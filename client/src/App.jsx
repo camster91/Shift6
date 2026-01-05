@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 // Client-only mode: No backend URL needed
-const STORAGE_PREFIX = 'just6weeks_';
+const STORAGE_PREFIX = 'shift6_';
 
 
 // Common rest logic: Weeks 1-3 = 60s, Weeks 4-6 = 90s

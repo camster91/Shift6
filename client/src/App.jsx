@@ -291,11 +291,20 @@ const AuthScreen = ({ onLogin }) => {
 };
 
 const App = () => {
-    const [token, setToken] = useState(localStorage.getItem('token'));
-    const [username, setUsername] = useState(localStorage.getItem('username'));
+    // Persistent State (No Auth)
+    const [completedDays, setCompletedDays] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}progress`);
+        return saved ? JSON.parse(saved) : {};
+    });
+
+    // Save effect
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}progress`, JSON.stringify(completedDays));
+    }, [completedDays]);
+
     const [activeTab, setActiveTab] = useState('plan');
     const [activeExercise, setActiveExercise] = useState('pushups');
-    const [completedDays, setCompletedDays] = useState({});
+    const [workoutQueue, setWorkoutQueue] = useState([]);
     const [currentSession, setCurrentSession] = useState(null);
     const [timeLeft, setTimeLeft] = useState(0);
     const [amrapValue, setAmrapValue] = useState('');
@@ -306,11 +315,7 @@ const App = () => {
     // Assessment state
     const [testInput, setTestInput] = useState('');
 
-    useEffect(() => {
-        if (token) {
-            fetchProgress();
-        }
-    }, [token]);
+
 
     const fetchProgress = async () => {
         setIsLoadingData(true);
@@ -318,7 +323,7 @@ const App = () => {
             // Simulate network delay
             await new Promise(r => setTimeout(r, 300));
 
-            const savedData = localStorage.getItem(`${STORAGE_PREFIX}progress_${username}`);
+            const savedData = localStorage.getItem(`${STORAGE_PREFIX}progress`);
             if (savedData) {
                 setCompletedDays(JSON.parse(savedData));
             } else {
@@ -331,18 +336,51 @@ const App = () => {
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        setToken(null);
-        setUsername(null);
-        setCompletedDays({});
+    const getNextSessionForExercise = (exKey) => {
+        const plan = EXERCISE_PLANS[exKey];
+        if (!plan) return null;
+
+        // Find first incomplete day
+        for (let w = 0; w < plan.weeks.length; w++) {
+            const week = plan.weeks[w];
+            for (let d = 0; d < week.days.length; d++) {
+                const day = week.days[d];
+                // Check if completed
+                const completed = completedDays[exKey]?.includes(day.id);
+                if (!completed) {
+                    return {
+                        exerciseKey: exKey,
+                        week: week.week,
+                        dayIndex: d,
+                        dayId: day.id,
+                        name: plan.name
+                    };
+                }
+            }
+        }
+        return null; // All done
     };
 
-    const handleLogin = (newToken, newUsername) => {
-        setToken(newToken);
-        setUsername(newUsername);
+    const getDailyStack = () => {
+        const stack = [];
+        Object.keys(EXERCISE_PLANS).forEach(key => {
+            const next = getNextSessionForExercise(key);
+            if (next) stack.push(next);
+        });
+        return stack;
     };
+
+    const startStack = () => {
+        const stack = getDailyStack();
+        if (stack.length === 0) return;
+
+        setWorkoutQueue(stack.slice(1)); // Queue the rest
+        startWorkout(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
+    };
+
+
+
+
 
     // Timer logic
     useEffect(() => {
@@ -356,15 +394,18 @@ const App = () => {
         return () => clearInterval(interval);
     }, [isTimerRunning, timeLeft]);
 
-    const startWorkout = (week, dayIndex) => {
-        const exercise = EXERCISE_PLANS[activeExercise];
+    const startWorkout = (week, dayIndex, overrideKey = null) => {
+        const exKey = overrideKey || activeExercise;
+        if (overrideKey) setActiveExercise(overrideKey);
+
+        const exercise = EXERCISE_PLANS[exKey];
         const weekData = exercise.weeks.find(w => w.week === week);
         const day = weekData.days[dayIndex];
 
         const isFinal = day.isFinal || false;
 
         setCurrentSession({
-            exerciseKey: activeExercise,
+            exerciseKey: exKey,
             exerciseName: exercise.name,
             week,
             dayIndex,
@@ -428,20 +469,23 @@ const App = () => {
         };
         setCompletedDays(newCompletedDays);
 
-        try {
-            // Save to localStorage
-            localStorage.setItem(`${STORAGE_PREFIX}progress_${username}`, JSON.stringify(newCompletedDays));
-        } catch (e) {
-            console.error("Failed to save progress", e);
-        }
+        // Queue Check
+        if (workoutQueue.length > 0) {
+            // Moving to next in stack
+            const next = workoutQueue[0];
+            const remaining = workoutQueue.slice(1);
 
-        setCurrentSession(null);
-        setActiveTab('plan');
+            // Short delay/transition could go here, but for now instant switch
+            setWorkoutQueue(remaining);
+            startWorkout(next.week, next.dayIndex, next.exerciseKey);
+        } else {
+            setCurrentSession(null);
+            setActiveTab('plan');
+        }
     };
 
-    if (!token) {
-        return <AuthScreen onLogin={handleLogin} />;
-    }
+    // No Auth Check
+
 
     const exercise = EXERCISE_PLANS[activeExercise];
     const colorMap = {
@@ -510,7 +554,7 @@ const App = () => {
                     </div>
                     <div className="flex items-center gap-4">
                         <nav className="hidden sm:flex bg-slate-800 rounded-full p-1">
-                            {['plan', 'workout', 'guide'].map(tab => (
+                            {['dashboard', 'plan', 'workout', 'guide'].map(tab => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
@@ -520,20 +564,13 @@ const App = () => {
                                 </button>
                             ))}
                         </nav>
-                        <button
-                            onClick={handleLogout}
-                            className="p-2 text-slate-400 hover:text-red-400 transition-colors"
-                            title="Logout"
-                        >
-                            <LogOut size={20} />
-                        </button>
                     </div>
                 </div>
             </header>
 
             {/* Mobile Nav */}
             <nav className="sm:hidden flex bg-slate-900 text-white border-t border-slate-800 p-2 fixed bottom-0 w-full z-20">
-                {['plan', 'workout', 'guide'].map(tab => (
+                {['dashboard', 'plan', 'workout', 'guide'].map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -546,8 +583,128 @@ const App = () => {
 
             <main className="max-w-4xl mx-auto p-4 md:p-6 mt-4 pb-24 sm:pb-6">
 
+                {activeTab === 'dashboard' && (
+                    <div className="space-y-8 animate-in fade-in duration-500">
+                        {/* Hero Section */}
+                        <div className="bg-slate-900 text-white p-8 rounded-3xl relative overflow-hidden shadow-2xl">
+                            <div className="absolute top-0 right-0 p-8 opacity-5 transform translate-x-10 -translate-y-10">
+                                <Trophy size={300} />
+                            </div>
+                            <div className="relative z-10">
+                                <p className="text-blue-400 font-bold uppercase tracking-widest text-xs mb-2">Transformation Journey</p>
+                                <h1 className="text-4xl md:text-5xl font-black mb-6">Total Body Mastery</h1>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {Object.entries(EXERCISE_PLANS).map(([key, ex]) => {
+                                        const count = completedDays[key]?.length || 0;
+                                        return (
+                                            <div key={key} className="bg-slate-800/50 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700/50 flex items-center gap-2 text-xs font-bold text-slate-300">
+                                                {ex.icon} <span>{count}/18</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {Object.entries(EXERCISE_PLANS).map(([key, ex]) => {
+                                const count = completedDays[key]?.length || 0;
+                                const percent = Math.min(100, Math.round((count / 18) * 100));
+
+                                return (
+                                    <button
+                                        key={key}
+                                        onClick={() => {
+                                            setActiveExercise(key);
+                                            setActiveTab('plan');
+                                        }}
+                                        className="bg-white p-6 rounded-2xl border-2 border-slate-100 hover:border-slate-300 hover:scale-[1.02] active:scale-95 transition-all text-left group shadow-sm hover:shadow-md h-full flex flex-col justify-between"
+                                    >
+                                        <div className="w-full">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${key === 'pushups' ? 'bg-blue-100 text-blue-600' :
+                                                    key === 'squats' ? 'bg-orange-100 text-orange-600' :
+                                                        key === 'lunges' ? 'bg-purple-100 text-purple-600' :
+                                                            key === 'dips' ? 'bg-fuchsia-100 text-fuchsia-600' :
+                                                                key === 'supermans' ? 'bg-amber-100 text-amber-600' :
+                                                                    key === 'glutebridge' ? 'bg-cyan-100 text-cyan-600' :
+                                                                        key === 'vups' ? 'bg-emerald-100 text-emerald-600' :
+                                                                            key === 'pullups' ? 'bg-indigo-100 text-indigo-600' :
+                                                                                'bg-rose-100 text-rose-600'
+                                                    }`}>
+                                                    {React.cloneElement(ex.icon, { size: 24 })}
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase bg-slate-100 text-slate-500 px-2 py-1 rounded-md">
+                                                    {percent}% Ready
+                                                </span>
+                                            </div>
+
+                                            <h3 className="text-xl font-black text-slate-900 mb-1">{ex.name}</h3>
+                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-6">Goal: {ex.finalGoal}</p>
+                                        </div>
+
+                                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-1000 ${key === 'pushups' ? 'bg-blue-500' :
+                                                    key === 'squats' ? 'bg-orange-500' :
+                                                        key === 'lunges' ? 'bg-purple-500' :
+                                                            key === 'dips' ? 'bg-fuchsia-500' :
+                                                                key === 'supermans' ? 'bg-amber-500' :
+                                                                    key === 'glutebridge' ? 'bg-cyan-500' :
+                                                                        key === 'vups' ? 'bg-emerald-500' :
+                                                                            key === 'pullups' ? 'bg-indigo-500' :
+                                                                                'bg-rose-500'
+                                                    }`}
+                                                style={{ width: `${percent}%` }}
+                                            />
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 {activeTab === 'plan' && (
                     <div className="space-y-6 animate-in fade-in duration-500">
+                        {/* Daily Stack Card */}
+                        <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group hover:shadow-2xl transition-all">
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <LayoutDashboard size={120} />
+                            </div>
+                            <div className="relative z-10">
+                                <h2 className="text-2xl font-black mb-2 flex items-center gap-2">
+                                    <Zap className="text-yellow-400" fill="currentColor" /> Daily Stack
+                                </h2>
+                                <p className="text-slate-400 mb-6 max-w-md">
+                                    Your personal playlist for today. One click to run all your next scheduled sessions back-to-back.
+                                </p>
+
+                                <div className="flex flex-wrap gap-2 mb-6">
+                                    {getDailyStack().map((item, i) => (
+                                        <div key={i} className="bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2 border border-slate-700">
+                                            {EXERCISE_PLANS[item.exerciseKey].icon}
+                                            {item.name} <span className="text-slate-500">W{item.week}D{item.dayIndex + 1}</span>
+                                        </div>
+                                    ))}
+                                    {getDailyStack().length === 0 && (
+                                        <div className="text-slate-500 text-sm font-bold flex items-center gap-2">
+                                            <CheckCircle2 size={16} /> All caught up!
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={startStack}
+                                    disabled={getDailyStack().length === 0}
+                                    className="bg-white text-slate-900 px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wide hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+                                >
+                                    Start Stack ({getDailyStack().length})
+                                </button>
+                            </div>
+                        </div>
                         {/* Stats Card */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">

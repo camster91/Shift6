@@ -22,7 +22,7 @@ import {
     UserPlus
 } from 'lucide-react';
 
-const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3000';
+const API_URL = '';
 
 // Common rest logic: Weeks 1-3 = 60s, Weeks 4-6 = 90s
 const getRest = (week) => (week <= 3 ? 60 : 90);
@@ -543,8 +543,8 @@ const App = () => {
                                                         key={day.id}
                                                         onClick={() => startWorkout(weekData.week, idx)}
                                                         className={`group p-4 rounded-xl border text-left transition-all hover:shadow-md ${isCompleted
-                                                                ? 'bg-green-50 border-green-200'
-                                                                : `bg-white border-slate-200 ${getThemeClass('hover')}`
+                                                            ? 'bg-green-50 border-green-200'
+                                                            : `bg-white border-slate-200 ${getThemeClass('hover')}`
                                                             }`}
                                                     >
                                                         <div className="flex justify-between items-start mb-2">
@@ -694,7 +694,7 @@ const App = () => {
                                                     <div
                                                         key={i}
                                                         className={`h-2 flex-1 rounded-full transition-all duration-500 ${i < currentSession.setIndex ? 'bg-green-500' :
-                                                                i === currentSession.setIndex ? `${getThemeClass('bg')} scale-y-150` : 'bg-slate-100'
+                                                            i === currentSession.setIndex ? `${getThemeClass('bg')} scale-y-150` : 'bg-slate-100'
                                                             }`}
                                                     />
                                                 ))}

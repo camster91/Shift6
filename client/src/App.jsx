@@ -19,7 +19,10 @@ import {
     Scale,
     LogOut,
     Lock,
-    UserPlus
+    UserPlus,
+    Footprints,
+    ArrowDown,
+    Plane
 } from 'lucide-react';
 
 const API_URL = '';
@@ -127,6 +130,51 @@ const EXERCISE_PLANS = {
             { week: 4, days: [{ id: "k41", reps: [80, 100, 80, 80, 120] }, { id: "k42", reps: [90, 110, 90, 90, 130] }, { id: "k43", reps: [100, 120, 100, 100, 140] }] },
             { week: 5, days: [{ id: "k51", reps: [110, 130, 110, 110, 150] }, { id: "k52", reps: [120, 140, 120, 120, 160] }, { id: "k53", reps: [130, 150, 130, 130, 180] }] },
             { week: 6, days: [{ id: "k61", reps: [140, 160, 140, 140, 200] }, { id: "k62", reps: [150, 180, 150, 150, 220] }, { id: "k63", reps: [300], isFinal: true }] },
+        ]
+    },
+    lunges: {
+        name: "Lunges",
+        icon: <Footprints size={20} />,
+        color: "purple",
+        unit: "reps/leg",
+        finalGoal: "50 Reps/Leg",
+        weeks: [
+            { week: 1, days: [{ id: "u11", reps: [6, 8, 6, 6, 10] }, { id: "u12", reps: [8, 10, 8, 8, 12] }, { id: "u13", reps: [10, 12, 10, 10, 15] }] },
+            { week: 2, days: [{ id: "u21", reps: [12, 14, 12, 12, 18] }, { id: "u22", reps: [14, 16, 14, 14, 20] }, { id: "u23", reps: [16, 18, 16, 16, 25] }] },
+            { week: 3, days: [{ id: "u31", reps: [18, 22, 18, 18, 28] }, { id: "u32", reps: [20, 25, 20, 20, 30] }, { id: "u33", reps: [22, 28, 22, 22, 35] }] },
+            { week: 4, days: [{ id: "u41", reps: [25, 30, 25, 25, 40] }, { id: "u42", reps: [28, 35, 28, 28, 45] }, { id: "u43", reps: [30, 40, 30, 30, 50] }] },
+            { week: 5, days: [{ id: "u51", reps: [35, 45, 35, 35, 55] }, { id: "u52", reps: [40, 50, 40, 40, 60] }, { id: "u53", reps: [45, 55, 45, 45, 65] }] },
+            { week: 6, days: [{ id: "u61", reps: [50, 60, 50, 50, 70] }, { id: "u62", reps: [55, 65, 55, 55, 80] }, { id: "u63", reps: [50], isFinal: true }] },
+        ]
+    },
+    dips: {
+        name: "Dips",
+        icon: <ArrowDown size={20} />,
+        color: "fuchsia",
+        unit: "reps",
+        finalGoal: "50 Reps",
+        weeks: [
+            { week: 1, days: [{ id: "d11", reps: [3, 4, 3, 3, 5] }, { id: "d12", reps: [4, 5, 4, 4, 6] }, { id: "d13", reps: [5, 6, 5, 5, 8] }] },
+            { week: 2, days: [{ id: "d21", reps: [6, 8, 6, 6, 10] }, { id: "d22", reps: [8, 10, 8, 8, 12] }, { id: "d23", reps: [10, 12, 10, 10, 15] }] },
+            { week: 3, days: [{ id: "d31", reps: [12, 14, 12, 12, 18] }, { id: "d32", reps: [14, 16, 14, 14, 20] }, { id: "d33", reps: [15, 18, 15, 15, 25] }] },
+            { week: 4, days: [{ id: "d41", reps: [18, 20, 18, 18, 28] }, { id: "d42", reps: [20, 22, 20, 20, 30] }, { id: "d43", reps: [22, 25, 22, 22, 35] }] },
+            { week: 5, days: [{ id: "d51", reps: [25, 30, 25, 25, 40] }, { id: "d52", reps: [28, 35, 28, 28, 45] }, { id: "d53", reps: [30, 38, 30, 30, 50] }] },
+            { week: 6, days: [{ id: "d61", reps: [35, 40, 35, 35, 55] }, { id: "d62", reps: [40, 45, 40, 40, 60] }, { id: "d63", reps: [50], isFinal: true }] },
+        ]
+    },
+    supermans: {
+        name: "Supermans",
+        icon: <Plane size={20} />,
+        color: "amber",
+        unit: "reps",
+        finalGoal: "100 Reps",
+        weeks: [
+            { week: 1, days: [{ id: "m11", reps: [5, 6, 5, 5, 8] }, { id: "m12", reps: [6, 8, 6, 6, 10] }, { id: "m13", reps: [8, 10, 8, 8, 12] }] },
+            { week: 2, days: [{ id: "m21", reps: [10, 12, 10, 10, 15] }, { id: "m22", reps: [12, 15, 12, 12, 18] }, { id: "m23", reps: [15, 18, 15, 15, 20] }] },
+            { week: 3, days: [{ id: "m31", reps: [18, 20, 18, 18, 25] }, { id: "m32", reps: [20, 25, 20, 20, 30] }, { id: "m33", reps: [25, 30, 25, 25, 35] }] },
+            { week: 4, days: [{ id: "m41", reps: [30, 35, 30, 30, 40] }, { id: "m42", reps: [35, 40, 35, 35, 45] }, { id: "m43", reps: [40, 50, 40, 40, 55] }] },
+            { week: 5, days: [{ id: "m51", reps: [45, 55, 45, 45, 60] }, { id: "m52", reps: [50, 60, 50, 50, 70] }, { id: "m53", reps: [55, 65, 55, 55, 80] }] },
+            { week: 6, days: [{ id: "m61", reps: [60, 70, 60, 60, 90] }, { id: "m62", reps: [70, 80, 70, 70, 100] }, { id: "m63", reps: [100], isFinal: true }] },
         ]
     }
 };
@@ -395,6 +443,9 @@ const App = () => {
         indigo: 'bg-indigo-600 border-indigo-200 text-indigo-600 ring-indigo-500 hover:border-indigo-300',
         rose: 'bg-rose-600 border-rose-200 text-rose-600 ring-rose-500 hover:border-rose-300',
         cyan: 'bg-cyan-600 border-cyan-200 text-cyan-600 ring-cyan-500 hover:border-cyan-300',
+        purple: 'bg-purple-600 border-purple-200 text-purple-600 ring-purple-500 hover:border-purple-300',
+        fuchsia: 'bg-fuchsia-600 border-fuchsia-200 text-fuchsia-600 ring-fuchsia-500 hover:border-fuchsia-300',
+        amber: 'bg-amber-600 border-amber-200 text-amber-600 ring-amber-500 hover:border-amber-300',
     };
 
     const getThemeClass = (part) => {
@@ -800,7 +851,10 @@ const App = () => {
                                                         activeExercise === 'plank' ? "Squeeze glutes to protect lower back." :
                                                             activeExercise === 'vups' ? "Keep legs straight and reach for your toes." :
                                                                 activeExercise === 'glutebridge' ? "Drive through your heel, keep hips level." :
-                                                                    "Exhale on the way up."
+                                                                    activeExercise === 'lunges' ? "Keep torso upright, knee shouldn't touch ground." :
+                                                                        activeExercise === 'dips' ? "Keep elbows tucked, lean forward slightly." :
+                                                                            activeExercise === 'supermans' ? "Lift chest and thighs simultaneously, pause at top." :
+                                                                                "Exhale on the way up."
                                         }
                                     </p>
                                 </div>

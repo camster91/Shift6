@@ -361,9 +361,25 @@ const App = () => {
         return null; // All done
     };
 
+    const getScheduleFocus = () => {
+        const day = new Date().getDay();
+        if (day === 0) return 'Rest & Recovery';
+        if (day % 2 === 1) return 'Upper Body Focus'; // Mon, Wed, Fri
+        return 'Lower Body & Core'; // Tue, Thu, Sat
+    };
+
     const getDailyStack = () => {
+        const day = new Date().getDay();
+        const upper = ['pushups', 'dips', 'pullups', 'supermans'];
+        const lower = ['squats', 'lunges', 'glutebridge', 'vups', 'plank'];
+
+        let targetKeys = [];
+        if (day === 0) targetKeys = []; // Sunday rest
+        else if (day % 2 === 1) targetKeys = upper; // Mon, Wed, Fri
+        else targetKeys = lower; // Tue, Thu, Sat
+
         const stack = [];
-        Object.keys(EXERCISE_PLANS).forEach(key => {
+        targetKeys.forEach(key => {
             const next = getNextSessionForExercise(key);
             if (next) stack.push(next);
         });
@@ -417,7 +433,7 @@ const App = () => {
             isFinal: isFinal,
             color: exercise.color,
             unit: exercise.unit,
-            step: isFinal ? 'workout' : 'assessment' // New step logic
+            step: isFinal ? 'workout' : ((completedDays[exKey]?.length || 0) === 0 ? 'assessment' : 'workout') // Max Test only on first session
         });
         setActiveTab('workout');
         setAmrapValue('');
@@ -607,6 +623,50 @@ const App = () => {
                             </div>
                         </div>
 
+                        {/* Daily Stack Card (Moved from Plan) */}
+                        <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group hover:shadow-2xl transition-all border border-slate-700">
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <LayoutDashboard size={120} />
+                            </div>
+                            <div className="relative z-10">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h2 className="text-2xl font-black flex items-center gap-2">
+                                        <Zap className="text-yellow-400" fill="currentColor" /> Daily Stack
+                                    </h2>
+                                    <span className="bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-slate-700">
+                                        {getScheduleFocus()}
+                                    </span>
+                                </div>
+                                <p className="text-slate-400 mb-6 max-w-md">
+                                    {getDailyStack().length > 0
+                                        ? "Your scheduled sessions for today. One click to run them back-to-back."
+                                        : "No scheduled workouts for today. Enjoy your rest!"}
+                                </p>
+
+                                <div className="flex flex-wrap gap-2 mb-6">
+                                    {getDailyStack().map((item, i) => (
+                                        <div key={i} className="bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2 border border-slate-700">
+                                            {EXERCISE_PLANS[item.exerciseKey].icon}
+                                            {item.name} <span className="text-slate-500">W{item.week}D{item.dayIndex + 1}</span>
+                                        </div>
+                                    ))}
+                                    {getDailyStack().length === 0 && (
+                                        <div className="text-slate-500 text-sm font-bold flex items-center gap-2">
+                                            <CheckCircle2 size={16} /> All caught up!
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={startStack}
+                                    disabled={getDailyStack().length === 0}
+                                    className="bg-white text-slate-900 px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wide hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+                                >
+                                    Start Stack ({getDailyStack().length})
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(EXERCISE_PLANS).map(([key, ex]) => {
@@ -669,43 +729,43 @@ const App = () => {
 
                 {activeTab === 'plan' && (
                     <div className="space-y-6 animate-in fade-in duration-500">
-                        {/* Daily Stack Card */}
-                        <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group hover:shadow-2xl transition-all">
-                            <div className="absolute top-0 right-0 p-8 opacity-10">
-                                <LayoutDashboard size={120} />
-                            </div>
-                            <div className="relative z-10">
-                                <h2 className="text-2xl font-black mb-2 flex items-center gap-2">
-                                    <Zap className="text-yellow-400" fill="currentColor" /> Daily Stack
-                                </h2>
-                                <p className="text-slate-400 mb-6 max-w-md">
-                                    Your personal playlist for today. One click to run all your next scheduled sessions back-to-back.
-                                </p>
-
-                                <div className="flex flex-wrap gap-2 mb-6">
-                                    {getDailyStack().map((item, i) => (
-                                        <div key={i} className="bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2 border border-slate-700">
-                                            {EXERCISE_PLANS[item.exerciseKey].icon}
-                                            {item.name} <span className="text-slate-500">W{item.week}D{item.dayIndex + 1}</span>
-                                        </div>
-                                    ))}
-                                    {getDailyStack().length === 0 && (
-                                        <div className="text-slate-500 text-sm font-bold flex items-center gap-2">
-                                            <CheckCircle2 size={16} /> All caught up!
-                                        </div>
-                                    )}
+                        {/* Daily Stack Card OLD */}{false && (
+                            <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group hover:shadow-2xl transition-all">
+                                <div className="absolute top-0 right-0 p-8 opacity-10">
+                                    <LayoutDashboard size={120} />
                                 </div>
+                                <div className="relative z-10">
+                                    <h2 className="text-2xl font-black mb-2 flex items-center gap-2">
+                                        <Zap className="text-yellow-400" fill="currentColor" /> Daily Stack
+                                    </h2>
+                                    <p className="text-slate-400 mb-6 max-w-md">
+                                        Your personal playlist for today. One click to run all your next scheduled sessions back-to-back.
+                                    </p>
 
-                                <button
-                                    onClick={startStack}
-                                    disabled={getDailyStack().length === 0}
-                                    className="bg-white text-slate-900 px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wide hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
-                                >
-                                    Start Stack ({getDailyStack().length})
-                                </button>
+                                    <div className="flex flex-wrap gap-2 mb-6">
+                                        {getDailyStack().map((item, i) => (
+                                            <div key={i} className="bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2 border border-slate-700">
+                                                {EXERCISE_PLANS[item.exerciseKey].icon}
+                                                {item.name} <span className="text-slate-500">W{item.week}D{item.dayIndex + 1}</span>
+                                            </div>
+                                        ))}
+                                        {getDailyStack().length === 0 && (
+                                            <div className="text-slate-500 text-sm font-bold flex items-center gap-2">
+                                                <CheckCircle2 size={16} /> All caught up!
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        onClick={startStack}
+                                        disabled={getDailyStack().length === 0}
+                                        className="bg-white text-slate-900 px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wide hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+                                    >
+                                        Start Stack ({getDailyStack().length})
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        {/* Stats Card */}
+                        )} {/* Stats Card */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                                 <p className="text-slate-400 text-xs font-bold uppercase mb-1">Total Progress</p>
@@ -801,87 +861,61 @@ const App = () => {
                                 </button>
                             </div>
                         ) : currentSession.step === 'assessment' ? (
-                            // ---------------- ASSESSMENT SCREEN ----------------
+                            // ---------------- ASSESSMENT SCREEN (FIRST TIME ONLY) ----------------
                             <div className="space-y-6">
-                                <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-slate-200">
+                                <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-slate-200 animate-in zoom-in duration-300">
                                     <div className="bg-slate-900 text-white p-8">
                                         <div className="flex items-center gap-2 text-blue-400 text-xs font-black uppercase tracking-widest mb-1">
-                                            Calibration Stage <ChevronRight size={12} /> {currentSession.exerciseName}
+                                            First Session <ChevronRight size={12} /> {currentSession.exerciseName}
                                         </div>
-                                        <h2 className="text-3xl font-black">Pre-Workout Check</h2>
+                                        <h2 className="text-3xl font-black">Baseline Assessment</h2>
                                     </div>
                                     <div className="p-8 md:p-12 space-y-8">
-                                        <div className="flex gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                            <Scale className={`shrink-0 ${getThemeClass('text')}`} size={24} />
+
+                                        {/* Warning Alert */}
+                                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 text-amber-900">
+                                            <AlertCircle className="shrink-0 mt-0.5" size={20} />
                                             <div>
-                                                <p className="font-bold text-slate-800 text-sm mb-1">Optimize Your Training</p>
-                                                <p className="text-xs text-slate-500">
-                                                    The default plan assumes a baseline strength. Adjust today's volume based on your current readiness or a quick test result.
+                                                <p className="font-bold text-sm mb-1">Fresh Muscles Required</p>
+                                                <p className="text-xs leading-relaxed opacity-90 font-medium">
+                                                    For accurate results, please ensure you have had a <span className="underline">10-15 minute break</span> from any other exercise before attempting this test so you don't ruin your numbers.
                                                 </p>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            {/* OPTION A: Quick Select */}
-                                            <div className="space-y-4">
-                                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Quick Readiness</h3>
-                                                <div className="space-y-2">
-                                                    <button
-                                                        onClick={() => applyCalibration(1.15)}
-                                                        className="w-full p-4 rounded-xl border border-slate-200 hover:border-green-400 hover:bg-green-50 transition-colors flex items-center justify-between group"
-                                                    >
-                                                        <span className="font-bold text-slate-700 group-hover:text-green-700">Feeling Strong</span>
-                                                        <span className="text-xs font-black bg-green-100 text-green-700 px-2 py-1 rounded">+15% Volume</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => applyCalibration(1)}
-                                                        className="w-full p-4 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-colors flex items-center justify-between group"
-                                                    >
-                                                        <span className="font-bold text-slate-700 group-hover:text-blue-700">Normal</span>
-                                                        <span className="text-xs font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">Standard</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => applyCalibration(0.85)}
-                                                        className="w-full p-4 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition-colors flex items-center justify-between group"
-                                                    >
-                                                        <span className="font-bold text-slate-700 group-hover:text-amber-700">Tired / Sore</span>
-                                                        <span className="text-xs font-black bg-amber-100 text-amber-700 px-2 py-1 rounded">-15% Volume</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {/* OPTION B: Input Test */}
-                                            <div className="space-y-4">
-                                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Max Test (Optional)</h3>
-                                                <form onSubmit={handleTestSubmit} className="space-y-3">
-                                                    <p className="text-xs text-slate-500">
-                                                        Perform a single max set of {currentSession.exerciseName}. Enter your result to mathematically scale the entire workout.
-                                                    </p>
-                                                    <div className="flex gap-2">
-                                                        <input
-                                                            type="number"
-                                                            value={testInput}
-                                                            onChange={(e) => setTestInput(e.target.value)}
-                                                            placeholder={currentSession.unit === 'seconds' ? 'Max seconds' : 'Max reps'}
-                                                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-2 focus:ring-slate-400"
-                                                        />
-                                                        <button
-                                                            type="submit"
-                                                            className={`px-6 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-transform ${getThemeClass('bg')}`}
-                                                        >
-                                                            Adjust
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                            </div>
+                                        <div className="text-center space-y-4">
+                                            <Trophy className={`mx-auto ${getThemeClass('text')}`} size={48} />
+                                            <p className="text-lg font-bold text-slate-700">
+                                                Perform one set of {currentSession.exerciseName} to FAILURE with perfect form.
+                                            </p>
                                         </div>
 
-                                        <div className="pt-4 border-t border-slate-100">
+                                        <form onSubmit={handleTestSubmit} className="max-w-md mx-auto space-y-4">
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="number"
+                                                    value={testInput}
+                                                    onChange={(e) => setTestInput(e.target.value)}
+                                                    placeholder={currentSession.unit === 'seconds' ? 'Max seconds' : 'Max reps'}
+                                                    autoFocus
+                                                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-4 text-xl font-black text-center focus:outline-none focus:ring-4 focus:ring-slate-100 transition-all"
+                                                />
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={!testInput}
+                                                className={`w-full py-4 rounded-xl font-black text-white text-lg shadow-lg active:scale-95 transition-all ${getThemeClass('bg')} disabled:opacity-50 disabled:grayscale`}
+                                            >
+                                                Calculated Start
+                                            </button>
+                                        </form>
+
+                                        <div className="pt-4 border-t border-slate-100 text-center">
                                             <button
                                                 onClick={() => applyCalibration(1)}
-                                                className="w-full py-4 text-center text-slate-400 font-bold text-sm hover:text-slate-600 transition-colors"
+                                                className="text-slate-400 font-bold text-sm hover:text-slate-600 transition-colors uppercase tracking-wide"
                                             >
-                                                Skip Assessment (Start Standard Workout)
+                                                Skip (Start Standard Level)
                                             </button>
                                         </div>
                                     </div>

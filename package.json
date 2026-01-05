@@ -1,0 +1,17 @@
+{
+    "name": "just6weeks-monolith",
+    "version": "1.0.0",
+    "description": "Full stack deployment for Just 6 Weeks",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "scripts": {
+        "postinstall": "npm install --prefix client && npm install --prefix server",
+        "build": "npm run build --prefix client",
+        "start": "npm start --prefix server",
+        "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\""
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

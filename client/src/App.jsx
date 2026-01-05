@@ -25,7 +25,9 @@ import {
     Plane
 } from 'lucide-react';
 
-const API_URL = '';
+// Client-only mode: No backend URL needed
+const STORAGE_PREFIX = 'just6weeks_';
+
 
 // Common rest logic: Weeks 1-3 = 60s, Weeks 4-6 = 90s
 const getRest = (week) => (week <= 3 ? 60 : 90);
@@ -191,21 +193,34 @@ const AuthScreen = ({ onLogin }) => {
         setError('');
         setIsLoading(true);
 
+        // Simulate network delay
+        await new Promise(r => setTimeout(r, 500));
+
         try {
-            const endpoint = isRegistering ? '/auth/register' : '/auth/login';
-            const res = await fetch(`${API_URL}${endpoint}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
+            if (isRegistering) {
+                const existing = localStorage.getItem(`${STORAGE_PREFIX}user_${username}`);
+                if (existing) throw new Error('Username already taken');
 
-            const data = await res.json();
+                // Save user credentials (in production use a real backend!)
+                localStorage.setItem(`${STORAGE_PREFIX}user_${username}`, JSON.stringify({ username, password }));
 
-            if (!res.ok) throw new Error(data.error || 'Something went wrong');
+                // Auto-login
+                const token = `local_token_${Date.now()}`;
+                localStorage.setItem('token', token);
+                localStorage.setItem('username', username);
+                onLogin(token, username);
+            } else {
+                const userStr = localStorage.getItem(`${STORAGE_PREFIX}user_${username}`);
+                if (!userStr) throw new Error('User not found');
 
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('username', data.username);
-            onLogin(data.token, data.username);
+                const user = JSON.parse(userStr);
+                if (user.password !== password) throw new Error('Invalid password');
+
+                const token = `local_token_${Date.now()}`;
+                localStorage.setItem('token', token);
+                localStorage.setItem('username', username);
+                onLogin(token, username);
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -300,14 +315,14 @@ const App = () => {
     const fetchProgress = async () => {
         setIsLoadingData(true);
         try {
-            const res = await fetch(`${API_URL}/api/progress`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setCompletedDays(data);
-            } else if (res.status === 401) {
-                handleLogout();
+            // Simulate network delay
+            await new Promise(r => setTimeout(r, 300));
+
+            const savedData = localStorage.getItem(`${STORAGE_PREFIX}progress_${username}`);
+            if (savedData) {
+                setCompletedDays(JSON.parse(savedData));
+            } else {
+                setCompletedDays({});
             }
         } catch (e) {
             console.error("Failed to fetch progress", e);
@@ -414,17 +429,10 @@ const App = () => {
         setCompletedDays(newCompletedDays);
 
         try {
-            await fetch(`${API_URL}/api/progress`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ exerciseKey, dayId })
-            });
+            // Save to localStorage
+            localStorage.setItem(`${STORAGE_PREFIX}progress_${username}`, JSON.stringify(newCompletedDays));
         } catch (e) {
             console.error("Failed to save progress", e);
-            // Revert on error? For now just log
         }
 
         setCurrentSession(null);

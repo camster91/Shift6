@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  /* Global active state for interactive elements */
+  button:active,
+  a:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+    transition: opacity 0.1s, transform 0.1s;
+  }
+}

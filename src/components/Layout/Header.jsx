@@ -15,7 +15,7 @@ const Header = ({
     const exercise = EXERCISE_PLANS[activeExercise];
 
     return (
-        <header className="bg-slate-900 text-white sticky top-0 z-20 shadow-xl border-b border-slate-800">
+        <header className="bg-slate-900 text-white sticky top-0 z-20 shadow-xl border-b border-slate-800 pt-[env(safe-area-inset-top)]">
             <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
 
                 {/* Logo & Branding */}

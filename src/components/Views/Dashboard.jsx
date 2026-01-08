@@ -67,6 +67,9 @@ const Dashboard = ({ completedDays, setActiveExercise, setActiveTab, startStack 
                 </div>
             </div>
 
+            {/* Gamification Hub */}
+            <GamificationSection completedDays={completedDays} />
+
             {/* Daily Stack Card */}
             <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group hover:shadow-2xl transition-all border border-slate-700">
                 <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -167,6 +170,54 @@ const Dashboard = ({ completedDays, setActiveExercise, setActiveTab, startStack 
                         </button>
                     );
                 })}
+            </div>
+        </div>
+    );
+};
+
+import { calculateStats, getUnlockedBadges, BADGES } from '../../utils/gamification';
+
+const GamificationSection = ({ completedDays }) => {
+    const stats = calculateStats(completedDays);
+    const unlocked = getUnlockedBadges(stats);
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Stats */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 flex gap-4 items-center shadow-sm">
+                <div className="p-4 bg-orange-100 text-orange-600 rounded-full">
+                    <Zap size={24} fill="currentColor" />
+                </div>
+                <div>
+                    <h3 className="text-2xl font-black text-slate-900">{stats.currentStreak}</h3>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Active Streak</p>
+                </div>
+                <div className="ml-auto text-right">
+                    <h3 className="text-2xl font-black text-slate-900">{stats.totalSessions}</h3>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Total Sessions</p>
+                </div>
+            </div>
+
+            {/* Badges */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Latest Achievements</h3>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    {unlocked.length > 0 ? unlocked.map(badge => (
+                        <div key={badge.id} className="min-w-[80px] flex flex-col items-center text-center p-2 bg-slate-50 rounded-xl border border-slate-100">
+                            <span className="text-2xl mb-1 filter drop-shadow-sm">{badge.icon}</span>
+                            <span className="text-[10px] font-bold text-slate-700 leading-tight">{badge.name}</span>
+                        </div>
+                    )) : (
+                        <p className="text-sm text-slate-400 italic">Complete workouts to unlock badges!</p>
+                    )}
+                    {/* Show locked greyed out */}
+                    {BADGES.filter(b => !unlocked.includes(b)).slice(0, 3).map(badge => (
+                        <div key={badge.id} className="min-w-[80px] flex flex-col items-center text-center p-2 grayscale opacity-40 border border-dashed border-slate-200 rounded-xl">
+                            <span className="text-2xl mb-1">{badge.icon}</span>
+                            <span className="text-[10px] font-bold text-slate-700 leading-tight">{badge.name}</span>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

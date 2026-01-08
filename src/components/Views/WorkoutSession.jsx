@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronRight, Trophy, Timer, Info, Play, AlertCircle } from 'lucide-react';
 import { formatValue } from '../../data/exercises';
+import { playBeep, playStart, playSuccess } from '../../utils/audio';
 
 const WorkoutSession = ({
     currentSession,
@@ -43,6 +44,22 @@ const WorkoutSession = ({
             </div>
         );
     }
+
+    // Audio Cues
+    React.useEffect(() => {
+        if (isTimerRunning && timeLeft > 0 && timeLeft <= 3) {
+            playBeep();
+        }
+        if (isTimerRunning && timeLeft === 0) {
+            playStart(); // Time's up -> GO!
+        }
+    }, [timeLeft, isTimerRunning]);
+
+    // Handle session complete for success sound
+    const handleComplete = () => {
+        playSuccess();
+        completeWorkout();
+    };
 
     // Assessment Screen
     if (currentSession.step === 'assessment') {
@@ -201,7 +218,7 @@ const WorkoutSession = ({
                                             />
                                         </div>
                                         <button
-                                            onClick={completeWorkout}
+                                            onClick={handleComplete}
                                             className={`w-full text-white py-5 rounded-2xl font-black text-xl shadow-xl hover:brightness-110 transition-all active:scale-95 ${getThemeClass('bg')}`}
                                         >
                                             FINISH WORKOUT

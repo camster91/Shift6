@@ -9,8 +9,8 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
             manifest: {
-                name: 'Just 6 Weeks',
-                short_name: '6Weeks',
+                name: 'Shift6',
+                short_name: 'Shift6',
                 description: 'Simple 6-week workout tracker',
                 theme_color: '#0f172a',
                 background_color: '#ffffff',

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Zap, LayoutDashboard, CheckCircle2, X } from 'lucide-react';
+import { Trophy, Zap, LayoutDashboard, CheckCircle2, X, Volume2 } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises';
 import { getDailyStack, getScheduleFocus } from '../../utils/schedule';
+import { vibrate } from '../../utils/device';
 
 const Dashboard = ({ completedDays, setActiveExercise, setActiveTab, startStack }) => {
     const dailyStack = getDailyStack(completedDays);
@@ -105,7 +106,10 @@ const Dashboard = ({ completedDays, setActiveExercise, setActiveTab, startStack 
                     </div>
 
                     <button
-                        onClick={startStack}
+                        onClick={() => {
+                            vibrate(20);
+                            startStack();
+                        }}
                         disabled={dailyStack.length === 0}
                         className="bg-white text-slate-900 px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wide hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
                     >
@@ -124,6 +128,7 @@ const Dashboard = ({ completedDays, setActiveExercise, setActiveTab, startStack 
                         <button
                             key={key}
                             onClick={() => {
+                                vibrate(10);
                                 setActiveExercise(key);
                                 setActiveTab('plan');
                             }}

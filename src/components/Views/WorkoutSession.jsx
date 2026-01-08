@@ -1,7 +1,8 @@
-import React from 'react';
-import { ChevronRight, Trophy, Timer, Info, Play, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronRight, Trophy, Timer, Info, Play, AlertCircle, Share2, Check } from 'lucide-react';
 import { formatValue } from '../../data/exercises';
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
+import { requestWakeLock, releaseWakeLock, vibrate, copyToClipboard } from '../../utils/device';
 
 const WorkoutSession = ({
     currentSession,
@@ -45,20 +46,40 @@ const WorkoutSession = ({
         );
     }
 
-    // Audio Cues
+    const [copied, setCopied] = useState(false);
+
+    // Audio Cues & Haptics & WakeLock
     React.useEffect(() => {
+        if (isTimerRunning) {
+            requestWakeLock();
+        } else {
+            releaseWakeLock();
+        }
+
         if (isTimerRunning && timeLeft > 0 && timeLeft <= 3) {
             playBeep();
         }
         if (isTimerRunning && timeLeft === 0) {
             playStart(); // Time's up -> GO!
+            vibrate([100, 50, 100]); // Buzz buzz buzz
         }
     }, [timeLeft, isTimerRunning]);
 
     // Handle session complete for success sound
     const handleComplete = () => {
         playSuccess();
+        vibrate([50, 50, 50, 50, 200]);
         completeWorkout();
+    };
+
+    const handleShare = async () => {
+        const text = `Shift6: Just crushed Day ${currentSession.dayIndex + 1} of ${currentSession.exerciseName} (Week ${currentSession.week}). Hit ${amrapValue || 'my goal'} on the max set! 🚀`;
+        const success = await copyToClipboard(text);
+        if (success) {
+            setCopied(true);
+            vibrate(50);
+            setTimeout(() => setCopied(false), 2000);
+        }
     };
 
     // Assessment Screen
@@ -194,7 +215,10 @@ const WorkoutSession = ({
                                     {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                                 </div>
                                 <button
-                                    onClick={() => setTimeLeft(0)}
+                                    onClick={() => {
+                                        setTimeLeft(0);
+                                        vibrate(20);
+                                    }}
                                     className="mt-6 text-xs font-black text-slate-400 hover:text-white uppercase tracking-widest border border-slate-700 px-4 py-2 rounded-full"
                                 >
                                     Skip Timer
@@ -218,6 +242,13 @@ const WorkoutSession = ({
                                             />
                                         </div>
                                         <button
+                                            onClick={handleShare}
+                                            className="w-full text-slate-500 py-3 rounded-xl font-bold text-sm hover:text-blue-600 transition-colors flex items-center justify-center gap-2 mb-2"
+                                        >
+                                            {copied ? <Check size={16} /> : <Share2 size={16} />}
+                                            {copied ? 'Copied to Clipboard!' : 'Share Result'}
+                                        </button>
+                                        <button
                                             onClick={handleComplete}
                                             className={`w-full text-white py-5 rounded-2xl font-black text-xl shadow-xl hover:brightness-110 transition-all active:scale-95 ${getThemeClass('bg')}`}
                                         >
@@ -227,6 +258,7 @@ const WorkoutSession = ({
                                 ) : (
                                     <button
                                         onClick={() => {
+                                            vibrate(20);
                                             setCurrentSession(prev => ({ ...prev, setIndex: prev.setIndex + 1 }));
                                             setTimeLeft(currentSession.rest);
                                             setIsTimerRunning(true);

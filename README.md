@@ -1,75 +1,58 @@
-# Just 6 Weeks - PWA with Backend
+# Shift6 🚀
 
-This project has been converted to a full-stack Progressive Web App.
+**Shift6** is a modern, high-performance Progressive Web App (PWA) designed to help you master 6 foundational bodyweight exercises over a 6-week progression.
 
-## Prerequisites
-- Node.js installed on your machine.
-- A terminal (PowerShell, Command Prompt, or Git Bash).
+Built with **React**, **Vite**, **TailwindCSS**, and **Glassmorphism Design**.
 
-## Structure
-- `client/`: The Frontend (React + Vite + Tailwind).
-- `server/`: The Backend (Node.js + Express + SQLite).
-- `server/database.sqlite`: The database file (auto-created on first run).
+![Shift6 Interface](https://via.placeholder.com/800x400?text=Shift6+Preview)
 
-## Setup Instructions
+## ✨ Features
 
-Since I was unable to run commands in your environment, you need to install the dependencies manually.
+*   **Dynamic Progression**: Automatically adjusts difficulty based on your "Max Effort" set.
+*   **Offline Ready (PWA)**: Installable on iOS/Android, works 100% offline.
+*   **Deep Analytics**:
+    *   **Activity Streaks**: Track your consistency.
+    *   **Badges**: Unlock achievements like "Early Bird" and "Week Warrior".
+*   **Native Feel**:
+    *   **Haptics**: Tactile feedback on interactions.
+    *   **Wake Lock**: Keeps your screen awake during workouts (no more unlocking mid-plank!).
+    *   **Audio Cues**: Beeps and fanfares for timers and completion.
+*   **Data Choice**:
+    *   **Local Privacy**: Data lives on your device by default.
+    *   **Backup/Restore**: Export your progress to JSON and move it between devices.
 
-1.  **Install Server Dependencies**:
+## 🛠️ Tech Stack
+
+*   **Frontend**: React 18, Vite 5
+*   **Styling**: TailwindCSS, Lucide Icons
+*   **Utils**: VitePWA, Web Audio API, Vibration API
+
+## 🚀 Getting Started
+
+1.  **Install Dependencies**:
     ```bash
-    cd server
     npm install
     ```
 
-2.  **Install Client Dependencies**:
+2.  **Run Locally**:
     ```bash
-    cd ../client
-    npm install
-    ```
-
-## Development (Running Locally)
-
-To run the app in development mode (with hot reload):
-
-1.  **Start the Backend** (in terminal 1):
-    ```bash
-    cd server
     npm run dev
     ```
-    (Runs on port 3000)
 
-2.  **Start the Frontend** (in terminal 2):
+3.  **Build for Production**:
     ```bash
-    cd client
-    npm run dev
-    ```
-    (Runs on port 5173. It proxies API requests to localhost:3000).
-
-## Deployment (Uploading to Web Server)
-
-To prepare the app for your web server:
-
-1.  **Build the Client**:
-    ```bash
-    cd client
     npm run build
     ```
-    This creates a `dist` folder in `client/`.
 
-2.  **Prepare the Server**:
-    The server is configured to serve the `client/dist` folder automatically.
+## 📱 Deployment (Hostinger / Vercel)
 
-3.  **Upload**:
-    Upload the entire project to your web server.
-    On the server, run:
-    ```bash
-    cd server
-    npm install --production
-    node index.js
-    ```
-    
-    The app will be available at `http://your-server-ip:3000`.
+This project is a static site (SPA). You can deploy the `dist/` folder anywhere.
 
-## PWA
-The app is configured as a PWA. To finalize it:
-- Add `pwa-192x192.png` and `pwa-512x512.png` to `client/public/`.
+**Hostinger Setup**:
+1.  Set **Root Directory** to the folder containing `package.json` (e.g., `/Just6Weeks`).
+2.  **Build Command**: `npm run build`
+3.  **Publish Directory**: `dist`
+
+## 🤝 Contributing
+
+This project is personal software, but feel free to fork and modify!

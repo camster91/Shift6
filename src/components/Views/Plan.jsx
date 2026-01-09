@@ -16,21 +16,21 @@ const Plan = ({
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <p className="text-slate-400 text-xs font-bold uppercase mb-1">Total Progress</p>
+                    <p className="text-slate-500 text-xs font-bold uppercase mb-1">Total Progress</p>
                     <div className="flex items-end gap-2">
                         <span className="text-3xl font-black">{completedCount}</span>
-                        <span className="text-slate-400 font-bold mb-1">/ 18 Days</span>
+                        <span className="text-slate-500 font-bold mb-1">/ 18 Days</span>
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <p className="text-slate-400 text-xs font-bold uppercase mb-1">Goal</p>
+                    <p className="text-slate-500 text-xs font-bold uppercase mb-1">Goal</p>
                     <div className="flex items-end gap-2">
                         <span className={`text-3xl font-black ${getThemeClass('text')}`}>{exercise.finalGoal}</span>
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
-                        <p className="text-slate-400 text-xs font-bold uppercase mb-1">Next Session</p>
+                        <p className="text-slate-500 text-xs font-bold uppercase mb-1">Next Session</p>
                         <p className="font-bold">Week {Math.min(6, Math.floor(completedCount / 3) + 1)}</p>
                     </div>
                     <div className={`p-2 rounded-full ${getThemeClass('bg')} bg-opacity-10 ${getThemeClass('text')}`}>
@@ -54,7 +54,7 @@ const Plan = ({
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold">Week {weekData.week}</h3>
-                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
                                         Rest: {getRest(weekData.week)}s Between Sets
                                     </p>
                                 </div>
@@ -73,7 +73,7 @@ const Plan = ({
                                                 }`}
                                         >
                                             <div className="flex justify-between items-start mb-2">
-                                                <span className="text-[10px] font-black text-slate-400">SESSION {idx + 1}</span>
+                                                <span className="text-[10px] font-black text-slate-500">SESSION {idx + 1}</span>
                                                 {isCompleted && <CheckCircle2 size={14} className="text-green-600" />}
                                             </div>
                                             <div className="text-sm font-mono font-bold text-slate-700">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Trophy, Timer, Info, Play, AlertCircle, Share2, Check } from 'lucide-react';
+import { ChevronRight, Trophy, Timer, Info, Play, AlertCircle, Share2, Check, X, Zap } from 'lucide-react';
 import { formatValue } from '../../data/exercises.jsx';
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { requestWakeLock, releaseWakeLock, vibrate, copyToClipboard } from '../../utils/device';
@@ -108,12 +108,12 @@ const WorkoutSession = ({
 
     if (currentSession.step === 'assessment') {
         return (
-            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="max-w-2xl mx-auto space-y-6 animate-in slide-in-from-bottom-4 duration-500">
                 <div className="bg-white rounded-[2rem] overflow-hidden shadow-2xl border border-slate-100 mesh-bg min-h-[500px] flex flex-col justify-center text-center p-8 text-white">
                     <Trophy className="mx-auto text-blue-400 mb-8 animate-float" size={64} />
                     <h2 className="text-4xl font-black mb-4 tracking-tighter">Elite Calibration</h2>
-                    <p className="text-slate-400 mb-12 max-w-md mx-auto font-medium">
-                        Perform one set of {currentSession.exerciseName} to <span className="text-white">FAILURE</span>. Form over everything.
+                    <p className="text-slate-300 mb-12 max-w-md mx-auto font-medium">
+                        Perform one set of {currentSession.exerciseName} to <span className="text-white font-black underline decoration-blue-500/50 underline-offset-4">FAILURE</span>. Form over everything.
                     </p>
 
                     <form onSubmit={handleTestSubmit} className="max-w-xs mx-auto w-full space-y-4 mb-8">
@@ -121,7 +121,7 @@ const WorkoutSession = ({
                             type="number"
                             value={testInput}
                             onChange={(e) => setTestInput(e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-5 text-4xl font-black text-center focus:outline-none focus:ring-4 focus:ring-blue-500/20 text-white placeholder:text-white/20"
+                            className="w-full bg-white/10 border border-white/30 rounded-2xl px-4 py-5 text-4xl font-black text-center focus:outline-none focus:ring-4 focus:ring-blue-500/20 text-white placeholder:text-white/50"
                             placeholder="0"
                             autoFocus
                         />
@@ -134,7 +134,7 @@ const WorkoutSession = ({
                         </button>
                     </form>
 
-                    <button onClick={() => applyCalibration(1)} className="text-slate-500 font-bold text-xs uppercase tracking-widest hover:text-white transition-colors">
+                    <button onClick={() => applyCalibration(1)} className="text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-white transition-colors">
                         Use Standard Default
                     </button>
                 </div>
@@ -143,7 +143,7 @@ const WorkoutSession = ({
     }
 
     return (
-        <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-700 h-[calc(100vh-10rem)] flex flex-col">
+        <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-bottom-8 duration-700 h-[calc(100vh-10rem)] flex flex-col">
             <div className="bg-white rounded-[3rem] overflow-hidden shadow-2xl border border-slate-100 flex-1 flex flex-col relative transition-all duration-500">
                 {/* Header */}
                 <div className="bg-slate-900 text-white p-6 shrink-0 flex justify-between items-center mesh-bg">
@@ -181,12 +181,12 @@ const WorkoutSession = ({
                                         <span className="text-7xl font-black text-slate-900 tabular-nums tracking-tighter">
                                             {timeLeft}
                                         </span>
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rest</span>
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rest</span>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => { setTimeLeft(0); vibrate(20); }}
-                                    className="px-8 py-3 bg-slate-50 text-slate-400 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 active-scale"
+                                    className="px-8 py-3 bg-slate-100 text-slate-600 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 active-scale"
                                 >
                                     End Rest
                                 </button>
@@ -200,7 +200,7 @@ const WorkoutSession = ({
                                         </div>
                                         <div className="space-y-2">
                                             <h3 className="text-5xl font-black text-slate-900 tracking-tighter">Max Effort</h3>
-                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">How many did you hit?</p>
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">How many did you hit?</p>
                                         </div>
                                         <input
                                             type="number"
@@ -223,7 +223,7 @@ const WorkoutSession = ({
                                 ) : (
                                     <div className="space-y-12">
                                         <div className="space-y-2">
-                                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Set {currentSession.setIndex + 1} of {currentSession.reps.length}</p>
+                                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Set {currentSession.setIndex + 1} of {currentSession.reps.length}</p>
                                             <div className="text-[140px] leading-none font-black text-slate-900 tracking-tighter tabular-nums drop-shadow-sm">
                                                 {currentSession.reps[currentSession.setIndex]}
                                             </div>
@@ -254,7 +254,7 @@ const WorkoutSession = ({
                     <Info size={20} />
                 </div>
                 <div className="flex-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Elite Tip / Form Check</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Elite Tip / Form Check</p>
                     <p className="text-xs font-bold text-slate-600 leading-relaxed">
                         {
                             currentSession.exerciseKey === 'pushups' ? "Keep elbows at 45 degrees. Squeeze your core like a plank." :

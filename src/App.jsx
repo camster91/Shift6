@@ -20,9 +20,18 @@ const App = () => {
         return saved ? JSON.parse(saved) : {};
     });
 
+    const [sessionHistory, setSessionHistory] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}history`);
+        return saved ? JSON.parse(saved) : [];
+    });
+
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}progress`, JSON.stringify(completedDays));
     }, [completedDays]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
+    }, [sessionHistory]);
 
     // UI State
     const [activeTab, setActiveTab] = useState('dashboard'); // Default to Dashboard (User Request)
@@ -41,26 +50,19 @@ const App = () => {
 
     const getThemeClass = (part) => {
         const exercise = EXERCISE_PLANS[activeExercise];
-        const colorMap = {
-            blue: 'bg-blue-600 border-blue-200 text-blue-600 ring-blue-500 hover:border-blue-300',
-            orange: 'bg-orange-600 border-orange-200 text-orange-600 ring-orange-500 hover:border-orange-300',
-            emerald: 'bg-emerald-600 border-emerald-200 text-emerald-600 ring-emerald-500 hover:border-emerald-300',
-            indigo: 'bg-indigo-600 border-indigo-200 text-indigo-600 ring-indigo-500 hover:border-indigo-300',
-            rose: 'bg-rose-600 border-rose-200 text-rose-600 ring-rose-500 hover:border-rose-300',
-            cyan: 'bg-cyan-600 border-cyan-200 text-cyan-600 ring-cyan-500 hover:border-cyan-300',
-            purple: 'bg-purple-600 border-purple-200 text-purple-600 ring-purple-500 hover:border-purple-300',
-            fuchsia: 'bg-fuchsia-600 border-fuchsia-200 text-fuchsia-600 ring-fuchsia-500 hover:border-fuchsia-300',
-            amber: 'bg-amber-600 border-amber-200 text-amber-600 ring-amber-500 hover:border-amber-300',
+        const colors = {
+            blue: { bg: 'bg-blue-600', border: 'border-blue-200', text: 'text-blue-600', ring: 'ring-blue-500', hover: 'hover:border-blue-300', light: 'bg-blue-50' },
+            orange: { bg: 'bg-orange-600', border: 'border-orange-200', text: 'text-orange-600', ring: 'ring-orange-500', hover: 'hover:border-orange-300', light: 'bg-orange-50' },
+            emerald: { bg: 'bg-emerald-600', border: 'border-emerald-200', text: 'text-emerald-600', ring: 'ring-emerald-500', hover: 'hover:border-emerald-300', light: 'bg-emerald-50' },
+            indigo: { bg: 'bg-indigo-600', border: 'border-indigo-200', text: 'text-indigo-600', ring: 'ring-indigo-500', hover: 'hover:border-indigo-300', light: 'bg-indigo-50' },
+            rose: { bg: 'bg-rose-600', border: 'border-rose-200', text: 'text-rose-600', ring: 'ring-rose-500', hover: 'hover:border-rose-300', light: 'bg-rose-50' },
+            cyan: { bg: 'bg-cyan-600', border: 'border-cyan-200', text: 'text-cyan-600', ring: 'ring-cyan-500', hover: 'hover:border-cyan-300', light: 'bg-cyan-50' },
+            purple: { bg: 'bg-purple-600', border: 'border-purple-200', text: 'text-purple-600', ring: 'ring-purple-500', hover: 'hover:border-purple-300', light: 'bg-purple-50' },
+            fuchsia: { bg: 'bg-fuchsia-600', border: 'border-fuchsia-200', text: 'text-fuchsia-600', ring: 'ring-fuchsia-500', hover: 'hover:border-fuchsia-300', light: 'bg-fuchsia-50' },
+            amber: { bg: 'bg-amber-600', border: 'border-amber-200', text: 'text-amber-600', ring: 'ring-amber-500', hover: 'hover:border-amber-300', light: 'bg-amber-50' },
         };
-        const base = colorMap[exercise.color];
-        if (!base) return '';
-        const [bg, border, text, ring, hover] = base.split(' ');
-        if (part === 'bg') return bg;
-        if (part === 'border') return border;
-        if (part === 'text') return text;
-        if (part === 'ring') return ring;
-        if (part === 'hover') return hover;
-        return '';
+        const config = colors[exercise.color] || colors.blue;
+        return config[part] || '';
     };
 
     // ---------------- WORKOUT LOGIC ----------------
@@ -118,15 +120,27 @@ const App = () => {
 
     const completeWorkout = () => {
         if (!currentSession) return;
-        const { exerciseKey, dayId } = currentSession;
+        const { exerciseKey, dayId, reps, setIndex, unit } = currentSession;
+
+        // Calculate total volume for this session
+        const totalVolume = reps.reduce((sum, r) => sum + r, 0) + (parseInt(amrapValue) || 0);
 
         // Update progress
         const newCompletedDays = {
             ...completedDays,
-            [exerciseKey]: [...(completedDays[exerciseKey] || []), dayId] // Handle duplicate safety? Set? Array is fine for now
+            [exerciseKey]: [...(completedDays[exerciseKey] || []), dayId]
         };
-        // Deduplicate just in case
         newCompletedDays[exerciseKey] = [...new Set(newCompletedDays[exerciseKey])];
+
+        // Update history
+        const newHistoryItem = {
+            exerciseKey,
+            dayId,
+            date: new Date().toISOString(),
+            volume: totalVolume,
+            unit
+        };
+        setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50)); // Keep last 50
 
         setCompletedDays(newCompletedDays);
 
@@ -138,7 +152,6 @@ const App = () => {
             startWorkout(next.week, next.dayIndex, next.exerciseKey);
         } else {
             setCurrentSession(null);
-            setActiveTab('plan'); // Or dashboard? User asked for dashboard home, but after workout plan is usually good. Stick to plan or dashboard. Let's go Dashboard to see updated daily stack.
             setActiveTab('dashboard');
         }
     };
@@ -223,6 +236,7 @@ const App = () => {
                 {activeTab === 'dashboard' && (
                     <Dashboard
                         completedDays={completedDays}
+                        sessionHistory={sessionHistory}
                         setActiveExercise={setActiveExercise}
                         setActiveTab={setActiveTab}
                         startStack={startStack}

@@ -45,28 +45,40 @@ const Guide = ({ getThemeClass }) => {
                     </div>
 
                     <div className="space-y-4">
-                        <div className="border border-slate-200 p-4">
-                            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 mb-2">
-                                <div className="p-1.5 bg-blue-100 text-blue-600">
-                                    <Clock size={14} />
-                                </div>
-                                Plank / Core
+                        <div className="border border-slate-200 overflow-hidden">
+                            {/* Form Demo Image Placeholder */}
+                            <div className="h-32 bg-gradient-to-br from-blue-50 to-slate-50 border-b border-slate-200 flex items-center justify-center">
+                                <div className="text-3xl">🧘</div>
                             </div>
-                            <p className="text-xs text-slate-600">
-                                Squeeze core tight. Pull elbows toward toes. Maximum tension, zero movement.
-                            </p>
+                            <div className="p-4">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 mb-2">
+                                    <div className="p-1.5 bg-blue-100 text-blue-600">
+                                        <Clock size={14} />
+                                    </div>
+                                    Plank / Core
+                                </div>
+                                <p className="text-xs text-slate-600">
+                                    Squeeze core tight. Pull elbows toward toes. Maximum tension, zero movement.
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="border border-slate-200 p-4">
-                            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 mb-2">
-                                <div className="p-1.5 bg-indigo-100 text-indigo-600">
-                                    <ArrowUp size={14} />
-                                </div>
-                                Pull-Ups
+                        <div className="border border-slate-200 overflow-hidden">
+                            {/* Form Demo Image Placeholder */}
+                            <div className="h-32 bg-gradient-to-br from-indigo-50 to-slate-50 border-b border-slate-200 flex items-center justify-center">
+                                <div className="text-3xl">💪</div>
                             </div>
-                            <p className="text-xs text-slate-600">
-                                Drive elbows down. Lead with chest, not chin. Use negatives if needed.
-                            </p>
+                            <div className="p-4">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 mb-2">
+                                    <div className="p-1.5 bg-indigo-100 text-indigo-600">
+                                        <ArrowUp size={14} />
+                                    </div>
+                                    Pull-Ups
+                                </div>
+                                <p className="text-xs text-slate-600">
+                                    Drive elbows down. Lead with chest, not chin. Use negatives if needed.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </section>

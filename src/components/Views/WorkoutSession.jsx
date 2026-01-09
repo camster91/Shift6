@@ -268,28 +268,39 @@ const WorkoutSession = ({
                     )}
                 </div>
 
-                {/* Tips Section */}
-                <div className="border-t border-slate-200 p-4 bg-slate-50">
-                    <div className="flex gap-3 items-start">
-                        <div className="p-2 bg-blue-100 text-blue-600">
-                            <Info size={16} />
+                {/* Tips Section with Infographic */}
+                <div className="border-t border-slate-200 bg-slate-50">
+                    {/* Exercise Infographic Placeholder */}
+                    <div className="relative h-48 bg-gradient-to-br from-blue-50 to-slate-50 border-b border-slate-200 flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="text-5xl mb-2">📊</div>
+                            <p className="text-xs text-slate-500 font-medium">Exercise Infographic</p>
+                            <p className="text-[10px] text-slate-400">{currentSession.exerciseName} - Form Guide</p>
                         </div>
-                        <div>
-                            <p className="text-xs font-semibold text-slate-900 mb-1">Form Tip</p>
-                            <p className="text-xs text-slate-600">
-                                {
-                                    currentSession.exerciseKey === 'pushups' ? "Keep elbows at 45 degrees. Squeeze core." :
-                                    currentSession.exerciseKey === 'squats' ? "Weight in heels, chest up." :
-                                    currentSession.exerciseKey === 'pullups' ? "Full extension at bottom. Pull elbows down." :
-                                    currentSession.exerciseKey === 'plank' ? "Squeeze glutes. Keep neck neutral." :
-                                    currentSession.exerciseKey === 'vups' ? "Keep legs straight, reach for toes." :
-                                    currentSession.exerciseKey === 'dips' ? "Chest up, elbows tucked." :
-                                    currentSession.exerciseKey === 'lunges' ? "Keep torso upright." :
-                                    currentSession.exerciseKey === 'glutebridge' ? "Drive through heels, squeeze glutes." :
-                                    currentSession.exerciseKey === 'supermans' ? "Lift chest and thighs. Neutral neck." :
-                                    "Maintain perfect form throughout."
-                                }
-                            </p>
+                    </div>
+
+                    <div className="p-4">
+                        <div className="flex gap-3 items-start">
+                            <div className="p-2 bg-blue-100 text-blue-600">
+                                <Info size={16} />
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold text-slate-900 mb-1">Form Tip</p>
+                                <p className="text-xs text-slate-600">
+                                    {
+                                        currentSession.exerciseKey === 'pushups' ? "Keep elbows at 45 degrees. Squeeze core." :
+                                        currentSession.exerciseKey === 'squats' ? "Weight in heels, chest up." :
+                                        currentSession.exerciseKey === 'pullups' ? "Full extension at bottom. Pull elbows down." :
+                                        currentSession.exerciseKey === 'plank' ? "Squeeze glutes. Keep neck neutral." :
+                                        currentSession.exerciseKey === 'vups' ? "Keep legs straight, reach for toes." :
+                                        currentSession.exerciseKey === 'dips' ? "Chest up, elbows tucked." :
+                                        currentSession.exerciseKey === 'lunges' ? "Keep torso upright." :
+                                        currentSession.exerciseKey === 'glutebridge' ? "Drive through heels, squeeze glutes." :
+                                        currentSession.exerciseKey === 'supermans' ? "Lift chest and thighs. Neutral neck." :
+                                        "Maintain perfect form throughout."
+                                    }
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

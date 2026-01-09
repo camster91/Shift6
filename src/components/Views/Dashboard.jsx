@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Zap, LayoutDashboard, CheckCircle2, X, Volume2, Info } from 'lucide-react';
-import { EXERCISE_PLANS } from '../../data/exercises';
+import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 import { getDailyStack, getScheduleFocus } from '../../utils/schedule';
 import { vibrate } from '../../utils/device';
+import { calculateStats, getUnlockedBadges, BADGES } from '../../utils/gamification';
 
 const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActiveTab, startStack }) => {
     const dailyStack = getDailyStack(completedDays);
@@ -246,8 +247,6 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
         </div>
     );
 };
-
-import { calculateStats, getUnlockedBadges, BADGES } from '../../utils/gamification';
 
 const GamificationSection = ({ completedDays, sessionHistory }) => {
     const stats = calculateStats(completedDays, sessionHistory);

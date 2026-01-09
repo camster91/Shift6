@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronDown, Settings, Download, Upload } from 'lucide-react';
-import { EXERCISE_PLANS } from '../../data/exercises';
+import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 
 const Header = ({
     activeExercise,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { EXERCISE_PLANS, getRest } from './data/exercises';
+import { EXERCISE_PLANS, getRest } from './data/exercises.jsx';
 import { getDailyStack } from './utils/schedule';
 
 // Components

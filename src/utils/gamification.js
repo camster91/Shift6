@@ -1,4 +1,4 @@
-import { EXERCISE_PLANS } from '../data/exercises';
+import { EXERCISE_PLANS } from '../data/exercises.jsx';
 
 // Badges Configuration
 export const BADGES = [

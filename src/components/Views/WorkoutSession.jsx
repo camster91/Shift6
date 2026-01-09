@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronRight, Trophy, Timer, Info, Play, AlertCircle, Share2, Check } from 'lucide-react';
-import { formatValue } from '../../data/exercises';
+import { formatValue } from '../../data/exercises.jsx';
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { requestWakeLock, releaseWakeLock, vibrate, copyToClipboard } from '../../utils/device';
 

@@ -1,4 +1,4 @@
-import { EXERCISE_PLANS } from '../data/exercises';
+import { EXERCISE_PLANS } from '../data/exercises.jsx';
 
 export const getNextSessionForExercise = (exKey, completedDays) => {
     const plan = EXERCISE_PLANS[exKey];

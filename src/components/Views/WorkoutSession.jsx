@@ -108,163 +108,210 @@ const WorkoutSession = ({
 
     if (currentSession.step === 'assessment') {
         return (
-            <div className="max-w-2xl mx-auto space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-white rounded-[2rem] overflow-hidden shadow-2xl border border-slate-100 mesh-bg min-h-[500px] flex flex-col justify-center text-center p-8 text-white">
-                    <Trophy className="mx-auto text-blue-400 mb-8 animate-float" size={64} />
-                    <h2 className="text-4xl font-black mb-4 tracking-tighter">Elite Calibration</h2>
-                    <p className="text-slate-300 mb-12 max-w-md mx-auto font-medium">
-                        Perform one set of {currentSession.exerciseName} to <span className="text-white font-black underline decoration-blue-500/50 underline-offset-4">FAILURE</span>. Form over everything.
-                    </p>
+            <div className="max-w-lg mx-auto w-full px-4 py-8 md:py-12 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 mesh-bg min-h-[600px] flex flex-col justify-center text-center p-8 md:p-12 text-white relative">
+                    <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                        <Trophy className="absolute -top-10 -right-10" size={300} />
+                    </div>
 
-                    <form onSubmit={handleTestSubmit} className="max-w-xs mx-auto w-full space-y-4 mb-8">
-                        <input
-                            type="number"
-                            value={testInput}
-                            onChange={(e) => setTestInput(e.target.value)}
-                            className="w-full bg-white/10 border border-white/30 rounded-2xl px-4 py-5 text-4xl font-black text-center focus:outline-none focus:ring-4 focus:ring-blue-500/20 text-white placeholder:text-white/50"
-                            placeholder="0"
-                            autoFocus
-                        />
-                        <button
-                            type="submit"
-                            disabled={!testInput}
-                            className="w-full bg-blue-600 py-5 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl shadow-blue-600/30 active-scale disabled:opacity-30"
-                        >
-                            Sync Baseline
+                    <div className="relative z-10">
+                        <Trophy className="mx-auto text-blue-400 mb-8 animate-float" size={64} />
+                        <h2 className="text-4xl font-black mb-4 tracking-tighter">Elite Calibration</h2>
+                        <p className="text-slate-400 mb-12 max-w-sm mx-auto font-medium leading-relaxed">
+                            Perform one set of {currentSession.exerciseName} to <span className="text-white font-black underline decoration-blue-500/50 underline-offset-4">FAILURE</span>. <br />Form over everything.
+                        </p>
+
+                        <form onSubmit={handleTestSubmit} className="max-w-xs mx-auto w-full space-y-4 mb-10">
+                            <div className="relative group">
+                                <input
+                                    type="number"
+                                    value={testInput}
+                                    onChange={(e) => setTestInput(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-3xl px-6 py-8 text-6xl font-black text-center focus:outline-none focus:bg-white/10 focus:border-blue-500/50 transition-all text-white placeholder:text-white/10"
+                                    placeholder="0"
+                                    autoFocus
+                                />
+                                <div className="absolute inset-0 bg-blue-500/5 rounded-3xl -z-10 group-focus-within:bg-blue-500/10 transition-colors" />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={!testInput}
+                                className="w-full bg-blue-600 py-6 rounded-3xl font-black text-white uppercase tracking-widest shadow-2xl shadow-blue-600/30 active-scale disabled:opacity-30 disabled:grayscale transition-all"
+                            >
+                                Sync Baseline
+                            </button>
+                        </form>
+
+                        <button onClick={() => applyCalibration(1)} className="text-slate-500 font-bold text-xs uppercase tracking-widest hover:text-white transition-colors py-2">
+                            Use Standard Default
                         </button>
-                    </form>
-
-                    <button onClick={() => applyCalibration(1)} className="text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-white transition-colors">
-                        Use Standard Default
-                    </button>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-bottom-8 duration-700 h-[calc(100vh-10rem)] flex flex-col">
-            <div className="bg-white rounded-[3rem] overflow-hidden shadow-2xl border border-slate-100 flex-1 flex flex-col relative transition-all duration-500">
-                {/* Header */}
-                <div className="bg-slate-900 text-white p-6 shrink-0 flex justify-between items-center mesh-bg">
-                    <div>
-                        <div className="flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest mb-1">
-                            {currentSession.exerciseName} <ChevronRight size={10} /> Day {currentSession.dayIndex + 1}
+        <div className="max-w-4xl mx-auto w-full px-4 animate-in slide-in-from-bottom-8 duration-700 min-h-[500px] flex flex-col items-center justify-center py-4 md:py-10">
+            <div className="bg-white rounded-[3rem] overflow-hidden shadow-2xl border border-slate-100 flex flex-col md:flex-row relative transition-all duration-500 w-full min-h-[600px] md:h-[650px]">
+
+                {/* Left Side: Session Info & Main Action */}
+                <div className="flex-1 flex flex-col relative bg-white">
+                    {/* Header Overlay */}
+                    <div className="bg-slate-900 text-white p-6 shrink-0 flex justify-between items-center mesh-bg">
+                        <div>
+                            <div className="flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest mb-1">
+                                {currentSession.exerciseName} <ChevronRight size={10} /> Day {currentSession.dayIndex + 1}
+                            </div>
+                            <h2 className="text-2xl font-black tracking-tight">Week {currentSession.week}</h2>
                         </div>
-                        <h2 className="text-2xl font-black tracking-tight">Week {currentSession.week}</h2>
+                        <button onClick={() => setCurrentSession(null)} className="p-2 bg-white/5 rounded-xl text-white/50 hover:text-white active-scale">
+                            <X size={18} />
+                        </button>
                     </div>
-                    <button onClick={() => setCurrentSession(null)} className="p-3 bg-white/5 rounded-2xl text-white/50 hover:text-white active-scale">
-                        <X size={20} />
-                    </button>
-                </div>
 
-                {/* Progress */}
-                <div className="h-1 w-full bg-slate-50 flex gap-0.5">
-                    {currentSession.reps.map((_, i) => (
-                        <div key={i} className={`h-full flex-1 transition-all duration-500 ${i <= currentSession.setIndex ? 'bg-blue-600' : 'bg-slate-100'}`} />
-                    ))}
-                </div>
+                    {/* Progress Bar */}
+                    <div className="h-1.5 w-full bg-slate-50 flex gap-0.5">
+                        {currentSession.reps.map((_, i) => (
+                            <div key={i} className={`h-full flex-1 transition-all duration-500 ${i <= currentSession.setIndex ? 'bg-blue-600' : 'bg-slate-100'}`} />
+                        ))}
+                    </div>
 
-                {/* Main */}
-                <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
-                    <div className="text-center relative z-10 w-full max-w-sm">
-                        {timeLeft > 0 ? (
-                            <div className="animate-in zoom-in duration-500 space-y-8">
-                                <div className="relative inline-block">
-                                    <ProgressRing
-                                        progress={timeLeft / currentSession.rest}
-                                        color="#3b82f6"
-                                        size={240}
-                                        stroke={12}
-                                    />
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-7xl font-black text-slate-900 tabular-nums tracking-tighter">
-                                            {timeLeft}
-                                        </span>
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rest</span>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => { setTimeLeft(0); vibrate(20); }}
-                                    className="px-8 py-3 bg-slate-100 text-slate-600 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 active-scale"
-                                >
-                                    End Rest
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
-                                {currentSession.setIndex === currentSession.reps.length - 1 ? (
-                                    <div className="space-y-8">
-                                        <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-float">
-                                            <Zap className="text-blue-600 fill-blue-600" size={40} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="text-5xl font-black text-slate-900 tracking-tighter">Max Effort</h3>
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">How many did you hit?</p>
-                                        </div>
-                                        <input
-                                            type="number"
-                                            value={amrapValue}
-                                            onChange={(e) => setAmrapValue(e.target.value)}
-                                            className="w-full text-8xl font-black text-center focus:outline-none placeholder:text-slate-100 text-slate-900"
-                                            autoFocus
-                                            placeholder="0"
+                    {/* Centered Action Content */}
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 relative overflow-hidden">
+                        <div className="text-center relative z-10 w-full max-w-sm h-full flex flex-col justify-center">
+                            {timeLeft > 0 ? (
+                                <div className="animate-in zoom-in duration-500 space-y-10">
+                                    <div className="relative inline-block scale-110 md:scale-125">
+                                        <ProgressRing
+                                            progress={timeLeft / currentSession.rest}
+                                            color="#3b82f6"
+                                            size={240}
+                                            stroke={12}
                                         />
-                                        <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
-                                            <button onClick={handleShare} className="bg-white border-2 border-slate-100 py-4 rounded-2xl flex items-center justify-center gap-2 active-scale text-slate-600 font-bold text-sm">
-                                                {copied ? <Check size={20} /> : <Share2 size={20} />}
-                                                {copied ? 'Link' : 'Share'}
-                                            </button>
-                                            <button onClick={handleComplete} className="bg-blue-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-600/30 active-scale">
-                                                Finish
-                                            </button>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                            <span className="text-7xl font-black text-slate-900 tabular-nums tracking-tighter">
+                                                {timeLeft}
+                                            </span>
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rest</span>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="space-y-12">
-                                        <div className="space-y-2">
-                                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Set {currentSession.setIndex + 1} of {currentSession.reps.length}</p>
-                                            <div className="text-[140px] leading-none font-black text-slate-900 tracking-tighter tabular-nums drop-shadow-sm">
-                                                {currentSession.reps[currentSession.setIndex]}
+                                    <button
+                                        onClick={() => { setTimeLeft(0); vibrate(20); }}
+                                        className="px-8 py-3 bg-slate-100 text-slate-600 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 active-scale"
+                                    >
+                                        End Rest
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8 h-full flex flex-col justify-center">
+                                    {currentSession.setIndex === currentSession.reps.length - 1 ? (
+                                        <div className="space-y-10">
+                                            <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-float">
+                                                <Zap className="text-blue-600 fill-blue-600" size={40} />
                                             </div>
-                                            <p className="text-sm font-black text-blue-600 uppercase tracking-widest">{currentSession.unit}</p>
+                                            <div className="space-y-2">
+                                                <h3 className="text-5xl font-black text-slate-900 tracking-tighter">Max Effort</h3>
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Final Assessment</p>
+                                            </div>
+                                            <div className="relative group max-w-[200px] mx-auto">
+                                                <input
+                                                    type="number"
+                                                    value={amrapValue}
+                                                    onChange={(e) => setAmrapValue(e.target.value)}
+                                                    className="w-full text-8xl font-black text-center focus:outline-none placeholder:text-slate-100 text-slate-900 bg-transparent hide-spinners"
+                                                    autoFocus
+                                                    placeholder="0"
+                                                />
+                                                <div className="h-2 w-full bg-slate-100 group-focus-within:bg-blue-600 rounded-full transition-colors mt-2" />
+                                            </div>
+
+                                            <div className="flex flex-col gap-3 w-full max-w-xs mx-auto pt-4 md:flex-row">
+                                                <button onClick={handleComplete} className="flex-1 bg-blue-600 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-600/30 active-scale">
+                                                    Finish
+                                                </button>
+                                                <button onClick={handleShare} className="flex-1 bg-white border border-slate-200 py-4 rounded-2xl flex items-center justify-center gap-2 active-scale text-slate-500 font-bold text-sm hover:bg-slate-50 transition-colors">
+                                                    {copied ? <Check size={18} /> : <Share2 size={18} />}
+                                                    {copied ? 'Copied' : 'Share'}
+                                                </button>
+                                            </div>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                vibrate(20);
-                                                setCurrentSession(prev => ({ ...prev, setIndex: prev.setIndex + 1 }));
-                                                setTimeLeft(currentSession.rest);
-                                                setIsTimerRunning(true);
-                                            }}
-                                            className="w-full max-w-xs py-5 bg-slate-900 text-white rounded-2xl font-black text-lg uppercase tracking-widest shadow-2xl shadow-slate-900/30 active-scale group flex items-center justify-center gap-4"
-                                        >
-                                            Complete Set <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-between h-full py-4">
+                                            <div className="space-y-6">
+                                                <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Set {currentSession.setIndex + 1} of {currentSession.reps.length}</p>
+                                                <div className="text-[140px] md:text-[180px] leading-none font-black text-slate-900 tracking-tighter tabular-nums drop-shadow-sm">
+                                                    {currentSession.reps[currentSession.setIndex]}
+                                                </div>
+                                                <p className="text-sm font-black text-blue-600 uppercase tracking-widest">{currentSession.unit}</p>
+                                            </div>
+
+                                            <button
+                                                onClick={() => {
+                                                    vibrate(20);
+                                                    setCurrentSession(prev => ({ ...prev, setIndex: prev.setIndex + 1 }));
+                                                    setTimeLeft(currentSession.rest);
+                                                    setIsTimerRunning(true);
+                                                }}
+                                                className="w-full max-w-xs py-7 bg-slate-900 text-white rounded-[2rem] font-black text-xl uppercase tracking-widest shadow-2xl shadow-slate-900/40 active-scale group flex items-center justify-center gap-4 mt-12"
+                                            >
+                                                Complete Set <ChevronRight size={24} className="group-hover:translate-x-1 transition-transform" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Tip Footer */}
-            <div className="bg-white/90 backdrop-blur-md p-5 rounded-[2rem] border border-slate-100 flex gap-4 items-start shrink-0 shadow-sm animate-in slide-in-from-bottom-2 duration-1000 delay-700">
-                <div className="p-3 rounded-2xl bg-blue-50 text-blue-600">
-                    <Info size={20} />
+                {/* Right Side: Tips & Visual (Desktop Only) */}
+                <div className="hidden md:flex w-80 bg-slate-50 border-l border-slate-100 flex-col p-8 justify-between">
+                    <div className="space-y-8">
+                        <div>
+                            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center mb-6">
+                                <Info size={24} />
+                            </div>
+                            <h3 className="text-lg font-black text-slate-900 tracking-tight mb-2 uppercase tracking-widest text-xs">Form Check</h3>
+                            <p className="text-sm font-medium text-slate-600 leading-relaxed italic">
+                                "Perfect form is non-negotiable. Every rep is an investment in your future strength."
+                            </p>
+                        </div>
+
+                        <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm">
+                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3">Coach's Tip</p>
+                            <p className="text-xs font-bold text-slate-700 leading-relaxed">
+                                {
+                                    currentSession.exerciseKey === 'pushups' ? "Keep elbows at 45 degrees. Squeeze your core like a plank." :
+                                        currentSession.exerciseKey === 'squats' ? "Weight in heels, chest up. Drive through your mid-foot." :
+                                            currentSession.exerciseKey === 'pullups' ? "Full extension at the bottom. Think about pulling elbows to pockets." :
+                                                currentSession.exerciseKey === 'plank' ? "Squeeze glutes to protect lower back. Keep neck neutral." :
+                                                    currentSession.exerciseKey === 'vups' ? "Keep legs straight and reach for your toes. Control the down." :
+                                                        "Maintain perfect tension throughout the move."
+                                }
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="opacity-20 flex justify-center pb-4">
+                        <Trophy size={100} className="text-slate-400" />
+                    </div>
                 </div>
-                <div className="flex-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Elite Tip / Form Check</p>
-                    <p className="text-xs font-bold text-slate-600 leading-relaxed">
-                        {
-                            currentSession.exerciseKey === 'pushups' ? "Keep elbows at 45 degrees. Squeeze your core like a plank." :
-                                currentSession.exerciseKey === 'squats' ? "Weight in heels, chest up. Drive through your mid-foot." :
-                                    currentSession.exerciseKey === 'pullups' ? "Full extension at the bottom. Think about pulling elbows to pockets." :
-                                        currentSession.exerciseKey === 'plank' ? "Squeeze glutes to protect lower back. Keep neck neutral." :
-                                            currentSession.exerciseKey === 'vups' ? "Keep legs straight and reach for your toes. Control the down." :
-                                                "Maintain perfect tension throughout the move."
-                        }
-                    </p>
+
+                {/* Mobile Tip Overlay (Floating) */}
+                <div className="md:hidden p-4 bg-slate-50 border-t border-slate-100">
+                    <div className="flex gap-4 items-center">
+                        <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                            <Info size={16} />
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-600">
+                            <span className="font-black text-blue-600 uppercase">Tip:</span> {
+                                currentSession.exerciseKey === 'pushups' ? "Keep elbows at 45 degrees. Squeeze core." :
+                                    currentSession.exerciseKey === 'squats' ? "Weight in heels, chest up." :
+                                        "Maintain perfect form throughout."
+                            }
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

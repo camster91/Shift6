@@ -11,6 +11,16 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
 
     return (
         <div className="space-y-6 pb-24">
+            {/* Hero Image Placeholder */}
+            <div className="relative h-48 bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="text-6xl mb-2">💪</div>
+                        <p className="text-xs text-slate-400 font-medium">Hero Image Placeholder</p>
+                    </div>
+                </div>
+            </div>
+
             {/* Header */}
             <div className="space-y-1">
                 <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
@@ -139,23 +149,31 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                                     setActiveExercise(key);
                                     setActiveTab('plan');
                                 }}
-                                className="border border-slate-200 hover:border-blue-600 p-5 text-left transition-colors group"
+                                className="border border-slate-200 hover:border-blue-600 text-left transition-colors group overflow-hidden"
                             >
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className={`w-10 h-10 flex items-center justify-center bg-${ex.color}-100 text-${ex.color}-600`}>
-                                        {React.cloneElement(ex.icon, { size: 20 })}
-                                    </div>
-                                    {count > 0 && (
-                                        <CheckCircle2 size={16} className="text-green-600" />
-                                    )}
+                                {/* Exercise Image Placeholder */}
+                                <div className="relative h-32 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 -mx-0 -mt-0 mb-4 flex items-center justify-center">
+                                    <div className="text-4xl opacity-30">🏋️</div>
+                                    <div className="absolute bottom-2 right-2 text-[9px] text-slate-400">Image: {ex.name}</div>
                                 </div>
-                                <h3 className="text-base font-semibold text-slate-900 mb-1">{ex.name}</h3>
-                                <div className="text-xs text-slate-500 mb-3">{count}/18 days completed</div>
-                                <div className="w-full bg-slate-100 h-1">
-                                    <div
-                                        className={`h-full bg-${ex.color}-600 transition-all`}
-                                        style={{ width: `${percent}%` }}
-                                    />
+
+                                <div className="px-5 pb-5">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className={`w-10 h-10 flex items-center justify-center bg-${ex.color}-100 text-${ex.color}-600`}>
+                                            {React.cloneElement(ex.icon, { size: 20 })}
+                                        </div>
+                                        {count > 0 && (
+                                            <CheckCircle2 size={16} className="text-green-600" />
+                                        )}
+                                    </div>
+                                    <h3 className="text-base font-semibold text-slate-900 mb-1">{ex.name}</h3>
+                                    <div className="text-xs text-slate-500 mb-3">{count}/18 days completed</div>
+                                    <div className="w-full bg-slate-100 h-1">
+                                        <div
+                                            className={`h-full bg-${ex.color}-600 transition-all`}
+                                            style={{ width: `${percent}%` }}
+                                        />
+                                    </div>
                                 </div>
                             </button>
                         );

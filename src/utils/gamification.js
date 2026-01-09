@@ -10,40 +10,63 @@ export const BADGES = [
     { id: 'night_owl', name: 'Night Owl', desc: 'Workout after 8pm', icon: '🦉', condition: (p) => p.hasLateWorkout },
 ];
 
-export const calculateStats = (completedDays) => {
+export const calculateStats = (completedDays, sessionHistory = []) => {
     let totalSessions = 0;
     let completedPlans = 0;
 
-    // Flatten all dates/sessions to find streaks
-    // In this app, completedDays[key] is an array of IDs like 'p11', 'p12'. 
-    // We don't currently store timestamps in completedDays (it's just IDs). 
-    // To do TRUE streak tracking we would need timestamps.
-    // For now, we will approximate 'Consistency' based on total count vs expected.
-    // OR we relies on the user to use the app daily. 
-
-    // Wait, the current completion logic relies on IDs. 
-    // To support "Streaks" properly we need to know WHEN they finished.
-    // Since we didn't migrate to timestamped data yet, we can't calculate *real-time* streaks (e.g. yesterday vs today).
-    // Feature Adjustment: We will implement "Session Streaks" (consecutive sessions without failure) 
-    // or just "Total Sessions" for now until we migrate data structure.
-
-    // Actually, look at App.jsx -> handleImport/Export. We see it's just ID arrays.
-    // CHANGE: We will interpret 'Streak' as 'Sessions Completed' for Version 1 of this feature, 
-    // OR we can add a 'lastWorkoutDate' to localStorage to track simple daily streaks separate from exercise progress.
-
+    // Plan Progress
     Object.keys(completedDays).forEach(key => {
         const count = completedDays[key].length;
         totalSessions += count;
         if (count >= 18) completedPlans++;
     });
 
+    // True Streak Calculation from History
+    let currentStreak = 0;
+    let hasEarlyWorkout = false;
+    let hasLateWorkout = false;
+
+    if (sessionHistory.length > 0) {
+        // Sort history by date descending
+        const sorted = [...sessionHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Time of day checks
+        sessionHistory.forEach(s => {
+            const hour = new Date(s.date).getHours();
+            if (hour < 8) hasEarlyWorkout = true;
+            if (hour >= 20) hasLateWorkout = true;
+        });
+
+        // Daily Streak
+        const uniqueDays = new Set(sorted.map(s => s.date.split('T')[0]));
+        const days = Array.from(uniqueDays).sort((a, b) => new Date(b) - new Date(a));
+
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+        // If no workout today or yesterday, streak is 0
+        if (days[0] === today || days[0] === yesterday) {
+            currentStreak = 1;
+            for (let i = 0; i < days.length - 1; i++) {
+                const current = new Date(days[i]);
+                const next = new Date(days[i + 1]);
+                const diffDays = (current - next) / (1000 * 60 * 60 * 24);
+
+                if (diffDays <= 1.1) { // Allowing some slack for rounding
+                    currentStreak++;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
     return {
         totalSessions,
         completedPlans,
-        // Mocked for now since we don't have timestamps in the underlying data structure yet
-        currentStreak: Math.min(totalSessions, 5),
-        hasEarlyWorkout: false,
-        hasLateWorkout: false
+        currentStreak,
+        hasEarlyWorkout,
+        hasLateWorkout
     };
 };
 

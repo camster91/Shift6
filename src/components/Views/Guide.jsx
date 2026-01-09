@@ -79,6 +79,26 @@ const Guide = ({ getThemeClass }) => {
                     </div>
                 </section>
             </div>
+            <section className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl shadow-slate-200/40">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-6 mb-8">
+                    <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs">Metrics Glossary</h3>
+                    <span className="bg-blue-50 px-3 py-1 rounded-full text-[10px] font-black text-blue-600 uppercase tracking-widest">System Intel</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {[
+                        { t: "Volume Trajectory", d: "The cumulative sum of reps multiplied by difficulty. It tracks your physiological output over time." },
+                        { t: "Active Stack", d: "The sequence of exercises scheduled for today's protocol. Complete them in order for maximum metabolic shift." },
+                        { t: "AMRAP", d: "As Many Reps As Possible. The final set is used to determine your capacity and adjust next week's baseline." },
+                        { t: "Node Mastery", d: "Your progression through the 18-week curriculum. 100% indicates total technical and volume dominance." },
+                        { t: "Baseline Calibration", d: "The initial assessment that sets your starting point. The system adjusts periodically based on failure points." }
+                    ].map((item, i) => (
+                        <div key={i} className="space-y-2">
+                            <p className="font-black text-slate-900 text-sm uppercase tracking-tighter">{item.t}</p>
+                            <p className="text-xs text-slate-400 leading-relaxed font-medium">{item.d}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
         </div>
     );
 };

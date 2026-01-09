@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronLeft, Settings, Download, Upload } from 'lucide-react';
+import { ChevronDown, ChevronLeft, Settings, Download, Upload, Trash2 } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 
 const Header = ({
@@ -11,7 +11,8 @@ const Header = ({
     getThemeClass,
     setActiveTab,
     onExport,
-    onImport
+    onImport,
+    onFactoryReset
 }) => {
     const exercise = EXERCISE_PLANS[activeExercise];
 
@@ -69,7 +70,9 @@ const Header = ({
                                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold transition-all hover:bg-slate-800 ${activeExercise === key ? 'text-white bg-slate-800/50' : 'text-slate-400'
                                                 }`}
                                         >
-                                            <span className={`p-2 rounded-lg ${activeExercise === key ? ex.color.replace('text-', 'bg-').replace('600', '500') + '/20 text-' + ex.color.replace('text-', '') + '-400' : 'bg-slate-800 text-slate-600'}`}>
+                                            <span className={`p-2 rounded-lg ${activeExercise === key
+                                                ? `bg-${ex.color}-500/20 text-${ex.color}-400`
+                                                : 'bg-slate-800 text-slate-600'}`}>
                                                 {React.cloneElement(ex.icon, { size: 16 })}
                                             </span>
                                             {ex.name}
@@ -82,14 +85,14 @@ const Header = ({
                     </div>
 
                     {/* Settings / Data Menu */}
-                    <DataMenu onExport={onExport} onImport={onImport} />
+                    <DataMenu onExport={onExport} onImport={onImport} onFactoryReset={onFactoryReset} />
                 </div>
             </div>
         </header>
     );
 };
 
-const DataMenu = ({ onExport, onImport }) => {
+const DataMenu = ({ onExport, onImport, onFactoryReset }) => {
     const [isOpen, setIsOpen] = React.useState(false);
 
     return (
@@ -120,6 +123,13 @@ const DataMenu = ({ onExport, onImport }) => {
                                 }
                             }} />
                         </label>
+                        <div className="h-[1px] bg-slate-800 my-1" />
+                        <button
+                            onClick={() => { onFactoryReset(); setIsOpen(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
+                        >
+                            <Trash2 size={16} /> Factory Reset
+                        </button>
                     </div>
                 </>
             )}

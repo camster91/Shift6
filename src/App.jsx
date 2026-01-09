@@ -39,6 +39,36 @@ const App = () => {
         return ['dashboard', 'plan', 'workout', 'guide'].includes(hash) ? hash : 'dashboard';
     });
 
+    const [workoutQueue, setWorkoutQueue] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}queue`);
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const [currentSession, setCurrentSession] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}current_session`);
+        return saved ? JSON.parse(saved) : null;
+    });
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}queue`, JSON.stringify(workoutQueue));
+    }, [workoutQueue]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}current_session`, JSON.stringify(currentSession));
+    }, [currentSession]);
+
+    // Browser exit warning
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (currentSession) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [currentSession]);
+
     const setActiveTab = (tab, push = true) => {
         setActiveTabState(tab);
         if (push) {
@@ -70,12 +100,11 @@ const App = () => {
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
     // Workout State
-    const [workoutQueue, setWorkoutQueue] = useState([]);
-    const [currentSession, setCurrentSession] = useState(null);
     const [timeLeft, setTimeLeft] = useState(0);
     const [amrapValue, setAmrapValue] = useState('');
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     const [testInput, setTestInput] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
 
     // ---------------- HELPERS ----------------
 
@@ -150,8 +179,10 @@ const App = () => {
     };
 
     const completeWorkout = () => {
-        if (!currentSession) return;
-        const { exerciseKey, dayId, reps, setIndex, unit } = currentSession;
+        if (!currentSession || isProcessing) return;
+        setIsProcessing(true);
+
+        const { exerciseKey, dayId, reps, unit } = currentSession;
 
         // Calculate total volume for this session
         const totalVolume = reps.reduce((sum, r) => sum + r, 0) + (parseInt(amrapValue) || 0);
@@ -171,7 +202,7 @@ const App = () => {
             volume: totalVolume,
             unit
         };
-        setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50)); // Keep last 50
+        setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
 
         setCompletedDays(newCompletedDays);
 
@@ -185,6 +216,8 @@ const App = () => {
             setCurrentSession(null);
             setActiveTab('dashboard');
         }
+
+        setTimeout(() => setIsProcessing(false), 1000);
     };
 
     const applyCalibration = (factor) => {
@@ -238,14 +271,23 @@ const App = () => {
                 if (data.introDismissed) {
                     localStorage.setItem('shift6_intro_dismissed', data.introDismissed);
                 }
-                alert('Data restored successfully! Please refresh if changes are not immediately visible.');
-                // Force reload or let state update handle it
+                alert('Data restored successfully!');
             } catch (err) {
                 console.error("Import failed", err);
                 alert('Failed to import data. Invalid file format.');
             }
         };
         reader.readAsText(file);
+    };
+
+    const handleFactoryReset = () => {
+        if (window.confirm('WARNING: This will permanently delete ALL workout history and progress. This cannot be undone. Are you absolutely sure?')) {
+            setCompletedDays({});
+            setSessionHistory([]);
+            localStorage.clear();
+            alert('Aura Cleansed. Progress Reset.');
+            window.location.reload();
+        }
     };
 
     // ---------------- RENDER ----------------
@@ -262,6 +304,7 @@ const App = () => {
                 setActiveTab={setActiveTab}
                 onExport={handleExport}
                 onImport={handleImport}
+                onFactoryReset={handleFactoryReset}
             />
 
             <main className="max-w-6xl mx-auto p-4 md:p-8 mt-4">
@@ -272,6 +315,8 @@ const App = () => {
                         setActiveExercise={setActiveExercise}
                         setActiveTab={setActiveTab}
                         startStack={startStack}
+                        workoutQueue={workoutQueue}
+                        setWorkoutQueue={setWorkoutQueue}
                     />
                 )}
 

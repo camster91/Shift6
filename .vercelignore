@@ -1,0 +1,10 @@
+node_modules
+.git
+dist
+android
+ios
+*.log
+.DS_Store
+.env.local
+.env.*.local
+CAPACITOR_GUIDE.md

@@ -1,0 +1,17 @@
+{
+  "appId": "com.shift6.app",
+  "appName": "Shift6",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0f172a",
+      "androidSplashResourceName": "splash",
+      "iosSplashResourceName": "Default"
+    }
+  }
+}

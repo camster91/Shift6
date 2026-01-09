@@ -14,7 +14,7 @@ const Plan = ({
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">
             {/* Exercise Header & Progress */}
-            <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden mesh-bg shadow-2xl ring-1 ring-white/10">
+            <div className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden mesh-bg shadow-2xl ring-1 ring-white/10">
                 <div className="absolute top-0 right-0 p-12 opacity-5 transform scale-150">
                     {React.cloneElement(exercise.icon, { size: 300 })}
                 </div>
@@ -33,8 +33,8 @@ const Plan = ({
                     </div>
 
                     <div className="flex gap-4">
-                        <div className="bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 text-center min-w-[120px]">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Status</p>
+                        <div className="bg-white/5 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 text-center min-w-[120px]">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Completed</p>
                             <p className="text-2xl font-black">{completedCount}/18</p>
                         </div>
                         <div className="bg-blue-600 px-6 py-4 rounded-3xl text-center min-w-[120px] shadow-xl shadow-blue-900/50">
@@ -63,7 +63,7 @@ const Plan = ({
                         return (
                             <div key={weekData.week} className="relative z-10">
                                 <div className="flex items-center gap-6 mb-8 group">
-                                    <div className={`w-20 h-20 rounded-[2rem] flex flex-col items-center justify-center font-black transition-all duration-500 shadow-xl ${isCurrentWeek ? `${getThemeClass('bg')} text-white scale-110` :
+                                    <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-black transition-all duration-500 shadow-xl ${isCurrentWeek ? `${getThemeClass('bg')} text-white scale-110` :
                                         isCompletedWeek ? 'bg-green-500 text-white' : 'bg-white border-2 border-slate-100 text-slate-300'
                                         }`}>
                                         <span className="text-[10px] uppercase tracking-widest opacity-60">Week</span>
@@ -71,7 +71,7 @@ const Plan = ({
                                     </div>
                                     <div className="flex-1">
                                         <h3 className="text-xl font-black tracking-tight text-slate-900">
-                                            {isCurrentWeek ? 'Current Objective' : `Phase ${weekData.week}`}
+                                            {isCurrentWeek ? 'Current Level' : `Phase ${weekData.week}`}
                                         </h3>
                                         <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">
                                             Rest Intervals: {getRest(weekData.week)} SECONDS
@@ -88,7 +88,7 @@ const Plan = ({
                                             <button
                                                 key={day.id}
                                                 onClick={() => { vibrate(20); startWorkout(weekData.week, dIdx); }}
-                                                className={`group relative p-8 rounded-[2.5rem] border-2 transition-all duration-300 text-left ${isCompleted ? 'bg-white border-green-100 opacity-60' :
+                                                className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 text-left ${isCompleted ? 'bg-white border-green-100 opacity-60' :
                                                     isNext ? `bg-white border-blue-600 shadow-2xl shadow-blue-100 scale-[1.02] z-20` :
                                                         `bg-slate-50 border-transparent hover:bg-white hover:border-slate-200`
                                                     }`}

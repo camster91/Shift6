@@ -1,6 +1,7 @@
 import React from 'react';
 import { Zap, CheckCircle2 } from 'lucide-react';
 import { EXERCISE_PLANS, formatValue, getRest } from '../../data/exercises.jsx';
+import { vibrate } from '../../utils/device';
 
 const Plan = ({
     activeExercise,

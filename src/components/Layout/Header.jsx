@@ -1,8 +1,9 @@
 import React from 'react';
-import { ChevronDown, Settings, Download, Upload } from 'lucide-react';
+import { ChevronDown, ChevronLeft, Settings, Download, Upload } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 
 const Header = ({
+    activeTab,
     activeExercise,
     setActiveExercise,
     isSelectorOpen,
@@ -15,18 +16,29 @@ const Header = ({
     const exercise = EXERCISE_PLANS[activeExercise];
 
     return (
-        <header className="bg-slate-900 text-white sticky top-0 z-20 shadow-xl border-b border-slate-800 pt-[env(safe-area-inset-top)]">
-            <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+        <header className="bg-slate-900 text-white sticky top-0 z-30 shadow-2xl border-b border-white/5 pt-[env(safe-area-inset-top)] mesh-bg">
+            <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
 
                 {/* Logo & Branding */}
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1 font-black text-xl md:text-2xl tracking-tighter">
-                        <span className="text-blue-500">Shift</span>6
-                    </div>
+                <div className="flex items-center gap-6">
+                    {activeTab !== 'dashboard' && (
+                        <button
+                            onClick={() => window.history.back()}
+                            className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all active:scale-95 group"
+                        >
+                            <ChevronLeft size={22} className="group-hover:-translate-x-0.5 transition-transform" />
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setActiveTab('dashboard')}
+                        className="flex items-center gap-1 font-black text-2xl md:text-3xl tracking-tighter hover:opacity-80 transition-opacity active-scale"
+                    >
+                        <span className="text-blue-500">SHIFT</span>6
+                    </button>
                 </div>
 
                 {/* Right Side: Exercise Selector & Settings */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
                     {/* Exercise Selector */}
                     <div className="relative">
                         <button

@@ -34,7 +34,38 @@ const App = () => {
     }, [sessionHistory]);
 
     // UI State
-    const [activeTab, setActiveTab] = useState('dashboard'); // Default to Dashboard (User Request)
+    const [activeTab, setActiveTabState] = useState(() => {
+        const hash = window.location.hash.replace('#', '');
+        return ['dashboard', 'plan', 'workout', 'guide'].includes(hash) ? hash : 'dashboard';
+    });
+
+    const setActiveTab = (tab, push = true) => {
+        setActiveTabState(tab);
+        if (push) {
+            window.history.pushState({ tab }, '', `#${tab}`);
+        }
+    };
+
+    useEffect(() => {
+        const handlePopState = (event) => {
+            if (event.state && event.state.tab) {
+                setActiveTabState(event.state.tab);
+            } else {
+                const hash = window.location.hash.replace('#', '');
+                if (hash) setActiveTabState(hash);
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        // Initial state
+        if (!window.location.hash) {
+            window.history.replaceState({ tab: 'dashboard' }, '', '#dashboard');
+        }
+
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
     const [activeExercise, setActiveExercise] = useState('pushups');
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
@@ -220,8 +251,9 @@ const App = () => {
     // ---------------- RENDER ----------------
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 pb-24 font-sans selection:bg-slate-200">
+        <div className="min-h-screen bg-slate-50 text-slate-900 pb-32 font-sans selection:bg-slate-200">
             <Header
+                activeTab={activeTab}
                 activeExercise={activeExercise}
                 setActiveExercise={setActiveExercise}
                 isSelectorOpen={isSelectorOpen}
@@ -232,7 +264,7 @@ const App = () => {
                 onImport={handleImport}
             />
 
-            <main className="max-w-4xl mx-auto p-4 md:p-6 mt-4">
+            <main className="max-w-6xl mx-auto p-4 md:p-8 mt-4">
                 {activeTab === 'dashboard' && (
                     <Dashboard
                         completedDays={completedDays}

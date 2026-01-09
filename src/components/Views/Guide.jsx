@@ -23,7 +23,7 @@ const Guide = ({ getThemeClass }) => {
                                     <span className={`font-black text-xl text-blue-500`}>0{i + 1}</span>
                                     <div>
                                         <p className="font-bold text-slate-800 text-sm mb-1">{item.t}</p>
-                                        <p className="text-slate-500 text-xs leading-relaxed">{item.d}</p>
+                                        <p className="text-slate-600 text-xs leading-relaxed font-medium">{item.d}</p>
                                     </div>
                                 </div>
                             ))}
@@ -37,7 +37,7 @@ const Guide = ({ getThemeClass }) => {
                                 <div className="flex items-center gap-2 font-bold text-slate-900 text-sm mb-2">
                                     <Clock size={16} className="text-rose-600" /> Plank Tips
                                 </div>
-                                <p className="text-xs text-slate-600 leading-relaxed">
+                                <p className="text-xs text-slate-700 leading-relaxed font-medium">
                                     Don't just hang out there. Actively pull your elbows towards your toes (without moving them) to create massive core tension.
                                 </p>
                             </div>
@@ -45,7 +45,7 @@ const Guide = ({ getThemeClass }) => {
                                 <div className="flex items-center gap-2 font-bold text-slate-900 text-sm mb-2">
                                     <ArrowUp size={16} className="text-indigo-600" /> Pull-Up Tips
                                 </div>
-                                <p className="text-xs text-slate-600 leading-relaxed">
+                                <p className="text-xs text-slate-700 leading-relaxed font-medium">
                                     Imagine driving your elbows down into your back pockets. If you can't do one yet, do "negatives" (jump up, lower slowly).
                                 </p>
                             </div>

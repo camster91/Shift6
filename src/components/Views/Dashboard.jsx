@@ -45,52 +45,50 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                 </div>
             )}
 
-            {/* Hero Section */}
-            <div className="bg-slate-900 text-white p-8 rounded-[2rem] relative overflow-hidden shadow-2xl ring-1 ring-white/10 animate-in fade-in zoom-in-95 duration-700 delay-100 mesh-bg">
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] transform translate-x-10 -translate-y-10">
-                    <Trophy size={300} />
+            {/* Daily Stack Card */}
+            <div className="bg-white rounded-[2rem] p-8 text-slate-900 shadow-xl shadow-slate-200/50 relative overflow-hidden group active-scale border border-slate-100 animate-in slide-in-from-bottom-8 fade-in duration-700 delay-300">
+                <div className="absolute top-0 right-0 p-8 text-slate-50 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <LayoutDashboard size={120} />
                 </div>
-
                 <div className="relative z-10">
-                    <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-2">Total Volume Trajectory</p>
-                    <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tighter">Elite Strength</h1>
+                    <div className="flex justify-between items-start mb-4">
+                        <h2 className="text-2xl font-black flex items-center gap-2 tracking-tight">
+                            <Zap className="text-blue-600 fill-blue-600" size={24} /> Daily Stack
+                        </h2>
+                        <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                            {getScheduleFocus()}
+                        </span>
+                    </div>
+                    <p className="text-slate-600 mb-6 max-w-md text-sm font-medium leading-relaxed">
+                        {dailyStack.length > 0
+                            ? "Your power-stack for today. High efficiency training."
+                            : "Goal achieved. Take your recovery seriously."}
+                    </p>
 
-                    {/* Simple Volume Sparkline */}
-                    <div className="flex items-end gap-1 h-12 mb-6">
-                        {Array.from({ length: 14 }).map((_, i) => {
-                            const date = new Date();
-                            date.setDate(date.getDate() - (13 - i));
-                            const dateStr = date.toISOString().split('T')[0];
-                            const volume = sessionHistory
-                                .filter(s => s.date.startsWith(dateStr))
-                                .reduce((sum, s) => sum + s.volume, 0);
-                            const max = 200; // Normalization
-                            const height = Math.min(100, (volume / max) * 100);
-                            return (
-                                <div
-                                    key={i}
-                                    className="flex-1 bg-blue-500/20 rounded-t-sm relative group"
-                                    style={{ height: '100%' }}
-                                >
-                                    <div
-                                        className="absolute bottom-0 left-0 right-0 bg-blue-500 rounded-t-sm transition-all duration-1000"
-                                        style={{ height: `${Math.max(10, height)}%`, opacity: volume > 0 ? 1 : 0.3 }}
-                                    />
-                                </div>
-                            );
-                        })}
+                    <div className="flex flex-wrap gap-2 mb-8">
+                        {dailyStack.map((item, i) => (
+                            <div key={i} className="bg-slate-50 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-slate-100 text-slate-700">
+                                {React.cloneElement(EXERCISE_PLANS[item.exerciseKey].icon, { size: 14 })}
+                                {item.name} <span className="text-slate-500">W{item.week}D{item.dayIndex + 1}</span>
+                            </div>
+                        ))}
+                        {dailyStack.length === 0 && (
+                            <div className="text-blue-600 text-sm font-black flex items-center gap-2">
+                                <CheckCircle2 size={16} /> Mastery in progress
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                        {Object.entries(EXERCISE_PLANS).map(([key, ex]) => {
-                            const count = completedDays[key]?.length || 0;
-                            return (
-                                <div key={key} className="bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-2 text-xs font-bold text-slate-300">
-                                    {React.cloneElement(ex.icon, { size: 14 })} <span>{count}/18</span>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <button
+                        onClick={() => {
+                            vibrate(20);
+                            startStack();
+                        }}
+                        disabled={dailyStack.length === 0}
+                        className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 shadow-xl shadow-slate-900/20"
+                    >
+                        Launch Session ({dailyStack.length})
+                    </button>
                 </div>
             </div>
 
@@ -103,50 +101,52 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Col: Daily Stack & Grid */}
                 <div className="lg:col-span-2 space-y-8">
-                    {/* Daily Stack Card */}
-                    <div className="bg-white rounded-[2rem] p-8 text-slate-900 shadow-xl shadow-slate-200/50 relative overflow-hidden group active-scale border border-slate-100 animate-in slide-in-from-bottom-8 fade-in duration-700 delay-300">
-                        <div className="absolute top-0 right-0 p-8 text-slate-50 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <LayoutDashboard size={120} />
+                    {/* Hero Section */}
+                    <div className="bg-slate-900 text-white p-8 rounded-[2rem] relative overflow-hidden shadow-2xl ring-1 ring-white/10 animate-in fade-in zoom-in-95 duration-700 delay-100 mesh-bg">
+                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] transform translate-x-10 -translate-y-10">
+                            <Trophy size={300} />
                         </div>
+
                         <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-4">
-                                <h2 className="text-2xl font-black flex items-center gap-2 tracking-tight">
-                                    <Zap className="text-blue-600 fill-blue-600" size={24} /> Daily Stack
-                                </h2>
-                                <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
-                                    {getScheduleFocus()}
-                                </span>
-                            </div>
-                            <p className="text-slate-500 mb-6 max-w-md text-sm font-medium leading-relaxed">
-                                {dailyStack.length > 0
-                                    ? "Your power-stack for today. High efficiency training."
-                                    : "Goal achieved. Take your recovery seriously."}
-                            </p>
+                            <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-2">Total Volume Trajectory</p>
+                            <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tighter">Elite Strength</h1>
 
-                            <div className="flex flex-wrap gap-2 mb-8">
-                                {dailyStack.map((item, i) => (
-                                    <div key={i} className="bg-slate-50 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-slate-100 text-slate-700">
-                                        {React.cloneElement(EXERCISE_PLANS[item.exerciseKey].icon, { size: 14 })}
-                                        {item.name} <span className="text-slate-400">W{item.week}D{item.dayIndex + 1}</span>
-                                    </div>
-                                ))}
-                                {dailyStack.length === 0 && (
-                                    <div className="text-blue-600 text-sm font-black flex items-center gap-2">
-                                        <CheckCircle2 size={16} /> Mastery in progress
-                                    </div>
-                                )}
+                            {/* Simple Volume Sparkline */}
+                            <div className="flex items-end gap-1 h-12 mb-6">
+                                {Array.from({ length: 14 }).map((_, i) => {
+                                    const date = new Date();
+                                    date.setDate(date.getDate() - (13 - i));
+                                    const dateStr = date.toISOString().split('T')[0];
+                                    const volume = sessionHistory
+                                        .filter(s => s.date.startsWith(dateStr))
+                                        .reduce((sum, s) => sum + s.volume, 0);
+                                    const max = 200; // Normalization
+                                    const height = Math.min(100, (volume / max) * 100);
+                                    return (
+                                        <div
+                                            key={i}
+                                            className="flex-1 bg-blue-500/20 rounded-t-sm relative group"
+                                            style={{ height: '100%' }}
+                                        >
+                                            <div
+                                                className="absolute bottom-0 left-0 right-0 bg-blue-500 rounded-t-sm transition-all duration-1000"
+                                                style={{ height: `${Math.max(10, height)}%`, opacity: volume > 0 ? 1 : 0.3 }}
+                                            />
+                                        </div>
+                                    );
+                                })}
                             </div>
 
-                            <button
-                                onClick={() => {
-                                    vibrate(20);
-                                    startStack();
-                                }}
-                                disabled={dailyStack.length === 0}
-                                className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 shadow-xl shadow-slate-900/20"
-                            >
-                                Launch Session ({dailyStack.length})
-                            </button>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(EXERCISE_PLANS).map(([key, ex]) => {
+                                    const count = completedDays[key]?.length || 0;
+                                    return (
+                                        <div key={key} className="bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-2 text-xs font-bold text-slate-300">
+                                            {React.cloneElement(ex.icon, { size: 14 })} <span>{count}/18</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
 
@@ -175,7 +175,7 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                                             {React.cloneElement(ex.icon, { size: 22, strokeWidth: 2.5 })}
                                         </div>
                                         <h3 className="text-sm font-black text-slate-900 truncate tracking-tight">{ex.name}</h3>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{percent}%</p>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{percent}%</p>
                                     </div>
 
                                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
@@ -207,13 +207,13 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                                         <p className="text-xs font-black text-slate-900 truncate">
                                             {EXERCISE_PLANS[session.exerciseKey].name}
                                         </p>
-                                        <p className="text-[10px] font-bold text-slate-400 capitalize">
+                                        <p className="text-[10px] font-bold text-slate-500 capitalize">
                                             {new Date(session.date).toLocaleDateString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}
                                         </p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-xs font-black text-blue-600">+{session.volume}</p>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{session.unit}</p>
+                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">{session.unit}</p>
                                     </div>
                                 </div>
                             )) : (
@@ -221,13 +221,13 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                                     <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
                                         <Info className="text-slate-200" size={24} />
                                     </div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No activity yet</p>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No activity yet</p>
                                 </div>
                             )}
                         </div>
 
                         {sessionHistory.length > 5 && (
-                            <button className="w-full mt-6 py-3 border-t border-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">
+                            <button className="w-full mt-6 py-3 border-t border-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-600 transition-colors">
                                 View Full History
                             </button>
                         )}
@@ -271,7 +271,7 @@ const GamificationSection = ({ completedDays, sessionHistory }) => {
 
             {/* Badges */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Latest Achievements</h3>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Latest Achievements</h3>
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     {unlocked.length > 0 ? unlocked.map(badge => (
                         <div key={badge.id} className="min-w-[80px] flex flex-col items-center text-center p-2 bg-slate-50 rounded-xl border border-slate-100">
@@ -279,7 +279,7 @@ const GamificationSection = ({ completedDays, sessionHistory }) => {
                             <span className="text-[10px] font-bold text-slate-700 leading-tight">{badge.name}</span>
                         </div>
                     )) : (
-                        <p className="text-sm text-slate-400 italic">Complete workouts to unlock badges!</p>
+                        <p className="text-sm text-slate-500 italic">Complete workouts to unlock badges!</p>
                     )}
                     {/* Show locked greyed out */}
                     {BADGES.filter(b => !unlocked.includes(b)).slice(0, 3).map(badge => (

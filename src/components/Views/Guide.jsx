@@ -3,98 +3,90 @@ import { Info, Clock, ArrowUp } from 'lucide-react';
 
 const Guide = ({ getThemeClass }) => {
     return (
-        <div className="space-y-8 animate-in fade-in duration-700 pb-20">
-            <div className="bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden mesh-bg shadow-2xl ring-1 ring-white/10">
-                <div className="absolute top-0 right-0 p-12 opacity-[0.03] transform scale-150">
-                    <Info size={400} />
-                </div>
-
-                <div className="relative z-10 max-w-2xl">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-blue-600 rounded-2xl shadow-xl shadow-blue-900/40">
-                            <Info size={28} />
-                        </div>
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter">Methodology</h1>
+        <div className="space-y-6 pb-20">
+            <div className="border border-slate-200 p-6">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-blue-600 text-white">
+                        <Info size={20} />
                     </div>
-                    <p className="text-slate-400 text-lg font-medium leading-relaxed">
-                        The Shift6 architecture is engineered for compounding mastery. Understanding the mechanics of progress is as critical as the physical execution.
-                    </p>
+                    <h1 className="text-3xl font-bold text-slate-900">Guide</h1>
                 </div>
+                <p className="text-sm text-slate-600">
+                    Training methodology and form guidelines
+                </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <section className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl shadow-slate-200/40 space-y-8">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-                        <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs">The Protocols</h3>
-                        <span className="bg-slate-50 px-3 py-1 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-widest">Execution Laws</span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <section className="border border-slate-200 p-6 space-y-6">
+                    <div className="border-b border-slate-200 pb-4">
+                        <h3 className="text-sm font-semibold text-slate-900">Training Protocols</h3>
                     </div>
 
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                         {[
-                            { t: "Frequency Protocol", d: "3 sessions per week per muscle group. Consistency is the primary lever of adaptation. Maintain a 48-hour recovery window between identical loads." },
-                            { t: "The Rule of Five", d: "Structure your sessions into five strategic sets. The final set is AMRAP (As Many Reps As Possible), driving your central nervous system to its baseline limit." },
-                            { t: "Calibration Failure", d: "If a session target is not achieved, do not advance. Re-calibrate the load in 48 hours. Stagnation is a signal for recovery, not a reason for retreat." }
+                            { t: "Frequency Protocol", d: "3 sessions per week per muscle group. Maintain 48-hour recovery between sessions." },
+                            { t: "Five-Set Structure", d: "Each session has 5 sets. Final set is AMRAP (As Many Reps As Possible) to test your limit." },
+                            { t: "Progressive Overload", d: "If you can't complete the target, repeat the session after 48 hours before advancing." }
                         ].map((item, i) => (
-                            <div key={i} className="flex gap-6 group">
-                                <div className="text-3xl font-black text-slate-100 group-hover:text-blue-500 transition-colors duration-500">0{i + 1}</div>
+                            <div key={i} className="flex gap-4">
+                                <div className="text-2xl font-bold text-slate-200">0{i + 1}</div>
                                 <div>
-                                    <p className="font-black text-slate-900 text-sm mb-2">{item.t}</p>
-                                    <p className="text-slate-500 text-xs leading-relaxed font-medium">{item.d}</p>
+                                    <p className="font-semibold text-slate-900 text-sm mb-1">{item.t}</p>
+                                    <p className="text-xs text-slate-600">{item.d}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                <section className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl shadow-slate-200/40 space-y-8">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-                        <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs">Form Cues</h3>
-                        <span className="bg-slate-50 px-3 py-1 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-widest">Technical Mastery</span>
+                <section className="border border-slate-200 p-6 space-y-6">
+                    <div className="border-b border-slate-200 pb-4">
+                        <h3 className="text-sm font-semibold text-slate-900">Form Guidelines</h3>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6">
-                        <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-blue-200 transition-all">
-                            <div className="flex items-center gap-3 font-black text-slate-900 text-sm mb-4">
-                                <div className="p-2 bg-blue-100 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                    <Clock size={16} />
+                    <div className="space-y-4">
+                        <div className="border border-slate-200 p-4">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 mb-2">
+                                <div className="p-1.5 bg-blue-100 text-blue-600">
+                                    <Clock size={14} />
                                 </div>
-                                Core Stabilization (Plank)
+                                Plank / Core
                             </div>
-                            <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                                Actively compress your visceral midsection. Pull your elbows toward your toes as if trying to fold the floor in half. Maximum tension, zero movement.
+                            <p className="text-xs text-slate-600">
+                                Squeeze core tight. Pull elbows toward toes. Maximum tension, zero movement.
                             </p>
                         </div>
 
-                        <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-indigo-200 transition-all">
-                            <div className="flex items-center gap-3 font-black text-slate-900 text-sm mb-4">
-                                <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                    <ArrowUp size={16} />
+                        <div className="border border-slate-200 p-4">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 mb-2">
+                                <div className="p-1.5 bg-indigo-100 text-indigo-600">
+                                    <ArrowUp size={14} />
                                 </div>
-                                Vertical Pull (Pull-Ups)
+                                Pull-Ups
                             </div>
-                            <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                                Drive your elbows into your posterior pockets. Lead with the chest, not the chin. If baseline is not met, implement eccentric negatives for volume accumulation.
+                            <p className="text-xs text-slate-600">
+                                Drive elbows down. Lead with chest, not chin. Use negatives if needed.
                             </p>
                         </div>
                     </div>
                 </section>
             </div>
-            <section className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl shadow-slate-200/40">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-6 mb-8">
-                    <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs">Terminology</h3>
-                    <span className="bg-blue-50 px-3 py-1 rounded-full text-[10px] font-black text-blue-600 uppercase tracking-widest">Glossary</span>
+
+            <section className="border border-slate-200 p-6">
+                <div className="border-b border-slate-200 pb-4 mb-6">
+                    <h3 className="text-sm font-semibold text-slate-900">Terminology</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
-                        { t: "Volume History", d: "Your total work (reps × sets) over time. Used to track consistency and workload capacity." },
-                        { t: "Active Stack", d: "The list of exercises scheduled for today. Complete them in order." },
-                        { t: "AMRAP", d: "As Many Reps As Possible. The final set is used to judge your strength reserve and adjust future targets." },
-                        { t: "Course Progress", d: "Your journey through the 18-week curriculum for each movement." },
-                        { t: "Baseline Calibration", d: "The initial test that sets your starting difficulty." }
+                        { t: "Volume History", d: "Total work (reps × sets) over time. Tracks consistency and capacity." },
+                        { t: "Daily Stack", d: "Exercises scheduled for today. Complete them in order." },
+                        { t: "AMRAP", d: "As Many Reps As Possible. Final set to judge strength reserve." },
+                        { t: "Course Progress", d: "Your journey through the 18-day program for each exercise." },
+                        { t: "Baseline Test", d: "Initial assessment that sets your starting difficulty level." }
                     ].map((item, i) => (
-                        <div key={i} className="space-y-2">
-                            <p className="font-black text-slate-900 text-sm uppercase tracking-tighter">{item.t}</p>
-                            <p className="text-xs text-slate-400 leading-relaxed font-medium">{item.d}</p>
+                        <div key={i} className="space-y-1">
+                            <p className="font-semibold text-slate-900 text-sm">{item.t}</p>
+                            <p className="text-xs text-slate-600">{item.d}</p>
                         </div>
                     ))}
                 </div>

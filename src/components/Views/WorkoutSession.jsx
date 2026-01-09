@@ -126,7 +126,10 @@ const WorkoutSession = ({
                                 <input
                                     type="number"
                                     value={testInput}
-                                    onChange={(e) => setTestInput(e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/[^0-9]/g, '');
+                                        setTestInput(val);
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-3xl px-6 py-8 text-6xl font-black text-center focus:outline-none focus:bg-white/10 focus:border-blue-500/50 transition-all text-white placeholder:text-white/10"
                                     placeholder="0"
                                     autoFocus
@@ -165,7 +168,15 @@ const WorkoutSession = ({
                             </div>
                             <h2 className="text-2xl font-black tracking-tight">Week {currentSession.week}</h2>
                         </div>
-                        <button onClick={() => setCurrentSession(null)} className="p-2 bg-white/5 rounded-xl text-white/50 hover:text-white active-scale">
+                        <button
+                            onClick={() => {
+                                if (window.confirm('Current progress in this session will be lost. Quit workout?')) {
+                                    setCurrentSession(null);
+                                    setActiveTab('dashboard');
+                                }
+                            }}
+                            className="p-2 bg-white/5 rounded-xl text-white/50 hover:text-white active-scale"
+                        >
                             <X size={18} />
                         </button>
                     </div>
@@ -218,7 +229,10 @@ const WorkoutSession = ({
                                                 <input
                                                     type="number"
                                                     value={amrapValue}
-                                                    onChange={(e) => setAmrapValue(e.target.value)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/[^0-9]/g, '');
+                                                        setAmrapValue(val);
+                                                    }}
                                                     className="w-full text-8xl font-black text-center focus:outline-none placeholder:text-slate-100 text-slate-900 bg-transparent hide-spinners"
                                                     autoFocus
                                                     placeholder="0"
@@ -269,7 +283,7 @@ const WorkoutSession = ({
                 <div className="hidden md:flex w-80 bg-slate-50 border-l border-slate-100 flex-col p-8 justify-between">
                     <div className="space-y-8">
                         <div>
-                            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center mb-6">
+                            <div className={`w-12 h-12 rounded-2xl bg-${currentSession.color}-500/10 text-${currentSession.color}-600 flex items-center justify-center mb-6`}>
                                 <Info size={24} />
                             </div>
                             <h3 className="text-lg font-black text-slate-900 tracking-tight mb-2 uppercase tracking-widest text-xs">Form Check</h3>
@@ -279,15 +293,19 @@ const WorkoutSession = ({
                         </div>
 
                         <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm">
-                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3">Coach's Tip</p>
+                            <p className={`text-[10px] font-black text-${currentSession.color}-600 uppercase tracking-widest mb-3`}>Coach's Tip</p>
                             <p className="text-xs font-bold text-slate-700 leading-relaxed">
                                 {
                                     currentSession.exerciseKey === 'pushups' ? "Keep elbows at 45 degrees. Squeeze your core like a plank." :
                                         currentSession.exerciseKey === 'squats' ? "Weight in heels, chest up. Drive through your mid-foot." :
-                                            currentSession.exerciseKey === 'pullups' ? "Full extension at the bottom. Think about pulling elbows to pockets." :
+                                            currentSession.exerciseKey === 'pullups' ? "Full extension at the bottom. Pull elbows to pockets." :
                                                 currentSession.exerciseKey === 'plank' ? "Squeeze glutes to protect lower back. Keep neck neutral." :
-                                                    currentSession.exerciseKey === 'vups' ? "Keep legs straight and reach for your toes. Control the down." :
-                                                        "Maintain perfect tension throughout the move."
+                                                    currentSession.exerciseKey === 'vups' ? "Keep legs straight, reach for toes. Control the down." :
+                                                        currentSession.exerciseKey === 'dips' ? "Keep chest up and elbows tucked. Don't go below 90 deg." :
+                                                            currentSession.exerciseKey === 'lunges' ? "Keep torso upright. Back knee should almost touch the floor." :
+                                                                currentSession.exerciseKey === 'glutebridge' ? "Drive through heels, squeeze glutes at the top." :
+                                                                    currentSession.exerciseKey === 'supermans' ? "Lift chest and thighs. Neutral neck, stare at the floor." :
+                                                                        "Maintain perfect tension throughout the move."
                                 }
                             </p>
                         </div>
@@ -301,11 +319,11 @@ const WorkoutSession = ({
                 {/* Mobile Tip Overlay (Floating) */}
                 <div className="md:hidden p-4 bg-slate-50 border-t border-slate-100">
                     <div className="flex gap-4 items-center">
-                        <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                        <div className={`p-2 rounded-xl bg-${currentSession.color}-50 text-${currentSession.color}-600`}>
                             <Info size={16} />
                         </div>
                         <p className="text-[10px] font-bold text-slate-600">
-                            <span className="font-black text-blue-600 uppercase">Tip:</span> {
+                            <span className={`font-black text-${currentSession.color}-600 uppercase`}>Tip:</span> {
                                 currentSession.exerciseKey === 'pushups' ? "Keep elbows at 45 degrees. Squeeze core." :
                                     currentSession.exerciseKey === 'squats' ? "Weight in heels, chest up." :
                                         "Maintain perfect form throughout."

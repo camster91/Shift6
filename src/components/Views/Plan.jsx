@@ -1,5 +1,5 @@
 import React from 'react';
-import { History, LayoutDashboard, CheckCircle2 } from 'lucide-react';
+import { Zap, CheckCircle2 } from 'lucide-react';
 import { EXERCISE_PLANS, formatValue, getRest } from '../../data/exercises.jsx';
 
 const Plan = ({

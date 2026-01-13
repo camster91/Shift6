@@ -74,6 +74,8 @@ const App = () => {
         if (push) {
             window.history.pushState({ tab }, '', `#${tab}`);
         }
+        // Scroll to top when changing tabs
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     useEffect(() => {
@@ -84,6 +86,8 @@ const App = () => {
                 const hash = window.location.hash.replace('#', '');
                 if (hash) setActiveTabState(hash);
             }
+            // Scroll to top when navigating back/forward
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         window.addEventListener('popstate', handlePopState);

@@ -15,10 +15,10 @@ const Plan = ({
     return (
         <div className="space-y-6 pb-20">
             {/* Exercise Demo Image Placeholder */}
-            <div className="relative h-64 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-100 border border-slate-200 overflow-hidden">
+            <div className="relative h-48 bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 border border-slate-200 rounded-lg overflow-hidden">
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                        <div className="text-7xl mb-3">{React.cloneElement(exercise.icon, { size: 80, className: "text-slate-300 mx-auto" })}</div>
+                        <div className="text-6xl mb-3">{React.cloneElement(exercise.icon, { size: 64, className: "text-slate-300 mx-auto" })}</div>
                         <p className="text-sm text-slate-500 font-semibold">{exercise.name} Demonstration</p>
                         <p className="text-xs text-slate-400 mt-1">Exercise photo/video placeholder</p>
                     </div>
@@ -26,11 +26,11 @@ const Plan = ({
             </div>
 
             {/* Exercise Header */}
-            <div className="border border-slate-200 p-6">
+            <div className="border border-slate-200 rounded-lg p-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <div className={`w-10 h-10 flex items-center justify-center ${getThemeClass('bg')} ${getThemeClass('text')}`}>
+                            <div className={`w-10 h-10 rounded flex items-center justify-center ${getThemeClass('bg')} ${getThemeClass('text')}`}>
                                 {React.cloneElement(exercise.icon, { size: 20 })}
                             </div>
                             <h1 className="text-3xl font-bold text-slate-900">{exercise.name}</h1>
@@ -41,11 +41,11 @@ const Plan = ({
                     </div>
 
                     <div className="flex gap-4">
-                        <div className="border border-slate-200 px-5 py-3 text-center">
+                        <div className="border border-slate-200 rounded-lg px-5 py-3 text-center">
                             <p className="text-xs text-slate-500 mb-1">Completed</p>
                             <p className="text-xl font-bold text-slate-900">{completedCount}/18</p>
                         </div>
-                        <div className={`${getThemeClass('bg')} ${getThemeClass('text')} px-5 py-3 text-center`}>
+                        <div className={`${getThemeClass('bg')} ${getThemeClass('text')} rounded-lg px-5 py-3 text-center`}>
                             <p className="text-xs opacity-75 mb-1">Target</p>
                             <p className="text-xl font-bold">{exercise.finalGoal}</p>
                         </div>
@@ -68,7 +68,7 @@ const Plan = ({
                         return (
                             <div key={weekData.week} className="relative">
                                 <div className="flex items-center gap-4 mb-6">
-                                    <div className={`w-14 h-14 flex flex-col items-center justify-center font-bold transition-all ${
+                                    <div className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center font-bold transition-all ${
                                         isCurrentWeek ? `${getThemeClass('bg')} ${getThemeClass('text')}` :
                                         isCompletedWeek ? 'bg-green-600 text-white' : 'bg-white border border-slate-200 text-slate-400'
                                     }`}>
@@ -94,7 +94,7 @@ const Plan = ({
                                             <button
                                                 key={day.id}
                                                 onClick={() => { vibrate(20); startWorkout(weekData.week, dIdx); }}
-                                                className={`p-5 text-left transition-all ${
+                                                className={`p-5 rounded-lg text-left transition-all ${
                                                     isCompleted ? 'bg-slate-50 border border-slate-200 opacity-60' :
                                                     isNext ? 'border-2 border-blue-600 bg-white' :
                                                     'border border-slate-200 bg-white hover:border-slate-300'
@@ -120,7 +120,7 @@ const Plan = ({
                                                 </div>
 
                                                 {isNext && (
-                                                    <div className="mt-3 bg-blue-600 text-white px-3 py-1 text-xs font-medium text-center">
+                                                    <div className="mt-3 bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium text-center">
                                                         Start Now
                                                     </div>
                                                 )}

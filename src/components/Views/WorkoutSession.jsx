@@ -85,8 +85,8 @@ const WorkoutSession = ({
     if (!currentSession) {
         return (
             <div className="max-w-md mx-auto py-12">
-                <div className="border border-slate-200 p-12 text-center">
-                    <div className="w-16 h-16 bg-slate-100 flex items-center justify-center mx-auto mb-6">
+                <div className="border border-slate-200 rounded-lg p-12 text-center">
+                    <div className="w-16 h-16 bg-slate-100 rounded flex items-center justify-center mx-auto mb-6">
                         <Play className="text-slate-400" size={32} />
                     </div>
                     <h2 className="text-2xl font-bold mb-3 text-slate-900">No Active Workout</h2>
@@ -95,7 +95,7 @@ const WorkoutSession = ({
                     </p>
                     <button
                         onClick={() => setActiveTab('plan')}
-                        className="bg-slate-900 text-white px-6 py-3 text-sm font-medium hover:bg-slate-800 transition-colors"
+                        className="bg-slate-900 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
                     >
                         Go to Plan
                     </button>
@@ -107,7 +107,7 @@ const WorkoutSession = ({
     if (currentSession.step === 'assessment') {
         return (
             <div className="max-w-md mx-auto py-12">
-                <div className="border border-slate-200 p-12 text-center">
+                <div className="border border-slate-200 rounded-lg p-12 text-center">
                     <Trophy className="mx-auto text-blue-600 mb-6" size={48} />
                     <h2 className="text-2xl font-bold mb-3 text-slate-900">Initial Assessment</h2>
                     <p className="text-sm text-slate-600 mb-8">
@@ -122,14 +122,14 @@ const WorkoutSession = ({
                                 const val = e.target.value.replace(/[^0-9]/g, '');
                                 setTestInput(val);
                             }}
-                            className="w-full border border-slate-300 px-6 py-6 text-5xl font-bold text-center focus:outline-none focus:border-blue-600 text-slate-900"
+                            className="w-full border border-slate-300 rounded-lg px-6 py-6 text-5xl font-bold text-center focus:outline-none focus:border-blue-600 text-slate-900"
                             placeholder="0"
                             autoFocus
                         />
                         <button
                             type="submit"
                             disabled={!testInput}
-                            className="w-full bg-blue-600 py-4 text-white font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="w-full bg-blue-600 rounded-lg py-4 text-white font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             Set Baseline
                         </button>
@@ -148,7 +148,7 @@ const WorkoutSession = ({
 
     return (
         <div className="max-w-3xl mx-auto">
-            <div className="border border-slate-200">
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
                 {/* Header */}
                 <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
                     <div>
@@ -197,7 +197,7 @@ const WorkoutSession = ({
                             </div>
                             <button
                                 onClick={() => { setTimeLeft(0); vibrate(20); }}
-                                className="px-6 py-2 bg-slate-100 text-slate-600 text-sm font-medium hover:bg-slate-200 transition-colors"
+                                className="px-6 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm font-medium hover:bg-slate-200 transition-colors"
                             >
                                 End Rest
                             </button>
@@ -206,7 +206,7 @@ const WorkoutSession = ({
                         <div className="w-full max-w-sm">
                             {currentSession.setIndex === currentSession.reps.length - 1 ? (
                                 <div className="space-y-8 text-center">
-                                    <div className="w-20 h-20 bg-blue-100 flex items-center justify-center mx-auto">
+                                    <div className="w-20 h-20 bg-blue-100 rounded-lg flex items-center justify-center mx-auto">
                                         <Zap className="text-blue-600 fill-blue-600" size={36} />
                                     </div>
                                     <div>
@@ -230,13 +230,13 @@ const WorkoutSession = ({
                                     <div className="flex gap-3 pt-4">
                                         <button
                                             onClick={handleComplete}
-                                            className="flex-1 bg-blue-600 text-white py-4 text-sm font-medium hover:bg-blue-700 transition-colors"
+                                            className="flex-1 bg-blue-600 rounded-lg text-white py-4 text-sm font-medium hover:bg-blue-700 transition-colors"
                                         >
                                             Finish
                                         </button>
                                         <button
                                             onClick={handleShare}
-                                            className="flex-1 border border-slate-200 py-4 flex items-center justify-center gap-2 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
+                                            className="flex-1 border border-slate-200 rounded-lg py-4 flex items-center justify-center gap-2 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
                                         >
                                             {copied ? <Check size={16} /> : <Share2 size={16} />}
                                             {copied ? 'Copied' : 'Share'}
@@ -258,7 +258,7 @@ const WorkoutSession = ({
                                             setTimeLeft(currentSession.rest);
                                             setIsTimerRunning(true);
                                         }}
-                                        className="w-full py-5 bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                                        className="w-full py-5 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                                     >
                                         Complete Set <ChevronRight size={20} />
                                     </button>
@@ -281,7 +281,7 @@ const WorkoutSession = ({
 
                     <div className="p-4">
                         <div className="flex gap-3 items-start">
-                            <div className="p-2 bg-blue-100 text-blue-600">
+                            <div className="p-2 rounded bg-blue-100 text-blue-600">
                                 <Info size={16} />
                             </div>
                             <div>

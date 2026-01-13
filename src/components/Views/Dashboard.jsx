@@ -12,7 +12,7 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
     return (
         <div className="space-y-6 pb-24">
             {/* Hero Image Placeholder */}
-            <div className="relative h-48 bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 overflow-hidden">
+            <div className="relative h-48 bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 rounded-lg overflow-hidden">
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
                         <div className="text-6xl mb-2">💪</div>
@@ -29,19 +29,19 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
 
             {/* Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="border border-slate-200 p-4">
+                <div className="border border-slate-200 rounded-lg p-4">
                     <div className="text-2xl font-bold text-slate-900">{stats.currentStreak}</div>
                     <div className="text-xs text-slate-500 mt-1">Day Streak</div>
                 </div>
-                <div className="border border-slate-200 p-4">
+                <div className="border border-slate-200 rounded-lg p-4">
                     <div className="text-2xl font-bold text-slate-900">{stats.totalSessions}</div>
                     <div className="text-xs text-slate-500 mt-1">Total Sessions</div>
                 </div>
-                <div className="border border-slate-200 p-4">
+                <div className="border border-slate-200 rounded-lg p-4">
                     <div className="text-2xl font-bold text-slate-900">{dailyStack.length}</div>
                     <div className="text-xs text-slate-500 mt-1">Today's Exercises</div>
                 </div>
-                <div className="border border-slate-200 p-4">
+                <div className="border border-slate-200 rounded-lg p-4">
                     <div className="text-sm font-medium text-blue-600">{getScheduleFocus()}</div>
                     <div className="text-xs text-slate-500 mt-1">Current Focus</div>
                 </div>
@@ -50,7 +50,7 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
             {/* Volume Graph & Action */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Volume History */}
-                <div className="lg:col-span-2 border border-slate-200 p-6">
+                <div className="lg:col-span-2 border border-slate-200 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-sm font-semibold text-slate-900">Volume History</h2>
                         <span className="text-xs text-slate-400">Last 32 days</span>
@@ -81,7 +81,7 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                 </div>
 
                 {/* Quick Action */}
-                <div className="border border-slate-200 p-6 flex flex-col justify-between">
+                <div className="border border-slate-200 rounded-lg p-6 flex flex-col justify-between">
                     <div className="space-y-2">
                         <h3 className="text-sm font-semibold text-slate-900">Today's Status</h3>
                         <div className="text-2xl font-bold text-slate-900">
@@ -91,7 +91,7 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                     {workoutQueue.length > 0 ? (
                         <button
                             onClick={() => { if (window.confirm('End current workout session?')) setWorkoutQueue([]); }}
-                            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 py-3 text-sm font-medium transition-colors mt-4"
+                            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 py-3 rounded-lg text-sm font-medium transition-colors mt-4"
                         >
                             End Session
                         </button>
@@ -99,7 +99,7 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                         <button
                             onClick={() => { vibrate(20); startStack(); }}
                             disabled={dailyStack.length === 0}
-                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 text-sm font-medium transition-colors mt-4 flex items-center justify-center gap-2"
+                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg text-sm font-medium transition-colors mt-4 flex items-center justify-center gap-2"
                         >
                             <Zap size={16} />
                             Start Workout
@@ -110,13 +110,13 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
 
             {/* Recent Activity */}
             {sessionHistory.length > 0 && (
-                <div className="border border-slate-200 p-6">
+                <div className="border border-slate-200 rounded-lg p-6">
                     <h2 className="text-sm font-semibold text-slate-900 mb-4">Recent Activity</h2>
                     <div className="space-y-3">
                         {sessionHistory.slice(0, 5).map((session, i) => (
                             <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-600">
+                                    <div className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded text-slate-600">
                                         {React.cloneElement(EXERCISE_PLANS[session.exerciseKey].icon, { size: 16 })}
                                     </div>
                                     <div>
@@ -149,17 +149,17 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                                     setActiveExercise(key);
                                     setActiveTab('plan');
                                 }}
-                                className="border border-slate-200 hover:border-blue-600 text-left transition-colors group overflow-hidden"
+                                className="border border-slate-200 rounded-lg hover:border-blue-600 text-left transition-colors group overflow-hidden"
                             >
                                 {/* Exercise Image Placeholder */}
-                                <div className="relative h-32 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 -mx-0 -mt-0 mb-4 flex items-center justify-center">
+                                <div className="relative h-40 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 -mx-0 -mt-0 mb-4 flex items-center justify-center rounded-t-lg">
                                     <div className="text-4xl opacity-30">🏋️</div>
                                     <div className="absolute bottom-2 right-2 text-[9px] text-slate-400">Image: {ex.name}</div>
                                 </div>
 
                                 <div className="px-5 pb-5">
                                     <div className="flex items-start justify-between mb-3">
-                                        <div className={`w-10 h-10 flex items-center justify-center bg-${ex.color}-100 text-${ex.color}-600`}>
+                                        <div className={`w-10 h-10 flex items-center justify-center rounded bg-${ex.color}-100 text-${ex.color}-600`}>
                                             {React.cloneElement(ex.icon, { size: 20 })}
                                         </div>
                                         {count > 0 && (
@@ -168,9 +168,9 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                                     </div>
                                     <h3 className="text-base font-semibold text-slate-900 mb-1">{ex.name}</h3>
                                     <div className="text-xs text-slate-500 mb-3">{count}/18 days completed</div>
-                                    <div className="w-full bg-slate-100 h-1">
+                                    <div className="w-full bg-slate-100 h-1 rounded-full">
                                         <div
-                                            className={`h-full bg-${ex.color}-600 transition-all`}
+                                            className={`h-full rounded-full bg-${ex.color}-600 transition-all`}
                                             style={{ width: `${percent}%` }}
                                         />
                                     </div>

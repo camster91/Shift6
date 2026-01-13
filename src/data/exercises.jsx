@@ -3,12 +3,12 @@ import {
     Dumbbell,
     Zap,
     Activity,
-    User,
-    ArrowUp,
+    Triangle,
+    MoveUp,
     Clock,
-    Footprints,
-    ArrowDown,
-    Plane
+    Move,
+    MoveDown,
+    Wind
 } from 'lucide-react';
 
 // Common rest logic: Weeks 1-3 = 60s, Weeks 4-6 = 90s
@@ -57,7 +57,7 @@ export const EXERCISE_PLANS = {
         ]
     },
     glutebridge: {
-        name: "SL Bridge",
+        name: "Single Leg Glute Bridge",
         icon: <Activity size={20} />,
         color: "cyan",
         unit: "reps/leg",
@@ -73,7 +73,7 @@ export const EXERCISE_PLANS = {
     },
     vups: {
         name: "V-Ups",
-        icon: <User size={20} />,
+        icon: <Triangle size={20} />,
         color: "emerald",
         unit: "reps",
         finalGoal: "100 Reps",
@@ -88,7 +88,7 @@ export const EXERCISE_PLANS = {
     },
     pullups: {
         name: "Pull-Ups",
-        icon: <ArrowUp size={20} />,
+        icon: <MoveUp size={20} />,
         color: "indigo",
         unit: "reps",
         finalGoal: "20 Reps",
@@ -118,7 +118,7 @@ export const EXERCISE_PLANS = {
     },
     lunges: {
         name: "Lunges",
-        icon: <Footprints size={20} />,
+        icon: <Move size={20} />,
         color: "purple",
         unit: "reps/leg",
         finalGoal: "50 Reps/Leg",
@@ -133,7 +133,7 @@ export const EXERCISE_PLANS = {
     },
     dips: {
         name: "Dips",
-        icon: <ArrowDown size={20} />,
+        icon: <MoveDown size={20} />,
         color: "fuchsia",
         unit: "reps",
         finalGoal: "50 Reps",
@@ -148,7 +148,7 @@ export const EXERCISE_PLANS = {
     },
     supermans: {
         name: "Supermans",
-        icon: <Plane size={20} />,
+        icon: <Wind size={20} />,
         color: "amber",
         unit: "reps",
         finalGoal: "100 Reps",

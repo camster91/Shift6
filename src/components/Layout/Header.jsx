@@ -32,9 +32,12 @@ const Header = ({
                     )}
                     <button
                         onClick={() => setActiveTab('dashboard')}
-                        className="flex items-center gap-1 font-black text-2xl md:text-3xl tracking-tighter hover:opacity-80 transition-opacity active-scale"
+                        className="flex flex-col items-start font-black tracking-tighter hover:opacity-80 transition-opacity active-scale"
                     >
-                        <span className="text-blue-500">SHIFT</span>6
+                        <div className="flex items-center gap-1 text-2xl md:text-3xl">
+                            <span className="text-cyan-400 text-glow">SHIFT</span><span className="text-white">6</span>
+                        </div>
+                        <span className="text-[10px] md:text-xs text-cyan-400/70 tracking-widest font-semibold">ELITE</span>
                     </button>
                 </div>
 

@@ -115,15 +115,15 @@ const App = () => {
     const getThemeClass = (part) => {
         const exercise = EXERCISE_PLANS[activeExercise];
         const colors = {
-            blue: { bg: 'bg-blue-600', border: 'border-blue-200', text: 'text-blue-600', ring: 'ring-blue-500', hover: 'hover:border-blue-300', light: 'bg-blue-50' },
-            orange: { bg: 'bg-orange-600', border: 'border-orange-200', text: 'text-orange-600', ring: 'ring-orange-500', hover: 'hover:border-orange-300', light: 'bg-orange-50' },
-            emerald: { bg: 'bg-emerald-600', border: 'border-emerald-200', text: 'text-emerald-600', ring: 'ring-emerald-500', hover: 'hover:border-emerald-300', light: 'bg-emerald-50' },
-            indigo: { bg: 'bg-indigo-600', border: 'border-indigo-200', text: 'text-indigo-600', ring: 'ring-indigo-500', hover: 'hover:border-indigo-300', light: 'bg-indigo-50' },
-            rose: { bg: 'bg-rose-600', border: 'border-rose-200', text: 'text-rose-600', ring: 'ring-rose-500', hover: 'hover:border-rose-300', light: 'bg-rose-50' },
-            cyan: { bg: 'bg-cyan-600', border: 'border-cyan-200', text: 'text-cyan-600', ring: 'ring-cyan-500', hover: 'hover:border-cyan-300', light: 'bg-cyan-50' },
-            purple: { bg: 'bg-purple-600', border: 'border-purple-200', text: 'text-purple-600', ring: 'ring-purple-500', hover: 'hover:border-purple-300', light: 'bg-purple-50' },
-            fuchsia: { bg: 'bg-fuchsia-600', border: 'border-fuchsia-200', text: 'text-fuchsia-600', ring: 'ring-fuchsia-500', hover: 'hover:border-fuchsia-300', light: 'bg-fuchsia-50' },
-            amber: { bg: 'bg-amber-600', border: 'border-amber-200', text: 'text-amber-600', ring: 'ring-amber-500', hover: 'hover:border-amber-300', light: 'bg-amber-50' },
+            blue: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
+            orange: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
+            emerald: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
+            indigo: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
+            rose: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
+            cyan: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
+            purple: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
+            fuchsia: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
+            amber: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
         };
         const config = colors[exercise.color] || colors.blue;
         return config[part] || '';

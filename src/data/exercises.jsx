@@ -32,7 +32,7 @@ export const EXERCISE_PLANS = {
         color: "blue",
         unit: "reps",
         finalGoal: "100 Reps",
-        image: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&h=600&fit=crop",
+        image: "/assets/images/icon-pushups.png",
         weeks: [
             { week: 1, days: [{ id: "p11", reps: [3, 4, 3, 3, 5] }, { id: "p12", reps: [4, 5, 4, 4, 6] }, { id: "p13", reps: [5, 6, 5, 5, 8] }] },
             { week: 2, days: [{ id: "p21", reps: [6, 7, 6, 6, 9] }, { id: "p22", reps: [8, 10, 8, 8, 12] }, { id: "p23", reps: [10, 12, 10, 10, 15] }] },
@@ -48,7 +48,7 @@ export const EXERCISE_PLANS = {
         color: "orange",
         unit: "reps",
         finalGoal: "200 Reps",
-        image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800&h=600&fit=crop",
+        image: "/assets/images/icon-squats.png",
         weeks: [
             { week: 1, days: [{ id: "s11", reps: [15, 18, 15, 15, 20] }, { id: "s12", reps: [18, 22, 18, 18, 25] }, { id: "s13", reps: [20, 25, 20, 20, 30] }] },
             { week: 2, days: [{ id: "s21", reps: [25, 30, 25, 25, 35] }, { id: "s22", reps: [30, 35, 30, 30, 40] }, { id: "s23", reps: [35, 40, 35, 35, 50] }] },
@@ -64,7 +64,7 @@ export const EXERCISE_PLANS = {
         color: "cyan",
         unit: "reps/leg",
         finalGoal: "50 Reps/Leg",
-        image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&h=600&fit=crop",
+        image: "/assets/images/icon-glutebridge.png",
         weeks: [
             { week: 1, days: [{ id: "g11", reps: [5, 6, 5, 5, 8] }, { id: "g12", reps: [6, 8, 6, 6, 10] }, { id: "g13", reps: [8, 10, 8, 8, 12] }] },
             { week: 2, days: [{ id: "g21", reps: [10, 12, 10, 10, 15] }, { id: "g22", reps: [12, 15, 12, 12, 18] }, { id: "g23", reps: [15, 18, 15, 15, 20] }] },
@@ -80,7 +80,7 @@ export const EXERCISE_PLANS = {
         color: "emerald",
         unit: "reps",
         finalGoal: "100 Reps",
-        image: "https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=800&h=600&fit=crop",
+        image: "/assets/images/icon-vups.png",
         weeks: [
             { week: 1, days: [{ id: "v11", reps: [4, 5, 4, 4, 6] }, { id: "v12", reps: [5, 6, 5, 5, 8] }, { id: "v13", reps: [6, 8, 6, 6, 10] }] },
             { week: 2, days: [{ id: "v21", reps: [8, 10, 8, 8, 12] }, { id: "v22", reps: [10, 12, 10, 10, 15] }, { id: "v23", reps: [12, 15, 12, 12, 18] }] },
@@ -128,7 +128,7 @@ export const EXERCISE_PLANS = {
         color: "purple",
         unit: "reps/leg",
         finalGoal: "50 Reps/Leg",
-        image: "https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=800&h=600&fit=crop",
+        image: "/assets/images/icon-lunges.png",
         weeks: [
             { week: 1, days: [{ id: "u11", reps: [6, 8, 6, 6, 10] }, { id: "u12", reps: [8, 10, 8, 8, 12] }, { id: "u13", reps: [10, 12, 10, 10, 15] }] },
             { week: 2, days: [{ id: "u21", reps: [12, 14, 12, 12, 18] }, { id: "u22", reps: [14, 16, 14, 14, 20] }, { id: "u23", reps: [16, 18, 16, 16, 25] }] },

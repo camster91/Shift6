@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronRight, Trophy, Info, Play, Share2, Check, X, Zap } from 'lucide-react';
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { requestWakeLock, releaseWakeLock, vibrate, copyToClipboard } from '../../utils/device';
+import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 
 const ProgressRing = ({ progress, size = 200, stroke = 8, color = "currentColor" }) => {
     const radius = (size / 2) - (stroke * 2);
@@ -270,12 +271,15 @@ const WorkoutSession = ({
 
                 {/* Tips Section with Infographic */}
                 <div className="border-t border-slate-200 bg-slate-50">
-                    {/* Exercise Infographic Placeholder */}
-                    <div className="relative h-48 bg-gradient-to-br from-blue-50 to-slate-50 border-b border-slate-200 flex items-center justify-center">
-                        <div className="text-center">
-                            <div className="text-5xl mb-2">📊</div>
-                            <p className="text-xs text-slate-500 font-medium">Exercise Infographic</p>
-                            <p className="text-[10px] text-slate-400">{currentSession.exerciseName} - Form Guide</p>
+                    {/* Exercise Infographic */}
+                    <div className="relative h-48 border-b border-slate-200 overflow-hidden">
+                        <img
+                            src={EXERCISE_PLANS[currentSession.exerciseKey]?.image}
+                            alt={`${currentSession.exerciseName} form guide`}
+                            className="w-full h-full object-cover"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                            <p className="text-white text-xs font-medium">{currentSession.exerciseName} - Form Guide</p>
                         </div>
                     </div>
 

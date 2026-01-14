@@ -151,10 +151,13 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                                 }}
                                 className="border border-slate-200 rounded-lg hover:border-blue-600 text-left transition-colors group overflow-hidden"
                             >
-                                {/* Exercise Image Placeholder */}
-                                <div className="relative h-40 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 -mx-0 -mt-0 mb-4 flex items-center justify-center rounded-t-lg">
-                                    <div className="text-4xl opacity-30">🏋️</div>
-                                    <div className="absolute bottom-2 right-2 text-[9px] text-slate-400">Image: {ex.name}</div>
+                                {/* Exercise Image */}
+                                <div className="relative h-40 border-b border-slate-200 -mx-0 -mt-0 mb-4 overflow-hidden rounded-t-lg">
+                                    <img
+                                        src={ex.image}
+                                        alt={ex.name}
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
 
                                 <div className="px-5 pb-5">

@@ -14,14 +14,15 @@ const Plan = ({
 
     return (
         <div className="space-y-6 pb-20">
-            {/* Exercise Demo Image Placeholder */}
-            <div className="relative h-48 bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 border border-slate-200 rounded-lg overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="text-6xl mb-3">{React.cloneElement(exercise.icon, { size: 64, className: "text-slate-300 mx-auto" })}</div>
-                        <p className="text-sm text-slate-500 font-semibold">{exercise.name} Demonstration</p>
-                        <p className="text-xs text-slate-400 mt-1">Exercise photo/video placeholder</p>
-                    </div>
+            {/* Exercise Demo Image */}
+            <div className="relative h-64 border border-slate-200 rounded-lg overflow-hidden">
+                <img
+                    src={exercise.image}
+                    alt={`${exercise.name} demonstration`}
+                    className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                    <p className="text-white font-semibold text-sm">{exercise.name} Demonstration</p>
                 </div>
             </div>
 

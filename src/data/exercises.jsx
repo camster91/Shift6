@@ -8,7 +8,10 @@ import {
     Clock,
     Move,
     MoveDown,
-    Wind
+    Wind,
+    ArrowUp,
+    ArrowDown,
+    Minus
 } from 'lucide-react';
 
 // Common rest logic: Weeks 1-3 = 60s, Weeks 4-6 = 90s
@@ -92,11 +95,11 @@ export const EXERCISE_PLANS = {
     },
     pullups: {
         name: "Pull-Ups",
-        icon: <MoveUp size={20} />,
-        color: "indigo",
+        icon: <ArrowUp size={20} />,
+        color: "yellow",
         unit: "reps",
-        finalGoal: "20 Reps",
-        image: "https://images.unsplash.com/photo-1598971639041-9e3c3e3e8da0?w=800&h=600&fit=crop",
+        finalGoal: "50 Reps",
+        image: "neo:pullups",
         weeks: [
             { week: 1, days: [{ id: "l11", reps: [1, 2, 1, 1, 2] }, { id: "l12", reps: [2, 2, 2, 2, 3] }, { id: "l13", reps: [2, 3, 2, 2, 4] }] },
             { week: 2, days: [{ id: "l21", reps: [3, 3, 3, 3, 4] }, { id: "l22", reps: [3, 4, 3, 3, 5] }, { id: "l23", reps: [4, 5, 4, 4, 6] }] },
@@ -108,11 +111,11 @@ export const EXERCISE_PLANS = {
     },
     plank: {
         name: "Plank",
-        icon: <Clock size={20} />,
-        color: "rose",
+        icon: <Minus size={20} />,
+        color: "teal",
         unit: "seconds",
-        finalGoal: "5 Mins",
-        image: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&h=600&fit=crop",
+        finalGoal: "180 Seconds",
+        image: "neo:plank",
         weeks: [
             { week: 1, days: [{ id: "k11", reps: [20, 30, 20, 20, 30] }, { id: "k12", reps: [25, 35, 25, 25, 40] }, { id: "k13", reps: [30, 40, 30, 30, 45] }] },
             { week: 2, days: [{ id: "k21", reps: [35, 45, 35, 35, 50] }, { id: "k22", reps: [40, 50, 40, 40, 60] }, { id: "k23", reps: [45, 60, 45, 45, 70] }] },
@@ -140,11 +143,11 @@ export const EXERCISE_PLANS = {
     },
     dips: {
         name: "Dips",
-        icon: <MoveDown size={20} />,
-        color: "fuchsia",
+        icon: <ArrowDown size={20} />,
+        color: "pink",
         unit: "reps",
         finalGoal: "50 Reps",
-        image: "https://images.unsplash.com/photo-1598971639041-9e3c3e3e8da0?w=800&h=600&fit=crop",
+        image: "neo:dips",
         weeks: [
             { week: 1, days: [{ id: "d11", reps: [3, 4, 3, 3, 5] }, { id: "d12", reps: [4, 5, 4, 4, 6] }, { id: "d13", reps: [5, 6, 5, 5, 8] }] },
             { week: 2, days: [{ id: "d21", reps: [6, 8, 6, 6, 10] }, { id: "d22", reps: [8, 10, 8, 8, 12] }, { id: "d23", reps: [10, 12, 10, 10, 15] }] },
@@ -156,11 +159,11 @@ export const EXERCISE_PLANS = {
     },
     supermans: {
         name: "Supermans",
-        icon: <Wind size={20} />,
-        color: "amber",
+        icon: <Activity size={20} />,
+        color: "indigo",
         unit: "reps",
-        finalGoal: "100 Reps",
-        image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&h=600&fit=crop",
+        finalGoal: "50 Reps",
+        image: "neo:supermans",
         weeks: [
             { week: 1, days: [{ id: "m11", reps: [5, 6, 5, 5, 8] }, { id: "m12", reps: [6, 8, 6, 6, 10] }, { id: "m13", reps: [8, 10, 8, 8, 12] }] },
             { week: 2, days: [{ id: "m21", reps: [10, 12, 10, 10, 15] }, { id: "m22", reps: [12, 15, 12, 12, 18] }, { id: "m23", reps: [15, 18, 15, 15, 20] }] },

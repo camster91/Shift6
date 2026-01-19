@@ -11,7 +11,7 @@ const BottomNav = ({ activeTab, setActiveTab, getThemeClass }) => {
 
     return (
         <nav className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4">
-            <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl p-1.5 flex justify-between items-center relative overflow-hidden">
+            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-full shadow-2xl p-1.5 flex justify-between items-center relative overflow-hidden">
                 {tabs.map((tab) => {
                     const isActive = activeTab === tab.id;
                     return (

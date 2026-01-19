@@ -7,7 +7,6 @@ import { calculateStats } from '../../utils/gamification';
 import NeonBadge from '../Visuals/NeonBadge';
 import NeoIcon from '../Visuals/NeoIcon';
 import DataBackground from '../Visuals/DataBackground';
-import MindsetCard from '../Visuals/MindsetCard';
 
 const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActiveTab, startStack, workoutQueue, setWorkoutQueue }) => {
     const dailyStack = getDailyStack(completedDays);
@@ -133,11 +132,6 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                         </button>
                     )}
                 </div>
-            </div>
-
-            {/* Pro Tip Card */}
-            <div>
-                <MindsetCard />
             </div>
 
             {/* Recent Activity */}

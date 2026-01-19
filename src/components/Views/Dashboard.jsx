@@ -19,9 +19,11 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent" />
                 <div className="relative p-6 flex items-center justify-between">
                     <div>
-                        <p className="text-xs text-cyan-400 font-semibold uppercase tracking-wider mb-1">Welcome back</p>
+                        <p className="text-xs text-cyan-400 font-semibold uppercase tracking-wider mb-1">{getScheduleFocus()}</p>
                         <h1 className="text-2xl font-bold text-white">
-                            {dailyStack.length > 0 ? `${dailyStack.length} exercises today` : 'All caught up'}
+                            {dailyStack.length > 0
+                                ? `${dailyStack.length} exercises today`
+                                : (new Date().getDay() === 0 ? 'Rest Day' : 'All caught up')}
                         </h1>
                     </div>
                     {dailyStack.length > 0 && (

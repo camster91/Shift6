@@ -115,17 +115,17 @@ const App = () => {
     const getThemeClass = (part) => {
         const exercise = EXERCISE_PLANS[activeExercise];
         const colors = {
-            blue: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
-            orange: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
-            emerald: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
-            indigo: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
-            rose: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
+            blue: { bg: 'bg-blue-500', border: 'border-blue-500', text: 'text-blue-400', ring: 'ring-blue-500', hover: 'hover:border-blue-400', light: 'bg-blue-500/10' },
+            orange: { bg: 'bg-orange-500', border: 'border-orange-500', text: 'text-orange-400', ring: 'ring-orange-500', hover: 'hover:border-orange-400', light: 'bg-orange-500/10' },
+            emerald: { bg: 'bg-emerald-500', border: 'border-emerald-500', text: 'text-emerald-400', ring: 'ring-emerald-500', hover: 'hover:border-emerald-400', light: 'bg-emerald-500/10' },
+            indigo: { bg: 'bg-indigo-500', border: 'border-indigo-500', text: 'text-indigo-400', ring: 'ring-indigo-500', hover: 'hover:border-indigo-400', light: 'bg-indigo-500/10' },
             cyan: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
-            purple: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
-            fuchsia: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
-            amber: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
+            purple: { bg: 'bg-purple-500', border: 'border-purple-500', text: 'text-purple-400', ring: 'ring-purple-500', hover: 'hover:border-purple-400', light: 'bg-purple-500/10' },
+            pink: { bg: 'bg-pink-500', border: 'border-pink-500', text: 'text-pink-400', ring: 'ring-pink-500', hover: 'hover:border-pink-400', light: 'bg-pink-500/10' },
+            yellow: { bg: 'bg-yellow-500', border: 'border-yellow-500', text: 'text-yellow-400', ring: 'ring-yellow-500', hover: 'hover:border-yellow-400', light: 'bg-yellow-500/10' },
+            teal: { bg: 'bg-teal-500', border: 'border-teal-500', text: 'text-teal-400', ring: 'ring-teal-500', hover: 'hover:border-teal-400', light: 'bg-teal-500/10' },
         };
-        const config = colors[exercise.color] || colors.blue;
+        const config = colors[exercise.color] || colors.cyan;
         return config[part] || '';
     };
 
@@ -297,7 +297,7 @@ const App = () => {
     // ---------------- RENDER ----------------
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 pb-32 font-sans selection:bg-slate-200">
+        <div className="min-h-screen bg-slate-950 text-slate-100 pb-32 font-sans selection:bg-cyan-500/30">
             <Header
                 activeTab={activeTab}
                 activeExercise={activeExercise}

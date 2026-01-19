@@ -102,7 +102,7 @@ const Plan = ({
                                             <button
                                                 key={day.id}
                                                 onClick={() => { vibrate(20); startWorkout(weekData.week, dIdx); }}
-                                                className={`p-5 rounded-lg text-left transition-all ${
+                                                className={`p-4 md:p-6 rounded-lg text-left transition-all ${
                                                     isCompleted ? 'bg-slate-900/30 border border-slate-700 opacity-50' :
                                                     isNext ? 'border-2 border-cyan-500 bg-slate-900/50 neon-border animate-pulse-glow' :
                                                     'border border-slate-700 bg-slate-900/50 hover:border-cyan-500/50'

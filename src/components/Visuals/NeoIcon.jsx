@@ -1,15 +1,9 @@
-import React from 'react';
 import {
     Activity,
     ArrowUp,
     ArrowDown,
-    Triangle,
     Circle,
-    Minus,
-    MoveVertical,
-    StretchHorizontal,
-    Dumbbell,
-    User
+    Minus
 } from 'lucide-react';
 
 const NeoIcon = ({ type }) => {

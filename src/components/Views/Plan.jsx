@@ -6,8 +6,7 @@ import { vibrate } from '../../utils/device';
 const Plan = ({
     activeExercise,
     completedDays,
-    startWorkout,
-    getThemeClass
+    startWorkout
 }) => {
     const exercise = EXERCISE_PLANS[activeExercise];
     const completedCount = completedDays[activeExercise]?.length || 0;

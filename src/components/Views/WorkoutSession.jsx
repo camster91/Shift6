@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronRight, Trophy, Info, Play, Share2, Check, X, Zap } from 'lucide-react';
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
-import { requestWakeLock, releaseWakeLock, vibrate, copyToClipboard } from '../../utils/device';
+import { vibrate, copyToClipboard } from '../../utils/device';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 
 const ProgressRing = ({ progress, size = 200, stroke = 8, color = "currentColor" }) => {
@@ -51,11 +51,8 @@ const WorkoutSession = ({
     handleTestSubmit,
     applyCalibration,
     completeWorkout,
-    getThemeClass,
-    setActiveTab,
-    exerciseName
+    setActiveTab
 }) => {
-    const [isFinished, setIsFinished] = useState(false);
     const [copied, setCopied] = useState(false);
 
     // Audio/Vibrate Effect
@@ -70,7 +67,6 @@ const WorkoutSession = ({
     const handleComplete = () => {
         playSuccess();
         vibrate([50, 50, 50, 50, 200]);
-        setIsFinished(true);
         completeWorkout();
     };
 

@@ -1,7 +1,6 @@
-import React from 'react';
 import { Info, Clock, ArrowUp, Target, Zap, TrendingUp } from 'lucide-react';
 
-const Guide = ({ getThemeClass }) => {
+const Guide = () => {
     return (
         <div className="space-y-8 pb-24">
             {/* Header Section */}

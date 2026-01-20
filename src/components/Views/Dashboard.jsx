@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Zap, CheckCircle2 } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 import { getDailyStack, getScheduleFocus } from '../../utils/schedule';
@@ -8,7 +8,7 @@ import NeoIcon from '../Visuals/NeoIcon';
 import DataBackground from '../Visuals/DataBackground';
 import { BADGES, getUnlockedBadges } from '../../utils/gamification';
 
-const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActiveTab, startStack, workoutQueue, setWorkoutQueue }) => {
+const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActiveTab, startStack }) => {
     const dailyStack = getDailyStack(completedDays);
     const stats = calculateStats(completedDays, sessionHistory);
 

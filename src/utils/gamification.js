@@ -1,5 +1,3 @@
-import { EXERCISE_PLANS } from '../data/exercises.jsx';
-
 // Badges Configuration
 export const BADGES = [
     { id: 'first_step', name: 'First Step', desc: 'Complete your first workout', icon: '🌱', condition: (p) => p.totalSessions >= 1 },

@@ -33,7 +33,6 @@ export const playStart = () => {
 
 export const playSuccess = () => {
     // Victory fanfare little sequence
-    const now = audioCtx.currentTime;
     [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
         setTimeout(() => playTone(freq, 'triangle', 0.2, 0.1), i * 150);
     });

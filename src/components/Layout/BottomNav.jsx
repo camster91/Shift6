@@ -1,7 +1,7 @@
 import React from 'react';
 import { LayoutDashboard, Calendar, Dumbbell, BookOpen } from 'lucide-react';
 
-const BottomNav = ({ activeTab, setActiveTab, getThemeClass }) => {
+const BottomNav = ({ activeTab, setActiveTab }) => {
     const tabs = [
         { id: 'dashboard', label: 'Home', icon: <LayoutDashboard size={20} /> },
         { id: 'plan', label: 'Plan', icon: <Calendar size={20} /> },

@@ -1,14 +1,9 @@
-import React from 'react';
 import {
     Dumbbell,
     Zap,
     Activity,
     Triangle,
-    MoveUp,
-    Clock,
     Move,
-    MoveDown,
-    Wind,
     ArrowUp,
     ArrowDown,
     Minus

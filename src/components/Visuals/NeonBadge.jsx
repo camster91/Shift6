@@ -1,5 +1,3 @@
-import React from 'react';
-
 const NeonBadge = ({ type, label, subtext }) => {
     const styles = {
         bronze: {

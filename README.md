@@ -107,23 +107,56 @@ npm run cap:android
 
 ## Roadmap
 
-### Planned Features
+### Phase 1: Core Enhancements
 
 - **Progress Graphs**: Visual charts showing volume and strength gains over time
 - **Rest Timer**: Configurable rest periods between sets with audio alerts
 - **Workout Reminders**: Push notifications for scheduled workout days
+- **Personal Records**: Track and celebrate all-time bests for each exercise
+- **Workout Notes**: Add notes/journal entries to workout sessions
+- **Calendar View**: Visual monthly calendar showing workout history
+
+### Phase 2: Customization & Content
+
 - **Dark/Light Themes**: User-selectable color themes beyond the current neon aesthetic
 - **Exercise Variations**: Alternative movements for each exercise (e.g., knee push-ups, assisted pull-ups)
 - **Custom Programs**: User-defined exercise combinations and progression schemes
+- **Form Videos**: Embedded exercise demonstration clips with proper technique
+- **Warm-up Routines**: Guided warm-up sequences before workouts
+- **Cool-down Stretches**: Post-workout stretching recommendations
 
-### Future Improvements
+### Phase 3: Advanced Features
 
 - **Cloud Sync** (Optional): Sync progress across devices while maintaining privacy-first defaults
+- **Apple Health / Google Fit**: Integration with native health platforms
 - **Apple Watch / WearOS**: Companion app for wrist-based workout tracking
 - **Social Sharing**: Share achievements and milestones (opt-in)
-- **Form Videos**: Embedded exercise demonstration clips
+- **Workout Challenges**: Time-limited community challenges
+- **Body Metrics**: Optional weight/measurements tracking
+
+### Phase 4: Platform Expansion
+
 - **Multi-language Support**: i18n for global accessibility
-- **Accessibility**: Screen reader support and high-contrast mode
+- **Accessibility**: Screen reader support, high-contrast mode, reduced motion
+- **Home Screen Widgets**: Quick stats on iOS/Android home screens
+- **Siri / Google Assistant**: Voice shortcuts for starting workouts
+- **Offline Backup**: Export to device storage (not just JSON download)
+- **QR Code Sync**: Quick data transfer between devices
+
+### Feature Ideas Backlog
+
+| Feature | Description | Complexity |
+|---------|-------------|------------|
+| Interval Training | HIIT mode with work/rest cycles | Medium |
+| Voice Commands | Hands-free workout control | High |
+| Weekly Reports | Email/notification summaries | Medium |
+| Exercise Swaps | Substitute exercises mid-program | Low |
+| Superset Mode | Pair exercises with minimal rest | Medium |
+| Deload Weeks | Automatic recovery week scheduling | Low |
+| Plateau Detection | Alert when progress stalls | Medium |
+| Heart Rate Zones | Integration with HR monitors | High |
+| AI Form Check | Camera-based form analysis | Very High |
+| Nutrition Tips | Basic nutrition guidance per goal | Low |
 
 ### Technical Debt
 
@@ -131,6 +164,10 @@ npm run cap:android
 - [ ] Add E2E tests with Playwright
 - [ ] Improve test coverage for components
 - [ ] Add TypeScript for type safety
+- [ ] Migrate localStorage to IndexedDB for larger storage
+- [ ] Add error tracking (Sentry)
+- [ ] Implement proper PWA update flow
+- [ ] Add privacy-respecting analytics
 
 ## Contributing
 

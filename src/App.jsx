@@ -31,6 +31,11 @@ const App = () => {
         return saved !== null ? JSON.parse(saved) : true;
     });
 
+    const [restTimerOverride, setRestTimerOverride] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}rest_timer`);
+        return saved !== null ? JSON.parse(saved) : null; // null = use defaults
+    });
+
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}progress`, JSON.stringify(completedDays));
     }, [completedDays]);
@@ -42,6 +47,10 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}audio_enabled`, JSON.stringify(audioEnabled));
     }, [audioEnabled]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}rest_timer`, JSON.stringify(restTimerOverride));
+    }, [restTimerOverride]);
 
     // UI State
     const [activeTab, setActiveTabState] = useState(() => {
@@ -169,7 +178,7 @@ const App = () => {
             week,
             dayIndex,
             setIndex: 0,
-            rest: getRest(week),
+            rest: restTimerOverride !== null ? restTimerOverride : getRest(week),
             baseReps: day.reps, // Store original reps
             reps: day.reps,     // Will be modified by assessment
             dayId: day.id,
@@ -354,6 +363,8 @@ const App = () => {
                 onFactoryReset={handleFactoryReset}
                 audioEnabled={audioEnabled}
                 setAudioEnabled={setAudioEnabled}
+                restTimerOverride={restTimerOverride}
+                setRestTimerOverride={setRestTimerOverride}
             />
 
             <main className="max-w-6xl mx-auto p-4 md:p-8 mt-4">

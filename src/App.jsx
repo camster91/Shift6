@@ -25,6 +25,22 @@ const App = () => {
         return saved ? JSON.parse(saved) : [];
     });
 
+    // Settings
+    const [audioEnabled, setAudioEnabled] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}audio_enabled`);
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+
+    const [restTimerOverride, setRestTimerOverride] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}rest_timer`);
+        return saved !== null ? JSON.parse(saved) : null; // null = use defaults
+    });
+
+    const [theme, setTheme] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}theme`);
+        return saved || 'dark';
+    });
+
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}progress`, JSON.stringify(completedDays));
     }, [completedDays]);
@@ -32,6 +48,21 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
     }, [sessionHistory]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}audio_enabled`, JSON.stringify(audioEnabled));
+    }, [audioEnabled]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}rest_timer`, JSON.stringify(restTimerOverride));
+    }, [restTimerOverride]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}theme`, theme);
+        // Apply theme class to document root
+        document.documentElement.classList.remove('dark', 'light');
+        document.documentElement.classList.add(theme);
+    }, [theme]);
 
     // UI State
     const [activeTab, setActiveTabState] = useState(() => {
@@ -109,6 +140,7 @@ const App = () => {
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     const [testInput, setTestInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [workoutNotes, setWorkoutNotes] = useState('');
 
     // ---------------- HELPERS ----------------
 
@@ -158,7 +190,7 @@ const App = () => {
             week,
             dayIndex,
             setIndex: 0,
-            rest: getRest(week),
+            rest: restTimerOverride !== null ? restTimerOverride : getRest(week),
             baseReps: day.reps, // Store original reps
             reps: day.reps,     // Will be modified by assessment
             dayId: day.id,
@@ -172,6 +204,7 @@ const App = () => {
         setAmrapValue('');
         setTestInput('');
         setTimeLeft(0);
+        setWorkoutNotes('');
     };
 
     const startStack = () => {
@@ -204,9 +237,11 @@ const App = () => {
             dayId,
             date: new Date().toISOString(),
             volume: totalVolume,
-            unit
+            unit,
+            notes: workoutNotes.trim() || undefined
         };
         setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
+        setWorkoutNotes('');
 
         setCompletedDays(newCompletedDays);
 
@@ -264,6 +299,34 @@ const App = () => {
         URL.revokeObjectURL(url);
     };
 
+    const handleExportCSV = () => {
+        if (sessionHistory.length === 0) {
+            alert('No workout history to export.');
+            return;
+        }
+
+        const headers = ['Date', 'Exercise', 'Day', 'Volume', 'Unit', 'Notes'];
+        const rows = sessionHistory.map(s => [
+            new Date(s.date).toLocaleString(),
+            EXERCISE_PLANS[s.exerciseKey]?.name || s.exerciseKey,
+            s.dayId,
+            s.volume,
+            s.unit,
+            s.notes ? `"${s.notes.replace(/"/g, '""')}"` : ''
+        ]);
+
+        const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `shift6_history_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     const handleImport = (file) => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -297,7 +360,9 @@ const App = () => {
     // ---------------- RENDER ----------------
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 pb-32 font-sans selection:bg-cyan-500/30">
+        <div className={`min-h-screen pb-32 font-sans selection:bg-cyan-500/30 ${
+            theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
+        }`}>
             <Header
                 activeTab={activeTab}
                 activeExercise={activeExercise}
@@ -307,8 +372,15 @@ const App = () => {
                 getThemeClass={getThemeClass}
                 setActiveTab={setActiveTab}
                 onExport={handleExport}
+                onExportCSV={handleExportCSV}
                 onImport={handleImport}
                 onFactoryReset={handleFactoryReset}
+                audioEnabled={audioEnabled}
+                setAudioEnabled={setAudioEnabled}
+                restTimerOverride={restTimerOverride}
+                setRestTimerOverride={setRestTimerOverride}
+                theme={theme}
+                setTheme={setTheme}
             />
 
             <main className="max-w-6xl mx-auto p-4 md:p-8 mt-4">
@@ -351,6 +423,9 @@ const App = () => {
                         getThemeClass={getThemeClass}
                         setActiveTab={setActiveTab}
                         exerciseName={EXERCISE_PLANS[activeExercise].name}
+                        audioEnabled={audioEnabled}
+                        workoutNotes={workoutNotes}
+                        setWorkoutNotes={setWorkoutNotes}
                     />
                 )}
 

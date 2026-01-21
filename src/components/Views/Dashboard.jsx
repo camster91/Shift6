@@ -3,14 +3,17 @@ import { Zap, CheckCircle2 } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 import { getDailyStack, getScheduleFocus } from '../../utils/schedule';
 import { vibrate } from '../../utils/device';
-import { calculateStats } from '../../utils/gamification';
+import { calculateStats, getPersonalRecords } from '../../utils/gamification';
 import NeoIcon from '../Visuals/NeoIcon';
 import DataBackground from '../Visuals/DataBackground';
 import { BADGES, getUnlockedBadges } from '../../utils/gamification';
+import { Trophy } from 'lucide-react';
+import CalendarView from './CalendarView';
 
 const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActiveTab, startStack }) => {
     const dailyStack = getDailyStack(completedDays);
     const stats = calculateStats(completedDays, sessionHistory);
+    const personalRecords = getPersonalRecords(sessionHistory);
 
     return (
         <div className="space-y-8 pb-24">
@@ -122,6 +125,9 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                 </div>
             </div>
 
+            {/* Calendar View */}
+            <CalendarView sessionHistory={sessionHistory} />
+
             {/* Recent Activity */}
             {sessionHistory.length > 0 && (
                 <div className="relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
@@ -132,19 +138,24 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                         <h2 className="text-sm font-semibold text-white mb-4">Activity Log</h2>
                         <div className="space-y-1">
                             {sessionHistory.slice(0, 5).map((session, i) => (
-                                <div key={i} className="flex items-center justify-between py-3 border-b border-slate-800 last:border-0 hover:bg-slate-800/50 px-3 -mx-3 rounded transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 flex items-center justify-center bg-slate-800 rounded text-cyan-400">
-                                            {React.cloneElement(EXERCISE_PLANS[session.exerciseKey].icon, { size: 16 })}
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-medium text-slate-200">{EXERCISE_PLANS[session.exerciseKey].name}</div>
-                                            <div className="text-xs text-slate-500">
-                                                {new Date(session.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                <div key={i} className="py-3 border-b border-slate-800 last:border-0 hover:bg-slate-800/50 px-3 -mx-3 rounded transition-colors">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 flex items-center justify-center bg-slate-800 rounded text-cyan-400">
+                                                {React.cloneElement(EXERCISE_PLANS[session.exerciseKey].icon, { size: 16 })}
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium text-slate-200">{EXERCISE_PLANS[session.exerciseKey].name}</div>
+                                                <div className="text-xs text-slate-500">
+                                                    {new Date(session.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className="text-sm font-semibold text-white tabular-nums">{session.volume} <span className="text-xs text-slate-500 font-normal ml-1">{session.unit}</span></div>
                                     </div>
-                                    <div className="text-sm font-semibold text-white tabular-nums">{session.volume} <span className="text-xs text-slate-500 font-normal ml-1">{session.unit}</span></div>
+                                    {session.notes && (
+                                        <div className="mt-2 ml-11 text-xs text-slate-400 italic">&ldquo;{session.notes}&rdquo;</div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -164,6 +175,7 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                     {Object.entries(EXERCISE_PLANS).map(([key, ex]) => {
                         const count = completedDays[key]?.length || 0;
                         const percent = Math.min(100, Math.round((count / 18) * 100));
+                        const pr = personalRecords[key];
 
                         return (
                             <button
@@ -192,6 +204,14 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                                     {count > 0 && (
                                         <div className="absolute top-3 right-3 bg-cyan-500 text-white p-1 rounded-full shadow-lg">
                                             <CheckCircle2 size={14} />
+                                        </div>
+                                    )}
+
+                                    {/* Personal Record Badge */}
+                                    {pr && (
+                                        <div className="absolute top-3 left-3 bg-amber-500/90 text-white px-2 py-1 rounded-lg shadow-lg flex items-center gap-1">
+                                            <Trophy size={12} />
+                                            <span className="text-xs font-bold">{pr.volume} {ex.unit}</span>
                                         </div>
                                     )}
                                 </div>

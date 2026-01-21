@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronLeft, Settings, Download, Upload, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronLeft, Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 
 const Header = ({
@@ -11,8 +11,15 @@ const Header = ({
     getThemeClass,
     setActiveTab,
     onExport,
+    onExportCSV,
     onImport,
-    onFactoryReset
+    onFactoryReset,
+    audioEnabled,
+    setAudioEnabled,
+    restTimerOverride,
+    setRestTimerOverride,
+    theme,
+    setTheme
 }) => {
     const exercise = EXERCISE_PLANS[activeExercise];
 
@@ -88,15 +95,43 @@ const Header = ({
                     </div>
 
                     {/* Settings / Data Menu */}
-                    <DataMenu onExport={onExport} onImport={onImport} onFactoryReset={onFactoryReset} />
+                    <DataMenu
+                        onExport={onExport}
+                        onExportCSV={onExportCSV}
+                        onImport={onImport}
+                        onFactoryReset={onFactoryReset}
+                        audioEnabled={audioEnabled}
+                        setAudioEnabled={setAudioEnabled}
+                        restTimerOverride={restTimerOverride}
+                        setRestTimerOverride={setRestTimerOverride}
+                        theme={theme}
+                        setTheme={setTheme}
+                    />
                 </div>
             </div>
         </header>
     );
 };
 
-const DataMenu = ({ onExport, onImport, onFactoryReset }) => {
+const REST_OPTIONS = [
+    { value: null, label: 'Auto' },
+    { value: 30, label: '30s' },
+    { value: 45, label: '45s' },
+    { value: 60, label: '60s' },
+    { value: 90, label: '90s' },
+    { value: 120, label: '120s' }
+];
+
+const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride, theme, setTheme }) => {
     const [isOpen, setIsOpen] = React.useState(false);
+
+    const cycleRestTimer = () => {
+        const currentIndex = REST_OPTIONS.findIndex(o => o.value === restTimerOverride);
+        const nextIndex = (currentIndex + 1) % REST_OPTIONS.length;
+        setRestTimerOverride(REST_OPTIONS[nextIndex].value);
+    };
+
+    const currentRestLabel = REST_OPTIONS.find(o => o.value === restTimerOverride)?.label || 'Auto';
 
     return (
         <div className="relative">
@@ -112,10 +147,40 @@ const DataMenu = ({ onExport, onImport, onFactoryReset }) => {
                     <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
                     <div className="absolute top-full right-0 mt-2 w-48 bg-slate-900 text-white rounded-xl shadow-2xl border border-slate-800 overflow-hidden py-1 z-20 animate-in fade-in zoom-in-95 duration-200">
                         <button
+                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                        </button>
+                        <button
+                            onClick={() => setAudioEnabled(!audioEnabled)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            {audioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                            {audioEnabled ? 'Sound On' : 'Sound Off'}
+                        </button>
+                        <button
+                            onClick={cycleRestTimer}
+                            className="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            <span className="flex items-center gap-3">
+                                <Timer size={16} /> Rest Timer
+                            </span>
+                            <span className="text-cyan-400">{currentRestLabel}</span>
+                        </button>
+                        <div className="h-[1px] bg-slate-800 my-1" />
+                        <button
                             onClick={() => { onExport(); setIsOpen(false); }}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
                         >
                             <Download size={16} /> Backup Data
+                        </button>
+                        <button
+                            onClick={() => { onExportCSV(); setIsOpen(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            <FileSpreadsheet size={16} /> Export CSV
                         </button>
                         <label className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer">
                             <Upload size={16} /> Restore Data

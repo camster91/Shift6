@@ -2,8 +2,13 @@ import {
     MS_PER_DAY,
     TOTAL_DAYS_PER_EXERCISE,
     EARLY_WORKOUT_HOUR,
-    LATE_WORKOUT_HOUR
-} from './constants';
+    LATE_WORKOUT_HOUR,
+    UPPER_BODY_EXERCISES,
+    LOWER_BODY_EXERCISES
+} from './constants'
+
+/** Total number of exercises in the program */
+const TOTAL_EXERCISES = UPPER_BODY_EXERCISES.length + LOWER_BODY_EXERCISES.length
 
 /**
  * @typedef {Object} Badge
@@ -40,10 +45,13 @@ export const BADGES = [
     { id: 'first_step', name: 'First Step', desc: 'Complete your first workout', icon: '🌱', condition: (p) => p.totalSessions >= 1 },
     { id: 'week_warrior', name: 'Week Warrior', desc: 'Complete 3 workouts in a week', icon: '⚔️', condition: (p) => p.currentStreak >= 3 },
     { id: 'on_fire', name: 'On Fire', desc: '7 day streak', icon: '🔥', condition: (p) => p.currentStreak >= 7 },
+    { id: 'month_monster', name: 'Month Monster', desc: '30 day streak', icon: '👹', condition: (p) => p.currentStreak >= 30 },
+    { id: 'century_club', name: 'Century Club', desc: '100 total workouts', icon: '💯', condition: (p) => p.totalSessions >= 100 },
     { id: 'mastery', name: 'Master', desc: 'Complete an entire plan', icon: '👑', condition: (p) => p.completedPlans > 0 },
+    { id: 'complete_athlete', name: 'Complete Athlete', desc: `Master all ${TOTAL_EXERCISES} exercises`, icon: '🏆', condition: (p) => p.completedPlans >= TOTAL_EXERCISES },
     { id: 'early_bird', name: 'Early Bird', desc: `Workout before ${EARLY_WORKOUT_HOUR}am`, icon: '🌅', condition: (p) => p.hasEarlyWorkout },
     { id: 'night_owl', name: 'Night Owl', desc: `Workout after ${LATE_WORKOUT_HOUR - 12}pm`, icon: '🦉', condition: (p) => p.hasLateWorkout },
-];
+]
 
 /**
  * Calculates user statistics from completed workouts and session history.
@@ -118,4 +126,34 @@ export const calculateStats = (completedDays, sessionHistory = []) => {
  */
 export const getUnlockedBadges = (stats) => {
     return BADGES.filter(badge => badge.condition(stats));
+};
+
+/**
+ * Calculates personal records (max volume) for each exercise from session history.
+ * @param {SessionHistoryItem[]} sessionHistory - Array of session history items
+ * @returns {Object.<string, {volume: number, date: string}>} Map of exercise keys to PR info
+ */
+export const getPersonalRecords = (sessionHistory = []) => {
+    const prs = {};
+    sessionHistory.forEach(session => {
+        const { exerciseKey, volume, date } = session;
+        if (!prs[exerciseKey] || volume > prs[exerciseKey].volume) {
+            prs[exerciseKey] = { volume, date };
+        }
+    });
+    return prs;
+};
+
+/**
+ * Checks if a given volume is a new personal record for an exercise.
+ * @param {string} exerciseKey - The exercise key
+ * @param {number} volume - The volume to check
+ * @param {SessionHistoryItem[]} sessionHistory - Previous session history (not including current)
+ * @returns {boolean} True if this is a new PR
+ */
+export const isNewPersonalRecord = (exerciseKey, volume, sessionHistory = []) => {
+    const exerciseHistory = sessionHistory.filter(s => s.exerciseKey === exerciseKey);
+    if (exerciseHistory.length === 0) return volume > 0;
+    const maxVolume = Math.max(...exerciseHistory.map(s => s.volume));
+    return volume > maxVolume;
 };

@@ -1,6 +1,6 @@
 # Shift6
 
-**Shift6** is a Progressive Web App (PWA) designed to help you master 6 foundational bodyweight exercises over a 6-week progression system.
+**Shift6** is a Progressive Web App (PWA) designed to help you master 9 foundational bodyweight exercises over a 6-week progression system.
 
 Built with **React**, **Vite**, **TailwindCSS**, and **Capacitor** for native mobile deployment.
 
@@ -168,9 +168,9 @@ npm run cap:android
 |-------------|-------------|
 | First Steps | Complete your first workout |
 | Push-up Pro | Master all 18 days of push-ups |
-| Complete Athlete | Master all 6 exercises |
+| Complete Athlete | Master all 9 exercises |
 | Double Trouble | Do 2 exercises in one day |
-| Six Pack | Do all 6 exercises in one day |
+| Nine Lives | Do all 9 exercises in one day |
 | Week Warrior | 7-day streak |
 | Month Monster | 30-day streak |
 | Century Club | 100 total workouts |

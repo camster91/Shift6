@@ -278,6 +278,34 @@ const App = () => {
         URL.revokeObjectURL(url);
     };
 
+    const handleExportCSV = () => {
+        if (sessionHistory.length === 0) {
+            alert('No workout history to export.');
+            return;
+        }
+
+        const headers = ['Date', 'Exercise', 'Day', 'Volume', 'Unit', 'Notes'];
+        const rows = sessionHistory.map(s => [
+            new Date(s.date).toLocaleString(),
+            EXERCISE_PLANS[s.exerciseKey]?.name || s.exerciseKey,
+            s.dayId,
+            s.volume,
+            s.unit,
+            s.notes ? `"${s.notes.replace(/"/g, '""')}"` : ''
+        ]);
+
+        const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `shift6_history_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     const handleImport = (file) => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -321,6 +349,7 @@ const App = () => {
                 getThemeClass={getThemeClass}
                 setActiveTab={setActiveTab}
                 onExport={handleExport}
+                onExportCSV={handleExportCSV}
                 onImport={handleImport}
                 onFactoryReset={handleFactoryReset}
                 audioEnabled={audioEnabled}

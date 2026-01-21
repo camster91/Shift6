@@ -30,7 +30,7 @@ export const EXERCISE_PLANS = {
         color: "blue",
         unit: "reps",
         finalGoal: "100 Reps",
-        image: "/assets/images/icon-pushups.png",
+        image: "neo:pushups",
         youtubeId: "IODxDxX7oi4", // Athlean-X perfect push-up form
         instructions: "Keep body straight from head to heels. Lower chest to floor, elbows at 45°. Push through palms, engage core throughout.",
         tips: ["Don't let hips sag", "Full range of motion", "Breathe out on push"],
@@ -49,7 +49,7 @@ export const EXERCISE_PLANS = {
         color: "orange",
         unit: "reps",
         finalGoal: "200 Reps",
-        image: "/assets/images/icon-squats.png",
+        image: "neo:squats",
         youtubeId: "YaXPRqUwItQ", // Squat form tutorial
         instructions: "Feet shoulder-width apart, toes slightly out. Sit back and down, keeping knees tracking over toes. Drive through heels to stand.",
         tips: ["Keep chest up", "Depth: thighs parallel or below", "Don't let knees cave in"],
@@ -68,7 +68,7 @@ export const EXERCISE_PLANS = {
         color: "cyan",
         unit: "reps/leg",
         finalGoal: "50 Reps/Leg",
-        image: "/assets/images/icon-glutebridge.png",
+        image: "neo:glutebridge",
         youtubeId: "AVAXhy6pl7o", // Single leg glute bridge tutorial
         instructions: "Lie on back, one foot flat on floor. Drive through heel, squeeze glutes at top. Lower with control, keep hips level.",
         tips: ["Don't hyperextend lower back", "Squeeze glutes hard at top", "Keep core engaged"],
@@ -87,7 +87,7 @@ export const EXERCISE_PLANS = {
         color: "emerald",
         unit: "reps",
         finalGoal: "100 Reps",
-        image: "/assets/images/icon-vups.png",
+        image: "neo:vups",
         youtubeId: "7UVgs18Y1P4", // V-Up tutorial
         instructions: "Lie flat, arms overhead. Simultaneously lift legs and torso, reaching hands toward toes. Lower with control.",
         tips: ["Keep legs straight", "Touch toes at top", "Control the negative"],
@@ -144,7 +144,7 @@ export const EXERCISE_PLANS = {
         color: "purple",
         unit: "reps/leg",
         finalGoal: "50 Reps/Leg",
-        image: "/assets/images/icon-lunges.png",
+        image: "neo:lunges",
         youtubeId: "QOVaHwm-Q6U", // Lunge form tutorial
         instructions: "Step forward, lower until both knees at 90°. Front knee stays over ankle. Push through front heel to return.",
         tips: ["Keep torso upright", "Don't let knee pass toes", "Control the descent"],

@@ -128,12 +128,14 @@ const WorkoutSession = ({
 
     if (currentSession.step === 'assessment') {
         return (
-            <div className="max-w-md mx-auto py-12">
-                <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl p-12 text-center backdrop-blur-sm neon-border">
+            <div className="max-w-md mx-auto py-12 px-4">
+                <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl p-8 md:p-12 text-center backdrop-blur-sm neon-border">
                     <Trophy className="mx-auto text-cyan-400 mb-6" size={48} />
                     <h2 className="text-2xl font-bold mb-3 text-white">Initial Assessment</h2>
                     <p className="text-sm text-slate-400 mb-8">
-                        Perform {currentSession.exerciseName} to failure with proper form
+                        Perform {currentSession.exerciseName} to failure with proper form.
+                        <br />
+                        <span className="text-cyan-400">This is just to find your starting point.</span>
                     </p>
 
                     <form onSubmit={handleTestSubmit} className="space-y-4">
@@ -153,16 +155,64 @@ const WorkoutSession = ({
                             disabled={!testInput}
                             className="w-full bg-cyan-500 rounded-lg py-4 text-slate-900 font-bold hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors uppercase tracking-wider"
                         >
-                            Set Baseline
+                            Set Baseline & Continue
                         </button>
                     </form>
 
-                    <button
-                        onClick={() => applyCalibration(1)}
-                        className="text-slate-500 text-xs font-medium mt-4 hover:text-cyan-400 transition-colors"
-                    >
-                        Use default instead
-                    </button>
+                    <div className="flex items-center justify-center gap-4 mt-6">
+                        <button
+                            onClick={() => applyCalibration(1, true)}
+                            className="text-slate-500 text-xs font-medium hover:text-cyan-400 transition-colors"
+                        >
+                            Use default & start
+                        </button>
+                        <span className="text-slate-700">|</span>
+                        <button
+                            onClick={() => setCurrentSession(null)}
+                            className="text-slate-500 text-xs font-medium hover:text-cyan-400 transition-colors"
+                        >
+                            Save & Exit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Post-assessment confirmation - option to start workout or exit
+    if (currentSession.step === 'assessment-complete') {
+        return (
+            <div className="max-w-md mx-auto py-12 px-4">
+                <div className="bg-slate-900/50 border border-emerald-500/20 rounded-xl p-8 md:p-12 text-center backdrop-blur-sm">
+                    <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Check className="text-emerald-400" size={32} />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-3 text-white">Assessment Complete!</h2>
+                    <p className="text-sm text-slate-400 mb-2">
+                        Your program is calibrated for {currentSession.exerciseName}.
+                    </p>
+                    <p className="text-lg font-bold text-cyan-400 mb-8">
+                        Day 1 is ready when you are.
+                    </p>
+
+                    <div className="space-y-3">
+                        <button
+                            onClick={() => setCurrentSession(prev => ({ ...prev, step: 'workout' }))}
+                            className="w-full bg-cyan-500 rounded-lg py-4 text-slate-900 font-bold hover:bg-cyan-600 transition-colors uppercase tracking-wider"
+                        >
+                            Start Day 1 Now
+                        </button>
+                        <button
+                            onClick={() => setCurrentSession(null)}
+                            className="w-full bg-slate-800 border border-slate-700 rounded-lg py-4 text-white font-medium hover:bg-slate-700 transition-colors"
+                        >
+                            Save & Come Back Later
+                        </button>
+                    </div>
+
+                    <p className="text-xs text-slate-500 mt-6">
+                        Your calibration is saved. Next time you select this exercise, Day 1 will be waiting.
+                    </p>
                 </div>
             </div>
         );

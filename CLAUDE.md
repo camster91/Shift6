@@ -153,15 +153,255 @@ const Component = ({ props, getThemeClass }) => {
 | Voice Commands | Web Speech API for hands-free control | New utils/voice.js, WorkoutSession.jsx |
 | Heart Rate Integration | Web Bluetooth API for HR monitors | New utils/bluetooth.js |
 
-### Gamification Expansion Ideas
-- **Milestone Badges**: 100 workouts, 1000 total reps, 30-day streak
-- **Exercise Mastery**: Complete all 18 days of a single exercise
-- **Perfectionist**: Hit target reps on every set for a week
-- **Early Bird / Night Owl**: Time-based workout badges
-- **Comeback Kid**: Return after 7+ day break
-- **Iron Will**: Complete workout despite "too hard" rating
-- **Variety Pack**: Do all 6 exercises in one week
-- **Leaderboards**: Optional anonymous global/friends rankings
+### Exercise Level System (Per-Exercise Progression)
+
+Each exercise has its own level with achievements unlocked at milestones:
+
+**Level Structure (18 levels per exercise = 6 weeks x 3 days)**
+| Level | Name | Unlocks At | Reward |
+|-------|------|------------|--------|
+| 1 | Beginner | Complete assessment | Exercise unlocked |
+| 2 | Getting Started | Day 2 complete | Encouragement message |
+| 3 | Building Momentum | Day 3 complete | First week badge |
+| 4-6 | Week 2 | Days 4-6 | "Committed" badge at level 6 |
+| 7-9 | Week 3 | Days 7-9 | "Halfway Hero" badge at level 9 |
+| 10-12 | Week 4 | Days 10-12 | "Dedicated" badge at level 12 |
+| 13-15 | Week 5 | Days 13-15 | "Almost There" badge at level 15 |
+| 16-17 | Week 6 | Days 16-17 | "Final Push" message |
+| 18 | Master | Day 18 complete | "MASTERY" badge + celebration |
+
+**Exercise-Specific Achievements**
+| Achievement | Criteria | Badge Style |
+|-------------|----------|-------------|
+| Push-up Pro | Master push-ups | Gold with push-up icon |
+| Squat Champion | Master squats | Gold with squat icon |
+| Pull-up King/Queen | Master pull-ups | Gold with pull-up icon |
+| Dip Master | Master dips | Gold with dip icon |
+| Core Crusher | Master V-ups | Gold with V-up icon |
+| Glute God/Goddess | Master glute bridges | Gold with bridge icon |
+| Complete Athlete | Master all 6 exercises | Platinum animated badge |
+
+**Bonus Achievements**
+| Achievement | Criteria | Fun Factor |
+|-------------|----------|------------|
+| First Steps | Complete first ever workout | Welcome celebration |
+| Double Trouble | Do 2 exercises in one day | Encourages variety |
+| Triple Threat | Do 3 exercises in one day | Extra dedication |
+| Six Pack | Do all 6 exercises in one day | Ultimate challenge |
+| Streak Starter | 3-day streak | Flame icon appears |
+| Week Warrior | 7-day streak | Flame intensifies |
+| Month Monster | 30-day streak | Legendary flame |
+| Century Club | 100 total workouts | Confetti explosion |
+| Rep Machine | 1,000 total reps | Counter celebration |
+| Ten Thousand | 10,000 total reps | Epic achievement |
+| Early Bird | Workout before 7am | Sunrise badge |
+| Night Owl | Workout after 9pm | Moon badge |
+| Weekend Warrior | Workout on Sat & Sun | Weekend badge |
+| Comeback Kid | Return after 7+ days | Phoenix badge |
+| Overachiever | Exceed target reps 5x | Star badge |
+| Consistency King | Same time 5 days in a row | Clock badge |
+
+**Implementation Notes**
+- Store level per exercise: `{ pushups: 5, squats: 3, ... }` in localStorage
+- Achievements stored as: `{ earned: ['first_steps', 'streak_3'], dates: {...} }`
+- Show level progress bar on each exercise card
+- Celebrate level-ups with confetti + haptic + sound
+- Files: gamification.js, new AchievementModal.jsx, exercises.jsx
+
+---
+
+## UX Redesign Plans
+
+### Home Page Redesign
+
+**Current Problem**: Too cluttered, achievements take focus away from workouts
+
+**New Layout (Top to Bottom)**:
+```
+┌─────────────────────────────────┐
+│  Today's Summary (if worked out)│
+│  "You did Push-ups & Squats!"   │
+│  [Want to do more?] button      │
+├─────────────────────────────────┤
+│  Next Recommended Workouts      │
+│  ┌─────────┐ ┌─────────┐       │
+│  │ Squats  │ │ Pull-ups│  ...  │
+│  │ Day 4/18│ │ Day 2/18│       │
+│  │ [Start] │ │ [Start] │       │
+│  └─────────┘ └─────────┘       │
+├─────────────────────────────────┤
+│  Daily Goal Progress            │
+│  ████████░░ 2/3 workouts today  │
+├─────────────────────────────────┤
+│  Current Streak: 🔥 5 days      │
+└─────────────────────────────────┘
+```
+
+**Smart Home Page Awareness**
+- After workout: Show "Great job!" summary at top
+- Suggest complementary exercises: "You did upper body, try legs?"
+- Show which exercises are due vs. optional extras
+- Daily goal: Baseline of X workouts/day (user configurable, default 1-3)
+
+### Navigation Redesign
+
+**Bottom Nav (4 items max)**
+```
+┌────────┬────────┬────────┬────────┐
+│  Home  │Workout │Progress│  Menu  │
+│   🏠   │   💪   │   📊   │   ☰    │
+└────────┴────────┴────────┴────────┘
+```
+
+**Side Drawer Menu (☰ opens)**
+```
+┌─────────────────────┐
+│  👤 Profile         │
+│  🏆 Achievements    │  ← Moved from home
+│  📅 Calendar        │
+│  📖 Exercise Guide  │
+│  ⚙️ Settings        │
+│  💾 Backup/Restore  │
+│  ❓ Help            │
+└─────────────────────┘
+```
+
+**Implementation**
+- New SideDrawer.jsx component with slide animation
+- Update BottomNav.jsx to 4 items
+- Move achievements to dedicated Achievements.jsx view
+- Files: BottomNav.jsx, new SideDrawer.jsx, new Achievements.jsx, Dashboard.jsx
+
+### Daily Goal System
+
+**Concept**: Users choose any exercises but have a daily target
+
+**Settings**
+- Daily workout goal: 1-6 (default: 1)
+- Rest days: Select days of week (default: none required)
+- Goal resets at midnight local time
+
+**Home Page Integration**
+- Show progress ring: "2 of 3 workouts today"
+- After hitting goal: "Goal complete! Do more?"
+- Color coding: Red (0), Yellow (partial), Green (complete)
+
+---
+
+## Critical UX Fixes
+
+### Assessment Flow Fix
+
+**Current Bug**: After initial max effort assessment, user is sent directly to full workout
+
+**Correct Flow**:
+```
+1. User selects exercise for first time
+2. Show "Let's find your starting point" intro
+3. Do MAX EFFORT set (one set only)
+4. Show results: "Great! You did X reps"
+5. Calculate starting difficulty
+6. Show "Your program is ready!"
+7. Return to HOME (not workout!)
+8. Next time they tap exercise → Day 1 workout
+```
+
+**Implementation**
+- Add `assessmentComplete` flag per exercise in progress state
+- WorkoutSession.jsx: Check if assessment mode
+- After assessment: Update state, navigate to Dashboard
+- Files: WorkoutSession.jsx, App.jsx, exercises.jsx
+
+---
+
+## Media & Content Plan
+
+### Picture Replacement Strategy
+
+**Current State**: Placeholder or missing exercise images
+
+**Plan**:
+1. **Option A: Custom Illustrations** (Preferred)
+   - Commission simple line art illustrations
+   - Consistent style across all exercises
+   - SVG format for small file size
+   - Store in `/public/assets/exercises/`
+
+2. **Option B: Stock Photos**
+   - Use royalty-free fitness photos
+   - Consistent lighting/style
+   - Optimize with WebP format
+   - Lazy load with blur placeholder
+
+3. **Option C: AI-Generated**
+   - Generate consistent style illustrations
+   - Review for accuracy
+   - Touch up as needed
+
+**File Structure**
+```
+public/
+└── assets/
+    └── exercises/
+        ├── pushups/
+        │   ├── thumbnail.webp
+        │   ├── start-position.webp
+        │   └── end-position.webp
+        ├── squats/
+        │   └── ...
+        └── ...
+```
+
+### YouTube Video Integration
+
+**For Each Exercise**:
+| Exercise | Video Content | Duration |
+|----------|---------------|----------|
+| Push-ups | Proper form, common mistakes, variations | 2-3 min |
+| Squats | Depth, knee tracking, progressions | 2-3 min |
+| Pull-ups | Grip, full range, assisted options | 2-3 min |
+| Dips | Elbow position, depth, chair dips | 2-3 min |
+| V-Ups | Core engagement, modifications | 2-3 min |
+| Glute Bridges | Hip drive, single leg progression | 2-3 min |
+
+**Implementation Options**:
+
+1. **Embed YouTube** (Easiest)
+   ```jsx
+   // In Guide.jsx
+   <iframe
+     src="https://youtube.com/embed/VIDEO_ID"
+     loading="lazy"
+     allow="accelerometer; autoplay; encrypted-media"
+   />
+   ```
+   - Pros: Free hosting, no bandwidth cost
+   - Cons: Requires internet, YouTube branding
+
+2. **Self-Hosted Video** (Better UX)
+   - Host on CDN (Cloudflare R2, Bunny CDN)
+   - Use HLS for adaptive streaming
+   - Pros: Offline capable, no ads
+   - Cons: Hosting cost, more setup
+
+3. **Hybrid Approach** (Recommended)
+   - YouTube embeds in Guide for detailed tutorials
+   - Short GIFs/WebM for quick form checks in workout
+   - Cache thumbnails locally for offline
+
+**Guide.jsx Updates**
+```jsx
+const exerciseVideos = {
+  pushups: {
+    youtube: 'https://youtube.com/embed/abc123',
+    thumbnail: '/assets/exercises/pushups/thumbnail.webp',
+    duration: '2:45'
+  },
+  // ...
+}
+```
+
+**Files to Modify**: Guide.jsx, exercises.jsx, new VideoPlayer.jsx component
 
 ## Technical Improvements
 

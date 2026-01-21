@@ -107,6 +107,26 @@ npm run cap:android
 
 ## Roadmap
 
+### Immediate Priorities
+
+**UX Improvements**
+- **Redesigned Home Page**: Focus on next workouts and daily progress, not achievements
+- **Smart Workout Awareness**: Shows what you did today and suggests more if you want
+- **Daily Goal System**: Flexible daily targets (do any exercises, hit your goal)
+- **Streamlined Navigation**: Bottom nav (Home, Workout, Progress, Menu) + side drawer for extras
+- **Assessment Flow Fix**: Initial max effort test returns to home, not full workout
+
+**Achievement System Overhaul**
+- **18 Levels Per Exercise**: Progress from Beginner to Master over 6 weeks
+- **Exercise Mastery Badges**: Unique badge for completing each exercise program
+- **30+ Bonus Achievements**: Streaks, milestones, time-based, and fun challenges
+- **Achievements in Menu**: Moved out of home page into dedicated section
+
+**Content & Media**
+- **Exercise Images**: Custom illustrations or optimized photos for each movement
+- **YouTube Form Videos**: Embedded tutorials in the Guide section
+- **Quick Form GIFs**: Short animations during workouts for reference
+
 ### Phase 1: Core Enhancements
 
 - **Progress Graphs**: Visual charts showing volume and strength gains over time
@@ -121,7 +141,6 @@ npm run cap:android
 - **Dark/Light Themes**: User-selectable color themes beyond the current neon aesthetic
 - **Exercise Variations**: Alternative movements for each exercise (e.g., knee push-ups, assisted pull-ups)
 - **Custom Programs**: User-defined exercise combinations and progression schemes
-- **Form Videos**: Embedded exercise demonstration clips with proper technique
 - **Warm-up Routines**: Guided warm-up sequences before workouts
 - **Cool-down Stretches**: Post-workout stretching recommendations
 
@@ -142,6 +161,23 @@ npm run cap:android
 - **Siri / Google Assistant**: Voice shortcuts for starting workouts
 - **Offline Backup**: Export to device storage (not just JSON download)
 - **QR Code Sync**: Quick data transfer between devices
+
+### Achievement Ideas
+
+| Achievement | How to Earn |
+|-------------|-------------|
+| First Steps | Complete your first workout |
+| Push-up Pro | Master all 18 days of push-ups |
+| Complete Athlete | Master all 6 exercises |
+| Double Trouble | Do 2 exercises in one day |
+| Six Pack | Do all 6 exercises in one day |
+| Week Warrior | 7-day streak |
+| Month Monster | 30-day streak |
+| Century Club | 100 total workouts |
+| Rep Machine | 1,000 total reps |
+| Early Bird | Workout before 7am |
+| Night Owl | Workout after 9pm |
+| Comeback Kid | Return after 7+ day break |
 
 ### Feature Ideas Backlog
 

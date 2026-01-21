@@ -3,14 +3,16 @@ import { Zap, CheckCircle2 } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 import { getDailyStack, getScheduleFocus } from '../../utils/schedule';
 import { vibrate } from '../../utils/device';
-import { calculateStats } from '../../utils/gamification';
+import { calculateStats, getPersonalRecords } from '../../utils/gamification';
 import NeoIcon from '../Visuals/NeoIcon';
 import DataBackground from '../Visuals/DataBackground';
 import { BADGES, getUnlockedBadges } from '../../utils/gamification';
+import { Trophy } from 'lucide-react';
 
 const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActiveTab, startStack }) => {
     const dailyStack = getDailyStack(completedDays);
     const stats = calculateStats(completedDays, sessionHistory);
+    const personalRecords = getPersonalRecords(sessionHistory);
 
     return (
         <div className="space-y-8 pb-24">
@@ -169,6 +171,7 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                     {Object.entries(EXERCISE_PLANS).map(([key, ex]) => {
                         const count = completedDays[key]?.length || 0;
                         const percent = Math.min(100, Math.round((count / 18) * 100));
+                        const pr = personalRecords[key];
 
                         return (
                             <button
@@ -197,6 +200,14 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                                     {count > 0 && (
                                         <div className="absolute top-3 right-3 bg-cyan-500 text-white p-1 rounded-full shadow-lg">
                                             <CheckCircle2 size={14} />
+                                        </div>
+                                    )}
+
+                                    {/* Personal Record Badge */}
+                                    {pr && (
+                                        <div className="absolute top-3 left-3 bg-amber-500/90 text-white px-2 py-1 rounded-lg shadow-lg flex items-center gap-1">
+                                            <Trophy size={12} />
+                                            <span className="text-xs font-bold">{pr.volume} {ex.unit}</span>
                                         </div>
                                     )}
                                 </div>

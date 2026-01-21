@@ -124,41 +124,212 @@ const Component = ({ props, getThemeClass }) => {
 ## Feature Ideas
 
 ### High Priority
-- **Progress Graphs**: Add Chart.js or Recharts to visualize volume/strength trends in Dashboard.jsx
-- **Rest Timer**: Configurable countdown between sets in WorkoutSession.jsx with audio cues
-- **Workout Reminders**: Implement Push API + service worker notifications in utils/notifications.js
-- **Exercise Variations**: Extend exercises.jsx data structure to include easier/harder progressions
+| Feature | Implementation Notes | Files to Modify |
+|---------|---------------------|-----------------|
+| Progress Graphs | Add Recharts (lightweight). Create `ProgressChart.jsx` in Visuals/ | Dashboard.jsx, new ProgressChart.jsx |
+| Rest Timer | Configurable 30-180s countdown with audio beeps | WorkoutSession.jsx, audio.js, constants.js |
+| Workout Reminders | Push API + service worker. Store schedule in localStorage | New utils/notifications.js, vite.config.js |
+| Personal Records | Track max reps per exercise, celebrate new PRs with confetti | gamification.js, Dashboard.jsx |
+| Workout Notes | Text input after session completion, store in history | WorkoutSession.jsx, App.jsx |
+| Calendar View | Monthly grid showing workout days with exercise colors | New CalendarView.jsx in Views/ |
 
 ### Medium Priority
-- **Dark/Light Themes**: Add theme toggle in Header.jsx, store preference in localStorage, update Tailwind config
-- **Custom Programs**: Allow users to create custom exercise combinations in a new ProgramBuilder.jsx view
-- **Cloud Sync**: Optional Firebase/Supabase integration with encryption for cross-device sync
-- **Form Videos**: Embed short demonstration clips in Guide.jsx (consider lazy loading)
+| Feature | Implementation Notes | Files to Modify |
+|---------|---------------------|-----------------|
+| Dark/Light Themes | CSS variables + Tailwind dark mode, toggle in Header | index.css, tailwind.config.js, Header.jsx |
+| Exercise Variations | Add `variations[]` to exercise data with difficulty levels | exercises.jsx, Plan.jsx, WorkoutSession.jsx |
+| Custom Programs | New view for building programs, save to localStorage | New ProgramBuilder.jsx, App.jsx |
+| Form Videos | Lazy-loaded video embeds or GIFs in Guide | Guide.jsx, new assets in public/ |
+| Warm-up Routines | Pre-workout flow with dynamic stretches | New Warmup.jsx, exercises.jsx |
+| Body Metrics | Optional weight/measurements with trend line | New Metrics.jsx, App.jsx |
 
-### Nice to Have
-- **Apple Watch / WearOS**: Capacitor plugin or native companion app
-- **Social Sharing**: Share badges/achievements via Web Share API
-- **Multi-language**: Add i18n with react-intl or similar
-- **Accessibility**: ARIA labels, focus management, high-contrast mode
+### Lower Priority
+| Feature | Implementation Notes | Files to Modify |
+|---------|---------------------|-----------------|
+| Apple Watch / WearOS | Capacitor Watch plugin or separate native app | New capacitor plugin config |
+| Social Sharing | Web Share API for badges, generate shareable images | gamification.js, NeonBadge.jsx |
+| Multi-language | react-intl or i18next, extract all strings | New locales/, all components |
+| Accessibility | ARIA labels, focus trapping, reduced motion | All components, index.css |
+| Voice Commands | Web Speech API for hands-free control | New utils/voice.js, WorkoutSession.jsx |
+| Heart Rate Integration | Web Bluetooth API for HR monitors | New utils/bluetooth.js |
+
+### Gamification Expansion Ideas
+- **Milestone Badges**: 100 workouts, 1000 total reps, 30-day streak
+- **Exercise Mastery**: Complete all 18 days of a single exercise
+- **Perfectionist**: Hit target reps on every set for a week
+- **Early Bird / Night Owl**: Time-based workout badges
+- **Comeback Kid**: Return after 7+ day break
+- **Iron Will**: Complete workout despite "too hard" rating
+- **Variety Pack**: Do all 6 exercises in one week
+- **Leaderboards**: Optional anonymous global/friends rankings
 
 ## Technical Improvements
 
 ### Architecture
-- **State Management**: Consider migrating from prop drilling to React Context or Zustand for cleaner data flow
-- **TypeScript**: Add type safety to catch bugs early (start with utils/, then components/)
-- **Code Splitting**: Lazy load views with React.lazy() to improve initial load time
 
-### Testing
-- **E2E Tests**: Add Playwright for critical user flows (start workout, complete session, earn badge)
-- **Component Tests**: Increase coverage for Views/ and Layout/ components
-- **Visual Regression**: Consider Chromatic or Percy for UI consistency
+**State Management Migration**
+```
+Current: App.jsx → props → all components (prop drilling)
+Target:  Zustand store with slices for exercises, history, settings
+```
+- Create `store/` directory with `useExerciseStore.js`, `useHistoryStore.js`, `useSettingsStore.js`
+- Migrate one slice at a time, starting with settings (lowest risk)
+- Keep localStorage sync via Zustand `persist` middleware
 
-### Performance
-- **Bundle Analysis**: Run `npx vite-bundle-visualizer` to identify optimization opportunities
-- **Image Optimization**: If adding form videos/images, use modern formats (WebP, AVIF)
-- **Service Worker**: Enhance caching strategy for faster repeat visits
+**TypeScript Migration Path**
+1. Add `tsconfig.json` with strict mode
+2. Rename `utils/*.js` → `utils/*.ts` (start here - most isolated)
+3. Add types for exercise data structures in `types/exercise.ts`
+4. Convert components incrementally: Visuals → Layout → Views
+5. Update vite.config.js for TypeScript support
 
-### DevEx
-- **Husky + lint-staged**: Pre-commit hooks for consistent code quality
-- **GitHub Actions**: CI pipeline for automated testing on PRs
-- **Storybook**: Component documentation and visual testing
+**Code Splitting Strategy**
+```javascript
+// Lazy load views
+const Dashboard = lazy(() => import('./components/Views/Dashboard'))
+const WorkoutSession = lazy(() => import('./components/Views/WorkoutSession'))
+const Plan = lazy(() => import('./components/Views/Plan'))
+const Guide = lazy(() => import('./components/Views/Guide'))
+```
+
+### Data Layer
+
+**IndexedDB Migration**
+- Replace localStorage with IndexedDB via `idb` library
+- Benefits: Larger storage (50MB+), better performance, structured queries
+- Schema: `workouts`, `exercises`, `settings`, `badges` object stores
+- Keep localStorage as fallback for older browsers
+
+**Data Export Formats**
+- Current: JSON backup
+- Add: CSV export for spreadsheet analysis
+- Add: PDF summary report generation
+- Add: iCal export for workout schedule
+
+### Testing Strategy
+
+**Unit Tests** (Current: utils only)
+- Add tests for all utility functions
+- Mock localStorage and device APIs
+- Target: 80% coverage for utils/
+
+**Component Tests** (To add)
+```bash
+# Priority order
+1. WorkoutSession.jsx - most complex logic
+2. Dashboard.jsx - data display
+3. Plan.jsx - navigation
+4. Header.jsx - settings interactions
+```
+
+**E2E Tests** (To add with Playwright)
+```javascript
+// Critical flows to test
+test('complete full workout session')
+test('earn badge after milestone')
+test('export and import data')
+test('PWA install flow')
+test('offline functionality')
+```
+
+**Visual Regression**
+- Chromatic or Percy for catching unintended UI changes
+- Snapshot key views in light/dark themes
+- Test across viewport sizes (mobile, tablet, desktop)
+
+### Performance Optimization
+
+**Bundle Analysis**
+```bash
+npx vite-bundle-visualizer
+```
+- Current estimated bundle: ~150KB gzipped
+- Targets:
+  - Main bundle < 100KB
+  - Lazy chunks < 30KB each
+  - First contentful paint < 1.5s
+
+**Critical Rendering Path**
+- Inline critical CSS for above-fold content
+- Preload key fonts (Outfit)
+- Defer non-critical JavaScript
+
+**Service Worker Enhancements**
+- Implement stale-while-revalidate for assets
+- Background sync for future cloud features
+- Periodic sync for reminder notifications
+
+### DevEx Improvements
+
+**Git Hooks (Husky + lint-staged)**
+```json
+{
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx}": ["eslint --fix", "prettier --write"]
+  }
+}
+```
+
+**GitHub Actions CI Pipeline**
+```yaml
+# .github/workflows/ci.yml
+- Lint check
+- Type check (when TypeScript added)
+- Unit tests
+- Build verification
+- Lighthouse CI score check
+- Deploy preview to Vercel
+```
+
+**Storybook Setup**
+- Document all components in isolation
+- Visual testing with Chromatic
+- Accessibility testing with a11y addon
+- Interactive props playground
+
+### Security Considerations
+
+- **Content Security Policy**: Add strict CSP headers
+- **Subresource Integrity**: Hash external scripts/styles
+- **Data Encryption**: Encrypt localStorage data at rest (optional feature)
+- **Input Sanitization**: Sanitize workout notes before storage
+- **Rate Limiting**: If adding cloud sync, implement proper rate limits
+
+### Monitoring & Analytics
+
+**Error Tracking (Sentry)**
+- Capture JavaScript errors
+- Track failed API calls (future cloud sync)
+- Monitor performance metrics
+
+**Privacy-Respecting Analytics**
+- Self-hosted Plausible or Umami
+- Track: page views, feature usage, workout completions
+- No personal data, no cookies
+- Full GDPR compliance
+
+### Mobile-Specific Improvements
+
+**Capacitor Plugins to Add**
+- `@capacitor/local-notifications` - workout reminders
+- `@capacitor/share` - social sharing
+- `@capacitor/haptics` - enhanced haptic patterns
+- `@capacitor/screen-orientation` - lock during workout
+- `@capacitor/app` - handle app lifecycle events
+- `@capacitor/keyboard` - better input handling
+
+**iOS-Specific**
+- Add proper App Store screenshots
+- Implement Sign in with Apple (if adding accounts)
+- Support Dynamic Island for active workouts
+
+**Android-Specific**
+- Material You theming support
+- Wear OS companion app
+- Android Auto integration (audio cues only)

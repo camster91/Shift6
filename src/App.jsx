@@ -36,6 +36,11 @@ const App = () => {
         return saved !== null ? JSON.parse(saved) : null; // null = use defaults
     });
 
+    const [theme, setTheme] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}theme`);
+        return saved || 'dark';
+    });
+
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}progress`, JSON.stringify(completedDays));
     }, [completedDays]);
@@ -51,6 +56,13 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}rest_timer`, JSON.stringify(restTimerOverride));
     }, [restTimerOverride]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}theme`, theme);
+        // Apply theme class to document root
+        document.documentElement.classList.remove('dark', 'light');
+        document.documentElement.classList.add(theme);
+    }, [theme]);
 
     // UI State
     const [activeTab, setActiveTabState] = useState(() => {
@@ -348,7 +360,9 @@ const App = () => {
     // ---------------- RENDER ----------------
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 pb-32 font-sans selection:bg-cyan-500/30">
+        <div className={`min-h-screen pb-32 font-sans selection:bg-cyan-500/30 ${
+            theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
+        }`}>
             <Header
                 activeTab={activeTab}
                 activeExercise={activeExercise}
@@ -365,6 +379,8 @@ const App = () => {
                 setAudioEnabled={setAudioEnabled}
                 restTimerOverride={restTimerOverride}
                 setRestTimerOverride={setRestTimerOverride}
+                theme={theme}
+                setTheme={setTheme}
             />
 
             <main className="max-w-6xl mx-auto p-4 md:p-8 mt-4">

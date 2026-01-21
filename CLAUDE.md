@@ -218,7 +218,10 @@ Each exercise has its own level with achievements unlocked at milestones:
 | Dip Master | Master dips | Gold with dip icon |
 | Core Crusher | Master V-ups | Gold with V-up icon |
 | Glute God/Goddess | Master glute bridges | Gold with bridge icon |
-| Complete Athlete | Master all 6 exercises | Platinum animated badge |
+| Plank Warrior | Master plank | Gold with plank icon |
+| Lunge Legend | Master lunges | Gold with lunge icon |
+| Superman/Superwoman | Master supermans | Gold with superman icon |
+| Complete Athlete | Master all 9 exercises | Platinum animated badge |
 
 **Bonus Achievements**
 | Achievement | Criteria | Fun Factor |
@@ -226,7 +229,7 @@ Each exercise has its own level with achievements unlocked at milestones:
 | First Steps | Complete first ever workout | Welcome celebration |
 | Double Trouble | Do 2 exercises in one day | Encourages variety |
 | Triple Threat | Do 3 exercises in one day | Extra dedication |
-| Six Pack | Do all 6 exercises in one day | Ultimate challenge |
+| Nine Lives | Do all 9 exercises in one day | Ultimate challenge |
 | Streak Starter | 3-day streak | Flame icon appears |
 | Week Warrior | 7-day streak | Flame intensifies |
 | Month Monster | 30-day streak | Legendary flame |
@@ -402,6 +405,9 @@ public/
 | Dips | Elbow position, depth, chair dips | 2-3 min |
 | V-Ups | Core engagement, modifications | 2-3 min |
 | Glute Bridges | Hip drive, single leg progression | 2-3 min |
+| Plank | Core bracing, breathing, time progression | 2-3 min |
+| Lunges | Knee alignment, balance, walking lunges | 2-3 min |
+| Supermans | Back engagement, hold duration, variations | 2-3 min |
 
 **Implementation Options**:
 
@@ -487,10 +493,10 @@ const Guide = lazy(() => import('./components/Views/Guide'))
 
 ### Testing Strategy
 
-**Unit Tests** (Current: utils only)
-- Add tests for all utility functions
-- Mock localStorage and device APIs
-- Target: 80% coverage for utils/
+**Unit Tests** (Current: 69 tests across all utils)
+- All utility functions tested (gamification, schedule, constants, audio, device)
+- Mocks for localStorage, AudioContext, device APIs
+- Coverage: 100% of exported utility functions
 
 **Component Tests** (To add)
 ```bash

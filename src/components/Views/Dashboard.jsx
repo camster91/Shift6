@@ -54,10 +54,15 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                     <div className="p-6 border-b border-slate-800">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs text-cyan-400 font-semibold uppercase tracking-wider mb-1">
-                                    {getScheduleFocus()}
-                                </p>
-                                <h1 className="text-2xl font-bold text-white">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="px-3 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded-full text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                                        Today
+                                    </span>
+                                    <span className="text-sm font-semibold text-white">
+                                        {getScheduleFocus()}
+                                    </span>
+                                </div>
+                                <h1 className="text-3xl font-black text-white">
                                     {dailyStack.length} exercise{dailyStack.length > 1 ? 's' : ''} ready
                                 </h1>
                             </div>
@@ -73,6 +78,15 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
 
                     {/* Next Workout Cards */}
                     <div className="p-4 space-y-3">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-slate-500 uppercase tracking-wider">Scheduled for today</span>
+                            <button
+                                onClick={() => setActiveTab('plan')}
+                                className="text-xs text-cyan-400 hover:text-cyan-300 font-medium"
+                            >
+                                View All →
+                            </button>
+                        </div>
                         {dailyStack.map((item, i) => {
                             const ex = EXERCISE_PLANS[item.exerciseKey];
                             const pr = personalRecords[item.exerciseKey];

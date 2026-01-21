@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Zap, ChevronRight, Flame, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, Info, X } from 'lucide-react';
-import { EXERCISE_PLANS } from '../../data/exercises.jsx';
+import { Zap, ChevronRight, Flame, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info } from 'lucide-react';
+import { EXERCISE_PLANS, EXERCISE_ACHIEVEMENTS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx';
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise } from '../../utils/schedule';
 import { vibrate } from '../../utils/device';
 import { calculateStats, getPersonalRecords } from '../../utils/gamification';
@@ -22,18 +22,20 @@ const colorClasses = {
 };
 
 // Exercise Info Modal
-const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays }) => {
+const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficulty, onSetDifficulty, onDelete, isCustom }) => {
     if (!exercise) return null;
 
     const colors = colorClasses[exercise.color] || colorClasses.cyan;
     const nextSession = getNextSessionForExercise(exercise.key, completedDays);
     const isComplete = !nextSession;
-    const dayNum = (completedDays[exercise.key]?.length || 0) + 1;
+    const completedCount = completedDays[exercise.key]?.length || 0;
+    const dayNum = completedCount + 1;
+    const currentDifficulty = difficulty || 3;
 
     return (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
             <div
-                className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-md overflow-hidden"
+                className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}
             >
                 <div className={`p-6 ${colors.bg} border-b ${colors.border}`}>
@@ -43,7 +45,7 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays }) => {
                                 {exercise.image?.startsWith('neo:') ? (
                                     <NeoIcon name={exercise.image.replace('neo:', '')} size={24} className={colors.text} />
                                 ) : (
-                                    <span className={colors.text}>{exercise.icon}</span>
+                                    <Dumbbell className={colors.text} size={24} />
                                 )}
                             </div>
                             <div>
@@ -60,6 +62,64 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays }) => {
                 </div>
 
                 <div className="p-4 space-y-4">
+                    {/* Achievements */}
+                    <div>
+                        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Achievements</p>
+                        <div className="flex flex-wrap gap-2">
+                            {EXERCISE_ACHIEVEMENTS.map((ach) => {
+                                const isUnlocked = completedCount >= ach.days;
+                                return (
+                                    <div
+                                        key={ach.id}
+                                        className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 ${
+                                            isUnlocked
+                                                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                : 'bg-slate-800/50 text-slate-600 border border-slate-700'
+                                        }`}
+                                        title={ach.desc}
+                                    >
+                                        <span>{ach.icon}</span>
+                                        <span>{ach.name}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Difficulty Selector */}
+                    {exercise.variations && exercise.variations.length > 0 && (
+                        <div>
+                            <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Difficulty Level</p>
+                            <div className="grid grid-cols-3 gap-2">
+                                {[1, 2, 3, 4, 5, 6].map((level) => {
+                                    const variation = exercise.variations.find(v => v.level === level);
+                                    const levelInfo = DIFFICULTY_LEVELS[level];
+                                    const isSelected = currentDifficulty === level;
+                                    return (
+                                        <button
+                                            key={level}
+                                            onClick={() => onSetDifficulty && onSetDifficulty(exercise.key, level)}
+                                            className={`p-2 rounded-lg border text-center transition-all ${
+                                                isSelected
+                                                    ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
+                                                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
+                                            }`}
+                                            title={variation?.desc || levelInfo.name}
+                                        >
+                                            <p className="text-xs font-bold">{levelInfo.name}</p>
+                                            <p className="text-[10px] text-slate-500">{levelInfo.multiplier}x</p>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            {exercise.variations[currentDifficulty - 1] && (
+                                <p className="text-xs text-slate-400 mt-2 text-center">
+                                    {exercise.variations[currentDifficulty - 1].name}: {exercise.variations[currentDifficulty - 1].desc}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {/* Instructions */}
                     <div>
                         <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">How to do it</p>
@@ -67,7 +127,7 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays }) => {
                     </div>
 
                     {/* Tips */}
-                    {exercise.tips && (
+                    {exercise.tips && exercise.tips.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {exercise.tips.map((tip, i) => (
                                 <span key={i} className="text-xs px-2 py-1 bg-slate-800 border border-slate-700 rounded-full text-slate-400">
@@ -77,27 +137,27 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays }) => {
                         </div>
                     )}
 
+                    {/* Progress Bar */}
+                    <div>
+                        <div className="flex justify-between text-xs text-slate-500 mb-1">
+                            <span>Progress</span>
+                            <span>{Math.min(completedCount, 18)}/18 days</span>
+                        </div>
+                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full ${colors.solid} transition-all`}
+                                style={{ width: `${Math.min(completedCount / 18 * 100, 100)}%` }}
+                            />
+                        </div>
+                    </div>
+
                     {/* Goal */}
                     <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
                         <span className="text-xs text-slate-500">Final Goal</span>
                         <span className={`text-sm font-bold ${colors.text}`}>{exercise.finalGoal}</span>
                     </div>
 
-                    {/* Progress Bar */}
-                    <div>
-                        <div className="flex justify-between text-xs text-slate-500 mb-1">
-                            <span>Progress</span>
-                            <span>{Math.min(dayNum - 1, 18)}/18 days</span>
-                        </div>
-                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                            <div
-                                className={`h-full ${colors.solid} transition-all`}
-                                style={{ width: `${Math.min((dayNum - 1) / 18 * 100, 100)}%` }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Action Button */}
+                    {/* Action Buttons */}
                     {!isComplete && nextSession && (
                         <button
                             onClick={() => {
@@ -116,19 +176,47 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays }) => {
                             Exercise Mastered!
                         </div>
                     )}
+
+                    {/* Delete Custom Exercise */}
+                    {isCustom && onDelete && (
+                        <button
+                            onClick={() => {
+                                onDelete(exercise.key);
+                                onClose();
+                            }}
+                            className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
+                        >
+                            <Trash2 size={16} />
+                            Delete Custom Exercise
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
 
-const Dashboard = ({ completedDays, sessionHistory, startStack, startWorkout }) => {
-    const dailyStack = getDailyStack(completedDays);
+const Dashboard = ({
+    completedDays,
+    sessionHistory,
+    startStack,
+    startWorkout,
+    allExercises = EXERCISE_PLANS,
+    customExercises = {},
+    exerciseDifficulty = {},
+    onSetDifficulty,
+    onDeleteExercise,
+    onShowAddExercise
+}) => {
+    const dailyStack = getDailyStack(completedDays, allExercises);
     const stats = calculateStats(completedDays, sessionHistory);
     const personalRecords = getPersonalRecords(sessionHistory);
     const [showMore, setShowMore] = useState(false);
     const [showAllExercises, setShowAllExercises] = useState(false);
     const [selectedExercise, setSelectedExercise] = useState(null);
+
+    const exerciseCount = Object.keys(allExercises).length;
+    const customCount = Object.keys(customExercises).length;
 
     // Get today's completed workouts
     const today = new Date().toISOString().split('T')[0];
@@ -267,7 +355,9 @@ const Dashboard = ({ completedDays, sessionHistory, startStack, startWorkout }) 
                         </div>
                         <div className="text-left">
                             <h3 className="font-bold text-white">All Exercises</h3>
-                            <p className="text-xs text-slate-500">9 bodyweight exercises</p>
+                            <p className="text-xs text-slate-500">
+                                {exerciseCount} exercises {customCount > 0 && `(${customCount} custom)`}
+                            </p>
                         </div>
                     </div>
                     {showAllExercises ? (
@@ -278,48 +368,75 @@ const Dashboard = ({ completedDays, sessionHistory, startStack, startWorkout }) 
                 </button>
 
                 {showAllExercises && (
-                    <div className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {Object.entries(EXERCISE_PLANS).map(([key, ex]) => {
-                            const colors = colorClasses[ex.color] || colorClasses.cyan;
-                            const dayNum = (completedDays[key]?.length || 0) + 1;
-                            const isComplete = dayNum > 18;
-                            const pr = personalRecords[key];
+                    <div className="p-4 pt-0 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {Object.entries(allExercises).map(([key, ex]) => {
+                                const colors = colorClasses[ex.color] || colorClasses.cyan;
+                                const dayNum = (completedDays[key]?.length || 0) + 1;
+                                const isComplete = dayNum > 18;
+                                const pr = personalRecords[key];
+                                const isCustom = !!customExercises[key];
+                                const difficulty = exerciseDifficulty[key] || 3;
+                                const diffLevel = DIFFICULTY_LEVELS[difficulty];
 
-                            return (
-                                <button
-                                    key={key}
-                                    onClick={() => {
-                                        vibrate(10);
-                                        setSelectedExercise({ ...ex, key });
-                                    }}
-                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:bg-slate-800/50 ${
-                                        isComplete
-                                            ? 'bg-emerald-500/5 border-emerald-500/20'
-                                            : 'bg-slate-800/30 border-slate-700/50'
-                                    }`}
-                                >
-                                    <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0`}>
-                                        {ex.image?.startsWith('neo:') ? (
-                                            <NeoIcon name={ex.image.replace('neo:', '')} size={18} className={colors.text} />
-                                        ) : (
-                                            <span className={colors.text}>{ex.icon}</span>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 text-left min-w-0">
-                                        <h4 className="text-sm font-bold text-white truncate">{ex.name}</h4>
-                                        <p className="text-xs text-slate-500">
-                                            {isComplete ? (
-                                                <span className="text-emerald-400">Complete</span>
+                                return (
+                                    <button
+                                        key={key}
+                                        onClick={() => {
+                                            vibrate(10);
+                                            setSelectedExercise({ ...ex, key, isCustom });
+                                        }}
+                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:bg-slate-800/50 ${
+                                            isComplete
+                                                ? 'bg-emerald-500/5 border-emerald-500/20'
+                                                : isCustom
+                                                ? 'bg-purple-500/5 border-purple-500/20'
+                                                : 'bg-slate-800/30 border-slate-700/50'
+                                        }`}
+                                    >
+                                        <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0`}>
+                                            {ex.image?.startsWith('neo:') ? (
+                                                <NeoIcon name={ex.image.replace('neo:', '')} size={18} className={colors.text} />
                                             ) : (
-                                                `Day ${dayNum}/18`
+                                                <Dumbbell className={colors.text} size={18} />
                                             )}
-                                            {pr && <span className="text-amber-400 ml-2">PR: {pr.volume}</span>}
-                                        </p>
-                                    </div>
-                                    <ChevronRight size={16} className="text-slate-600 flex-shrink-0" />
-                                </button>
-                            );
-                        })}
+                                        </div>
+                                        <div className="flex-1 text-left min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="text-sm font-bold text-white truncate">{ex.name}</h4>
+                                                {isCustom && <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded">Custom</span>}
+                                            </div>
+                                            <p className="text-xs text-slate-500">
+                                                {isComplete ? (
+                                                    <span className="text-emerald-400">Complete</span>
+                                                ) : (
+                                                    `Day ${dayNum}/18`
+                                                )}
+                                                {difficulty !== 3 && (
+                                                    <span className="text-cyan-400 ml-2">{diffLevel.name}</span>
+                                                )}
+                                                {pr && <span className="text-amber-400 ml-2">PR: {pr.volume}</span>}
+                                            </p>
+                                        </div>
+                                        <ChevronRight size={16} className="text-slate-600 flex-shrink-0" />
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Add Exercise Button */}
+                        {onShowAddExercise && (
+                            <button
+                                onClick={() => {
+                                    vibrate(10);
+                                    onShowAddExercise();
+                                }}
+                                className="w-full p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-cyan-400"
+                            >
+                                <Plus size={20} />
+                                <span className="font-medium">Add Custom Exercise</span>
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
@@ -397,6 +514,10 @@ const Dashboard = ({ completedDays, sessionHistory, startStack, startWorkout }) 
                 <ExerciseInfoModal
                     exercise={selectedExercise}
                     completedDays={completedDays}
+                    difficulty={exerciseDifficulty[selectedExercise.key]}
+                    onSetDifficulty={onSetDifficulty}
+                    onDelete={onDeleteExercise}
+                    isCustom={selectedExercise.isCustom}
                     onClose={() => setSelectedExercise(null)}
                     onStart={startWorkout}
                 />

@@ -119,6 +119,7 @@ const App = () => {
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     const [testInput, setTestInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [workoutNotes, setWorkoutNotes] = useState('');
 
     // ---------------- HELPERS ----------------
 
@@ -182,6 +183,7 @@ const App = () => {
         setAmrapValue('');
         setTestInput('');
         setTimeLeft(0);
+        setWorkoutNotes('');
     };
 
     const startStack = () => {
@@ -214,9 +216,11 @@ const App = () => {
             dayId,
             date: new Date().toISOString(),
             volume: totalVolume,
-            unit
+            unit,
+            notes: workoutNotes.trim() || undefined
         };
         setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
+        setWorkoutNotes('');
 
         setCompletedDays(newCompletedDays);
 
@@ -364,6 +368,8 @@ const App = () => {
                         setActiveTab={setActiveTab}
                         exerciseName={EXERCISE_PLANS[activeExercise].name}
                         audioEnabled={audioEnabled}
+                        workoutNotes={workoutNotes}
+                        setWorkoutNotes={setWorkoutNotes}
                     />
                 )}
 

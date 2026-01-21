@@ -52,7 +52,9 @@ const WorkoutSession = ({
     applyCalibration,
     completeWorkout,
     setActiveTab,
-    audioEnabled = true
+    audioEnabled = true,
+    workoutNotes,
+    setWorkoutNotes
 }) => {
     const [copied, setCopied] = useState(false);
 
@@ -226,7 +228,19 @@ const WorkoutSession = ({
                                         />
                                     </div>
 
-                                    <div className="flex gap-3 pt-4">
+                                    {/* Optional workout notes */}
+                                    <div className="pt-4">
+                                        <textarea
+                                            value={workoutNotes || ''}
+                                            onChange={(e) => setWorkoutNotes(e.target.value)}
+                                            placeholder="Add notes (optional)..."
+                                            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 resize-none"
+                                            rows={2}
+                                            maxLength={200}
+                                        />
+                                    </div>
+
+                                    <div className="flex gap-3 pt-2">
                                         <button
                                             onClick={handleComplete}
                                             className="flex-1 bg-cyan-500 rounded-lg text-slate-900 py-4 text-sm font-bold hover:bg-cyan-600 transition-colors uppercase tracking-wider"

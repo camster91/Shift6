@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronLeft, Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet } from 'lucide-react';
+import { ChevronDown, ChevronLeft, Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer} from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 
 const Header = ({
@@ -15,7 +15,9 @@ const Header = ({
     onImport,
     onFactoryReset,
     audioEnabled,
-    setAudioEnabled
+    setAudioEnabled,
+    restTimerOverride,
+    setRestTimerOverride
 }) => {
     const exercise = EXERCISE_PLANS[activeExercise];
 
@@ -98,6 +100,8 @@ const Header = ({
                         onFactoryReset={onFactoryReset}
                         audioEnabled={audioEnabled}
                         setAudioEnabled={setAudioEnabled}
+                        restTimerOverride={restTimerOverride}
+                        setRestTimerOverride={setRestTimerOverride}
                     />
                 </div>
             </div>
@@ -105,8 +109,25 @@ const Header = ({
     );
 };
 
-const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled }) => {
+const REST_OPTIONS = [
+    { value: null, label: 'Auto' },
+    { value: 30, label: '30s' },
+    { value: 45, label: '45s' },
+    { value: 60, label: '60s' },
+    { value: 90, label: '90s' },
+    { value: 120, label: '120s' }
+];
+
+const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride }) => {
     const [isOpen, setIsOpen] = React.useState(false);
+
+    const cycleRestTimer = () => {
+        const currentIndex = REST_OPTIONS.findIndex(o => o.value === restTimerOverride);
+        const nextIndex = (currentIndex + 1) % REST_OPTIONS.length;
+        setRestTimerOverride(REST_OPTIONS[nextIndex].value);
+    };
+
+    const currentRestLabel = REST_OPTIONS.find(o => o.value === restTimerOverride)?.label || 'Auto';
 
     return (
         <div className="relative">
@@ -127,6 +148,15 @@ const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnable
                         >
                             {audioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
                             {audioEnabled ? 'Sound On' : 'Sound Off'}
+                        </button>
+                        <button
+                            onClick={cycleRestTimer}
+                            className="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            <span className="flex items-center gap-3">
+                                <Timer size={16} /> Rest Timer
+                            </span>
+                            <span className="text-cyan-400">{currentRestLabel}</span>
                         </button>
                         <div className="h-[1px] bg-slate-800 my-1" />
                         <button

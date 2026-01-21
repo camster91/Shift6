@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Trophy, Info, Play, Share2, Check, X, Zap, Youtube } from 'lucide-react';
+import { ChevronRight, Trophy, Info, Share2, Check, X, Zap, Youtube } from 'lucide-react';
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { vibrate, copyToClipboard } from '../../utils/device';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
@@ -89,7 +89,6 @@ const WorkoutSession = ({
     handleTestSubmit,
     applyCalibration,
     completeWorkout,
-    setActiveTab,
     audioEnabled = true,
     workoutNotes,
     setWorkoutNotes
@@ -124,25 +123,7 @@ const WorkoutSession = ({
     };
 
     if (!currentSession) {
-        return (
-            <div className="max-w-md mx-auto py-12">
-                <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl p-12 text-center backdrop-blur-sm">
-                    <div className="w-16 h-16 bg-cyan-500/10 border border-cyan-500/30 rounded-lg flex items-center justify-center mx-auto mb-6">
-                        <Play className="text-cyan-400" size={32} />
-                    </div>
-                    <h2 className="text-2xl font-bold mb-3 text-white">No Active Workout</h2>
-                    <p className="text-sm text-slate-400 mb-8">
-                        Select an exercise from your plan to begin
-                    </p>
-                    <button
-                        onClick={() => setActiveTab('plan')}
-                        className="bg-cyan-500 hover:bg-cyan-600 text-slate-900 px-6 py-3 rounded-lg text-sm font-bold transition-colors uppercase tracking-wider"
-                    >
-                        Go to Plan
-                    </button>
-                </div>
-            </div>
-        );
+        return null;
     }
 
     if (currentSession.step === 'assessment') {
@@ -202,7 +183,6 @@ const WorkoutSession = ({
                         onClick={() => {
                             if (window.confirm('Exit workout? Progress will be lost.')) {
                                 setCurrentSession(null);
-                                setActiveTab('dashboard');
                             }
                         }}
                         className="p-2 hover:bg-cyan-500/10 transition-colors rounded"

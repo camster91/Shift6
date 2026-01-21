@@ -132,19 +132,24 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                         <h2 className="text-sm font-semibold text-white mb-4">Activity Log</h2>
                         <div className="space-y-1">
                             {sessionHistory.slice(0, 5).map((session, i) => (
-                                <div key={i} className="flex items-center justify-between py-3 border-b border-slate-800 last:border-0 hover:bg-slate-800/50 px-3 -mx-3 rounded transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 flex items-center justify-center bg-slate-800 rounded text-cyan-400">
-                                            {React.cloneElement(EXERCISE_PLANS[session.exerciseKey].icon, { size: 16 })}
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-medium text-slate-200">{EXERCISE_PLANS[session.exerciseKey].name}</div>
-                                            <div className="text-xs text-slate-500">
-                                                {new Date(session.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                <div key={i} className="py-3 border-b border-slate-800 last:border-0 hover:bg-slate-800/50 px-3 -mx-3 rounded transition-colors">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 flex items-center justify-center bg-slate-800 rounded text-cyan-400">
+                                                {React.cloneElement(EXERCISE_PLANS[session.exerciseKey].icon, { size: 16 })}
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium text-slate-200">{EXERCISE_PLANS[session.exerciseKey].name}</div>
+                                                <div className="text-xs text-slate-500">
+                                                    {new Date(session.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className="text-sm font-semibold text-white tabular-nums">{session.volume} <span className="text-xs text-slate-500 font-normal ml-1">{session.unit}</span></div>
                                     </div>
-                                    <div className="text-sm font-semibold text-white tabular-nums">{session.volume} <span className="text-xs text-slate-500 font-normal ml-1">{session.unit}</span></div>
+                                    {session.notes && (
+                                        <div className="mt-2 ml-11 text-xs text-slate-400 italic">&ldquo;{session.notes}&rdquo;</div>
+                                    )}
                                 </div>
                             ))}
                         </div>

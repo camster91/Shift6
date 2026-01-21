@@ -198,6 +198,93 @@ const Component = ({ props, getThemeClass }) => {
 | Voice Commands | Web Speech API for hands-free control | New utils/voice.js, WorkoutSession.jsx |
 | Heart Rate Integration | Web Bluetooth API for HR monitors | New utils/bluetooth.js |
 
+### Exercise Library & Database
+
+**Concept**: Expandable library of bodyweight exercises users can add to their program
+
+**Data Structure**:
+```javascript
+// New file: src/data/exerciseLibrary.js
+export const EXERCISE_LIBRARY = {
+  // Core exercises (current 9)
+  pushups: { ...currentData, category: 'push', difficulty: 'beginner' },
+
+  // Additional bodyweight exercises
+  diamondPushups: {
+    name: 'Diamond Push-Ups',
+    category: 'push',
+    difficulty: 'intermediate',
+    baseExercise: 'pushups', // Links to progression
+    muscles: ['chest', 'triceps'],
+    equipment: 'none',
+    instructions: '...',
+    variations: ['wide', 'narrow', 'decline']
+  },
+  pistolSquats: {
+    name: 'Pistol Squats',
+    category: 'legs',
+    difficulty: 'advanced',
+    baseExercise: 'squats',
+    muscles: ['quads', 'glutes', 'balance'],
+    equipment: 'none'
+  },
+  // ... more exercises
+}
+```
+
+**Categories**:
+- Push (chest, shoulders, triceps)
+- Pull (back, biceps)
+- Legs (quads, hamstrings, glutes)
+- Core (abs, obliques, lower back)
+- Full Body (burpees, mountain climbers)
+
+**Implementation**:
+- New ExerciseLibrary.jsx view for browsing exercises
+- Filter by category, difficulty, muscle group
+- "Add to Program" button adds to user's active exercises
+- Store user's selected exercises in localStorage
+
+### Exercise Difficulty Scaling
+
+**Concept**: Make any exercise harder or easier with progressions/regressions
+
+**Difficulty Levels**:
+| Level | Name | Example (Push-Ups) |
+|-------|------|-------------------|
+| 1 | Assisted | Wall push-ups |
+| 2 | Beginner | Knee push-ups |
+| 3 | Standard | Regular push-ups |
+| 4 | Intermediate | Diamond push-ups |
+| 5 | Advanced | Archer push-ups |
+| 6 | Elite | One-arm push-ups |
+
+**Data Structure**:
+```javascript
+// Add to each exercise in exercises.jsx
+variations: [
+  { level: 1, name: 'Wall', multiplier: 0.5, description: 'Stand facing wall' },
+  { level: 2, name: 'Knee', multiplier: 0.7, description: 'Knees on ground' },
+  { level: 3, name: 'Standard', multiplier: 1.0, description: 'Full push-up' },
+  { level: 4, name: 'Diamond', multiplier: 1.3, description: 'Hands together' },
+  { level: 5, name: 'Archer', multiplier: 1.5, description: 'Shift to one side' },
+  { level: 6, name: 'One-Arm', multiplier: 2.0, description: 'Single arm' }
+]
+```
+
+**UX Flow**:
+1. During workout, show current variation
+2. "Too easy?" → Suggest next level
+3. "Too hard?" → Offer regression
+4. Track which variation user prefers per exercise
+5. Auto-suggest based on performance (e.g., if user exceeds target by 50%)
+
+**Files to Modify**:
+- exercises.jsx: Add variations array to each exercise
+- WorkoutSession.jsx: Add variation selector
+- Plan.jsx: Show current difficulty level
+- New DifficultySelector.jsx component
+
 ### Exercise Level System (Per-Exercise Progression)
 
 Each exercise has its own level with achievements unlocked at milestones:

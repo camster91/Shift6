@@ -143,8 +143,8 @@ const Component = ({ props, getThemeClass }) => {
 
 - **Framework:** Vitest with jsdom environment
 - **Pattern:** Unit tests co-located with utilities (`utils/*.test.js`)
-- **Current Coverage (69 tests):**
-  - `gamification.test.js` - Badge logic, stats calculation, unlock conditions (9 tests)
+- **Current Coverage (73 tests):**
+  - `gamification.test.js` - Badge logic, stats calculation, unlock conditions (13 tests)
   - `schedule.test.js` - Workout scheduling, daily stack, schedule focus (17 tests)
   - `constants.test.js` - App constants validation (18 tests)
   - `audio.test.js` - Web Audio API functions (8 tests)

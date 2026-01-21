@@ -1,130 +1,171 @@
-// Custom SVG exercise icons with neon styling
+// Custom SVG exercise icons with detailed stick figures
 
-// Push-up figure SVG
+// Push-up figure - person in push-up position
 const PushupIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <path
-            d="M4 16h3l2-4h6l2 4h3M8 12l1-3h6l1 3"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-        <circle cx="17" cy="8" r="2" stroke="currentColor" strokeWidth="1.5" />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+        {/* Head */}
+        <circle cx="38" cy="16" r="4" stroke="currentColor" strokeWidth="2.5" fill="currentColor" fillOpacity="0.2" />
+        {/* Body - horizontal */}
+        <path d="M34 18L12 22" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Arms pushing */}
+        <path d="M30 18L28 28M28 28L24 32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M18 20L16 28M16 28L12 32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Legs */}
+        <path d="M12 22L6 26M6 26L4 32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Ground line */}
+        <path d="M2 34H46" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.3" />
     </svg>
 );
 
-// Squat figure SVG
+// Squat figure - person in squat position
 const SquatIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <circle cx="12" cy="5" r="2" stroke="currentColor" strokeWidth="1.5" />
-        <path
-            d="M12 7v3M9 10l-2 5 3-1M15 10l2 5-3-1M10 14l-1 6M14 14l1 6"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+        {/* Head */}
+        <circle cx="24" cy="8" r="4" stroke="currentColor" strokeWidth="2.5" fill="currentColor" fillOpacity="0.2" />
+        {/* Torso */}
+        <path d="M24 12V22" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Arms out for balance */}
+        <path d="M24 16L32 14M24 16L16 14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Bent legs in squat */}
+        <path d="M24 22L18 26L14 34" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M24 22L30 26L34 34" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Feet */}
+        <path d="M12 34H16M32 34H36" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Ground */}
+        <path d="M8 36H40" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.3" />
     </svg>
 );
 
-// Pull-up figure SVG
+// Pull-up figure - person hanging from bar
 const PullupIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <path d="M4 4h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="12" cy="8" r="2" stroke="currentColor" strokeWidth="1.5" />
-        <path
-            d="M10 6V4M14 6V4M12 10v4M9 14l-2 6M15 14l2 6"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+        {/* Bar */}
+        <path d="M8 8H40" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        {/* Hands on bar */}
+        <circle cx="18" cy="8" r="2" fill="currentColor" />
+        <circle cx="30" cy="8" r="2" fill="currentColor" />
+        {/* Arms */}
+        <path d="M18 10L20 16M30 10L28 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Head */}
+        <circle cx="24" cy="14" r="4" stroke="currentColor" strokeWidth="2.5" fill="currentColor" fillOpacity="0.2" />
+        {/* Torso */}
+        <path d="M24 18V30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Legs hanging */}
+        <path d="M24 30L20 42M24 30L28 42" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
     </svg>
 );
 
-// Dip figure SVG
+// Dip figure - person on parallel bars
 const DipIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <path d="M4 6h5M15 6h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="12" cy="8" r="2" stroke="currentColor" strokeWidth="1.5" />
-        <path
-            d="M9 6v3l-1 2M15 6v3l1 2M12 10v5M10 15l-1 5M14 15l1 5"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+        {/* Parallel bars */}
+        <path d="M8 16H18M30 16H40" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        {/* Hands gripping */}
+        <circle cx="16" cy="16" r="2" fill="currentColor" />
+        <circle cx="32" cy="16" r="2" fill="currentColor" />
+        {/* Head */}
+        <circle cx="24" cy="12" r="4" stroke="currentColor" strokeWidth="2.5" fill="currentColor" fillOpacity="0.2" />
+        {/* Arms bent */}
+        <path d="M16 16L18 22L24 24M32 16L30 22L24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Torso */}
+        <path d="M24 24V34" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Legs */}
+        <path d="M24 34L20 44M24 34L28 44" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
     </svg>
 );
 
-// Plank figure SVG
+// Plank figure - person in plank position
 const PlankIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <circle cx="19" cy="10" r="2" stroke="currentColor" strokeWidth="1.5" />
-        <path
-            d="M17 11L6 13M6 13l-2 4M6 13l6 4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+        {/* Head */}
+        <circle cx="40" cy="18" r="4" stroke="currentColor" strokeWidth="2.5" fill="currentColor" fillOpacity="0.2" />
+        {/* Body - straight horizontal line */}
+        <path d="M36 20L8 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        {/* Arms - forearms on ground */}
+        <path d="M32 20L30 28L26 32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M20 22L18 28L14 32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Legs */}
+        <path d="M8 24L4 32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Ground */}
+        <path d="M2 34H46" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.3" />
     </svg>
 );
 
-// V-Up figure SVG
+// V-Up figure - person doing V-up
 const VupIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <circle cx="12" cy="6" r="2" stroke="currentColor" strokeWidth="1.5" />
-        <path
-            d="M12 8l-4 8M12 8l4 8M8 16l-2 2M16 16l2 2M10 10l-3-4M14 10l3-4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+        {/* Head */}
+        <circle cx="24" cy="10" r="4" stroke="currentColor" strokeWidth="2.5" fill="currentColor" fillOpacity="0.2" />
+        {/* Torso - angled up */}
+        <path d="M24 14L24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Arms reaching up to toes */}
+        <path d="M24 16L16 8M24 16L32 8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Legs angled up in V */}
+        <path d="M24 24L14 14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M24 24L34 14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Hands touching feet */}
+        <circle cx="14" cy="10" r="2" fill="currentColor" fillOpacity="0.5" />
+        <circle cx="34" cy="10" r="2" fill="currentColor" fillOpacity="0.5" />
+        {/* Ground indicator */}
+        <path d="M18 38H30" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.3" />
     </svg>
 );
 
-// Glute Bridge figure SVG
+// Glute Bridge figure - person doing bridge
 const GluteBridgeIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <circle cx="18" cy="10" r="2" stroke="currentColor" strokeWidth="1.5" />
-        <path
-            d="M16 11L10 10C8 10 6 12 6 14M10 10l2 6M6 14l3 4M6 14l-2 2"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+        {/* Head on ground */}
+        <circle cx="40" cy="32" r="4" stroke="currentColor" strokeWidth="2.5" fill="currentColor" fillOpacity="0.2" />
+        {/* Shoulders on ground */}
+        <path d="M36 32H32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Back arched up */}
+        <path d="M32 32C28 32 24 20 20 20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Hips up high */}
+        <circle cx="20" cy="18" r="2" fill="currentColor" fillOpacity="0.3" />
+        {/* Thigh */}
+        <path d="M20 20L12 28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Lower leg - foot on ground */}
+        <path d="M12 28L8 34" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Ground */}
+        <path d="M4 36H44" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.3" />
     </svg>
 );
 
-// Lunge figure SVG
+// Lunge figure - person in lunge position
 const LungeIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <circle cx="12" cy="4" r="2" stroke="currentColor" strokeWidth="1.5" />
-        <path
-            d="M12 6v4M12 10l-4 4v6M12 10l4 2 2 8"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+        {/* Head */}
+        <circle cx="24" cy="8" r="4" stroke="currentColor" strokeWidth="2.5" fill="currentColor" fillOpacity="0.2" />
+        {/* Torso - upright */}
+        <path d="M24 12V24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Arms on hips */}
+        <path d="M24 18L20 22M24 18L28 22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        {/* Front leg bent */}
+        <path d="M24 24L32 30L36 38" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Back leg extended */}
+        <path d="M24 24L14 32L8 38" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Feet */}
+        <path d="M34 38H40M6 38H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        {/* Ground */}
+        <path d="M4 40H44" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.3" />
     </svg>
 );
 
-// Superman figure SVG
+// Superman figure - person in superman pose
 const SupermanIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <circle cx="4" cy="12" r="2" stroke="currentColor" strokeWidth="1.5" />
-        <path
-            d="M6 12h8M14 12l4-4M14 12l4 4M6 10l-2-4M6 14l-2 4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+        {/* Head lifted */}
+        <circle cx="8" cy="18" r="4" stroke="currentColor" strokeWidth="2.5" fill="currentColor" fillOpacity="0.2" />
+        {/* Body - slight arch */}
+        <path d="M12 20C16 22 28 22 36 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Arms extended forward */}
+        <path d="M10 18L4 12M10 18L4 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Legs extended back and up */}
+        <path d="M36 24L44 20M36 24L44 28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Ground */}
+        <path d="M16 34H32" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.3" />
+        {/* Motion lines */}
+        <path d="M2 10L6 10M2 14L4 14" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeOpacity="0.4" />
     </svg>
 );
 
@@ -143,45 +184,45 @@ const NeoIcon = ({ name, size = 24, className = "" }) => {
 
     const IconComponent = iconMap[name];
 
-    // If used as full-size display (like before)
-    if (size === 80 || !name) {
+    // If used as full-size display (for large previews)
+    if (size >= 60) {
         return (
-            <div className="w-full h-full bg-slate-950 flex items-center justify-center relative overflow-hidden group">
-                {/* Grid Background */}
-                <div className="absolute inset-0 opacity-20"
+            <div className="w-full h-full bg-gradient-to-br from-slate-900 to-slate-950 flex items-center justify-center relative overflow-hidden group rounded-xl">
+                {/* Animated grid background */}
+                <div className="absolute inset-0 opacity-30"
                     style={{
                         backgroundImage: 'linear-gradient(to right, #0891b2 1px, transparent 1px), linear-gradient(to bottom, #0891b2 1px, transparent 1px)',
-                        backgroundSize: '20px 20px'
+                        backgroundSize: '16px 16px'
                     }}
                 />
 
-                {/* Radial Glow */}
-                <div className="absolute inset-0 bg-radial-gradient from-cyan-900/40 to-transparent opacity-50" />
+                {/* Radial glow */}
+                <div className="absolute inset-0 bg-gradient-radial from-cyan-500/20 via-transparent to-transparent" />
 
-                {/* Icon with Neon Glow */}
-                <div className="relative z-10 filter drop-shadow-[0_0_15px_rgba(34,211,238,0.8)] transition-transform duration-500 group-hover:scale-110">
+                {/* Icon with neon glow effect */}
+                <div className="relative z-10 filter drop-shadow-[0_0_20px_rgba(34,211,238,0.6)] transition-transform duration-500 group-hover:scale-110">
                     {IconComponent ? (
-                        <IconComponent size={80} className="text-cyan-400" />
+                        <IconComponent size={size} className="text-cyan-400" />
                     ) : (
-                        <div className="w-20 h-20 rounded-full border-2 border-cyan-400" />
+                        <div className="w-16 h-16 rounded-full border-2 border-cyan-400" />
                     )}
                 </div>
 
-                {/* Scanline Effect */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent opacity-20 animate-pulse pointer-events-none" />
+                {/* Scan line animation */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/5 to-transparent animate-pulse pointer-events-none" />
             </div>
         );
     }
 
-    // If used as inline icon
+    // Regular inline icon usage
     if (IconComponent) {
         return <IconComponent size={size} className={className} />;
     }
 
-    // Fallback
+    // Fallback circle
     return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-            <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" />
+        <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+            <circle cx="24" cy="24" r="16" stroke="currentColor" strokeWidth="2" />
         </svg>
     );
 };

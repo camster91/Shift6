@@ -4,11 +4,8 @@ import { getDailyStack } from './utils/schedule';
 
 // Components
 import Header from './components/Layout/Header';
-import BottomNav from './components/Layout/BottomNav';
 import Dashboard from './components/Views/Dashboard';
-import Plan from './components/Views/Plan';
 import WorkoutSession from './components/Views/WorkoutSession';
-import Guide from './components/Views/Guide';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -33,7 +30,7 @@ const App = () => {
 
     const [restTimerOverride, setRestTimerOverride] = useState(() => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}rest_timer`);
-        return saved !== null ? JSON.parse(saved) : null; // null = use defaults
+        return saved !== null ? JSON.parse(saved) : null;
     });
 
     const [theme, setTheme] = useState(() => {
@@ -59,17 +56,11 @@ const App = () => {
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}theme`, theme);
-        // Apply theme class to document root
         document.documentElement.classList.remove('dark', 'light');
         document.documentElement.classList.add(theme);
     }, [theme]);
 
     // UI State
-    const [activeTab, setActiveTabState] = useState(() => {
-        const hash = window.location.hash.replace('#', '');
-        return ['dashboard', 'plan', 'workout', 'guide'].includes(hash) ? hash : 'dashboard';
-    });
-
     const [workoutQueue, setWorkoutQueue] = useState(() => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}queue`);
         return saved ? JSON.parse(saved) : [];
@@ -100,39 +91,7 @@ const App = () => {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [currentSession]);
 
-    const setActiveTab = (tab, push = true) => {
-        setActiveTabState(tab);
-        if (push) {
-            window.history.pushState({ tab }, '', `#${tab}`);
-        }
-        // Scroll to top when changing tabs
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        const handlePopState = (event) => {
-            if (event.state && event.state.tab) {
-                setActiveTabState(event.state.tab);
-            } else {
-                const hash = window.location.hash.replace('#', '');
-                if (hash) setActiveTabState(hash);
-            }
-            // Scroll to top when navigating back/forward
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-
-        window.addEventListener('popstate', handlePopState);
-
-        // Initial state
-        if (!window.location.hash) {
-            window.history.replaceState({ tab: 'dashboard' }, '', '#dashboard');
-        }
-
-        return () => window.removeEventListener('popstate', handlePopState);
-    }, []);
-
     const [activeExercise, setActiveExercise] = useState('pushups');
-    const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
     // Workout State
     const [timeLeft, setTimeLeft] = useState(0);
@@ -141,25 +100,6 @@ const App = () => {
     const [testInput, setTestInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [workoutNotes, setWorkoutNotes] = useState('');
-
-    // ---------------- HELPERS ----------------
-
-    const getThemeClass = (part) => {
-        const exercise = EXERCISE_PLANS[activeExercise];
-        const colors = {
-            blue: { bg: 'bg-blue-500', border: 'border-blue-500', text: 'text-blue-400', ring: 'ring-blue-500', hover: 'hover:border-blue-400', light: 'bg-blue-500/10' },
-            orange: { bg: 'bg-orange-500', border: 'border-orange-500', text: 'text-orange-400', ring: 'ring-orange-500', hover: 'hover:border-orange-400', light: 'bg-orange-500/10' },
-            emerald: { bg: 'bg-emerald-500', border: 'border-emerald-500', text: 'text-emerald-400', ring: 'ring-emerald-500', hover: 'hover:border-emerald-400', light: 'bg-emerald-500/10' },
-            indigo: { bg: 'bg-indigo-500', border: 'border-indigo-500', text: 'text-indigo-400', ring: 'ring-indigo-500', hover: 'hover:border-indigo-400', light: 'bg-indigo-500/10' },
-            cyan: { bg: 'bg-cyan-500', border: 'border-cyan-500', text: 'text-cyan-400', ring: 'ring-cyan-500', hover: 'hover:border-cyan-400', light: 'bg-cyan-500/10' },
-            purple: { bg: 'bg-purple-500', border: 'border-purple-500', text: 'text-purple-400', ring: 'ring-purple-500', hover: 'hover:border-purple-400', light: 'bg-purple-500/10' },
-            pink: { bg: 'bg-pink-500', border: 'border-pink-500', text: 'text-pink-400', ring: 'ring-pink-500', hover: 'hover:border-pink-400', light: 'bg-pink-500/10' },
-            yellow: { bg: 'bg-yellow-500', border: 'border-yellow-500', text: 'text-yellow-400', ring: 'ring-yellow-500', hover: 'hover:border-yellow-400', light: 'bg-yellow-500/10' },
-            teal: { bg: 'bg-teal-500', border: 'border-teal-500', text: 'text-teal-400', ring: 'ring-teal-500', hover: 'hover:border-teal-400', light: 'bg-teal-500/10' },
-        };
-        const config = colors[exercise.color] || colors.cyan;
-        return config[part] || '';
-    };
 
     // ---------------- WORKOUT LOGIC ----------------
 
@@ -191,16 +131,14 @@ const App = () => {
             dayIndex,
             setIndex: 0,
             rest: restTimerOverride !== null ? restTimerOverride : getRest(week),
-            baseReps: day.reps, // Store original reps
-            reps: day.reps,     // Will be modified by assessment
+            baseReps: day.reps,
+            reps: day.reps,
             dayId: day.id,
             isFinal: isFinal,
             color: exercise.color,
             unit: exercise.unit,
-            // Check if assessment is needed (if no sessions completed for this exercise)
             step: isFinal ? 'workout' : ((completedDays[exKey]?.length || 0) === 0 ? 'assessment' : 'workout')
         });
-        setActiveTab('workout');
         setAmrapValue('');
         setTestInput('');
         setTimeLeft(0);
@@ -208,7 +146,7 @@ const App = () => {
     };
 
     const startStack = () => {
-        const stack = getDailyStack(completedDays); // Need to pass completedDays now
+        const stack = getDailyStack(completedDays);
         if (stack.length === 0) return;
 
         setWorkoutQueue(stack.slice(1));
@@ -220,18 +158,14 @@ const App = () => {
         setIsProcessing(true);
 
         const { exerciseKey, dayId, reps, unit } = currentSession;
-
-        // Calculate total volume for this session
         const totalVolume = reps.reduce((sum, r) => sum + r, 0) + (parseInt(amrapValue) || 0);
 
-        // Update progress
         const newCompletedDays = {
             ...completedDays,
             [exerciseKey]: [...(completedDays[exerciseKey] || []), dayId]
         };
         newCompletedDays[exerciseKey] = [...new Set(newCompletedDays[exerciseKey])];
 
-        // Update history
         const newHistoryItem = {
             exerciseKey,
             dayId,
@@ -242,7 +176,6 @@ const App = () => {
         };
         setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
         setWorkoutNotes('');
-
         setCompletedDays(newCompletedDays);
 
         // Queue Handling
@@ -253,7 +186,6 @@ const App = () => {
             startWorkout(next.week, next.dayIndex, next.exerciseKey);
         } else {
             setCurrentSession(null);
-            setActiveTab('dashboard');
         }
 
         setTimeout(() => setIsProcessing(false), 1000);
@@ -360,17 +292,10 @@ const App = () => {
     // ---------------- RENDER ----------------
 
     return (
-        <div className={`min-h-screen pb-32 font-sans selection:bg-cyan-500/30 ${
+        <div className={`min-h-screen font-sans selection:bg-cyan-500/30 ${
             theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
         }`}>
             <Header
-                activeTab={activeTab}
-                activeExercise={activeExercise}
-                setActiveExercise={setActiveExercise}
-                isSelectorOpen={isSelectorOpen}
-                setIsSelectorOpen={setIsSelectorOpen}
-                getThemeClass={getThemeClass}
-                setActiveTab={setActiveTab}
                 onExport={handleExport}
                 onExportCSV={handleExportCSV}
                 onImport={handleImport}
@@ -383,29 +308,18 @@ const App = () => {
                 setTheme={setTheme}
             />
 
-            <main className="max-w-6xl mx-auto p-4 md:p-8 mt-4">
-                {activeTab === 'dashboard' && (
-                    <Dashboard
-                        completedDays={completedDays}
-                        sessionHistory={sessionHistory}
-                        setActiveExercise={setActiveExercise}
-                        setActiveTab={setActiveTab}
-                        startStack={startStack}
-                        workoutQueue={workoutQueue}
-                        setWorkoutQueue={setWorkoutQueue}
-                    />
-                )}
+            <main className="max-w-6xl mx-auto p-4 md:p-8 pb-8">
+                <Dashboard
+                    completedDays={completedDays}
+                    sessionHistory={sessionHistory}
+                    startStack={startStack}
+                    startWorkout={startWorkout}
+                />
+            </main>
 
-                {activeTab === 'plan' && (
-                    <Plan
-                        activeExercise={activeExercise}
-                        completedDays={completedDays}
-                        startWorkout={startWorkout}
-                        getThemeClass={getThemeClass}
-                    />
-                )}
-
-                {activeTab === 'workout' && (
+            {/* Workout Session - Fullscreen Overlay */}
+            {currentSession && (
+                <div className="fixed inset-0 z-50 bg-slate-950">
                     <WorkoutSession
                         currentSession={currentSession}
                         setCurrentSession={setCurrentSession}
@@ -420,25 +334,12 @@ const App = () => {
                         handleTestSubmit={handleTestSubmit}
                         applyCalibration={applyCalibration}
                         completeWorkout={completeWorkout}
-                        getThemeClass={getThemeClass}
-                        setActiveTab={setActiveTab}
-                        exerciseName={EXERCISE_PLANS[activeExercise].name}
                         audioEnabled={audioEnabled}
                         workoutNotes={workoutNotes}
                         setWorkoutNotes={setWorkoutNotes}
                     />
-                )}
-
-                {activeTab === 'guide' && (
-                    <Guide getThemeClass={getThemeClass} />
-                )}
-            </main>
-
-            <BottomNav
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                getThemeClass={getThemeClass}
-            />
+                </div>
+            )}
         </div>
     );
 };

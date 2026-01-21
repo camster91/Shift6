@@ -2,24 +2,43 @@
 
 ## Project Overview
 
-Shift6 is a Progressive Web App (PWA) for a 6-week bodyweight fitness progression system. Users master 6 foundational exercises (Push-ups, Squats, Pull-ups, Dips, V-Ups, Glute Bridges) through structured, science-based programming with automatic difficulty scaling based on performance.
+Shift6 is a Progressive Web App (PWA) for a 6-week bodyweight fitness progression system. Users master 9 foundational exercises through structured, science-based programming with automatic difficulty scaling based on performance.
+
+**Exercises:**
+| Exercise | Color | Unit | Final Goal |
+|----------|-------|------|------------|
+| Push-Ups | Blue | reps | 100 |
+| Squats | Orange | reps | 200 |
+| Pull-Ups | Yellow | reps | 50 |
+| Dips | Pink | reps | 50 |
+| V-Ups | Emerald | reps | 100 |
+| Single Leg Glute Bridge | Cyan | reps/leg | 50 |
+| Plank | Teal | seconds | 180 |
+| Lunges | Purple | reps/leg | 50 |
+| Supermans | Indigo | reps | 100 |
 
 **Key Features:**
 - Dynamic rep progression with automatic scaling
 - 100% offline functionality (local-first data storage)
-- Native app experience with haptics and audio cues
-- Gamification via badges and streaks
+- Native app experience with haptics and audio cues (with mute toggle)
+- Gamification via badges, streaks, and personal records
 - PWA + Capacitor for iOS/Android deployment
+- Workout notes and CSV export
+- Configurable rest timer (Auto, 30s-120s)
+- Calendar view for workout history
+- Dark/light theme toggle
 
 ## Tech Stack
 
-- **Frontend:** React 18 + Vite 5
-- **Styling:** TailwindCSS 3.4 + custom glassmorphism effects
-- **Icons:** Lucide React
+- **Frontend:** React 18.2 + Vite 5.0
+- **Styling:** TailwindCSS 3.4 + tailwindcss-animate + custom glassmorphism
+- **Icons:** Lucide React 0.300
 - **State:** React Hooks + localStorage (no Redux/Context)
-- **Mobile:** Capacitor 8 (iOS/Android bridge)
-- **Testing:** Vitest + @testing-library/react
-- **Linting:** ESLint with React plugins
+- **Mobile:** Capacitor 8.0 (iOS/Android bridge)
+- **PWA:** vite-plugin-pwa 0.17
+- **Testing:** Vitest 4.0 + @testing-library/react 16.3 + jsdom 27
+- **Linting:** ESLint 8.57 with React/Hooks/Refresh plugins
+- **Build:** PostCSS + Autoprefixer
 
 ## Quick Commands
 
@@ -49,20 +68,35 @@ src/
 ├── App.jsx               # Main component (all state management)
 ├── index.css             # Global styles + Tailwind
 ├── components/
-│   ├── Layout/           # Header.jsx, BottomNav.jsx
-│   ├── Views/            # Dashboard, Plan, WorkoutSession, Guide
-│   ├── Visuals/          # NeonBadge, NeoIcon, DataBackground
+│   ├── Layout/
+│   │   ├── Header.jsx    # App header with settings
+│   │   └── BottomNav.jsx # Bottom navigation tabs
+│   ├── Views/
+│   │   ├── Dashboard.jsx     # Home view with progress
+│   │   ├── Plan.jsx          # Exercise selection
+│   │   ├── WorkoutSession.jsx # Active workout UI
+│   │   ├── Guide.jsx         # Exercise instructions
+│   │   └── CalendarView.jsx  # Monthly calendar with workout history
+│   ├── Visuals/
+│   │   ├── NeonBadge.jsx     # Badge display component
+│   │   ├── NeoIcon.jsx       # Custom icon renderer
+│   │   └── DataBackground.jsx # Visual effects
 │   └── ErrorBoundary.jsx # Class-based error boundary
 ├── utils/
-│   ├── constants.js      # App-wide constants
-│   ├── gamification.js   # Badge logic & stats (with JSDoc)
-│   ├── schedule.js       # Workout scheduling
-│   ├── audio.js          # Web Audio API synth
-│   └── device.js         # Wake Lock, Vibration APIs
+│   ├── constants.js         # App-wide constants (localStorage keys, limits)
+│   ├── constants.test.js    # Constants validation tests
+│   ├── gamification.js      # Badge logic & stats (with JSDoc)
+│   ├── gamification.test.js # Badge and stats tests
+│   ├── schedule.js          # Workout scheduling logic
+│   ├── schedule.test.js     # Schedule and daily stack tests
+│   ├── audio.js             # Web Audio API synth
+│   ├── audio.test.js        # Audio function tests
+│   ├── device.js            # Wake Lock, Vibration APIs
+│   └── device.test.js       # Device API tests
 ├── data/
-│   └── exercises.jsx     # Exercise plans data structure
+│   └── exercises.jsx     # 9 exercise plans with 6-week progressions
 └── test/
-    └── setup.js          # Vitest setup
+    └── setup.js          # Vitest + jsdom setup
 ```
 
 ## Coding Conventions
@@ -103,16 +137,26 @@ const Component = ({ props, getThemeClass }) => {
 
 ## Data Flow
 
-- **Exercise Plans:** Hardcoded in `/data/exercises.jsx`
-- **Progress:** `{ [exerciseKey]: [dayId, ...] }` in localStorage
-- **History:** Array of session objects with timestamp, exercise, volume
-- **No external APIs** - 100% client-side
+- **Exercise Plans:** Hardcoded in `/data/exercises.jsx` (9 exercises, 18 days each)
+- **Exercise Keys:** `pushups`, `squats`, `pullups`, `dips`, `vups`, `glutebridge`, `plank`, `lunges`, `supermans`
+- **Progress:** `shift6_progress` → `{ [exerciseKey]: [dayId, ...] }`
+- **History:** `shift6_history` → Array of `{ exerciseKey, dayId, date, volume, unit }` (max 50 items)
+- **Current Session:** `shift6_current_session` → Active workout state
+- **No external APIs** - 100% client-side, privacy-first
 
 ## Testing
 
-- Unit tests co-located with utilities (`*.test.js`)
-- Uses jsdom environment
-- Run `npm test` for watch mode, `npm run test:run` for CI
+- **Framework:** Vitest with jsdom environment
+- **Pattern:** Unit tests co-located with utilities (`utils/*.test.js`)
+- **Current Coverage (82 tests):**
+  - `gamification.test.js` - Badge logic, stats calculation, unlock conditions, personal records (22 tests)
+  - `schedule.test.js` - Workout scheduling, daily stack, schedule focus (17 tests)
+  - `constants.test.js` - App constants validation (18 tests)
+  - `audio.test.js` - Web Audio API functions (8 tests)
+  - `device.test.js` - Wake lock, vibration, clipboard (17 tests)
+- **Commands:**
+  - `npm test` - Watch mode for development
+  - `npm run test:run` - Single run for CI
 
 ## Important Notes
 
@@ -179,7 +223,10 @@ Each exercise has its own level with achievements unlocked at milestones:
 | Dip Master | Master dips | Gold with dip icon |
 | Core Crusher | Master V-ups | Gold with V-up icon |
 | Glute God/Goddess | Master glute bridges | Gold with bridge icon |
-| Complete Athlete | Master all 6 exercises | Platinum animated badge |
+| Plank Warrior | Master plank | Gold with plank icon |
+| Lunge Legend | Master lunges | Gold with lunge icon |
+| Superman/Superwoman | Master supermans | Gold with superman icon |
+| Complete Athlete | Master all 9 exercises | Platinum animated badge |
 
 **Bonus Achievements**
 | Achievement | Criteria | Fun Factor |
@@ -187,7 +234,7 @@ Each exercise has its own level with achievements unlocked at milestones:
 | First Steps | Complete first ever workout | Welcome celebration |
 | Double Trouble | Do 2 exercises in one day | Encourages variety |
 | Triple Threat | Do 3 exercises in one day | Extra dedication |
-| Six Pack | Do all 6 exercises in one day | Ultimate challenge |
+| Nine Lives | Do all 9 exercises in one day | Ultimate challenge |
 | Streak Starter | 3-day streak | Flame icon appears |
 | Week Warrior | 7-day streak | Flame intensifies |
 | Month Monster | 30-day streak | Legendary flame |
@@ -363,6 +410,9 @@ public/
 | Dips | Elbow position, depth, chair dips | 2-3 min |
 | V-Ups | Core engagement, modifications | 2-3 min |
 | Glute Bridges | Hip drive, single leg progression | 2-3 min |
+| Plank | Core bracing, breathing, time progression | 2-3 min |
+| Lunges | Knee alignment, balance, walking lunges | 2-3 min |
+| Supermans | Back engagement, hold duration, variations | 2-3 min |
 
 **Implementation Options**:
 
@@ -448,10 +498,10 @@ const Guide = lazy(() => import('./components/Views/Guide'))
 
 ### Testing Strategy
 
-**Unit Tests** (Current: utils only)
-- Add tests for all utility functions
-- Mock localStorage and device APIs
-- Target: 80% coverage for utils/
+**Unit Tests** (Current: 69 tests across all utils)
+- All utility functions tested (gamification, schedule, constants, audio, device)
+- Mocks for localStorage, AudioContext, device APIs
+- Coverage: 100% of exported utility functions
 
 **Component Tests** (To add)
 ```bash

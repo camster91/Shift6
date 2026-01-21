@@ -51,21 +51,24 @@ const WorkoutSession = ({
     handleTestSubmit,
     applyCalibration,
     completeWorkout,
-    setActiveTab
+    setActiveTab,
+    audioEnabled = true,
+    workoutNotes,
+    setWorkoutNotes
 }) => {
     const [copied, setCopied] = useState(false);
 
     // Audio/Vibrate Effect
     React.useEffect(() => {
-        if (isTimerRunning && timeLeft > 0 && timeLeft <= 3) playBeep();
+        if (isTimerRunning && timeLeft > 0 && timeLeft <= 3 && audioEnabled) playBeep();
         if (isTimerRunning && timeLeft === 0) {
-            playStart();
+            if (audioEnabled) playStart();
             vibrate([100, 50, 100]);
         }
-    }, [timeLeft, isTimerRunning]);
+    }, [timeLeft, isTimerRunning, audioEnabled]);
 
     const handleComplete = () => {
-        playSuccess();
+        if (audioEnabled) playSuccess();
         vibrate([50, 50, 50, 50, 200]);
         completeWorkout();
     };
@@ -225,7 +228,19 @@ const WorkoutSession = ({
                                         />
                                     </div>
 
-                                    <div className="flex gap-3 pt-4">
+                                    {/* Optional workout notes */}
+                                    <div className="pt-4">
+                                        <textarea
+                                            value={workoutNotes || ''}
+                                            onChange={(e) => setWorkoutNotes(e.target.value)}
+                                            placeholder="Add notes (optional)..."
+                                            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 resize-none"
+                                            rows={2}
+                                            maxLength={200}
+                                        />
+                                    </div>
+
+                                    <div className="flex gap-3 pt-2">
                                         <button
                                             onClick={handleComplete}
                                             className="flex-1 bg-cyan-500 rounded-lg text-slate-900 py-4 text-sm font-bold hover:bg-cyan-600 transition-colors uppercase tracking-wider"

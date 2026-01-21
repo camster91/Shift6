@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { BADGES, calculateStats, getUnlockedBadges } from './gamification';
+import { BADGES, calculateStats, getUnlockedBadges, getPersonalRecords, isNewPersonalRecord } from './gamification';
 
 describe('gamification utilities', () => {
     describe('BADGES', () => {
         it('contains expected badges', () => {
-            expect(BADGES.length).toBe(6);
+            expect(BADGES.length).toBe(9);
             expect(BADGES.map(b => b.id)).toContain('first_step');
             expect(BADGES.map(b => b.id)).toContain('week_warrior');
+            expect(BADGES.map(b => b.id)).toContain('month_monster');
+            expect(BADGES.map(b => b.id)).toContain('century_club');
+            expect(BADGES.map(b => b.id)).toContain('complete_athlete');
         });
     });
 
@@ -66,6 +69,97 @@ describe('gamification utilities', () => {
             const stats = { totalSessions: 3, completedPlans: 0, currentStreak: 3 };
             const badges = getUnlockedBadges(stats);
             expect(badges.map(b => b.id)).toContain('week_warrior');
+        });
+
+        it('returns month_monster badge for 30 day streak', () => {
+            const stats = { totalSessions: 30, completedPlans: 0, currentStreak: 30 };
+            const badges = getUnlockedBadges(stats);
+            expect(badges.map(b => b.id)).toContain('month_monster');
+        });
+
+        it('returns century_club badge for 100 sessions', () => {
+            const stats = { totalSessions: 100, completedPlans: 0, currentStreak: 0 };
+            const badges = getUnlockedBadges(stats);
+            expect(badges.map(b => b.id)).toContain('century_club');
+        });
+
+        it('returns complete_athlete badge when all 9 plans completed', () => {
+            const stats = { totalSessions: 162, completedPlans: 9, currentStreak: 0 };
+            const badges = getUnlockedBadges(stats);
+            expect(badges.map(b => b.id)).toContain('complete_athlete');
+        });
+
+        it('does not return complete_athlete for partial completion', () => {
+            const stats = { totalSessions: 100, completedPlans: 8, currentStreak: 0 };
+            const badges = getUnlockedBadges(stats);
+            expect(badges.map(b => b.id)).not.toContain('complete_athlete');
+        });
+    });
+
+    describe('getPersonalRecords', () => {
+        it('returns empty object for empty history', () => {
+            expect(getPersonalRecords([])).toEqual({});
+        });
+
+        it('returns max volume per exercise', () => {
+            const history = [
+                { exerciseKey: 'pushups', volume: 50, date: '2024-01-01' },
+                { exerciseKey: 'pushups', volume: 75, date: '2024-01-02' },
+                { exerciseKey: 'pushups', volume: 60, date: '2024-01-03' },
+                { exerciseKey: 'squats', volume: 100, date: '2024-01-01' }
+            ];
+            const prs = getPersonalRecords(history);
+            expect(prs.pushups.volume).toBe(75);
+            expect(prs.pushups.date).toBe('2024-01-02');
+            expect(prs.squats.volume).toBe(100);
+        });
+
+        it('handles single session per exercise', () => {
+            const history = [
+                { exerciseKey: 'pullups', volume: 25, date: '2024-01-01' }
+            ];
+            const prs = getPersonalRecords(history);
+            expect(prs.pullups.volume).toBe(25);
+        });
+    });
+
+    describe('isNewPersonalRecord', () => {
+        it('returns true for first workout of exercise', () => {
+            expect(isNewPersonalRecord('pushups', 50, [])).toBe(true);
+        });
+
+        it('returns true when volume exceeds previous max', () => {
+            const history = [
+                { exerciseKey: 'pushups', volume: 50 },
+                { exerciseKey: 'pushups', volume: 60 }
+            ];
+            expect(isNewPersonalRecord('pushups', 75, history)).toBe(true);
+        });
+
+        it('returns false when volume equals previous max', () => {
+            const history = [
+                { exerciseKey: 'pushups', volume: 60 }
+            ];
+            expect(isNewPersonalRecord('pushups', 60, history)).toBe(false);
+        });
+
+        it('returns false when volume is below previous max', () => {
+            const history = [
+                { exerciseKey: 'pushups', volume: 75 }
+            ];
+            expect(isNewPersonalRecord('pushups', 50, history)).toBe(false);
+        });
+
+        it('only considers same exercise history', () => {
+            const history = [
+                { exerciseKey: 'squats', volume: 100 },
+                { exerciseKey: 'pushups', volume: 30 }
+            ];
+            expect(isNewPersonalRecord('pushups', 50, history)).toBe(true);
+        });
+
+        it('returns false for zero volume on first workout', () => {
+            expect(isNewPersonalRecord('pushups', 0, [])).toBe(false);
         });
     });
 });

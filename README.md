@@ -191,7 +191,6 @@ npm run cap:android
 | Deload Weeks | Automatic recovery week scheduling | Low |
 | Plateau Detection | Alert when progress stalls | Medium |
 | Heart Rate Zones | Integration with HR monitors | High |
-| AI Form Check | Camera-based form analysis | Very High |
 | Nutrition Tips | Basic nutrition guidance per goal | Low |
 
 ### Technical Debt

@@ -111,6 +111,9 @@ export const EXERCISE_PLANS = {
         instructions: "Keep body straight from head to heels. Lower chest to floor, elbows at 45°. Push through palms, engage core throughout.",
         tips: ["Don't let hips sag", "Full range of motion", "Breathe out on push"],
         category: "push",
+        equipment: ['none'],
+        modes: ['bodyweight', 'mixed'],
+        isBuiltIn: true,
         variations: [
             { level: 1, name: "Wall Push-Ups", desc: "Stand facing wall, push away" },
             { level: 2, name: "Knee Push-Ups", desc: "Knees on ground" },
@@ -139,6 +142,9 @@ export const EXERCISE_PLANS = {
         instructions: "Feet shoulder-width apart, toes slightly out. Sit back and down, keeping knees tracking over toes. Drive through heels to stand.",
         tips: ["Keep chest up", "Depth: thighs parallel or below", "Don't let knees cave in"],
         category: "legs",
+        equipment: ['none'],
+        modes: ['bodyweight', 'mixed'],
+        isBuiltIn: true,
         variations: [
             { level: 1, name: "Chair Squats", desc: "Sit to chair, stand up" },
             { level: 2, name: "Half Squats", desc: "Partial depth squat" },
@@ -167,6 +173,9 @@ export const EXERCISE_PLANS = {
         instructions: "Lie on back, one foot flat on floor. Drive through heel, squeeze glutes at top. Lower with control, keep hips level.",
         tips: ["Don't hyperextend lower back", "Squeeze glutes hard at top", "Keep core engaged"],
         category: "legs",
+        equipment: ['none'],
+        modes: ['bodyweight', 'mixed'],
+        isBuiltIn: true,
         variations: [
             { level: 1, name: "Two-Leg Bridge", desc: "Both feet on ground" },
             { level: 2, name: "Marching Bridge", desc: "Alternate lifting legs" },
@@ -195,6 +204,9 @@ export const EXERCISE_PLANS = {
         instructions: "Lie flat, arms overhead. Simultaneously lift legs and torso, reaching hands toward toes. Lower with control.",
         tips: ["Keep legs straight", "Touch toes at top", "Control the negative"],
         category: "core",
+        equipment: ['none'],
+        modes: ['bodyweight', 'mixed'],
+        isBuiltIn: true,
         variations: [
             { level: 1, name: "Crunches", desc: "Upper body only, hands behind head" },
             { level: 2, name: "Tuck-Ups", desc: "Knees bent, touch shins" },
@@ -223,6 +235,9 @@ export const EXERCISE_PLANS = {
         instructions: "Grip bar shoulder-width, palms away. Pull until chin clears bar, leading with chest. Lower with control.",
         tips: ["Engage lats before pulling", "Don't swing or kip", "Use negatives to build strength"],
         category: "pull",
+        equipment: ['pullupBar'],
+        modes: ['bodyweight', 'mixed'],
+        isBuiltIn: true,
         variations: [
             { level: 1, name: "Dead Hangs", desc: "Just hang from bar, build grip" },
             { level: 2, name: "Negative Pull-Ups", desc: "Jump up, lower slowly" },
@@ -251,6 +266,9 @@ export const EXERCISE_PLANS = {
         instructions: "Forearms and toes on ground, body in straight line. Squeeze core, glutes, and quads. Breathe steadily.",
         tips: ["Don't let hips sag or pike", "Look at floor, neutral neck", "Engage entire core"],
         category: "core",
+        equipment: ['none'],
+        modes: ['bodyweight', 'mixed'],
+        isBuiltIn: true,
         variations: [
             { level: 1, name: "Knee Plank", desc: "Knees on ground, easier" },
             { level: 2, name: "Incline Plank", desc: "Hands on raised surface" },
@@ -279,6 +297,9 @@ export const EXERCISE_PLANS = {
         instructions: "Step forward, lower until both knees at 90°. Front knee stays over ankle. Push through front heel to return.",
         tips: ["Keep torso upright", "Don't let knee pass toes", "Control the descent"],
         category: "legs",
+        equipment: ['none'],
+        modes: ['bodyweight', 'mixed'],
+        isBuiltIn: true,
         variations: [
             { level: 1, name: "Static Lunges", desc: "Stay in split stance" },
             { level: 2, name: "Reverse Lunges", desc: "Step backward instead" },
@@ -307,6 +328,9 @@ export const EXERCISE_PLANS = {
         instructions: "Grip parallel bars, arms straight. Lower until upper arms parallel to floor. Push back up to full extension.",
         tips: ["Lean slightly forward for chest", "Don't go too deep initially", "Keep elbows close to body"],
         category: "push",
+        equipment: ['dipBars'],
+        modes: ['bodyweight', 'mixed'],
+        isBuiltIn: true,
         variations: [
             { level: 1, name: "Bench Dips", desc: "Hands on bench behind you" },
             { level: 2, name: "Assisted Dips", desc: "Use band or machine" },
@@ -334,7 +358,10 @@ export const EXERCISE_PLANS = {
         youtubeId: "cc6UVRS7PW4",
         instructions: "Lie face down, arms extended. Simultaneously lift arms, chest, and legs off floor. Hold briefly, lower with control.",
         tips: ["Squeeze glutes and lower back", "Keep neck neutral", "Don't hyperextend"],
-        category: "core",
+        category: "pull",
+        equipment: ['none'],
+        modes: ['bodyweight', 'mixed'],
+        isBuiltIn: true,
         variations: [
             { level: 1, name: "Bird Dogs", desc: "On all fours, opposite arm/leg" },
             { level: 2, name: "Cobra", desc: "Just lift upper body" },

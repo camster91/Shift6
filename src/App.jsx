@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import { EXERCISE_PLANS, getRest } from './data/exercises.jsx';
+import { useState, useEffect, useMemo } from 'react';
+import { EXERCISE_PLANS, getRest, DIFFICULTY_LEVELS } from './data/exercises.jsx';
 import { getDailyStack } from './utils/schedule';
 
 // Components
 import Header from './components/Layout/Header';
 import Dashboard from './components/Views/Dashboard';
 import WorkoutSession from './components/Views/WorkoutSession';
+import AddExercise from './components/Views/AddExercise';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -38,9 +39,37 @@ const App = () => {
         return saved || 'dark';
     });
 
+    // Custom exercises added by user
+    const [customExercises, setCustomExercises] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}custom_exercises`);
+        return saved ? JSON.parse(saved) : {};
+    });
+
+    // Difficulty level per exercise (1-6, default 3 = Standard)
+    const [exerciseDifficulty, setExerciseDifficulty] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}difficulty`);
+        return saved ? JSON.parse(saved) : {};
+    });
+
+    // UI State for Add Exercise modal
+    const [showAddExercise, setShowAddExercise] = useState(false);
+
+    // Merge built-in and custom exercises
+    const allExercises = useMemo(() => {
+        return { ...EXERCISE_PLANS, ...customExercises };
+    }, [customExercises]);
+
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}progress`, JSON.stringify(completedDays));
     }, [completedDays]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}custom_exercises`, JSON.stringify(customExercises));
+    }, [customExercises]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}difficulty`, JSON.stringify(exerciseDifficulty));
+    }, [exerciseDifficulty]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
@@ -119,10 +148,17 @@ const App = () => {
         const exKey = overrideKey || activeExercise;
         if (overrideKey) setActiveExercise(overrideKey);
 
-        const exercise = EXERCISE_PLANS[exKey];
+        const exercise = allExercises[exKey];
+        if (!exercise) return;
+
         const weekData = exercise.weeks.find(w => w.week === week);
         const day = weekData.days[dayIndex];
         const isFinal = day.isFinal || false;
+
+        // Apply difficulty scaling
+        const difficultyLevel = exerciseDifficulty[exKey] || 3;
+        const multiplier = DIFFICULTY_LEVELS[difficultyLevel]?.multiplier || 1.0;
+        const scaledReps = day.reps.map(r => Math.max(1, Math.round(r * multiplier)));
 
         setCurrentSession({
             exerciseKey: exKey,
@@ -132,17 +168,51 @@ const App = () => {
             setIndex: 0,
             rest: restTimerOverride !== null ? restTimerOverride : getRest(week),
             baseReps: day.reps,
-            reps: day.reps,
+            reps: scaledReps,
             dayId: day.id,
             isFinal: isFinal,
             color: exercise.color,
             unit: exercise.unit,
+            difficulty: difficultyLevel,
             step: isFinal ? 'workout' : ((completedDays[exKey]?.length || 0) === 0 ? 'assessment' : 'workout')
         });
         setAmrapValue('');
         setTestInput('');
         setTimeLeft(0);
         setWorkoutNotes('');
+    };
+
+    // Add custom exercise
+    const handleAddExercise = (exercise) => {
+        setCustomExercises(prev => ({
+            ...prev,
+            [exercise.key]: exercise
+        }));
+    };
+
+    // Delete custom exercise
+    const handleDeleteExercise = (key) => {
+        if (window.confirm('Delete this custom exercise? This cannot be undone.')) {
+            setCustomExercises(prev => {
+                const updated = { ...prev };
+                delete updated[key];
+                return updated;
+            });
+            // Also clean up progress for this exercise
+            setCompletedDays(prev => {
+                const updated = { ...prev };
+                delete updated[key];
+                return updated;
+            });
+        }
+    };
+
+    // Change difficulty for an exercise
+    const handleSetDifficulty = (exerciseKey, level) => {
+        setExerciseDifficulty(prev => ({
+            ...prev,
+            [exerciseKey]: level
+        }));
     };
 
     const startStack = () => {
@@ -191,10 +261,22 @@ const App = () => {
         setTimeout(() => setIsProcessing(false), 1000);
     };
 
-    const applyCalibration = (factor) => {
+    const applyCalibration = (factor, skipConfirmation = false) => {
         if (!currentSession) return;
         const newReps = currentSession.baseReps.map(r => Math.ceil(r * factor));
-        setCurrentSession(prev => ({ ...prev, reps: newReps, step: 'workout' }));
+
+        // Save calibration factor for this exercise
+        const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+        calibrations[currentSession.exerciseKey] = factor;
+        localStorage.setItem(`${STORAGE_PREFIX}calibrations`, JSON.stringify(calibrations));
+
+        // If using default, skip confirmation and go straight to workout
+        if (skipConfirmation) {
+            setCurrentSession(prev => ({ ...prev, reps: newReps, step: 'workout' }));
+        } else {
+            // Show assessment complete screen with option to start or exit
+            setCurrentSession(prev => ({ ...prev, reps: newReps, step: 'assessment-complete' }));
+        }
     };
 
     const handleTestSubmit = (e) => {
@@ -314,8 +396,22 @@ const App = () => {
                     sessionHistory={sessionHistory}
                     startStack={startStack}
                     startWorkout={startWorkout}
+                    allExercises={allExercises}
+                    customExercises={customExercises}
+                    exerciseDifficulty={exerciseDifficulty}
+                    onSetDifficulty={handleSetDifficulty}
+                    onDeleteExercise={handleDeleteExercise}
+                    onShowAddExercise={() => setShowAddExercise(true)}
                 />
             </main>
+
+            {/* Add Exercise Modal */}
+            {showAddExercise && (
+                <AddExercise
+                    onAdd={handleAddExercise}
+                    onClose={() => setShowAddExercise(false)}
+                />
+            )}
 
             {/* Workout Session - Fullscreen Overlay */}
             {currentSession && (

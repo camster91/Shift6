@@ -31,6 +31,9 @@ export const EXERCISE_PLANS = {
         unit: "reps",
         finalGoal: "100 Reps",
         image: "/assets/images/icon-pushups.png",
+        youtubeId: "IODxDxX7oi4", // Athlean-X perfect push-up form
+        instructions: "Keep body straight from head to heels. Lower chest to floor, elbows at 45°. Push through palms, engage core throughout.",
+        tips: ["Don't let hips sag", "Full range of motion", "Breathe out on push"],
         weeks: [
             { week: 1, days: [{ id: "p11", reps: [3, 4, 3, 3, 5] }, { id: "p12", reps: [4, 5, 4, 4, 6] }, { id: "p13", reps: [5, 6, 5, 5, 8] }] },
             { week: 2, days: [{ id: "p21", reps: [6, 7, 6, 6, 9] }, { id: "p22", reps: [8, 10, 8, 8, 12] }, { id: "p23", reps: [10, 12, 10, 10, 15] }] },
@@ -47,6 +50,9 @@ export const EXERCISE_PLANS = {
         unit: "reps",
         finalGoal: "200 Reps",
         image: "/assets/images/icon-squats.png",
+        youtubeId: "YaXPRqUwItQ", // Squat form tutorial
+        instructions: "Feet shoulder-width apart, toes slightly out. Sit back and down, keeping knees tracking over toes. Drive through heels to stand.",
+        tips: ["Keep chest up", "Depth: thighs parallel or below", "Don't let knees cave in"],
         weeks: [
             { week: 1, days: [{ id: "s11", reps: [15, 18, 15, 15, 20] }, { id: "s12", reps: [18, 22, 18, 18, 25] }, { id: "s13", reps: [20, 25, 20, 20, 30] }] },
             { week: 2, days: [{ id: "s21", reps: [25, 30, 25, 25, 35] }, { id: "s22", reps: [30, 35, 30, 30, 40] }, { id: "s23", reps: [35, 40, 35, 35, 50] }] },
@@ -63,6 +69,9 @@ export const EXERCISE_PLANS = {
         unit: "reps/leg",
         finalGoal: "50 Reps/Leg",
         image: "/assets/images/icon-glutebridge.png",
+        youtubeId: "AVAXhy6pl7o", // Single leg glute bridge tutorial
+        instructions: "Lie on back, one foot flat on floor. Drive through heel, squeeze glutes at top. Lower with control, keep hips level.",
+        tips: ["Don't hyperextend lower back", "Squeeze glutes hard at top", "Keep core engaged"],
         weeks: [
             { week: 1, days: [{ id: "g11", reps: [5, 6, 5, 5, 8] }, { id: "g12", reps: [6, 8, 6, 6, 10] }, { id: "g13", reps: [8, 10, 8, 8, 12] }] },
             { week: 2, days: [{ id: "g21", reps: [10, 12, 10, 10, 15] }, { id: "g22", reps: [12, 15, 12, 12, 18] }, { id: "g23", reps: [15, 18, 15, 15, 20] }] },
@@ -79,6 +88,9 @@ export const EXERCISE_PLANS = {
         unit: "reps",
         finalGoal: "100 Reps",
         image: "/assets/images/icon-vups.png",
+        youtubeId: "7UVgs18Y1P4", // V-Up tutorial
+        instructions: "Lie flat, arms overhead. Simultaneously lift legs and torso, reaching hands toward toes. Lower with control.",
+        tips: ["Keep legs straight", "Touch toes at top", "Control the negative"],
         weeks: [
             { week: 1, days: [{ id: "v11", reps: [4, 5, 4, 4, 6] }, { id: "v12", reps: [5, 6, 5, 5, 8] }, { id: "v13", reps: [6, 8, 6, 6, 10] }] },
             { week: 2, days: [{ id: "v21", reps: [8, 10, 8, 8, 12] }, { id: "v22", reps: [10, 12, 10, 10, 15] }, { id: "v23", reps: [12, 15, 12, 12, 18] }] },
@@ -95,6 +107,9 @@ export const EXERCISE_PLANS = {
         unit: "reps",
         finalGoal: "50 Reps",
         image: "neo:pullups",
+        youtubeId: "eGo4IYlbE5g", // Pull-up form tutorial
+        instructions: "Grip bar shoulder-width, palms away. Pull until chin clears bar, leading with chest. Lower with control.",
+        tips: ["Engage lats before pulling", "Don't swing or kip", "Use negatives to build strength"],
         weeks: [
             { week: 1, days: [{ id: "l11", reps: [1, 2, 1, 1, 2] }, { id: "l12", reps: [2, 2, 2, 2, 3] }, { id: "l13", reps: [2, 3, 2, 2, 4] }] },
             { week: 2, days: [{ id: "l21", reps: [3, 3, 3, 3, 4] }, { id: "l22", reps: [3, 4, 3, 3, 5] }, { id: "l23", reps: [4, 5, 4, 4, 6] }] },
@@ -111,6 +126,9 @@ export const EXERCISE_PLANS = {
         unit: "seconds",
         finalGoal: "180 Seconds",
         image: "neo:plank",
+        youtubeId: "ASdvN_XEl_c", // Plank form tutorial
+        instructions: "Forearms and toes on ground, body in straight line. Squeeze core, glutes, and quads. Breathe steadily.",
+        tips: ["Don't let hips sag or pike", "Look at floor, neutral neck", "Engage entire core"],
         weeks: [
             { week: 1, days: [{ id: "k11", reps: [20, 30, 20, 20, 30] }, { id: "k12", reps: [25, 35, 25, 25, 40] }, { id: "k13", reps: [30, 40, 30, 30, 45] }] },
             { week: 2, days: [{ id: "k21", reps: [35, 45, 35, 35, 50] }, { id: "k22", reps: [40, 50, 40, 40, 60] }, { id: "k23", reps: [45, 60, 45, 45, 70] }] },
@@ -127,6 +145,9 @@ export const EXERCISE_PLANS = {
         unit: "reps/leg",
         finalGoal: "50 Reps/Leg",
         image: "/assets/images/icon-lunges.png",
+        youtubeId: "QOVaHwm-Q6U", // Lunge form tutorial
+        instructions: "Step forward, lower until both knees at 90°. Front knee stays over ankle. Push through front heel to return.",
+        tips: ["Keep torso upright", "Don't let knee pass toes", "Control the descent"],
         weeks: [
             { week: 1, days: [{ id: "u11", reps: [6, 8, 6, 6, 10] }, { id: "u12", reps: [8, 10, 8, 8, 12] }, { id: "u13", reps: [10, 12, 10, 10, 15] }] },
             { week: 2, days: [{ id: "u21", reps: [12, 14, 12, 12, 18] }, { id: "u22", reps: [14, 16, 14, 14, 20] }, { id: "u23", reps: [16, 18, 16, 16, 25] }] },
@@ -143,6 +164,9 @@ export const EXERCISE_PLANS = {
         unit: "reps",
         finalGoal: "50 Reps",
         image: "neo:dips",
+        youtubeId: "2z8JmcrW-As", // Dip form tutorial
+        instructions: "Grip parallel bars, arms straight. Lower until upper arms parallel to floor. Push back up to full extension.",
+        tips: ["Lean slightly forward for chest", "Don't go too deep initially", "Keep elbows close to body"],
         weeks: [
             { week: 1, days: [{ id: "d11", reps: [3, 4, 3, 3, 5] }, { id: "d12", reps: [4, 5, 4, 4, 6] }, { id: "d13", reps: [5, 6, 5, 5, 8] }] },
             { week: 2, days: [{ id: "d21", reps: [6, 8, 6, 6, 10] }, { id: "d22", reps: [8, 10, 8, 8, 12] }, { id: "d23", reps: [10, 12, 10, 10, 15] }] },
@@ -159,6 +183,9 @@ export const EXERCISE_PLANS = {
         unit: "reps",
         finalGoal: "50 Reps",
         image: "neo:supermans",
+        youtubeId: "cc6UVRS7PW4", // Superman exercise tutorial
+        instructions: "Lie face down, arms extended. Simultaneously lift arms, chest, and legs off floor. Hold briefly, lower with control.",
+        tips: ["Squeeze glutes and lower back", "Keep neck neutral", "Don't hyperextend"],
         weeks: [
             { week: 1, days: [{ id: "m11", reps: [5, 6, 5, 5, 8] }, { id: "m12", reps: [6, 8, 6, 6, 10] }, { id: "m13", reps: [8, 10, 8, 8, 12] }] },
             { week: 2, days: [{ id: "m21", reps: [10, 12, 10, 10, 15] }, { id: "m22", reps: [12, 15, 12, 12, 18] }, { id: "m23", reps: [15, 18, 15, 15, 20] }] },

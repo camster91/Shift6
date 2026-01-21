@@ -1,8 +1,46 @@
 import React, { useState } from 'react';
-import { ChevronRight, Trophy, Info, Play, Share2, Check, X, Zap } from 'lucide-react';
+import { ChevronRight, Trophy, Info, Play, Share2, Check, X, Zap, Youtube } from 'lucide-react';
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { vibrate, copyToClipboard } from '../../utils/device';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
+
+const VideoModal = ({ exercise, onClose }) => {
+    if (!exercise) return null
+
+    return (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                    <h3 className="text-lg font-bold text-white">{exercise.name} - Form Guide</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+                        <X size={20} className="text-slate-400" />
+                    </button>
+                </div>
+                <div className="aspect-video bg-black">
+                    <iframe
+                        src={`https://www.youtube.com/embed/${exercise.youtubeId}?rel=0`}
+                        title={`${exercise.name} form guide`}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    />
+                </div>
+                <div className="p-4 space-y-3">
+                    <p className="text-sm text-slate-300">{exercise.instructions}</p>
+                    {exercise.tips && (
+                        <div className="flex flex-wrap gap-2">
+                            {exercise.tips.map((tip, i) => (
+                                <span key={i} className="text-xs px-2 py-1 bg-slate-800 border border-slate-700 rounded-full text-slate-400">
+                                    {tip}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
 
 const ProgressRing = ({ progress, size = 200, stroke = 8, color = "currentColor" }) => {
     const radius = (size / 2) - (stroke * 2);
@@ -57,6 +95,8 @@ const WorkoutSession = ({
     setWorkoutNotes
 }) => {
     const [copied, setCopied] = useState(false);
+    const [showVideo, setShowVideo] = useState(false);
+    const currentExercise = currentSession ? EXERCISE_PLANS[currentSession.exerciseKey] : null;
 
     // Audio/Vibrate Effect
     React.useEffect(() => {
@@ -281,46 +321,44 @@ const WorkoutSession = ({
                     )}
                 </div>
 
-                {/* Tips Section with Infographic */}
-                <div className="border-t border-cyan-500/20 bg-slate-900/50">
-                    {/* Exercise Infographic */}
-                    <div className="relative h-48 border-b border-cyan-500/20 overflow-hidden">
-                        <img
-                            src={EXERCISE_PLANS[currentSession.exerciseKey]?.image}
-                            alt={`${currentSession.exerciseName} form guide`}
-                            className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
-                        <div className="absolute bottom-0 left-0 right-0 p-3">
-                            <p className="text-cyan-400 text-xs font-bold uppercase tracking-wider">{currentSession.exerciseName} - Form Guide</p>
+                {/* Tips Section with Watch Video Button */}
+                <div className="border-t border-cyan-500/20 bg-slate-900/50 p-4">
+                    <div className="flex gap-3 items-start">
+                        <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                            <Info size={16} />
                         </div>
-                    </div>
-
-                    <div className="p-4">
-                        <div className="flex gap-3 items-start">
-                            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-                                <Info size={16} />
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-cyan-400 mb-1 uppercase tracking-wider">Form Tip</p>
-                                <p className="text-xs text-slate-400">
-                                    {
-                                        currentSession.exerciseKey === 'pushups' ? "Keep elbows at 45 degrees. Squeeze core." :
-                                        currentSession.exerciseKey === 'squats' ? "Weight in heels, chest up." :
-                                        currentSession.exerciseKey === 'pullups' ? "Full extension at bottom. Pull elbows down." :
-                                        currentSession.exerciseKey === 'plank' ? "Squeeze glutes. Keep neck neutral." :
-                                        currentSession.exerciseKey === 'vups' ? "Keep legs straight, reach for toes." :
-                                        currentSession.exerciseKey === 'dips' ? "Chest up, elbows tucked." :
-                                        currentSession.exerciseKey === 'lunges' ? "Keep torso upright." :
-                                        currentSession.exerciseKey === 'glutebridge' ? "Drive through heels, squeeze glutes." :
-                                        currentSession.exerciseKey === 'supermans' ? "Lift chest and thighs. Neutral neck." :
-                                        "Maintain perfect form throughout."
-                                    }
-                                </p>
-                            </div>
+                        <div className="flex-1">
+                            <p className="text-xs font-semibold text-cyan-400 mb-1 uppercase tracking-wider">Form Tip</p>
+                            <p className="text-xs text-slate-400">
+                                {currentExercise?.instructions || "Maintain perfect form throughout."}
+                            </p>
+                            {currentExercise?.tips && (
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                    {currentExercise.tips.map((tip, i) => (
+                                        <span key={i} className="text-xs px-2 py-0.5 bg-slate-800 border border-slate-700 rounded-full text-slate-500">
+                                            {tip}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
+                        {currentExercise?.youtubeId && (
+                            <button
+                                onClick={() => setShowVideo(true)}
+                                className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
+                                title="Watch form video"
+                            >
+                                <Youtube size={16} />
+                                <span className="text-xs font-medium hidden sm:inline">Watch</span>
+                            </button>
+                        )}
                     </div>
                 </div>
+
+                {/* Video Modal */}
+                {showVideo && currentExercise && (
+                    <VideoModal exercise={currentExercise} onClose={() => setShowVideo(false)} />
+                )}
             </div>
         </div>
     );

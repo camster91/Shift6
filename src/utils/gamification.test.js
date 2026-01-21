@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BADGES, calculateStats, getUnlockedBadges } from './gamification';
+import { BADGES, calculateStats, getUnlockedBadges, getPersonalRecords, isNewPersonalRecord } from './gamification';
 
 describe('gamification utilities', () => {
     describe('BADGES', () => {
@@ -93,6 +93,73 @@ describe('gamification utilities', () => {
             const stats = { totalSessions: 100, completedPlans: 8, currentStreak: 0 };
             const badges = getUnlockedBadges(stats);
             expect(badges.map(b => b.id)).not.toContain('complete_athlete');
+        });
+    });
+
+    describe('getPersonalRecords', () => {
+        it('returns empty object for empty history', () => {
+            expect(getPersonalRecords([])).toEqual({});
+        });
+
+        it('returns max volume per exercise', () => {
+            const history = [
+                { exerciseKey: 'pushups', volume: 50, date: '2024-01-01' },
+                { exerciseKey: 'pushups', volume: 75, date: '2024-01-02' },
+                { exerciseKey: 'pushups', volume: 60, date: '2024-01-03' },
+                { exerciseKey: 'squats', volume: 100, date: '2024-01-01' }
+            ];
+            const prs = getPersonalRecords(history);
+            expect(prs.pushups.volume).toBe(75);
+            expect(prs.pushups.date).toBe('2024-01-02');
+            expect(prs.squats.volume).toBe(100);
+        });
+
+        it('handles single session per exercise', () => {
+            const history = [
+                { exerciseKey: 'pullups', volume: 25, date: '2024-01-01' }
+            ];
+            const prs = getPersonalRecords(history);
+            expect(prs.pullups.volume).toBe(25);
+        });
+    });
+
+    describe('isNewPersonalRecord', () => {
+        it('returns true for first workout of exercise', () => {
+            expect(isNewPersonalRecord('pushups', 50, [])).toBe(true);
+        });
+
+        it('returns true when volume exceeds previous max', () => {
+            const history = [
+                { exerciseKey: 'pushups', volume: 50 },
+                { exerciseKey: 'pushups', volume: 60 }
+            ];
+            expect(isNewPersonalRecord('pushups', 75, history)).toBe(true);
+        });
+
+        it('returns false when volume equals previous max', () => {
+            const history = [
+                { exerciseKey: 'pushups', volume: 60 }
+            ];
+            expect(isNewPersonalRecord('pushups', 60, history)).toBe(false);
+        });
+
+        it('returns false when volume is below previous max', () => {
+            const history = [
+                { exerciseKey: 'pushups', volume: 75 }
+            ];
+            expect(isNewPersonalRecord('pushups', 50, history)).toBe(false);
+        });
+
+        it('only considers same exercise history', () => {
+            const history = [
+                { exerciseKey: 'squats', volume: 100 },
+                { exerciseKey: 'pushups', volume: 30 }
+            ];
+            expect(isNewPersonalRecord('pushups', 50, history)).toBe(true);
+        });
+
+        it('returns false for zero volume on first workout', () => {
+            expect(isNewPersonalRecord('pushups', 0, [])).toBe(false);
         });
     });
 });

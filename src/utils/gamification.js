@@ -127,3 +127,33 @@ export const calculateStats = (completedDays, sessionHistory = []) => {
 export const getUnlockedBadges = (stats) => {
     return BADGES.filter(badge => badge.condition(stats));
 };
+
+/**
+ * Calculates personal records (max volume) for each exercise from session history.
+ * @param {SessionHistoryItem[]} sessionHistory - Array of session history items
+ * @returns {Object.<string, {volume: number, date: string}>} Map of exercise keys to PR info
+ */
+export const getPersonalRecords = (sessionHistory = []) => {
+    const prs = {};
+    sessionHistory.forEach(session => {
+        const { exerciseKey, volume, date } = session;
+        if (!prs[exerciseKey] || volume > prs[exerciseKey].volume) {
+            prs[exerciseKey] = { volume, date };
+        }
+    });
+    return prs;
+};
+
+/**
+ * Checks if a given volume is a new personal record for an exercise.
+ * @param {string} exerciseKey - The exercise key
+ * @param {number} volume - The volume to check
+ * @param {SessionHistoryItem[]} sessionHistory - Previous session history (not including current)
+ * @returns {boolean} True if this is a new PR
+ */
+export const isNewPersonalRecord = (exerciseKey, volume, sessionHistory = []) => {
+    const exerciseHistory = sessionHistory.filter(s => s.exerciseKey === exerciseKey);
+    if (exerciseHistory.length === 0) return volume > 0;
+    const maxVolume = Math.max(...exerciseHistory.map(s => s.volume));
+    return volume > maxVolume;
+};

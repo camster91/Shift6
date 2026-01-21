@@ -20,9 +20,13 @@ Shift6 is a Progressive Web App (PWA) for a 6-week bodyweight fitness progressio
 **Key Features:**
 - Dynamic rep progression with automatic scaling
 - 100% offline functionality (local-first data storage)
-- Native app experience with haptics and audio cues
-- Gamification via badges and streaks
+- Native app experience with haptics and audio cues (with mute toggle)
+- Gamification via badges, streaks, and personal records
 - PWA + Capacitor for iOS/Android deployment
+- Workout notes and CSV export
+- Configurable rest timer (Auto, 30s-120s)
+- Calendar view for workout history
+- Dark/light theme toggle
 
 ## Tech Stack
 
@@ -71,7 +75,8 @@ src/
 │   │   ├── Dashboard.jsx     # Home view with progress
 │   │   ├── Plan.jsx          # Exercise selection
 │   │   ├── WorkoutSession.jsx # Active workout UI
-│   │   └── Guide.jsx         # Exercise instructions
+│   │   ├── Guide.jsx         # Exercise instructions
+│   │   └── CalendarView.jsx  # Monthly calendar with workout history
 │   ├── Visuals/
 │   │   ├── NeonBadge.jsx     # Badge display component
 │   │   ├── NeoIcon.jsx       # Custom icon renderer
@@ -143,8 +148,8 @@ const Component = ({ props, getThemeClass }) => {
 
 - **Framework:** Vitest with jsdom environment
 - **Pattern:** Unit tests co-located with utilities (`utils/*.test.js`)
-- **Current Coverage (73 tests):**
-  - `gamification.test.js` - Badge logic, stats calculation, unlock conditions (13 tests)
+- **Current Coverage (82 tests):**
+  - `gamification.test.js` - Badge logic, stats calculation, unlock conditions, personal records (22 tests)
   - `schedule.test.js` - Workout scheduling, daily stack, schedule focus (17 tests)
   - `constants.test.js` - App constants validation (18 tests)
   - `audio.test.js` - Web Audio API functions (8 tests)

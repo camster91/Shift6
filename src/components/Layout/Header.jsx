@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronLeft, Settings, Download, Upload, Trash2, Volume2, VolumeX } from 'lucide-react';
+import { ChevronDown, ChevronLeft, Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 
 const Header = ({
@@ -11,6 +11,7 @@ const Header = ({
     getThemeClass,
     setActiveTab,
     onExport,
+    onExportCSV,
     onImport,
     onFactoryReset,
     audioEnabled,
@@ -92,6 +93,7 @@ const Header = ({
                     {/* Settings / Data Menu */}
                     <DataMenu
                         onExport={onExport}
+                        onExportCSV={onExportCSV}
                         onImport={onImport}
                         onFactoryReset={onFactoryReset}
                         audioEnabled={audioEnabled}
@@ -103,7 +105,7 @@ const Header = ({
     );
 };
 
-const DataMenu = ({ onExport, onImport, onFactoryReset, audioEnabled, setAudioEnabled }) => {
+const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled }) => {
     const [isOpen, setIsOpen] = React.useState(false);
 
     return (
@@ -132,6 +134,12 @@ const DataMenu = ({ onExport, onImport, onFactoryReset, audioEnabled, setAudioEn
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
                         >
                             <Download size={16} /> Backup Data
+                        </button>
+                        <button
+                            onClick={() => { onExportCSV(); setIsOpen(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            <FileSpreadsheet size={16} /> Export CSV
                         </button>
                         <label className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer">
                             <Upload size={16} /> Restore Data

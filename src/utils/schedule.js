@@ -1,5 +1,5 @@
 import { EXERCISE_PLANS } from '../data/exercises.jsx';
-import { SUNDAY, UPPER_BODY_EXERCISES, LOWER_BODY_EXERCISES } from './constants';
+import { SUNDAY } from './constants';
 
 /**
  * @typedef {Object} NextSession
@@ -61,30 +61,39 @@ export const getScheduleFocus = () => {
  * Returns exercises that still have incomplete sessions.
  * @param {Object.<string, string[]>} completedDays - Map of exercise keys to completed day IDs
  * @param {Object} [exercisePlans] - Optional exercise plans object (defaults to EXERCISE_PLANS)
+ * @param {string[]} [activeProgram] - Optional array of exercise keys in user's active program
  * @returns {NextSession[]} Array of next sessions to complete today
  */
-export const getDailyStack = (completedDays, exercisePlans = EXERCISE_PLANS) => {
+export const getDailyStack = (completedDays, exercisePlans = EXERCISE_PLANS, activeProgram = null) => {
     const day = new Date().getDay();
 
-    // Get built-in exercises by day
-    let targetKeys = [];
-    if (day === SUNDAY) targetKeys = []; // Sunday rest
-    else if (day % 2 === 1) targetKeys = UPPER_BODY_EXERCISES; // Mon, Wed, Fri
-    else targetKeys = LOWER_BODY_EXERCISES; // Tue, Thu, Sat
+    // If activeProgram is provided, filter to only those exercises
+    // Otherwise use the default schedule (original 9 exercises)
+    const programKeys = activeProgram || Object.keys(EXERCISE_PLANS);
 
-    // Add custom exercises based on their category
-    Object.entries(exercisePlans).forEach(([key, ex]) => {
-        if (ex.isCustom) {
-            // Custom exercises: push/pull on upper body days, legs/core on lower body days
+    // Filter exercises by day based on category
+    let targetKeys = [];
+
+    if (day === SUNDAY) {
+        targetKeys = []; // Sunday rest
+    } else {
+        // Filter program exercises by category for the day
+        programKeys.forEach(key => {
+            const ex = exercisePlans[key];
+            if (!ex) return;
+
             const isUpperBody = ex.category === 'push' || ex.category === 'pull';
             const isLowerBody = ex.category === 'legs' || ex.category === 'core' || ex.category === 'full';
 
-            if (day !== SUNDAY) {
-                if (day % 2 === 1 && isUpperBody) targetKeys.push(key);
-                else if (day % 2 === 0 && isLowerBody) targetKeys.push(key);
+            if (day % 2 === 1 && isUpperBody) {
+                // Mon, Wed, Fri - Upper body
+                targetKeys.push(key);
+            } else if (day % 2 === 0 && isLowerBody) {
+                // Tue, Thu, Sat - Lower body & Core
+                targetKeys.push(key);
             }
-        }
-    });
+        });
+    }
 
     const stack = [];
     targetKeys.forEach(key => {

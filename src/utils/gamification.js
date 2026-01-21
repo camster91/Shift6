@@ -2,8 +2,13 @@ import {
     MS_PER_DAY,
     TOTAL_DAYS_PER_EXERCISE,
     EARLY_WORKOUT_HOUR,
-    LATE_WORKOUT_HOUR
-} from './constants';
+    LATE_WORKOUT_HOUR,
+    UPPER_BODY_EXERCISES,
+    LOWER_BODY_EXERCISES
+} from './constants'
+
+/** Total number of exercises in the program */
+const TOTAL_EXERCISES = UPPER_BODY_EXERCISES.length + LOWER_BODY_EXERCISES.length
 
 /**
  * @typedef {Object} Badge
@@ -40,10 +45,13 @@ export const BADGES = [
     { id: 'first_step', name: 'First Step', desc: 'Complete your first workout', icon: '🌱', condition: (p) => p.totalSessions >= 1 },
     { id: 'week_warrior', name: 'Week Warrior', desc: 'Complete 3 workouts in a week', icon: '⚔️', condition: (p) => p.currentStreak >= 3 },
     { id: 'on_fire', name: 'On Fire', desc: '7 day streak', icon: '🔥', condition: (p) => p.currentStreak >= 7 },
+    { id: 'month_monster', name: 'Month Monster', desc: '30 day streak', icon: '👹', condition: (p) => p.currentStreak >= 30 },
+    { id: 'century_club', name: 'Century Club', desc: '100 total workouts', icon: '💯', condition: (p) => p.totalSessions >= 100 },
     { id: 'mastery', name: 'Master', desc: 'Complete an entire plan', icon: '👑', condition: (p) => p.completedPlans > 0 },
+    { id: 'complete_athlete', name: 'Complete Athlete', desc: `Master all ${TOTAL_EXERCISES} exercises`, icon: '🏆', condition: (p) => p.completedPlans >= TOTAL_EXERCISES },
     { id: 'early_bird', name: 'Early Bird', desc: `Workout before ${EARLY_WORKOUT_HOUR}am`, icon: '🌅', condition: (p) => p.hasEarlyWorkout },
     { id: 'night_owl', name: 'Night Owl', desc: `Workout after ${LATE_WORKOUT_HOUR - 12}pm`, icon: '🦉', condition: (p) => p.hasLateWorkout },
-];
+]
 
 /**
  * Calculates user statistics from completed workouts and session history.

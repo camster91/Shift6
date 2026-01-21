@@ -4,9 +4,12 @@ import { BADGES, calculateStats, getUnlockedBadges } from './gamification';
 describe('gamification utilities', () => {
     describe('BADGES', () => {
         it('contains expected badges', () => {
-            expect(BADGES.length).toBe(6);
+            expect(BADGES.length).toBe(9);
             expect(BADGES.map(b => b.id)).toContain('first_step');
             expect(BADGES.map(b => b.id)).toContain('week_warrior');
+            expect(BADGES.map(b => b.id)).toContain('month_monster');
+            expect(BADGES.map(b => b.id)).toContain('century_club');
+            expect(BADGES.map(b => b.id)).toContain('complete_athlete');
         });
     });
 
@@ -66,6 +69,30 @@ describe('gamification utilities', () => {
             const stats = { totalSessions: 3, completedPlans: 0, currentStreak: 3 };
             const badges = getUnlockedBadges(stats);
             expect(badges.map(b => b.id)).toContain('week_warrior');
+        });
+
+        it('returns month_monster badge for 30 day streak', () => {
+            const stats = { totalSessions: 30, completedPlans: 0, currentStreak: 30 };
+            const badges = getUnlockedBadges(stats);
+            expect(badges.map(b => b.id)).toContain('month_monster');
+        });
+
+        it('returns century_club badge for 100 sessions', () => {
+            const stats = { totalSessions: 100, completedPlans: 0, currentStreak: 0 };
+            const badges = getUnlockedBadges(stats);
+            expect(badges.map(b => b.id)).toContain('century_club');
+        });
+
+        it('returns complete_athlete badge when all 9 plans completed', () => {
+            const stats = { totalSessions: 162, completedPlans: 9, currentStreak: 0 };
+            const badges = getUnlockedBadges(stats);
+            expect(badges.map(b => b.id)).toContain('complete_athlete');
+        });
+
+        it('does not return complete_athlete for partial completion', () => {
+            const stats = { totalSessions: 100, completedPlans: 8, currentStreak: 0 };
+            const badges = getUnlockedBadges(stats);
+            expect(badges.map(b => b.id)).not.toContain('complete_athlete');
         });
     });
 });

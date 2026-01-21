@@ -120,3 +120,45 @@ const Component = ({ props, getThemeClass }) => {
 - Audio uses Web Audio API (no external assets)
 - Device APIs (vibration, wake lock) have graceful fallbacks
 - ESLint enforces 0 warnings - fix all issues before committing
+
+## Feature Ideas
+
+### High Priority
+- **Progress Graphs**: Add Chart.js or Recharts to visualize volume/strength trends in Dashboard.jsx
+- **Rest Timer**: Configurable countdown between sets in WorkoutSession.jsx with audio cues
+- **Workout Reminders**: Implement Push API + service worker notifications in utils/notifications.js
+- **Exercise Variations**: Extend exercises.jsx data structure to include easier/harder progressions
+
+### Medium Priority
+- **Dark/Light Themes**: Add theme toggle in Header.jsx, store preference in localStorage, update Tailwind config
+- **Custom Programs**: Allow users to create custom exercise combinations in a new ProgramBuilder.jsx view
+- **Cloud Sync**: Optional Firebase/Supabase integration with encryption for cross-device sync
+- **Form Videos**: Embed short demonstration clips in Guide.jsx (consider lazy loading)
+
+### Nice to Have
+- **Apple Watch / WearOS**: Capacitor plugin or native companion app
+- **Social Sharing**: Share badges/achievements via Web Share API
+- **Multi-language**: Add i18n with react-intl or similar
+- **Accessibility**: ARIA labels, focus management, high-contrast mode
+
+## Technical Improvements
+
+### Architecture
+- **State Management**: Consider migrating from prop drilling to React Context or Zustand for cleaner data flow
+- **TypeScript**: Add type safety to catch bugs early (start with utils/, then components/)
+- **Code Splitting**: Lazy load views with React.lazy() to improve initial load time
+
+### Testing
+- **E2E Tests**: Add Playwright for critical user flows (start workout, complete session, earn badge)
+- **Component Tests**: Increase coverage for Views/ and Layout/ components
+- **Visual Regression**: Consider Chromatic or Percy for UI consistency
+
+### Performance
+- **Bundle Analysis**: Run `npx vite-bundle-visualizer` to identify optimization opportunities
+- **Image Optimization**: If adding form videos/images, use modern formats (WebP, AVIF)
+- **Service Worker**: Enhance caching strategy for faster repeat visits
+
+### DevEx
+- **Husky + lint-staged**: Pre-commit hooks for consistent code quality
+- **GitHub Actions**: CI pipeline for automated testing on PRs
+- **Storybook**: Component documentation and visual testing

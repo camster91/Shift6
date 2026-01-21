@@ -27,6 +27,7 @@ Shift6 is a Progressive Web App (PWA) for a 6-week bodyweight fitness progressio
 - Configurable rest timer (Auto, 30s-120s)
 - Calendar view for workout history
 - Dark/light theme toggle
+- Focused home page with next workout cards
 
 ## Tech Stack
 

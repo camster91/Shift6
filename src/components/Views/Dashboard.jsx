@@ -8,6 +8,7 @@ import NeoIcon from '../Visuals/NeoIcon';
 import DataBackground from '../Visuals/DataBackground';
 import { BADGES, getUnlockedBadges } from '../../utils/gamification';
 import { Trophy } from 'lucide-react';
+import CalendarView from './CalendarView';
 
 const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActiveTab, startStack }) => {
     const dailyStack = getDailyStack(completedDays);
@@ -123,6 +124,9 @@ const Dashboard = ({ completedDays, sessionHistory, setActiveExercise, setActive
                     </div>
                 </div>
             </div>
+
+            {/* Calendar View */}
+            <CalendarView sessionHistory={sessionHistory} />
 
             {/* Recent Activity */}
             {sessionHistory.length > 0 && (

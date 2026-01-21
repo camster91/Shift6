@@ -206,16 +206,25 @@ const Dashboard = ({
     exerciseDifficulty = {},
     onSetDifficulty,
     onDeleteExercise,
-    onShowAddExercise
+    onShowAddExercise,
+    // eslint-disable-next-line no-unused-vars
+    programMode,
+    activeProgram,
+    onShowExerciseLibrary,
+    onShowProgramManager
 }) => {
-    const dailyStack = getDailyStack(completedDays, allExercises);
+    const dailyStack = getDailyStack(completedDays, allExercises, activeProgram);
     const stats = calculateStats(completedDays, sessionHistory);
     const personalRecords = getPersonalRecords(sessionHistory);
     const [showMore, setShowMore] = useState(false);
     const [showAllExercises, setShowAllExercises] = useState(false);
     const [selectedExercise, setSelectedExercise] = useState(null);
 
-    const exerciseCount = Object.keys(allExercises).length;
+    // Show only active program exercises (or all if no activeProgram)
+    const programExercises = activeProgram
+        ? Object.fromEntries(activeProgram.map(k => [k, allExercises[k]]).filter(([, v]) => v))
+        : allExercises;
+    const exerciseCount = Object.keys(programExercises).length;
     const customCount = Object.keys(customExercises).length;
 
     // Get today's completed workouts
@@ -343,7 +352,7 @@ const Dashboard = ({
                 </div>
             )}
 
-            {/* All Exercises Section */}
+            {/* My Program Section */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
                 <button
                     onClick={() => setShowAllExercises(!showAllExercises)}
@@ -354,7 +363,7 @@ const Dashboard = ({
                             <Dumbbell size={18} className="text-cyan-400" />
                         </div>
                         <div className="text-left">
-                            <h3 className="font-bold text-white">All Exercises</h3>
+                            <h3 className="font-bold text-white">My Program</h3>
                             <p className="text-xs text-slate-500">
                                 {exerciseCount} exercises {customCount > 0 && `(${customCount} custom)`}
                             </p>
@@ -369,8 +378,32 @@ const Dashboard = ({
 
                 {showAllExercises && (
                     <div className="p-4 pt-0 space-y-3">
+                        {/* Quick Actions */}
+                        {(onShowExerciseLibrary || onShowProgramManager) && (
+                            <div className="flex gap-2 mb-3">
+                                {onShowExerciseLibrary && (
+                                    <button
+                                        onClick={() => { vibrate(10); onShowExerciseLibrary(); }}
+                                        className="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm text-slate-300 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Plus size={16} />
+                                        Browse Library
+                                    </button>
+                                )}
+                                {onShowProgramManager && (
+                                    <button
+                                        onClick={() => { vibrate(10); onShowProgramManager(); }}
+                                        className="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm text-slate-300 transition-colors"
+                                    >
+                                        Manage Program
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {Object.entries(allExercises).map(([key, ex]) => {
+                            {Object.entries(programExercises).map(([key, ex]) => {
+                                if (!ex) return null;
                                 const colors = colorClasses[ex.color] || colorClasses.cyan;
                                 const dayNum = (completedDays[key]?.length || 0) + 1;
                                 const isComplete = dayNum > 18;

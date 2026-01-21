@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { EXERCISE_PLANS, getRest, DIFFICULTY_LEVELS } from './data/exercises.jsx';
+import { EXERCISE_PLANS, getRest, DIFFICULTY_LEVELS, generateProgression } from './data/exercises.jsx';
+import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
 import { getDailyStack } from './utils/schedule';
 
 // Components
@@ -7,6 +8,9 @@ import Header from './components/Layout/Header';
 import Dashboard from './components/Views/Dashboard';
 import WorkoutSession from './components/Views/WorkoutSession';
 import AddExercise from './components/Views/AddExercise';
+import Onboarding from './components/Views/Onboarding';
+import ExerciseLibrary from './components/Views/ExerciseLibrary';
+import ProgramManager from './components/Views/ProgramManager';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -53,11 +57,66 @@ const App = () => {
 
     // UI State for Add Exercise modal
     const [showAddExercise, setShowAddExercise] = useState(false);
+    const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
+    const [showProgramManager, setShowProgramManager] = useState(false);
 
-    // Merge built-in and custom exercises
+    // Program Mode: 'bodyweight' | 'mixed' | 'gym'
+    const [programMode, setProgramMode] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}program_mode`);
+        return saved || null; // null = show onboarding
+    });
+
+    // Active Program: array of exercise keys in current program
+    const [activeProgram, setActiveProgram] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}active_program`);
+        return saved ? JSON.parse(saved) : null; // null = use default 9
+    });
+
+    // User Equipment: array of equipment IDs user has access to
+    const [userEquipment, setUserEquipment] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}user_equipment`);
+        return saved ? JSON.parse(saved) : ['none'];
+    });
+
+    // Onboarding Complete flag
+    const [onboardingComplete, setOnboardingComplete] = useState(() => {
+        // Check if user has progress (existing users skip onboarding)
+        const hasProgress = localStorage.getItem(`${STORAGE_PREFIX}progress`);
+        const onboarded = localStorage.getItem(`${STORAGE_PREFIX}onboarding_complete`);
+        if (onboarded === 'true') return true;
+        if (hasProgress && Object.keys(JSON.parse(hasProgress)).length > 0) {
+            // Existing user - mark as onboarded and set bodyweight mode
+            localStorage.setItem(`${STORAGE_PREFIX}onboarding_complete`, 'true');
+            localStorage.setItem(`${STORAGE_PREFIX}program_mode`, 'bodyweight');
+            return true;
+        }
+        return false;
+    });
+
+    // Merge built-in, library, and custom exercises
     const allExercises = useMemo(() => {
-        return { ...EXERCISE_PLANS, ...customExercises };
+        const merged = { ...EXERCISE_PLANS };
+
+        // Add library exercises (with generated progressions)
+        Object.entries(EXERCISE_LIBRARY).forEach(([key, ex]) => {
+            if (!merged[key]) {
+                merged[key] = {
+                    ...ex,
+                    weeks: generateProgression(ex.startReps, ex.finalGoal),
+                    image: `neo:${key}`,
+                    finalGoal: `${ex.finalGoal} ${ex.unit === 'seconds' ? 'Seconds' : 'Reps'}`,
+                };
+            }
+        });
+
+        // Add custom exercises
+        return { ...merged, ...customExercises };
     }, [customExercises]);
+
+    // Get active program exercise keys (defaults to original 9)
+    const activeProgramKeys = useMemo(() => {
+        return activeProgram || Object.keys(EXERCISE_PLANS);
+    }, [activeProgram]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}progress`, JSON.stringify(completedDays));
@@ -88,6 +147,24 @@ const App = () => {
         document.documentElement.classList.remove('dark', 'light');
         document.documentElement.classList.add(theme);
     }, [theme]);
+
+    useEffect(() => {
+        if (programMode) localStorage.setItem(`${STORAGE_PREFIX}program_mode`, programMode);
+    }, [programMode]);
+
+    useEffect(() => {
+        if (activeProgram) {
+            localStorage.setItem(`${STORAGE_PREFIX}active_program`, JSON.stringify(activeProgram));
+        }
+    }, [activeProgram]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}user_equipment`, JSON.stringify(userEquipment));
+    }, [userEquipment]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}onboarding_complete`, String(onboardingComplete));
+    }, [onboardingComplete]);
 
     // UI State
     const [workoutQueue, setWorkoutQueue] = useState(() => {
@@ -215,8 +292,63 @@ const App = () => {
         }));
     };
 
+    // Add exercise to active program
+    const handleAddToProgram = (exerciseKey) => {
+        setActiveProgram(prev => {
+            const current = prev || Object.keys(EXERCISE_PLANS);
+            if (current.includes(exerciseKey)) return current;
+            return [...current, exerciseKey];
+        });
+    };
+
+    // Remove exercise from active program
+    const handleRemoveFromProgram = (exerciseKey) => {
+        setActiveProgram(prev => {
+            const current = prev || Object.keys(EXERCISE_PLANS);
+            return current.filter(k => k !== exerciseKey);
+        });
+    };
+
+    // Apply a starter template
+    const handleApplyTemplate = (templateId) => {
+        const template = STARTER_TEMPLATES[templateId];
+        if (template) {
+            setProgramMode(template.mode);
+            setActiveProgram([...template.exercises]);
+        }
+    };
+
+    // Complete onboarding
+    const handleCompleteOnboarding = (mode, equipment, templateId) => {
+        setProgramMode(mode);
+        setUserEquipment(equipment);
+        if (templateId) {
+            const template = STARTER_TEMPLATES[templateId];
+            if (template) {
+                setActiveProgram([...template.exercises]);
+            }
+        } else {
+            // Default to Shift6 Classic
+            setActiveProgram([...STARTER_TEMPLATES['shift6-classic'].exercises]);
+        }
+        setOnboardingComplete(true);
+    };
+
+    // Change program mode
+    const handleChangeProgramMode = (newMode) => {
+        setProgramMode(newMode);
+        // Filter active program to only include compatible exercises
+        if (activeProgram) {
+            const filtered = activeProgram.filter(key => {
+                const ex = allExercises[key];
+                return ex && ex.modes && ex.modes.includes(newMode);
+            });
+            setActiveProgram(filtered.length > 0 ? filtered : null);
+        }
+    };
+
     const startStack = () => {
-        const stack = getDailyStack(completedDays);
+        const stack = getDailyStack(completedDays, allExercises, activeProgramKeys);
         if (stack.length === 0) return;
 
         setWorkoutQueue(stack.slice(1));
@@ -402,6 +534,10 @@ const App = () => {
                     onSetDifficulty={handleSetDifficulty}
                     onDeleteExercise={handleDeleteExercise}
                     onShowAddExercise={() => setShowAddExercise(true)}
+                    programMode={programMode}
+                    activeProgram={activeProgramKeys}
+                    onShowExerciseLibrary={() => setShowExerciseLibrary(true)}
+                    onShowProgramManager={() => setShowProgramManager(true)}
                 />
             </main>
 
@@ -435,6 +571,51 @@ const App = () => {
                         setWorkoutNotes={setWorkoutNotes}
                     />
                 </div>
+            )}
+
+            {/* Exercise Library Modal */}
+            {showExerciseLibrary && (
+                <ExerciseLibrary
+                    allExercises={allExercises}
+                    activeProgram={activeProgramKeys}
+                    programMode={programMode}
+                    userEquipment={userEquipment}
+                    onAddToProgram={handleAddToProgram}
+                    onRemoveFromProgram={handleRemoveFromProgram}
+                    onClose={() => setShowExerciseLibrary(false)}
+                />
+            )}
+
+            {/* Program Manager Modal */}
+            {showProgramManager && (
+                <ProgramManager
+                    allExercises={allExercises}
+                    activeProgram={activeProgramKeys}
+                    programMode={programMode}
+                    userEquipment={userEquipment}
+                    templates={STARTER_TEMPLATES}
+                    equipment={EQUIPMENT}
+                    programModes={PROGRAM_MODES}
+                    onApplyTemplate={handleApplyTemplate}
+                    onRemoveFromProgram={handleRemoveFromProgram}
+                    onChangeProgramMode={handleChangeProgramMode}
+                    onSetEquipment={setUserEquipment}
+                    onShowLibrary={() => {
+                        setShowProgramManager(false);
+                        setShowExerciseLibrary(true);
+                    }}
+                    onClose={() => setShowProgramManager(false)}
+                />
+            )}
+
+            {/* Onboarding - Fullscreen for new users */}
+            {!onboardingComplete && (
+                <Onboarding
+                    programModes={PROGRAM_MODES}
+                    equipment={EQUIPMENT}
+                    templates={STARTER_TEMPLATES}
+                    onComplete={handleCompleteOnboarding}
+                />
             )}
         </div>
     );

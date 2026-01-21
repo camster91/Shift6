@@ -51,21 +51,22 @@ const WorkoutSession = ({
     handleTestSubmit,
     applyCalibration,
     completeWorkout,
-    setActiveTab
+    setActiveTab,
+    audioEnabled = true
 }) => {
     const [copied, setCopied] = useState(false);
 
     // Audio/Vibrate Effect
     React.useEffect(() => {
-        if (isTimerRunning && timeLeft > 0 && timeLeft <= 3) playBeep();
+        if (isTimerRunning && timeLeft > 0 && timeLeft <= 3 && audioEnabled) playBeep();
         if (isTimerRunning && timeLeft === 0) {
-            playStart();
+            if (audioEnabled) playStart();
             vibrate([100, 50, 100]);
         }
-    }, [timeLeft, isTimerRunning]);
+    }, [timeLeft, isTimerRunning, audioEnabled]);
 
     const handleComplete = () => {
-        playSuccess();
+        if (audioEnabled) playSuccess();
         vibrate([50, 50, 50, 50, 200]);
         completeWorkout();
     };

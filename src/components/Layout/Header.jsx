@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronLeft, Settings, Download, Upload, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronLeft, Settings, Download, Upload, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 
 const Header = ({
@@ -12,7 +12,9 @@ const Header = ({
     setActiveTab,
     onExport,
     onImport,
-    onFactoryReset
+    onFactoryReset,
+    audioEnabled,
+    setAudioEnabled
 }) => {
     const exercise = EXERCISE_PLANS[activeExercise];
 
@@ -88,14 +90,20 @@ const Header = ({
                     </div>
 
                     {/* Settings / Data Menu */}
-                    <DataMenu onExport={onExport} onImport={onImport} onFactoryReset={onFactoryReset} />
+                    <DataMenu
+                        onExport={onExport}
+                        onImport={onImport}
+                        onFactoryReset={onFactoryReset}
+                        audioEnabled={audioEnabled}
+                        setAudioEnabled={setAudioEnabled}
+                    />
                 </div>
             </div>
         </header>
     );
 };
 
-const DataMenu = ({ onExport, onImport, onFactoryReset }) => {
+const DataMenu = ({ onExport, onImport, onFactoryReset, audioEnabled, setAudioEnabled }) => {
     const [isOpen, setIsOpen] = React.useState(false);
 
     return (
@@ -111,6 +119,14 @@ const DataMenu = ({ onExport, onImport, onFactoryReset }) => {
                 <>
                     <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
                     <div className="absolute top-full right-0 mt-2 w-48 bg-slate-900 text-white rounded-xl shadow-2xl border border-slate-800 overflow-hidden py-1 z-20 animate-in fade-in zoom-in-95 duration-200">
+                        <button
+                            onClick={() => setAudioEnabled(!audioEnabled)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            {audioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                            {audioEnabled ? 'Sound On' : 'Sound Off'}
+                        </button>
+                        <div className="h-[1px] bg-slate-800 my-1" />
                         <button
                             onClick={() => { onExport(); setIsOpen(false); }}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Zap, ChevronRight, Flame, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info } from 'lucide-react';
 import { EXERCISE_PLANS, EXERCISE_ACHIEVEMENTS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx';
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise } from '../../utils/schedule';
@@ -196,7 +196,7 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficul
     );
 };
 
-const Dashboard = ({
+const Dashboard = memo(({
     completedDays,
     sessionHistory,
     startStack,
@@ -213,6 +213,8 @@ const Dashboard = ({
     onShowExerciseLibrary,
     onShowProgramManager
 }) => {
+    // Bolt ⚡: useMemo was considered here, but getDailyStack is already efficient.
+    // The main optimization is React.memo to prevent re-renders from the parent timer.
     const dailyStack = getDailyStack(completedDays, allExercises, activeProgram);
     const stats = calculateStats(completedDays, sessionHistory);
     const personalRecords = getPersonalRecords(sessionHistory);
@@ -557,6 +559,6 @@ const Dashboard = ({
             )}
         </div>
     );
-};
+});
 
 export default Dashboard;

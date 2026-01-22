@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { EXERCISE_PLANS, getRest, DIFFICULTY_LEVELS, generateProgression } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
 import { getDailyStack } from './utils/schedule';
@@ -238,7 +238,8 @@ const App = () => {
         return () => clearInterval(interval);
     }, [isExerciseTimerRunning, exerciseTimeLeft, exerciseTimerStarted]);
 
-    const startWorkout = (week, dayIndex, overrideKey = null) => {
+    // Bolt ⚡: Memoizing startWorkout to prevent Dashboard re-renders.
+    const startWorkout = useCallback((week, dayIndex, overrideKey = null) => {
         const exKey = overrideKey || activeExercise;
         if (overrideKey) setActiveExercise(overrideKey);
 
@@ -278,18 +279,19 @@ const App = () => {
         setExerciseTimeLeft(0);
         setIsExerciseTimerRunning(false);
         setExerciseTimerStarted(false);
-    };
+    }, [activeExercise, allExercises, completedDays, exerciseDifficulty, restTimerOverride]);
 
     // Add custom exercise
-    const handleAddExercise = (exercise) => {
+    const handleAddExercise = useCallback((exercise) => {
         setCustomExercises(prev => ({
             ...prev,
             [exercise.key]: exercise
         }));
-    };
+    }, []);
 
     // Delete custom exercise
-    const handleDeleteExercise = (key) => {
+    // Bolt ⚡: Memoizing handleDeleteExercise to prevent Dashboard re-renders.
+    const handleDeleteExercise = useCallback((key) => {
         if (window.confirm('Delete this custom exercise? This cannot be undone.')) {
             setCustomExercises(prev => {
                 const updated = { ...prev };
@@ -303,15 +305,16 @@ const App = () => {
                 return updated;
             });
         }
-    };
+    }, []);
 
     // Change difficulty for an exercise
-    const handleSetDifficulty = (exerciseKey, level) => {
+    // Bolt ⚡: Memoizing handleSetDifficulty to prevent Dashboard re-renders.
+    const handleSetDifficulty = useCallback((exerciseKey, level) => {
         setExerciseDifficulty(prev => ({
             ...prev,
             [exerciseKey]: level
         }));
-    };
+    }, []);
 
     // Add exercise to active program
     const handleAddToProgram = (exerciseKey) => {
@@ -368,13 +371,14 @@ const App = () => {
         }
     };
 
-    const startStack = () => {
+    // Bolt ⚡: Memoizing startStack to prevent Dashboard re-renders.
+    const startStack = useCallback(() => {
         const stack = getDailyStack(completedDays, allExercises, activeProgramKeys);
         if (stack.length === 0) return;
 
         setWorkoutQueue(stack.slice(1));
         startWorkout(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
-    };
+    }, [completedDays, allExercises, activeProgramKeys, startWorkout]);
 
     const completeWorkout = () => {
         if (!currentSession || isProcessing) return;
@@ -526,6 +530,12 @@ const App = () => {
 
     // ---------------- RENDER ----------------
 
+    // Bolt ⚡: Memoizing modal toggles to prevent Dashboard re-renders.
+    const showAddExerciseHandler = useCallback(() => setShowAddExercise(true), []);
+    const hideAddExerciseHandler = useCallback(() => setShowAddExercise(false), []);
+    const showExerciseLibraryHandler = useCallback(() => setShowExerciseLibrary(true), []);
+    const showProgramManagerHandler = useCallback(() => setShowProgramManager(true), []);
+
     return (
         <div className={`min-h-screen font-sans selection:bg-cyan-500/30 ${
             theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
@@ -554,11 +564,11 @@ const App = () => {
                     exerciseDifficulty={exerciseDifficulty}
                     onSetDifficulty={handleSetDifficulty}
                     onDeleteExercise={handleDeleteExercise}
-                    onShowAddExercise={() => setShowAddExercise(true)}
+                    onShowAddExercise={showAddExerciseHandler}
                     programMode={programMode}
                     activeProgram={activeProgramKeys}
-                    onShowExerciseLibrary={() => setShowExerciseLibrary(true)}
-                    onShowProgramManager={() => setShowProgramManager(true)}
+                    onShowExerciseLibrary={showExerciseLibraryHandler}
+                    onShowProgramManager={showProgramManagerHandler}
                 />
             </main>
 
@@ -566,7 +576,7 @@ const App = () => {
             {showAddExercise && (
                 <AddExercise
                     onAdd={handleAddExercise}
-                    onClose={() => setShowAddExercise(false)}
+                    onClose={hideAddExerciseHandler}
                 />
             )}
 

@@ -207,9 +207,14 @@ const App = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [workoutNotes, setWorkoutNotes] = useState('');
 
+    // Exercise countdown timer (for hold exercises like Plank)
+    const [exerciseTimeLeft, setExerciseTimeLeft] = useState(0);
+    const [isExerciseTimerRunning, setIsExerciseTimerRunning] = useState(false);
+    const [exerciseTimerStarted, setExerciseTimerStarted] = useState(false);
+
     // ---------------- WORKOUT LOGIC ----------------
 
-    // Timer Tick
+    // Rest Timer Tick
     useEffect(() => {
         let interval = null;
         if (isTimerRunning && timeLeft > 0) {
@@ -220,6 +225,18 @@ const App = () => {
         }
         return () => clearInterval(interval);
     }, [isTimerRunning, timeLeft]);
+
+    // Exercise Countdown Timer Tick (for hold exercises)
+    useEffect(() => {
+        let interval = null;
+        if (isExerciseTimerRunning && exerciseTimeLeft > 0) {
+            interval = setInterval(() => setExerciseTimeLeft(prev => prev - 1), 1000);
+        } else if (exerciseTimeLeft === 0 && exerciseTimerStarted) {
+            setIsExerciseTimerRunning(false);
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [isExerciseTimerRunning, exerciseTimeLeft, exerciseTimerStarted]);
 
     const startWorkout = (week, dayIndex, overrideKey = null) => {
         const exKey = overrideKey || activeExercise;
@@ -257,6 +274,10 @@ const App = () => {
         setTestInput('');
         setTimeLeft(0);
         setWorkoutNotes('');
+        // Reset exercise timer state
+        setExerciseTimeLeft(0);
+        setIsExerciseTimerRunning(false);
+        setExerciseTimerStarted(false);
     };
 
     // Add custom exercise
@@ -569,6 +590,12 @@ const App = () => {
                         audioEnabled={audioEnabled}
                         workoutNotes={workoutNotes}
                         setWorkoutNotes={setWorkoutNotes}
+                        exerciseTimeLeft={exerciseTimeLeft}
+                        setExerciseTimeLeft={setExerciseTimeLeft}
+                        isExerciseTimerRunning={isExerciseTimerRunning}
+                        setIsExerciseTimerRunning={setIsExerciseTimerRunning}
+                        exerciseTimerStarted={exerciseTimerStarted}
+                        setExerciseTimerStarted={setExerciseTimerStarted}
                     />
                 </div>
             )}

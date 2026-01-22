@@ -5,14 +5,31 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
     const [step, setStep] = useState(1)
     const [selectedMode, setSelectedMode] = useState(null)
     const [selectedEquipment, setSelectedEquipment] = useState(['none'])
-    const [selectedTemplate, setSelectedTemplate] = useState('shift6-classic')
+    const [selectedTemplate, setSelectedTemplate] = useState(null)
 
     const totalSteps = selectedMode === 'bodyweight' ? 3 : 4
+
+    // Calculate display step for bodyweight mode (skips step 2)
+    const getDisplayStep = () => {
+        if (selectedMode === 'bodyweight') {
+            if (step === 1) return 1
+            if (step === 3) return 2
+            if (step === 4) return 3
+        }
+        return step
+    }
+    const displayStep = getDisplayStep()
 
     const handleModeSelect = (mode) => {
         setSelectedMode(mode)
         if (mode === 'bodyweight') {
             setSelectedEquipment(['none'])
+        }
+        // Set default template for the selected mode
+        const modeTemplates = Object.entries(templates).filter(([, t]) => t.mode === mode)
+        if (modeTemplates.length > 0) {
+            const recommended = modeTemplates.find(([, t]) => t.recommended)
+            setSelectedTemplate(recommended ? recommended[0] : modeTemplates[0][0])
         }
     }
 
@@ -36,10 +53,12 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
         } else if (step === 2) {
             setStep(3)
         } else if (step === 3) {
-            // Find appropriate template for mode
+            // Find appropriate template for mode and ensure selection is valid
             const modeTemplates = Object.entries(templates).filter(([, t]) => t.mode === selectedMode)
-            if (modeTemplates.length > 0 && !templates[selectedTemplate]?.mode === selectedMode) {
-                setSelectedTemplate(modeTemplates[0][0])
+            if (modeTemplates.length > 0 && templates[selectedTemplate]?.mode !== selectedMode) {
+                // Find recommended template or use first one
+                const recommended = modeTemplates.find(([, t]) => t.recommended)
+                setSelectedTemplate(recommended ? recommended[0] : modeTemplates[0][0])
             }
             setStep(4)
         } else if (step === 4) {
@@ -73,11 +92,11 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                 <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
                     <div
                         className="h-full bg-cyan-500 transition-all duration-300"
-                        style={{ width: `${(step / totalSteps) * 100}%` }}
+                        style={{ width: `${(displayStep / totalSteps) * 100}%` }}
                     />
                 </div>
                 <div className="text-center text-slate-500 text-sm mt-2">
-                    Step {step} of {totalSteps}
+                    Step {displayStep} of {totalSteps}
                 </div>
             </div>
 
@@ -262,8 +281,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 : 'bg-slate-700 text-slate-500 cursor-not-allowed'
                         }`}
                     >
-                        {step === totalSteps ? 'Start Training' : 'Continue'}
-                        {step < totalSteps && <ChevronRight className="w-4 h-4" />}
+                        {displayStep === totalSteps ? 'Start Training' : 'Continue'}
+                        {displayStep < totalSteps && <ChevronRight className="w-4 h-4" />}
                     </button>
                 </div>
             </div>

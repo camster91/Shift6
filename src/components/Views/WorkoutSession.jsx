@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Trophy, Info, Share2, Check, X, Zap, Youtube } from 'lucide-react';
+import { ChevronRight, Trophy, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square } from 'lucide-react';
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { vibrate, copyToClipboard } from '../../utils/device';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
@@ -91,13 +91,19 @@ const WorkoutSession = ({
     completeWorkout,
     audioEnabled = true,
     workoutNotes,
-    setWorkoutNotes
+    setWorkoutNotes,
+    exerciseTimeLeft,
+    setExerciseTimeLeft,
+    isExerciseTimerRunning,
+    setIsExerciseTimerRunning,
+    exerciseTimerStarted,
+    setExerciseTimerStarted
 }) => {
     const [copied, setCopied] = useState(false);
     const [showVideo, setShowVideo] = useState(false);
     const currentExercise = currentSession ? EXERCISE_PLANS[currentSession.exerciseKey] : null;
 
-    // Audio/Vibrate Effect
+    // Audio/Vibrate Effect for Rest Timer
     React.useEffect(() => {
         if (isTimerRunning && timeLeft > 0 && timeLeft <= 3 && audioEnabled) playBeep();
         if (isTimerRunning && timeLeft === 0) {
@@ -105,6 +111,18 @@ const WorkoutSession = ({
             vibrate([100, 50, 100]);
         }
     }, [timeLeft, isTimerRunning, audioEnabled]);
+
+    // Audio/Vibrate Effect for Exercise Countdown Timer (hold exercises)
+    React.useEffect(() => {
+        if (isExerciseTimerRunning && exerciseTimeLeft > 0 && exerciseTimeLeft <= 3 && audioEnabled) {
+            playBeep();
+        }
+        if (exerciseTimerStarted && exerciseTimeLeft === 0 && !isExerciseTimerRunning) {
+            // Timer completed - play success sound
+            if (audioEnabled) playSuccess();
+            vibrate([100, 50, 100, 50, 200]);
+        }
+    }, [exerciseTimeLeft, isExerciseTimerRunning, exerciseTimerStarted, audioEnabled]);
 
     const handleComplete = () => {
         if (audioEnabled) playSuccess();
@@ -326,7 +344,130 @@ const WorkoutSession = ({
                                         </button>
                                     </div>
                                 </div>
+                            ) : currentSession.unit === 'seconds' ? (
+                                // Countdown timer for hold exercises (like Plank)
+                                <div className="text-center space-y-6">
+                                    <p className="text-xs text-cyan-400 uppercase tracking-wider">Set {currentSession.setIndex + 1} of {currentSession.reps.length}</p>
+
+                                    {!exerciseTimerStarted ? (
+                                        // Timer not started - show target and Start button
+                                        <>
+                                            <div className="relative inline-block">
+                                                <ProgressRing
+                                                    progress={1}
+                                                    color="#06b6d4"
+                                                    size={240}
+                                                    stroke={10}
+                                                />
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                    <span className="text-7xl font-bold text-white tabular-nums">
+                                                        {currentSession.reps[currentSession.setIndex]}
+                                                    </span>
+                                                    <span className="text-sm text-cyan-400 uppercase mt-2 tracking-wider">seconds</span>
+                                                </div>
+                                            </div>
+                                            <p className="text-slate-400 text-sm">Get into position, then tap Start</p>
+                                            <button
+                                                onClick={() => {
+                                                    vibrate(20);
+                                                    if (audioEnabled) playStart();
+                                                    setExerciseTimeLeft(currentSession.reps[currentSession.setIndex]);
+                                                    setExerciseTimerStarted(true);
+                                                    setIsExerciseTimerRunning(true);
+                                                }}
+                                                className="w-full py-5 rounded-lg bg-cyan-500 text-slate-900 font-bold hover:bg-cyan-600 transition-colors flex items-center justify-center gap-3 uppercase tracking-wider"
+                                            >
+                                                <Play size={24} fill="currentColor" /> Start Timer
+                                            </button>
+                                        </>
+                                    ) : exerciseTimeLeft > 0 ? (
+                                        // Timer is running or paused
+                                        <>
+                                            <div className="relative inline-block">
+                                                <ProgressRing
+                                                    progress={exerciseTimeLeft / currentSession.reps[currentSession.setIndex]}
+                                                    color={isExerciseTimerRunning ? "#06b6d4" : "#f59e0b"}
+                                                    size={240}
+                                                    stroke={10}
+                                                />
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                    <span className={`text-7xl font-bold tabular-nums ${isExerciseTimerRunning ? 'text-white' : 'text-amber-400'}`}>
+                                                        {exerciseTimeLeft}
+                                                    </span>
+                                                    <span className={`text-sm uppercase mt-2 tracking-wider ${isExerciseTimerRunning ? 'text-cyan-400' : 'text-amber-400'}`}>
+                                                        {isExerciseTimerRunning ? 'Hold!' : 'Paused'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={() => {
+                                                        vibrate(20);
+                                                        setIsExerciseTimerRunning(prev => !prev);
+                                                    }}
+                                                    className={`flex-1 py-4 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 uppercase tracking-wider ${
+                                                        isExerciseTimerRunning
+                                                            ? 'bg-amber-500 text-slate-900 hover:bg-amber-600'
+                                                            : 'bg-cyan-500 text-slate-900 hover:bg-cyan-600'
+                                                    }`}
+                                                >
+                                                    {isExerciseTimerRunning ? (
+                                                        <><Pause size={20} /> Pause</>
+                                                    ) : (
+                                                        <><Play size={20} fill="currentColor" /> Resume</>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        vibrate([50, 30, 50]);
+                                                        const timeAchieved = currentSession.reps[currentSession.setIndex] - exerciseTimeLeft;
+                                                        // Record partial time and move to next set
+                                                        setIsExerciseTimerRunning(false);
+                                                        setExerciseTimerStarted(false);
+                                                        setExerciseTimeLeft(0);
+                                                        setCurrentSession(prev => ({ ...prev, setIndex: prev.setIndex + 1 }));
+                                                        setTimeLeft(currentSession.rest);
+                                                        setIsTimerRunning(true);
+                                                    }}
+                                                    className="px-6 py-4 rounded-lg bg-slate-700 text-white font-bold hover:bg-slate-600 transition-colors flex items-center justify-center gap-2 uppercase tracking-wider"
+                                                >
+                                                    <Square size={18} fill="currentColor" /> Stop
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        // Timer completed - show success and continue
+                                        <>
+                                            <div className="relative inline-block">
+                                                <ProgressRing
+                                                    progress={0}
+                                                    color="#10b981"
+                                                    size={240}
+                                                    stroke={10}
+                                                />
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                    <Check className="text-emerald-400" size={64} />
+                                                    <span className="text-lg text-emerald-400 uppercase mt-2 tracking-wider font-bold">Complete!</span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    vibrate(20);
+                                                    setExerciseTimerStarted(false);
+                                                    setExerciseTimeLeft(0);
+                                                    setCurrentSession(prev => ({ ...prev, setIndex: prev.setIndex + 1 }));
+                                                    setTimeLeft(currentSession.rest);
+                                                    setIsTimerRunning(true);
+                                                }}
+                                                className="w-full py-5 rounded-lg bg-emerald-500 text-slate-900 font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2 uppercase tracking-wider"
+                                            >
+                                                Next Set <ChevronRight size={20} />
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                             ) : (
+                                // Standard rep-based exercise display
                                 <div className="text-center space-y-8">
                                     <p className="text-xs text-cyan-400 uppercase tracking-wider">Set {currentSession.setIndex + 1} of {currentSession.reps.length}</p>
                                     <div className="text-[120px] leading-none font-bold text-white tabular-nums text-glow">

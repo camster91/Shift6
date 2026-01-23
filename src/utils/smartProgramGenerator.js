@@ -468,6 +468,7 @@ export function getDailyStack(program, completedDays = {}) {
 
 /**
  * Pre-built quick start templates
+ * Only uses exercises from the simplified database
  */
 export const QUICK_TEMPLATES = {
   'beginner-bodyweight': {
@@ -475,8 +476,8 @@ export const QUICK_TEMPLATES = {
     name: 'Bodyweight Basics',
     description: 'Perfect for starting your fitness journey',
     exercises: [
-      'kneePushup', 'inclinePushup', 'airSquat', 'gluteBridge',
-      'australianRow', 'plank', 'deadBug', 'walkingLunge'
+      'kneePushup', 'airSquat', 'gluteBridge',
+      'plank', 'walkingLunge', 'birdDog'
     ],
   },
   'intermediate-bodyweight': {
@@ -485,8 +486,8 @@ export const QUICK_TEMPLATES = {
     description: 'Build strength with progressive calisthenics',
     exercises: [
       'pushup', 'diamondPushup', 'pikePushup', 'dip',
-      'pullup', 'australianRow', 'airSquat', 'bulgarianSplitSquat',
-      'singleLegGluteBridge', 'plank', 'vUp', 'sidePlank'
+      'pullup', 'australianRow', 'airSquat', 'walkingLunge',
+      'gluteBridge', 'plank', 'vUp', 'sidePlank'
     ],
   },
   'advanced-bodyweight': {
@@ -494,9 +495,9 @@ export const QUICK_TEMPLATES = {
     name: 'Calisthenics Master',
     description: 'Challenge yourself with advanced movements',
     exercises: [
-      'archerPushup', 'diamondPushup', 'pikePushup', 'dip',
-      'pullup', 'chinup', 'pistolSquat', 'bulgarianSplitSquat',
-      'singleLegGluteBridge', 'hollowBodyHold', 'vUp', 'legRaise'
+      'diamondPushup', 'declinePushup', 'pikePushup', 'dip',
+      'pullup', 'chinup', 'jumpSquat', 'walkingLunge',
+      'gluteBridge', 'vUp', 'legRaise', 'mountainClimber'
     ],
   },
   'gym-basics': {
@@ -504,9 +505,8 @@ export const QUICK_TEMPLATES = {
     name: 'Gym Essentials',
     description: 'Fundamental gym exercises for beginners',
     exercises: [
-      'chestPressMachine', 'latPulldownWide', 'legPress', 'seatedLegCurl',
-      'seatedShoulderPress', 'seatedCableRow', 'dbBicepCurl', 'tricepPushdownRope',
-      'cableCrunch', 'backExtension'
+      'dbChestPress', 'latPulldown', 'legPress', 'legCurl',
+      'shoulderPress', 'seatedRow', 'bicepCurl', 'tricepPushdown'
     ],
   },
   'gym-muscle-building': {
@@ -514,11 +514,10 @@ export const QUICK_TEMPLATES = {
     name: 'Muscle Builder',
     description: 'Optimized for hypertrophy and growth',
     exercises: [
-      'dbChestPressFlat', 'dbChestPressIncline', 'cableCrossover',
-      'latPulldownWide', 'seatedCableRow', 'singleArmDbRow',
-      'seatedShoulderPress', 'lateralRaise', 'facePull',
-      'legPress', 'romanianDeadlift', 'legExtension', 'seatedLegCurl',
-      'dbBicepCurl', 'tricepPushdownRope', 'cableCrunch'
+      'dbChestPress', 'shoulderPress', 'lateralRaise',
+      'latPulldown', 'seatedRow', 'dbRow', 'facePull',
+      'legPress', 'romanianDeadlift', 'legCurl', 'gobletSquat',
+      'bicepCurl', 'tricepPushdown'
     ],
   },
   'minimalist': {

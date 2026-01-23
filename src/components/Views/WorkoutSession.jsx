@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square, Dumbbell, Plus, Minus } from 'lucide-react';
+import { ChevronRight, ChevronUp, ChevronDown, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square, Dumbbell, Plus, Minus } from 'lucide-react';
 
 // Color classes for exercise themes
 const colorClasses = {
@@ -220,25 +220,44 @@ const WorkoutSession = ({
                                 How many {unitLabel} did you complete?
                             </label>
                             {/* Number display with +/- buttons */}
-                            <div className="flex items-center justify-center gap-4">
+                            <div className="flex items-center justify-center gap-3">
+                                {/* -5 button */}
                                 <button
                                     type="button"
-                                    onClick={() => setTestInput(String(Math.max(0, (parseInt(testInput) || 0) - 1)))}
-                                    className="w-16 h-16 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center text-2xl font-bold"
+                                    onClick={() => setTestInput(String(Math.max(0, (parseInt(testInput) || 0) - 5)))}
+                                    className="w-14 h-14 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center text-lg font-bold"
                                 >
-                                    −1
+                                    −5
                                 </button>
-                                <div className="w-28 h-24 bg-slate-800/50 border border-cyan-500/30 rounded-xl flex items-center justify-center">
-                                    <span className="text-5xl font-bold text-white tabular-nums">
-                                        {testInput || '0'}
-                                    </span>
+                                {/* Number with up/down arrows */}
+                                <div className="flex flex-col items-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => setTestInput(String((parseInt(testInput) || 0) + 1))}
+                                        className="w-12 h-8 rounded-t-lg bg-slate-700/50 border border-slate-600 border-b-0 text-slate-400 hover:bg-slate-600 hover:text-white transition-colors flex items-center justify-center"
+                                    >
+                                        <ChevronUp size={20} />
+                                    </button>
+                                    <div className="w-24 h-16 bg-slate-800/50 border border-cyan-500/30 flex items-center justify-center">
+                                        <span className="text-4xl font-bold text-white tabular-nums">
+                                            {testInput || '0'}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTestInput(String(Math.max(0, (parseInt(testInput) || 0) - 1)))}
+                                        className="w-12 h-8 rounded-b-lg bg-slate-700/50 border border-slate-600 border-t-0 text-slate-400 hover:bg-slate-600 hover:text-white transition-colors flex items-center justify-center"
+                                    >
+                                        <ChevronDown size={20} />
+                                    </button>
                                 </div>
+                                {/* +5 button */}
                                 <button
                                     type="button"
-                                    onClick={() => setTestInput(String((parseInt(testInput) || 0) + 1))}
-                                    className="w-16 h-16 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center text-2xl font-bold"
+                                    onClick={() => setTestInput(String((parseInt(testInput) || 0) + 5))}
+                                    className="w-14 h-14 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center text-lg font-bold"
                                 >
-                                    +1
+                                    +5
                                 </button>
                             </div>
                         </div>
@@ -364,123 +383,6 @@ const WorkoutSession = ({
                             >
                                 End Rest
                             </button>
-
-                            {/* Form Tips & Video - enhanced during rest */}
-                            {currentExercise && (currentExercise.tips || currentExercise.instructions || currentExercise.youtubeId) && (
-                                <div className="w-full max-w-sm space-y-3">
-                                    {/* Watch Video Button - prominent during rest */}
-                                    {currentExercise.youtubeId && (
-                                        <button
-                                            onClick={() => setShowVideo(true)}
-                                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
-                                        >
-                                            <Youtube size={18} />
-                                            <span className="text-sm font-medium">Watch Form Video</span>
-                                        </button>
-                                    )}
-
-                                    {/* Collapsible Form Tips */}
-                                    <button
-                                        onClick={() => setShowTips(!showTips)}
-                                        className="w-full flex items-center justify-between px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-lg text-sm text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            <Info size={16} />
-                                            Form Tips
-                                        </span>
-                                        <ChevronRight size={16} className={`transition-transform ${showTips ? 'rotate-90' : ''}`} />
-                                    </button>
-                                    {showTips && (
-                                        <div className="p-4 bg-slate-800/20 border border-slate-700/30 rounded-lg space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                                            {currentExercise.instructions && (
-                                                <p className="text-sm text-slate-300 leading-relaxed">
-                                                    {currentExercise.instructions}
-                                                </p>
-                                            )}
-                                            {currentExercise.tips && currentExercise.tips.length > 0 && (
-                                                <ul className="space-y-1">
-                                                    {currentExercise.tips.map((tip, i) => (
-                                                        <li key={i} className="text-xs text-cyan-400 flex items-start gap-2">
-                                                            <span className="text-cyan-500 mt-0.5">•</span>
-                                                            {tip}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Achievements - collapsible during rest */}
-                            <div className="w-full max-w-sm">
-                                <button
-                                    onClick={() => setShowAchievements(!showAchievements)}
-                                    className="w-full flex items-center justify-between px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-lg text-sm text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
-                                >
-                                    <span className="flex items-center gap-2">
-                                        <span className="text-base">🏆</span>
-                                        Achievements
-                                        <span className="text-xs text-cyan-400">({unlockedBadges.length}/{BADGES.length})</span>
-                                    </span>
-                                    <ChevronRight size={16} className={`transition-transform ${showAchievements ? 'rotate-90' : ''}`} />
-                                </button>
-                                {showAchievements && (
-                                    <div className="mt-2 p-4 bg-slate-800/20 border border-slate-700/30 rounded-lg space-y-3 animate-in fade-in slide-in-from-top-2 duration-200 max-h-48 overflow-y-auto">
-                                        {/* Exercise-specific progress */}
-                                        <div className="pb-2 border-b border-slate-700/30">
-                                            <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">{currentSession?.exerciseName} Progress</p>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {EXERCISE_ACHIEVEMENTS.map((ach) => {
-                                                    const isUnlocked = exerciseCompletedCount >= ach.days;
-                                                    return (
-                                                        <div
-                                                            key={ach.id}
-                                                            className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
-                                                                isUnlocked
-                                                                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                                                    : 'bg-slate-800/50 text-slate-600 border border-slate-700'
-                                                            }`}
-                                                            title={ach.desc}
-                                                        >
-                                                            <span>{ach.icon}</span>
-                                                            <span className="hidden sm:inline">{ach.name}</span>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-
-                                        {/* Global badges */}
-                                        <div>
-                                            <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Overall Achievements</p>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {BADGES.slice(0, 12).map((badge) => {
-                                                    const isUnlocked = badge.condition(stats);
-                                                    return (
-                                                        <div
-                                                            key={badge.id}
-                                                            className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
-                                                                isUnlocked
-                                                                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                                                    : 'bg-slate-800/50 text-slate-600 border border-slate-700'
-                                                            }`}
-                                                            title={badge.desc}
-                                                        >
-                                                            <span>{badge.icon}</span>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                            {BADGES.length > 12 && (
-                                                <p className="text-xs text-slate-600 mt-2 text-center">
-                                                    +{BADGES.length - 12} more badges to unlock
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
                         </div>
                     ) : (
                         <div className="w-full max-w-sm">
@@ -703,6 +605,123 @@ const WorkoutSession = ({
                             )}
                         </div>
                     )}
+
+                    {/* Form Tips, Video & Achievements - always visible */}
+                    <div className="w-full max-w-sm mx-auto mt-6 space-y-3">
+                        {/* Watch Video Button */}
+                        {currentExercise?.youtubeId && (
+                            <button
+                                onClick={() => setShowVideo(true)}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
+                            >
+                                <Youtube size={18} />
+                                <span className="text-sm font-medium">Watch Form Video</span>
+                            </button>
+                        )}
+
+                        {/* Collapsible Form Tips */}
+                        {currentExercise && (currentExercise.tips || currentExercise.instructions) && (
+                            <>
+                                <button
+                                    onClick={() => setShowTips(!showTips)}
+                                    className="w-full flex items-center justify-between px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-lg text-sm text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <Info size={16} />
+                                        Form Tips
+                                    </span>
+                                    <ChevronRight size={16} className={`transition-transform ${showTips ? 'rotate-90' : ''}`} />
+                                </button>
+                                {showTips && (
+                                    <div className="p-4 bg-slate-800/20 border border-slate-700/30 rounded-lg space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        {currentExercise.instructions && (
+                                            <p className="text-sm text-slate-300 leading-relaxed">
+                                                {currentExercise.instructions}
+                                            </p>
+                                        )}
+                                        {currentExercise.tips && currentExercise.tips.length > 0 && (
+                                            <ul className="space-y-1">
+                                                {currentExercise.tips.map((tip, i) => (
+                                                    <li key={i} className="text-xs text-cyan-400 flex items-start gap-2">
+                                                        <span className="text-cyan-500 mt-0.5">•</span>
+                                                        {tip}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Collapsible Achievements */}
+                        <button
+                            onClick={() => setShowAchievements(!showAchievements)}
+                            className="w-full flex items-center justify-between px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-lg text-sm text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
+                        >
+                            <span className="flex items-center gap-2">
+                                <span className="text-base">🏆</span>
+                                Achievements
+                                <span className="text-xs text-cyan-400">({unlockedBadges.length}/{BADGES.length})</span>
+                            </span>
+                            <ChevronRight size={16} className={`transition-transform ${showAchievements ? 'rotate-90' : ''}`} />
+                        </button>
+                        {showAchievements && (
+                            <div className="p-4 bg-slate-800/20 border border-slate-700/30 rounded-lg space-y-3 animate-in fade-in slide-in-from-top-2 duration-200 max-h-48 overflow-y-auto">
+                                {/* Exercise-specific progress */}
+                                <div className="pb-2 border-b border-slate-700/30">
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">{currentSession?.exerciseName} Progress</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {EXERCISE_ACHIEVEMENTS.map((ach) => {
+                                            const isUnlocked = exerciseCompletedCount >= ach.days;
+                                            return (
+                                                <div
+                                                    key={ach.id}
+                                                    className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
+                                                        isUnlocked
+                                                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                            : 'bg-slate-800/50 text-slate-600 border border-slate-700'
+                                                    }`}
+                                                    title={ach.desc}
+                                                >
+                                                    <span>{ach.icon}</span>
+                                                    <span className="hidden sm:inline">{ach.name}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Global badges */}
+                                <div>
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Overall Achievements</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {BADGES.slice(0, 12).map((badge) => {
+                                            const isUnlocked = badge.condition(stats);
+                                            return (
+                                                <div
+                                                    key={badge.id}
+                                                    className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
+                                                        isUnlocked
+                                                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                                            : 'bg-slate-800/50 text-slate-600 border border-slate-700'
+                                                    }`}
+                                                    title={badge.desc}
+                                                >
+                                                    <span>{badge.icon}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {BADGES.length > 12 && (
+                                        <p className="text-xs text-slate-600 mt-2 text-center">
+                                            +{BADGES.length - 12} more badges to unlock
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Video Modal */}

@@ -21,6 +21,34 @@ export const MAX_SCALING_FACTOR = 2.5;
 export const STORAGE_PREFIX = 'shift6_';
 export const MAX_HISTORY_ITEMS = 50;
 
+// Storage keys
+export const STORAGE_KEYS = {
+    progress: 'shift6_progress',
+    history: 'shift6_history',
+    calibrations: 'shift6_calibrations',
+    difficulty: 'shift6_difficulty',
+    activeProgram: 'shift6_active_program',
+    programMode: 'shift6_program_mode',
+    userEquipment: 'shift6_user_equipment',
+    currentSession: 'shift6_current_session',
+    queue: 'shift6_queue',
+    seenBadges: 'shift6_seen_badges',
+    audioEnabled: 'shift6_audio_enabled',
+    restTimer: 'shift6_rest_timer',
+    theme: 'shift6_theme',
+    onboardingComplete: 'shift6_onboarding_complete',
+    trainingPreferences: 'shift6_training_preferences',
+    customPlans: 'shift6_custom_plans',
+    gymWeights: 'shift6_gym_weights',
+    customExercises: 'shift6_custom_exercises'
+};
+
+// Training preference options
+export const TRAINING_DAYS_OPTIONS = [2, 3, 4, 5, 6];
+export const PROGRAM_DURATION_OPTIONS = [4, 6, 8, 12];
+export const SESSION_DURATION_OPTIONS = [15, 20, 30, 45, 60];
+export const SETS_PER_EXERCISE_OPTIONS = [3, 4, 5, 6, 7, 8];
+
 // Schedule (day of week)
 export const SUNDAY = 0;
 

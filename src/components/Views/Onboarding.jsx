@@ -1,24 +1,42 @@
 import { useState } from 'react'
-import { ChevronRight, Check, Dumbbell } from 'lucide-react'
+import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles } from 'lucide-react'
+import {
+    REP_SCHEME_CONFIGS,
+    FITNESS_LEVEL_PRESETS,
+    DEFAULT_TRAINING_PREFERENCES
+} from '../../data/exercises.jsx'
+import {
+    TRAINING_DAYS_OPTIONS,
+    SESSION_DURATION_OPTIONS
+} from '../../utils/constants.js'
+import { applyFitnessLevelPreset } from '../../utils/preferences.js'
 
 const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
     const [step, setStep] = useState(1)
     const [selectedMode, setSelectedMode] = useState(null)
     const [selectedEquipment, setSelectedEquipment] = useState(['none'])
     const [selectedTemplate, setSelectedTemplate] = useState(null)
+    const [trainingPreferences, setTrainingPreferences] = useState({ ...DEFAULT_TRAINING_PREFERENCES })
 
-    const totalSteps = selectedMode === 'bodyweight' ? 3 : 4
-
-    // Calculate display step for bodyweight mode (skips step 2)
-    const getDisplayStep = () => {
+    // Steps: 1=Mode, 2=Equipment (skipped for bodyweight), 3=Fitness, 4=Goal, 5=Schedule, 6=Template, 7=Confirm
+    // Fitness Level now comes BEFORE Goal/Schedule so presets set the starting point
+    const getStepConfig = () => {
         if (selectedMode === 'bodyweight') {
-            if (step === 1) return 1
-            if (step === 3) return 2
-            if (step === 4) return 3
+            // Skip equipment step for bodyweight
+            return {
+                steps: [1, 3, 4, 5, 6, 7],
+                total: 6
+            }
         }
-        return step
+        return {
+            steps: [1, 2, 3, 4, 5, 6, 7],
+            total: 7
+        }
     }
-    const displayStep = getDisplayStep()
+
+    const stepConfig = getStepConfig()
+    const displayStep = stepConfig.steps.indexOf(step) + 1
+    const totalSteps = stepConfig.total
 
     const handleModeSelect = (mode) => {
         setSelectedMode(mode)
@@ -34,7 +52,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
     }
 
     const handleEquipmentToggle = (equipId) => {
-        if (equipId === 'none') return // Can't toggle 'none'
+        if (equipId === 'none') return
         setSelectedEquipment(prev => {
             if (prev.includes(equipId)) {
                 return prev.filter(e => e !== equipId)
@@ -43,47 +61,67 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
         })
     }
 
+    const handlePreferenceChange = (key, value) => {
+        setTrainingPreferences(prev => ({ ...prev, [key]: value }))
+    }
+
+    const handleFitnessLevelSelect = (level) => {
+        const updated = applyFitnessLevelPreset(level, trainingPreferences)
+        setTrainingPreferences(updated)
+    }
+
+    const togglePreferredDay = (dayIndex) => {
+        setTrainingPreferences(prev => {
+            const days = prev.preferredDays || []
+            if (days.includes(dayIndex)) {
+                return { ...prev, preferredDays: days.filter(d => d !== dayIndex) }
+            }
+            return { ...prev, preferredDays: [...days, dayIndex].sort((a, b) => a - b) }
+        })
+    }
+
     const handleNext = () => {
-        if (step === 1 && selectedMode) {
-            if (selectedMode === 'bodyweight') {
-                setStep(3) // Skip equipment for bodyweight
-            } else {
-                setStep(2)
+        const nextStepIndex = stepConfig.steps.indexOf(step) + 1
+        if (nextStepIndex < stepConfig.steps.length) {
+            const nextStep = stepConfig.steps[nextStepIndex]
+            // Ensure template is valid for mode when reaching template step
+            if (nextStep === 6) {
+                const modeTemplates = Object.entries(templates).filter(([, t]) => t.mode === selectedMode)
+                if (modeTemplates.length > 0 && templates[selectedTemplate]?.mode !== selectedMode) {
+                    const recommended = modeTemplates.find(([, t]) => t.recommended)
+                    setSelectedTemplate(recommended ? recommended[0] : modeTemplates[0][0])
+                }
             }
-        } else if (step === 2) {
-            setStep(3)
-        } else if (step === 3) {
-            // Find appropriate template for mode and ensure selection is valid
-            const modeTemplates = Object.entries(templates).filter(([, t]) => t.mode === selectedMode)
-            if (modeTemplates.length > 0 && templates[selectedTemplate]?.mode !== selectedMode) {
-                // Find recommended template or use first one
-                const recommended = modeTemplates.find(([, t]) => t.recommended)
-                setSelectedTemplate(recommended ? recommended[0] : modeTemplates[0][0])
-            }
-            setStep(4)
-        } else if (step === 4) {
-            onComplete(selectedMode, selectedEquipment, selectedTemplate)
+            setStep(nextStep)
+        } else {
+            // Final step - complete onboarding
+            onComplete(selectedMode, selectedEquipment, selectedTemplate, trainingPreferences)
         }
     }
 
     const handleBack = () => {
-        if (step === 3 && selectedMode === 'bodyweight') {
-            setStep(1)
-        } else {
-            setStep(prev => Math.max(1, prev - 1))
+        const currentIndex = stepConfig.steps.indexOf(step)
+        if (currentIndex > 0) {
+            setStep(stepConfig.steps[currentIndex - 1])
         }
     }
 
     const canProceed = () => {
-        if (step === 1) return selectedMode !== null
-        if (step === 2) return true // Equipment is optional
-        if (step === 3) return true
-        if (step === 4) return selectedTemplate !== null
-        return false
+        switch (step) {
+            case 1: return selectedMode !== null
+            case 2: return true // Equipment is optional
+            case 3: return trainingPreferences.fitnessLevel !== null // Fitness Level
+            case 4: return trainingPreferences.repScheme !== null // Training Goal
+            case 5: return trainingPreferences.trainingDaysPerWeek >= 2 // Schedule
+            case 6: return selectedTemplate !== null
+            case 7: return true
+            default: return false
+        }
     }
 
     // Get templates for current mode
     const availableTemplates = Object.entries(templates).filter(([, t]) => t.mode === selectedMode)
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
     return (
         <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col">
@@ -155,7 +193,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 <button
                                     key={id}
                                     onClick={() => handleEquipmentToggle(id)}
-                                    className={`p-4 rounded-xl border-2 transition-all ${
+                                    className={`p-4 rounded-xl border-2 transition-all relative ${
                                         selectedEquipment.includes(id)
                                             ? 'border-cyan-500 bg-cyan-500/10'
                                             : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
@@ -178,8 +216,159 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                     </div>
                 )}
 
-                {/* Step 3: Template Selection */}
+                {/* Step 3: Fitness Level (comes first to set smart defaults) */}
                 {step === 3 && (
+                    <div className="w-full max-w-md space-y-6 animate-fadeIn">
+                        <div className="text-center space-y-2">
+                            <h2 className="text-2xl font-bold text-white">Your Fitness Level</h2>
+                            <p className="text-slate-400">We will set smart defaults based on your experience</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {Object.entries(FITNESS_LEVEL_PRESETS).map(([key, preset]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => handleFitnessLevelSelect(key)}
+                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                                        trainingPreferences.fitnessLevel === key
+                                            ? 'border-cyan-500 bg-cyan-500/10'
+                                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-2xl">{preset.icon}</span>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-white">{preset.name}</h3>
+                                            <p className="text-sm text-slate-400">{preset.desc}</p>
+                                        </div>
+                                        {trainingPreferences.fitnessLevel === key && (
+                                            <Check className="w-5 h-5 text-cyan-500 flex-shrink-0" />
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="bg-slate-800/50 rounded-xl p-4 text-center">
+                            <div className="flex items-center justify-center gap-2 text-slate-400 text-sm mb-2">
+                                <Sparkles className="w-4 h-4" />
+                                <span>This sets recommended defaults you can customize next</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 4: Training Goal (Rep Scheme) */}
+                {step === 4 && (
+                    <div className="w-full max-w-md space-y-6 animate-fadeIn">
+                        <div className="text-center space-y-2">
+                            <h2 className="text-2xl font-bold text-white">What is Your Goal?</h2>
+                            <p className="text-slate-400">We will customize your rep ranges and rest times</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {Object.entries(REP_SCHEME_CONFIGS).map(([key, config]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => handlePreferenceChange('repScheme', key)}
+                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                                        trainingPreferences.repScheme === key
+                                            ? 'border-cyan-500 bg-cyan-500/10'
+                                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-2xl">{config.icon}</span>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-white">{config.name}</h3>
+                                            <p className="text-sm text-slate-400">{config.desc}</p>
+                                            <p className="text-xs text-cyan-400 mt-1">
+                                                {config.repRange[0]}-{config.repRange[1]} reps • {config.restSeconds}s rest
+                                            </p>
+                                        </div>
+                                        {trainingPreferences.repScheme === key && (
+                                            <Check className="w-5 h-5 text-cyan-500 flex-shrink-0" />
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 5: Schedule Configuration */}
+                {step === 5 && (
+                    <div className="w-full max-w-md space-y-6 animate-fadeIn">
+                        <div className="text-center space-y-2">
+                            <h2 className="text-2xl font-bold text-white">Your Schedule</h2>
+                            <p className="text-slate-400">How often can you train?</p>
+                        </div>
+
+                        {/* Days per week */}
+                        <div>
+                            <label className="text-sm text-slate-400 block mb-2">Training Days per Week</label>
+                            <div className="flex justify-between gap-2">
+                                {TRAINING_DAYS_OPTIONS.map(num => (
+                                    <button
+                                        key={num}
+                                        onClick={() => handlePreferenceChange('trainingDaysPerWeek', num)}
+                                        className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
+                                            trainingPreferences.trainingDaysPerWeek === num
+                                                ? 'bg-cyan-500 text-white'
+                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                        }`}
+                                    >
+                                        {num}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Preferred days */}
+                        <div>
+                            <label className="text-sm text-slate-400 block mb-2">Preferred Days (optional)</label>
+                            <div className="flex gap-2">
+                                {daysOfWeek.map((day, idx) => (
+                                    <button
+                                        key={day}
+                                        onClick={() => togglePreferredDay(idx)}
+                                        className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                                            trainingPreferences.preferredDays?.includes(idx)
+                                                ? 'bg-cyan-500 text-white'
+                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                        }`}
+                                    >
+                                        {day}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-slate-500 mt-2">Leave empty to train any day (except Sunday)</p>
+                        </div>
+
+                        {/* Session duration */}
+                        <div>
+                            <label className="text-sm text-slate-400 block mb-2">Target Session Length</label>
+                            <div className="grid grid-cols-5 gap-2">
+                                {SESSION_DURATION_OPTIONS.map(mins => (
+                                    <button
+                                        key={mins}
+                                        onClick={() => handlePreferenceChange('targetSessionDuration', mins)}
+                                        className={`py-2 rounded-lg text-sm transition-all ${
+                                            trainingPreferences.targetSessionDuration === mins
+                                                ? 'bg-cyan-500 text-white'
+                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                        }`}
+                                    >
+                                        {mins}m
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 6: Template Selection */}
+                {step === 6 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
                             <h2 className="text-2xl font-bold text-white">Choose Your Program</h2>
@@ -222,8 +411,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                     </div>
                 )}
 
-                {/* Step 4: Confirmation */}
-                {step === 4 && (
+                {/* Step 7: Confirmation */}
+                {step === 7 && (
                     <div className="w-full max-w-md space-y-8 animate-fadeIn">
                         <div className="text-center space-y-4">
                             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
@@ -247,6 +436,18 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
+                                <span className="text-slate-400">Training Goal</span>
+                                <span className="text-white font-medium">
+                                    {REP_SCHEME_CONFIGS[trainingPreferences.repScheme]?.name}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-slate-400">Schedule</span>
+                                <span className="text-white font-medium">
+                                    {trainingPreferences.trainingDaysPerWeek}x/week • {trainingPreferences.programDuration} weeks
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Exercises</span>
                                 <span className="text-white font-medium">
                                     {templates[selectedTemplate]?.exercises.length}
@@ -255,7 +456,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         </div>
 
                         <p className="text-center text-slate-500 text-sm">
-                            You can always add more exercises or change your program later
+                            You can adjust all settings anytime in the app
                         </p>
                     </div>
                 )}
@@ -264,11 +465,12 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             {/* Navigation */}
             <div className="p-4 border-t border-slate-800">
                 <div className="flex gap-3 max-w-md mx-auto">
-                    {step > 1 && (
+                    {displayStep > 1 && (
                         <button
                             onClick={handleBack}
-                            className="flex-1 py-3 px-6 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
+                            className="flex-1 py-3 px-6 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                         >
+                            <ChevronLeft className="w-4 h-4" />
                             Back
                         </button>
                     )}

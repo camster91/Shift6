@@ -12,6 +12,321 @@ import {
 // Common rest logic: Weeks 1-3 = 60s, Weeks 4-6 = 90s
 export const getRest = (week) => (week <= 3 ? 60 : 90);
 
+// ============================================
+// TRAINING PREFERENCE CONFIGURATIONS
+// Research-based rep schemes and progression rates
+// ============================================
+
+/**
+ * Rep scheme configurations based on strength training research
+ * - Endurance: High reps (15-25+), short rest, builds stamina
+ * - Hypertrophy: Moderate reps (8-15), moderate rest, muscle growth
+ * - Strength: Low reps (3-8), longer rest, maximal strength
+ * - Balanced: Mix of ranges for general fitness (default)
+ */
+export const REP_SCHEME_CONFIGS = {
+    endurance: {
+        id: 'endurance',
+        name: 'Endurance',
+        desc: 'Higher reps, builds stamina and muscular endurance',
+        longDesc: 'Focus on muscular endurance with higher rep ranges. Great for building work capacity and stamina.',
+        repRange: [15, 25],
+        defaultSets: 3,
+        restSeconds: 30,
+        multiplier: 1.3,
+        progressionStyle: 'volume',
+        icon: '🏃',
+        color: 'emerald'
+    },
+    hypertrophy: {
+        id: 'hypertrophy',
+        name: 'Hypertrophy',
+        desc: 'Moderate reps, optimal for muscle growth',
+        longDesc: 'The sweet spot for building muscle mass. Moderate reps with controlled tempo.',
+        repRange: [8, 15],
+        defaultSets: 4,
+        restSeconds: 60,
+        multiplier: 1.0,
+        progressionStyle: 'reps_then_sets',
+        icon: '💪',
+        color: 'blue'
+    },
+    strength: {
+        id: 'strength',
+        name: 'Strength',
+        desc: 'Lower reps, builds maximal strength',
+        longDesc: 'Focus on building raw strength with lower reps and longer rest periods.',
+        repRange: [3, 8],
+        defaultSets: 5,
+        restSeconds: 90,
+        multiplier: 0.6,
+        progressionStyle: 'intensity',
+        icon: '🏋️',
+        color: 'orange'
+    },
+    balanced: {
+        id: 'balanced',
+        name: 'Balanced',
+        desc: 'Mix of all rep ranges for general fitness',
+        longDesc: 'A well-rounded approach that builds strength, muscle, and endurance together.',
+        repRange: [8, 15],
+        defaultSets: 5,
+        restSeconds: 60,
+        multiplier: 1.0,
+        progressionStyle: 'standard',
+        icon: '⚖️',
+        color: 'cyan'
+    }
+};
+
+/**
+ * Progression rate configurations
+ * Controls how quickly rep targets increase week over week
+ */
+export const PROGRESSION_RATES = {
+    conservative: {
+        id: 'conservative',
+        name: 'Conservative',
+        desc: 'Slower progression, great for injury prevention',
+        longDesc: 'Ideal for beginners or those recovering from injury. Prioritizes consistency over speed.',
+        weeklyIncrease: 0.05,
+        deloadFrequency: 3,
+        deloadReduction: 0.2,
+        icon: '🐢',
+        color: 'green'
+    },
+    moderate: {
+        id: 'moderate',
+        name: 'Moderate',
+        desc: 'Balanced progression for most users',
+        longDesc: 'The recommended rate for most people. Sustainable progress without burnout.',
+        weeklyIncrease: 0.08,
+        deloadFrequency: 4,
+        deloadReduction: 0.15,
+        icon: '🎯',
+        color: 'cyan'
+    },
+    aggressive: {
+        id: 'aggressive',
+        name: 'Aggressive',
+        desc: 'Fast progression for experienced athletes',
+        longDesc: 'For those with a solid training base who can handle rapid increases.',
+        weeklyIncrease: 0.12,
+        deloadFrequency: 5,
+        deloadReduction: 0.1,
+        icon: '🚀',
+        color: 'orange'
+    }
+};
+
+/**
+ * Fitness level presets with smart defaults
+ */
+export const FITNESS_LEVEL_PRESETS = {
+    beginner: {
+        id: 'beginner',
+        name: 'Beginner',
+        desc: 'New to fitness or returning after a long break',
+        defaults: {
+            trainingDaysPerWeek: 3,
+            repScheme: 'endurance',
+            progressionRate: 'conservative',
+            setsPerExercise: 3,
+            programDuration: 6,
+            targetSessionDuration: 20
+        },
+        icon: '🌱',
+        color: 'green'
+    },
+    intermediate: {
+        id: 'intermediate',
+        name: 'Intermediate',
+        desc: 'Consistent training for 6+ months',
+        defaults: {
+            trainingDaysPerWeek: 4,
+            repScheme: 'balanced',
+            progressionRate: 'moderate',
+            setsPerExercise: 5,
+            programDuration: 6,
+            targetSessionDuration: 30
+        },
+        icon: '💪',
+        color: 'cyan'
+    },
+    advanced: {
+        id: 'advanced',
+        name: 'Advanced',
+        desc: 'Years of consistent training experience',
+        defaults: {
+            trainingDaysPerWeek: 5,
+            repScheme: 'strength',
+            progressionRate: 'aggressive',
+            setsPerExercise: 6,
+            programDuration: 8,
+            targetSessionDuration: 45
+        },
+        icon: '🏆',
+        color: 'orange'
+    }
+};
+
+/**
+ * Default training preferences (matches current app behavior)
+ */
+export const DEFAULT_TRAINING_PREFERENCES = {
+    // Schedule
+    trainingDaysPerWeek: 3,
+    preferredDays: [],
+    targetSessionDuration: 30,
+
+    // Training Style
+    repScheme: 'balanced',
+    setsPerExercise: 5,
+
+    // Progression
+    progressionRate: 'moderate',
+    programDuration: 6,
+
+    // Rest
+    restBetweenSets: 'auto',
+
+    // Fitness Level
+    fitnessLevel: 'intermediate',
+
+    // Metadata
+    createdAt: null,
+    updatedAt: null
+};
+
+/**
+ * Generate set pattern based on rep scheme philosophy
+ * @param {number} baseRep - Base rep count for this day
+ * @param {number} sets - Number of sets
+ * @param {Object} schemeConfig - Rep scheme configuration
+ * @returns {number[]} Array of reps per set
+ */
+const generateSetPattern = (baseRep, sets, schemeConfig) => {
+    const pattern = [];
+
+    switch (schemeConfig.progressionStyle) {
+        case 'volume':
+            // Endurance: All sets similar, slight increase on last
+            for (let i = 0; i < sets; i++) {
+                pattern.push(i === sets - 1 ? Math.round(baseRep * 1.1) : baseRep);
+            }
+            break;
+        case 'intensity':
+            // Strength: Pyramid - ramp up then maintain
+            for (let i = 0; i < sets; i++) {
+                const factor = 0.7 + (0.3 * Math.min(i / 2, 1));
+                pattern.push(Math.max(1, Math.round(baseRep * factor)));
+            }
+            break;
+        case 'reps_then_sets':
+            // Hypertrophy: Consistent with slight variation
+            for (let i = 0; i < sets; i++) {
+                const factor = i === 0 ? 0.9 : (i === sets - 1 ? 1.1 : 1.0);
+                pattern.push(Math.max(1, Math.round(baseRep * factor)));
+            }
+            break;
+        default: {
+            // Standard/Balanced: Classic variation pattern [0.8x, 1.0x, 0.8x, 0.8x, 1.2x]
+            const standardPattern = [0.8, 1.0, 0.8, 0.8, 1.2];
+            for (let i = 0; i < sets; i++) {
+                const factor = standardPattern[i % standardPattern.length];
+                pattern.push(Math.max(1, Math.round(baseRep * factor)));
+            }
+        }
+    }
+
+    return pattern;
+};
+
+/**
+ * Generates a customized progression plan based on user preferences
+ * @param {number} startReps - Starting rep count from calibration
+ * @param {number} finalGoal - Target final rep count
+ * @param {Object} preferences - Training preferences object
+ * @returns {Array} Array of week objects with day progressions
+ */
+export const generateCustomProgression = (startReps, finalGoal, preferences = {}) => {
+    const {
+        trainingDaysPerWeek = 3,
+        programDuration = 6,
+        repScheme = 'balanced',
+        setsPerExercise = 5,
+        progressionRate = 'moderate'
+    } = preferences;
+
+    const schemeConfig = REP_SCHEME_CONFIGS[repScheme] || REP_SCHEME_CONFIGS.balanced;
+    const rateConfig = PROGRESSION_RATES[progressionRate] || PROGRESSION_RATES.moderate;
+
+    // Adjust final goal based on rep scheme multiplier
+    const adjustedGoal = Math.round(finalGoal * schemeConfig.multiplier);
+    const adjustedStart = Math.max(1, startReps);
+
+    // Calculate total training days
+    const totalDays = programDuration * trainingDaysPerWeek;
+
+    const weeks = [];
+    let dayCount = 0;
+
+    for (let week = 1; week <= programDuration; week++) {
+        const isDeloadWeek = rateConfig.deloadFrequency > 0 && week % rateConfig.deloadFrequency === 0;
+        const days = [];
+
+        for (let d = 0; d < trainingDaysPerWeek; d++) {
+            const progress = totalDays > 1 ? dayCount / (totalDays - 1) : 1;
+            let baseRep = Math.round(adjustedStart + (adjustedGoal - adjustedStart) * progress);
+
+            // Apply deload reduction if it's a deload week
+            if (isDeloadWeek) {
+                baseRep = Math.round(baseRep * (1 - rateConfig.deloadReduction));
+            }
+
+            const isFinal = week === programDuration && d === trainingDaysPerWeek - 1;
+
+            if (isFinal) {
+                days.push({
+                    id: `w${week}d${d + 1}`,
+                    reps: [adjustedGoal],
+                    isFinal: true
+                });
+            } else {
+                const reps = generateSetPattern(baseRep, setsPerExercise, schemeConfig);
+                days.push({ id: `w${week}d${d + 1}`, reps });
+            }
+            dayCount++;
+        }
+        weeks.push({ week, days });
+    }
+
+    return weeks;
+};
+
+/**
+ * Gets rest time based on user preferences and week
+ * @param {number} week - Current week number
+ * @param {Object} preferences - Training preferences
+ * @returns {number} Rest time in seconds
+ */
+export const getCustomRest = (week, preferences = {}) => {
+    const { restBetweenSets = 'auto', repScheme = 'balanced', programDuration = 6 } = preferences;
+
+    if (restBetweenSets !== 'auto' && typeof restBetweenSets === 'number') {
+        return restBetweenSets;
+    }
+
+    const schemeConfig = REP_SCHEME_CONFIGS[repScheme] || REP_SCHEME_CONFIGS.balanced;
+    const baseRest = schemeConfig.restSeconds;
+
+    // Progressive rest: increase 10% in later half of program for recovery
+    const midpoint = Math.ceil(programDuration / 2);
+    const weekMultiplier = week > midpoint ? 1.1 : 1.0;
+
+    return Math.round(baseRest * weekMultiplier);
+};
+
 // Difficulty variations - each exercise can have easier/harder versions
 // multiplier affects the rep targets (0.5 = half reps, 2.0 = double reps)
 export const DIFFICULTY_LEVELS = {

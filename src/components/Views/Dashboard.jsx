@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Zap, ChevronRight, Flame, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info } from 'lucide-react';
-import { EXERCISE_PLANS, EXERCISE_ACHIEVEMENTS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx';
+import { EXERCISE_PLANS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx';
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise } from '../../utils/schedule';
 import { vibrate } from '../../utils/device';
 import { calculateStats, getPersonalRecords } from '../../utils/gamification';
@@ -62,30 +62,6 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficul
                 </div>
 
                 <div className="p-4 space-y-4">
-                    {/* Achievements */}
-                    <div>
-                        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Achievements</p>
-                        <div className="flex flex-wrap gap-2">
-                            {EXERCISE_ACHIEVEMENTS.map((ach) => {
-                                const isUnlocked = completedCount >= ach.days;
-                                return (
-                                    <div
-                                        key={ach.id}
-                                        className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 ${
-                                            isUnlocked
-                                                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                                : 'bg-slate-800/50 text-slate-600 border border-slate-700'
-                                        }`}
-                                        title={ach.desc}
-                                    >
-                                        <span>{ach.icon}</span>
-                                        <span>{ach.name}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
                     {/* Difficulty Selector */}
                     {exercise.variations && exercise.variations.length > 0 && (
                         <div>

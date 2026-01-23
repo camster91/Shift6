@@ -18,6 +18,7 @@ import { vibrate, copyToClipboard } from '../../utils/device';
 import { EXERCISE_PLANS, EXERCISE_ACHIEVEMENTS } from '../../data/exercises.jsx';
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js';
 import { calculateStats, getUnlockedBadges, BADGES } from '../../utils/gamification';
+import Confetti from '../Visuals/Confetti';
 
 const VideoModal = ({ exercise, onClose }) => {
     if (!exercise) return null
@@ -123,6 +124,7 @@ const WorkoutSession = ({
     const [showVideo, setShowVideo] = useState(false);
     const [showTips, setShowTips] = useState(false);
     const [showAchievements, setShowAchievements] = useState(false);
+    const [showConfetti, setShowConfetti] = useState(false);
 
     // Gym workout state - track reps completed for each set
     const [gymSetReps, setGymSetReps] = useState([]);
@@ -172,7 +174,11 @@ const WorkoutSession = ({
     const handleComplete = () => {
         if (audioEnabled) playSuccess();
         vibrate([50, 50, 50, 50, 200]);
-        completeWorkout();
+        setShowConfetti(true);
+        // Delay completion slightly to show confetti
+        setTimeout(() => {
+            completeWorkout();
+        }, 500);
     };
 
     // Save assessment and exit (for Save & Exit button)
@@ -346,6 +352,9 @@ const WorkoutSession = ({
 
     return (
         <div className="max-w-3xl mx-auto">
+            {/* Celebration confetti */}
+            <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
+
             <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl overflow-hidden backdrop-blur-sm neon-border">
                 {/* Header */}
                 <div className="bg-slate-900/80 text-white p-4 flex justify-between items-center border-b border-cyan-500/20">

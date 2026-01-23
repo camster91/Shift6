@@ -22,11 +22,11 @@ const colorClasses = {
 };
 
 // Exercise Info Modal
-const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficulty, onSetDifficulty, onDelete, isCustom }) => {
+const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficulty, onSetDifficulty, onDelete, isCustom, allExercises }) => {
     if (!exercise) return null;
 
     const colors = colorClasses[exercise.color] || colorClasses.cyan;
-    const nextSession = getNextSessionForExercise(exercise.key, completedDays);
+    const nextSession = getNextSessionForExercise(exercise.key, completedDays, allExercises);
     const isComplete = !nextSession;
     const completedCount = completedDays[exercise.key]?.length || 0;
     const dayNum = completedCount + 1;
@@ -553,6 +553,7 @@ const Dashboard = ({
                     isCustom={selectedExercise.isCustom}
                     onClose={() => setSelectedExercise(null)}
                     onStart={startWorkout}
+                    allExercises={allExercises}
                 />
             )}
         </div>

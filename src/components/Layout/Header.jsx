@@ -13,16 +13,24 @@ const Header = ({
     theme,
     setTheme
 }) => {
+    const handleHomeClick = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     return (
         <header className="bg-slate-900 text-white sticky top-0 z-30 shadow-2xl border-b border-white/5 pt-[env(safe-area-inset-top)] mesh-bg">
             <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                {/* Logo & Branding */}
-                <div className="flex flex-col items-start font-black tracking-tighter">
+                {/* Logo & Branding - Clickable Home Button */}
+                <button
+                    onClick={handleHomeClick}
+                    className="flex flex-col items-start font-black tracking-tighter hover:opacity-80 transition-opacity"
+                    aria-label="Go to home"
+                >
                     <div className="flex items-center gap-1 text-2xl">
                         <span className="text-cyan-400 text-glow">SHIFT</span><span className="text-white">6</span>
                     </div>
                     <span className="text-[9px] text-cyan-400/70 tracking-widest font-semibold">ELITE</span>
-                </div>
+                </button>
 
                 {/* Settings Menu */}
                 <DataMenu

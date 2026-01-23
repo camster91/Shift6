@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square, Dumbbell } from 'lucide-react';
+import { ChevronRight, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square, Dumbbell, Plus, Minus } from 'lucide-react';
 
 // Color classes for exercise themes
 const colorClasses = {
@@ -16,6 +16,7 @@ const colorClasses = {
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { vibrate, copyToClipboard } from '../../utils/device';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
+import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js';
 
 const VideoModal = ({ exercise, onClose }) => {
     if (!exercise) return null
@@ -114,7 +115,11 @@ const WorkoutSession = ({
 }) => {
     const [copied, setCopied] = useState(false);
     const [showVideo, setShowVideo] = useState(false);
-    const currentExercise = currentSession ? EXERCISE_PLANS[currentSession.exerciseKey] : null;
+    const [showTips, setShowTips] = useState(false);
+    // Look up exercise from both EXERCISE_PLANS and EXERCISE_LIBRARY
+    const currentExercise = currentSession
+        ? (EXERCISE_PLANS[currentSession.exerciseKey] || EXERCISE_LIBRARY[currentSession.exerciseKey])
+        : null;
 
     // Audio/Vibrate Effect for Rest Timer
     React.useEffect(() => {
@@ -197,31 +202,56 @@ const WorkoutSession = ({
                         <span className="text-cyan-400 text-xs">We&apos;ll customize your program based on this.</span>
                     </p>
 
-                    <form onSubmit={handleTestSubmit} className="space-y-4">
+                    <div className="space-y-4">
                         <div>
-                            <label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">
+                            <label className="text-xs text-slate-500 uppercase tracking-wider mb-3 block">
                                 How many {unitLabel} did you complete?
                             </label>
-                            <input
-                                type="number"
-                                value={testInput}
-                                onChange={(e) => {
-                                    const val = e.target.value.replace(/[^0-9]/g, '');
-                                    setTestInput(val);
-                                }}
-                                className="w-full bg-slate-800/50 border border-cyan-500/30 rounded-lg px-6 py-5 text-4xl font-bold text-center focus:outline-none focus:border-cyan-500 text-white"
-                                placeholder="0"
-                                autoFocus
-                            />
+                            {/* Number display with +/- buttons */}
+                            <div className="flex items-center justify-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setTestInput(String(Math.max(0, (parseInt(testInput) || 0) - 5)))}
+                                    className="w-14 h-14 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center"
+                                >
+                                    <Minus size={24} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTestInput(String(Math.max(0, (parseInt(testInput) || 0) - 1)))}
+                                    className="w-10 h-10 rounded-full bg-slate-800/50 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors flex items-center justify-center text-lg font-bold"
+                                >
+                                    -1
+                                </button>
+                                <div className="w-24 h-20 bg-slate-800/50 border border-cyan-500/30 rounded-xl flex items-center justify-center">
+                                    <span className="text-4xl font-bold text-white tabular-nums">
+                                        {testInput || '0'}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setTestInput(String((parseInt(testInput) || 0) + 1))}
+                                    className="w-10 h-10 rounded-full bg-slate-800/50 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors flex items-center justify-center text-lg font-bold"
+                                >
+                                    +1
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTestInput(String((parseInt(testInput) || 0) + 5))}
+                                    className="w-14 h-14 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center"
+                                >
+                                    <Plus size={24} />
+                                </button>
+                            </div>
                         </div>
                         <button
-                            type="submit"
-                            disabled={!testInput}
+                            onClick={handleTestSubmit}
+                            disabled={!testInput || testInput === '0'}
                             className="w-full bg-cyan-500 rounded-lg py-4 text-slate-900 font-bold hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors uppercase tracking-wider"
                         >
                             Set Baseline & Continue
                         </button>
-                    </form>
+                    </div>
 
                     <div className="flex items-center justify-center gap-4 mt-6">
                         <button
@@ -315,16 +345,16 @@ const WorkoutSession = ({
                 {/* Main Content */}
                 <div className="p-8 md:p-12 min-h-[500px] flex flex-col items-center justify-center bg-slate-900/30">
                     {timeLeft > 0 ? (
-                        <div className="space-y-8 flex flex-col items-center">
+                        <div className="space-y-6 flex flex-col items-center w-full">
                             <div className="relative">
                                 <ProgressRing
                                     progress={timeLeft / currentSession.rest}
                                     color="#06b6d4"
-                                    size={220}
+                                    size={180}
                                     stroke={8}
                                 />
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-7xl font-bold text-white tabular-nums">
+                                    <span className="text-6xl font-bold text-white tabular-nums">
                                         {timeLeft}
                                     </span>
                                     <span className="text-xs text-cyan-400 uppercase mt-1 tracking-wider">Rest</span>
@@ -336,30 +366,88 @@ const WorkoutSession = ({
                             >
                                 End Rest
                             </button>
+
+                            {/* Form Tips - collapsible during rest */}
+                            {currentExercise && (currentExercise.tips || currentExercise.instructions) && (
+                                <div className="w-full max-w-sm">
+                                    <button
+                                        onClick={() => setShowTips(!showTips)}
+                                        className="w-full flex items-center justify-between px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-lg text-sm text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <Info size={16} />
+                                            Form Tips
+                                        </span>
+                                        <ChevronRight size={16} className={`transition-transform ${showTips ? 'rotate-90' : ''}`} />
+                                    </button>
+                                    {showTips && (
+                                        <div className="mt-2 p-4 bg-slate-800/20 border border-slate-700/30 rounded-lg space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            {currentExercise.instructions && (
+                                                <p className="text-sm text-slate-300 leading-relaxed">
+                                                    {currentExercise.instructions}
+                                                </p>
+                                            )}
+                                            {currentExercise.tips && currentExercise.tips.length > 0 && (
+                                                <ul className="space-y-1">
+                                                    {currentExercise.tips.map((tip, i) => (
+                                                        <li key={i} className="text-xs text-cyan-400 flex items-start gap-2">
+                                                            <span className="text-cyan-500 mt-0.5">•</span>
+                                                            {tip}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="w-full max-w-sm">
                             {currentSession.setIndex === currentSession.reps.length - 1 ? (
-                                <div className="space-y-8 text-center">
-                                    <div className="w-20 h-20 bg-cyan-500/10 border border-cyan-500/30 rounded-lg flex items-center justify-center mx-auto">
-                                        <Zap className="text-cyan-400 fill-cyan-400" size={36} />
+                                <div className="space-y-6 text-center">
+                                    <div className="w-16 h-16 bg-cyan-500/10 border border-cyan-500/30 rounded-lg flex items-center justify-center mx-auto">
+                                        <Zap className="text-cyan-400 fill-cyan-400" size={28} />
                                     </div>
                                     <div>
-                                        <h3 className="text-4xl font-bold text-white mb-2">Final Set</h3>
+                                        <h3 className="text-3xl font-bold text-white mb-1">Final Set</h3>
                                         <p className="text-xs text-cyan-400 uppercase tracking-wider">Max Effort</p>
                                     </div>
-                                    <div className="max-w-[180px] mx-auto">
-                                        <input
-                                            type="number"
-                                            value={amrapValue}
-                                            onChange={(e) => {
-                                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                                setAmrapValue(val);
-                                            }}
-                                            className="w-full text-7xl font-bold text-center focus:outline-none text-white bg-transparent hide-spinners border-b-2 border-slate-700 focus:border-cyan-500"
-                                            autoFocus
-                                            placeholder="0"
-                                        />
+                                    {/* Number display with +/- buttons */}
+                                    <div className="flex items-center justify-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setAmrapValue(String(Math.max(0, (parseInt(amrapValue) || 0) - 5)))}
+                                            className="w-12 h-12 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center"
+                                        >
+                                            <Minus size={20} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAmrapValue(String(Math.max(0, (parseInt(amrapValue) || 0) - 1)))}
+                                            className="w-9 h-9 rounded-full bg-slate-800/50 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors flex items-center justify-center text-sm font-bold"
+                                        >
+                                            -1
+                                        </button>
+                                        <div className="w-20 h-16 bg-slate-800/50 border border-cyan-500/30 rounded-xl flex items-center justify-center">
+                                            <span className="text-4xl font-bold text-white tabular-nums">
+                                                {amrapValue || '0'}
+                                            </span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAmrapValue(String((parseInt(amrapValue) || 0) + 1))}
+                                            className="w-9 h-9 rounded-full bg-slate-800/50 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors flex items-center justify-center text-sm font-bold"
+                                        >
+                                            +1
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAmrapValue(String((parseInt(amrapValue) || 0) + 5))}
+                                            className="w-12 h-12 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center"
+                                        >
+                                            <Plus size={20} />
+                                        </button>
                                     </div>
 
                                     {/* Optional workout notes */}

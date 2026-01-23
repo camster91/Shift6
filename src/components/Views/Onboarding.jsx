@@ -1,15 +1,19 @@
-import { useState } from 'react'
-import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench } from 'lucide-react'
 import {
     REP_SCHEME_CONFIGS,
     FITNESS_LEVEL_PRESETS,
-    DEFAULT_TRAINING_PREFERENCES
+    DEFAULT_TRAINING_PREFERENCES,
+    EXERCISE_PLANS
 } from '../../data/exercises.jsx'
 import {
     TRAINING_DAYS_OPTIONS,
     SESSION_DURATION_OPTIONS
 } from '../../utils/constants.js'
 import { applyFitnessLevelPreset } from '../../utils/preferences.js'
+import { EXERCISE_LIBRARY, GOAL_ICONS } from '../../data/exerciseLibrary.js'
+import TemplateCard from '../Visuals/TemplateCard'
+import CustomProgramBuilder from './CustomProgramBuilder'
 
 const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
     const [step, setStep] = useState(1)
@@ -17,6 +21,15 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
     const [selectedEquipment, setSelectedEquipment] = useState(['none'])
     const [selectedTemplate, setSelectedTemplate] = useState(null)
     const [trainingPreferences, setTrainingPreferences] = useState({ ...DEFAULT_TRAINING_PREFERENCES })
+    // New state for template selection UI
+    const [programTab, setProgramTab] = useState('templates') // 'templates' | 'custom'
+    const [customExercises, setCustomExercises] = useState([])
+    const [goalFilter, setGoalFilter] = useState('all')
+
+    // Combine all exercises for the builder
+    const allExercises = useMemo(() => {
+        return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY }
+    }, [])
 
     // Steps: 1=Mode, 2=Equipment (skipped for bodyweight), 3=Fitness, 4=Goal, 5=Schedule, 6=Template, 7=Confirm
     // Fitness Level now comes BEFORE Goal/Schedule so presets set the starting point
@@ -95,7 +108,13 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             setStep(nextStep)
         } else {
             // Final step - complete onboarding
-            onComplete(selectedMode, selectedEquipment, selectedTemplate, trainingPreferences)
+            // For custom programs, pass exercises directly; for templates, pass template ID
+            if (programTab === 'custom') {
+                // Pass custom exercises as a "virtual template"
+                onComplete(selectedMode, selectedEquipment, null, trainingPreferences, customExercises)
+            } else {
+                onComplete(selectedMode, selectedEquipment, selectedTemplate, trainingPreferences)
+            }
         }
     }
 
@@ -113,10 +132,24 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             case 3: return trainingPreferences.fitnessLevel !== null // Fitness Level
             case 4: return trainingPreferences.repScheme !== null // Training Goal
             case 5: return trainingPreferences.trainingDaysPerWeek >= 2 // Schedule
-            case 6: return selectedTemplate !== null
+            case 6: {
+                // For custom programs, need at least 3 exercises
+                if (programTab === 'custom') {
+                    return customExercises.length >= 3
+                }
+                return selectedTemplate !== null
+            }
             case 7: return true
             default: return false
         }
+    }
+
+    // Get the final program exercises
+    const getFinalExercises = () => {
+        if (programTab === 'custom') {
+            return customExercises
+        }
+        return templates[selectedTemplate]?.exercises || []
     }
 
     // Get templates for current mode
@@ -367,47 +400,121 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                     </div>
                 )}
 
-                {/* Step 6: Template Selection */}
+                {/* Step 6: Template Selection / Custom Builder */}
                 {step === 6 && (
-                    <div className="w-full max-w-md space-y-6 animate-fadeIn">
+                    <div className="w-full max-w-lg space-y-4 animate-fadeIn">
                         <div className="text-center space-y-2">
                             <h2 className="text-2xl font-bold text-white">Choose Your Program</h2>
-                            <p className="text-slate-400">Start with a template or build your own</p>
+                            <p className="text-slate-400">Pick a template or build your own</p>
                         </div>
 
-                        <div className="space-y-3">
-                            {availableTemplates.map(([id, template]) => (
-                                <button
-                                    key={id}
-                                    onClick={() => setSelectedTemplate(id)}
-                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                                        selectedTemplate === id
-                                            ? 'border-cyan-500 bg-cyan-500/10'
-                                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="font-semibold text-white">{template.name}</h3>
-                                                {template.recommended && (
-                                                    <span className="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full">
-                                                        Recommended
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-slate-400">{template.desc}</p>
-                                            <p className="text-xs text-slate-500 mt-1">
-                                                {template.exercises.length} exercises
-                                            </p>
-                                        </div>
-                                        {selectedTemplate === id && (
-                                            <Check className="w-5 h-5 text-cyan-500 flex-shrink-0" />
-                                        )}
-                                    </div>
-                                </button>
-                            ))}
+                        {/* Tab Toggle */}
+                        <div className="flex bg-slate-800 rounded-lg p-1">
+                            <button
+                                onClick={() => setProgramTab('templates')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                                    programTab === 'templates'
+                                        ? 'bg-cyan-500 text-white'
+                                        : 'text-slate-400 hover:text-white'
+                                }`}
+                            >
+                                <LayoutGrid className="w-4 h-4" />
+                                Templates
+                            </button>
+                            <button
+                                onClick={() => setProgramTab('custom')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                                    programTab === 'custom'
+                                        ? 'bg-cyan-500 text-white'
+                                        : 'text-slate-400 hover:text-white'
+                                }`}
+                            >
+                                <Wrench className="w-4 h-4" />
+                                Build Your Own
+                            </button>
                         </div>
+
+                        {/* Templates Tab */}
+                        {programTab === 'templates' && (
+                            <div className="space-y-4">
+                                {/* Goal Filter */}
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        onClick={() => setGoalFilter('all')}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                            goalFilter === 'all'
+                                                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                        }`}
+                                    >
+                                        All
+                                    </button>
+                                    {Object.entries(GOAL_ICONS).map(([goal, icon]) => (
+                                        <button
+                                            key={goal}
+                                            onClick={() => setGoalFilter(goal)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
+                                                goalFilter === goal
+                                                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                            }`}
+                                        >
+                                            <span>{icon}</span>
+                                            <span className="capitalize">{goal}</span>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Template List */}
+                                <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
+                                    {/* Always show selected template first if it doesn't match filter */}
+                                    {selectedTemplate &&
+                                     goalFilter !== 'all' &&
+                                     templates[selectedTemplate]?.goal !== goalFilter && (
+                                        <div className="pb-2 mb-2 border-b border-slate-700">
+                                            <p className="text-xs text-slate-500 mb-2">Currently selected:</p>
+                                            <TemplateCard
+                                                template={templates[selectedTemplate]}
+                                                selected={true}
+                                                onSelect={setSelectedTemplate}
+                                                showPreview={true}
+                                                allExercises={allExercises}
+                                            />
+                                        </div>
+                                    )}
+                                    {availableTemplates
+                                        .filter(([, t]) => goalFilter === 'all' || t.goal === goalFilter)
+                                        .map(([id, template]) => (
+                                            <TemplateCard
+                                                key={id}
+                                                template={template}
+                                                selected={selectedTemplate === id}
+                                                onSelect={setSelectedTemplate}
+                                                showPreview={true}
+                                                allExercises={allExercises}
+                                            />
+                                        ))}
+                                    {availableTemplates.filter(([, t]) => goalFilter === 'all' || t.goal === goalFilter).length === 0 && (
+                                        <p className="text-center text-slate-500 py-4">
+                                            No templates match this filter
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Custom Builder Tab */}
+                        {programTab === 'custom' && (
+                            <CustomProgramBuilder
+                                selectedExercises={customExercises}
+                                onExercisesChange={setCustomExercises}
+                                programMode={selectedMode}
+                                userEquipment={selectedEquipment}
+                                allExercises={allExercises}
+                                maxExercises={15}
+                                minExercises={3}
+                            />
+                        )}
                     </div>
                 )}
 
@@ -432,7 +539,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                             <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Program</span>
                                 <span className="text-white font-medium">
-                                    {templates[selectedTemplate]?.name}
+                                    {programTab === 'custom' ? 'Custom Program' : templates[selectedTemplate]?.name}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
@@ -450,7 +557,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                             <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Exercises</span>
                                 <span className="text-white font-medium">
-                                    {templates[selectedTemplate]?.exercises.length}
+                                    {getFinalExercises().length}
                                 </span>
                             </div>
                         </div>

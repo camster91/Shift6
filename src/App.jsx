@@ -459,11 +459,23 @@ const App = () => {
         }
     };
 
+    // Apply custom program from ProgramManager
+    const handleApplyCustomProgram = (exercises) => {
+        if (exercises && exercises.length >= 3) {
+            setActiveProgram([...exercises]);
+        }
+    };
+
     // Complete onboarding
-    const handleCompleteOnboarding = (mode, equipment, templateId, preferences = null) => {
+    const handleCompleteOnboarding = (mode, equipment, templateId, preferences = null, customExerciseList = null) => {
         setProgramMode(mode);
         setUserEquipment(equipment);
-        if (templateId) {
+
+        // Handle program exercises
+        if (customExerciseList && customExerciseList.length > 0) {
+            // User built a custom program
+            setActiveProgram([...customExerciseList]);
+        } else if (templateId) {
             const template = STARTER_TEMPLATES[templateId];
             if (template) {
                 setActiveProgram([...template.exercises]);
@@ -472,6 +484,7 @@ const App = () => {
             // Default to Shift6 Classic
             setActiveProgram([...STARTER_TEMPLATES['shift6-classic'].exercises]);
         }
+
         // Save training preferences if provided
         if (preferences) {
             const prefsWithTimestamps = {
@@ -785,9 +798,11 @@ const App = () => {
                     equipment={EQUIPMENT}
                     programModes={PROGRAM_MODES}
                     onApplyTemplate={handleApplyTemplate}
+                    onApplyCustomProgram={handleApplyCustomProgram}
                     onRemoveFromProgram={handleRemoveFromProgram}
                     onChangeProgramMode={handleChangeProgramMode}
                     onSetEquipment={setUserEquipment}
+                    completedDays={completedDays}
                     onShowLibrary={() => {
                         setShowProgramManager(false);
                         setShowExerciseLibrary(true);

@@ -495,7 +495,13 @@ const Dashboard = ({
             {showMore && (
                 <div className="space-y-6 animate-in fade-in duration-300">
                     {/* Calendar */}
-                    <CalendarView sessionHistory={sessionHistory} />
+                    <CalendarView
+                        sessionHistory={sessionHistory}
+                        completedDays={completedDays}
+                        allExercises={allExercises}
+                        activeProgram={activeProgram}
+                        startWorkout={startWorkout}
+                    />
 
                     {/* Achievements */}
                     {(() => {

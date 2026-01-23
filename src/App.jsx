@@ -634,6 +634,8 @@ const App = () => {
                         setIsExerciseTimerRunning={setIsExerciseTimerRunning}
                         exerciseTimerStarted={exerciseTimerStarted}
                         setExerciseTimerStarted={setExerciseTimerStarted}
+                        completedDays={completedDays}
+                        sessionHistory={sessionHistory}
                     />
                 </div>
             )}

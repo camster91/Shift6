@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles } from 'lucide-react'
 import {
     REP_SCHEME_CONFIGS,
-    PROGRESSION_RATES,
     FITNESS_LEVEL_PRESETS,
     DEFAULT_TRAINING_PREFERENCES
 } from '../../data/exercises.jsx'
@@ -19,7 +18,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
     const [selectedTemplate, setSelectedTemplate] = useState(null)
     const [trainingPreferences, setTrainingPreferences] = useState({ ...DEFAULT_TRAINING_PREFERENCES })
 
-    // Steps: 1=Mode, 2=Equipment (skipped for bodyweight), 3=Goal, 4=Schedule, 5=Fitness, 6=Template, 7=Confirm
+    // Steps: 1=Mode, 2=Equipment (skipped for bodyweight), 3=Fitness, 4=Goal, 5=Schedule, 6=Template, 7=Confirm
+    // Fitness Level now comes BEFORE Goal/Schedule so presets set the starting point
     const getStepConfig = () => {
         if (selectedMode === 'bodyweight') {
             // Skip equipment step for bodyweight
@@ -110,9 +110,9 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
         switch (step) {
             case 1: return selectedMode !== null
             case 2: return true // Equipment is optional
-            case 3: return trainingPreferences.repScheme !== null
-            case 4: return trainingPreferences.trainingDaysPerWeek >= 2
-            case 5: return trainingPreferences.fitnessLevel !== null
+            case 3: return trainingPreferences.fitnessLevel !== null // Fitness Level
+            case 4: return trainingPreferences.repScheme !== null // Training Goal
+            case 5: return trainingPreferences.trainingDaysPerWeek >= 2 // Schedule
             case 6: return selectedTemplate !== null
             case 7: return true
             default: return false
@@ -216,8 +216,50 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                     </div>
                 )}
 
-                {/* Step 3: Training Goal (Rep Scheme) */}
+                {/* Step 3: Fitness Level (comes first to set smart defaults) */}
                 {step === 3 && (
+                    <div className="w-full max-w-md space-y-6 animate-fadeIn">
+                        <div className="text-center space-y-2">
+                            <h2 className="text-2xl font-bold text-white">Your Fitness Level</h2>
+                            <p className="text-slate-400">We'll set smart defaults based on your experience</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {Object.entries(FITNESS_LEVEL_PRESETS).map(([key, preset]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => handleFitnessLevelSelect(key)}
+                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                                        trainingPreferences.fitnessLevel === key
+                                            ? 'border-cyan-500 bg-cyan-500/10'
+                                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-2xl">{preset.icon}</span>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-white">{preset.name}</h3>
+                                            <p className="text-sm text-slate-400">{preset.desc}</p>
+                                        </div>
+                                        {trainingPreferences.fitnessLevel === key && (
+                                            <Check className="w-5 h-5 text-cyan-500 flex-shrink-0" />
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="bg-slate-800/50 rounded-xl p-4 text-center">
+                            <div className="flex items-center justify-center gap-2 text-slate-400 text-sm mb-2">
+                                <Sparkles className="w-4 h-4" />
+                                <span>This sets recommended defaults you can customize next</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 4: Training Goal (Rep Scheme) */}
+                {step === 4 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
                             <h2 className="text-2xl font-bold text-white">What's Your Goal?</h2>
@@ -254,8 +296,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                     </div>
                 )}
 
-                {/* Step 4: Schedule Configuration */}
-                {step === 4 && (
+                {/* Step 5: Schedule Configuration */}
+                {step === 5 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
                             <h2 className="text-2xl font-bold text-white">Your Schedule</h2>
@@ -300,7 +342,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     </button>
                                 ))}
                             </div>
-                            <p className="text-xs text-slate-500 mt-2">Leave empty to train any day</p>
+                            <p className="text-xs text-slate-500 mt-2">Leave empty to train any day (except Sunday)</p>
                         </div>
 
                         {/* Session duration */}
@@ -321,49 +363,6 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     </button>
                                 ))}
                             </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Step 5: Fitness Level */}
-                {step === 5 && (
-                    <div className="w-full max-w-md space-y-6 animate-fadeIn">
-                        <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Your Fitness Level</h2>
-                            <p className="text-slate-400">We'll set smart defaults based on your experience</p>
-                        </div>
-
-                        <div className="space-y-3">
-                            {Object.entries(FITNESS_LEVEL_PRESETS).map(([key, preset]) => (
-                                <button
-                                    key={key}
-                                    onClick={() => handleFitnessLevelSelect(key)}
-                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                                        trainingPreferences.fitnessLevel === key
-                                            ? 'border-cyan-500 bg-cyan-500/10'
-                                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-2xl">{preset.icon}</span>
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-white">{preset.name}</h3>
-                                            <p className="text-sm text-slate-400">{preset.desc}</p>
-                                        </div>
-                                        {trainingPreferences.fitnessLevel === key && (
-                                            <Check className="w-5 h-5 text-cyan-500 flex-shrink-0" />
-                                        )}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="bg-slate-800/50 rounded-xl p-4 text-center">
-                            <div className="flex items-center justify-center gap-2 text-slate-400 text-sm mb-2">
-                                <Sparkles className="w-4 h-4" />
-                                <span>Selecting a level sets recommended defaults</span>
-                            </div>
-                            <p className="text-xs text-slate-500">You can customize everything in settings later</p>
                         </div>
                     </div>
                 )}

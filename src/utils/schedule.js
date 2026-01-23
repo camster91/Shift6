@@ -67,14 +67,14 @@ export const getNextSessionForExercise = (exKey, completedDays, exercisePlans = 
 export const isTrainingDay = (preferredDays = []) => {
     const today = new Date().getDay();
 
-    // Sunday is always rest day by default
+    // If preferred days are set, use them (user can override Sunday rest)
+    if (preferredDays && preferredDays.length > 0) {
+        return preferredDays.includes(today);
+    }
+
+    // Default behavior: Sunday is rest day, all other days are valid
     if (today === SUNDAY) return false;
-
-    // If no preferred days set, any non-Sunday day is valid
-    if (!preferredDays || preferredDays.length === 0) return true;
-
-    // Check if today is in preferred days
-    return preferredDays.includes(today);
+    return true;
 };
 
 /**
@@ -85,13 +85,13 @@ export const isTrainingDay = (preferredDays = []) => {
 export const getScheduleFocus = (preferredDays = []) => {
     const day = new Date().getDay();
 
-    if (day === SUNDAY) return 'Rest & Recovery';
-
-    // Check preferred days
-    if (preferredDays && preferredDays.length > 0 && !preferredDays.includes(day)) {
-        return 'Rest Day';
+    // If preferred days are set, use them
+    if (preferredDays && preferredDays.length > 0) {
+        return preferredDays.includes(day) ? 'Full Program' : 'Rest Day';
     }
 
+    // Default behavior: Sunday is rest, others are training
+    if (day === SUNDAY) return 'Rest & Recovery';
     return 'Full Program';
 };
 

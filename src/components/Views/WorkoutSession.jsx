@@ -15,8 +15,9 @@ const colorClasses = {
 };
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { vibrate, copyToClipboard } from '../../utils/device';
-import { EXERCISE_PLANS } from '../../data/exercises.jsx';
+import { EXERCISE_PLANS, EXERCISE_ACHIEVEMENTS } from '../../data/exercises.jsx';
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js';
+import { calculateStats, getUnlockedBadges, BADGES } from '../../utils/gamification';
 
 const VideoModal = ({ exercise, onClose }) => {
     if (!exercise) return null
@@ -111,11 +112,22 @@ const WorkoutSession = ({
     isExerciseTimerRunning,
     setIsExerciseTimerRunning,
     exerciseTimerStarted,
-    setExerciseTimerStarted
+    setExerciseTimerStarted,
+    completedDays = {},
+    sessionHistory = []
 }) => {
     const [copied, setCopied] = useState(false);
     const [showVideo, setShowVideo] = useState(false);
     const [showTips, setShowTips] = useState(false);
+    const [showAchievements, setShowAchievements] = useState(false);
+
+    // Calculate stats and unlocked badges
+    const stats = calculateStats(completedDays, sessionHistory);
+    const unlockedBadges = getUnlockedBadges(stats);
+
+    // Get exercise-specific achievements progress
+    const exerciseCompletedCount = currentSession ? (completedDays[currentSession.exerciseKey]?.length || 0) : 0;
+
     // Look up exercise from both EXERCISE_PLANS and EXERCISE_LIBRARY
     const currentExercise = currentSession
         ? (EXERCISE_PLANS[currentSession.exerciseKey] || EXERCISE_LIBRARY[currentSession.exerciseKey])
@@ -367,9 +379,21 @@ const WorkoutSession = ({
                                 End Rest
                             </button>
 
-                            {/* Form Tips - collapsible during rest */}
-                            {currentExercise && (currentExercise.tips || currentExercise.instructions) && (
-                                <div className="w-full max-w-sm">
+                            {/* Form Tips & Video - enhanced during rest */}
+                            {currentExercise && (currentExercise.tips || currentExercise.instructions || currentExercise.youtubeId) && (
+                                <div className="w-full max-w-sm space-y-3">
+                                    {/* Watch Video Button - prominent during rest */}
+                                    {currentExercise.youtubeId && (
+                                        <button
+                                            onClick={() => setShowVideo(true)}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
+                                        >
+                                            <Youtube size={18} />
+                                            <span className="text-sm font-medium">Watch Form Video</span>
+                                        </button>
+                                    )}
+
+                                    {/* Collapsible Form Tips */}
                                     <button
                                         onClick={() => setShowTips(!showTips)}
                                         className="w-full flex items-center justify-between px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-lg text-sm text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
@@ -381,7 +405,7 @@ const WorkoutSession = ({
                                         <ChevronRight size={16} className={`transition-transform ${showTips ? 'rotate-90' : ''}`} />
                                     </button>
                                     {showTips && (
-                                        <div className="mt-2 p-4 bg-slate-800/20 border border-slate-700/30 rounded-lg space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="p-4 bg-slate-800/20 border border-slate-700/30 rounded-lg space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                                             {currentExercise.instructions && (
                                                 <p className="text-sm text-slate-300 leading-relaxed">
                                                     {currentExercise.instructions}
@@ -401,6 +425,76 @@ const WorkoutSession = ({
                                     )}
                                 </div>
                             )}
+
+                            {/* Achievements - collapsible during rest */}
+                            <div className="w-full max-w-sm">
+                                <button
+                                    onClick={() => setShowAchievements(!showAchievements)}
+                                    className="w-full flex items-center justify-between px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-lg text-sm text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <span className="text-base">🏆</span>
+                                        Achievements
+                                        <span className="text-xs text-cyan-400">({unlockedBadges.length}/{BADGES.length})</span>
+                                    </span>
+                                    <ChevronRight size={16} className={`transition-transform ${showAchievements ? 'rotate-90' : ''}`} />
+                                </button>
+                                {showAchievements && (
+                                    <div className="mt-2 p-4 bg-slate-800/20 border border-slate-700/30 rounded-lg space-y-3 animate-in fade-in slide-in-from-top-2 duration-200 max-h-48 overflow-y-auto">
+                                        {/* Exercise-specific progress */}
+                                        <div className="pb-2 border-b border-slate-700/30">
+                                            <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">{currentSession?.exerciseName} Progress</p>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {EXERCISE_ACHIEVEMENTS.map((ach) => {
+                                                    const isUnlocked = exerciseCompletedCount >= ach.days;
+                                                    return (
+                                                        <div
+                                                            key={ach.id}
+                                                            className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
+                                                                isUnlocked
+                                                                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                                    : 'bg-slate-800/50 text-slate-600 border border-slate-700'
+                                                            }`}
+                                                            title={ach.desc}
+                                                        >
+                                                            <span>{ach.icon}</span>
+                                                            <span className="hidden sm:inline">{ach.name}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Global badges */}
+                                        <div>
+                                            <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Overall Achievements</p>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {BADGES.slice(0, 12).map((badge) => {
+                                                    const isUnlocked = badge.condition(stats);
+                                                    return (
+                                                        <div
+                                                            key={badge.id}
+                                                            className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
+                                                                isUnlocked
+                                                                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                                                    : 'bg-slate-800/50 text-slate-600 border border-slate-700'
+                                                            }`}
+                                                            title={badge.desc}
+                                                        >
+                                                            <span>{badge.icon}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            {BADGES.length > 12 && (
+                                                <p className="text-xs text-slate-600 mt-2 text-center">
+                                                    +{BADGES.length - 12} more badges to unlock
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     ) : (
                         <div className="w-full max-w-sm">
@@ -623,40 +717,6 @@ const WorkoutSession = ({
                             )}
                         </div>
                     )}
-                </div>
-
-                {/* Tips Section with Watch Video Button */}
-                <div className="border-t border-cyan-500/20 bg-slate-900/50 p-4">
-                    <div className="flex gap-3 items-start">
-                        <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-                            <Info size={16} />
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-xs font-semibold text-cyan-400 mb-1 uppercase tracking-wider">Form Tip</p>
-                            <p className="text-xs text-slate-400">
-                                {currentExercise?.instructions || "Maintain perfect form throughout."}
-                            </p>
-                            {currentExercise?.tips && (
-                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                    {currentExercise.tips.map((tip, i) => (
-                                        <span key={i} className="text-xs px-2 py-0.5 bg-slate-800 border border-slate-700 rounded-full text-slate-500">
-                                            {tip}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        {currentExercise?.youtubeId && (
-                            <button
-                                onClick={() => setShowVideo(true)}
-                                className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
-                                title="Watch form video"
-                            >
-                                <Youtube size={16} />
-                                <span className="text-xs font-medium hidden sm:inline">Watch</span>
-                            </button>
-                        )}
-                    </div>
                 </div>
 
                 {/* Video Modal */}

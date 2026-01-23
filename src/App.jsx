@@ -254,6 +254,11 @@ const App = () => {
         const multiplier = DIFFICULTY_LEVELS[difficultyLevel]?.multiplier || 1.0;
         const scaledReps = day.reps.map(r => Math.max(1, Math.round(r * multiplier)));
 
+        // Check if assessment already done (calibration exists)
+        const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+        const hasCalibration = calibrations[exKey] !== undefined;
+        const needsAssessment = !isFinal && (completedDays[exKey]?.length || 0) === 0 && !hasCalibration;
+
         setCurrentSession({
             exerciseKey: exKey,
             exerciseName: exercise.name,
@@ -268,7 +273,7 @@ const App = () => {
             color: exercise.color,
             unit: exercise.unit,
             difficulty: difficultyLevel,
-            step: isFinal ? 'workout' : ((completedDays[exKey]?.length || 0) === 0 ? 'assessment' : 'workout')
+            step: needsAssessment ? 'assessment' : 'workout'
         });
         setAmrapValue('');
         setTestInput('');

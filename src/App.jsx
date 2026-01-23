@@ -36,7 +36,7 @@ import Onboarding from './components/Views/Onboarding';
 import ExerciseLibrary from './components/Views/ExerciseLibrary';
 import ProgramManager from './components/Views/ProgramManager';
 import TrainingSettings from './components/Views/TrainingSettings';
-import { AchievementToastManager } from './components/Visuals/AchievementToast';
+import { MultiAchievementModal } from './components/Visuals/AchievementModal';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -976,10 +976,10 @@ const App = () => {
                 />
             )}
 
-            {/* Achievement Toast Notifications */}
-            <AchievementToastManager
-                newBadges={newBadges}
-                onAllDismissed={() => setNewBadges([])}
+            {/* Achievement Modal */}
+            <MultiAchievementModal
+                badges={newBadges}
+                onClose={() => setNewBadges([])}
             />
         </div>
     );

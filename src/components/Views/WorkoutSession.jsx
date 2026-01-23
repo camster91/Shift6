@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { ChevronRight, Trophy, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square } from 'lucide-react';
+import { ChevronRight, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square, Dumbbell } from 'lucide-react';
+
+// Color classes for exercise themes
+const colorClasses = {
+    blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', solid: 'bg-blue-500' },
+    orange: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400', solid: 'bg-orange-500' },
+    cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', solid: 'bg-cyan-500' },
+    emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', solid: 'bg-emerald-500' },
+    yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', solid: 'bg-yellow-500' },
+    teal: { bg: 'bg-teal-500/10', border: 'border-teal-500/30', text: 'text-teal-400', solid: 'bg-teal-500' },
+    purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', solid: 'bg-purple-500' },
+    pink: { bg: 'bg-pink-500/10', border: 'border-pink-500/30', text: 'text-pink-400', solid: 'bg-pink-500' },
+    indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', solid: 'bg-indigo-500' },
+};
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { vibrate, copyToClipboard } from '../../utils/device';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
@@ -130,6 +143,26 @@ const WorkoutSession = ({
         completeWorkout();
     };
 
+    // Save assessment and exit (for Save & Exit button)
+    const handleSaveAssessmentAndExit = () => {
+        if (testInput && currentSession) {
+            const userMax = parseFloat(testInput);
+            if (!isNaN(userMax) && userMax > 0) {
+                // Calculate calibration factor (same logic as handleTestSubmit)
+                const planMaxRep = Math.max(...currentSession.baseReps);
+                const estimatedPlanMax = planMaxRep / 0.7;
+                const scalingFactor = userMax / estimatedPlanMax;
+                const clampedFactor = Math.max(0.5, Math.min(scalingFactor, 2.5));
+
+                // Save calibration to localStorage
+                const calibrations = JSON.parse(localStorage.getItem('shift6_calibrations') || '{}');
+                calibrations[currentSession.exerciseKey] = clampedFactor;
+                localStorage.setItem('shift6_calibrations', JSON.stringify(calibrations));
+            }
+        }
+        setCurrentSession(null);
+    };
+
     const handleShare = async () => {
         const text = `Shift6: Just crushed Day ${currentSession.dayIndex + 1} of ${currentSession.exerciseName}! Volume is climbing. 🚀`;
         const success = await copyToClipboard(text);
@@ -145,29 +178,42 @@ const WorkoutSession = ({
     }
 
     if (currentSession.step === 'assessment') {
+        const unitLabel = currentSession.unit === 'seconds' ? 'seconds' : 'reps';
         return (
-            <div className="max-w-md mx-auto py-12 px-4">
-                <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl p-8 md:p-12 text-center backdrop-blur-sm neon-border">
-                    <Trophy className="mx-auto text-cyan-400 mb-6" size={48} />
-                    <h2 className="text-2xl font-bold mb-3 text-white">Initial Assessment</h2>
-                    <p className="text-sm text-slate-400 mb-8">
-                        Perform {currentSession.exerciseName} to failure with proper form.
+            <div className="max-w-md mx-auto py-8 px-4">
+                <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl p-6 md:p-10 text-center backdrop-blur-sm neon-border">
+                    {/* Exercise being assessed - prominent display */}
+                    <div className={`inline-flex items-center gap-3 px-4 py-2 rounded-full ${colorClasses[currentSession.color]?.bg || 'bg-cyan-500/10'} ${colorClasses[currentSession.color]?.border || 'border-cyan-500/30'} border mb-4`}>
+                        <Dumbbell className={colorClasses[currentSession.color]?.text || 'text-cyan-400'} size={20} />
+                        <span className={`font-bold ${colorClasses[currentSession.color]?.text || 'text-cyan-400'}`}>
+                            {currentSession.exerciseName}
+                        </span>
+                    </div>
+
+                    <h2 className="text-xl font-bold mb-2 text-white">Find Your Starting Point</h2>
+                    <p className="text-sm text-slate-400 mb-6">
+                        Do as many <span className="text-white font-medium">{currentSession.exerciseName}</span> as you can with good form.
                         <br />
-                        <span className="text-cyan-400">This is just to find your starting point.</span>
+                        <span className="text-cyan-400 text-xs">We&apos;ll customize your program based on this.</span>
                     </p>
 
                     <form onSubmit={handleTestSubmit} className="space-y-4">
-                        <input
-                            type="number"
-                            value={testInput}
-                            onChange={(e) => {
-                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                setTestInput(val);
-                            }}
-                            className="w-full bg-slate-800/50 border border-cyan-500/30 rounded-lg px-6 py-6 text-5xl font-bold text-center focus:outline-none focus:border-cyan-500 text-white"
-                            placeholder="0"
-                            autoFocus
-                        />
+                        <div>
+                            <label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">
+                                How many {unitLabel} did you complete?
+                            </label>
+                            <input
+                                type="number"
+                                value={testInput}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                    setTestInput(val);
+                                }}
+                                className="w-full bg-slate-800/50 border border-cyan-500/30 rounded-lg px-6 py-5 text-4xl font-bold text-center focus:outline-none focus:border-cyan-500 text-white"
+                                placeholder="0"
+                                autoFocus
+                            />
+                        </div>
                         <button
                             type="submit"
                             disabled={!testInput}
@@ -182,14 +228,14 @@ const WorkoutSession = ({
                             onClick={() => applyCalibration(1, true)}
                             className="text-slate-500 text-xs font-medium hover:text-cyan-400 transition-colors"
                         >
-                            Use default & start
+                            Skip & use default
                         </button>
                         <span className="text-slate-700">|</span>
                         <button
-                            onClick={() => setCurrentSession(null)}
+                            onClick={handleSaveAssessmentAndExit}
                             className="text-slate-500 text-xs font-medium hover:text-cyan-400 transition-colors"
                         >
-                            Save & Exit
+                            {testInput ? 'Save & Exit' : 'Exit'}
                         </button>
                     </div>
                 </div>

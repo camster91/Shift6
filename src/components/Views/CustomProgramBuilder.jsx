@@ -258,8 +258,8 @@ const CustomProgramBuilder = ({
       </div>
 
       {/* Exercise Categories */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium text-white">Add Exercises</h3>
+      <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+        <h3 className="text-sm font-medium text-white sticky top-0 bg-slate-950 py-1 z-10">Add Exercises</h3>
 
         {Object.entries(CATEGORIES).map(([catKey, catInfo]) => {
           const exercises = exercisesByCategory[catKey] || []

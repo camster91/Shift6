@@ -1,7 +1,7 @@
 import { useState, memo } from 'react';
 import { Zap, ChevronRight, Flame, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info } from 'lucide-react';
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx';
-import { getDailyStack, getScheduleFocus, getNextSessionForExercise } from '../../utils/schedule';
+import { getDailyStack, getScheduleFocus, getNextSessionForExercise, isTrainingDay } from '../../utils/schedule';
 import { vibrate } from '../../utils/device';
 import { calculateStats, getPersonalRecords } from '../../utils/gamification';
 import { BADGES, getUnlockedBadges } from '../../utils/gamification';
@@ -170,9 +170,13 @@ const Dashboard = ({
     programMode,
     activeProgram,
     onShowExerciseLibrary,
-    onShowProgramManager
+    onShowProgramManager,
+    trainingPreferences = null,
+    // eslint-disable-next-line no-unused-vars
+    customPlans = null
 }) => {
-    const dailyStack = getDailyStack(completedDays, allExercises, activeProgram);
+    const preferredDays = trainingPreferences?.preferredDays || [];
+    const dailyStack = getDailyStack(completedDays, allExercises, activeProgram, trainingPreferences);
     const stats = calculateStats(completedDays, sessionHistory);
     const personalRecords = getPersonalRecords(sessionHistory);
     const [showMore, setShowMore] = useState(false);
@@ -190,8 +194,8 @@ const Dashboard = ({
     const today = new Date().toISOString().split('T')[0];
     const todayWorkouts = sessionHistory.filter(s => s.date.startsWith(today));
 
-    // Determine if it's a rest day
-    const isRestDay = new Date().getDay() === 0;
+    // Determine if it's a rest day (use training preferences if available)
+    const isRestDay = !isTrainingDay(preferredDays);
 
     return (
         <div className="space-y-6 pb-8">
@@ -231,7 +235,7 @@ const Dashboard = ({
                                         Today
                                     </span>
                                     <span className="text-sm font-semibold text-white">
-                                        {getScheduleFocus()}
+                                        {getScheduleFocus(preferredDays)}
                                     </span>
                                 </div>
                                 <h1 className="text-3xl font-black text-white">

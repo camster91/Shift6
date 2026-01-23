@@ -221,7 +221,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
                             <h2 className="text-2xl font-bold text-white">Your Fitness Level</h2>
-                            <p className="text-slate-400">We'll set smart defaults based on your experience</p>
+                            <p className="text-slate-400">We will set smart defaults based on your experience</p>
                         </div>
 
                         <div className="space-y-3">
@@ -262,8 +262,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                 {step === 4 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">What's Your Goal?</h2>
-                            <p className="text-slate-400">We'll customize your rep ranges and rest times</p>
+                            <h2 className="text-2xl font-bold text-white">What is Your Goal?</h2>
+                            <p className="text-slate-400">We will customize your rep ranges and rest times</p>
                         </div>
 
                         <div className="space-y-3">
@@ -418,7 +418,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
                                 <Check className="w-10 h-10 text-white" />
                             </div>
-                            <h2 className="text-2xl font-bold text-white">You're all set!</h2>
+                            <h2 className="text-2xl font-bold text-white">You are all set!</h2>
                             <p className="text-slate-400">Your personalized program is ready</p>
                         </div>
 

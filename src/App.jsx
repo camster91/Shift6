@@ -11,6 +11,20 @@ import {
     saveCustomPlans,
     loadCustomPlans
 } from './utils/preferences.js';
+import {
+    loadSprints,
+    saveSprints,
+    getActiveSprint,
+    getOrCreateSprint,
+    analyzeWorkoutPerformance,
+    recalculateSprint,
+    advanceSprint,
+    completeSprint,
+    generateNextSprint,
+    getCurrentWorkout,
+    getSprintProgress,
+    SPRINT_STATUS
+} from './utils/progression.js';
 
 // Components
 import Header from './components/Layout/Header';
@@ -71,6 +85,9 @@ const App = () => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_weights`);
         return saved ? JSON.parse(saved) : {};
     });
+
+    // Sprint-based progression system
+    const [sprints, setSprints] = useState(() => loadSprints());
 
     // UI State for Add Exercise modal
     const [showAddExercise, setShowAddExercise] = useState(false);
@@ -173,6 +190,11 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
     }, [sessionHistory]);
+
+    // Save sprints when they change
+    useEffect(() => {
+        saveSprints(sprints);
+    }, [sprints]);
 
     // Detect new badges when stats change
     useEffect(() => {
@@ -536,12 +558,17 @@ const App = () => {
         startWorkout(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
     }, [completedDays, allExercises, activeProgramKeys, startWorkout, trainingPreferences]);
 
-    const completeWorkout = () => {
+    const completeWorkout = (actualRepsPerSet = null) => {
         if (!currentSession || isProcessing) return;
         setIsProcessing(true);
 
         const { exerciseKey, dayId, reps, unit } = currentSession;
-        const totalVolume = reps.reduce((sum, r) => sum + r, 0) + (parseInt(amrapValue) || 0);
+        const amrapReps = parseInt(amrapValue) || 0;
+        const totalVolume = reps.reduce((sum, r) => sum + r, 0) + amrapReps;
+
+        // For standard exercises, assume prescribed reps were completed per set
+        // AMRAP captures extra effort on final set
+        const actualReps = actualRepsPerSet || reps;
 
         const newCompletedDays = {
             ...completedDays,
@@ -555,11 +582,45 @@ const App = () => {
             date: new Date().toISOString(),
             volume: totalVolume,
             unit,
-            notes: workoutNotes.trim() || undefined
+            notes: workoutNotes.trim() || undefined,
+            actualReps,
+            targetReps: reps,
+            amrapReps
         };
         setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
         setWorkoutNotes('');
         setCompletedDays(newCompletedDays);
+
+        // Update sprint progression if exists
+        const activeSprint = getActiveSprint(sprints, exerciseKey);
+        if (activeSprint) {
+            // Analyze performance
+            const performance = analyzeWorkoutPerformance(actualReps, reps, amrapReps);
+
+            // Recalculate sprint if needed
+            let updatedSprint = activeSprint;
+            if (performance.adjustment.shouldAdjust) {
+                updatedSprint = recalculateSprint(activeSprint, performance);
+            } else {
+                // Just record performance without adjusting
+                updatedSprint = {
+                    ...activeSprint,
+                    performanceHistory: [...activeSprint.performanceHistory, {
+                        date: new Date().toISOString(),
+                        ...performance
+                    }]
+                };
+            }
+
+            // Advance to next day/week
+            updatedSprint = advanceSprint(updatedSprint);
+
+            // Update sprints state
+            setSprints(prev => ({
+                ...prev,
+                [updatedSprint.id]: updatedSprint
+            }));
+        }
 
         // Queue Handling
         if (workoutQueue.length > 0) {
@@ -690,6 +751,66 @@ const App = () => {
     const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
     const onShowTrainingSettings = useCallback(() => setShowTrainingSettings(true), []);
 
+    // ---------------- SPRINT MANAGEMENT ----------------
+
+    // Get or create a sprint for an exercise
+    const ensureSprintExists = useCallback((exerciseKey, startingMax) => {
+        const exerciseData = allExercises[exerciseKey];
+        const existingSprint = getActiveSprint(sprints, exerciseKey);
+
+        if (existingSprint) {
+            return existingSprint;
+        }
+
+        // Create new sprint with user's preferences
+        const newSprint = getOrCreateSprint(sprints, exerciseKey, startingMax, {
+            repScheme: trainingPreferences.repScheme || 'hypertrophy',
+            trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek || 3,
+            programDuration: 6 // 6-week sprints
+        }, exerciseData);
+
+        setSprints(prev => ({
+            ...prev,
+            [newSprint.id]: newSprint
+        }));
+
+        return newSprint;
+    }, [sprints, allExercises, trainingPreferences]);
+
+    // Complete a sprint (called when user finishes all weeks)
+    const handleCompleteSprint = useCallback((sprintId, finalMax) => {
+        const sprint = sprints[sprintId];
+        if (!sprint || sprint.status !== SPRINT_STATUS.ACTIVE) return;
+
+        const completed = completeSprint(sprint, finalMax);
+
+        // Generate next sprint
+        const nextSprint = generateNextSprint(completed, {
+            repScheme: trainingPreferences.repScheme || 'hypertrophy',
+            trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek || 3
+        });
+
+        setSprints(prev => ({
+            ...prev,
+            [sprintId]: completed,
+            [nextSprint.id]: nextSprint
+        }));
+
+        return { completed, nextSprint };
+    }, [sprints, trainingPreferences]);
+
+    // Get sprint progress for an exercise
+    const getExerciseSprintProgress = useCallback((exerciseKey) => {
+        const activeSprint = getActiveSprint(sprints, exerciseKey);
+        if (!activeSprint) return null;
+
+        return {
+            sprint: activeSprint,
+            progress: getSprintProgress(activeSprint),
+            currentWorkout: getCurrentWorkout(activeSprint)
+        };
+    }, [sprints]);
+
     // ---------------- RENDER ----------------
 
     return (
@@ -728,6 +849,10 @@ const App = () => {
                     onShowProgramManager={onShowProgramManager}
                     trainingPreferences={trainingPreferences}
                     customPlans={customPlans}
+                    sprints={sprints}
+                    getExerciseSprintProgress={getExerciseSprintProgress}
+                    ensureSprintExists={ensureSprintExists}
+                    onCompleteSprint={handleCompleteSprint}
                 />
             </main>
 

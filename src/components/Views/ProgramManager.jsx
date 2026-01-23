@@ -5,6 +5,7 @@ import TemplateCard from '../Visuals/TemplateCard'
 import CustomProgramBuilder from './CustomProgramBuilder'
 import { EXERCISE_LIBRARY, GOAL_ICONS } from '../../data/exerciseLibrary.js'
 import { EXERCISE_PLANS } from '../../data/exercises.jsx'
+import { EXERCISES } from '../../data/exerciseDatabase.js'
 
 const ProgramManager = ({
     allExercises,
@@ -34,7 +35,7 @@ const ProgramManager = ({
 
     // Combine all exercises
     const combinedExercises = useMemo(() => {
-        return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY, ...allExercises }
+        return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY, ...EXERCISES, ...allExercises }
     }, [allExercises])
 
     const handleEquipmentToggle = (equipId) => {

@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { EXERCISE_PLANS, getRest, DIFFICULTY_LEVELS, generateProgression } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
 import { getDailyStack } from './utils/schedule';
+import { calculateStats, getUnlockedBadges } from './utils/gamification';
 
 // Components
 import Header from './components/Layout/Header';
@@ -11,6 +12,7 @@ import AddExercise from './components/Views/AddExercise';
 import Onboarding from './components/Views/Onboarding';
 import ExerciseLibrary from './components/Views/ExerciseLibrary';
 import ProgramManager from './components/Views/ProgramManager';
+import { AchievementToastManager } from './components/Visuals/AchievementToast';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -93,6 +95,14 @@ const App = () => {
         return false;
     });
 
+    // Track unlocked badges to detect new ones
+    const [seenBadgeIds, setSeenBadgeIds] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}seen_badges`);
+        return saved ? JSON.parse(saved) : [];
+    });
+    const [newBadges, setNewBadges] = useState([]);
+    const prevStatsRef = useRef(null);
+
     // Merge built-in, library, and custom exercises
     const allExercises = useMemo(() => {
         const merged = { ...EXERCISE_PLANS };
@@ -133,6 +143,29 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
     }, [sessionHistory]);
+
+    // Detect new badges when stats change
+    useEffect(() => {
+        const stats = calculateStats(completedDays, sessionHistory);
+        const unlockedBadges = getUnlockedBadges(stats);
+        const unlockedIds = unlockedBadges.map(b => b.id);
+
+        // Find newly unlocked badges (not in seenBadgeIds)
+        const newlyUnlocked = unlockedBadges.filter(b => !seenBadgeIds.includes(b.id));
+
+        if (newlyUnlocked.length > 0 && prevStatsRef.current !== null) {
+            setNewBadges(newlyUnlocked);
+            // Update seen badges
+            setSeenBadgeIds(unlockedIds);
+            localStorage.setItem(`${STORAGE_PREFIX}seen_badges`, JSON.stringify(unlockedIds));
+        } else if (prevStatsRef.current === null) {
+            // First load - just update seen badges without showing toast
+            setSeenBadgeIds(unlockedIds);
+            localStorage.setItem(`${STORAGE_PREFIX}seen_badges`, JSON.stringify(unlockedIds));
+        }
+
+        prevStatsRef.current = stats;
+    }, [completedDays, sessionHistory, seenBadgeIds]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}audio_enabled`, JSON.stringify(audioEnabled));
@@ -649,6 +682,12 @@ const App = () => {
                     onComplete={handleCompleteOnboarding}
                 />
             )}
+
+            {/* Achievement Toast Notifications */}
+            <AchievementToastManager
+                newBadges={newBadges}
+                onAllDismissed={() => setNewBadges([])}
+            />
         </div>
     );
 };

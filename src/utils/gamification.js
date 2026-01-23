@@ -26,6 +26,11 @@ const TOTAL_EXERCISES = UPPER_BODY_EXERCISES.length + LOWER_BODY_EXERCISES.lengt
  * @property {number} currentStreak - Current consecutive day streak
  * @property {boolean} hasEarlyWorkout - Has completed a workout before 8am
  * @property {boolean} hasLateWorkout - Has completed a workout after 8pm
+ * @property {number} totalVolume - Total reps/seconds across all workouts
+ * @property {number} exercisesInOneDay - Max exercises completed in a single day
+ * @property {boolean} hasWeekendWorkout - Has worked out on both Sat and Sun
+ * @property {number} longestStreak - Longest streak ever achieved
+ * @property {number} personalRecords - Number of personal records set
  */
 
 /**
@@ -42,15 +47,44 @@ const TOTAL_EXERCISES = UPPER_BODY_EXERCISES.length + LOWER_BODY_EXERCISES.lengt
  * @type {Badge[]}
  */
 export const BADGES = [
+    // Getting Started
     { id: 'first_step', name: 'First Step', desc: 'Complete your first workout', icon: '🌱', condition: (p) => p.totalSessions >= 1 },
-    { id: 'week_warrior', name: 'Week Warrior', desc: 'Complete 3 workouts in a week', icon: '⚔️', condition: (p) => p.currentStreak >= 3 },
-    { id: 'on_fire', name: 'On Fire', desc: '7 day streak', icon: '🔥', condition: (p) => p.currentStreak >= 7 },
-    { id: 'month_monster', name: 'Month Monster', desc: '30 day streak', icon: '👹', condition: (p) => p.currentStreak >= 30 },
+    { id: 'getting_started', name: 'Getting Started', desc: 'Complete 5 workouts', icon: '🚀', condition: (p) => p.totalSessions >= 5 },
+    { id: 'dedicated', name: 'Dedicated', desc: 'Complete 25 workouts', icon: '💪', condition: (p) => p.totalSessions >= 25 },
+    { id: 'half_century', name: 'Half Century', desc: '50 total workouts', icon: '5️⃣', condition: (p) => p.totalSessions >= 50 },
     { id: 'century_club', name: 'Century Club', desc: '100 total workouts', icon: '💯', condition: (p) => p.totalSessions >= 100 },
-    { id: 'mastery', name: 'Master', desc: 'Complete an entire plan', icon: '👑', condition: (p) => p.completedPlans > 0 },
+
+    // Streaks
+    { id: 'week_warrior', name: 'Week Warrior', desc: '3 day streak', icon: '⚔️', condition: (p) => p.currentStreak >= 3 },
+    { id: 'on_fire', name: 'On Fire', desc: '7 day streak', icon: '🔥', condition: (p) => p.currentStreak >= 7 },
+    { id: 'two_weeks', name: 'Fortnight Fighter', desc: '14 day streak', icon: '🗓️', condition: (p) => p.currentStreak >= 14 },
+    { id: 'month_monster', name: 'Month Monster', desc: '30 day streak', icon: '👹', condition: (p) => p.currentStreak >= 30 },
+
+    // Mastery
+    { id: 'mastery', name: 'Master', desc: 'Complete an entire exercise plan', icon: '👑', condition: (p) => p.completedPlans > 0 },
+    { id: 'triple_threat', name: 'Triple Threat', desc: 'Master 3 exercises', icon: '🎯', condition: (p) => p.completedPlans >= 3 },
+    { id: 'halfway_hero', name: 'Halfway Hero', desc: 'Master half the exercises', icon: '⭐', condition: (p) => p.completedPlans >= Math.ceil(TOTAL_EXERCISES / 2) },
     { id: 'complete_athlete', name: 'Complete Athlete', desc: `Master all ${TOTAL_EXERCISES} exercises`, icon: '🏆', condition: (p) => p.completedPlans >= TOTAL_EXERCISES },
+
+    // Volume
+    { id: 'thousand_club', name: 'Thousand Club', desc: '1,000 total reps', icon: '🔢', condition: (p) => p.totalVolume >= 1000 },
+    { id: 'five_thousand', name: 'High Volume', desc: '5,000 total reps', icon: '📈', condition: (p) => p.totalVolume >= 5000 },
+    { id: 'ten_thousand', name: 'Rep Machine', desc: '10,000 total reps', icon: '🤖', condition: (p) => p.totalVolume >= 10000 },
+
+    // Daily Intensity
+    { id: 'double_up', name: 'Double Up', desc: '2 exercises in one day', icon: '✌️', condition: (p) => p.exercisesInOneDay >= 2 },
+    { id: 'triple_session', name: 'Triple Session', desc: '3 exercises in one day', icon: '🎲', condition: (p) => p.exercisesInOneDay >= 3 },
+    { id: 'beast_mode', name: 'Beast Mode', desc: '5+ exercises in one day', icon: '🦁', condition: (p) => p.exercisesInOneDay >= 5 },
+
+    // Time-based
     { id: 'early_bird', name: 'Early Bird', desc: `Workout before ${EARLY_WORKOUT_HOUR}am`, icon: '🌅', condition: (p) => p.hasEarlyWorkout },
     { id: 'night_owl', name: 'Night Owl', desc: `Workout after ${LATE_WORKOUT_HOUR - 12}pm`, icon: '🦉', condition: (p) => p.hasLateWorkout },
+    { id: 'weekend_warrior', name: 'Weekend Warrior', desc: 'Workout on both Sat & Sun', icon: '🎉', condition: (p) => p.hasWeekendWorkout },
+
+    // Personal Records
+    { id: 'record_breaker', name: 'Record Breaker', desc: 'Set a personal record', icon: '📊', condition: (p) => p.personalRecords >= 1 },
+    { id: 'pr_hunter', name: 'PR Hunter', desc: 'Set 5 personal records', icon: '🎖️', condition: (p) => p.personalRecords >= 5 },
+    { id: 'unstoppable', name: 'Unstoppable', desc: 'Set 10 personal records', icon: '⚡', condition: (p) => p.personalRecords >= 10 },
 ]
 
 /**
@@ -74,16 +108,67 @@ export const calculateStats = (completedDays, sessionHistory = []) => {
     let currentStreak = 0;
     let hasEarlyWorkout = false;
     let hasLateWorkout = false;
+    let totalVolume = 0;
+    let exercisesInOneDay = 0;
+    let hasWeekendWorkout = false;
+    let personalRecords = 0;
 
     if (sessionHistory.length > 0) {
         // Sort history by date descending
         const sorted = [...sessionHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        // Time of day checks
+        // Track workouts per day and weekend days
+        const workoutsPerDay = {};
+        const weekendSaturdays = new Set();
+        const weekendSundays = new Set();
+
+        // Track PRs per exercise
+        const exercisePRs = {};
+
         sessionHistory.forEach(s => {
-            const hour = new Date(s.date).getHours();
+            const sessionDate = new Date(s.date);
+            const hour = sessionDate.getHours();
+            const dayOfWeek = sessionDate.getDay();
+            const dateKey = s.date.split('T')[0];
+
+            // Time of day checks
             if (hour < EARLY_WORKOUT_HOUR) hasEarlyWorkout = true;
             if (hour >= LATE_WORKOUT_HOUR) hasLateWorkout = true;
+
+            // Total volume
+            totalVolume += s.volume || 0;
+
+            // Exercises per day
+            if (!workoutsPerDay[dateKey]) workoutsPerDay[dateKey] = new Set();
+            workoutsPerDay[dateKey].add(s.exerciseKey);
+
+            // Weekend tracking
+            if (dayOfWeek === 6) weekendSaturdays.add(dateKey);
+            if (dayOfWeek === 0) weekendSundays.add(dateKey);
+
+            // Personal records tracking
+            if (!exercisePRs[s.exerciseKey] || s.volume > exercisePRs[s.exerciseKey]) {
+                if (exercisePRs[s.exerciseKey] !== undefined) {
+                    personalRecords++;
+                }
+                exercisePRs[s.exerciseKey] = s.volume;
+            }
+        });
+
+        // Max exercises in one day
+        Object.values(workoutsPerDay).forEach(exercises => {
+            if (exercises.size > exercisesInOneDay) {
+                exercisesInOneDay = exercises.size;
+            }
+        });
+
+        // Check for weekend warrior (worked out on both days of same weekend)
+        weekendSaturdays.forEach(satDate => {
+            const satDateObj = new Date(satDate);
+            const sunDate = new Date(satDateObj.getTime() + MS_PER_DAY).toISOString().split('T')[0];
+            if (weekendSundays.has(sunDate)) {
+                hasWeekendWorkout = true;
+            }
         });
 
         // Daily Streak
@@ -115,7 +200,11 @@ export const calculateStats = (completedDays, sessionHistory = []) => {
         completedPlans,
         currentStreak,
         hasEarlyWorkout,
-        hasLateWorkout
+        hasLateWorkout,
+        totalVolume,
+        exercisesInOneDay,
+        hasWeekendWorkout,
+        personalRecords
     };
 };
 

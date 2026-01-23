@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS, generateProgression, getCustomRest } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
+import { EXERCISES } from './data/exerciseDatabase.js';
 import { getDailyStack } from './utils/schedule';
 import { calculateStats, getUnlockedBadges } from './utils/gamification';
 import {
@@ -146,12 +147,24 @@ const App = () => {
     const [newBadges, setNewBadges] = useState([]);
     const prevStatsRef = useRef(null);
 
-    // Merge built-in, library, and custom exercises
+    // Merge built-in, library, database, and custom exercises
     const allExercises = useMemo(() => {
         const merged = { ...EXERCISE_PLANS };
 
         // Add library exercises (with generated progressions)
         Object.entries(EXERCISE_LIBRARY).forEach(([key, ex]) => {
+            if (!merged[key]) {
+                merged[key] = {
+                    ...ex,
+                    weeks: generateProgression(ex.startReps, ex.finalGoal),
+                    image: `neo:${key}`,
+                    finalGoal: `${ex.finalGoal} ${ex.unit === 'seconds' ? 'Seconds' : 'Reps'}`,
+                };
+            }
+        });
+
+        // Add exercises from expanded database (with generated progressions)
+        Object.entries(EXERCISES).forEach(([key, ex]) => {
             if (!merged[key]) {
                 merged[key] = {
                     ...ex,

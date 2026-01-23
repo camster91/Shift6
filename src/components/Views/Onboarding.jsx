@@ -224,7 +224,9 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
+            <div className={`flex-1 flex flex-col items-center p-6 overflow-y-auto ${
+                step === 6 && programTab === 'custom' ? 'justify-start pt-4' : 'justify-center'
+            }`}>
                 {/* Step 1: Welcome & Mode Selection */}
                 {step === 1 && (
                     <div className="w-full max-w-md space-y-8 animate-fadeIn">

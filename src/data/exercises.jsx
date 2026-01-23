@@ -114,6 +114,7 @@ export const EXERCISE_PLANS = {
         equipment: ['none'],
         modes: ['bodyweight', 'mixed'],
         isBuiltIn: true,
+        progressionType: 'bodyweight',
         variations: [
             { level: 1, name: "Wall Push-Ups", desc: "Stand facing wall, push away" },
             { level: 2, name: "Knee Push-Ups", desc: "Knees on ground" },
@@ -145,6 +146,7 @@ export const EXERCISE_PLANS = {
         equipment: ['none'],
         modes: ['bodyweight', 'mixed'],
         isBuiltIn: true,
+        progressionType: 'bodyweight',
         variations: [
             { level: 1, name: "Chair Squats", desc: "Sit to chair, stand up" },
             { level: 2, name: "Half Squats", desc: "Partial depth squat" },
@@ -176,6 +178,7 @@ export const EXERCISE_PLANS = {
         equipment: ['none'],
         modes: ['bodyweight', 'mixed'],
         isBuiltIn: true,
+        progressionType: 'bodyweight',
         variations: [
             { level: 1, name: "Two-Leg Bridge", desc: "Both feet on ground" },
             { level: 2, name: "Marching Bridge", desc: "Alternate lifting legs" },
@@ -207,6 +210,7 @@ export const EXERCISE_PLANS = {
         equipment: ['none'],
         modes: ['bodyweight', 'mixed'],
         isBuiltIn: true,
+        progressionType: 'bodyweight',
         variations: [
             { level: 1, name: "Crunches", desc: "Upper body only, hands behind head" },
             { level: 2, name: "Tuck-Ups", desc: "Knees bent, touch shins" },
@@ -238,6 +242,7 @@ export const EXERCISE_PLANS = {
         equipment: ['pullupBar'],
         modes: ['bodyweight', 'mixed'],
         isBuiltIn: true,
+        progressionType: 'bodyweight',
         variations: [
             { level: 1, name: "Dead Hangs", desc: "Just hang from bar, build grip" },
             { level: 2, name: "Negative Pull-Ups", desc: "Jump up, lower slowly" },
@@ -269,6 +274,7 @@ export const EXERCISE_PLANS = {
         equipment: ['none'],
         modes: ['bodyweight', 'mixed'],
         isBuiltIn: true,
+        progressionType: 'bodyweight',
         variations: [
             { level: 1, name: "Knee Plank", desc: "Knees on ground, easier" },
             { level: 2, name: "Incline Plank", desc: "Hands on raised surface" },
@@ -300,6 +306,7 @@ export const EXERCISE_PLANS = {
         equipment: ['none'],
         modes: ['bodyweight', 'mixed'],
         isBuiltIn: true,
+        progressionType: 'bodyweight',
         variations: [
             { level: 1, name: "Static Lunges", desc: "Stay in split stance" },
             { level: 2, name: "Reverse Lunges", desc: "Step backward instead" },
@@ -331,6 +338,7 @@ export const EXERCISE_PLANS = {
         equipment: ['dipBars'],
         modes: ['bodyweight', 'mixed'],
         isBuiltIn: true,
+        progressionType: 'bodyweight',
         variations: [
             { level: 1, name: "Bench Dips", desc: "Hands on bench behind you" },
             { level: 2, name: "Assisted Dips", desc: "Use band or machine" },
@@ -362,6 +370,7 @@ export const EXERCISE_PLANS = {
         equipment: ['none'],
         modes: ['bodyweight', 'mixed'],
         isBuiltIn: true,
+        progressionType: 'bodyweight',
         variations: [
             { level: 1, name: "Bird Dogs", desc: "On all fours, opposite arm/leg" },
             { level: 2, name: "Cobra", desc: "Just lift upper body" },

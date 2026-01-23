@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench, Shuffle } from 'lucide-react'
 import {
     REP_SCHEME_CONFIGS,
     FITNESS_LEVEL_PRESETS,
@@ -12,6 +12,7 @@ import {
 } from '../../utils/constants.js'
 import { applyFitnessLevelPreset } from '../../utils/preferences.js'
 import { EXERCISE_LIBRARY, GOAL_ICONS } from '../../data/exerciseLibrary.js'
+import { generateProgram, regenerateProgram } from '../../utils/programGenerator.js'
 import TemplateCard from '../Visuals/TemplateCard'
 import CustomProgramBuilder from './CustomProgramBuilder'
 
@@ -21,15 +22,47 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
     const [selectedEquipment, setSelectedEquipment] = useState(['none'])
     const [selectedTemplate, setSelectedTemplate] = useState(null)
     const [trainingPreferences, setTrainingPreferences] = useState({ ...DEFAULT_TRAINING_PREFERENCES })
-    // New state for template selection UI
-    const [programTab, setProgramTab] = useState('templates') // 'templates' | 'custom'
+    // Program selection UI state
+    const [programTab, setProgramTab] = useState('generated') // 'generated' | 'templates' | 'custom'
     const [customExercises, setCustomExercises] = useState([])
     const [goalFilter, setGoalFilter] = useState('all')
+    // Generated program state
+    const [generatedProgram, setGeneratedProgram] = useState(null)
+    const [showProgramDetails, setShowProgramDetails] = useState(false)
 
     // Combine all exercises for the builder
     const allExercises = useMemo(() => {
         return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY }
     }, [])
+
+    // Generate program when reaching step 6 or when relevant preferences change
+    useEffect(() => {
+        if (step === 6 && selectedMode && trainingPreferences.fitnessLevel && trainingPreferences.repScheme) {
+            const program = generateProgram({
+                mode: selectedMode,
+                equipment: selectedEquipment,
+                fitnessLevel: trainingPreferences.fitnessLevel,
+                repScheme: trainingPreferences.repScheme,
+                trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek,
+                targetSessionDuration: trainingPreferences.targetSessionDuration,
+            }, allExercises)
+            setGeneratedProgram(program)
+        }
+    }, [step, selectedMode, selectedEquipment, trainingPreferences, allExercises])
+
+    // Handler to regenerate with variation
+    const handleRegenerateProgram = () => {
+        if (!selectedMode) return
+        const program = regenerateProgram({
+            mode: selectedMode,
+            equipment: selectedEquipment,
+            fitnessLevel: trainingPreferences.fitnessLevel,
+            repScheme: trainingPreferences.repScheme,
+            trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek,
+            targetSessionDuration: trainingPreferences.targetSessionDuration,
+        }, allExercises, generatedProgram?.exercises || [])
+        setGeneratedProgram(program)
+    }
 
     // Steps: 1=Mode, 2=Equipment (skipped for bodyweight), 3=Fitness, 4=Goal, 5=Schedule, 6=Template, 7=Confirm
     // Fitness Level now comes BEFORE Goal/Schedule so presets set the starting point
@@ -108,11 +141,14 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             setStep(nextStep)
         } else {
             // Final step - complete onboarding
-            // For custom programs, pass exercises directly; for templates, pass template ID
-            if (programTab === 'custom') {
-                // Pass custom exercises as a "virtual template"
+            if (programTab === 'generated' && generatedProgram?.exercises?.length > 0) {
+                // Use AI-generated program
+                onComplete(selectedMode, selectedEquipment, null, trainingPreferences, generatedProgram.exercises)
+            } else if (programTab === 'custom') {
+                // Use custom-built program
                 onComplete(selectedMode, selectedEquipment, null, trainingPreferences, customExercises)
             } else {
+                // Use template
                 onComplete(selectedMode, selectedEquipment, selectedTemplate, trainingPreferences)
             }
         }
@@ -133,7 +169,9 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             case 4: return trainingPreferences.repScheme !== null // Training Goal
             case 5: return trainingPreferences.trainingDaysPerWeek >= 2 // Schedule
             case 6: {
-                // For custom programs, need at least 3 exercises
+                if (programTab === 'generated') {
+                    return generatedProgram?.exercises?.length >= 3
+                }
                 if (programTab === 'custom') {
                     return customExercises.length >= 3
                 }
@@ -146,10 +184,24 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
 
     // Get the final program exercises
     const getFinalExercises = () => {
+        if (programTab === 'generated') {
+            return generatedProgram?.exercises || []
+        }
         if (programTab === 'custom') {
             return customExercises
         }
         return templates[selectedTemplate]?.exercises || []
+    }
+
+    // Get final program name
+    const getFinalProgramName = () => {
+        if (programTab === 'generated') {
+            return generatedProgram?.name || 'Custom Program'
+        }
+        if (programTab === 'custom') {
+            return 'Custom Program'
+        }
+        return templates[selectedTemplate]?.name || 'Selected Template'
     }
 
     // Get templates for current mode
@@ -400,39 +452,134 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                     </div>
                 )}
 
-                {/* Step 6: Template Selection / Custom Builder */}
+                {/* Step 6: Program Selection - Generated, Templates, or Custom */}
                 {step === 6 && (
                     <div className="w-full max-w-lg space-y-4 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Choose Your Program</h2>
-                            <p className="text-slate-400">Pick a template or build your own</p>
+                            <h2 className="text-2xl font-bold text-white">Your Program</h2>
+                            <p className="text-slate-400">Personalized based on your preferences</p>
                         </div>
 
                         {/* Tab Toggle */}
                         <div className="flex bg-slate-800 rounded-lg p-1">
                             <button
+                                onClick={() => setProgramTab('generated')}
+                                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${
+                                    programTab === 'generated'
+                                        ? 'bg-cyan-500 text-white'
+                                        : 'text-slate-400 hover:text-white'
+                                }`}
+                            >
+                                <Sparkles className="w-3 h-3" />
+                                For You
+                            </button>
+                            <button
                                 onClick={() => setProgramTab('templates')}
-                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${
                                     programTab === 'templates'
                                         ? 'bg-cyan-500 text-white'
                                         : 'text-slate-400 hover:text-white'
                                 }`}
                             >
-                                <LayoutGrid className="w-4 h-4" />
+                                <LayoutGrid className="w-3 h-3" />
                                 Templates
                             </button>
                             <button
                                 onClick={() => setProgramTab('custom')}
-                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${
                                     programTab === 'custom'
                                         ? 'bg-cyan-500 text-white'
                                         : 'text-slate-400 hover:text-white'
                                 }`}
                             >
-                                <Wrench className="w-4 h-4" />
-                                Build Your Own
+                                <Wrench className="w-3 h-3" />
+                                Custom
                             </button>
                         </div>
+
+                        {/* Generated Program Tab */}
+                        {programTab === 'generated' && generatedProgram && (
+                            <div className="space-y-4">
+                                {/* Program Summary Card */}
+                                <div className="bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 rounded-xl p-4">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div>
+                                            <h3 className="font-bold text-white text-lg">{generatedProgram.name}</h3>
+                                            <p className="text-cyan-300 text-sm">{generatedProgram.metadata?.splitName} Split</p>
+                                        </div>
+                                        <button
+                                            onClick={handleRegenerateProgram}
+                                            className="p-2 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors"
+                                            title="Generate different exercises"
+                                        >
+                                            <Shuffle className="w-4 h-4 text-cyan-400" />
+                                        </button>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-3 mb-4">
+                                        <div className="bg-slate-800/50 rounded-lg p-2 text-center">
+                                            <div className="text-lg font-bold text-white">{generatedProgram.exercises?.length || 0}</div>
+                                            <div className="text-xs text-slate-400">Exercises</div>
+                                        </div>
+                                        <div className="bg-slate-800/50 rounded-lg p-2 text-center">
+                                            <div className="text-lg font-bold text-white">{trainingPreferences.trainingDaysPerWeek}x</div>
+                                            <div className="text-xs text-slate-400">Per Week</div>
+                                        </div>
+                                        <div className="bg-slate-800/50 rounded-lg p-2 text-center">
+                                            <div className="text-lg font-bold text-white">~{generatedProgram.metadata?.estimatedSessionDuration || trainingPreferences.targetSessionDuration}m</div>
+                                            <div className="text-xs text-slate-400">Per Session</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Exercise Preview */}
+                                    <div>
+                                        <button
+                                            onClick={() => setShowProgramDetails(!showProgramDetails)}
+                                            className="flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 mb-2"
+                                        >
+                                            <span>{showProgramDetails ? 'Hide' : 'Show'} Exercises</span>
+                                            <ChevronRight className={`w-4 h-4 transition-transform ${showProgramDetails ? 'rotate-90' : ''}`} />
+                                        </button>
+
+                                        {showProgramDetails && (
+                                            <div className="space-y-2 max-h-[30vh] overflow-y-auto">
+                                                {generatedProgram.exercises?.map((exKey, index) => {
+                                                    const exercise = allExercises[exKey]
+                                                    return (
+                                                        <div
+                                                            key={exKey}
+                                                            className="flex items-center gap-3 bg-slate-800/50 rounded-lg p-2"
+                                                        >
+                                                            <span className="text-xs text-slate-500 w-5">{index + 1}.</span>
+                                                            <span className="flex-1 text-sm text-white">{exercise?.name || exKey}</span>
+                                                            <span className="text-xs text-slate-400 capitalize">{exercise?.category}</span>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Why these exercises */}
+                                <div className="bg-slate-800/50 rounded-xl p-4">
+                                    <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+                                        <Sparkles className="w-4 h-4 text-cyan-400" />
+                                        Why these exercises?
+                                    </h4>
+                                    <ul className="text-sm text-slate-400 space-y-1">
+                                        <li>Matched to your {trainingPreferences.fitnessLevel} fitness level</li>
+                                        <li>Optimized for {REP_SCHEME_CONFIGS[trainingPreferences.repScheme]?.name?.toLowerCase() || 'your goals'}</li>
+                                        <li>Balanced across all major muscle groups</li>
+                                        <li>Fits your {trainingPreferences.targetSessionDuration} minute sessions</li>
+                                    </ul>
+                                </div>
+
+                                <p className="text-center text-slate-500 text-xs">
+                                    Not quite right? Try the shuffle button or build your own
+                                </p>
+                            </div>
+                        )}
 
                         {/* Templates Tab */}
                         {programTab === 'templates' && (
@@ -539,7 +686,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                             <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Program</span>
                                 <span className="text-white font-medium">
-                                    {programTab === 'custom' ? 'Custom Program' : templates[selectedTemplate]?.name}
+                                    {getFinalProgramName()}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">

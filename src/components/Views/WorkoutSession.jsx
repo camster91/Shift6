@@ -114,12 +114,27 @@ const WorkoutSession = ({
     exerciseTimerStarted,
     setExerciseTimerStarted,
     completedDays = {},
-    sessionHistory = []
+    sessionHistory = [],
+    gymWeights = {},
+    setGymWeights,
+    allExercises = {}
 }) => {
     const [copied, setCopied] = useState(false);
     const [showVideo, setShowVideo] = useState(false);
     const [showTips, setShowTips] = useState(false);
     const [showAchievements, setShowAchievements] = useState(false);
+
+    // Gym workout state - track reps completed for each set
+    const [gymSetReps, setGymSetReps] = useState([]);
+    const [currentGymReps, setCurrentGymReps] = useState(0);
+
+    // Check if this is a gym exercise
+    const exerciseData = currentSession ? (allExercises[currentSession.exerciseKey] || EXERCISE_PLANS[currentSession.exerciseKey] || EXERCISE_LIBRARY[currentSession.exerciseKey]) : null;
+    const isGymExercise = exerciseData?.progressionType === 'gym';
+    const gymConfig = exerciseData?.gymConfig;
+
+    // Get current weight for gym exercise
+    const currentWeight = currentSession ? (gymWeights[currentSession.exerciseKey] || 0) : 0;
 
     // Calculate stats and unlocked badges
     const stats = calculateStats(completedDays, sessionHistory);
@@ -361,7 +376,235 @@ const WorkoutSession = ({
 
                 {/* Main Content */}
                 <div className="p-8 md:p-12 min-h-[500px] flex flex-col items-center justify-center bg-slate-900/30">
-                    {timeLeft > 0 ? (
+                    {/* Gym Exercise Workout UI */}
+                    {isGymExercise && gymConfig ? (
+                        <div className="w-full max-w-sm">
+                            {timeLeft > 0 ? (
+                                // Rest Timer for Gym
+                                <div className="space-y-6 flex flex-col items-center w-full">
+                                    <div className="relative">
+                                        <ProgressRing
+                                            progress={timeLeft / (gymConfig.restSeconds || 90)}
+                                            color="#06b6d4"
+                                            size={180}
+                                            stroke={8}
+                                        />
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                            <span className="text-6xl font-bold text-white tabular-nums">
+                                                {timeLeft}
+                                            </span>
+                                            <span className="text-xs text-cyan-400 uppercase mt-1 tracking-wider">Rest</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => { setTimeLeft(0); vibrate(20); }}
+                                        className="px-6 py-2 rounded-lg bg-slate-800/50 border border-cyan-500/30 text-cyan-400 text-sm font-medium hover:bg-slate-700/50 transition-colors uppercase tracking-wider"
+                                    >
+                                        End Rest
+                                    </button>
+                                </div>
+                            ) : gymSetReps.length >= gymConfig.sets ? (
+                                // All sets complete - show summary
+                                <div className="space-y-6 text-center">
+                                    <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center justify-center mx-auto">
+                                        <Check className="text-emerald-400" size={32} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-white mb-2">Workout Complete!</h3>
+                                        <p className="text-slate-400 text-sm">
+                                            {gymConfig.sets} sets @ {currentWeight > 0 ? `${currentWeight} lbs` : 'bodyweight'}
+                                        </p>
+                                    </div>
+
+                                    {/* Set Summary */}
+                                    <div className="bg-slate-800/30 border border-slate-700 rounded-lg p-4">
+                                        <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">Set Summary</p>
+                                        <div className="flex justify-center gap-3">
+                                            {gymSetReps.map((reps, i) => (
+                                                <div key={i} className="text-center">
+                                                    <div className="text-2xl font-bold text-white">{reps}</div>
+                                                    <div className="text-xs text-slate-500">Set {i + 1}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Progression hint if last set exceeded range */}
+                                    {gymSetReps[gymSetReps.length - 1] > gymConfig.repRange[1] && (
+                                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                                            <p className="text-emerald-400 text-sm font-medium">
+                                                💪 Great job! Consider increasing weight by {gymConfig.weightIncrement} lbs next time.
+                                            </p>
+                                            <button
+                                                onClick={() => {
+                                                    if (setGymWeights) {
+                                                        setGymWeights(prev => ({
+                                                            ...prev,
+                                                            [currentSession.exerciseKey]: currentWeight + gymConfig.weightIncrement
+                                                        }));
+                                                    }
+                                                    vibrate(50);
+                                                }}
+                                                className="mt-2 px-4 py-2 bg-emerald-500 text-slate-900 rounded-lg text-sm font-bold hover:bg-emerald-600 transition-colors"
+                                            >
+                                                Increase to {currentWeight + gymConfig.weightIncrement} lbs
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Notes */}
+                                    <div>
+                                        <textarea
+                                            value={workoutNotes || ''}
+                                            onChange={(e) => setWorkoutNotes(e.target.value)}
+                                            placeholder="Add notes (optional)..."
+                                            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 resize-none"
+                                            rows={2}
+                                            maxLength={200}
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            if (audioEnabled) playSuccess();
+                                            vibrate([50, 50, 50, 50, 200]);
+                                            // Store gym workout in history with weight info
+                                            const totalReps = gymSetReps.reduce((sum, r) => sum + r, 0);
+                                            setAmrapValue(String(totalReps));
+                                            completeWorkout();
+                                            setGymSetReps([]);
+                                            setCurrentGymReps(0);
+                                        }}
+                                        className="w-full bg-cyan-500 rounded-lg text-slate-900 py-4 text-sm font-bold hover:bg-cyan-600 transition-colors uppercase tracking-wider"
+                                    >
+                                        Finish Workout
+                                    </button>
+                                </div>
+                            ) : (
+                                // Active set - gym exercise
+                                <div className="text-center space-y-6">
+                                    <p className="text-xs text-cyan-400 uppercase tracking-wider">
+                                        Set {gymSetReps.length + 1} of {gymConfig.sets}
+                                    </p>
+
+                                    {/* Current Weight Display */}
+                                    <div className="bg-slate-800/30 border border-slate-700 rounded-lg p-4">
+                                        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Weight</p>
+                                        <div className="flex items-center justify-center gap-3">
+                                            <button
+                                                onClick={() => {
+                                                    if (setGymWeights && currentWeight > 0) {
+                                                        setGymWeights(prev => ({
+                                                            ...prev,
+                                                            [currentSession.exerciseKey]: Math.max(0, currentWeight - gymConfig.weightIncrement)
+                                                        }));
+                                                    }
+                                                    vibrate(20);
+                                                }}
+                                                className="w-10 h-10 rounded-full bg-slate-700 border border-slate-600 text-slate-300 hover:bg-slate-600 transition-colors flex items-center justify-center"
+                                            >
+                                                <Minus size={18} />
+                                            </button>
+                                            <div className="text-3xl font-bold text-white min-w-[100px]">
+                                                {currentWeight > 0 ? `${currentWeight} lbs` : 'BW'}
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    if (setGymWeights) {
+                                                        setGymWeights(prev => ({
+                                                            ...prev,
+                                                            [currentSession.exerciseKey]: currentWeight + gymConfig.weightIncrement
+                                                        }));
+                                                    }
+                                                    vibrate(20);
+                                                }}
+                                                className="w-10 h-10 rounded-full bg-slate-700 border border-slate-600 text-slate-300 hover:bg-slate-600 transition-colors flex items-center justify-center"
+                                            >
+                                                <Plus size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Rep Target */}
+                                    <div>
+                                        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Target Reps</p>
+                                        <div className="text-4xl font-bold text-cyan-400">
+                                            {gymConfig.repRange[0]}-{gymConfig.repRange[1]}
+                                        </div>
+                                    </div>
+
+                                    {/* Rep Counter */}
+                                    <div>
+                                        <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">Reps Completed</p>
+                                        <div className="flex items-center justify-center gap-3">
+                                            <button
+                                                onClick={() => setCurrentGymReps(prev => Math.max(0, prev - 5))}
+                                                className="w-12 h-12 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center"
+                                            >
+                                                <Minus size={20} />
+                                            </button>
+                                            <button
+                                                onClick={() => setCurrentGymReps(prev => Math.max(0, prev - 1))}
+                                                className="w-9 h-9 rounded-full bg-slate-800/50 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors flex items-center justify-center text-sm font-bold"
+                                            >
+                                                -1
+                                            </button>
+                                            <div className="w-20 h-16 bg-slate-800/50 border border-cyan-500/30 rounded-xl flex items-center justify-center">
+                                                <span className="text-4xl font-bold text-white tabular-nums">
+                                                    {currentGymReps}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => setCurrentGymReps(prev => prev + 1)}
+                                                className="w-9 h-9 rounded-full bg-slate-800/50 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors flex items-center justify-center text-sm font-bold"
+                                            >
+                                                +1
+                                            </button>
+                                            <button
+                                                onClick={() => setCurrentGymReps(prev => prev + 5)}
+                                                className="w-12 h-12 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center"
+                                            >
+                                                <Plus size={20} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Rep quality indicator */}
+                                    {currentGymReps > 0 && (
+                                        <div className={`text-xs font-medium ${
+                                            currentGymReps < gymConfig.repRange[0]
+                                                ? 'text-amber-400'
+                                                : currentGymReps > gymConfig.repRange[1]
+                                                    ? 'text-emerald-400'
+                                                    : 'text-cyan-400'
+                                        }`}>
+                                            {currentGymReps < gymConfig.repRange[0]
+                                                ? 'Below target - consider reducing weight'
+                                                : currentGymReps > gymConfig.repRange[1]
+                                                    ? 'Above target - ready to progress!'
+                                                    : 'In target range - good work!'}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={() => {
+                                            vibrate(20);
+                                            setGymSetReps(prev => [...prev, currentGymReps]);
+                                            setCurrentGymReps(0);
+                                            if (gymSetReps.length + 1 < gymConfig.sets) {
+                                                setTimeLeft(gymConfig.restSeconds || 90);
+                                                setIsTimerRunning(true);
+                                            }
+                                        }}
+                                        disabled={currentGymReps === 0}
+                                        className="w-full py-5 rounded-lg bg-cyan-500 text-slate-900 font-bold hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 uppercase tracking-wider"
+                                    >
+                                        {gymSetReps.length + 1 >= gymConfig.sets ? 'Complete Final Set' : 'Complete Set'} <ChevronRight size={20} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ) : timeLeft > 0 ? (
                         <div className="space-y-6 flex flex-col items-center w-full">
                             <div className="relative">
                                 <ProgressRing

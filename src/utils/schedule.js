@@ -4,24 +4,41 @@ import { SUNDAY } from './constants';
 /**
  * @typedef {Object} NextSession
  * @property {string} exerciseKey - Exercise identifier
- * @property {number} week - Week number (1-6)
- * @property {number} dayIndex - Day index within the week (0-2)
+ * @property {number} week - Week number (1-6 for bodyweight, 0 for gym)
+ * @property {number} dayIndex - Day index within the week (0-2 for bodyweight, 0 for gym)
  * @property {string} dayId - Unique day identifier
  * @property {string} name - Exercise display name
+ * @property {boolean} [isGym] - True if this is a gym exercise
  */
 
 /**
  * Finds the next incomplete workout session for a given exercise.
- * @param {string} exKey - Exercise key (e.g., 'pushups', 'squats')
+ * For bodyweight exercises: Returns next incomplete day in 18-day plan
+ * For gym exercises: Always returns available (gym uses progressive overload, not day completion)
+ * @param {string} exKey - Exercise key (e.g., 'pushups', 'squats', 'benchPress')
  * @param {Object.<string, string[]>} completedDays - Map of exercise keys to completed day IDs
  * @param {Object} [exercisePlans] - Optional exercise plans object (defaults to EXERCISE_PLANS)
- * @returns {NextSession|null} Next session info or null if exercise is complete
+ * @returns {NextSession|null} Next session info or null if exercise is complete (bodyweight only)
  */
 export const getNextSessionForExercise = (exKey, completedDays, exercisePlans = EXERCISE_PLANS) => {
     const plan = exercisePlans[exKey];
     if (!plan) return null;
 
-    // Find first incomplete day
+    // Gym exercises use progressive overload - always available
+    if (plan.progressionType === 'gym') {
+        return {
+            exerciseKey: exKey,
+            week: 0,
+            dayIndex: 0,
+            dayId: `gym_${exKey}`,
+            name: plan.name,
+            isGym: true
+        };
+    }
+
+    // Bodyweight exercises - find first incomplete day in 18-day plan
+    if (!plan.weeks) return null;
+
     for (let w = 0; w < plan.weeks.length; w++) {
         const week = plan.weeks[w];
         for (let d = 0; d < week.days.length; d++) {

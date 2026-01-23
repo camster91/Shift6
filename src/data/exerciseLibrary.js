@@ -1233,6 +1233,8 @@ export const STARTER_TEMPLATES = {
     name: 'Shift6 Classic',
     desc: 'The original 9 foundational exercises',
     mode: 'bodyweight',
+    goal: 'balanced',
+    difficulty: 'beginner',
     exercises: ['pushups', 'squats', 'pullups', 'dips', 'vups', 'glutebridge', 'plank', 'lunges', 'supermans'],
     recommended: true,
   },
@@ -1241,6 +1243,8 @@ export const STARTER_TEMPLATES = {
     name: 'Minimalist',
     desc: '4 compound movements for busy schedules',
     mode: 'bodyweight',
+    goal: 'balanced',
+    difficulty: 'beginner',
     exercises: ['pushups', 'squats', 'pullups', 'plank'],
   },
   'bodyweight-complete': {
@@ -1248,6 +1252,8 @@ export const STARTER_TEMPLATES = {
     name: 'Complete Bodyweight',
     desc: '12 exercises for full-body development',
     mode: 'bodyweight',
+    goal: 'balanced',
+    difficulty: 'intermediate',
     exercises: ['pushups', 'diamondPushups', 'pikePushups', 'squats', 'lunges', 'pistolSquats', 'pullups', 'chinups', 'australianRows', 'dips', 'vups', 'plank'],
   },
   'gym-basics': {
@@ -1255,6 +1261,8 @@ export const STARTER_TEMPLATES = {
     name: 'Gym Basics',
     desc: '5 essential compound lifts',
     mode: 'gym',
+    goal: 'strength',
+    difficulty: 'beginner',
     exercises: ['benchPress', 'backSquat', 'deadlift', 'overheadPress', 'barbellRows'],
   },
   'gym-complete': {
@@ -1262,6 +1270,8 @@ export const STARTER_TEMPLATES = {
     name: 'Complete Gym',
     desc: '10 exercises covering all muscle groups',
     mode: 'gym',
+    goal: 'hypertrophy',
+    difficulty: 'intermediate',
     exercises: ['benchPress', 'inclineBenchPress', 'backSquat', 'romanianDeadlift', 'deadlift', 'barbellRows', 'latPulldowns', 'overheadPress', 'bicepCurls', 'cableCrunches'],
   },
   'hybrid': {
@@ -1269,8 +1279,133 @@ export const STARTER_TEMPLATES = {
     name: 'Hybrid Athlete',
     desc: 'Best of bodyweight and gym',
     mode: 'mixed',
+    goal: 'balanced',
     exercises: ['pushups', 'benchPress', 'squats', 'deadlift', 'pullups', 'barbellRows', 'dips', 'overheadPress', 'vups', 'plank'],
   },
+
+  // === NEW BODYWEIGHT TEMPLATES ===
+  'bodyweight-strength': {
+    id: 'bodyweight-strength',
+    name: 'Strength Foundation',
+    desc: 'Build raw strength with progressive overload',
+    mode: 'bodyweight',
+    goal: 'strength',
+    difficulty: 'intermediate',
+    exercises: ['pushups', 'archerPushups', 'pullups', 'pistolSquats', 'dips', 'plank', 'lSits'],
+  },
+  'bodyweight-endurance': {
+    id: 'bodyweight-endurance',
+    name: 'Endurance Builder',
+    desc: 'High-rep circuits for stamina and conditioning',
+    mode: 'bodyweight',
+    goal: 'endurance',
+    difficulty: 'beginner',
+    exercises: ['pushups', 'squats', 'burpees', 'mountainClimbers', 'jumpingJacks', 'highKnees', 'plank'],
+  },
+  'upper-body-focus': {
+    id: 'upper-body-focus',
+    name: 'Upper Body Blast',
+    desc: 'Chest, back, shoulders, and arms focus',
+    mode: 'bodyweight',
+    goal: 'hypertrophy',
+    focus: 'upper',
+    exercises: ['pushups', 'diamondPushups', 'pikePushups', 'pullups', 'chinups', 'dips', 'australianRows'],
+  },
+  'lower-body-focus': {
+    id: 'lower-body-focus',
+    name: 'Leg Day',
+    desc: 'Quads, glutes, hamstrings, and calves',
+    mode: 'bodyweight',
+    goal: 'hypertrophy',
+    focus: 'lower',
+    exercises: ['squats', 'lunges', 'glutebridge', 'pistolSquats', 'calfRaises', 'wallSits', 'boxJumps'],
+  },
+
+  // === NEW GYM TEMPLATES ===
+  'gym-strength': {
+    id: 'gym-strength',
+    name: 'Powerlifting Prep',
+    desc: 'Focus on the big 3 plus accessories',
+    mode: 'gym',
+    goal: 'strength',
+    difficulty: 'intermediate',
+    exercises: ['backSquat', 'benchPress', 'deadlift', 'overheadPress', 'barbellRows', 'weightedDips'],
+  },
+  'gym-hypertrophy': {
+    id: 'gym-hypertrophy',
+    name: 'Muscle Builder',
+    desc: 'High volume for maximum growth',
+    mode: 'gym',
+    goal: 'hypertrophy',
+    difficulty: 'intermediate',
+    exercises: ['benchPress', 'inclineBenchPress', 'latPulldowns', 'barbellRows', 'legPress', 'bicepCurls', 'tricepPushdowns', 'cableCrunches'],
+  },
+  'gym-functional': {
+    id: 'gym-functional',
+    name: 'Functional Fitness',
+    desc: 'Athletic movements for real-world strength',
+    mode: 'gym',
+    goal: 'functional',
+    difficulty: 'beginner',
+    exercises: ['deadlift', 'gobletSquats', 'dumbbellRows', 'overheadPress', 'romanianDeadlift', 'facePulls'],
+  },
+
+  // === NEW MIXED/HYBRID TEMPLATES ===
+  'hybrid-strength': {
+    id: 'hybrid-strength',
+    name: 'Hybrid Strength',
+    desc: 'Bodyweight skills plus heavy compounds',
+    mode: 'mixed',
+    goal: 'strength',
+    difficulty: 'intermediate',
+    recommended: true,
+    exercises: ['pullups', 'deadlift', 'dips', 'backSquat', 'pushups', 'overheadPress', 'plank'],
+  },
+  'hybrid-athletic': {
+    id: 'hybrid-athletic',
+    name: 'Complete Athlete',
+    desc: 'Well-rounded fitness for sports performance',
+    mode: 'mixed',
+    goal: 'athletic',
+    difficulty: 'intermediate',
+    exercises: ['pushups', 'squats', 'pullups', 'deadlift', 'burpees', 'boxJumps', 'plank', 'barbellRows'],
+  },
+  'hybrid-minimal': {
+    id: 'hybrid-minimal',
+    name: 'Home Gym Essentials',
+    desc: 'For those with basic home equipment',
+    mode: 'mixed',
+    goal: 'balanced',
+    difficulty: 'beginner',
+    equipment: ['dumbbells', 'pullupBar'],
+    exercises: ['pushups', 'pullups', 'dumbbellPress', 'dumbbellRows', 'gobletSquats', 'lunges', 'plank'],
+  },
+  'push-pull-legs': {
+    id: 'push-pull-legs',
+    name: 'Push/Pull/Legs',
+    desc: 'Classic bodybuilding split structure',
+    mode: 'mixed',
+    goal: 'hypertrophy',
+    difficulty: 'intermediate',
+    exercises: ['benchPress', 'pushups', 'overheadPress', 'pullups', 'barbellRows', 'deadlift', 'backSquat', 'lunges'],
+  },
+}
+
+// Goal icons for UI display
+export const GOAL_ICONS = {
+  strength: '💪',
+  endurance: '🏃',
+  hypertrophy: '🎯',
+  balanced: '⚖️',
+  athletic: '🏆',
+  functional: '🔄',
+}
+
+// Difficulty labels
+export const DIFFICULTY_LABELS = {
+  beginner: { name: 'Beginner', color: 'emerald' },
+  intermediate: { name: 'Intermediate', color: 'cyan' },
+  advanced: { name: 'Advanced', color: 'orange' },
 }
 
 /**

@@ -467,6 +467,21 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
 
                                 {/* Template List */}
                                 <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
+                                    {/* Always show selected template first if it doesn't match filter */}
+                                    {selectedTemplate &&
+                                     goalFilter !== 'all' &&
+                                     templates[selectedTemplate]?.goal !== goalFilter && (
+                                        <div className="pb-2 mb-2 border-b border-slate-700">
+                                            <p className="text-xs text-slate-500 mb-2">Currently selected:</p>
+                                            <TemplateCard
+                                                template={templates[selectedTemplate]}
+                                                selected={true}
+                                                onSelect={setSelectedTemplate}
+                                                showPreview={true}
+                                                allExercises={allExercises}
+                                            />
+                                        </div>
+                                    )}
                                     {availableTemplates
                                         .filter(([, t]) => goalFilter === 'all' || t.goal === goalFilter)
                                         .map(([id, template]) => (

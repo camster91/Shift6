@@ -459,6 +459,13 @@ const App = () => {
         }
     };
 
+    // Apply custom program from ProgramManager
+    const handleApplyCustomProgram = (exercises) => {
+        if (exercises && exercises.length >= 3) {
+            setActiveProgram([...exercises]);
+        }
+    };
+
     // Complete onboarding
     const handleCompleteOnboarding = (mode, equipment, templateId, preferences = null, customExerciseList = null) => {
         setProgramMode(mode);
@@ -791,6 +798,7 @@ const App = () => {
                     equipment={EQUIPMENT}
                     programModes={PROGRAM_MODES}
                     onApplyTemplate={handleApplyTemplate}
+                    onApplyCustomProgram={handleApplyCustomProgram}
                     onRemoveFromProgram={handleRemoveFromProgram}
                     onChangeProgramMode={handleChangeProgramMode}
                     onSetEquipment={setUserEquipment}

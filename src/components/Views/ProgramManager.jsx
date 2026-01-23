@@ -15,6 +15,7 @@ const ProgramManager = ({
     equipment,
     programModes,
     onApplyTemplate,
+    onApplyCustomProgram,
     onRemoveFromProgram,
     onChangeProgramMode,
     onSetEquipment,
@@ -29,6 +30,7 @@ const ProgramManager = ({
     const [goalFilter, setGoalFilter] = useState('all')
     const [customExercises, setCustomExercises] = useState([])
     const [confirmApply, setConfirmApply] = useState(null) // Template ID to confirm
+    const [confirmCustom, setConfirmCustom] = useState(false) // Confirm custom program apply
 
     // Combine all exercises
     const combinedExercises = useMemo(() => {
@@ -77,19 +79,20 @@ const ProgramManager = ({
             // Check if user has progress
             const hasProgress = Object.values(completedDays).some(days => days?.length > 0)
             if (hasProgress) {
-                // Show confirmation - we'll use a simple confirm for now
-                if (window.confirm('Apply custom program? Your progress for exercises not in the new program will be preserved.')) {
-                    // Apply custom program by updating active program directly
-                    // This requires a new prop - for now we'll use onApplyTemplate with null
-                    // and pass exercises via a different mechanism
-                    // For simplicity, let's just show a message
-                    alert('Custom program saved! Progress preserved for matching exercises.')
-                }
+                setConfirmCustom(true)
+            } else {
+                onApplyCustomProgram(customExercises)
+                setActiveTab('current')
+                setCustomExercises([])
             }
-            // Note: Full implementation would need a new handler in App.jsx
-            // For now, redirect to add exercises manually
-            onShowLibrary()
         }
+    }
+
+    const confirmCustomApply = () => {
+        onApplyCustomProgram(customExercises)
+        setConfirmCustom(false)
+        setActiveTab('current')
+        setCustomExercises([])
     }
 
     // Get templates for current mode
@@ -306,7 +309,7 @@ const ProgramManager = ({
                 )}
             </div>
 
-            {/* Confirmation Modal */}
+            {/* Template Confirmation Modal */}
             {confirmApply && (
                 <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-slate-900 rounded-2xl w-full max-w-sm overflow-hidden">
@@ -334,6 +337,40 @@ const ProgramManager = ({
                                 className="flex-1 py-2 bg-cyan-500 text-white rounded-lg font-medium hover:bg-cyan-600"
                             >
                                 Switch
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Program Confirmation Modal */}
+            {confirmCustom && (
+                <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-slate-900 rounded-2xl w-full max-w-sm overflow-hidden">
+                        <div className="p-6 text-center">
+                            <div className="w-16 h-16 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center mb-4">
+                                <span className="text-3xl">⚠️</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">Apply Custom Program?</h3>
+                            <p className="text-slate-400 text-sm mb-4">
+                                Your progress will be preserved for exercises that exist in both programs.
+                            </p>
+                            <p className="text-slate-500 text-xs">
+                                New program: {customExercises.length} exercises
+                            </p>
+                        </div>
+                        <div className="p-4 border-t border-slate-800 flex gap-3">
+                            <button
+                                onClick={() => setConfirmCustom(false)}
+                                className="flex-1 py-2 border border-slate-700 text-slate-300 rounded-lg hover:bg-slate-800"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmCustomApply}
+                                className="flex-1 py-2 bg-cyan-500 text-white rounded-lg font-medium hover:bg-cyan-600"
+                            >
+                                Apply
                             </button>
                         </div>
                     </div>

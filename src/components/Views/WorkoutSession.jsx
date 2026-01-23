@@ -220,39 +220,25 @@ const WorkoutSession = ({
                                 How many {unitLabel} did you complete?
                             </label>
                             {/* Number display with +/- buttons */}
-                            <div className="flex items-center justify-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setTestInput(String(Math.max(0, (parseInt(testInput) || 0) - 5)))}
-                                    className="w-14 h-14 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center"
-                                >
-                                    <Minus size={24} />
-                                </button>
+                            <div className="flex items-center justify-center gap-4">
                                 <button
                                     type="button"
                                     onClick={() => setTestInput(String(Math.max(0, (parseInt(testInput) || 0) - 1)))}
-                                    className="w-10 h-10 rounded-full bg-slate-800/50 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors flex items-center justify-center text-lg font-bold"
+                                    className="w-16 h-16 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center text-2xl font-bold"
                                 >
-                                    -1
+                                    −1
                                 </button>
-                                <div className="w-24 h-20 bg-slate-800/50 border border-cyan-500/30 rounded-xl flex items-center justify-center">
-                                    <span className="text-4xl font-bold text-white tabular-nums">
+                                <div className="w-28 h-24 bg-slate-800/50 border border-cyan-500/30 rounded-xl flex items-center justify-center">
+                                    <span className="text-5xl font-bold text-white tabular-nums">
                                         {testInput || '0'}
                                     </span>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setTestInput(String((parseInt(testInput) || 0) + 1))}
-                                    className="w-10 h-10 rounded-full bg-slate-800/50 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors flex items-center justify-center text-lg font-bold"
+                                    className="w-16 h-16 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center text-2xl font-bold"
                                 >
                                     +1
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setTestInput(String((parseInt(testInput) || 0) + 5))}
-                                    className="w-14 h-14 rounded-full bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-cyan-500/50 transition-colors flex items-center justify-center"
-                                >
-                                    <Plus size={24} />
                                 </button>
                             </div>
                         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon } from 'lucide-react';
+import { Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon, Dumbbell } from 'lucide-react';
 
 const Header = ({
     onExport,
@@ -11,7 +11,8 @@ const Header = ({
     restTimerOverride,
     setRestTimerOverride,
     theme,
-    setTheme
+    setTheme,
+    onShowTrainingSettings
 }) => {
     const handleHomeClick = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -44,6 +45,7 @@ const Header = ({
                     setRestTimerOverride={setRestTimerOverride}
                     theme={theme}
                     setTheme={setTheme}
+                    onShowTrainingSettings={onShowTrainingSettings}
                 />
             </div>
         </header>
@@ -59,7 +61,7 @@ const REST_OPTIONS = [
     { value: 120, label: '120s' }
 ];
 
-const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride, theme, setTheme }) => {
+const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride, theme, setTheme, onShowTrainingSettings }) => {
     const [isOpen, setIsOpen] = React.useState(false);
 
     const cycleRestTimer = () => {
@@ -105,6 +107,12 @@ const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnable
                                 <Timer size={16} /> Rest Timer
                             </span>
                             <span className="text-cyan-400">{currentRestLabel}</span>
+                        </button>
+                        <button
+                            onClick={() => { onShowTrainingSettings?.(); setIsOpen(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            <Dumbbell size={16} /> Training Settings
                         </button>
                         <div className="h-[1px] bg-slate-800 my-1" />
                         <button

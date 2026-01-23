@@ -32,7 +32,6 @@ const DayDetailModal = ({ date, workouts, plannedExercises, isPast, isToday, isF
 
     const dayOfWeek = date.getDay();
     const isRestDay = dayOfWeek === 0; // Sunday
-    const focusType = dayOfWeek % 2 === 1 ? 'Upper Body' : 'Lower Body & Core';
 
     return (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -44,7 +43,7 @@ const DayDetailModal = ({ date, workouts, plannedExercises, isPast, isToday, isF
                     <div>
                         <h3 className="text-lg font-bold text-white">{dateStr}</h3>
                         {!isRestDay && (
-                            <p className="text-xs text-cyan-400">{focusType} Day</p>
+                            <p className="text-xs text-cyan-400">Workout Day</p>
                         )}
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
@@ -184,27 +183,18 @@ const CalendarView = ({ sessionHistory, completedDays = {}, allExercises = {}, a
         }
     });
 
-    // Get planned exercises for a given day
+    // Get planned exercises for a given day (all active exercises)
     const getPlannedForDay = (dayOfWeek) => {
         if (dayOfWeek === 0) return []; // Sunday rest
 
         const programKeys = activeProgram.length > 0 ? activeProgram : Object.keys(EXERCISE_PLANS);
         const planned = [];
 
+        // Include all active exercises that have incomplete sessions
         programKeys.forEach(key => {
-            const ex = mergedExercises[key];
-            if (!ex) return;
-
-            const isUpperBody = ex.category === 'push' || ex.category === 'pull';
-            const isLowerBody = ex.category === 'legs' || ex.category === 'core' || ex.category === 'full';
-
-            const shouldInclude = (dayOfWeek % 2 === 1 && isUpperBody) || (dayOfWeek % 2 === 0 && isLowerBody);
-
-            if (shouldInclude) {
-                const next = getNextSessionForExercise(key, completedDays, mergedExercises);
-                if (next) {
-                    planned.push(next);
-                }
+            const next = getNextSessionForExercise(key, completedDays, mergedExercises);
+            if (next) {
+                planned.push(next);
             }
         });
 

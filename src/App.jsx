@@ -57,6 +57,12 @@ const App = () => {
         return saved ? JSON.parse(saved) : {};
     });
 
+    // Gym weights per exercise (stores current weight for gym progression)
+    const [gymWeights, setGymWeights] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_weights`);
+        return saved ? JSON.parse(saved) : {};
+    });
+
     // UI State for Add Exercise modal
     const [showAddExercise, setShowAddExercise] = useState(false);
     const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
@@ -139,6 +145,10 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}difficulty`, JSON.stringify(exerciseDifficulty));
     }, [exerciseDifficulty]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}gym_weights`, JSON.stringify(gymWeights));
+    }, [gymWeights]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
@@ -278,7 +288,41 @@ const App = () => {
         const exercise = allExercises[exKey];
         if (!exercise) return;
 
-        const weekData = exercise.weeks.find(w => w.week === week);
+        // Handle gym exercises (progressive overload, no fixed days)
+        if (exercise.progressionType === 'gym') {
+            const gymConfig = exercise.gymConfig || { sets: 3, repRange: [8, 12], restSeconds: 90 };
+            setCurrentSession({
+                exerciseKey: exKey,
+                exerciseName: exercise.name,
+                week: 0,
+                dayIndex: 0,
+                setIndex: 0,
+                rest: restTimerOverride !== null ? restTimerOverride : gymConfig.restSeconds,
+                baseReps: [],
+                reps: [],
+                dayId: `gym_${exKey}_${Date.now()}`,
+                isFinal: false,
+                color: exercise.color,
+                unit: exercise.unit,
+                difficulty: 3,
+                step: 'workout',
+                isGym: true,
+                gymConfig
+            });
+            setAmrapValue('');
+            setTestInput('');
+            setTimeLeft(0);
+            setWorkoutNotes('');
+            setExerciseTimeLeft(0);
+            setIsExerciseTimerRunning(false);
+            setExerciseTimerStarted(false);
+            return;
+        }
+
+        // Handle bodyweight exercises (18-day progression)
+        const weekData = exercise.weeks?.find(w => w.week === week);
+        if (!weekData) return;
+
         const day = weekData.days[dayIndex];
         const isFinal = day.isFinal || false;
 
@@ -636,6 +680,9 @@ const App = () => {
                         setExerciseTimerStarted={setExerciseTimerStarted}
                         completedDays={completedDays}
                         sessionHistory={sessionHistory}
+                        gymWeights={gymWeights}
+                        setGymWeights={setGymWeights}
+                        allExercises={allExercises}
                     />
                 </div>
             )}

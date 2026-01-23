@@ -490,33 +490,40 @@ const App = () => {
 
     // Complete onboarding
     const handleCompleteOnboarding = (mode, equipment, templateId, preferences = null, customExerciseList = null) => {
-        setProgramMode(mode);
-        setUserEquipment(equipment);
+        try {
+            setProgramMode(mode || 'bodyweight');
+            setUserEquipment(equipment || ['none']);
 
-        // Handle program exercises
-        if (customExerciseList && customExerciseList.length > 0) {
-            // User built a custom program
-            setActiveProgram([...customExerciseList]);
-        } else if (templateId) {
-            const template = STARTER_TEMPLATES[templateId];
-            if (template) {
+            // Handle program exercises
+            if (customExerciseList && customExerciseList.length > 0) {
+                // User built a custom program
+                setActiveProgram([...customExerciseList]);
+            } else if (templateId && STARTER_TEMPLATES[templateId]) {
+                const template = STARTER_TEMPLATES[templateId];
                 setActiveProgram([...template.exercises]);
+            } else {
+                // Default to Shift6 Classic
+                setActiveProgram([...STARTER_TEMPLATES['shift6-classic'].exercises]);
             }
-        } else {
-            // Default to Shift6 Classic
-            setActiveProgram([...STARTER_TEMPLATES['shift6-classic'].exercises]);
-        }
 
-        // Save training preferences if provided
-        if (preferences) {
-            const prefsWithTimestamps = {
-                ...preferences,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            setTrainingPreferences(prefsWithTimestamps);
+            // Save training preferences if provided
+            if (preferences) {
+                const prefsWithTimestamps = {
+                    ...preferences,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                setTrainingPreferences(prefsWithTimestamps);
+            }
+        } catch (error) {
+            console.error('Error completing onboarding:', error);
+            // Set fallback values
+            setProgramMode('bodyweight');
+            setActiveProgram([...STARTER_TEMPLATES['shift6-classic'].exercises]);
+        } finally {
+            // Always complete onboarding even if there were errors
+            setOnboardingComplete(true);
         }
-        setOnboardingComplete(true);
     };
 
     // Handle training preferences change

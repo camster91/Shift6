@@ -141,15 +141,24 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             setStep(nextStep)
         } else {
             // Final step - complete onboarding
-            if (programTab === 'generated' && generatedProgram?.exercises?.length > 0) {
-                // Use AI-generated program
-                onComplete(selectedMode, selectedEquipment, null, trainingPreferences, generatedProgram.exercises)
-            } else if (programTab === 'custom') {
-                // Use custom-built program
-                onComplete(selectedMode, selectedEquipment, null, trainingPreferences, customExercises)
-            } else {
-                // Use template
-                onComplete(selectedMode, selectedEquipment, selectedTemplate, trainingPreferences)
+            try {
+                if (programTab === 'generated' && generatedProgram?.exercises?.length > 0) {
+                    // Use AI-generated program
+                    onComplete(selectedMode, selectedEquipment, null, trainingPreferences, generatedProgram.exercises)
+                } else if (programTab === 'custom' && customExercises.length > 0) {
+                    // Use custom-built program
+                    onComplete(selectedMode, selectedEquipment, null, trainingPreferences, customExercises)
+                } else if (selectedTemplate) {
+                    // Use template
+                    onComplete(selectedMode, selectedEquipment, selectedTemplate, trainingPreferences)
+                } else {
+                    // Fallback - use default template
+                    onComplete(selectedMode, selectedEquipment, 'shift6-classic', trainingPreferences)
+                }
+            } catch (error) {
+                console.error('Onboarding completion error:', error)
+                // Fallback to default
+                onComplete(selectedMode, selectedEquipment, 'shift6-classic', trainingPreferences)
             }
         }
     }

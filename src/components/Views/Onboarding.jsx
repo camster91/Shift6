@@ -12,7 +12,8 @@ import {
 } from '../../utils/constants.js'
 import { applyFitnessLevelPreset } from '../../utils/preferences.js'
 import { EXERCISE_LIBRARY, GOAL_ICONS } from '../../data/exerciseLibrary.js'
-import { generateProgram, regenerateProgram } from '../../utils/programGenerator.js'
+import { EXERCISES } from '../../data/exerciseDatabase.js'
+import { generateSmartProgram } from '../../utils/smartProgramGenerator.js'
 import TemplateCard from '../Visuals/TemplateCard'
 import CustomProgramBuilder from './CustomProgramBuilder'
 
@@ -32,35 +33,36 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
 
     // Combine all exercises for the builder
     const allExercises = useMemo(() => {
-        return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY }
+        return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY, ...EXERCISES }
     }, [])
 
     // Generate program when reaching step 6 or when relevant preferences change
     useEffect(() => {
         if (step === 6 && selectedMode && trainingPreferences.fitnessLevel && trainingPreferences.repScheme) {
-            const program = generateProgram({
+            const program = generateSmartProgram({
                 mode: selectedMode,
                 equipment: selectedEquipment,
                 fitnessLevel: trainingPreferences.fitnessLevel,
-                repScheme: trainingPreferences.repScheme,
+                goal: trainingPreferences.repScheme,
                 trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek,
-                targetSessionDuration: trainingPreferences.targetSessionDuration,
-            }, allExercises)
+                sessionDuration: trainingPreferences.targetSessionDuration,
+            })
             setGeneratedProgram(program)
         }
-    }, [step, selectedMode, selectedEquipment, trainingPreferences, allExercises])
+    }, [step, selectedMode, selectedEquipment, trainingPreferences])
 
     // Handler to regenerate with variation
     const handleRegenerateProgram = () => {
         if (!selectedMode) return
-        const program = regenerateProgram({
+        // Generate a new program - the smart generator uses randomization internally
+        const program = generateSmartProgram({
             mode: selectedMode,
             equipment: selectedEquipment,
             fitnessLevel: trainingPreferences.fitnessLevel,
-            repScheme: trainingPreferences.repScheme,
+            goal: trainingPreferences.repScheme,
             trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek,
-            targetSessionDuration: trainingPreferences.targetSessionDuration,
-        }, allExercises, generatedProgram?.exercises || [])
+            sessionDuration: trainingPreferences.targetSessionDuration,
+        })
         setGeneratedProgram(program)
     }
 

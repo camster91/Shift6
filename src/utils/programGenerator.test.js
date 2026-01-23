@@ -348,16 +348,16 @@ describe('programGenerator', () => {
     })
 
     it('has valid complexity values (1-3)', () => {
-      for (const [key, meta] of Object.entries(EXERCISE_METADATA)) {
+      for (const [, meta] of Object.entries(EXERCISE_METADATA)) {
         expect(meta.complexity).toBeGreaterThanOrEqual(1)
         expect(meta.complexity).toBeLessThanOrEqual(3)
       }
     })
 
     it('has valid goal alignment values (0-1)', () => {
-      for (const [key, meta] of Object.entries(EXERCISE_METADATA)) {
+      for (const [, meta] of Object.entries(EXERCISE_METADATA)) {
         if (meta.goalAlignment) {
-          for (const [goal, value] of Object.entries(meta.goalAlignment)) {
+          for (const [, value] of Object.entries(meta.goalAlignment)) {
             expect(value).toBeGreaterThanOrEqual(0)
             expect(value).toBeLessThanOrEqual(1)
           }

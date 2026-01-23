@@ -1,8 +1,18 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { EXERCISE_PLANS, getRest, DIFFICULTY_LEVELS, generateProgression } from './data/exercises.jsx';
+import { EXERCISE_PLANS, getRest, DIFFICULTY_LEVELS, generateProgression, getCustomRest, DEFAULT_TRAINING_PREFERENCES } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
 import { getDailyStack } from './utils/schedule';
 import { calculateStats, getUnlockedBadges } from './utils/gamification';
+import {
+    loadPreferences,
+    savePreferences,
+    migrateExistingUser,
+    requiresPlanRegeneration,
+    regenerateAllPlans,
+    saveCustomPlans,
+    loadCustomPlans
+} from './utils/preferences.js';
+import { STORAGE_KEYS } from './utils/constants.js';
 
 // Components
 import Header from './components/Layout/Header';
@@ -12,6 +22,7 @@ import AddExercise from './components/Views/AddExercise';
 import Onboarding from './components/Views/Onboarding';
 import ExerciseLibrary from './components/Views/ExerciseLibrary';
 import ProgramManager from './components/Views/ProgramManager';
+import TrainingSettings from './components/Views/TrainingSettings';
 import { AchievementToastManager } from './components/Visuals/AchievementToast';
 
 const STORAGE_PREFIX = 'shift6_';
@@ -67,6 +78,17 @@ const App = () => {
     const [showAddExercise, setShowAddExercise] = useState(false);
     const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
     const [showProgramManager, setShowProgramManager] = useState(false);
+    const [showTrainingSettings, setShowTrainingSettings] = useState(false);
+
+    // Training Preferences (with migration for existing users)
+    const [trainingPreferences, setTrainingPreferences] = useState(() => {
+        return migrateExistingUser();
+    });
+
+    // Custom generated plans (based on preferences)
+    const [customPlans, setCustomPlans] = useState(() => {
+        return loadCustomPlans();
+    });
 
     // Program Mode: 'bodyweight' | 'mixed' | 'gym'
     const [programMode, setProgramMode] = useState(() => {
@@ -208,6 +230,14 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}onboarding_complete`, String(onboardingComplete));
     }, [onboardingComplete]);
+
+    useEffect(() => {
+        savePreferences(trainingPreferences);
+    }, [trainingPreferences]);
+
+    useEffect(() => {
+        saveCustomPlans(customPlans);
+    }, [customPlans]);
 
     // UI State
     const [workoutQueue, setWorkoutQueue] = useState(() => {
@@ -425,7 +455,7 @@ const App = () => {
     };
 
     // Complete onboarding
-    const handleCompleteOnboarding = (mode, equipment, templateId) => {
+    const handleCompleteOnboarding = (mode, equipment, templateId, preferences = null) => {
         setProgramMode(mode);
         setUserEquipment(equipment);
         if (templateId) {
@@ -437,8 +467,35 @@ const App = () => {
             // Default to Shift6 Classic
             setActiveProgram([...STARTER_TEMPLATES['shift6-classic'].exercises]);
         }
+        // Save training preferences if provided
+        if (preferences) {
+            const prefsWithTimestamps = {
+                ...preferences,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            setTrainingPreferences(prefsWithTimestamps);
+        }
         setOnboardingComplete(true);
     };
+
+    // Handle training preferences change
+    const handleTrainingPreferencesChange = useCallback((newPrefs) => {
+        const oldPrefs = trainingPreferences;
+        const updatedPrefs = {
+            ...newPrefs,
+            updatedAt: new Date().toISOString()
+        };
+
+        // Check if we need to regenerate plans
+        if (requiresPlanRegeneration(oldPrefs, updatedPrefs)) {
+            const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+            const newPlans = regenerateAllPlans(allExercises, activeProgramKeys, calibrations, updatedPrefs);
+            setCustomPlans(newPlans);
+        }
+
+        setTrainingPreferences(updatedPrefs);
+    }, [trainingPreferences, allExercises, activeProgramKeys]);
 
     // Change program mode
     const handleChangeProgramMode = (newMode) => {
@@ -454,12 +511,12 @@ const App = () => {
     };
 
     const startStack = useCallback(() => {
-        const stack = getDailyStack(completedDays, allExercises, activeProgramKeys);
+        const stack = getDailyStack(completedDays, allExercises, activeProgramKeys, trainingPreferences);
         if (stack.length === 0) return;
 
         setWorkoutQueue(stack.slice(1));
         startWorkout(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
-    }, [completedDays, allExercises, activeProgramKeys, startWorkout]);
+    }, [completedDays, allExercises, activeProgramKeys, startWorkout, trainingPreferences]);
 
     const completeWorkout = () => {
         if (!currentSession || isProcessing) return;
@@ -613,6 +670,7 @@ const App = () => {
     const onShowAddExercise = useCallback(() => setShowAddExercise(true), []);
     const onShowExerciseLibrary = useCallback(() => setShowExerciseLibrary(true), []);
     const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
+    const onShowTrainingSettings = useCallback(() => setShowTrainingSettings(true), []);
 
     // ---------------- RENDER ----------------
 
@@ -631,6 +689,7 @@ const App = () => {
                 setRestTimerOverride={setRestTimerOverride}
                 theme={theme}
                 setTheme={setTheme}
+                onShowTrainingSettings={onShowTrainingSettings}
             />
 
             <main className="max-w-6xl mx-auto p-4 md:p-8 pb-8">
@@ -737,6 +796,16 @@ const App = () => {
                     equipment={EQUIPMENT}
                     templates={STARTER_TEMPLATES}
                     onComplete={handleCompleteOnboarding}
+                />
+            )}
+
+            {/* Training Settings Modal */}
+            {showTrainingSettings && (
+                <TrainingSettings
+                    preferences={trainingPreferences}
+                    onSave={handleTrainingPreferencesChange}
+                    onClose={() => setShowTrainingSettings(false)}
+                    hasProgress={Object.keys(completedDays).length > 0}
                 />
             )}
 

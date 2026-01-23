@@ -60,30 +60,56 @@ export const getNextSessionForExercise = (exKey, completedDays, exercisePlans = 
 };
 
 /**
- * Returns the workout focus for today based on day of week.
- * - Sunday: Rest & Recovery
- * - All other days: Full Program
+ * Checks if today is a valid training day based on preferences
+ * @param {number[]} [preferredDays] - Array of preferred day indices (0=Sun, 1=Mon, etc.)
+ * @returns {boolean} True if today is a valid training day
+ */
+export const isTrainingDay = (preferredDays = []) => {
+    const today = new Date().getDay();
+
+    // Sunday is always rest day by default
+    if (today === SUNDAY) return false;
+
+    // If no preferred days set, any non-Sunday day is valid
+    if (!preferredDays || preferredDays.length === 0) return true;
+
+    // Check if today is in preferred days
+    return preferredDays.includes(today);
+};
+
+/**
+ * Returns the workout focus for today based on day of week and preferences.
+ * @param {number[]} [preferredDays] - Optional array of preferred training days
  * @returns {string} Today's workout focus description
  */
-export const getScheduleFocus = () => {
+export const getScheduleFocus = (preferredDays = []) => {
     const day = new Date().getDay();
+
     if (day === SUNDAY) return 'Rest & Recovery';
+
+    // Check preferred days
+    if (preferredDays && preferredDays.length > 0 && !preferredDays.includes(day)) {
+        return 'Rest Day';
+    }
+
     return 'Full Program';
 };
 
 /**
- * Builds a workout stack for today based on schedule and progress.
+ * Builds a workout stack for today based on schedule, progress, and preferences.
  * Returns ALL active exercises that still have incomplete sessions.
+ * Respects preferred training days if specified.
  * @param {Object.<string, string[]>} completedDays - Map of exercise keys to completed day IDs
  * @param {Object} [exercisePlans] - Optional exercise plans object (defaults to EXERCISE_PLANS)
  * @param {string[]} [activeProgram] - Optional array of exercise keys in user's active program
+ * @param {Object} [trainingPreferences] - Optional training preferences object
  * @returns {NextSession[]} Array of next sessions to complete today
  */
-export const getDailyStack = (completedDays, exercisePlans = EXERCISE_PLANS, activeProgram = null) => {
-    const day = new Date().getDay();
+export const getDailyStack = (completedDays, exercisePlans = EXERCISE_PLANS, activeProgram = null, trainingPreferences = null) => {
+    const preferredDays = trainingPreferences?.preferredDays || [];
 
-    // Sunday is rest day
-    if (day === SUNDAY) {
+    // Check if today is a valid training day
+    if (!isTrainingDay(preferredDays)) {
         return [];
     }
 

@@ -25,10 +25,16 @@ const TrainingSettings = ({
     const [hasChanges, setHasChanges] = useState(false)
 
     useEffect(() => {
-        // Check if preferences have changed
-        const changed = Object.keys(tempPrefs).some(
-            key => tempPrefs[key] !== preferences[key]
-        )
+        // Check if preferences have changed (handles arrays like preferredDays)
+        const changed = Object.keys(tempPrefs).some(key => {
+            const tempVal = tempPrefs[key]
+            const prefVal = preferences[key]
+            // Handle array comparison
+            if (Array.isArray(tempVal) && Array.isArray(prefVal)) {
+                return JSON.stringify(tempVal) !== JSON.stringify(prefVal)
+            }
+            return tempVal !== prefVal
+        })
         setHasChanges(changed)
     }, [tempPrefs, preferences])
 

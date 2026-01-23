@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Zap, ChevronRight, Flame, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info } from 'lucide-react';
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx';
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise } from '../../utils/schedule';
@@ -525,4 +525,6 @@ const Dashboard = ({
     );
 };
 
-export default Dashboard;
+// ⚡ Bolt: Memoize Dashboard to prevent re-renders when props are unchanged.
+// This is a key optimization as App.jsx is state-heavy and causes frequent re-renders.
+export default memo(Dashboard);

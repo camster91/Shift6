@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { EXERCISE_PLANS, getRest, DIFFICULTY_LEVELS, generateProgression } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
 import { getDailyStack } from './utils/schedule';
@@ -271,7 +271,8 @@ const App = () => {
         return () => clearInterval(interval);
     }, [isExerciseTimerRunning, exerciseTimeLeft, exerciseTimerStarted]);
 
-    const startWorkout = (week, dayIndex, overrideKey = null) => {
+    // ⚡ Bolt: Memoize startWorkout to prevent re-renders in Dashboard.
+    const startWorkout = useCallback((week, dayIndex, overrideKey = null) => {
         const exKey = overrideKey || activeExercise;
         if (overrideKey) setActiveExercise(overrideKey);
 
@@ -316,7 +317,7 @@ const App = () => {
         setExerciseTimeLeft(0);
         setIsExerciseTimerRunning(false);
         setExerciseTimerStarted(false);
-    };
+    }, [activeExercise, allExercises, completedDays, exerciseDifficulty, restTimerOverride]);
 
     // Add custom exercise
     const handleAddExercise = (exercise) => {
@@ -327,7 +328,8 @@ const App = () => {
     };
 
     // Delete custom exercise
-    const handleDeleteExercise = (key) => {
+    // ⚡ Bolt: Memoize handleDeleteExercise to prevent Dashboard re-renders.
+    const handleDeleteExercise = useCallback((key) => {
         if (window.confirm('Delete this custom exercise? This cannot be undone.')) {
             setCustomExercises(prev => {
                 const updated = { ...prev };
@@ -341,15 +343,16 @@ const App = () => {
                 return updated;
             });
         }
-    };
+    }, []);
 
     // Change difficulty for an exercise
-    const handleSetDifficulty = (exerciseKey, level) => {
+    // ⚡ Bolt: Memoize handleSetDifficulty to prevent Dashboard re-renders.
+    const handleSetDifficulty = useCallback((exerciseKey, level) => {
         setExerciseDifficulty(prev => ({
             ...prev,
             [exerciseKey]: level
         }));
-    };
+    }, []);
 
     // Add exercise to active program
     const handleAddToProgram = (exerciseKey) => {
@@ -406,13 +409,13 @@ const App = () => {
         }
     };
 
-    const startStack = () => {
+    const startStack = useCallback(() => {
         const stack = getDailyStack(completedDays, allExercises, activeProgramKeys);
         if (stack.length === 0) return;
 
         setWorkoutQueue(stack.slice(1));
         startWorkout(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
-    };
+    }, [completedDays, allExercises, activeProgramKeys, startWorkout]);
 
     const completeWorkout = () => {
         if (!currentSession || isProcessing) return;
@@ -562,6 +565,11 @@ const App = () => {
         }
     };
 
+    // ⚡ Bolt: Memoize modal handlers to prevent Dashboard re-renders.
+    const onShowAddExercise = useCallback(() => setShowAddExercise(true), []);
+    const onShowExerciseLibrary = useCallback(() => setShowExerciseLibrary(true), []);
+    const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
+
     // ---------------- RENDER ----------------
 
     return (
@@ -592,11 +600,11 @@ const App = () => {
                     exerciseDifficulty={exerciseDifficulty}
                     onSetDifficulty={handleSetDifficulty}
                     onDeleteExercise={handleDeleteExercise}
-                    onShowAddExercise={() => setShowAddExercise(true)}
+                    onShowAddExercise={onShowAddExercise}
                     programMode={programMode}
                     activeProgram={activeProgramKeys}
-                    onShowExerciseLibrary={() => setShowExerciseLibrary(true)}
-                    onShowProgramManager={() => setShowProgramManager(true)}
+                    onShowExerciseLibrary={onShowExerciseLibrary}
+                    onShowProgramManager={onShowProgramManager}
                 />
             </main>
 

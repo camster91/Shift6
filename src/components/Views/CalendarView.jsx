@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, X, Dumbbell } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Dumbbell, Play, Calendar, Clock } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
+import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js';
+import { getNextSessionForExercise } from '../../utils/schedule';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -19,7 +21,7 @@ const colorClasses = {
     indigo: 'bg-indigo-500',
 };
 
-const DayDetailModal = ({ date, workouts, onClose }) => {
+const DayDetailModal = ({ date, workouts, plannedExercises, isPast, isToday, isFuture, onClose, onStartWorkout, allExercises }) => {
     if (!date) return null;
 
     const dateStr = date.toLocaleDateString('en-US', {
@@ -28,63 +30,125 @@ const DayDetailModal = ({ date, workouts, onClose }) => {
         day: 'numeric'
     });
 
+    const dayOfWeek = date.getDay();
+    const isRestDay = dayOfWeek === 0; // Sunday
+    const focusType = dayOfWeek % 2 === 1 ? 'Upper Body' : 'Lower Body & Core';
+
     return (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div
-                className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-md overflow-hidden"
+                className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between p-4 border-b border-slate-700">
-                    <h3 className="text-lg font-bold text-white">{dateStr}</h3>
+                    <div>
+                        <h3 className="text-lg font-bold text-white">{dateStr}</h3>
+                        {!isRestDay && (
+                            <p className="text-xs text-cyan-400">{focusType} Day</p>
+                        )}
+                    </div>
                     <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
                         <X size={20} className="text-slate-400" />
                     </button>
                 </div>
 
-                <div className="p-4">
-                    {workouts.length === 0 ? (
+                <div className="p-4 overflow-y-auto flex-1">
+                    {isRestDay ? (
                         <div className="text-center py-8">
-                            <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
-                                <Dumbbell size={20} className="text-slate-500" />
+                            <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <Calendar size={20} className="text-emerald-400" />
                             </div>
-                            <p className="text-slate-400 text-sm">No workouts on this day</p>
+                            <p className="text-emerald-400 font-medium">Rest Day</p>
+                            <p className="text-slate-500 text-sm mt-1">Recovery is part of the program</p>
                         </div>
                     ) : (
-                        <div className="space-y-3">
-                            <p className="text-xs text-slate-500 uppercase tracking-wider">
-                                {workouts.length} workout{workouts.length > 1 ? 's' : ''} completed
-                            </p>
-                            {workouts.map((workout, i) => {
-                                const exercise = EXERCISE_PLANS[workout.exerciseKey];
-                                const colorClass = colorClasses[exercise?.color] || 'bg-cyan-500';
+                        <div className="space-y-4">
+                            {/* Completed Workouts */}
+                            {workouts.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-xs text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                                        {workouts.length} Completed
+                                    </p>
+                                    {workouts.map((workout, i) => {
+                                        const exercise = allExercises[workout.exerciseKey] || EXERCISE_PLANS[workout.exerciseKey];
+                                        const colorClass = colorClasses[exercise?.color] || 'bg-cyan-500';
 
-                                return (
-                                    <div
-                                        key={i}
-                                        className="flex items-center gap-3 p-3 bg-slate-800/50 border border-slate-700 rounded-lg"
-                                    >
-                                        <div className={`w-2 h-10 rounded-full ${colorClass}`} />
-                                        <div className="flex-1">
-                                            <p className="font-semibold text-white text-sm">
-                                                {exercise?.name || workout.exerciseKey}
-                                            </p>
-                                            <p className="text-xs text-slate-400">
-                                                {workout.volume} {workout.unit}
-                                                {workout.dayId && (
-                                                    <span className="text-slate-500 ml-2">
-                                                        • Day {parseInt(workout.dayId.slice(-1)) || '?'}
-                                                    </span>
-                                                )}
-                                            </p>
-                                        </div>
-                                        {workout.notes && (
-                                            <div className="text-xs text-slate-500 max-w-[100px] truncate" title={workout.notes}>
-                                                📝 {workout.notes}
+                                        return (
+                                            <div
+                                                key={i}
+                                                className="flex items-center gap-3 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg"
+                                            >
+                                                <div className={`w-2 h-10 rounded-full ${colorClass}`} />
+                                                <div className="flex-1">
+                                                    <p className="font-semibold text-white text-sm">
+                                                        {exercise?.name || workout.exerciseKey}
+                                                    </p>
+                                                    <p className="text-xs text-slate-400">
+                                                        {workout.volume} {workout.unit}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        )}
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Planned/Suggested Exercises */}
+                            {plannedExercises.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-xs text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                        <Clock size={12} />
+                                        {isPast ? 'Could Have Done' : isToday ? 'Today\'s Plan' : 'Planned'}
+                                    </p>
+                                    {plannedExercises.map((planned, i) => {
+                                        const exercise = allExercises[planned.exerciseKey] || EXERCISE_PLANS[planned.exerciseKey];
+                                        const colorClass = colorClasses[exercise?.color] || 'bg-cyan-500';
+
+                                        return (
+                                            <div
+                                                key={i}
+                                                className={`flex items-center gap-3 p-3 rounded-lg border ${
+                                                    isPast
+                                                        ? 'bg-slate-800/30 border-slate-700/50 opacity-60'
+                                                        : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                                                }`}
+                                            >
+                                                <div className={`w-2 h-10 rounded-full ${colorClass} ${isPast ? 'opacity-50' : ''}`} />
+                                                <div className="flex-1">
+                                                    <p className={`font-semibold text-sm ${isPast ? 'text-slate-400' : 'text-white'}`}>
+                                                        {exercise?.name || planned.exerciseKey}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">
+                                                        Week {planned.week} • Day {planned.dayIndex + 1}
+                                                    </p>
+                                                </div>
+                                                {(isToday || isFuture) && onStartWorkout && (
+                                                    <button
+                                                        onClick={() => {
+                                                            onStartWorkout(planned.week, planned.dayIndex, planned.exerciseKey);
+                                                            onClose();
+                                                        }}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors ${colorClass} text-white hover:opacity-90`}
+                                                    >
+                                                        <Play size={12} fill="currentColor" />
+                                                        Start
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {workouts.length === 0 && plannedExercises.length === 0 && (
+                                <div className="text-center py-8">
+                                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <Dumbbell size={20} className="text-slate-500" />
                                     </div>
-                                );
-                            })}
+                                    <p className="text-slate-400 text-sm">No exercises scheduled</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -93,12 +157,17 @@ const DayDetailModal = ({ date, workouts, onClose }) => {
     );
 };
 
-const CalendarView = ({ sessionHistory }) => {
+const CalendarView = ({ sessionHistory, completedDays = {}, allExercises = {}, activeProgram = [], startWorkout }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState(null);
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Merge exercise data
+    const mergedExercises = { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY, ...allExercises };
 
     // Get first day of month and total days
     const firstDay = new Date(year, month, 1).getDay();
@@ -115,6 +184,33 @@ const CalendarView = ({ sessionHistory }) => {
         }
     });
 
+    // Get planned exercises for a given day
+    const getPlannedForDay = (dayOfWeek) => {
+        if (dayOfWeek === 0) return []; // Sunday rest
+
+        const programKeys = activeProgram.length > 0 ? activeProgram : Object.keys(EXERCISE_PLANS);
+        const planned = [];
+
+        programKeys.forEach(key => {
+            const ex = mergedExercises[key];
+            if (!ex) return;
+
+            const isUpperBody = ex.category === 'push' || ex.category === 'pull';
+            const isLowerBody = ex.category === 'legs' || ex.category === 'core' || ex.category === 'full';
+
+            const shouldInclude = (dayOfWeek % 2 === 1 && isUpperBody) || (dayOfWeek % 2 === 0 && isLowerBody);
+
+            if (shouldInclude) {
+                const next = getNextSessionForExercise(key, completedDays, mergedExercises);
+                if (next) {
+                    planned.push(next);
+                }
+            }
+        });
+
+        return planned;
+    };
+
     // Navigate months
     const prevMonth = () => {
         setCurrentDate(new Date(year, month - 1, 1));
@@ -126,13 +222,22 @@ const CalendarView = ({ sessionHistory }) => {
 
     const handleDayClick = (day) => {
         const clickedDate = new Date(year, month, day);
+        clickedDate.setHours(0, 0, 0, 0);
+        const dayOfWeek = clickedDate.getDay();
+        const isPast = clickedDate < today;
+        const isToday = clickedDate.getTime() === today.getTime();
+        const isFuture = clickedDate > today;
+
         setSelectedDay({
             date: clickedDate,
-            workouts: workoutsByDay[day] || []
+            workouts: workoutsByDay[day] || [],
+            plannedExercises: getPlannedForDay(dayOfWeek),
+            isPast,
+            isToday,
+            isFuture
         });
     };
 
-    const today = new Date();
     const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
     // Build calendar grid
@@ -238,7 +343,13 @@ const CalendarView = ({ sessionHistory }) => {
                 <DayDetailModal
                     date={selectedDay.date}
                     workouts={selectedDay.workouts}
+                    plannedExercises={selectedDay.plannedExercises}
+                    isPast={selectedDay.isPast}
+                    isToday={selectedDay.isToday}
+                    isFuture={selectedDay.isFuture}
                     onClose={() => setSelectedDay(null)}
+                    onStartWorkout={startWorkout}
+                    allExercises={mergedExercises}
                 />
             )}
         </>

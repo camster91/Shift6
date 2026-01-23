@@ -4,12 +4,17 @@ import { BADGES, calculateStats, getUnlockedBadges, getPersonalRecords, isNewPer
 describe('gamification utilities', () => {
     describe('BADGES', () => {
         it('contains expected badges', () => {
-            expect(BADGES.length).toBe(9);
+            expect(BADGES.length).toBe(25);
             expect(BADGES.map(b => b.id)).toContain('first_step');
             expect(BADGES.map(b => b.id)).toContain('week_warrior');
             expect(BADGES.map(b => b.id)).toContain('month_monster');
             expect(BADGES.map(b => b.id)).toContain('century_club');
             expect(BADGES.map(b => b.id)).toContain('complete_athlete');
+            // New badges
+            expect(BADGES.map(b => b.id)).toContain('thousand_club');
+            expect(BADGES.map(b => b.id)).toContain('double_up');
+            expect(BADGES.map(b => b.id)).toContain('record_breaker');
+            expect(BADGES.map(b => b.id)).toContain('weekend_warrior');
         });
     });
 

@@ -229,13 +229,14 @@ const generateSetPattern = (baseRep, sets, schemeConfig) => {
                 pattern.push(Math.max(1, Math.round(baseRep * factor)));
             }
             break;
-        default:
+        default: {
             // Standard/Balanced: Classic variation pattern [0.8x, 1.0x, 0.8x, 0.8x, 1.2x]
             const standardPattern = [0.8, 1.0, 0.8, 0.8, 1.2];
             for (let i = 0; i < sets; i++) {
                 const factor = standardPattern[i % standardPattern.length];
                 pattern.push(Math.max(1, Math.round(baseRep * factor)));
             }
+        }
     }
 
     return pattern;

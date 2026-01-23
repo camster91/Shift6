@@ -10,8 +10,7 @@ import {
     isExerciseComplete,
     getProgressPosition
 } from './preferences';
-import { DEFAULT_TRAINING_PREFERENCES, FITNESS_LEVEL_PRESETS } from '../data/exercises.jsx';
-import { STORAGE_KEYS } from './constants';
+import { DEFAULT_TRAINING_PREFERENCES } from '../data/exercises.jsx';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -23,7 +22,7 @@ const localStorageMock = (() => {
         clear: vi.fn(() => { store = {}; })
     };
 })();
-Object.defineProperty(global, 'localStorage', { value: localStorageMock });
+Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock });
 
 describe('preferences utilities', () => {
     beforeEach(() => {

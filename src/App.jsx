@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { EXERCISE_PLANS, getRest, DIFFICULTY_LEVELS, generateProgression, getCustomRest, DEFAULT_TRAINING_PREFERENCES } from './data/exercises.jsx';
+import { EXERCISE_PLANS, DIFFICULTY_LEVELS, generateProgression, getCustomRest } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
 import { getDailyStack } from './utils/schedule';
 import { calculateStats, getUnlockedBadges } from './utils/gamification';
 import {
-    loadPreferences,
     savePreferences,
     migrateExistingUser,
     requiresPlanRegeneration,
@@ -12,7 +11,6 @@ import {
     saveCustomPlans,
     loadCustomPlans
 } from './utils/preferences.js';
-import { STORAGE_KEYS } from './utils/constants.js';
 
 // Components
 import Header from './components/Layout/Header';
@@ -351,7 +349,9 @@ const App = () => {
         }
 
         // Handle bodyweight exercises (18-day progression)
-        const weekData = exercise.weeks?.find(w => w.week === week);
+        // Use customPlans if available, otherwise fall back to exercise.weeks
+        const exerciseWeeks = customPlans[exKey]?.weeks || exercise.weeks;
+        const weekData = exerciseWeeks?.find(w => w.week === week);
         if (!weekData) return;
 
         const day = weekData.days[dayIndex];
@@ -367,13 +367,18 @@ const App = () => {
         const hasCalibration = calibrations[exKey] !== undefined;
         const needsAssessment = !isFinal && (completedDays[exKey]?.length || 0) === 0 && !hasCalibration;
 
+        // Calculate rest time: user override > custom preferences > default
+        const restTime = restTimerOverride !== null
+            ? restTimerOverride
+            : getCustomRest(week, trainingPreferences);
+
         setCurrentSession({
             exerciseKey: exKey,
             exerciseName: exercise.name,
             week,
             dayIndex,
             setIndex: 0,
-            rest: restTimerOverride !== null ? restTimerOverride : getRest(week),
+            rest: restTime,
             baseReps: day.reps,
             reps: scaledReps,
             dayId: day.id,
@@ -391,7 +396,7 @@ const App = () => {
         setExerciseTimeLeft(0);
         setIsExerciseTimerRunning(false);
         setExerciseTimerStarted(false);
-    }, [activeExercise, allExercises, completedDays, exerciseDifficulty, restTimerOverride]);
+    }, [activeExercise, allExercises, completedDays, exerciseDifficulty, restTimerOverride, customPlans, trainingPreferences]);
 
     // Add custom exercise
     const handleAddExercise = (exercise) => {
@@ -708,6 +713,8 @@ const App = () => {
                     activeProgram={activeProgramKeys}
                     onShowExerciseLibrary={onShowExerciseLibrary}
                     onShowProgramManager={onShowProgramManager}
+                    trainingPreferences={trainingPreferences}
+                    customPlans={customPlans}
                 />
             </main>
 

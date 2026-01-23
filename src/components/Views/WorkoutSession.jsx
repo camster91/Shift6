@@ -420,8 +420,7 @@ const WorkoutSession = ({
                                                 <button
                                                     onClick={() => {
                                                         vibrate([50, 30, 50]);
-                                                        const timeAchieved = currentSession.reps[currentSession.setIndex] - exerciseTimeLeft;
-                                                        // Record partial time and move to next set
+                                                        // Stop timer and move to next set
                                                         setIsExerciseTimerRunning(false);
                                                         setExerciseTimerStarted(false);
                                                         setExerciseTimeLeft(0);

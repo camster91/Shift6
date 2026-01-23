@@ -7,6 +7,7 @@ import { calculateStats, getPersonalRecords } from '../../utils/gamification';
 import { BADGES, getUnlockedBadges } from '../../utils/gamification';
 import NeoIcon from '../Visuals/NeoIcon';
 import CalendarView from './CalendarView';
+import ProgressChart from '../Visuals/ProgressChart';
 
 // Color classes for exercise themes
 const colorClasses = {
@@ -525,6 +526,12 @@ const Dashboard = ({
 
             {showMore && (
                 <div className="space-y-6 animate-in fade-in duration-300">
+                    {/* Progress Charts */}
+                    <ProgressChart
+                        sessionHistory={sessionHistory}
+                        allExercises={allExercises}
+                    />
+
                     {/* Calendar */}
                     <CalendarView
                         sessionHistory={sessionHistory}

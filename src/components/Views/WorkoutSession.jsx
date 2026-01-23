@@ -41,7 +41,7 @@ const VideoModal = ({ exercise, onClose }) => {
                     />
                 </div>
                 <div className="p-4 space-y-3">
-                    <p className="text-sm text-slate-300">{exercise.instructions}</p>
+                    <p className="text-sm text-slate-300">{exercise.instructions || exercise.cue}</p>
                     {exercise.tips && (
                         <div className="flex flex-wrap gap-2">
                             {exercise.tips.map((tip, i) => (
@@ -863,7 +863,7 @@ const WorkoutSession = ({
                         )}
 
                         {/* Collapsible Form Tips */}
-                        {currentExercise && (currentExercise.tips || currentExercise.instructions) && (
+                        {currentExercise && (currentExercise.tips || currentExercise.instructions || currentExercise.cue) && (
                             <>
                                 <button
                                     onClick={() => setShowTips(!showTips)}
@@ -877,9 +877,9 @@ const WorkoutSession = ({
                                 </button>
                                 {showTips && (
                                     <div className="p-4 bg-slate-800/20 border border-slate-700/30 rounded-lg space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        {currentExercise.instructions && (
+                                        {(currentExercise.instructions || currentExercise.cue) && (
                                             <p className="text-sm text-slate-300 leading-relaxed">
-                                                {currentExercise.instructions}
+                                                {currentExercise.instructions || currentExercise.cue}
                                             </p>
                                         )}
                                         {currentExercise.tips && currentExercise.tips.length > 0 && (

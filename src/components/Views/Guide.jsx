@@ -38,7 +38,7 @@ const VideoModal = ({ exercise, onClose }) => {
                     />
                 </div>
                 <div className="p-4 space-y-3">
-                    <p className="text-sm text-slate-300">{exercise.instructions}</p>
+                    <p className="text-sm text-slate-300">{exercise.instructions || exercise.cue}</p>
                     {exercise.tips && (
                         <div className="flex flex-wrap gap-2">
                             {exercise.tips.map((tip, i) => (
@@ -97,7 +97,7 @@ const ExerciseCard = ({ exercise, onWatchVideo }) => {
             {/* Expanded content */}
             {expanded && (
                 <div className="px-4 pb-4 space-y-3 border-t border-slate-700 pt-3">
-                    <p className="text-sm text-slate-300">{exercise.instructions}</p>
+                    <p className="text-sm text-slate-300">{exercise.instructions || exercise.cue}</p>
 
                     {exercise.tips && (
                         <div>

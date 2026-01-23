@@ -120,23 +120,6 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficul
                         </div>
                     )}
 
-                    {/* Instructions */}
-                    <div>
-                        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">How to do it</p>
-                        <p className="text-sm text-slate-300">{exercise.instructions}</p>
-                    </div>
-
-                    {/* Tips */}
-                    {exercise.tips && exercise.tips.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                            {exercise.tips.map((tip, i) => (
-                                <span key={i} className="text-xs px-2 py-1 bg-slate-800 border border-slate-700 rounded-full text-slate-400">
-                                    {tip}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-
                     {/* Progress Bar */}
                     <div>
                         <div className="flex justify-between text-xs text-slate-500 mb-1">

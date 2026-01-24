@@ -40,7 +40,50 @@ export const STORAGE_KEYS = {
     trainingPreferences: 'shift6_training_preferences',
     customPlans: 'shift6_custom_plans',
     gymWeights: 'shift6_gym_weights',
-    customExercises: 'shift6_custom_exercises'
+    customExercises: 'shift6_custom_exercises',
+    // Persona system keys
+    userPersona: 'shift6_user_persona',
+    currentLocation: 'shift6_current_location',
+    accessibility: 'shift6_accessibility',
+    streakFreezes: 'shift6_streak_freezes'
+};
+
+// Express mode configuration
+export const EXPRESS_MODE_CONFIG = {
+    sets: 2,
+    restBetweenSets: 20,
+    targetDuration: 8,
+    maxExercises: 2,
+    skipReadiness: true
+};
+
+// Workout locations
+export const WORKOUT_LOCATIONS = {
+    HOME: 'home',
+    GYM: 'gym',
+    OUTDOOR: 'outdoor',
+    TRAVEL: 'travel'
+};
+
+// Accessibility defaults
+export const ACCESSIBILITY_DEFAULTS = {
+    fontSize: 'normal',
+    highContrast: false,
+    reducedMotion: false,
+    simpleLanguage: false,
+    longerRestTimes: false,
+    largerButtons: false,
+    voiceInstructions: false
+};
+
+// Compassionate streak configuration
+export const STREAK_CONFIG = {
+    gracePeriodDays: 1,
+    weekendGrace: true,
+    partialCredit: true,
+    comebackBonus: true,
+    maxGraceDays: 2,
+    freezeTokensPerMonth: 3
 };
 
 // Training preference options

@@ -1,10 +1,12 @@
 import { useState, memo } from 'react';
-import { Zap, ChevronRight, Flame, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info } from 'lucide-react';
+import { Zap, ChevronRight, Flame, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info, Clock } from 'lucide-react';
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx';
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise, isTrainingDay } from '../../utils/schedule';
 import { vibrate } from '../../utils/device';
 import { calculateStats, getPersonalRecords } from '../../utils/gamification';
 import { BADGES, getUnlockedBadges } from '../../utils/gamification';
+import { EXPRESS_MODE_CONFIG } from '../../utils/constants';
+import { isExpressPersona } from '../../utils/personas';
 import NeoIcon from '../Visuals/NeoIcon';
 import CalendarView from './CalendarView';
 import ProgressChart from '../Visuals/ProgressChart';
@@ -160,6 +162,7 @@ const Dashboard = ({
     sessionHistory,
     startStack,
     startWorkout,
+    startExpressWorkout,
     allExercises = EXERCISE_PLANS,
     customExercises = {},
     exerciseDifficulty = {},
@@ -208,8 +211,42 @@ const Dashboard = ({
     const activeSprints = Object.values(sprints).filter(s => s.status === 'active');
     const hasActiveSprints = activeSprints.length > 0;
 
+    // Check if user has express mode enabled
+    const userPersona = trainingPreferences?.persona;
+    const isExpressModeUser = trainingPreferences?.expressMode || isExpressPersona(userPersona);
+
     return (
         <div className="space-y-6 pb-8">
+            {/* Express Mode Quick Start - Show for express mode users */}
+            {isExpressModeUser && dailyStack.length > 0 && startExpressWorkout && (
+                <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-5">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                                <Zap className="text-yellow-400" size={28} />
+                            </div>
+                            <div>
+                                <p className="text-yellow-400 font-bold text-lg">Express Workout</p>
+                                <p className="text-slate-400 text-sm flex items-center gap-2">
+                                    <Clock size={14} />
+                                    {EXPRESS_MODE_CONFIG.targetDuration} min • {EXPRESS_MODE_CONFIG.sets} sets • {EXPRESS_MODE_CONFIG.maxExercises} exercises
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => {
+                                vibrate(50);
+                                startExpressWorkout();
+                            }}
+                            className="px-5 py-3 bg-yellow-500 text-slate-900 rounded-xl font-bold hover:bg-yellow-400 transition-colors flex items-center gap-2"
+                        >
+                            <Play size={18} />
+                            Go
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Today's Summary - Only show if worked out today */}
             {todayWorkouts.length > 0 && (
                 <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">

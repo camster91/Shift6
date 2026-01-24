@@ -39,6 +39,7 @@ import ProgramManager from './components/Views/ProgramManager';
 import TrainingSettings from './components/Views/TrainingSettings';
 import BodyMetrics from './components/Views/BodyMetrics';
 import WarmupRoutine from './components/Views/WarmupRoutine';
+import AccessibilitySettings from './components/Views/AccessibilitySettings';
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
 import { getRecommendedWarmup } from './data/warmupRoutines';
 
@@ -100,6 +101,7 @@ const App = () => {
     const [showProgramManager, setShowProgramManager] = useState(false);
     const [showTrainingSettings, setShowTrainingSettings] = useState(false);
     const [showBodyMetrics, setShowBodyMetrics] = useState(false);
+    const [showAccessibility, setShowAccessibility] = useState(false);
     const [showWarmup, setShowWarmup] = useState(false);
     const [pendingWorkout, setPendingWorkout] = useState(null); // Stores workout to start after warmup
 
@@ -1023,6 +1025,7 @@ const App = () => {
     const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
     const onShowTrainingSettings = useCallback(() => setShowTrainingSettings(true), []);
     const onShowBodyMetrics = useCallback(() => setShowBodyMetrics(true), []);
+    const onShowAccessibility = useCallback(() => setShowAccessibility(true), []);
 
     // ---------------- SPRINT MANAGEMENT ----------------
 
@@ -1104,6 +1107,7 @@ const App = () => {
                 setWarmupEnabled={setWarmupEnabled}
                 onShowTrainingSettings={onShowTrainingSettings}
                 onShowBodyMetrics={onShowBodyMetrics}
+                onShowAccessibility={onShowAccessibility}
                 programMode={programMode}
                 onChangeProgramMode={handleChangeProgramMode}
             />
@@ -1241,6 +1245,13 @@ const App = () => {
                     onAddMetric={handleAddMetric}
                     onDeleteMetric={handleDeleteMetric}
                     onClose={() => setShowBodyMetrics(false)}
+                />
+            )}
+
+            {/* Accessibility Settings Modal */}
+            {showAccessibility && (
+                <AccessibilitySettings
+                    onClose={() => setShowAccessibility(false)}
                 />
             )}
 

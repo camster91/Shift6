@@ -4,7 +4,9 @@ import {
     EARLY_WORKOUT_HOUR,
     LATE_WORKOUT_HOUR,
     UPPER_BODY_EXERCISES,
-    LOWER_BODY_EXERCISES
+    LOWER_BODY_EXERCISES,
+    STREAK_CONFIG,
+    STORAGE_KEYS
 } from './constants'
 
 /** Total number of exercises in the program */
@@ -245,4 +247,186 @@ export const isNewPersonalRecord = (exerciseKey, volume, sessionHistory = []) =>
     if (exerciseHistory.length === 0) return volume > 0;
     const maxVolume = Math.max(...exerciseHistory.map(s => s.volume));
     return volume > maxVolume;
+};
+
+// ============================================
+// COMPASSIONATE STREAK SYSTEM
+// ============================================
+
+/**
+ * Calculates streak with grace period and weekend grace
+ * @param {SessionHistoryItem[]} history - Session history
+ * @param {Object} config - Streak configuration
+ * @returns {Object} - { streak, graceDaysUsed, graceRemaining, isAtRisk, message }
+ */
+export const calculateStreakWithGrace = (history, config = STREAK_CONFIG) => {
+    if (!history || history.length === 0) {
+        return {
+            streak: 0,
+            graceDaysUsed: 0,
+            graceRemaining: config.gracePeriodDays,
+            isAtRisk: false,
+            message: 'Start your streak today!'
+        };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get unique workout days
+    const workoutDays = new Set(
+        history.map(h => h.date.split('T')[0])
+    );
+
+    let streak = 0;
+    let graceDaysUsed = 0;
+    let currentDate = new Date(today);
+    let continueChecking = true;
+
+    // Count backwards from today (max 365 days)
+    while (continueChecking && (today - currentDate < 365 * MS_PER_DAY)) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const dayOfWeek = currentDate.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+        const workedOut = workoutDays.has(dateStr);
+
+        if (workedOut) {
+            streak++;
+            graceDaysUsed = 0; // Reset grace on workout
+        } else if (isWeekend && config.weekendGrace) {
+            // Weekend grace - doesn't count against or for streak
+            // Just continue checking
+        } else if (graceDaysUsed < config.gracePeriodDays) {
+            graceDaysUsed++;
+            // Grace day used, don't break streak but don't add to it
+        } else {
+            continueChecking = false; // Streak broken
+        }
+
+        // Move to previous day
+        currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    // Determine if streak is at risk (didn't work out today)
+    const todayStr = today.toISOString().split('T')[0];
+    const workedOutToday = workoutDays.has(todayStr);
+    const isAtRisk = !workedOutToday && streak > 0;
+
+    // Generate appropriate message
+    let message = '';
+    if (streak === 0) {
+        message = 'Start a new streak today!';
+    } else if (isAtRisk && graceDaysUsed > 0) {
+        message = `Work out today to save your ${streak} day streak!`;
+    } else if (isAtRisk) {
+        message = `Keep your ${streak} day streak going!`;
+    } else {
+        message = `${streak} day streak! Keep it up!`;
+    }
+
+    return {
+        streak,
+        graceDaysUsed,
+        graceRemaining: config.gracePeriodDays - graceDaysUsed,
+        isAtRisk,
+        message
+    };
+};
+
+/**
+ * Get remaining streak freeze tokens for current month
+ * @returns {number} - Remaining freeze tokens
+ */
+export const getRemainingFreezeTokens = () => {
+    const currentMonth = new Date().getMonth();
+    const freezeKey = `${STORAGE_KEYS.streakFreezes}_${currentMonth}`;
+    const freezesUsed = parseInt(localStorage.getItem(freezeKey) || '0', 10);
+    return Math.max(0, STREAK_CONFIG.freezeTokensPerMonth - freezesUsed);
+};
+
+/**
+ * Use a streak freeze token
+ * @returns {Object} - { success, remaining, message }
+ */
+export const useStreakFreeze = () => {
+    const currentMonth = new Date().getMonth();
+    const freezeKey = `${STORAGE_KEYS.streakFreezes}_${currentMonth}`;
+    const freezesUsed = parseInt(localStorage.getItem(freezeKey) || '0', 10);
+
+    if (freezesUsed >= STREAK_CONFIG.freezeTokensPerMonth) {
+        return {
+            success: false,
+            remaining: 0,
+            message: 'No freeze tokens remaining this month'
+        };
+    }
+
+    localStorage.setItem(freezeKey, String(freezesUsed + 1));
+
+    return {
+        success: true,
+        remaining: STREAK_CONFIG.freezeTokensPerMonth - freezesUsed - 1,
+        message: 'Streak frozen for today! Your streak is safe.'
+    };
+};
+
+/**
+ * Check if user is returning after a break and deserves a comeback badge
+ * @param {SessionHistoryItem[]} history - Session history
+ * @returns {Object|null} - Comeback info or null
+ */
+export const checkComeback = (history) => {
+    if (!history || history.length < 2) return null;
+
+    // Sort by date descending
+    const sorted = [...history].sort((a, b) =>
+        new Date(b.date) - new Date(a.date)
+    );
+
+    const latest = new Date(sorted[0].date);
+    const previous = new Date(sorted[1].date);
+    const daysBetween = Math.floor((latest - previous) / MS_PER_DAY);
+
+    if (daysBetween >= 7) {
+        return {
+            type: 'comeback',
+            daysMissed: daysBetween,
+            badge: 'comeback_kid',
+            message: `Welcome back! You were away for ${daysBetween} days, but you're here now! 💪`
+        };
+    }
+
+    return null;
+};
+
+/**
+ * Get streak status with emoji indicator
+ * @param {Object} streakData - Data from calculateStreakWithGrace
+ * @returns {Object} - { emoji, color, status }
+ */
+export const getStreakStatus = (streakData) => {
+    const { streak, isAtRisk, graceRemaining } = streakData;
+
+    if (streak === 0) {
+        return { emoji: '💤', color: 'slate', status: 'inactive' };
+    }
+
+    if (isAtRisk && graceRemaining === 0) {
+        return { emoji: '🚨', color: 'red', status: 'danger' };
+    }
+
+    if (isAtRisk) {
+        return { emoji: '⚠️', color: 'yellow', status: 'warning' };
+    }
+
+    if (streak >= 30) {
+        return { emoji: '🔥🔥', color: 'orange', status: 'legendary' };
+    }
+
+    if (streak >= 7) {
+        return { emoji: '🔥', color: 'orange', status: 'hot' };
+    }
+
+    return { emoji: '✨', color: 'cyan', status: 'active' };
 };

@@ -1,5 +1,16 @@
-import { describe, it, expect } from 'vitest';
-import { BADGES, calculateStats, getUnlockedBadges, getPersonalRecords, isNewPersonalRecord } from './gamification';
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+    BADGES,
+    calculateStats,
+    getUnlockedBadges,
+    getPersonalRecords,
+    isNewPersonalRecord,
+    calculateStreakWithGrace,
+    getRemainingFreezeTokens,
+    useStreakFreeze,
+    checkComeback,
+    getStreakStatus
+} from './gamification';
 
 describe('gamification utilities', () => {
     describe('BADGES', () => {
@@ -165,6 +176,147 @@ describe('gamification utilities', () => {
 
         it('returns false for zero volume on first workout', () => {
             expect(isNewPersonalRecord('pushups', 0, [])).toBe(false);
+        });
+    });
+
+    // Compassionate Streak System Tests
+    describe('calculateStreakWithGrace', () => {
+        it('returns zero streak for empty history', () => {
+            const result = calculateStreakWithGrace([]);
+            expect(result.streak).toBe(0);
+            expect(result.graceDaysUsed).toBe(0);
+        });
+
+        it('counts consecutive workout days', () => {
+            const today = new Date();
+            const history = [
+                { date: today.toISOString(), exerciseKey: 'pushups', volume: 50 },
+                { date: new Date(today - 86400000).toISOString(), exerciseKey: 'pushups', volume: 50 },
+                { date: new Date(today - 172800000).toISOString(), exerciseKey: 'pushups', volume: 50 }
+            ];
+            const result = calculateStreakWithGrace(history);
+            expect(result.streak).toBe(3);
+        });
+
+        it('identifies when streak is at risk', () => {
+            const yesterday = new Date(Date.now() - 86400000);
+            const history = [
+                { date: yesterday.toISOString(), exerciseKey: 'pushups', volume: 50 }
+            ];
+            const result = calculateStreakWithGrace(history);
+            expect(result.isAtRisk).toBe(true);
+        });
+
+        it('shows streak as not at risk when worked out today', () => {
+            const today = new Date();
+            const history = [
+                { date: today.toISOString(), exerciseKey: 'pushups', volume: 50 }
+            ];
+            const result = calculateStreakWithGrace(history);
+            expect(result.isAtRisk).toBe(false);
+        });
+
+        it('provides appropriate message for active streak', () => {
+            const today = new Date();
+            const history = [
+                { date: today.toISOString(), exerciseKey: 'pushups', volume: 50 }
+            ];
+            const result = calculateStreakWithGrace(history);
+            expect(result.message).toContain('Keep it up');
+        });
+    });
+
+    describe('getRemainingFreezeTokens', () => {
+        beforeEach(() => {
+            localStorage.clear();
+        });
+
+        it('returns max tokens when none used', () => {
+            const remaining = getRemainingFreezeTokens();
+            expect(remaining).toBe(3); // Default from STREAK_CONFIG
+        });
+    });
+
+    describe('useStreakFreeze', () => {
+        beforeEach(() => {
+            localStorage.clear();
+        });
+
+        it('successfully uses a freeze token', () => {
+            const result = useStreakFreeze();
+            expect(result.success).toBe(true);
+            expect(result.remaining).toBe(2);
+        });
+
+        it('fails when no tokens remaining', () => {
+            // Use all tokens
+            useStreakFreeze();
+            useStreakFreeze();
+            useStreakFreeze();
+
+            const result = useStreakFreeze();
+            expect(result.success).toBe(false);
+            expect(result.remaining).toBe(0);
+        });
+    });
+
+    describe('checkComeback', () => {
+        it('returns null for empty history', () => {
+            expect(checkComeback([])).toBeNull();
+        });
+
+        it('returns null for recent workout', () => {
+            const today = new Date();
+            const yesterday = new Date(today - 86400000);
+            const history = [
+                { date: today.toISOString() },
+                { date: yesterday.toISOString() }
+            ];
+            expect(checkComeback(history)).toBeNull();
+        });
+
+        it('detects comeback after 7+ days', () => {
+            const today = new Date();
+            const eightDaysAgo = new Date(today - 8 * 86400000);
+            const history = [
+                { date: today.toISOString() },
+                { date: eightDaysAgo.toISOString() }
+            ];
+            const result = checkComeback(history);
+            expect(result).not.toBeNull();
+            expect(result.type).toBe('comeback');
+            expect(result.daysMissed).toBeGreaterThanOrEqual(7);
+        });
+    });
+
+    describe('getStreakStatus', () => {
+        it('returns inactive status for zero streak', () => {
+            const result = getStreakStatus({ streak: 0, isAtRisk: false, graceRemaining: 1 });
+            expect(result.status).toBe('inactive');
+            expect(result.emoji).toBe('💤');
+        });
+
+        it('returns danger status when at risk with no grace', () => {
+            const result = getStreakStatus({ streak: 5, isAtRisk: true, graceRemaining: 0 });
+            expect(result.status).toBe('danger');
+            expect(result.color).toBe('red');
+        });
+
+        it('returns warning status when at risk with grace remaining', () => {
+            const result = getStreakStatus({ streak: 5, isAtRisk: true, graceRemaining: 1 });
+            expect(result.status).toBe('warning');
+            expect(result.color).toBe('yellow');
+        });
+
+        it('returns hot status for 7+ day streak', () => {
+            const result = getStreakStatus({ streak: 10, isAtRisk: false, graceRemaining: 1 });
+            expect(result.status).toBe('hot');
+            expect(result.emoji).toBe('🔥');
+        });
+
+        it('returns legendary status for 30+ day streak', () => {
+            const result = getStreakStatus({ streak: 35, isAtRisk: false, graceRemaining: 1 });
+            expect(result.status).toBe('legendary');
         });
     });
 });

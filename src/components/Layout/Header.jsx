@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon, Dumbbell, Scale, Flame, Home } from 'lucide-react';
+import { Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon, Dumbbell, Scale, Flame, Home, Eye } from 'lucide-react';
 
 const Header = ({
     onExport,
@@ -16,6 +16,7 @@ const Header = ({
     setWarmupEnabled,
     onShowTrainingSettings,
     onShowBodyMetrics,
+    onShowAccessibility,
     programMode,
     onChangeProgramMode
 }) => {
@@ -84,6 +85,7 @@ const Header = ({
                         setWarmupEnabled={setWarmupEnabled}
                         onShowTrainingSettings={onShowTrainingSettings}
                         onShowBodyMetrics={onShowBodyMetrics}
+                        onShowAccessibility={onShowAccessibility}
                     />
                 </div>
             </div>
@@ -100,7 +102,7 @@ const REST_OPTIONS = [
     { value: 120, label: '120s' }
 ];
 
-const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride, theme, setTheme, warmupEnabled, setWarmupEnabled, onShowTrainingSettings, onShowBodyMetrics }) => {
+const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride, theme, setTheme, warmupEnabled, setWarmupEnabled, onShowTrainingSettings, onShowBodyMetrics, onShowAccessibility }) => {
     const [isOpen, setIsOpen] = React.useState(false);
 
     const cycleRestTimer = () => {
@@ -167,6 +169,12 @@ const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnable
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
                         >
                             <Scale size={16} /> Body Metrics
+                        </button>
+                        <button
+                            onClick={() => { onShowAccessibility?.(); setIsOpen(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            <Eye size={16} /> Accessibility
                         </button>
                         <div className="h-[1px] bg-slate-800 my-1" />
                         <button

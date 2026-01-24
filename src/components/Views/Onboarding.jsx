@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench, Shuffle } from 'lucide-react'
+import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench, Shuffle, Zap } from 'lucide-react'
 import {
     REP_SCHEME_CONFIGS,
     FITNESS_LEVEL_PRESETS,
@@ -8,17 +8,25 @@ import {
 } from '../../data/exercises.jsx'
 import {
     TRAINING_DAYS_OPTIONS,
-    SESSION_DURATION_OPTIONS
+    SESSION_DURATION_OPTIONS,
+    EXPRESS_MODE_CONFIG
 } from '../../utils/constants.js'
 import { applyFitnessLevelPreset } from '../../utils/preferences.js'
 import { EXERCISE_LIBRARY, GOAL_ICONS } from '../../data/exerciseLibrary.js'
 import { EXERCISES } from '../../data/exerciseDatabase.js'
 import { generateSmartProgram } from '../../utils/smartProgramGenerator.js'
+import {
+    PERSONA_TYPES,
+    PERSONA_INFO,
+    getPersonaDefaults,
+    isExpressPersona
+} from '../../utils/personas.js'
 import TemplateCard from '../Visuals/TemplateCard'
 import CustomProgramBuilder from './CustomProgramBuilder'
 
 const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
-    const [step, setStep] = useState(1)
+    const [step, setStep] = useState(0) // Start at persona selection (step 0)
+    const [selectedPersona, setSelectedPersona] = useState(null)
     const [selectedMode, setSelectedMode] = useState(null)
     const [selectedEquipment, setSelectedEquipment] = useState(['none'])
     const [selectedTemplate, setSelectedTemplate] = useState(null)
@@ -66,25 +74,71 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
         setGeneratedProgram(program)
     }
 
-    // Steps: 1=Mode, 2=Equipment (skipped for bodyweight), 3=Fitness, 4=Goal, 5=Schedule, 6=Template, 7=Confirm
-    // Fitness Level now comes BEFORE Goal/Schedule so presets set the starting point
+    // Steps: 0=Persona, 1=Mode, 2=Equipment (skipped for bodyweight), 3=Fitness, 4=Goal, 5=Schedule, 6=Template, 7=Confirm
+    // Persona step is now first - sets smart defaults and can skip steps
     const getStepConfig = () => {
-        if (selectedMode === 'bodyweight') {
-            // Skip equipment step for bodyweight
+        // Express/Busy Bee persona gets shortened flow
+        if (selectedPersona === PERSONA_TYPES.BUSY_BEE) {
             return {
-                steps: [1, 3, 4, 5, 6, 7],
+                steps: [0, 5, 6, 7], // Persona → Schedule → Program → Confirm
+                total: 4
+            }
+        }
+        // Golden Years persona gets accessibility-focused flow
+        if (selectedPersona === PERSONA_TYPES.GOLDEN_YEARS) {
+            return {
+                steps: [0, 1, 3, 5, 6, 7], // Persona → Mode → Fitness → Schedule → Program → Confirm
                 total: 6
             }
         }
+        // Default flow based on mode
+        if (selectedMode === 'bodyweight') {
+            // Skip equipment step for bodyweight
+            return {
+                steps: [0, 1, 3, 4, 5, 6, 7],
+                total: 7
+            }
+        }
         return {
-            steps: [1, 2, 3, 4, 5, 6, 7],
-            total: 7
+            steps: [0, 1, 2, 3, 4, 5, 6, 7],
+            total: 8
         }
     }
 
     const stepConfig = getStepConfig()
     const displayStep = stepConfig.steps.indexOf(step) + 1
     const totalSteps = stepConfig.total
+
+    const handlePersonaSelect = (personaType) => {
+        setSelectedPersona(personaType)
+
+        // Apply persona defaults to training preferences
+        const defaults = getPersonaDefaults(personaType)
+        setTrainingPreferences(prev => ({
+            ...prev,
+            ...defaults,
+            persona: personaType
+        }))
+
+        // Auto-set mode based on persona
+        if (defaults.programMode) {
+            setSelectedMode(defaults.programMode)
+            if (defaults.programMode === 'bodyweight') {
+                setSelectedEquipment(['none'])
+            }
+        }
+
+        // For express personas, enable express mode
+        if (isExpressPersona(personaType)) {
+            setTrainingPreferences(prev => ({
+                ...prev,
+                expressMode: true,
+                setsPerExercise: EXPRESS_MODE_CONFIG.sets,
+                restBetweenSets: EXPRESS_MODE_CONFIG.restBetweenSets,
+                targetSessionDuration: EXPRESS_MODE_CONFIG.targetDuration
+            }))
+        }
+    }
 
     const handleModeSelect = (mode) => {
         setSelectedMode(mode)
@@ -143,24 +197,31 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             setStep(nextStep)
         } else {
             // Final step - complete onboarding
+            // Include persona in preferences
+            const finalPreferences = {
+                ...trainingPreferences,
+                persona: selectedPersona,
+                expressMode: isExpressPersona(selectedPersona)
+            }
+
             try {
                 if (programTab === 'generated' && generatedProgram?.exercises?.length > 0) {
                     // Use AI-generated program
-                    onComplete(selectedMode, selectedEquipment, null, trainingPreferences, generatedProgram.exercises)
+                    onComplete(selectedMode, selectedEquipment, null, finalPreferences, generatedProgram.exercises)
                 } else if (programTab === 'custom' && customExercises.length > 0) {
                     // Use custom-built program
-                    onComplete(selectedMode, selectedEquipment, null, trainingPreferences, customExercises)
+                    onComplete(selectedMode, selectedEquipment, null, finalPreferences, customExercises)
                 } else if (selectedTemplate) {
                     // Use template
-                    onComplete(selectedMode, selectedEquipment, selectedTemplate, trainingPreferences)
+                    onComplete(selectedMode, selectedEquipment, selectedTemplate, finalPreferences)
                 } else {
                     // Fallback - use default template
-                    onComplete(selectedMode, selectedEquipment, 'shift6-classic', trainingPreferences)
+                    onComplete(selectedMode, selectedEquipment, 'shift6-classic', finalPreferences)
                 }
             } catch (error) {
                 console.error('Onboarding completion error:', error)
                 // Fallback to default
-                onComplete(selectedMode, selectedEquipment, 'shift6-classic', trainingPreferences)
+                onComplete(selectedMode, selectedEquipment, 'shift6-classic', finalPreferences)
             }
         }
     }
@@ -174,17 +235,20 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
 
     const canProceed = () => {
         switch (step) {
+            case 0: return selectedPersona !== null // Persona selection
             case 1: return selectedMode !== null
             case 2: return true // Equipment is optional
             case 3: return trainingPreferences.fitnessLevel !== null // Fitness Level
             case 4: return trainingPreferences.repScheme !== null // Training Goal
             case 5: return trainingPreferences.trainingDaysPerWeek >= 2 // Schedule
             case 6: {
+                // For express mode, require fewer exercises
+                const minExercises = isExpressPersona(selectedPersona) ? 2 : 3
                 if (programTab === 'generated') {
-                    return generatedProgram?.exercises?.length >= 3
+                    return generatedProgram?.exercises?.length >= minExercises
                 }
                 if (programTab === 'custom') {
-                    return customExercises.length >= 3
+                    return customExercises.length >= minExercises
                 }
                 return selectedTemplate !== null
             }
@@ -237,19 +301,59 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             {/* Content */}
             <div className={`flex-1 flex flex-col items-center p-6 overflow-y-auto ${step === 6 && programTab === 'custom' ? 'justify-start pt-4' : 'justify-center'
                 }`}>
-                {/* Step 1: Welcome & Mode Selection */}
-                {step === 1 && (
-                    <div className="w-full max-w-md space-y-8 animate-fadeIn">
+                {/* Step 0: Persona Selection */}
+                {step === 0 && (
+                    <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-4">
                             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center">
                                 <Dumbbell className="w-10 h-10 text-white" />
                             </div>
                             <h1 className="text-3xl font-bold text-white">Welcome to Shift6</h1>
-                            <p className="text-slate-400">6 weeks to transform your fitness</p>
+                            <p className="text-slate-400">What best describes you?</p>
                         </div>
 
                         <div className="space-y-2">
-                            <p className="text-slate-300 text-center mb-4">Choose your training style:</p>
+                            {Object.values(PERSONA_TYPES).map((personaType) => {
+                                const info = PERSONA_INFO[personaType]
+                                return (
+                                    <button
+                                        key={personaType}
+                                        onClick={() => handlePersonaSelect(personaType)}
+                                        className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedPersona === personaType
+                                            ? 'border-cyan-500 bg-cyan-500/10'
+                                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-3xl">{info.icon}</span>
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-white">{info.title}</h3>
+                                                <p className="text-sm text-slate-400">{info.description}</p>
+                                            </div>
+                                            {selectedPersona === personaType && (
+                                                <Check className="w-5 h-5 text-cyan-500" />
+                                            )}
+                                        </div>
+                                    </button>
+                                )
+                            })}
+                        </div>
+
+                        <p className="text-center text-slate-500 text-xs">
+                            This helps us personalize your experience. You can change settings anytime.
+                        </p>
+                    </div>
+                )}
+
+                {/* Step 1: Mode Selection (may be skipped for some personas) */}
+                {step === 1 && (
+                    <div className="w-full max-w-md space-y-6 animate-fadeIn">
+                        <div className="text-center space-y-2">
+                            <h2 className="text-2xl font-bold text-white">Training Style</h2>
+                            <p className="text-slate-400">Where will you be working out?</p>
+                        </div>
+
+                        <div className="space-y-2">
 
                             {Object.entries(programModes).map(([id, mode]) => (
                                 <button
@@ -703,6 +807,15 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         </div>
 
                         <div className="bg-slate-800/50 rounded-xl p-4 space-y-3">
+                            {selectedPersona && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400">Profile</span>
+                                    <span className="text-white font-medium flex items-center gap-2">
+                                        <span>{PERSONA_INFO[selectedPersona]?.icon}</span>
+                                        {PERSONA_INFO[selectedPersona]?.shortTitle}
+                                    </span>
+                                </div>
+                            )}
                             <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Mode</span>
                                 <span className="text-white font-medium">
@@ -727,6 +840,15 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     {trainingPreferences.trainingDaysPerWeek}x/week • {trainingPreferences.programDuration} weeks
                                 </span>
                             </div>
+                            {isExpressPersona(selectedPersona) && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400">Express Mode</span>
+                                    <span className="text-cyan-400 font-medium flex items-center gap-1">
+                                        <Zap className="w-4 h-4" />
+                                        Enabled
+                                    </span>
+                                </div>
+                            )}
                             <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Exercises</span>
                                 <span className="text-white font-medium">

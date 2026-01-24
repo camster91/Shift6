@@ -235,9 +235,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             </div>
 
             {/* Content */}
-            <div className={`flex-1 flex flex-col items-center p-6 overflow-y-auto ${
-                step === 6 && programTab === 'custom' ? 'justify-start pt-4' : 'justify-center'
-            }`}>
+            <div className={`flex-1 flex flex-col items-center p-6 overflow-y-auto ${step === 6 && programTab === 'custom' ? 'justify-start pt-4' : 'justify-center'
+                }`}>
                 {/* Step 1: Welcome & Mode Selection */}
                 {step === 1 && (
                     <div className="w-full max-w-md space-y-8 animate-fadeIn">
@@ -256,11 +255,10 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 <button
                                     key={id}
                                     onClick={() => handleModeSelect(id)}
-                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                                        selectedMode === id
+                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedMode === id
                                             ? 'border-cyan-500 bg-cyan-500/10'
                                             : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex items-center gap-4">
                                         <span className="text-3xl">{mode.icon}</span>
@@ -291,11 +289,10 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 <button
                                     key={id}
                                     onClick={() => handleEquipmentToggle(id)}
-                                    className={`p-4 rounded-xl border-2 transition-all relative ${
-                                        selectedEquipment.includes(id)
+                                    className={`p-4 rounded-xl border-2 transition-all relative ${selectedEquipment.includes(id)
                                             ? 'border-cyan-500 bg-cyan-500/10'
                                             : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="text-center">
                                         <span className="text-2xl block mb-1">{equip.icon}</span>
@@ -327,11 +324,10 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 <button
                                     key={key}
                                     onClick={() => handleFitnessLevelSelect(key)}
-                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                                        trainingPreferences.fitnessLevel === key
+                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${trainingPreferences.fitnessLevel === key
                                             ? 'border-cyan-500 bg-cyan-500/10'
                                             : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex items-center gap-4">
                                         <span className="text-2xl">{preset.icon}</span>
@@ -369,11 +365,10 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 <button
                                     key={key}
                                     onClick={() => handlePreferenceChange('repScheme', key)}
-                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                                        trainingPreferences.repScheme === key
+                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${trainingPreferences.repScheme === key
                                             ? 'border-cyan-500 bg-cyan-500/10'
                                             : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex items-center gap-4">
                                         <span className="text-2xl">{config.icon}</span>
@@ -410,11 +405,10 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     <button
                                         key={num}
                                         onClick={() => handlePreferenceChange('trainingDaysPerWeek', num)}
-                                        className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
-                                            trainingPreferences.trainingDaysPerWeek === num
+                                        className={`flex-1 py-3 rounded-lg font-semibold transition-all ${trainingPreferences.trainingDaysPerWeek === num
                                                 ? 'bg-cyan-500 text-white'
                                                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                        }`}
+                                            }`}
                                     >
                                         {num}
                                     </button>
@@ -430,11 +424,10 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     <button
                                         key={day}
                                         onClick={() => togglePreferredDay(idx)}
-                                        className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
-                                            trainingPreferences.preferredDays?.includes(idx)
+                                        className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${trainingPreferences.preferredDays?.includes(idx)
                                                 ? 'bg-cyan-500 text-white'
                                                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                        }`}
+                                            }`}
                                     >
                                         {day}
                                     </button>
@@ -451,11 +444,10 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     <button
                                         key={mins}
                                         onClick={() => handlePreferenceChange('targetSessionDuration', mins)}
-                                        className={`py-2 rounded-lg text-sm transition-all ${
-                                            trainingPreferences.targetSessionDuration === mins
+                                        className={`py-2 rounded-lg text-sm transition-all ${trainingPreferences.targetSessionDuration === mins
                                                 ? 'bg-cyan-500 text-white'
                                                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                        }`}
+                                            }`}
                                     >
                                         {mins}m
                                     </button>
@@ -477,33 +469,30 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         <div className="flex bg-slate-800 rounded-lg p-1">
                             <button
                                 onClick={() => setProgramTab('generated')}
-                                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${
-                                    programTab === 'generated'
+                                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${programTab === 'generated'
                                         ? 'bg-cyan-500 text-white'
                                         : 'text-slate-400 hover:text-white'
-                                }`}
+                                    }`}
                             >
                                 <Sparkles className="w-3 h-3" />
                                 For You
                             </button>
                             <button
                                 onClick={() => setProgramTab('templates')}
-                                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${
-                                    programTab === 'templates'
+                                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${programTab === 'templates'
                                         ? 'bg-cyan-500 text-white'
                                         : 'text-slate-400 hover:text-white'
-                                }`}
+                                    }`}
                             >
                                 <LayoutGrid className="w-3 h-3" />
                                 Templates
                             </button>
                             <button
                                 onClick={() => setProgramTab('custom')}
-                                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${
-                                    programTab === 'custom'
+                                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${programTab === 'custom'
                                         ? 'bg-cyan-500 text-white'
                                         : 'text-slate-400 hover:text-white'
-                                }`}
+                                    }`}
                             >
                                 <Wrench className="w-3 h-3" />
                                 Custom
@@ -511,87 +500,113 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         </div>
 
                         {/* Generated Program Tab */}
-                        {programTab === 'generated' && generatedProgram && (
-                            <div className="space-y-4">
-                                {/* Program Summary Card */}
-                                <div className="bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 rounded-xl p-4">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div>
-                                            <h3 className="font-bold text-white text-lg">{generatedProgram.name}</h3>
-                                            <p className="text-cyan-300 text-sm">{generatedProgram.metadata?.splitName} Split</p>
-                                        </div>
-                                        <button
-                                            onClick={handleRegenerateProgram}
-                                            className="p-2 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors"
-                                            title="Generate different exercises"
-                                        >
-                                            <Shuffle className="w-4 h-4 text-cyan-400" />
-                                        </button>
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-3 mb-4">
-                                        <div className="bg-slate-800/50 rounded-lg p-2 text-center">
-                                            <div className="text-lg font-bold text-white">{generatedProgram.exercises?.length || 0}</div>
-                                            <div className="text-xs text-slate-400">Exercises</div>
-                                        </div>
-                                        <div className="bg-slate-800/50 rounded-lg p-2 text-center">
-                                            <div className="text-lg font-bold text-white">{trainingPreferences.trainingDaysPerWeek}x</div>
-                                            <div className="text-xs text-slate-400">Per Week</div>
-                                        </div>
-                                        <div className="bg-slate-800/50 rounded-lg p-2 text-center">
-                                            <div className="text-lg font-bold text-white">~{generatedProgram.metadata?.estimatedSessionDuration || trainingPreferences.targetSessionDuration}m</div>
-                                            <div className="text-xs text-slate-400">Per Session</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Exercise Preview */}
-                                    <div>
-                                        <button
-                                            onClick={() => setShowProgramDetails(!showProgramDetails)}
-                                            className="flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 mb-2"
-                                        >
-                                            <span>{showProgramDetails ? 'Hide' : 'Show'} Exercises</span>
-                                            <ChevronRight className={`w-4 h-4 transition-transform ${showProgramDetails ? 'rotate-90' : ''}`} />
-                                        </button>
-
-                                        {showProgramDetails && (
-                                            <div className="space-y-2 max-h-[30vh] overflow-y-auto">
-                                                {generatedProgram.exercises?.map((exKey, index) => {
-                                                    const exercise = allExercises[exKey]
-                                                    return (
-                                                        <div
-                                                            key={exKey}
-                                                            className="flex items-center gap-3 bg-slate-800/50 rounded-lg p-2"
-                                                        >
-                                                            <span className="text-xs text-slate-500 w-5">{index + 1}.</span>
-                                                            <span className="flex-1 text-sm text-white">{exercise?.name || exKey}</span>
-                                                            <span className="text-xs text-slate-400 capitalize">{exercise?.category}</span>
-                                                        </div>
-                                                    )
-                                                })}
+                        {programTab === 'generated' && (
+                            generatedProgram ? (
+                                <div className="space-y-4">
+                                    {/* Program Summary Card */}
+                                    <div className="bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 rounded-xl p-4">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div>
+                                                <h3 className="font-bold text-white text-lg">{generatedProgram.name}</h3>
+                                                <p className="text-cyan-300 text-sm">{generatedProgram.metadata?.splitName} Split</p>
                                             </div>
-                                        )}
+                                            <button
+                                                onClick={handleRegenerateProgram}
+                                                className="p-2 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors"
+                                                title="Generate different exercises"
+                                            >
+                                                <Shuffle className="w-4 h-4 text-cyan-400" />
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-3 mb-4">
+                                            <div className="bg-slate-800/50 rounded-lg p-2 text-center">
+                                                <div className="text-lg font-bold text-white">{generatedProgram.exercises?.length || 0}</div>
+                                                <div className="text-xs text-slate-400">Exercises</div>
+                                            </div>
+                                            <div className="bg-slate-800/50 rounded-lg p-2 text-center">
+                                                <div className="text-lg font-bold text-white">{trainingPreferences.trainingDaysPerWeek}x</div>
+                                                <div className="text-xs text-slate-400">Per Week</div>
+                                            </div>
+                                            <div className="bg-slate-800/50 rounded-lg p-2 text-center">
+                                                <div className="text-lg font-bold text-white">~{generatedProgram.metadata?.estimatedSessionDuration || trainingPreferences.targetSessionDuration}m</div>
+                                                <div className="text-xs text-slate-400">Per Session</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Exercise Preview */}
+                                        <div>
+                                            <button
+                                                onClick={() => setShowProgramDetails(!showProgramDetails)}
+                                                className="flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 mb-2"
+                                            >
+                                                <span>{showProgramDetails ? 'Hide' : 'Show'} Exercises</span>
+                                                <ChevronRight className={`w-4 h-4 transition-transform ${showProgramDetails ? 'rotate-90' : ''}`} />
+                                            </button>
+
+                                            {showProgramDetails && (
+                                                <div className="space-y-2 max-h-[30vh] overflow-y-auto">
+                                                    {generatedProgram.exercises?.map((exKey, index) => {
+                                                        const exercise = allExercises[exKey]
+                                                        return (
+                                                            <div
+                                                                key={exKey}
+                                                                className="flex items-center gap-3 bg-slate-800/50 rounded-lg p-2"
+                                                            >
+                                                                <span className="text-xs text-slate-500 w-5">{index + 1}.</span>
+                                                                <span className="flex-1 text-sm text-white">{exercise?.name || exKey}</span>
+                                                                <span className="text-xs text-slate-400 capitalize">{exercise?.category}</span>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Why these exercises */}
+                                    <div className="bg-slate-800/50 rounded-xl p-4">
+                                        <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+                                            <Sparkles className="w-4 h-4 text-cyan-400" />
+                                            Why these exercises?
+                                        </h4>
+                                        <ul className="text-sm text-slate-400 space-y-1">
+                                            <li>Matched to your {trainingPreferences.fitnessLevel} fitness level</li>
+                                            <li>Optimized for {REP_SCHEME_CONFIGS[trainingPreferences.repScheme]?.name?.toLowerCase() || 'your goals'}</li>
+                                            <li>Balanced across all major muscle groups</li>
+                                            <li>Fits your {trainingPreferences.targetSessionDuration} minute sessions</li>
+                                        </ul>
+                                    </div>
+
+                                    <p className="text-center text-slate-500 text-xs">
+                                        Not quite right? Try the shuffle button or build your own
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center animate-fadeIn">
+                                    <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <Wrench className="w-6 h-6 text-red-400" />
+                                    </div>
+                                    <h3 className="text-red-400 font-bold mb-2">Unable to Generate Program</h3>
+                                    <p className="text-slate-400 text-sm mb-4">
+                                        We couldn't find enough exercises with your current settings. This usually happens when 'Gym' mode is selected without available equipment.
+                                    </p>
+                                    <div className="space-y-2">
+                                        <button
+                                            onClick={() => setStep(2)}
+                                            className="w-full px-4 py-3 bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-300 rounded-lg text-sm transition-colors border border-slate-700"
+                                        >
+                                            Update Equipment
+                                        </button>
+                                        <button
+                                            onClick={() => setStep(1)}
+                                            className="w-full px-4 py-3 bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-300 rounded-lg text-sm transition-colors border border-slate-700"
+                                        >
+                                            Change Mode
+                                        </button>
                                     </div>
                                 </div>
-
-                                {/* Why these exercises */}
-                                <div className="bg-slate-800/50 rounded-xl p-4">
-                                    <h4 className="font-medium text-white mb-2 flex items-center gap-2">
-                                        <Sparkles className="w-4 h-4 text-cyan-400" />
-                                        Why these exercises?
-                                    </h4>
-                                    <ul className="text-sm text-slate-400 space-y-1">
-                                        <li>Matched to your {trainingPreferences.fitnessLevel} fitness level</li>
-                                        <li>Optimized for {REP_SCHEME_CONFIGS[trainingPreferences.repScheme]?.name?.toLowerCase() || 'your goals'}</li>
-                                        <li>Balanced across all major muscle groups</li>
-                                        <li>Fits your {trainingPreferences.targetSessionDuration} minute sessions</li>
-                                    </ul>
-                                </div>
-
-                                <p className="text-center text-slate-500 text-xs">
-                                    Not quite right? Try the shuffle button or build your own
-                                </p>
-                            </div>
+                            )
                         )}
 
                         {/* Templates Tab */}
@@ -601,11 +616,10 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 <div className="flex flex-wrap gap-2">
                                     <button
                                         onClick={() => setGoalFilter('all')}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                            goalFilter === 'all'
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${goalFilter === 'all'
                                                 ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                                                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                        }`}
+                                            }`}
                                     >
                                         All
                                     </button>
@@ -613,11 +627,10 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                         <button
                                             key={goal}
                                             onClick={() => setGoalFilter(goal)}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
-                                                goalFilter === goal
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${goalFilter === goal
                                                     ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                                                     : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                            }`}
+                                                }`}
                                         >
                                             <span>{icon}</span>
                                             <span className="capitalize">{goal}</span>
@@ -629,19 +642,19 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
                                     {/* Always show selected template first if it doesn't match filter */}
                                     {selectedTemplate &&
-                                     goalFilter !== 'all' &&
-                                     templates[selectedTemplate]?.goal !== goalFilter && (
-                                        <div className="pb-2 mb-2 border-b border-slate-700">
-                                            <p className="text-xs text-slate-500 mb-2">Currently selected:</p>
-                                            <TemplateCard
-                                                template={templates[selectedTemplate]}
-                                                selected={true}
-                                                onSelect={setSelectedTemplate}
-                                                showPreview={true}
-                                                allExercises={allExercises}
-                                            />
-                                        </div>
-                                    )}
+                                        goalFilter !== 'all' &&
+                                        templates[selectedTemplate]?.goal !== goalFilter && (
+                                            <div className="pb-2 mb-2 border-b border-slate-700">
+                                                <p className="text-xs text-slate-500 mb-2">Currently selected:</p>
+                                                <TemplateCard
+                                                    template={templates[selectedTemplate]}
+                                                    selected={true}
+                                                    onSelect={setSelectedTemplate}
+                                                    showPreview={true}
+                                                    allExercises={allExercises}
+                                                />
+                                            </div>
+                                        )}
                                     {availableTemplates
                                         .filter(([, t]) => goalFilter === 'all' || t.goal === goalFilter)
                                         .map(([id, template]) => (
@@ -744,11 +757,10 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                     <button
                         onClick={handleNext}
                         disabled={!canProceed()}
-                        className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
-                            canProceed()
+                        className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${canProceed()
                                 ? 'bg-cyan-500 text-white hover:bg-cyan-600'
                                 : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                        }`}
+                            }`}
                     >
                         {displayStep === totalSteps ? 'Start Training' : 'Continue'}
                         {displayStep < totalSteps && <ChevronRight className="w-4 h-4" />}

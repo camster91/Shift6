@@ -26,7 +26,7 @@ export const SPLIT_TEMPLATES = {
     name: 'Full Body',
     description: '2 full body sessions per week',
     days: [
-      { name: 'Full Body A', patterns: ['horizontal_push', 'horizontal_pull', 'knee_dominant', 'core_anti_extension'] },
+      { name: 'Full Body A', patterns: ['horizontal_push', 'horizontal_pull', 'knee_dominant', 'core_stability'] },
       { name: 'Full Body B', patterns: ['vertical_push', 'vertical_pull', 'hip_dominant', 'core_flexion'] },
     ],
   },
@@ -48,7 +48,7 @@ export const SPLIT_TEMPLATES = {
     description: 'Upper and lower body split',
     days: [
       { name: 'Upper A', patterns: ['horizontal_push', 'horizontal_pull', 'vertical_push', 'isolation_arms'], focus: 'upper' },
-      { name: 'Lower A', patterns: ['knee_dominant', 'hip_dominant', 'core_anti_extension'], focus: 'lower' },
+      { name: 'Lower A', patterns: ['knee_dominant', 'hip_dominant', 'core_stability'], focus: 'lower' },
       { name: 'Upper B', patterns: ['vertical_push', 'vertical_pull', 'horizontal_push', 'isolation_arms'], focus: 'upper' },
       { name: 'Lower B', patterns: ['hip_dominant', 'knee_dominant', 'core_flexion', 'isolation_legs'], focus: 'lower' },
     ],
@@ -63,7 +63,7 @@ export const SPLIT_TEMPLATES = {
       { name: 'Pull', patterns: ['horizontal_pull', 'vertical_pull', 'isolation_arms'], focus: 'pull' },
       { name: 'Legs', patterns: ['knee_dominant', 'hip_dominant', 'isolation_legs'], focus: 'legs' },
       { name: 'Upper', patterns: ['horizontal_push', 'horizontal_pull', 'vertical_push', 'vertical_pull'], focus: 'upper' },
-      { name: 'Lower + Core', patterns: ['knee_dominant', 'hip_dominant', 'core_anti_extension', 'core_flexion'], focus: 'lower' },
+      { name: 'Lower + Core', patterns: ['knee_dominant', 'hip_dominant', 'core_stability', 'core_flexion'], focus: 'lower' },
     ],
   },
 
@@ -74,7 +74,7 @@ export const SPLIT_TEMPLATES = {
     days: [
       { name: 'Push A', patterns: ['horizontal_push', 'vertical_push', 'isolation_arms'], focus: 'push' },
       { name: 'Pull A', patterns: ['horizontal_pull', 'vertical_pull', 'isolation_arms'], focus: 'pull' },
-      { name: 'Legs A', patterns: ['knee_dominant', 'hip_dominant', 'core_anti_extension'], focus: 'legs' },
+      { name: 'Legs A', patterns: ['knee_dominant', 'hip_dominant', 'core_stability'], focus: 'legs' },
       { name: 'Push B', patterns: ['vertical_push', 'horizontal_push', 'isolation_arms'], focus: 'push' },
       { name: 'Pull B', patterns: ['vertical_pull', 'horizontal_pull', 'isolation_arms'], focus: 'pull' },
       { name: 'Legs B', patterns: ['hip_dominant', 'knee_dominant', 'core_flexion', 'isolation_legs'], focus: 'legs' },
@@ -87,25 +87,25 @@ export const BODYWEIGHT_SPLITS = {
   2: {
     name: 'Full Body',
     days: [
-      { name: 'Full Body A', patterns: ['horizontal_push', 'vertical_pull', 'knee_dominant', 'core_anti_extension'] },
+      { name: 'Full Body A', patterns: ['horizontal_push', 'vertical_pull', 'knee_dominant', 'core_stability'] },
       { name: 'Full Body B', patterns: ['vertical_push', 'horizontal_pull', 'hip_dominant', 'core_flexion'] },
     ],
   },
   3: {
     name: 'Full Body',
     days: [
-      { name: 'Push + Core', patterns: ['horizontal_push', 'vertical_push', 'core_anti_extension', 'core_flexion'] },
-      { name: 'Pull + Core', patterns: ['vertical_pull', 'horizontal_pull', 'core_anti_rotation'] },
+      { name: 'Push + Core', patterns: ['horizontal_push', 'vertical_push', 'core_stability', 'core_flexion'] },
+      { name: 'Pull + Core', patterns: ['vertical_pull', 'horizontal_pull', 'core_stability'] },
       { name: 'Legs + Core', patterns: ['knee_dominant', 'hip_dominant', 'core_flexion'] },
     ],
   },
   4: {
     name: 'Upper/Lower',
     days: [
-      { name: 'Upper Push', patterns: ['horizontal_push', 'vertical_push', 'core_anti_extension'] },
+      { name: 'Upper Push', patterns: ['horizontal_push', 'vertical_push', 'core_stability'] },
       { name: 'Lower', patterns: ['knee_dominant', 'hip_dominant', 'core_flexion'] },
-      { name: 'Upper Pull', patterns: ['vertical_pull', 'horizontal_pull', 'core_anti_rotation'] },
-      { name: 'Lower + Core', patterns: ['hip_dominant', 'knee_dominant', 'core_anti_extension', 'core_flexion'] },
+      { name: 'Upper Pull', patterns: ['vertical_pull', 'horizontal_pull', 'core_stability'] },
+      { name: 'Lower + Core', patterns: ['hip_dominant', 'knee_dominant', 'core_stability', 'core_flexion'] },
     ],
   },
   5: {
@@ -115,18 +115,18 @@ export const BODYWEIGHT_SPLITS = {
       { name: 'Pull', patterns: ['vertical_pull', 'horizontal_pull'] },
       { name: 'Legs', patterns: ['knee_dominant', 'hip_dominant'] },
       { name: 'Upper', patterns: ['horizontal_push', 'vertical_pull'] },
-      { name: 'Core + Legs', patterns: ['core_anti_extension', 'core_flexion', 'knee_dominant'] },
+      { name: 'Core + Legs', patterns: ['core_stability', 'core_flexion', 'knee_dominant'] },
     ],
   },
   6: {
     name: 'Daily Focus',
     days: [
-      { name: 'Horizontal Push', patterns: ['horizontal_push', 'core_anti_extension'] },
+      { name: 'Horizontal Push', patterns: ['horizontal_push', 'core_stability'] },
       { name: 'Vertical Pull', patterns: ['vertical_pull', 'core_flexion'] },
       { name: 'Legs A', patterns: ['knee_dominant', 'hip_dominant'] },
-      { name: 'Vertical Push', patterns: ['vertical_push', 'core_anti_rotation'] },
+      { name: 'Vertical Push', patterns: ['vertical_push', 'core_stability'] },
       { name: 'Horizontal Pull', patterns: ['horizontal_pull', 'core_flexion'] },
-      { name: 'Legs B', patterns: ['hip_dominant', 'knee_dominant', 'core_anti_extension'] },
+      { name: 'Legs B', patterns: ['hip_dominant', 'knee_dominant', 'core_stability'] },
     ],
   },
 }

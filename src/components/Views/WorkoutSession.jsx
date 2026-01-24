@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronUp, ChevronDown, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square, Dumbbell, Plus, Minus } from 'lucide-react';
+import { ChevronRight, ChevronUp, ChevronDown, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square, Dumbbell, Plus, Minus, Battery, BatteryLow, BatteryCharging, TrendingUp, TrendingDown } from 'lucide-react';
 
 // Color classes for exercise themes
 const colorClasses = {
@@ -213,6 +213,119 @@ const WorkoutSession = ({
 
     if (!currentSession) {
         return null;
+    }
+
+    // Phase 3: Auto-Regulation - Readiness Check
+    if (currentSession.step === 'readiness') {
+        const handleReadiness = (level) => {
+            let adjustments = {};
+            let message = '';
+
+            if (level === 'low') {
+                // Optimization Mode: Reduce volume
+                if (currentSession.isGym) {
+                    const newSets = Math.max(1, (currentSession.gymConfig?.sets || 3) - 1);
+                    adjustments = {
+                        gymConfig: { ...currentSession.gymConfig, sets: newSets }
+                    };
+                    message = `Volume reduced to ${newSets} sets. Focus on quality!`;
+                } else {
+                    // Bodyweight: remove one set (if > 1)
+                    if (currentSession.reps.length > 1) {
+                        const newReps = currentSession.reps.slice(0, -1);
+                        adjustments = { reps: newReps };
+                        message = `Volume reduced. Focus on form!`;
+                    }
+                }
+            } else if (level === 'high') {
+                // Hero Mode: Increase volume
+                if (currentSession.isGym) {
+                    const newSets = (currentSession.gymConfig?.sets || 3) + 1;
+                    adjustments = {
+                        gymConfig: { ...currentSession.gymConfig, sets: newSets }
+                    };
+                    message = `Hero Mode activated! ${newSets} sets today. Go crush it!`;
+                } else {
+                    // Bodyweight: add a set (repeat last set)
+                    if (currentSession.reps.length > 0) {
+                        const lastRep = currentSession.reps[currentSession.reps.length - 1];
+                        const newReps = [...currentSession.reps, lastRep];
+                        adjustments = { reps: newReps };
+                        message = `Hero Mode activated! Extra set added.`;
+                    }
+                }
+            }
+
+            if (message) {
+                // Could show a toast here, but for now just proceed
+            }
+
+            setCurrentSession(prev => ({
+                ...prev,
+                step: 'workout',
+                ...adjustments,
+                readiness: level
+            }));
+            vibrate(50);
+        };
+
+        return (
+            <div className="max-w-md mx-auto py-12 px-4">
+                <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl p-8 text-center backdrop-blur-sm">
+                    <h2 className="text-2xl font-bold mb-2 text-white">Readiness Check</h2>
+                    <p className="text-slate-400 mb-8">How is your energy level today?</p>
+
+                    <div className="space-y-4">
+                        <button
+                            onClick={() => handleReadiness('low')}
+                            className="w-full bg-slate-800/50 border border-amber-500/30 p-4 rounded-xl flex items-center justify-between hover:bg-amber-500/10 transition-colors group"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-amber-500/20 rounded-full text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-900 transition-colors">
+                                    <BatteryLow size={24} />
+                                </div>
+                                <div className="text-left">
+                                    <div className="font-bold text-white group-hover:text-amber-400 transition-colors">Low Energy</div>
+                                    <div className="text-xs text-slate-400">Reduce sets, focus on form</div>
+                                </div>
+                            </div>
+                            <TrendingDown size={20} className="text-amber-500/50" />
+                        </button>
+
+                        <button
+                            onClick={() => handleReadiness('normal')}
+                            className="w-full bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex items-center justify-between hover:bg-slate-700 transition-colors group"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-slate-700 rounded-full text-slate-400 group-hover:text-white transition-colors">
+                                    <Battery size={24} />
+                                </div>
+                                <div className="text-left">
+                                    <div className="font-bold text-white">Normal</div>
+                                    <div className="text-xs text-slate-400">Stick to the plan</div>
+                                </div>
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={() => handleReadiness('high')}
+                            className="w-full bg-slate-800/50 border border-emerald-500/30 p-4 rounded-xl flex items-center justify-between hover:bg-emerald-500/10 transition-colors group"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-emerald-500/20 rounded-full text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-900 transition-colors">
+                                    <BatteryCharging size={24} />
+                                </div>
+                                <div className="text-left">
+                                    <div className="font-bold text-white group-hover:text-emerald-400 transition-colors">Crushing It</div>
+                                    <div className="text-xs text-slate-400">Add bonus set</div>
+                                </div>
+                            </div>
+                            <TrendingUp size={20} className="text-emerald-500/50" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     if (currentSession.step === 'assessment') {
@@ -461,8 +574,31 @@ const WorkoutSession = ({
                                         </div>
                                     )}
 
-                                    {/* Notes */}
-                                    <div>
+                                    {/* Feedback Section */}
+                                    <div className="pt-4 space-y-4">
+                                        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                                            <p className="text-white text-sm font-bold mb-3 text-center">How hard was this?</p>
+                                            <div className="flex justify-between items-center mb-2 px-2">
+                                                <span className="text-xs text-slate-400">Easy</span>
+                                                <span className="text-xs text-slate-400">Hard</span>
+                                                <span className="text-xs text-slate-400">Max</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="1"
+                                                max="10"
+                                                step="1"
+                                                defaultValue="7"
+                                                onChange={(e) => {
+                                                    const display = document.getElementById('gym-rpe-display');
+                                                    if (display) display.innerText = e.target.value;
+                                                }}
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                                                id="gym-rpe-slider"
+                                            />
+                                            <div className="text-center mt-2 text-2xl font-bold text-cyan-400" id="gym-rpe-display">7</div>
+                                        </div>
+
                                         <textarea
                                             value={workoutNotes || ''}
                                             onChange={(e) => setWorkoutNotes(e.target.value)}
@@ -480,7 +616,11 @@ const WorkoutSession = ({
                                             // Store gym workout in history with weight info
                                             const totalReps = gymSetReps.reduce((sum, r) => sum + r, 0);
                                             setAmrapValue(String(totalReps));
-                                            completeWorkout();
+
+                                            const rpe = parseInt(document.getElementById('gym-rpe-slider')?.value || '7');
+                                            const feedback = { rpe, difficulty: rpe >= 9 ? 'hard' : rpe <= 4 ? 'easy' : 'moderate' };
+
+                                            completeWorkout(null, feedback);
                                             setGymSetReps([]);
                                             setCurrentGymReps(0);
                                         }}
@@ -580,13 +720,12 @@ const WorkoutSession = ({
 
                                     {/* Rep quality indicator */}
                                     {currentGymReps > 0 && (
-                                        <div className={`text-xs font-medium ${
-                                            currentGymReps < gymConfig.repRange[0]
-                                                ? 'text-amber-400'
-                                                : currentGymReps > gymConfig.repRange[1]
-                                                    ? 'text-emerald-400'
-                                                    : 'text-cyan-400'
-                                        }`}>
+                                        <div className={`text-xs font-medium ${currentGymReps < gymConfig.repRange[0]
+                                            ? 'text-amber-400'
+                                            : currentGymReps > gymConfig.repRange[1]
+                                                ? 'text-emerald-400'
+                                                : 'text-cyan-400'
+                                            }`}>
                                             {currentGymReps < gymConfig.repRange[0]
                                                 ? 'Below target - consider reducing weight'
                                                 : currentGymReps > gymConfig.repRange[1]
@@ -684,8 +823,32 @@ const WorkoutSession = ({
                                         </button>
                                     </div>
 
-                                    {/* Optional workout notes */}
-                                    <div className="pt-4">
+                                    {/* Feedback Section */}
+                                    <div className="pt-4 space-y-4">
+                                        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                                            <p className="text-white text-sm font-bold mb-3 text-center">How hard was this?</p>
+                                            <div className="flex justify-between items-center mb-2 px-2">
+                                                <span className="text-xs text-slate-400">Easy</span>
+                                                <span className="text-xs text-slate-400">Hard</span>
+                                                <span className="text-xs text-slate-400">Max</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="1"
+                                                max="10"
+                                                step="1"
+                                                defaultValue="7"
+                                                onChange={(e) => {
+                                                    // Store feedback in a temporary state or ref if needed, or pass directly
+                                                    // Ideally we add state for this: const [feedbackRpe, setFeedbackRpe] = useState(7);
+                                                    document.getElementById('rpe-display').innerText = e.target.value;
+                                                }}
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                                                id="rpe-slider"
+                                            />
+                                            <div className="text-center mt-2 text-2xl font-bold text-cyan-400" id="rpe-display">7</div>
+                                        </div>
+
                                         <textarea
                                             value={workoutNotes || ''}
                                             onChange={(e) => setWorkoutNotes(e.target.value)}
@@ -698,7 +861,10 @@ const WorkoutSession = ({
 
                                     <div className="flex gap-3 pt-2">
                                         <button
-                                            onClick={handleComplete}
+                                            onClick={() => {
+                                                const rpe = parseInt(document.getElementById('rpe-slider').value);
+                                                handleComplete({ rpe, difficulty: rpe >= 9 ? 'hard' : rpe <= 4 ? 'easy' : 'moderate' });
+                                            }}
                                             className="flex-1 bg-cyan-500 rounded-lg text-slate-900 py-4 text-sm font-bold hover:bg-cyan-600 transition-colors uppercase tracking-wider"
                                         >
                                             Finish
@@ -773,11 +939,10 @@ const WorkoutSession = ({
                                                         vibrate(20);
                                                         setIsExerciseTimerRunning(prev => !prev);
                                                     }}
-                                                    className={`flex-1 py-4 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 uppercase tracking-wider ${
-                                                        isExerciseTimerRunning
-                                                            ? 'bg-amber-500 text-slate-900 hover:bg-amber-600'
-                                                            : 'bg-cyan-500 text-slate-900 hover:bg-cyan-600'
-                                                    }`}
+                                                    className={`flex-1 py-4 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 uppercase tracking-wider ${isExerciseTimerRunning
+                                                        ? 'bg-amber-500 text-slate-900 hover:bg-amber-600'
+                                                        : 'bg-cyan-500 text-slate-900 hover:bg-cyan-600'
+                                                        }`}
                                                 >
                                                     {isExerciseTimerRunning ? (
                                                         <><Pause size={20} /> Pause</>
@@ -929,11 +1094,10 @@ const WorkoutSession = ({
                                             return (
                                                 <div
                                                     key={ach.id}
-                                                    className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
-                                                        isUnlocked
-                                                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                                            : 'bg-slate-800/50 text-slate-600 border border-slate-700'
-                                                    }`}
+                                                    className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${isUnlocked
+                                                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                        : 'bg-slate-800/50 text-slate-600 border border-slate-700'
+                                                        }`}
                                                     title={ach.desc}
                                                 >
                                                     <span>{ach.icon}</span>
@@ -953,11 +1117,10 @@ const WorkoutSession = ({
                                             return (
                                                 <div
                                                     key={badge.id}
-                                                    className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
-                                                        isUnlocked
-                                                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                                            : 'bg-slate-800/50 text-slate-600 border border-slate-700'
-                                                    }`}
+                                                    className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${isUnlocked
+                                                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                                        : 'bg-slate-800/50 text-slate-600 border border-slate-700'
+                                                        }`}
                                                     title={badge.desc}
                                                 >
                                                     <span>{badge.icon}</span>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon, Dumbbell } from 'lucide-react';
+import { Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon, Dumbbell, Scale } from 'lucide-react';
 
 const Header = ({
     onExport,
@@ -12,7 +12,8 @@ const Header = ({
     setRestTimerOverride,
     theme,
     setTheme,
-    onShowTrainingSettings
+    onShowTrainingSettings,
+    onShowBodyMetrics
 }) => {
     const handleHomeClick = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -46,6 +47,7 @@ const Header = ({
                     theme={theme}
                     setTheme={setTheme}
                     onShowTrainingSettings={onShowTrainingSettings}
+                    onShowBodyMetrics={onShowBodyMetrics}
                 />
             </div>
         </header>
@@ -61,7 +63,7 @@ const REST_OPTIONS = [
     { value: 120, label: '120s' }
 ];
 
-const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride, theme, setTheme, onShowTrainingSettings }) => {
+const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride, theme, setTheme, onShowTrainingSettings, onShowBodyMetrics }) => {
     const [isOpen, setIsOpen] = React.useState(false);
 
     const cycleRestTimer = () => {
@@ -113,6 +115,12 @@ const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnable
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
                         >
                             <Dumbbell size={16} /> Training Settings
+                        </button>
+                        <button
+                            onClick={() => { onShowBodyMetrics?.(); setIsOpen(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            <Scale size={16} /> Body Metrics
                         </button>
                         <div className="h-[1px] bg-slate-800 my-1" />
                         <button

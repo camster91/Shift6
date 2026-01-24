@@ -36,6 +36,7 @@ import Onboarding from './components/Views/Onboarding';
 import ExerciseLibrary from './components/Views/ExerciseLibrary';
 import ProgramManager from './components/Views/ProgramManager';
 import TrainingSettings from './components/Views/TrainingSettings';
+import BodyMetrics from './components/Views/BodyMetrics';
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
 
 const STORAGE_PREFIX = 'shift6_';
@@ -95,6 +96,13 @@ const App = () => {
     const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
     const [showProgramManager, setShowProgramManager] = useState(false);
     const [showTrainingSettings, setShowTrainingSettings] = useState(false);
+    const [showBodyMetrics, setShowBodyMetrics] = useState(false);
+
+    // Body metrics (weight, measurements)
+    const [bodyMetrics, setBodyMetrics] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}body_metrics`);
+        return saved ? JSON.parse(saved) : [];
+    });
 
     // Training Preferences (with migration for existing users)
     const [trainingPreferences, setTrainingPreferences] = useState(() => {
@@ -199,6 +207,10 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}gym_weights`, JSON.stringify(gymWeights));
     }, [gymWeights]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}body_metrics`, JSON.stringify(bodyMetrics));
+    }, [bodyMetrics]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
@@ -466,6 +478,15 @@ const App = () => {
             ...prev,
             [exerciseKey]: level
         }));
+    }, []);
+
+    // Body metrics handlers
+    const handleAddMetric = useCallback((metric) => {
+        setBodyMetrics(prev => [...prev, metric]);
+    }, []);
+
+    const handleDeleteMetric = useCallback((id) => {
+        setBodyMetrics(prev => prev.filter(m => m.id !== id));
     }, []);
 
     // Add exercise to active program
@@ -770,6 +791,7 @@ const App = () => {
     const onShowExerciseLibrary = useCallback(() => setShowExerciseLibrary(true), []);
     const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
     const onShowTrainingSettings = useCallback(() => setShowTrainingSettings(true), []);
+    const onShowBodyMetrics = useCallback(() => setShowBodyMetrics(true), []);
 
     // ---------------- SPRINT MANAGEMENT ----------------
 
@@ -849,6 +871,7 @@ const App = () => {
                 theme={theme}
                 setTheme={setTheme}
                 onShowTrainingSettings={onShowTrainingSettings}
+                onShowBodyMetrics={onShowBodyMetrics}
             />
 
             <main className="max-w-6xl mx-auto p-4 md:p-8 pb-8">
@@ -973,6 +996,16 @@ const App = () => {
                     onSave={handleTrainingPreferencesChange}
                     onClose={() => setShowTrainingSettings(false)}
                     hasProgress={Object.keys(completedDays).length > 0}
+                />
+            )}
+
+            {/* Body Metrics Modal */}
+            {showBodyMetrics && (
+                <BodyMetrics
+                    metrics={bodyMetrics}
+                    onAddMetric={handleAddMetric}
+                    onDeleteMetric={handleDeleteMetric}
+                    onClose={() => setShowBodyMetrics(false)}
                 />
             )}
 

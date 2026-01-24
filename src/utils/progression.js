@@ -328,14 +328,30 @@ export function categorizePerformance(ratio) {
  * @param {number[]} actualReps - Reps completed per set
  * @param {number[]} targetReps - Target reps per set
  * @param {number} amrapReps - Bonus AMRAP reps (optional)
+ * @param {Object} feedback - User feedback { rpe: number, difficulty: string }
  * @returns {Object} Performance analysis
  */
-export function analyzeWorkoutPerformance(actualReps, targetReps, amrapReps = 0) {
+export function analyzeWorkoutPerformance(actualReps, targetReps, amrapReps = 0, feedback = null) {
   const actualTotal = actualReps.reduce((a, b) => a + b, 0) + amrapReps
   const targetTotal = targetReps.reduce((a, b) => a + b, 0)
 
   const performanceRatio = targetTotal > 0 ? actualTotal / targetTotal : 1
-  const category = categorizePerformance(performanceRatio)
+  let category = categorizePerformance(performanceRatio)
+
+  // Modulate based on RPE (Phase 2: RPE Integration)
+  if (feedback?.rpe) {
+    const { rpe } = feedback;
+    if (rpe <= 4) { // Easy
+      // Boost category if they found it easy (unless already crushing)
+      if (category === PERFORMANCE_CATEGORIES.ON_TRACK) category = PERFORMANCE_CATEGORIES.EXCEEDING;
+      else if (category === PERFORMANCE_CATEGORIES.BELOW_TARGET) category = PERFORMANCE_CATEGORIES.ON_TRACK;
+    } else if (rpe >= 9) { // Hard/Max
+      // Dampen category if they struggled (safety brake)
+      // Even if they hit the numbers, if it was a 10/10 grind, don't accelerate too hard
+      if (category === PERFORMANCE_CATEGORIES.CRUSHING) category = PERFORMANCE_CATEGORIES.EXCEEDING;
+      else if (category === PERFORMANCE_CATEGORIES.EXCEEDING) category = PERFORMANCE_CATEGORIES.ON_TRACK;
+    }
+  }
 
   // Set completion analysis
   const setsCompleted = actualReps.filter((actual, i) => actual >= (targetReps[i] || 0)).length
@@ -350,6 +366,7 @@ export function analyzeWorkoutPerformance(actualReps, targetReps, amrapReps = 0)
     setsCompleted,
     totalSets: targetReps.length,
     adjustment: getAdjustment(category),
+    rpe: feedback?.rpe // Store RPE in analysis
   }
 }
 
@@ -535,7 +552,7 @@ export function getCurrentWorkout(sprint) {
     weekTheme: weekData.theme,
     weekTargetMax: weekData.targetMax,
     isLastWorkout: currentWeek === sprint.weeks.length - 1 &&
-                   currentDay === weekData.days.length - 1,
+      currentDay === weekData.days.length - 1,
   }
 }
 
@@ -616,6 +633,53 @@ export function generateNextSprint(previousSprint, preferences, exerciseData = n
   newSprint.previousSprintId = previousSprint.id
 
   return newSprint
+}
+
+// ============================================================
+// PLATEAU DETECTION (Phase 4)
+// ============================================================
+
+/**
+ * Check for plateau or stagnation
+ * @param {Object} sprint - Current sprint data
+ * @returns {Object|null} Intervention recommendation or null
+ */
+export function detectPlateau(sprint) {
+  if (!sprint || sprint.performanceHistory.length < 3) return null;
+
+  // Check last 3 sessions
+  const recent = sprint.performanceHistory.slice(-3);
+
+  // Count bad sessions (STRUGGLING or BELOW_TARGET)
+  const struggles = recent.filter(p =>
+    p.category === PERFORMANCE_CATEGORIES.STRUGGLING ||
+    p.category === PERFORMANCE_CATEGORIES.BELOW_TARGET
+  ).length;
+
+  if (struggles >= 3) {
+    // 3 strikes: suggest reset
+    return {
+      type: 'deload',
+      reason: 'multiple_fails',
+      message: 'It looks like you have hit a plateau on this exercise.',
+      suggestion: 'We recommend a "Deload": reducing the weight by 10% to let your body recover and rebuild momentum.',
+      actionLabel: 'Apply Deload & Reset',
+      apply: (s) => {
+        // Create a new sprint with lowered max
+        const deloadMax = Math.round(s.startingMax * 0.9);
+        return {
+          ...s,
+          status: SPRINT_STATUS.COMPLETED, // Close old sprint
+          nextSprintParams: { // Params for generating next
+            startingMax: deloadMax,
+            isDeload: true
+          }
+        };
+      }
+    };
+  }
+
+  return null;
 }
 
 // ============================================================

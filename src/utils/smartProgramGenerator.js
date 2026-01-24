@@ -11,7 +11,7 @@
  * Uses movement patterns for balanced muscle development.
  */
 
-import { EXERCISES, DIFFICULTY, getExercisesByPattern } from '../data/exerciseDatabase.js'
+import { EXERCISES, DIFFICULTY, getExercisesByPattern, MOVEMENT_PATTERNS } from '../data/exerciseDatabase.js'
 
 // ============================================================
 // SPLIT CONFIGURATIONS
@@ -159,19 +159,41 @@ function getExerciseDifficultyScore(exercise, userLevel) {
  * Score an exercise for program inclusion
  */
 function scoreExercise(exercise, context) {
-  const { userLevel, goal, usedPatterns, usedExercises } = context
+  const { userLevel, goal, usedPatterns, usedExercises, dayPatterns, dayMuscleCounts } = context
   let score = 10 // Base score
 
   // Difficulty appropriateness
   score += getExerciseDifficultyScore(exercise, userLevel) * 20
 
-  // Penalize if pattern already well-covered
+  // Penalize if pattern already heavily covered (global program context)
   const patternCount = usedPatterns[exercise.pattern] || 0
-  score -= patternCount * 15
+  score -= patternCount * 5
+
+  // Penalize if pattern used in THIS day (encourage variety within day)
+  if (dayPatterns && dayPatterns[exercise.pattern]) {
+    score -= dayPatterns[exercise.pattern] * 15;
+  }
 
   // Penalize if similar exercise already selected
   if (usedExercises.has(exercise.id)) {
     score -= 100
+  }
+
+  // Muscle Balance Penalty
+  // Check which muscles this exercise hits and penalize if already worked today
+  if (dayMuscleCounts) {
+    const patternInfo = MOVEMENT_PATTERNS[exercise.pattern];
+    if (patternInfo && patternInfo.muscles) {
+      let musclePenalty = 0;
+      patternInfo.muscles.forEach(muscle => {
+        const currentCount = dayMuscleCounts[muscle] || 0;
+        // Higher penalty for primary muscles already hit > 2 times
+        if (currentCount > 0) {
+          musclePenalty += currentCount * 8;
+        }
+      });
+      score -= musclePenalty;
+    }
   }
 
   // Goal alignment bonuses
@@ -222,49 +244,85 @@ function generateDayWorkout(dayTemplate, availableExercises, context, exercisesP
   const selected = []
   const usedInDay = new Set()
 
-  // First pass: one exercise per pattern
+  // Track usage specific to this day to ensure balance
+  const dayPatterns = {};
+  const dayMuscleCounts = {};
+
+  // Helper to update trackers
+  const recordSelection = (exercise) => {
+    selected.push(exercise);
+    usedInDay.add(exercise.id);
+
+    // Update Context (Global)
+    context.usedExercises.add(exercise.id);
+    context.usedPatterns[exercise.pattern] = (context.usedPatterns[exercise.pattern] || 0) + 1;
+
+    // Update Day Trackers
+    dayPatterns[exercise.pattern] = (dayPatterns[exercise.pattern] || 0) + 1;
+
+    const patternInfo = MOVEMENT_PATTERNS[exercise.pattern];
+    if (patternInfo && patternInfo.muscles) {
+      patternInfo.muscles.forEach(m => {
+        dayMuscleCounts[m] = (dayMuscleCounts[m] || 0) + 1;
+      });
+    }
+  };
+
+  // First pass: one exercise per MANDATORY pattern
   for (const pattern of patterns) {
-    if (selected.length >= exercisesPerDay) break
+    if (selected.length >= exercisesPerDay) break;
 
+    // Filter out exercises already used globally if possible, but hard filter for 'usedInDay'
     const exercise = selectExerciseForPattern(
       pattern,
       availableExercises.filter(ex => !usedInDay.has(ex.id)),
-      { ...context, usedExercises: new Set([...context.usedExercises, ...usedInDay]) }
+      { ...context, dayPatterns, dayMuscleCounts }
     )
 
     if (exercise) {
-      selected.push(exercise)
-      usedInDay.add(exercise.id)
-      context.usedPatterns[exercise.pattern] = (context.usedPatterns[exercise.pattern] || 0) + 1
+      recordSelection(exercise);
     }
   }
 
-  // Second pass: fill remaining slots if needed
+  // Second pass: fill remaining slots intelligently
   while (selected.length < exercisesPerDay) {
-    // Find patterns that could use another exercise
-    const underrepresentedPatterns = patterns.filter(p =>
-      (context.usedPatterns[p] || 0) < 2
-    )
+    // Find patterns that are under-represented relative to muscle balance
+    // Instead of random, pick the pattern whose primary muscles are LEAST worked
+    const scoredPatterns = patterns.map(p => {
+      const info = MOVEMENT_PATTERNS[p];
+      if (!info) return { pattern: p, score: 0 };
 
-    if (underrepresentedPatterns.length === 0) break
+      // Calculate "fatigue" for this pattern based on muscles used
+      let fatigue = 0;
+      info.muscles.forEach(m => {
+        fatigue += (dayMuscleCounts[m] || 0);
+      });
 
-    const pattern = underrepresentedPatterns[Math.floor(Math.random() * underrepresentedPatterns.length)]
-    const exercise = selectExerciseForPattern(
-      pattern,
-      availableExercises.filter(ex => !usedInDay.has(ex.id)),
-      { ...context, usedExercises: new Set([...context.usedExercises, ...usedInDay]) }
-    )
+      // Lower fatigue = Higher score
+      return { pattern: p, score: -fatigue };
+    }).sort((a, b) => b.score - a.score); // Highest score (least fatigue) first
 
-    if (exercise) {
-      selected.push(exercise)
-      usedInDay.add(exercise.id)
-      context.usedPatterns[exercise.pattern] = (context.usedPatterns[exercise.pattern] || 0) + 1
-    } else {
-      break
+    // Try top patterns
+    let found = false;
+    for (const { pattern } of scoredPatterns) {
+      const exercise = selectExerciseForPattern(
+        pattern,
+        availableExercises.filter(ex => !usedInDay.has(ex.id)),
+        { ...context, dayPatterns, dayMuscleCounts }
+      );
+
+      if (exercise) {
+        recordSelection(exercise);
+        found = true;
+        break;
+      }
     }
+
+    // If we couldn't find anything for any pattern (rare), break
+    if (!found) break;
   }
 
-  return selected
+  return selected;
 }
 
 /**

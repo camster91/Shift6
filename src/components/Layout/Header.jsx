@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon, Dumbbell, Scale, Flame } from 'lucide-react';
+import { Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon, Dumbbell, Scale, Flame, Home } from 'lucide-react';
 
 const Header = ({
     onExport,
@@ -15,10 +15,17 @@ const Header = ({
     warmupEnabled,
     setWarmupEnabled,
     onShowTrainingSettings,
-    onShowBodyMetrics
+    onShowBodyMetrics,
+    programMode,
+    onChangeProgramMode
 }) => {
     const handleHomeClick = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const toggleMode = () => {
+        const newMode = programMode === 'bodyweight' ? 'gym' : 'bodyweight';
+        onChangeProgramMode?.(newMode);
     };
 
     return (
@@ -36,23 +43,49 @@ const Header = ({
                     <span className="text-[9px] text-cyan-400/70 tracking-widest font-semibold">ELITE</span>
                 </button>
 
-                {/* Settings Menu */}
-                <DataMenu
-                    onExport={onExport}
-                    onExportCSV={onExportCSV}
-                    onImport={onImport}
-                    onFactoryReset={onFactoryReset}
-                    audioEnabled={audioEnabled}
-                    setAudioEnabled={setAudioEnabled}
-                    restTimerOverride={restTimerOverride}
-                    setRestTimerOverride={setRestTimerOverride}
-                    theme={theme}
-                    setTheme={setTheme}
-                    warmupEnabled={warmupEnabled}
-                    setWarmupEnabled={setWarmupEnabled}
-                    onShowTrainingSettings={onShowTrainingSettings}
-                    onShowBodyMetrics={onShowBodyMetrics}
-                />
+                <div className="flex items-center gap-3">
+                    {/* Quick Mode Toggle (Hybrid Hustler) */}
+                    {programMode && onChangeProgramMode && (
+                        <button
+                            onClick={toggleMode}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${programMode === 'gym'
+                                    ? 'bg-purple-500/20 border-purple-500/50 text-purple-400'
+                                    : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
+                                }`}
+                            title={`Switch to ${programMode === 'gym' ? 'Home' : 'Gym'} mode`}
+                        >
+                            {programMode === 'gym' ? (
+                                <>
+                                    <Dumbbell size={14} />
+                                    <span className="hidden sm:inline">Gym</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Home size={14} />
+                                    <span className="hidden sm:inline">Home</span>
+                                </>
+                            )}
+                        </button>
+                    )}
+
+                    {/* Settings Menu */}
+                    <DataMenu
+                        onExport={onExport}
+                        onExportCSV={onExportCSV}
+                        onImport={onImport}
+                        onFactoryReset={onFactoryReset}
+                        audioEnabled={audioEnabled}
+                        setAudioEnabled={setAudioEnabled}
+                        restTimerOverride={restTimerOverride}
+                        setRestTimerOverride={setRestTimerOverride}
+                        theme={theme}
+                        setTheme={setTheme}
+                        warmupEnabled={warmupEnabled}
+                        setWarmupEnabled={setWarmupEnabled}
+                        onShowTrainingSettings={onShowTrainingSettings}
+                        onShowBodyMetrics={onShowBodyMetrics}
+                    />
+                </div>
             </div>
         </header>
     );

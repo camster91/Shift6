@@ -24,6 +24,7 @@ import {
     generateNextSprint,
     getCurrentWorkout,
     getSprintProgress,
+    detectPlateau,
     SPRINT_STATUS
 } from './utils/progression.js';
 
@@ -164,6 +165,68 @@ const App = () => {
     });
     const [newBadges, setNewBadges] = useState([]);
     const prevStatsRef = useRef(null);
+
+    // Bootstrap Sprints for Active Program (Dynamic Engine Migration)
+    useEffect(() => {
+        if (!activeProgram || !trainingPreferences || !allExercises) return;
+
+        // Defer to avoid blocking render
+        const timer = setTimeout(() => {
+            let hasChanges = false;
+            const updatedSprints = { ...sprints };
+            const prs = calculateStats(completedDays, sessionHistory).personalRecords || {};
+            // Note: calculateStats returns count, not values. We need getPersonalRecords from gamification
+            // Actually getPersonalRecords is exported but not imported in App.jsx yet maybe?
+            // Wait, calculateStats returns { personalRecords: count }. We need the lookup.
+            // Let's import getPersonalRecords or just scan sessionHistory here.
+
+            // Simple PR scan from history
+            const historyPRs = {};
+            sessionHistory.forEach(s => {
+                if (!historyPRs[s.exerciseKey] || s.volume > historyPRs[s.exerciseKey]) {
+                    historyPRs[s.exerciseKey] = s.volume;
+                }
+            });
+
+            activeProgram.forEach(exKey => {
+                // skip if already has active sprint
+                if (getActiveSprint(updatedSprints, exKey)) return;
+
+                const exercise = allExercises[exKey];
+                if (!exercise) return;
+
+                // Determine starting max from history or default
+                const historyMax = historyPRs[exKey] || 0;
+                // If no history, checking if we have calibration
+                const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+                const calibrationFactor = calibrations[exKey] || 1.0;
+
+                // Base start reps scaled by calibration, or history max
+                let startMax = Math.round((exercise.startReps || 10) * calibrationFactor);
+                if (historyMax > startMax) startMax = historyMax;
+
+                // Create sprint
+                const newSprint = getOrCreateSprint(
+                    updatedSprints,
+                    exKey,
+                    startMax,
+                    trainingPreferences,
+                    exercise
+                );
+
+                if (newSprint) {
+                    updatedSprints[newSprint.id] = newSprint;
+                    hasChanges = true;
+                }
+            });
+
+            if (hasChanges) {
+                setSprints(updatedSprints);
+            }
+        }, 2000); // Delay 2s to allow load
+
+        return () => clearTimeout(timer);
+    }, [activeProgram, trainingPreferences, sessionHistory.length]); // Dependency on history length to trigger updates
 
     // Merge built-in, library, database, and custom exercises
     const allExercises = useMemo(() => {
@@ -377,6 +440,40 @@ const App = () => {
 
         const exercise = allExercises[exKey];
         if (!exercise) return;
+
+        // Dynamic Engine: Check for active sprint
+        const activeSprint = getActiveSprint(sprints, exKey);
+        if (activeSprint) {
+            const sprintSession = getCurrentWorkout(activeSprint);
+            if (sprintSession) {
+                // Construct session from dynamic sprint data
+                setCurrentSession({
+                    exerciseKey: exKey,
+                    exerciseName: exercise.name,
+                    week: sprintSession.weekNumber,
+                    dayIndex: sprintSession.dayIndex || (sprintSession.dayNumber - 1),
+                    setIndex: 0,
+                    rest: sprintSession.restSeconds,
+                    baseReps: sprintSession.reps,
+                    reps: sprintSession.reps,
+                    dayId: sprintSession.id,
+                    isFinal: sprintSession.isTestDay,
+                    color: exercise.color,
+                    unit: exercise.unit,
+                    difficulty: 3, // Difficulty is managed by the sprint engine
+                    step: 'readiness', // Phase 3: Auto-Regulation - check readiness first
+                    sprintId: activeSprint.id
+                });
+                setAmrapValue('');
+                setTestInput('');
+                setTimeLeft(0);
+                setWorkoutNotes('');
+                setExerciseTimeLeft(0);
+                setIsExerciseTimerRunning(false);
+                setExerciseTimerStarted(false);
+                return;
+            }
+        }
 
         // Handle gym exercises (progressive overload, no fixed days)
         if (exercise.progressionType === 'gym') {
@@ -664,7 +761,7 @@ const App = () => {
         startWorkoutWithWarmup(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
     }, [completedDays, allExercises, activeProgramKeys, startWorkoutWithWarmup, trainingPreferences]);
 
-    const completeWorkout = (actualRepsPerSet = null) => {
+    const completeWorkout = (actualRepsPerSet = null, feedback = null) => {
         if (!currentSession || isProcessing) return;
         setIsProcessing(true);
 
@@ -691,7 +788,9 @@ const App = () => {
             notes: workoutNotes.trim() || undefined,
             actualReps,
             targetReps: reps,
-            amrapReps
+            amrapReps,
+            rpe: feedback?.rpe,
+            difficulty: feedback?.difficulty
         };
         setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
         setWorkoutNotes('');
@@ -701,7 +800,7 @@ const App = () => {
         const activeSprint = getActiveSprint(sprints, exerciseKey);
         if (activeSprint) {
             // Analyze performance
-            const performance = analyzeWorkoutPerformance(actualReps, reps, amrapReps);
+            const performance = analyzeWorkoutPerformance(actualReps, reps, amrapReps, feedback);
 
             // Recalculate sprint if needed
             let updatedSprint = activeSprint;
@@ -716,6 +815,15 @@ const App = () => {
                         ...performance
                     }]
                 };
+            }
+
+            // Phase 4: Plateau Detector
+            const intervention = detectPlateau(updatedSprint);
+            if (intervention) {
+                // Ask user if they want to apply the intervention
+                if (window.confirm(`${intervention.message}\n\n${intervention.suggestion}\n\nApply this change?`)) {
+                    updatedSprint = intervention.apply(updatedSprint);
+                }
             }
 
             // Advance to next day/week
@@ -921,9 +1029,8 @@ const App = () => {
     // ---------------- RENDER ----------------
 
     return (
-        <div className={`min-h-screen font-sans selection:bg-cyan-500/30 ${
-            theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
-        }`}>
+        <div className={`min-h-screen font-sans selection:bg-cyan-500/30 ${theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
+            }`}>
             <Header
                 onExport={handleExport}
                 onExportCSV={handleExportCSV}
@@ -939,6 +1046,8 @@ const App = () => {
                 setWarmupEnabled={setWarmupEnabled}
                 onShowTrainingSettings={onShowTrainingSettings}
                 onShowBodyMetrics={onShowBodyMetrics}
+                programMode={programMode}
+                onChangeProgramMode={handleChangeProgramMode}
             />
 
             <main className="max-w-6xl mx-auto p-4 md:p-8 pb-8">

@@ -76,11 +76,10 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficul
                                         <button
                                             key={level}
                                             onClick={() => onSetDifficulty && onSetDifficulty(exercise.key, level)}
-                                            className={`p-2 rounded-lg border text-center transition-all ${
-                                                isSelected
+                                            className={`p-2 rounded-lg border text-center transition-all ${isSelected
                                                     ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
                                                     : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
-                                            }`}
+                                                }`}
                                             title={variation?.desc || levelInfo.name}
                                         >
                                             <p className="text-xs font-bold">{levelInfo.name}</p>
@@ -221,7 +220,7 @@ const Dashboard = ({
                         <div>
                             <p className="text-emerald-400 text-sm font-bold">Great work today!</p>
                             <p className="text-slate-300 text-xs">
-                                You completed {todayWorkouts.map(w => EXERCISE_PLANS[w.exerciseKey]?.name).join(' & ')}
+                                You completed {todayWorkouts.map(w => allExercises[w.exerciseKey]?.name || w.exerciseKey).join(' & ')}
                             </p>
                         </div>
                     </div>
@@ -324,7 +323,7 @@ const Dashboard = ({
                     {/* Next Workout Cards */}
                     <div className="p-4 space-y-3">
                         {dailyStack.map((item, i) => {
-                            const ex = EXERCISE_PLANS[item.exerciseKey];
+                            const ex = allExercises[item.exerciseKey];
                             const pr = personalRecords[item.exerciseKey];
                             const dayNum = (completedDays[item.exerciseKey]?.length || 0) + 1;
                             const colors = colorClasses[ex.color] || colorClasses.cyan;
@@ -451,13 +450,12 @@ const Dashboard = ({
                                             vibrate(10);
                                             setSelectedExercise({ ...ex, key, isCustom });
                                         }}
-                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:bg-slate-800/50 ${
-                                            isComplete
+                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:bg-slate-800/50 ${isComplete
                                                 ? 'bg-emerald-500/5 border-emerald-500/20'
                                                 : isCustom
-                                                ? 'bg-purple-500/5 border-purple-500/20'
-                                                : 'bg-slate-800/30 border-slate-700/50'
-                                        }`}
+                                                    ? 'bg-purple-500/5 border-purple-500/20'
+                                                    : 'bg-slate-800/30 border-slate-700/50'
+                                            }`}
                                     >
                                         <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0`}>
                                             {ex.image?.startsWith('neo:') ? (
@@ -556,11 +554,10 @@ const Dashboard = ({
                                         return (
                                             <div
                                                 key={badge.id}
-                                                className={`px-2 py-1 rounded-lg text-xs ${
-                                                    isUnlocked
+                                                className={`px-2 py-1 rounded-lg text-xs ${isUnlocked
                                                         ? 'bg-cyan-500/10 text-cyan-400'
                                                         : 'bg-slate-800/50 text-slate-600'
-                                                }`}
+                                                    }`}
                                                 title={badge.desc}
                                             >
                                                 {badge.icon} {badge.name}

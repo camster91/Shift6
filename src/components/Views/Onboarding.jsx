@@ -256,8 +256,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     key={id}
                                     onClick={() => handleModeSelect(id)}
                                     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedMode === id
-                                            ? 'border-cyan-500 bg-cyan-500/10'
-                                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                                        ? 'border-cyan-500 bg-cyan-500/10'
+                                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                                         }`}
                                 >
                                     <div className="flex items-center gap-4">
@@ -290,8 +290,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     key={id}
                                     onClick={() => handleEquipmentToggle(id)}
                                     className={`p-4 rounded-xl border-2 transition-all relative ${selectedEquipment.includes(id)
-                                            ? 'border-cyan-500 bg-cyan-500/10'
-                                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                                        ? 'border-cyan-500 bg-cyan-500/10'
+                                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                                         }`}
                                 >
                                     <div className="text-center">
@@ -325,8 +325,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     key={key}
                                     onClick={() => handleFitnessLevelSelect(key)}
                                     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${trainingPreferences.fitnessLevel === key
-                                            ? 'border-cyan-500 bg-cyan-500/10'
-                                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                                        ? 'border-cyan-500 bg-cyan-500/10'
+                                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                                         }`}
                                 >
                                     <div className="flex items-center gap-4">
@@ -366,8 +366,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     key={key}
                                     onClick={() => handlePreferenceChange('repScheme', key)}
                                     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${trainingPreferences.repScheme === key
-                                            ? 'border-cyan-500 bg-cyan-500/10'
-                                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                                        ? 'border-cyan-500 bg-cyan-500/10'
+                                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                                         }`}
                                 >
                                     <div className="flex items-center gap-4">
@@ -406,8 +406,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                         key={num}
                                         onClick={() => handlePreferenceChange('trainingDaysPerWeek', num)}
                                         className={`flex-1 py-3 rounded-lg font-semibold transition-all ${trainingPreferences.trainingDaysPerWeek === num
-                                                ? 'bg-cyan-500 text-white'
-                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                            ? 'bg-cyan-500 text-white'
+                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                                             }`}
                                     >
                                         {num}
@@ -425,8 +425,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                         key={day}
                                         onClick={() => togglePreferredDay(idx)}
                                         className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${trainingPreferences.preferredDays?.includes(idx)
-                                                ? 'bg-cyan-500 text-white'
-                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                            ? 'bg-cyan-500 text-white'
+                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                                             }`}
                                     >
                                         {day}
@@ -445,8 +445,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                         key={mins}
                                         onClick={() => handlePreferenceChange('targetSessionDuration', mins)}
                                         className={`py-2 rounded-lg text-sm transition-all ${trainingPreferences.targetSessionDuration === mins
-                                                ? 'bg-cyan-500 text-white'
-                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                            ? 'bg-cyan-500 text-white'
+                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                                             }`}
                                     >
                                         {mins}m
@@ -470,8 +470,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                             <button
                                 onClick={() => setProgramTab('generated')}
                                 className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${programTab === 'generated'
-                                        ? 'bg-cyan-500 text-white'
-                                        : 'text-slate-400 hover:text-white'
+                                    ? 'bg-cyan-500 text-white'
+                                    : 'text-slate-400 hover:text-white'
                                     }`}
                             >
                                 <Sparkles className="w-3 h-3" />
@@ -480,8 +480,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                             <button
                                 onClick={() => setProgramTab('templates')}
                                 className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${programTab === 'templates'
-                                        ? 'bg-cyan-500 text-white'
-                                        : 'text-slate-400 hover:text-white'
+                                    ? 'bg-cyan-500 text-white'
+                                    : 'text-slate-400 hover:text-white'
                                     }`}
                             >
                                 <LayoutGrid className="w-3 h-3" />
@@ -490,8 +490,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                             <button
                                 onClick={() => setProgramTab('custom')}
                                 className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${programTab === 'custom'
-                                        ? 'bg-cyan-500 text-white'
-                                        : 'text-slate-400 hover:text-white'
+                                    ? 'bg-cyan-500 text-white'
+                                    : 'text-slate-400 hover:text-white'
                                     }`}
                             >
                                 <Wrench className="w-3 h-3" />
@@ -589,7 +589,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     </div>
                                     <h3 className="text-red-400 font-bold mb-2">Unable to Generate Program</h3>
                                     <p className="text-slate-400 text-sm mb-4">
-                                        We couldn't find enough exercises with your current settings. This usually happens when 'Gym' mode is selected without available equipment.
+                                        We couldn&apos;t find enough exercises with your current settings. This usually happens when &apos;Gym&apos; mode is selected without available equipment.
                                     </p>
                                     <div className="space-y-2">
                                         <button
@@ -617,8 +617,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     <button
                                         onClick={() => setGoalFilter('all')}
                                         className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${goalFilter === 'all'
-                                                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                                             }`}
                                     >
                                         All
@@ -628,8 +628,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                             key={goal}
                                             onClick={() => setGoalFilter(goal)}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${goalFilter === goal
-                                                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                                                 }`}
                                         >
                                             <span>{icon}</span>
@@ -758,8 +758,8 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         onClick={handleNext}
                         disabled={!canProceed()}
                         className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${canProceed()
-                                ? 'bg-cyan-500 text-white hover:bg-cyan-600'
-                                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                            ? 'bg-cyan-500 text-white hover:bg-cyan-600'
+                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'
                             }`}
                     >
                         {displayStep === totalSteps ? 'Start Training' : 'Continue'}

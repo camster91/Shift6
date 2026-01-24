@@ -37,7 +37,9 @@ import ExerciseLibrary from './components/Views/ExerciseLibrary';
 import ProgramManager from './components/Views/ProgramManager';
 import TrainingSettings from './components/Views/TrainingSettings';
 import BodyMetrics from './components/Views/BodyMetrics';
+import WarmupRoutine from './components/Views/WarmupRoutine';
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
+import { getRecommendedWarmup } from './data/warmupRoutines';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -97,6 +99,14 @@ const App = () => {
     const [showProgramManager, setShowProgramManager] = useState(false);
     const [showTrainingSettings, setShowTrainingSettings] = useState(false);
     const [showBodyMetrics, setShowBodyMetrics] = useState(false);
+    const [showWarmup, setShowWarmup] = useState(false);
+    const [pendingWorkout, setPendingWorkout] = useState(null); // Stores workout to start after warmup
+
+    // Warm-up preference (enabled by default)
+    const [warmupEnabled, setWarmupEnabled] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}warmup_enabled`);
+        return saved !== null ? JSON.parse(saved) : true;
+    });
 
     // Body metrics (weight, measurements)
     const [bodyMetrics, setBodyMetrics] = useState(() => {
@@ -211,6 +221,10 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}body_metrics`, JSON.stringify(bodyMetrics));
     }, [bodyMetrics]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}warmup_enabled`, JSON.stringify(warmupEnabled));
+    }, [warmupEnabled]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
@@ -489,6 +503,57 @@ const App = () => {
         setBodyMetrics(prev => prev.filter(m => m.id !== id));
     }, []);
 
+    // Start workout with optional warmup
+    const startWorkoutWithWarmup = useCallback((week, dayIndex, overrideKey = null) => {
+        const exKey = overrideKey || activeExercise;
+        const exercise = allExercises[exKey];
+
+        // Check if user has warm-up enabled and hasn't warmed up recently (within last 30 min)
+        const lastWarmup = localStorage.getItem(`${STORAGE_PREFIX}last_warmup`);
+        const thirtyMinsAgo = Date.now() - (30 * 60 * 1000);
+        const recentlyWarmedUp = lastWarmup && parseInt(lastWarmup) > thirtyMinsAgo;
+
+        if (warmupEnabled && !recentlyWarmedUp && exercise) {
+            // Store the workout to start after warmup
+            setPendingWorkout({ week, dayIndex, overrideKey: exKey });
+            setShowWarmup(true);
+        } else {
+            // Skip warmup, start workout directly
+            startWorkout(week, dayIndex, overrideKey);
+        }
+    }, [activeExercise, allExercises, warmupEnabled, startWorkout]);
+
+    // Handle warmup completion
+    const handleWarmupComplete = useCallback(() => {
+        // Record warmup time
+        localStorage.setItem(`${STORAGE_PREFIX}last_warmup`, Date.now().toString());
+        setShowWarmup(false);
+
+        // Start the pending workout
+        if (pendingWorkout) {
+            startWorkout(pendingWorkout.week, pendingWorkout.dayIndex, pendingWorkout.overrideKey);
+            setPendingWorkout(null);
+        }
+    }, [pendingWorkout, startWorkout]);
+
+    // Handle warmup skip
+    const handleWarmupSkip = useCallback(() => {
+        setShowWarmup(false);
+
+        // Start the pending workout
+        if (pendingWorkout) {
+            startWorkout(pendingWorkout.week, pendingWorkout.dayIndex, pendingWorkout.overrideKey);
+            setPendingWorkout(null);
+        }
+    }, [pendingWorkout, startWorkout]);
+
+    // Get recommended warmup based on exercise category
+    const getRecommendedWarmupForExercise = useCallback((exerciseKey) => {
+        const exercise = allExercises[exerciseKey];
+        if (!exercise) return 'quick';
+        return getRecommendedWarmup(exercise.category);
+    }, [allExercises]);
+
     // Add exercise to active program
     const handleAddToProgram = (exerciseKey) => {
         setActiveProgram(prev => {
@@ -596,8 +661,8 @@ const App = () => {
         if (stack.length === 0) return;
 
         setWorkoutQueue(stack.slice(1));
-        startWorkout(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
-    }, [completedDays, allExercises, activeProgramKeys, startWorkout, trainingPreferences]);
+        startWorkoutWithWarmup(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
+    }, [completedDays, allExercises, activeProgramKeys, startWorkoutWithWarmup, trainingPreferences]);
 
     const completeWorkout = (actualRepsPerSet = null) => {
         if (!currentSession || isProcessing) return;
@@ -870,6 +935,8 @@ const App = () => {
                 setRestTimerOverride={setRestTimerOverride}
                 theme={theme}
                 setTheme={setTheme}
+                warmupEnabled={warmupEnabled}
+                setWarmupEnabled={setWarmupEnabled}
                 onShowTrainingSettings={onShowTrainingSettings}
                 onShowBodyMetrics={onShowBodyMetrics}
             />
@@ -879,7 +946,7 @@ const App = () => {
                     completedDays={completedDays}
                     sessionHistory={sessionHistory}
                     startStack={startStack}
-                    startWorkout={startWorkout}
+                    startWorkout={startWorkoutWithWarmup}
                     allExercises={allExercises}
                     customExercises={customExercises}
                     exerciseDifficulty={exerciseDifficulty}
@@ -1006,6 +1073,16 @@ const App = () => {
                     onAddMetric={handleAddMetric}
                     onDeleteMetric={handleDeleteMetric}
                     onClose={() => setShowBodyMetrics(false)}
+                />
+            )}
+
+            {/* Warmup Routine Modal */}
+            {showWarmup && (
+                <WarmupRoutine
+                    onComplete={handleWarmupComplete}
+                    onSkip={handleWarmupSkip}
+                    recommendedRoutine={pendingWorkout ? getRecommendedWarmupForExercise(pendingWorkout.overrideKey) : 'quick'}
+                    audioEnabled={audioEnabled}
                 />
             )}
 

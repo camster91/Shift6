@@ -215,8 +215,20 @@ const WorkoutSession = ({
         return null;
     }
 
-    // Phase 3: Auto-Regulation - Readiness Check
+    // Express Mode: Skip readiness check and go straight to workout
+    const isExpressMode = currentSession.expressMode === true;
+
+    // Phase 3: Auto-Regulation - Readiness Check (skipped in Express Mode)
     if (currentSession.step === 'readiness') {
+        // Auto-skip readiness for express mode
+        if (isExpressMode) {
+            setCurrentSession(prev => ({
+                ...prev,
+                step: 'workout',
+                readiness: 'normal'
+            }));
+            return null;
+        }
         const handleReadiness = (level) => {
             let adjustments = {};
             let message = '';
@@ -474,6 +486,12 @@ const WorkoutSession = ({
                     <div>
                         <div className="flex items-center gap-2 text-cyan-400 text-xs font-medium mb-1 uppercase tracking-wider">
                             {currentSession.exerciseName} <ChevronRight size={12} /> Day {currentSession.dayIndex + 1}
+                            {isExpressMode && (
+                                <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-500/20 border border-yellow-500/30 rounded-full text-yellow-400">
+                                    <Zap size={10} />
+                                    Express
+                                </span>
+                            )}
                         </div>
                         <h2 className="text-xl font-bold text-white">Week {currentSession.week}</h2>
                     </div>

@@ -39,6 +39,7 @@ import ProgramManager from './components/Views/ProgramManager';
 import TrainingSettings from './components/Views/TrainingSettings';
 import BodyMetrics from './components/Views/BodyMetrics';
 import WarmupRoutine from './components/Views/WarmupRoutine';
+import AccessibilitySettings from './components/Views/AccessibilitySettings';
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
 import { getRecommendedWarmup } from './data/warmupRoutines';
 
@@ -100,6 +101,7 @@ const App = () => {
     const [showProgramManager, setShowProgramManager] = useState(false);
     const [showTrainingSettings, setShowTrainingSettings] = useState(false);
     const [showBodyMetrics, setShowBodyMetrics] = useState(false);
+    const [showAccessibility, setShowAccessibility] = useState(false);
     const [showWarmup, setShowWarmup] = useState(false);
     const [pendingWorkout, setPendingWorkout] = useState(null); // Stores workout to start after warmup
 
@@ -761,6 +763,64 @@ const App = () => {
         startWorkoutWithWarmup(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
     }, [completedDays, allExercises, activeProgramKeys, startWorkoutWithWarmup, trainingPreferences]);
 
+    // Express Mode: Quick workout with 2 exercises, 2 sets each, minimal rest
+    const startExpressWorkout = useCallback(() => {
+        const stack = getDailyStack(completedDays, allExercises, activeProgramKeys, trainingPreferences);
+        if (stack.length === 0) return;
+
+        // Get first exercise for express workout
+        const firstExercise = stack[0];
+        const exKey = firstExercise.exerciseKey;
+        const exercise = allExercises[exKey];
+        if (!exercise) return;
+
+        // Get the workout data
+        const exerciseWeeks = customPlans[exKey]?.weeks || exercise.weeks;
+        const weekData = exerciseWeeks?.find(w => w.week === firstExercise.week);
+        if (!weekData) return;
+
+        const day = weekData.days[firstExercise.dayIndex];
+
+        // Apply difficulty scaling
+        const difficultyLevel = exerciseDifficulty[exKey] || 3;
+        const multiplier = DIFFICULTY_LEVELS[difficultyLevel]?.multiplier || 1.0;
+
+        // Express mode: only 2 sets (take first 2 reps from the day's plan)
+        const expressReps = day.reps.slice(0, 2);
+        const scaledReps = expressReps.map(r => Math.max(1, Math.round(r * multiplier)));
+
+        // Queue the second exercise if available
+        if (stack.length > 1) {
+            setWorkoutQueue([stack[1]]);
+        }
+
+        // Start session with express mode enabled
+        setCurrentSession({
+            exerciseKey: exKey,
+            exerciseName: exercise.name,
+            week: firstExercise.week,
+            dayIndex: firstExercise.dayIndex,
+            setIndex: 0,
+            rest: 20, // Express rest time
+            baseReps: expressReps,
+            reps: scaledReps,
+            dayId: day.id,
+            isFinal: false,
+            color: exercise.color,
+            unit: exercise.unit,
+            difficulty: difficultyLevel,
+            step: 'workout', // Skip readiness check for express mode
+            expressMode: true
+        });
+        setAmrapValue('');
+        setTestInput('');
+        setTimeLeft(0);
+        setWorkoutNotes('');
+        setExerciseTimeLeft(0);
+        setIsExerciseTimerRunning(false);
+        setExerciseTimerStarted(false);
+    }, [completedDays, allExercises, activeProgramKeys, trainingPreferences, customPlans, exerciseDifficulty]);
+
     const completeWorkout = (actualRepsPerSet = null, feedback = null) => {
         if (!currentSession || isProcessing) return;
         setIsProcessing(true);
@@ -965,6 +1025,7 @@ const App = () => {
     const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
     const onShowTrainingSettings = useCallback(() => setShowTrainingSettings(true), []);
     const onShowBodyMetrics = useCallback(() => setShowBodyMetrics(true), []);
+    const onShowAccessibility = useCallback(() => setShowAccessibility(true), []);
 
     // ---------------- SPRINT MANAGEMENT ----------------
 
@@ -1046,6 +1107,7 @@ const App = () => {
                 setWarmupEnabled={setWarmupEnabled}
                 onShowTrainingSettings={onShowTrainingSettings}
                 onShowBodyMetrics={onShowBodyMetrics}
+                onShowAccessibility={onShowAccessibility}
                 programMode={programMode}
                 onChangeProgramMode={handleChangeProgramMode}
             />
@@ -1056,6 +1118,7 @@ const App = () => {
                     sessionHistory={sessionHistory}
                     startStack={startStack}
                     startWorkout={startWorkoutWithWarmup}
+                    startExpressWorkout={startExpressWorkout}
                     allExercises={allExercises}
                     customExercises={customExercises}
                     exerciseDifficulty={exerciseDifficulty}
@@ -1182,6 +1245,13 @@ const App = () => {
                     onAddMetric={handleAddMetric}
                     onDeleteMetric={handleDeleteMetric}
                     onClose={() => setShowBodyMetrics(false)}
+                />
+            )}
+
+            {/* Accessibility Settings Modal */}
+            {showAccessibility && (
+                <AccessibilitySettings
+                    onClose={() => setShowAccessibility(false)}
                 />
             )}
 

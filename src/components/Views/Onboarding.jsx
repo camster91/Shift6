@@ -12,7 +12,8 @@ import {
 } from '../../utils/constants.js'
 import { applyFitnessLevelPreset } from '../../utils/preferences.js'
 import { EXERCISE_LIBRARY, GOAL_ICONS } from '../../data/exerciseLibrary.js'
-import { generateProgram, regenerateProgram } from '../../utils/programGenerator.js'
+import { EXERCISES } from '../../data/exerciseDatabase.js'
+import { generateSmartProgram } from '../../utils/smartProgramGenerator.js'
 import TemplateCard from '../Visuals/TemplateCard'
 import CustomProgramBuilder from './CustomProgramBuilder'
 
@@ -32,35 +33,36 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
 
     // Combine all exercises for the builder
     const allExercises = useMemo(() => {
-        return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY }
+        return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY, ...EXERCISES }
     }, [])
 
     // Generate program when reaching step 6 or when relevant preferences change
     useEffect(() => {
         if (step === 6 && selectedMode && trainingPreferences.fitnessLevel && trainingPreferences.repScheme) {
-            const program = generateProgram({
+            const program = generateSmartProgram({
                 mode: selectedMode,
                 equipment: selectedEquipment,
                 fitnessLevel: trainingPreferences.fitnessLevel,
-                repScheme: trainingPreferences.repScheme,
+                goal: trainingPreferences.repScheme,
                 trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek,
-                targetSessionDuration: trainingPreferences.targetSessionDuration,
-            }, allExercises)
+                sessionDuration: trainingPreferences.targetSessionDuration,
+            })
             setGeneratedProgram(program)
         }
-    }, [step, selectedMode, selectedEquipment, trainingPreferences, allExercises])
+    }, [step, selectedMode, selectedEquipment, trainingPreferences])
 
     // Handler to regenerate with variation
     const handleRegenerateProgram = () => {
         if (!selectedMode) return
-        const program = regenerateProgram({
+        // Generate a new program - the smart generator uses randomization internally
+        const program = generateSmartProgram({
             mode: selectedMode,
             equipment: selectedEquipment,
             fitnessLevel: trainingPreferences.fitnessLevel,
-            repScheme: trainingPreferences.repScheme,
+            goal: trainingPreferences.repScheme,
             trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek,
-            targetSessionDuration: trainingPreferences.targetSessionDuration,
-        }, allExercises, generatedProgram?.exercises || [])
+            sessionDuration: trainingPreferences.targetSessionDuration,
+        })
         setGeneratedProgram(program)
     }
 
@@ -141,15 +143,24 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             setStep(nextStep)
         } else {
             // Final step - complete onboarding
-            if (programTab === 'generated' && generatedProgram?.exercises?.length > 0) {
-                // Use AI-generated program
-                onComplete(selectedMode, selectedEquipment, null, trainingPreferences, generatedProgram.exercises)
-            } else if (programTab === 'custom') {
-                // Use custom-built program
-                onComplete(selectedMode, selectedEquipment, null, trainingPreferences, customExercises)
-            } else {
-                // Use template
-                onComplete(selectedMode, selectedEquipment, selectedTemplate, trainingPreferences)
+            try {
+                if (programTab === 'generated' && generatedProgram?.exercises?.length > 0) {
+                    // Use AI-generated program
+                    onComplete(selectedMode, selectedEquipment, null, trainingPreferences, generatedProgram.exercises)
+                } else if (programTab === 'custom' && customExercises.length > 0) {
+                    // Use custom-built program
+                    onComplete(selectedMode, selectedEquipment, null, trainingPreferences, customExercises)
+                } else if (selectedTemplate) {
+                    // Use template
+                    onComplete(selectedMode, selectedEquipment, selectedTemplate, trainingPreferences)
+                } else {
+                    // Fallback - use default template
+                    onComplete(selectedMode, selectedEquipment, 'shift6-classic', trainingPreferences)
+                }
+            } catch (error) {
+                console.error('Onboarding completion error:', error)
+                // Fallback to default
+                onComplete(selectedMode, selectedEquipment, 'shift6-classic', trainingPreferences)
             }
         }
     }
@@ -224,7 +235,9 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
+            <div className={`flex-1 flex flex-col items-center p-6 overflow-y-auto ${
+                step === 6 && programTab === 'custom' ? 'justify-start pt-4' : 'justify-center'
+            }`}>
                 {/* Step 1: Welcome & Mode Selection */}
                 {step === 1 && (
                     <div className="w-full max-w-md space-y-8 animate-fadeIn">

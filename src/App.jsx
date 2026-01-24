@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS, generateProgression, getCustomRest } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
+import { EXERCISES } from './data/exerciseDatabase.js';
 import { getDailyStack } from './utils/schedule';
 import { calculateStats, getUnlockedBadges } from './utils/gamification';
 import {
@@ -11,6 +12,20 @@ import {
     saveCustomPlans,
     loadCustomPlans
 } from './utils/preferences.js';
+import {
+    loadSprints,
+    saveSprints,
+    getActiveSprint,
+    getOrCreateSprint,
+    analyzeWorkoutPerformance,
+    recalculateSprint,
+    advanceSprint,
+    completeSprint,
+    generateNextSprint,
+    getCurrentWorkout,
+    getSprintProgress,
+    SPRINT_STATUS
+} from './utils/progression.js';
 
 // Components
 import Header from './components/Layout/Header';
@@ -21,7 +36,10 @@ import Onboarding from './components/Views/Onboarding';
 import ExerciseLibrary from './components/Views/ExerciseLibrary';
 import ProgramManager from './components/Views/ProgramManager';
 import TrainingSettings from './components/Views/TrainingSettings';
-import { AchievementToastManager } from './components/Visuals/AchievementToast';
+import BodyMetrics from './components/Views/BodyMetrics';
+import WarmupRoutine from './components/Views/WarmupRoutine';
+import { MultiAchievementModal } from './components/Visuals/AchievementModal';
+import { getRecommendedWarmup } from './data/warmupRoutines';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -72,11 +90,29 @@ const App = () => {
         return saved ? JSON.parse(saved) : {};
     });
 
+    // Sprint-based progression system
+    const [sprints, setSprints] = useState(() => loadSprints());
+
     // UI State for Add Exercise modal
     const [showAddExercise, setShowAddExercise] = useState(false);
     const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
     const [showProgramManager, setShowProgramManager] = useState(false);
     const [showTrainingSettings, setShowTrainingSettings] = useState(false);
+    const [showBodyMetrics, setShowBodyMetrics] = useState(false);
+    const [showWarmup, setShowWarmup] = useState(false);
+    const [pendingWorkout, setPendingWorkout] = useState(null); // Stores workout to start after warmup
+
+    // Warm-up preference (enabled by default)
+    const [warmupEnabled, setWarmupEnabled] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}warmup_enabled`);
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+
+    // Body metrics (weight, measurements)
+    const [bodyMetrics, setBodyMetrics] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}body_metrics`);
+        return saved ? JSON.parse(saved) : [];
+    });
 
     // Training Preferences (with migration for existing users)
     const [trainingPreferences, setTrainingPreferences] = useState(() => {
@@ -129,12 +165,24 @@ const App = () => {
     const [newBadges, setNewBadges] = useState([]);
     const prevStatsRef = useRef(null);
 
-    // Merge built-in, library, and custom exercises
+    // Merge built-in, library, database, and custom exercises
     const allExercises = useMemo(() => {
         const merged = { ...EXERCISE_PLANS };
 
         // Add library exercises (with generated progressions)
         Object.entries(EXERCISE_LIBRARY).forEach(([key, ex]) => {
+            if (!merged[key]) {
+                merged[key] = {
+                    ...ex,
+                    weeks: generateProgression(ex.startReps, ex.finalGoal),
+                    image: `neo:${key}`,
+                    finalGoal: `${ex.finalGoal} ${ex.unit === 'seconds' ? 'Seconds' : 'Reps'}`,
+                };
+            }
+        });
+
+        // Add exercises from expanded database (with generated progressions)
+        Object.entries(EXERCISES).forEach(([key, ex]) => {
             if (!merged[key]) {
                 merged[key] = {
                     ...ex,
@@ -171,8 +219,21 @@ const App = () => {
     }, [gymWeights]);
 
     useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}body_metrics`, JSON.stringify(bodyMetrics));
+    }, [bodyMetrics]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}warmup_enabled`, JSON.stringify(warmupEnabled));
+    }, [warmupEnabled]);
+
+    useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
     }, [sessionHistory]);
+
+    // Save sprints when they change
+    useEffect(() => {
+        saveSprints(sprints);
+    }, [sprints]);
 
     // Detect new badges when stats change
     useEffect(() => {
@@ -433,6 +494,66 @@ const App = () => {
         }));
     }, []);
 
+    // Body metrics handlers
+    const handleAddMetric = useCallback((metric) => {
+        setBodyMetrics(prev => [...prev, metric]);
+    }, []);
+
+    const handleDeleteMetric = useCallback((id) => {
+        setBodyMetrics(prev => prev.filter(m => m.id !== id));
+    }, []);
+
+    // Start workout with optional warmup
+    const startWorkoutWithWarmup = useCallback((week, dayIndex, overrideKey = null) => {
+        const exKey = overrideKey || activeExercise;
+        const exercise = allExercises[exKey];
+
+        // Check if user has warm-up enabled and hasn't warmed up recently (within last 30 min)
+        const lastWarmup = localStorage.getItem(`${STORAGE_PREFIX}last_warmup`);
+        const thirtyMinsAgo = Date.now() - (30 * 60 * 1000);
+        const recentlyWarmedUp = lastWarmup && parseInt(lastWarmup) > thirtyMinsAgo;
+
+        if (warmupEnabled && !recentlyWarmedUp && exercise) {
+            // Store the workout to start after warmup
+            setPendingWorkout({ week, dayIndex, overrideKey: exKey });
+            setShowWarmup(true);
+        } else {
+            // Skip warmup, start workout directly
+            startWorkout(week, dayIndex, overrideKey);
+        }
+    }, [activeExercise, allExercises, warmupEnabled, startWorkout]);
+
+    // Handle warmup completion
+    const handleWarmupComplete = useCallback(() => {
+        // Record warmup time
+        localStorage.setItem(`${STORAGE_PREFIX}last_warmup`, Date.now().toString());
+        setShowWarmup(false);
+
+        // Start the pending workout
+        if (pendingWorkout) {
+            startWorkout(pendingWorkout.week, pendingWorkout.dayIndex, pendingWorkout.overrideKey);
+            setPendingWorkout(null);
+        }
+    }, [pendingWorkout, startWorkout]);
+
+    // Handle warmup skip
+    const handleWarmupSkip = useCallback(() => {
+        setShowWarmup(false);
+
+        // Start the pending workout
+        if (pendingWorkout) {
+            startWorkout(pendingWorkout.week, pendingWorkout.dayIndex, pendingWorkout.overrideKey);
+            setPendingWorkout(null);
+        }
+    }, [pendingWorkout, startWorkout]);
+
+    // Get recommended warmup based on exercise category
+    const getRecommendedWarmupForExercise = useCallback((exerciseKey) => {
+        const exercise = allExercises[exerciseKey];
+        if (!exercise) return 'quick';
+        return getRecommendedWarmup(exercise.category);
+    }, [allExercises]);
+
     // Add exercise to active program
     const handleAddToProgram = (exerciseKey) => {
         setActiveProgram(prev => {
@@ -468,33 +589,40 @@ const App = () => {
 
     // Complete onboarding
     const handleCompleteOnboarding = (mode, equipment, templateId, preferences = null, customExerciseList = null) => {
-        setProgramMode(mode);
-        setUserEquipment(equipment);
+        try {
+            setProgramMode(mode || 'bodyweight');
+            setUserEquipment(equipment || ['none']);
 
-        // Handle program exercises
-        if (customExerciseList && customExerciseList.length > 0) {
-            // User built a custom program
-            setActiveProgram([...customExerciseList]);
-        } else if (templateId) {
-            const template = STARTER_TEMPLATES[templateId];
-            if (template) {
+            // Handle program exercises
+            if (customExerciseList && customExerciseList.length > 0) {
+                // User built a custom program
+                setActiveProgram([...customExerciseList]);
+            } else if (templateId && STARTER_TEMPLATES[templateId]) {
+                const template = STARTER_TEMPLATES[templateId];
                 setActiveProgram([...template.exercises]);
+            } else {
+                // Default to Shift6 Classic
+                setActiveProgram([...STARTER_TEMPLATES['shift6-classic'].exercises]);
             }
-        } else {
-            // Default to Shift6 Classic
-            setActiveProgram([...STARTER_TEMPLATES['shift6-classic'].exercises]);
-        }
 
-        // Save training preferences if provided
-        if (preferences) {
-            const prefsWithTimestamps = {
-                ...preferences,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            setTrainingPreferences(prefsWithTimestamps);
+            // Save training preferences if provided
+            if (preferences) {
+                const prefsWithTimestamps = {
+                    ...preferences,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                setTrainingPreferences(prefsWithTimestamps);
+            }
+        } catch (error) {
+            console.error('Error completing onboarding:', error);
+            // Set fallback values
+            setProgramMode('bodyweight');
+            setActiveProgram([...STARTER_TEMPLATES['shift6-classic'].exercises]);
+        } finally {
+            // Always complete onboarding even if there were errors
+            setOnboardingComplete(true);
         }
-        setOnboardingComplete(true);
     };
 
     // Handle training preferences change
@@ -533,15 +661,20 @@ const App = () => {
         if (stack.length === 0) return;
 
         setWorkoutQueue(stack.slice(1));
-        startWorkout(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
-    }, [completedDays, allExercises, activeProgramKeys, startWorkout, trainingPreferences]);
+        startWorkoutWithWarmup(stack[0].week, stack[0].dayIndex, stack[0].exerciseKey);
+    }, [completedDays, allExercises, activeProgramKeys, startWorkoutWithWarmup, trainingPreferences]);
 
-    const completeWorkout = () => {
+    const completeWorkout = (actualRepsPerSet = null) => {
         if (!currentSession || isProcessing) return;
         setIsProcessing(true);
 
         const { exerciseKey, dayId, reps, unit } = currentSession;
-        const totalVolume = reps.reduce((sum, r) => sum + r, 0) + (parseInt(amrapValue) || 0);
+        const amrapReps = parseInt(amrapValue) || 0;
+        const totalVolume = reps.reduce((sum, r) => sum + r, 0) + amrapReps;
+
+        // For standard exercises, assume prescribed reps were completed per set
+        // AMRAP captures extra effort on final set
+        const actualReps = actualRepsPerSet || reps;
 
         const newCompletedDays = {
             ...completedDays,
@@ -555,11 +688,45 @@ const App = () => {
             date: new Date().toISOString(),
             volume: totalVolume,
             unit,
-            notes: workoutNotes.trim() || undefined
+            notes: workoutNotes.trim() || undefined,
+            actualReps,
+            targetReps: reps,
+            amrapReps
         };
         setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
         setWorkoutNotes('');
         setCompletedDays(newCompletedDays);
+
+        // Update sprint progression if exists
+        const activeSprint = getActiveSprint(sprints, exerciseKey);
+        if (activeSprint) {
+            // Analyze performance
+            const performance = analyzeWorkoutPerformance(actualReps, reps, amrapReps);
+
+            // Recalculate sprint if needed
+            let updatedSprint = activeSprint;
+            if (performance.adjustment.shouldAdjust) {
+                updatedSprint = recalculateSprint(activeSprint, performance);
+            } else {
+                // Just record performance without adjusting
+                updatedSprint = {
+                    ...activeSprint,
+                    performanceHistory: [...activeSprint.performanceHistory, {
+                        date: new Date().toISOString(),
+                        ...performance
+                    }]
+                };
+            }
+
+            // Advance to next day/week
+            updatedSprint = advanceSprint(updatedSprint);
+
+            // Update sprints state
+            setSprints(prev => ({
+                ...prev,
+                [updatedSprint.id]: updatedSprint
+            }));
+        }
 
         // Queue Handling
         if (workoutQueue.length > 0) {
@@ -689,6 +856,67 @@ const App = () => {
     const onShowExerciseLibrary = useCallback(() => setShowExerciseLibrary(true), []);
     const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
     const onShowTrainingSettings = useCallback(() => setShowTrainingSettings(true), []);
+    const onShowBodyMetrics = useCallback(() => setShowBodyMetrics(true), []);
+
+    // ---------------- SPRINT MANAGEMENT ----------------
+
+    // Get or create a sprint for an exercise
+    const ensureSprintExists = useCallback((exerciseKey, startingMax) => {
+        const exerciseData = allExercises[exerciseKey];
+        const existingSprint = getActiveSprint(sprints, exerciseKey);
+
+        if (existingSprint) {
+            return existingSprint;
+        }
+
+        // Create new sprint with user's preferences
+        const newSprint = getOrCreateSprint(sprints, exerciseKey, startingMax, {
+            repScheme: trainingPreferences.repScheme || 'hypertrophy',
+            trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek || 3,
+            programDuration: 6 // 6-week sprints
+        }, exerciseData);
+
+        setSprints(prev => ({
+            ...prev,
+            [newSprint.id]: newSprint
+        }));
+
+        return newSprint;
+    }, [sprints, allExercises, trainingPreferences]);
+
+    // Complete a sprint (called when user finishes all weeks)
+    const handleCompleteSprint = useCallback((sprintId, finalMax) => {
+        const sprint = sprints[sprintId];
+        if (!sprint || sprint.status !== SPRINT_STATUS.ACTIVE) return;
+
+        const completed = completeSprint(sprint, finalMax);
+
+        // Generate next sprint
+        const nextSprint = generateNextSprint(completed, {
+            repScheme: trainingPreferences.repScheme || 'hypertrophy',
+            trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek || 3
+        });
+
+        setSprints(prev => ({
+            ...prev,
+            [sprintId]: completed,
+            [nextSprint.id]: nextSprint
+        }));
+
+        return { completed, nextSprint };
+    }, [sprints, trainingPreferences]);
+
+    // Get sprint progress for an exercise
+    const getExerciseSprintProgress = useCallback((exerciseKey) => {
+        const activeSprint = getActiveSprint(sprints, exerciseKey);
+        if (!activeSprint) return null;
+
+        return {
+            sprint: activeSprint,
+            progress: getSprintProgress(activeSprint),
+            currentWorkout: getCurrentWorkout(activeSprint)
+        };
+    }, [sprints]);
 
     // ---------------- RENDER ----------------
 
@@ -707,7 +935,10 @@ const App = () => {
                 setRestTimerOverride={setRestTimerOverride}
                 theme={theme}
                 setTheme={setTheme}
+                warmupEnabled={warmupEnabled}
+                setWarmupEnabled={setWarmupEnabled}
                 onShowTrainingSettings={onShowTrainingSettings}
+                onShowBodyMetrics={onShowBodyMetrics}
             />
 
             <main className="max-w-6xl mx-auto p-4 md:p-8 pb-8">
@@ -715,7 +946,7 @@ const App = () => {
                     completedDays={completedDays}
                     sessionHistory={sessionHistory}
                     startStack={startStack}
-                    startWorkout={startWorkout}
+                    startWorkout={startWorkoutWithWarmup}
                     allExercises={allExercises}
                     customExercises={customExercises}
                     exerciseDifficulty={exerciseDifficulty}
@@ -728,6 +959,10 @@ const App = () => {
                     onShowProgramManager={onShowProgramManager}
                     trainingPreferences={trainingPreferences}
                     customPlans={customPlans}
+                    sprints={sprints}
+                    getExerciseSprintProgress={getExerciseSprintProgress}
+                    ensureSprintExists={ensureSprintExists}
+                    onCompleteSprint={handleCompleteSprint}
                 />
             </main>
 
@@ -831,10 +1066,30 @@ const App = () => {
                 />
             )}
 
-            {/* Achievement Toast Notifications */}
-            <AchievementToastManager
-                newBadges={newBadges}
-                onAllDismissed={() => setNewBadges([])}
+            {/* Body Metrics Modal */}
+            {showBodyMetrics && (
+                <BodyMetrics
+                    metrics={bodyMetrics}
+                    onAddMetric={handleAddMetric}
+                    onDeleteMetric={handleDeleteMetric}
+                    onClose={() => setShowBodyMetrics(false)}
+                />
+            )}
+
+            {/* Warmup Routine Modal */}
+            {showWarmup && (
+                <WarmupRoutine
+                    onComplete={handleWarmupComplete}
+                    onSkip={handleWarmupSkip}
+                    recommendedRoutine={pendingWorkout ? getRecommendedWarmupForExercise(pendingWorkout.overrideKey) : 'quick'}
+                    audioEnabled={audioEnabled}
+                />
+            )}
+
+            {/* Achievement Modal */}
+            <MultiAchievementModal
+                badges={newBadges}
+                onClose={() => setNewBadges([])}
             />
         </div>
     );

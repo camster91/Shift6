@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon, Dumbbell, Scale } from 'lucide-react';
+import { Settings, Download, Upload, Trash2, Volume2, VolumeX, FileSpreadsheet, Timer, Sun, Moon, Dumbbell, Scale, Flame } from 'lucide-react';
 
 const Header = ({
     onExport,
@@ -12,6 +12,8 @@ const Header = ({
     setRestTimerOverride,
     theme,
     setTheme,
+    warmupEnabled,
+    setWarmupEnabled,
     onShowTrainingSettings,
     onShowBodyMetrics
 }) => {
@@ -46,6 +48,8 @@ const Header = ({
                     setRestTimerOverride={setRestTimerOverride}
                     theme={theme}
                     setTheme={setTheme}
+                    warmupEnabled={warmupEnabled}
+                    setWarmupEnabled={setWarmupEnabled}
                     onShowTrainingSettings={onShowTrainingSettings}
                     onShowBodyMetrics={onShowBodyMetrics}
                 />
@@ -63,7 +67,7 @@ const REST_OPTIONS = [
     { value: 120, label: '120s' }
 ];
 
-const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride, theme, setTheme, onShowTrainingSettings, onShowBodyMetrics }) => {
+const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride, theme, setTheme, warmupEnabled, setWarmupEnabled, onShowTrainingSettings, onShowBodyMetrics }) => {
     const [isOpen, setIsOpen] = React.useState(false);
 
     const cycleRestTimer = () => {
@@ -109,6 +113,15 @@ const DataMenu = ({ onExport, onExportCSV, onImport, onFactoryReset, audioEnable
                                 <Timer size={16} /> Rest Timer
                             </span>
                             <span className="text-cyan-400">{currentRestLabel}</span>
+                        </button>
+                        <button
+                            onClick={() => setWarmupEnabled(!warmupEnabled)}
+                            className="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        >
+                            <span className="flex items-center gap-3">
+                                <Flame size={16} /> Warm-Up
+                            </span>
+                            <span className={warmupEnabled ? 'text-orange-400' : 'text-slate-500'}>{warmupEnabled ? 'On' : 'Off'}</span>
                         </button>
                         <button
                             onClick={() => { onShowTrainingSettings?.(); setIsOpen(false); }}

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { X, Plus, Check, ChevronDown, ChevronUp, AlertTriangle, Sparkles } from 'lucide-react'
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js'
+import { EXERCISES } from '../../data/exerciseDatabase.js'
 import NeoIcon from '../Visuals/NeoIcon'
 
 // Color classes for exercise display
@@ -77,7 +78,19 @@ const CustomProgramBuilder = ({
       }
     })
 
-    // Also include exercises from allExercises that might not be in EXERCISE_LIBRARY
+    // Add exercises from new EXERCISES database
+    Object.entries(EXERCISES).forEach(([key, ex]) => {
+      if (exercises[key]) return // Skip if already added
+      if (!ex.modes?.includes(programMode)) return
+      const hasEquipment = ex.equipment?.every(eq =>
+        eq === 'none' || userEquipment.includes(eq)
+      )
+      if (hasEquipment) {
+        exercises[key] = ex
+      }
+    })
+
+    // Also include exercises from allExercises that might not be in either library
     Object.entries(allExercises).forEach(([key, ex]) => {
       if (!exercises[key] && ex.modes?.includes(programMode)) {
         exercises[key] = ex
@@ -258,8 +271,8 @@ const CustomProgramBuilder = ({
       </div>
 
       {/* Exercise Categories */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium text-white">Add Exercises</h3>
+      <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+        <h3 className="text-sm font-medium text-white sticky top-0 bg-slate-950 py-1 z-10">Add Exercises</h3>
 
         {Object.entries(CATEGORIES).map(([catKey, catInfo]) => {
           const exercises = exercisesByCategory[catKey] || []

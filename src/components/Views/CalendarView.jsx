@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { ChevronLeft, ChevronRight, X, Dumbbell, Play, Calendar, Clock } from 'lucide-react';
 import { EXERCISE_PLANS } from '../../data/exercises.jsx';
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js';
@@ -346,4 +346,7 @@ const CalendarView = ({ sessionHistory, completedDays = {}, allExercises = {}, a
     );
 };
 
-export default CalendarView;
+// ⚡ Bolt: Memoize CalendarView to prevent re-renders when its parent (Dashboard)
+// re-renders. Since Dashboard is state-heavy, this prevents the calendar
+// from re-calculating unless its specific props (like sessionHistory) change.
+export default memo(CalendarView);

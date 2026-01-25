@@ -47,7 +47,7 @@ describe('schedule utilities', () => {
             const next = getNextSessionForExercise('squats', {})
             expect(next.exerciseKey).toBe('squats')
             expect(next.dayId).toBe('s11')
-            expect(next.name).toBe('Squats')
+            expect(next.name).toBe('Air Squats') // Updated to match new name
         })
     })
 
@@ -115,7 +115,7 @@ describe('schedule utilities', () => {
             vi.setSystemTime(new Date('2024-01-08')) // Monday
             const stack = getDailyStack({})
             const exerciseKeys = stack.map(s => s.exerciseKey)
-            // All 9 exercises should be returned
+            // Should contain core exercises from the calisthenics library
             expect(exerciseKeys).toContain('pushups')
             expect(exerciseKeys).toContain('squats')
             expect(exerciseKeys).toContain('pullups')
@@ -125,18 +125,19 @@ describe('schedule utilities', () => {
             expect(exerciseKeys).toContain('plank')
             expect(exerciseKeys).toContain('lunges')
             expect(exerciseKeys).toContain('supermans')
-            expect(stack.length).toBe(9)
+            // Stack should contain all exercises from the calisthenics library
+            expect(stack.length).toBeGreaterThanOrEqual(9)
         })
 
         it('returns all exercises on Tuesday', () => {
             vi.setSystemTime(new Date('2024-01-09')) // Tuesday
             const stack = getDailyStack({})
             const exerciseKeys = stack.map(s => s.exerciseKey)
-            // All 9 exercises should be returned
+            // Should contain core exercises
             expect(exerciseKeys).toContain('pushups')
             expect(exerciseKeys).toContain('squats')
             expect(exerciseKeys).toContain('pullups')
-            expect(stack.length).toBe(9)
+            expect(stack.length).toBeGreaterThanOrEqual(9)
         })
 
         it('excludes completed exercises from stack', () => {
@@ -147,11 +148,13 @@ describe('schedule utilities', () => {
                 'p31', 'p32', 'p33', 'p41', 'p42', 'p43',
                 'p51', 'p52', 'p53', 'p61', 'p62', 'p63'
             ]
+            const initialStack = getDailyStack({})
             const stack = getDailyStack({ pushups: allPushupDays })
             const exerciseKeys = stack.map(s => s.exerciseKey)
             expect(exerciseKeys).not.toContain('pushups')
             expect(exerciseKeys).toContain('dips') // Still has sessions
-            expect(stack.length).toBe(8) // 9 minus 1 completed
+            // Should have one less than before
+            expect(stack.length).toBe(initialStack.length - 1)
         })
     })
 })

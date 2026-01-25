@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench, Shuffle, Clock, Home, Building2, ArrowLeftRight } from 'lucide-react'
+import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench, Shuffle, Clock, Home, Building2 } from 'lucide-react'
 import {
     REP_SCHEME_CONFIGS,
     FITNESS_LEVEL_PRESETS,
@@ -12,9 +12,8 @@ import {
 } from '../../utils/constants.js'
 import { applyFitnessLevelPreset } from '../../utils/preferences.js'
 import { EXERCISE_LIBRARY, GOAL_ICONS } from '../../data/exerciseLibrary.js'
-import { EXERCISES } from '../../data/exerciseDatabase.js'
 import { generateSmartProgram } from '../../utils/smartProgramGenerator.js'
-import { detectPersona, getPersonaDefaults, isExpressPersona } from '../../utils/personas.js'
+import { detectPersona, getPersonaDefaults } from '../../utils/personas.js'
 import TemplateCard from '../Visuals/TemplateCard'
 import CustomProgramBuilder from './CustomProgramBuilder'
 
@@ -26,14 +25,13 @@ const TIME_OPTIONS = [
     { id: 'long', label: '45+ minutes', sublabel: 'Comprehensive training', icon: '🏆', duration: 50 }
 ]
 
-// Location/mode options
+// Location/mode options - Calisthenics focused
 const LOCATION_OPTIONS = [
-    { id: 'bodyweight', label: 'At Home', sublabel: 'Bodyweight exercises, minimal equipment', icon: Home },
-    { id: 'gym', label: 'At the Gym', sublabel: 'Full equipment access', icon: Building2 },
-    { id: 'mixed', label: 'Both', sublabel: 'Flexible - home and gym', icon: ArrowLeftRight }
+    { id: 'bodyweight', label: 'At Home', sublabel: 'No equipment needed', icon: Home },
+    { id: 'outdoor', label: 'Outdoor/Park', sublabel: 'Pull-up bar, dip bars', icon: Building2 },
 ]
 
-const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
+const Onboarding = ({ equipment, templates, onComplete }) => {
     // Steps: 1=Time, 2=Location, 3=Equipment (conditional), 4=Fitness, 5=Goal, 6=Schedule, 7=Program, 8=Confirm
     const [step, setStep] = useState(1)
 
@@ -55,7 +53,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
 
     // Combine all exercises for the builder
     const allExercises = useMemo(() => {
-        return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY, ...EXERCISES }
+        return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY }
     }, [])
 
     // Auto-detect persona based on user selections

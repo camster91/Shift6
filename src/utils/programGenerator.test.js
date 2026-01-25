@@ -169,11 +169,12 @@ describe('programGenerator', () => {
       expect(advanced).toContain('oneArmPushups')
     })
 
-    it('gym mode returns gym exercises', () => {
-      const available = filterAvailableExercises(allExercises, 'gym', ['barbell', 'bench'], 'intermediate')
+    it('bodyweight mode returns calisthenics exercises', () => {
+      const available = filterAvailableExercises(allExercises, 'bodyweight', ['pullupBar', 'dipBars'], 'intermediate')
 
-      expect(available).toContain('benchPress')
-      expect(available).toContain('backSquat')
+      expect(available).toContain('pushups')
+      expect(available).toContain('pullups')
+      expect(available).toContain('dips')
     })
   })
 
@@ -262,8 +263,8 @@ describe('programGenerator', () => {
 
     it('uses upperLower split for 4 days intermediate', () => {
       const program = generateProgram({
-        mode: 'mixed',
-        equipment: ['pullupBar', 'dumbbells'],
+        mode: 'bodyweight',
+        equipment: ['pullupBar', 'dipBars'],
         fitnessLevel: 'intermediate',
         repScheme: 'hypertrophy',
         trainingDaysPerWeek: 4,
@@ -275,8 +276,8 @@ describe('programGenerator', () => {
 
     it('uses pushPullLegs split for 6 days advanced', () => {
       const program = generateProgram({
-        mode: 'gym',
-        equipment: ['barbell', 'dumbbells', 'bench', 'cables'],
+        mode: 'bodyweight',
+        equipment: ['pullupBar', 'dipBars', 'rings'],
         fitnessLevel: 'advanced',
         repScheme: 'strength',
         trainingDaysPerWeek: 6,

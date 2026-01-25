@@ -379,18 +379,46 @@ const App = () => {
         return saved ? JSON.parse(saved) : [];
     });
 
-    const [currentSession, setCurrentSession] = useState(() => {
+    // Current active session - null until user starts or resumes
+    const [currentSession, setCurrentSession] = useState(null);
+
+    // Pending session from previous app session (loaded from localStorage)
+    const [pendingSession, setPendingSession] = useState(() => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}current_session`);
         return saved ? JSON.parse(saved) : null;
     });
+
+    // Resume a pending session
+    const handleResumeSession = useCallback(() => {
+        if (pendingSession) {
+            setCurrentSession(pendingSession);
+            setPendingSession(null);
+        }
+    }, [pendingSession]);
+
+    // Discard a pending session
+    const handleDiscardSession = useCallback(() => {
+        setPendingSession(null);
+        localStorage.removeItem(`${STORAGE_PREFIX}current_session`);
+    }, []);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}queue`, JSON.stringify(workoutQueue));
     }, [workoutQueue]);
 
+    // Persist current session to localStorage
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}current_session`, JSON.stringify(currentSession));
+        if (currentSession) {
+            localStorage.setItem(`${STORAGE_PREFIX}current_session`, JSON.stringify(currentSession));
+        }
     }, [currentSession]);
+
+    // Clear localStorage when session ends (currentSession becomes null)
+    useEffect(() => {
+        if (currentSession === null && !pendingSession) {
+            localStorage.removeItem(`${STORAGE_PREFIX}current_session`);
+        }
+    }, [currentSession, pendingSession]);
 
     // Browser exit warning
     useEffect(() => {
@@ -1148,6 +1176,9 @@ const App = () => {
                         getExerciseSprintProgress={getExerciseSprintProgress}
                         ensureSprintExists={ensureSprintExists}
                         onCompleteSprint={handleCompleteSprint}
+                        pendingSession={pendingSession}
+                        onResumeSession={handleResumeSession}
+                        onDiscardSession={handleDiscardSession}
                     />
                 )}
 
@@ -1175,6 +1206,8 @@ const App = () => {
                         activeProgram={activeProgramKeys}
                         startWorkout={startWorkoutWithWarmup}
                         theme={theme}
+                        sprints={sprints}
+                        getExerciseSprintProgress={getExerciseSprintProgress}
                     />
                 )}
             </main>

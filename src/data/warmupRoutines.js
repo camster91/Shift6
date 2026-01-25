@@ -220,61 +220,32 @@ export const WARMUP_EXERCISES = {
   },
 }
 
-// Pre-built warm-up routines
+// Pre-built warm-up routines - simplified to 2 options
 export const WARMUP_ROUTINES = {
   quick: {
     id: 'quick',
-    name: 'Quick Warm-Up',
-    description: '2 minutes to get moving',
+    name: 'Quick',
+    description: '2 min - get moving fast',
     duration: 2,
     exercises: ['jumpingJacks', 'armCircles', 'hipCircles', 'bodyweightSquats'],
   },
-  upperBody: {
-    id: 'upperBody',
-    name: 'Upper Body Focus',
-    description: 'Prep for push and pull exercises',
-    duration: 3,
-    exercises: ['armCircles', 'shoulderRolls', 'wristCircles', 'chestOpener', 'scapularPushups', 'catCow'],
-  },
-  lowerBody: {
-    id: 'lowerBody',
-    name: 'Lower Body Focus',
-    description: 'Prep for squats and leg work',
-    duration: 3,
-    exercises: ['walkingHighKnees', 'legSwings', 'hipCircles', 'kneeCircles', 'ankleCircles', 'bodyweightSquats'],
-  },
-  fullBody: {
-    id: 'fullBody',
-    name: 'Full Body Warm-Up',
-    description: 'Complete preparation for any workout',
-    duration: 5,
-    exercises: ['jumpingJacks', 'armCircles', 'hipCircles', 'legSwings', 'torsoTwists', 'inchworms', 'worldsGreatestStretch', 'bodyweightSquats'],
-  },
-  mobility: {
-    id: 'mobility',
-    name: 'Mobility Flow',
-    description: 'Focus on joint mobility and flexibility',
+  full: {
+    id: 'full',
+    name: 'Full',
+    description: '4 min - thorough preparation',
     duration: 4,
-    exercises: ['neckRotations', 'shoulderRolls', 'wristCircles', 'catCow', 'hipCircles', 'ankleCircles', 'worldsGreatestStretch'],
+    exercises: ['jumpingJacks', 'armCircles', 'hipCircles', 'torsoTwists', 'inchworms', 'bodyweightSquats'],
   },
 }
 
 /**
- * Get recommended warm-up based on exercise category
- * @param {string} exerciseCategory - The category of the main workout (push, pull, legs, core)
+ * Get recommended warm-up based on session duration
+ * @param {number} sessionDuration - Expected session length in minutes
  * @returns {string} - Recommended warm-up routine ID
  */
-export const getRecommendedWarmup = (exerciseCategory) => {
-  const categoryMap = {
-    push: 'upperBody',
-    pull: 'upperBody',
-    upper: 'upperBody',
-    legs: 'lowerBody',
-    lower: 'lowerBody',
-    core: 'fullBody',
-    full: 'fullBody',
-  }
-  return categoryMap[exerciseCategory] || 'quick'
+export const getRecommendedWarmup = (sessionDuration = 30) => {
+  // Quick warmup for short sessions, full for longer ones
+  return sessionDuration <= 20 ? 'quick' : 'full'
 }
 
 /**

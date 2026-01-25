@@ -141,7 +141,7 @@ export function generateWeeklyTargets(start, target, weeks = 6) {
 export function distributeReps(total, sets, repRange) {
   const [minRep, maxRep] = repRange
   const reps = []
-  let remaining = total
+  let remaining = Math.max(total, sets) // At minimum, 1 rep per set
 
   for (let i = 0; i < sets; i++) {
     const setsLeft = sets - i
@@ -154,8 +154,9 @@ export function distributeReps(total, sets, repRange) {
     // Clamp to range
     thisSet = Math.max(minRep, Math.min(maxRep, thisSet))
 
-    // Ensure we don't exceed remaining
+    // Ensure we don't exceed remaining (but never go negative)
     thisSet = Math.min(thisSet, remaining - (minRep * (setsLeft - 1)))
+    thisSet = Math.max(1, thisSet) // Ensure minimum of 1 rep per set
 
     reps.push(thisSet)
     remaining -= thisSet

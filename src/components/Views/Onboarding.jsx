@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench, Shuffle, Zap } from 'lucide-react'
+import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench, Shuffle, Clock, Home, Building2, ArrowLeftRight } from 'lucide-react'
 import {
     REP_SCHEME_CONFIGS,
     FITNESS_LEVEL_PRESETS,
@@ -8,33 +8,47 @@ import {
 } from '../../data/exercises.jsx'
 import {
     TRAINING_DAYS_OPTIONS,
-    SESSION_DURATION_OPTIONS,
     EXPRESS_MODE_CONFIG
 } from '../../utils/constants.js'
 import { applyFitnessLevelPreset } from '../../utils/preferences.js'
 import { EXERCISE_LIBRARY, GOAL_ICONS } from '../../data/exerciseLibrary.js'
 import { EXERCISES } from '../../data/exerciseDatabase.js'
 import { generateSmartProgram } from '../../utils/smartProgramGenerator.js'
-import {
-    PERSONA_TYPES,
-    PERSONA_INFO,
-    getPersonaDefaults,
-    isExpressPersona
-} from '../../utils/personas.js'
+import { detectPersona, getPersonaDefaults, isExpressPersona, PERSONA_INFO } from '../../utils/personas.js'
 import TemplateCard from '../Visuals/TemplateCard'
 import CustomProgramBuilder from './CustomProgramBuilder'
 
+// Time options for the first question
+const TIME_OPTIONS = [
+    { id: 'express', label: '10-15 minutes', sublabel: 'Quick & efficient', icon: '⚡', duration: 10 },
+    { id: 'short', label: '20-30 minutes', sublabel: 'Focused sessions', icon: '🎯', duration: 25 },
+    { id: 'medium', label: '30-45 minutes', sublabel: 'Balanced workout', icon: '💪', duration: 35 },
+    { id: 'long', label: '45+ minutes', sublabel: 'Comprehensive training', icon: '🏆', duration: 50 }
+]
+
+// Location/mode options
+const LOCATION_OPTIONS = [
+    { id: 'bodyweight', label: 'At Home', sublabel: 'Bodyweight exercises, minimal equipment', icon: Home },
+    { id: 'gym', label: 'At the Gym', sublabel: 'Full equipment access', icon: Building2 },
+    { id: 'mixed', label: 'Both', sublabel: 'Flexible - home and gym', icon: ArrowLeftRight }
+]
+
 const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
-    const [step, setStep] = useState(0) // Start at persona selection (step 0)
-    const [selectedPersona, setSelectedPersona] = useState(null)
+    // Steps: 1=Time, 2=Location, 3=Equipment (conditional), 4=Fitness, 5=Goal, 6=Schedule, 7=Program, 8=Confirm
+    const [step, setStep] = useState(1)
+
+    // User selections
+    const [selectedTime, setSelectedTime] = useState(null)
     const [selectedMode, setSelectedMode] = useState(null)
     const [selectedEquipment, setSelectedEquipment] = useState(['none'])
     const [selectedTemplate, setSelectedTemplate] = useState(null)
     const [trainingPreferences, setTrainingPreferences] = useState({ ...DEFAULT_TRAINING_PREFERENCES })
+
     // Program selection UI state
-    const [programTab, setProgramTab] = useState('generated') // 'generated' | 'templates' | 'custom'
+    const [programTab, setProgramTab] = useState('generated')
     const [customExercises, setCustomExercises] = useState([])
     const [goalFilter, setGoalFilter] = useState('all')
+
     // Generated program state
     const [generatedProgram, setGeneratedProgram] = useState(null)
     const [showProgramDetails, setShowProgramDetails] = useState(false)
@@ -44,98 +58,90 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
         return { ...EXERCISE_PLANS, ...EXERCISE_LIBRARY, ...EXERCISES }
     }, [])
 
-    // Generate program when reaching step 6 or when relevant preferences change
+    // Auto-detect persona based on user selections
+    const detectedPersona = useMemo(() => {
+        return detectPersona({
+            programMode: selectedMode,
+            targetSessionDuration: selectedTime ? TIME_OPTIONS.find(t => t.id === selectedTime)?.duration : 30,
+            fitnessLevel: trainingPreferences.fitnessLevel,
+            trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek,
+            repScheme: trainingPreferences.repScheme,
+            expressMode: selectedTime === 'express'
+        })
+    }, [selectedMode, selectedTime, trainingPreferences.fitnessLevel, trainingPreferences.trainingDaysPerWeek, trainingPreferences.repScheme])
+
+    // Determine which steps to show based on selections
+    const getSteps = () => {
+        // Express mode users get a shortened flow
+        if (selectedTime === 'express') {
+            return [1, 6, 7, 8] // Time → Schedule → Program → Confirm
+        }
+        // Bodyweight-only users skip equipment
+        if (selectedMode === 'bodyweight') {
+            return [1, 2, 4, 5, 6, 7, 8]
+        }
+        // Full flow for gym and mixed
+        return [1, 2, 3, 4, 5, 6, 7, 8]
+    }
+
+    const steps = getSteps()
+    const currentStepIndex = steps.indexOf(step)
+    const totalSteps = steps.length
+    const displayStep = currentStepIndex + 1
+
+    // Generate program when reaching step 7
     useEffect(() => {
-        if (step === 6 && selectedMode && trainingPreferences.fitnessLevel && trainingPreferences.repScheme) {
+        if (step === 7 && selectedMode) {
+            const timeOption = TIME_OPTIONS.find(t => t.id === selectedTime)
             const program = generateSmartProgram({
                 mode: selectedMode,
                 equipment: selectedEquipment,
-                fitnessLevel: trainingPreferences.fitnessLevel,
-                goal: trainingPreferences.repScheme,
+                fitnessLevel: trainingPreferences.fitnessLevel || 'beginner',
+                goal: trainingPreferences.repScheme || 'balanced',
                 trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek,
-                sessionDuration: trainingPreferences.targetSessionDuration,
+                sessionDuration: timeOption?.duration || 30,
             })
             setGeneratedProgram(program)
         }
-    }, [step, selectedMode, selectedEquipment, trainingPreferences])
+    }, [step, selectedMode, selectedEquipment, trainingPreferences, selectedTime])
 
     // Handler to regenerate with variation
     const handleRegenerateProgram = () => {
         if (!selectedMode) return
-        // Generate a new program - the smart generator uses randomization internally
+        const timeOption = TIME_OPTIONS.find(t => t.id === selectedTime)
         const program = generateSmartProgram({
             mode: selectedMode,
             equipment: selectedEquipment,
-            fitnessLevel: trainingPreferences.fitnessLevel,
-            goal: trainingPreferences.repScheme,
+            fitnessLevel: trainingPreferences.fitnessLevel || 'beginner',
+            goal: trainingPreferences.repScheme || 'balanced',
             trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek,
-            sessionDuration: trainingPreferences.targetSessionDuration,
+            sessionDuration: timeOption?.duration || 30,
         })
         setGeneratedProgram(program)
     }
 
-    // Steps: 0=Persona, 1=Mode, 2=Equipment (skipped for bodyweight), 3=Fitness, 4=Goal, 5=Schedule, 6=Template, 7=Confirm
-    // Persona step is now first - sets smart defaults and can skip steps
-    const getStepConfig = () => {
-        // Express/Busy Bee persona gets shortened flow
-        if (selectedPersona === PERSONA_TYPES.BUSY_BEE) {
-            return {
-                steps: [0, 5, 6, 7], // Persona → Schedule → Program → Confirm
-                total: 4
-            }
-        }
-        // Golden Years persona gets accessibility-focused flow
-        if (selectedPersona === PERSONA_TYPES.GOLDEN_YEARS) {
-            return {
-                steps: [0, 1, 3, 5, 6, 7], // Persona → Mode → Fitness → Schedule → Program → Confirm
-                total: 6
-            }
-        }
-        // Default flow based on mode
-        if (selectedMode === 'bodyweight') {
-            // Skip equipment step for bodyweight
-            return {
-                steps: [0, 1, 3, 4, 5, 6, 7],
-                total: 7
-            }
-        }
-        return {
-            steps: [0, 1, 2, 3, 4, 5, 6, 7],
-            total: 8
-        }
-    }
+    const handleTimeSelect = (timeId) => {
+        setSelectedTime(timeId)
+        const timeOption = TIME_OPTIONS.find(t => t.id === timeId)
 
-    const stepConfig = getStepConfig()
-    const displayStep = stepConfig.steps.indexOf(step) + 1
-    const totalSteps = stepConfig.total
-
-    const handlePersonaSelect = (personaType) => {
-        setSelectedPersona(personaType)
-
-        // Apply persona defaults to training preferences
-        const defaults = getPersonaDefaults(personaType)
+        // Set session duration
         setTrainingPreferences(prev => ({
             ...prev,
-            ...defaults,
-            persona: personaType
+            targetSessionDuration: timeOption?.duration || 30
         }))
 
-        // Auto-set mode based on persona
-        if (defaults.programMode) {
-            setSelectedMode(defaults.programMode)
-            if (defaults.programMode === 'bodyweight') {
-                setSelectedEquipment(['none'])
-            }
-        }
-
-        // For express personas, enable express mode
-        if (isExpressPersona(personaType)) {
+        // Express mode auto-configures many settings
+        if (timeId === 'express') {
+            setSelectedMode('bodyweight')
+            setSelectedEquipment(['none'])
             setTrainingPreferences(prev => ({
                 ...prev,
                 expressMode: true,
                 setsPerExercise: EXPRESS_MODE_CONFIG.sets,
                 restBetweenSets: EXPRESS_MODE_CONFIG.restBetweenSets,
-                targetSessionDuration: EXPRESS_MODE_CONFIG.targetDuration
+                targetSessionDuration: EXPRESS_MODE_CONFIG.targetDuration,
+                fitnessLevel: 'beginner',
+                repScheme: 'endurance'
             }))
         }
     }
@@ -183,11 +189,11 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
     }
 
     const handleNext = () => {
-        const nextStepIndex = stepConfig.steps.indexOf(step) + 1
-        if (nextStepIndex < stepConfig.steps.length) {
-            const nextStep = stepConfig.steps[nextStepIndex]
+        const nextIndex = currentStepIndex + 1
+        if (nextIndex < steps.length) {
+            const nextStep = steps[nextIndex]
             // Ensure template is valid for mode when reaching template step
-            if (nextStep === 6) {
+            if (nextStep === 7) {
                 const modeTemplates = Object.entries(templates).filter(([, t]) => t.mode === selectedMode)
                 if (modeTemplates.length > 0 && templates[selectedTemplate]?.mode !== selectedMode) {
                     const recommended = modeTemplates.find(([, t]) => t.recommended)
@@ -197,53 +203,57 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             setStep(nextStep)
         } else {
             // Final step - complete onboarding
-            // Include persona in preferences
+            const timeOption = TIME_OPTIONS.find(t => t.id === selectedTime)
+
+            // Apply persona defaults for detected persona
+            const personaDefaults = getPersonaDefaults(detectedPersona)
+
             const finalPreferences = {
                 ...trainingPreferences,
-                persona: selectedPersona,
-                expressMode: isExpressPersona(selectedPersona)
+                ...personaDefaults,
+                // Override with user selections
+                targetSessionDuration: timeOption?.duration || trainingPreferences.targetSessionDuration,
+                fitnessLevel: trainingPreferences.fitnessLevel || personaDefaults.fitnessLevel,
+                repScheme: trainingPreferences.repScheme || personaDefaults.repScheme,
+                trainingDaysPerWeek: trainingPreferences.trainingDaysPerWeek,
+                preferredDays: trainingPreferences.preferredDays,
+                persona: detectedPersona,
+                expressMode: selectedTime === 'express'
             }
 
             try {
                 if (programTab === 'generated' && generatedProgram?.exercises?.length > 0) {
-                    // Use AI-generated program
                     onComplete(selectedMode, selectedEquipment, null, finalPreferences, generatedProgram.exercises)
                 } else if (programTab === 'custom' && customExercises.length > 0) {
-                    // Use custom-built program
                     onComplete(selectedMode, selectedEquipment, null, finalPreferences, customExercises)
                 } else if (selectedTemplate) {
-                    // Use template
                     onComplete(selectedMode, selectedEquipment, selectedTemplate, finalPreferences)
                 } else {
-                    // Fallback - use default template
                     onComplete(selectedMode, selectedEquipment, 'shift6-classic', finalPreferences)
                 }
             } catch (error) {
                 console.error('Onboarding completion error:', error)
-                // Fallback to default
                 onComplete(selectedMode, selectedEquipment, 'shift6-classic', finalPreferences)
             }
         }
     }
 
     const handleBack = () => {
-        const currentIndex = stepConfig.steps.indexOf(step)
-        if (currentIndex > 0) {
-            setStep(stepConfig.steps[currentIndex - 1])
+        if (currentStepIndex > 0) {
+            setStep(steps[currentStepIndex - 1])
         }
     }
 
     const canProceed = () => {
         switch (step) {
-            case 0: return selectedPersona !== null // Persona selection
-            case 1: return selectedMode !== null
-            case 2: return true // Equipment is optional
-            case 3: return trainingPreferences.fitnessLevel !== null // Fitness Level
-            case 4: return trainingPreferences.repScheme !== null // Training Goal
-            case 5: return trainingPreferences.trainingDaysPerWeek >= 2 // Schedule
-            case 6: {
-                // For express mode, require fewer exercises
-                const minExercises = isExpressPersona(selectedPersona) ? 2 : 3
+            case 1: return selectedTime !== null
+            case 2: return selectedMode !== null
+            case 3: return true // Equipment is optional
+            case 4: return trainingPreferences.fitnessLevel !== null
+            case 5: return trainingPreferences.repScheme !== null
+            case 6: return trainingPreferences.trainingDaysPerWeek >= 2
+            case 7: {
+                const minExercises = selectedTime === 'express' ? 2 : 3
                 if (programTab === 'generated') {
                     return generatedProgram?.exercises?.length >= minExercises
                 }
@@ -252,7 +262,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                 }
                 return selectedTemplate !== null
             }
-            case 7: return true
+            case 8: return true
             default: return false
         }
     }
@@ -299,38 +309,78 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
             </div>
 
             {/* Content */}
-            <div className={`flex-1 flex flex-col items-center p-6 overflow-y-auto ${step === 6 && programTab === 'custom' ? 'justify-start pt-4' : 'justify-center'
-                }`}>
-                {/* Step 0: Persona Selection */}
-                {step === 0 && (
+            <div className={`flex-1 flex flex-col items-center p-6 overflow-y-auto ${step === 7 && programTab === 'custom' ? 'justify-start pt-4' : 'justify-center'}`}>
+
+                {/* Step 1: How much time do you have? */}
+                {step === 1 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-4">
                             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center">
                                 <Dumbbell className="w-10 h-10 text-white" />
                             </div>
                             <h1 className="text-3xl font-bold text-white">Welcome to Shift6</h1>
-                            <p className="text-slate-400">What best describes you?</p>
+                            <p className="text-slate-400">How much time do you have for workouts?</p>
                         </div>
 
-                        <div className="space-y-2">
-                            {Object.values(PERSONA_TYPES).map((personaType) => {
-                                const info = PERSONA_INFO[personaType]
+                        <div className="space-y-3">
+                            {TIME_OPTIONS.map((option) => (
+                                <button
+                                    key={option.id}
+                                    onClick={() => handleTimeSelect(option.id)}
+                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedTime === option.id
+                                        ? 'border-cyan-500 bg-cyan-500/10'
+                                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-3xl">{option.icon}</span>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-white">{option.label}</h3>
+                                            <p className="text-sm text-slate-400">{option.sublabel}</p>
+                                        </div>
+                                        {selectedTime === option.id && (
+                                            <Check className="w-5 h-5 text-cyan-500" />
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <p className="text-center text-slate-500 text-xs">
+                            We'll customize your program based on your available time
+                        </p>
+                    </div>
+                )}
+
+                {/* Step 2: Where will you work out? */}
+                {step === 2 && (
+                    <div className="w-full max-w-md space-y-6 animate-fadeIn">
+                        <div className="text-center space-y-2">
+                            <h2 className="text-2xl font-bold text-white">Where will you work out?</h2>
+                            <p className="text-slate-400">We'll find the right exercises for your setup</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {LOCATION_OPTIONS.map((option) => {
+                                const Icon = option.icon
                                 return (
                                     <button
-                                        key={personaType}
-                                        onClick={() => handlePersonaSelect(personaType)}
-                                        className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedPersona === personaType
+                                        key={option.id}
+                                        onClick={() => handleModeSelect(option.id)}
+                                        className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedMode === option.id
                                             ? 'border-cyan-500 bg-cyan-500/10'
                                             : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                            }`}
+                                        }`}
                                     >
                                         <div className="flex items-center gap-4">
-                                            <span className="text-3xl">{info.icon}</span>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-white">{info.title}</h3>
-                                                <p className="text-sm text-slate-400">{info.description}</p>
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedMode === option.id ? 'bg-cyan-500/20' : 'bg-slate-700'}`}>
+                                                <Icon className={`w-6 h-6 ${selectedMode === option.id ? 'text-cyan-400' : 'text-slate-400'}`} />
                                             </div>
-                                            {selectedPersona === personaType && (
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-white">{option.label}</h3>
+                                                <p className="text-sm text-slate-400">{option.sublabel}</p>
+                                            </div>
+                                            {selectedMode === option.id && (
                                                 <Check className="w-5 h-5 text-cyan-500" />
                                             )}
                                         </div>
@@ -338,54 +388,15 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 )
                             })}
                         </div>
-
-                        <p className="text-center text-slate-500 text-xs">
-                            This helps us personalize your experience. You can change settings anytime.
-                        </p>
                     </div>
                 )}
 
-                {/* Step 1: Mode Selection (may be skipped for some personas) */}
-                {step === 1 && (
-                    <div className="w-full max-w-md space-y-6 animate-fadeIn">
-                        <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Training Style</h2>
-                            <p className="text-slate-400">Where will you be working out?</p>
-                        </div>
-
-                        <div className="space-y-2">
-
-                            {Object.entries(programModes).map(([id, mode]) => (
-                                <button
-                                    key={id}
-                                    onClick={() => handleModeSelect(id)}
-                                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedMode === id
-                                        ? 'border-cyan-500 bg-cyan-500/10'
-                                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-3xl">{mode.icon}</span>
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-white">{mode.name}</h3>
-                                            <p className="text-sm text-slate-400">{mode.desc}</p>
-                                        </div>
-                                        {selectedMode === id && (
-                                            <Check className="w-5 h-5 text-cyan-500" />
-                                        )}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Step 2: Equipment Selection */}
-                {step === 2 && (
+                {/* Step 3: Equipment Selection */}
+                {step === 3 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
                             <h2 className="text-2xl font-bold text-white">What equipment do you have?</h2>
-                            <p className="text-slate-400">Select all that apply (you can change this later)</p>
+                            <p className="text-slate-400">Select all that apply</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -396,7 +407,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     className={`p-4 rounded-xl border-2 transition-all relative ${selectedEquipment.includes(id)
                                         ? 'border-cyan-500 bg-cyan-500/10'
                                         : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                        }`}
+                                    }`}
                                 >
                                     <div className="text-center">
                                         <span className="text-2xl block mb-1">{equip.icon}</span>
@@ -410,17 +421,17 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         </div>
 
                         <p className="text-center text-slate-500 text-sm">
-                            No equipment? No problem - bodyweight exercises work great too!
+                            Don't have equipment yet? No problem - we'll include bodyweight alternatives
                         </p>
                     </div>
                 )}
 
-                {/* Step 3: Fitness Level (comes first to set smart defaults) */}
-                {step === 3 && (
+                {/* Step 4: Fitness Level */}
+                {step === 4 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Your Fitness Level</h2>
-                            <p className="text-slate-400">We will set smart defaults based on your experience</p>
+                            <h2 className="text-2xl font-bold text-white">What's your experience level?</h2>
+                            <p className="text-slate-400">Be honest - we'll scale everything appropriately</p>
                         </div>
 
                         <div className="space-y-3">
@@ -431,7 +442,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${trainingPreferences.fitnessLevel === key
                                         ? 'border-cyan-500 bg-cyan-500/10'
                                         : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                        }`}
+                                    }`}
                                 >
                                     <div className="flex items-center gap-4">
                                         <span className="text-2xl">{preset.icon}</span>
@@ -446,22 +457,15 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 </button>
                             ))}
                         </div>
-
-                        <div className="bg-slate-800/50 rounded-xl p-4 text-center">
-                            <div className="flex items-center justify-center gap-2 text-slate-400 text-sm mb-2">
-                                <Sparkles className="w-4 h-4" />
-                                <span>This sets recommended defaults you can customize next</span>
-                            </div>
-                        </div>
                     </div>
                 )}
 
-                {/* Step 4: Training Goal (Rep Scheme) */}
-                {step === 4 && (
+                {/* Step 5: Training Goal */}
+                {step === 5 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">What is Your Goal?</h2>
-                            <p className="text-slate-400">We will customize your rep ranges and rest times</p>
+                            <h2 className="text-2xl font-bold text-white">What's your main goal?</h2>
+                            <p className="text-slate-400">This affects your rep ranges and rest times</p>
                         </div>
 
                         <div className="space-y-3">
@@ -472,16 +476,13 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${trainingPreferences.repScheme === key
                                         ? 'border-cyan-500 bg-cyan-500/10'
                                         : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                                        }`}
+                                    }`}
                                 >
                                     <div className="flex items-center gap-4">
                                         <span className="text-2xl">{config.icon}</span>
                                         <div className="flex-1">
                                             <h3 className="font-semibold text-white">{config.name}</h3>
                                             <p className="text-sm text-slate-400">{config.desc}</p>
-                                            <p className="text-xs text-cyan-400 mt-1">
-                                                {config.repRange[0]}-{config.repRange[1]} reps • {config.restSeconds}s rest
-                                            </p>
                                         </div>
                                         {trainingPreferences.repScheme === key && (
                                             <Check className="w-5 h-5 text-cyan-500 flex-shrink-0" />
@@ -493,17 +494,17 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                     </div>
                 )}
 
-                {/* Step 5: Schedule Configuration */}
-                {step === 5 && (
+                {/* Step 6: Schedule Configuration */}
+                {step === 6 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Your Schedule</h2>
+                            <h2 className="text-2xl font-bold text-white">Your Training Schedule</h2>
                             <p className="text-slate-400">How often can you train?</p>
                         </div>
 
                         {/* Days per week */}
                         <div>
-                            <label className="text-sm text-slate-400 block mb-2">Training Days per Week</label>
+                            <label className="text-sm text-slate-400 block mb-2">Days per week</label>
                             <div className="flex justify-between gap-2">
                                 {TRAINING_DAYS_OPTIONS.map(num => (
                                     <button
@@ -512,7 +513,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                         className={`flex-1 py-3 rounded-lg font-semibold transition-all ${trainingPreferences.trainingDaysPerWeek === num
                                             ? 'bg-cyan-500 text-white'
                                             : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                            }`}
+                                        }`}
                                     >
                                         {num}
                                     </button>
@@ -522,7 +523,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
 
                         {/* Preferred days */}
                         <div>
-                            <label className="text-sm text-slate-400 block mb-2">Preferred Days (optional)</label>
+                            <label className="text-sm text-slate-400 block mb-2">Which days work best? (optional)</label>
                             <div className="flex gap-2">
                                 {daysOfWeek.map((day, idx) => (
                                     <button
@@ -531,38 +532,30 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                         className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${trainingPreferences.preferredDays?.includes(idx)
                                             ? 'bg-cyan-500 text-white'
                                             : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                            }`}
+                                        }`}
                                     >
                                         {day}
                                     </button>
                                 ))}
                             </div>
-                            <p className="text-xs text-slate-500 mt-2">Leave empty to train any day (except Sunday)</p>
+                            <p className="text-xs text-slate-500 mt-2">Leave empty to train any day</p>
                         </div>
 
-                        {/* Session duration */}
-                        <div>
-                            <label className="text-sm text-slate-400 block mb-2">Target Session Length</label>
-                            <div className="grid grid-cols-5 gap-2">
-                                {SESSION_DURATION_OPTIONS.map(mins => (
-                                    <button
-                                        key={mins}
-                                        onClick={() => handlePreferenceChange('targetSessionDuration', mins)}
-                                        className={`py-2 rounded-lg text-sm transition-all ${trainingPreferences.targetSessionDuration === mins
-                                            ? 'bg-cyan-500 text-white'
-                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                            }`}
-                                    >
-                                        {mins}m
-                                    </button>
-                                ))}
+                        {/* Express mode indicator */}
+                        {selectedTime === 'express' && (
+                            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-center gap-3">
+                                <Clock className="w-5 h-5 text-yellow-400" />
+                                <div>
+                                    <p className="text-yellow-400 font-medium text-sm">Express Mode Active</p>
+                                    <p className="text-slate-400 text-xs">Quick 10-15 minute workouts optimized for your schedule</p>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
 
-                {/* Step 6: Program Selection - Generated, Templates, or Custom */}
-                {step === 6 && (
+                {/* Step 7: Program Selection */}
+                {step === 7 && (
                     <div className="w-full max-w-lg space-y-4 animate-fadeIn">
                         <div className="text-center space-y-2">
                             <h2 className="text-2xl font-bold text-white">Your Program</h2>
@@ -576,7 +569,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${programTab === 'generated'
                                     ? 'bg-cyan-500 text-white'
                                     : 'text-slate-400 hover:text-white'
-                                    }`}
+                                }`}
                             >
                                 <Sparkles className="w-3 h-3" />
                                 For You
@@ -586,7 +579,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${programTab === 'templates'
                                     ? 'bg-cyan-500 text-white'
                                     : 'text-slate-400 hover:text-white'
-                                    }`}
+                                }`}
                             >
                                 <LayoutGrid className="w-3 h-3" />
                                 Templates
@@ -596,7 +589,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${programTab === 'custom'
                                     ? 'bg-cyan-500 text-white'
                                     : 'text-slate-400 hover:text-white'
-                                    }`}
+                                }`}
                             >
                                 <Wrench className="w-3 h-3" />
                                 Custom
@@ -607,7 +600,6 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         {programTab === 'generated' && (
                             generatedProgram ? (
                                 <div className="space-y-4">
-                                    {/* Program Summary Card */}
                                     <div className="bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 rounded-xl p-4">
                                         <div className="flex items-start justify-between mb-3">
                                             <div>
@@ -633,7 +625,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                                 <div className="text-xs text-slate-400">Per Week</div>
                                             </div>
                                             <div className="bg-slate-800/50 rounded-lg p-2 text-center">
-                                                <div className="text-lg font-bold text-white">~{generatedProgram.metadata?.estimatedSessionDuration || trainingPreferences.targetSessionDuration}m</div>
+                                                <div className="text-lg font-bold text-white">~{TIME_OPTIONS.find(t => t.id === selectedTime)?.duration || 30}m</div>
                                                 <div className="text-xs text-slate-400">Per Session</div>
                                             </div>
                                         </div>
@@ -667,48 +659,16 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                             )}
                                         </div>
                                     </div>
-
-                                    {/* Why these exercises */}
-                                    <div className="bg-slate-800/50 rounded-xl p-4">
-                                        <h4 className="font-medium text-white mb-2 flex items-center gap-2">
-                                            <Sparkles className="w-4 h-4 text-cyan-400" />
-                                            Why these exercises?
-                                        </h4>
-                                        <ul className="text-sm text-slate-400 space-y-1">
-                                            <li>Matched to your {trainingPreferences.fitnessLevel} fitness level</li>
-                                            <li>Optimized for {REP_SCHEME_CONFIGS[trainingPreferences.repScheme]?.name?.toLowerCase() || 'your goals'}</li>
-                                            <li>Balanced across all major muscle groups</li>
-                                            <li>Fits your {trainingPreferences.targetSessionDuration} minute sessions</li>
-                                        </ul>
-                                    </div>
-
-                                    <p className="text-center text-slate-500 text-xs">
-                                        Not quite right? Try the shuffle button or build your own
-                                    </p>
                                 </div>
                             ) : (
-                                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center animate-fadeIn">
+                                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
                                     <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                                         <Wrench className="w-6 h-6 text-red-400" />
                                     </div>
                                     <h3 className="text-red-400 font-bold mb-2">Unable to Generate Program</h3>
                                     <p className="text-slate-400 text-sm mb-4">
-                                        We couldn&apos;t find enough exercises with your current settings. This usually happens when &apos;Gym&apos; mode is selected without available equipment.
+                                        Try selecting different equipment or changing your workout location.
                                     </p>
-                                    <div className="space-y-2">
-                                        <button
-                                            onClick={() => setStep(2)}
-                                            className="w-full px-4 py-3 bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-300 rounded-lg text-sm transition-colors border border-slate-700"
-                                        >
-                                            Update Equipment
-                                        </button>
-                                        <button
-                                            onClick={() => setStep(1)}
-                                            className="w-full px-4 py-3 bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-300 rounded-lg text-sm transition-colors border border-slate-700"
-                                        >
-                                            Change Mode
-                                        </button>
-                                    </div>
                                 </div>
                             )
                         )}
@@ -716,14 +676,13 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         {/* Templates Tab */}
                         {programTab === 'templates' && (
                             <div className="space-y-4">
-                                {/* Goal Filter */}
                                 <div className="flex flex-wrap gap-2">
                                     <button
                                         onClick={() => setGoalFilter('all')}
                                         className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${goalFilter === 'all'
                                             ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                                             : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                            }`}
+                                        }`}
                                     >
                                         All
                                     </button>
@@ -734,7 +693,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${goalFilter === goal
                                                 ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                                                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                                }`}
+                                            }`}
                                         >
                                             <span>{icon}</span>
                                             <span className="capitalize">{goal}</span>
@@ -742,23 +701,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                     ))}
                                 </div>
 
-                                {/* Template List */}
                                 <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-                                    {/* Always show selected template first if it doesn't match filter */}
-                                    {selectedTemplate &&
-                                        goalFilter !== 'all' &&
-                                        templates[selectedTemplate]?.goal !== goalFilter && (
-                                            <div className="pb-2 mb-2 border-b border-slate-700">
-                                                <p className="text-xs text-slate-500 mb-2">Currently selected:</p>
-                                                <TemplateCard
-                                                    template={templates[selectedTemplate]}
-                                                    selected={true}
-                                                    onSelect={setSelectedTemplate}
-                                                    showPreview={true}
-                                                    allExercises={allExercises}
-                                                />
-                                            </div>
-                                        )}
                                     {availableTemplates
                                         .filter(([, t]) => goalFilter === 'all' || t.goal === goalFilter)
                                         .map(([id, template]) => (
@@ -771,11 +714,6 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                                 allExercises={allExercises}
                                             />
                                         ))}
-                                    {availableTemplates.filter(([, t]) => goalFilter === 'all' || t.goal === goalFilter).length === 0 && (
-                                        <p className="text-center text-slate-500 py-4">
-                                            No templates match this filter
-                                        </p>
-                                    )}
                                 </div>
                             </div>
                         )}
@@ -795,31 +733,38 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                     </div>
                 )}
 
-                {/* Step 7: Confirmation */}
-                {step === 7 && (
+                {/* Step 8: Confirmation */}
+                {step === 8 && (
                     <div className="w-full max-w-md space-y-8 animate-fadeIn">
                         <div className="text-center space-y-4">
                             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
                                 <Check className="w-10 h-10 text-white" />
                             </div>
-                            <h2 className="text-2xl font-bold text-white">You are all set!</h2>
+                            <h2 className="text-2xl font-bold text-white">You're all set!</h2>
                             <p className="text-slate-400">Your personalized program is ready</p>
                         </div>
 
                         <div className="bg-slate-800/50 rounded-xl p-4 space-y-3">
-                            {selectedPersona && (
-                                <div className="flex justify-between items-center">
-                                    <span className="text-slate-400">Profile</span>
+                            {/* Show detected persona */}
+                            {detectedPersona && PERSONA_INFO[detectedPersona] && (
+                                <div className="flex justify-between items-center pb-3 border-b border-slate-700">
+                                    <span className="text-slate-400">Your Profile</span>
                                     <span className="text-white font-medium flex items-center gap-2">
-                                        <span>{PERSONA_INFO[selectedPersona]?.icon}</span>
-                                        {PERSONA_INFO[selectedPersona]?.shortTitle}
+                                        <span>{PERSONA_INFO[detectedPersona].icon}</span>
+                                        {PERSONA_INFO[detectedPersona].shortTitle}
                                     </span>
                                 </div>
                             )}
                             <div className="flex justify-between items-center">
-                                <span className="text-slate-400">Mode</span>
+                                <span className="text-slate-400">Session Length</span>
                                 <span className="text-white font-medium">
-                                    {programModes[selectedMode]?.name}
+                                    {TIME_OPTIONS.find(t => t.id === selectedTime)?.label}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-slate-400">Location</span>
+                                <span className="text-white font-medium">
+                                    {LOCATION_OPTIONS.find(o => o.id === selectedMode)?.label}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
@@ -829,26 +774,17 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-slate-400">Training Goal</span>
+                                <span className="text-slate-400">Goal</span>
                                 <span className="text-white font-medium">
-                                    {REP_SCHEME_CONFIGS[trainingPreferences.repScheme]?.name}
+                                    {REP_SCHEME_CONFIGS[trainingPreferences.repScheme]?.name || 'Balanced'}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Schedule</span>
                                 <span className="text-white font-medium">
-                                    {trainingPreferences.trainingDaysPerWeek}x/week • {trainingPreferences.programDuration} weeks
+                                    {trainingPreferences.trainingDaysPerWeek}x per week
                                 </span>
                             </div>
-                            {isExpressPersona(selectedPersona) && (
-                                <div className="flex justify-between items-center">
-                                    <span className="text-slate-400">Express Mode</span>
-                                    <span className="text-cyan-400 font-medium flex items-center gap-1">
-                                        <Zap className="w-4 h-4" />
-                                        Enabled
-                                    </span>
-                                </div>
-                            )}
                             <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Exercises</span>
                                 <span className="text-white font-medium">
@@ -858,7 +794,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         </div>
 
                         <p className="text-center text-slate-500 text-sm">
-                            You can adjust all settings anytime in the app
+                            You can adjust all settings anytime in the menu
                         </p>
                     </div>
                 )}
@@ -882,7 +818,7 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${canProceed()
                             ? 'bg-cyan-500 text-white hover:bg-cyan-600'
                             : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                            }`}
+                        }`}
                     >
                         {displayStep === totalSteps ? 'Start Training' : 'Continue'}
                         {displayStep < totalSteps && <ChevronRight className="w-4 h-4" />}

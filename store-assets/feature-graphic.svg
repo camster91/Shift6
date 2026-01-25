@@ -1,0 +1,62 @@
+<svg width="1024" height="500" viewBox="0 0 1024 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1024" height="500" fill="#0f172a"/>
+
+  <!-- Gradient overlay -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:0.15" />
+      <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0.1" />
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22d3ee" />
+      <stop offset="100%" style="stop-color:#06b6d4" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="500" fill="url(#bgGradient)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="200" fill="#06b6d4" opacity="0.05"/>
+  <circle cx="900" cy="400" r="250" fill="#3b82f6" opacity="0.05"/>
+
+  <!-- App name -->
+  <text x="512" y="180" text-anchor="middle"
+        font-family="Arial, sans-serif"
+        font-weight="900"
+        font-size="120">
+    <tspan fill="url(#textGradient)">SHIFT</tspan><tspan fill="white">6</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="512" y="280" text-anchor="middle"
+        font-family="Arial, sans-serif"
+        font-weight="600"
+        font-size="36"
+        fill="#94a3b8">
+    Master Bodyweight Fitness in 6 Weeks
+  </text>
+
+  <!-- Features -->
+  <g font-family="Arial, sans-serif" font-size="24" fill="#64748b">
+    <text x="200" y="380">9 Exercises</text>
+    <text x="420" y="380">Smart Progression</text>
+    <text x="700" y="380">100% Offline</text>
+  </g>
+
+  <!-- Decorative line -->
+  <line x1="150" y1="320" x2="874" y2="320" stroke="#06b6d4" stroke-width="2" opacity="0.3"/>
+
+  <!-- Exercise icons row -->
+  <g transform="translate(200, 420)" opacity="0.4">
+    <circle cx="0" cy="0" r="25" fill="#3b82f6"/>
+    <circle cx="80" cy="0" r="25" fill="#f97316"/>
+    <circle cx="160" cy="0" r="25" fill="#eab308"/>
+    <circle cx="240" cy="0" r="25" fill="#ec4899"/>
+    <circle cx="320" cy="0" r="25" fill="#10b981"/>
+    <circle cx="400" cy="0" r="25" fill="#06b6d4"/>
+    <circle cx="480" cy="0" r="25" fill="#14b8a6"/>
+    <circle cx="560" cy="0" r="25" fill="#a855f7"/>
+    <circle cx="640" cy="0" r="25" fill="#6366f1"/>
+  </g>
+</svg>

@@ -30,7 +30,12 @@ import {
 
 // Components
 import Header from './components/Layout/Header';
+import BottomNav from './components/Layout/BottomNav';
+import SideDrawer from './components/Layout/SideDrawer';
 import Dashboard from './components/Views/Dashboard';
+import WorkoutQuickStart from './components/Views/WorkoutQuickStart';
+import Progress from './components/Views/Progress';
+import Guide from './components/Views/Guide';
 import WorkoutSession from './components/Views/WorkoutSession';
 import AddExercise from './components/Views/AddExercise';
 import Onboarding from './components/Views/Onboarding';
@@ -104,6 +109,11 @@ const App = () => {
     const [showAccessibility, setShowAccessibility] = useState(false);
     const [showWarmup, setShowWarmup] = useState(false);
     const [pendingWorkout, setPendingWorkout] = useState(null); // Stores workout to start after warmup
+
+    // Navigation State
+    const [activeTab, setActiveTab] = useState('home');
+    const [showDrawer, setShowDrawer] = useState(false);
+    const [showGuide, setShowGuide] = useState(false);
 
     // Warm-up preference (enabled by default)
     const [warmupEnabled, setWarmupEnabled] = useState(() => {
@@ -1089,54 +1099,113 @@ const App = () => {
 
     // ---------------- RENDER ----------------
 
+    // Calculate stats for drawer
+    const drawerStats = useMemo(() => {
+        const stats = calculateStats(completedDays, sessionHistory);
+        const unlockedBadges = getUnlockedBadges(stats);
+        return {
+            totalSessions: stats.totalSessions,
+            currentStreak: stats.currentStreak,
+            completedPlans: stats.completedPlans,
+            unlockedBadges: unlockedBadges.length
+        };
+    }, [completedDays, sessionHistory]);
+
     return (
         <div className={`min-h-screen font-sans selection:bg-cyan-500/30 ${theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
             }`}>
             <Header
-                onExport={handleExport}
-                onExportCSV={handleExportCSV}
-                onImport={handleImport}
-                onFactoryReset={handleFactoryReset}
                 audioEnabled={audioEnabled}
                 setAudioEnabled={setAudioEnabled}
-                restTimerOverride={restTimerOverride}
-                setRestTimerOverride={setRestTimerOverride}
                 theme={theme}
                 setTheme={setTheme}
-                warmupEnabled={warmupEnabled}
-                setWarmupEnabled={setWarmupEnabled}
-                onShowTrainingSettings={onShowTrainingSettings}
-                onShowBodyMetrics={onShowBodyMetrics}
-                onShowAccessibility={onShowAccessibility}
                 programMode={programMode}
                 onChangeProgramMode={handleChangeProgramMode}
             />
 
-            <main className="max-w-6xl mx-auto p-4 md:p-8 pb-8">
-                <Dashboard
-                    completedDays={completedDays}
-                    sessionHistory={sessionHistory}
-                    startStack={startStack}
-                    startWorkout={startWorkoutWithWarmup}
-                    startExpressWorkout={startExpressWorkout}
-                    allExercises={allExercises}
-                    customExercises={customExercises}
-                    exerciseDifficulty={exerciseDifficulty}
-                    onSetDifficulty={handleSetDifficulty}
-                    onDeleteExercise={handleDeleteExercise}
-                    onShowAddExercise={onShowAddExercise}
-                    programMode={programMode}
-                    activeProgram={activeProgramKeys}
-                    onShowExerciseLibrary={onShowExerciseLibrary}
-                    onShowProgramManager={onShowProgramManager}
-                    trainingPreferences={trainingPreferences}
-                    customPlans={customPlans}
-                    sprints={sprints}
-                    getExerciseSprintProgress={getExerciseSprintProgress}
-                    ensureSprintExists={ensureSprintExists}
-                    onCompleteSprint={handleCompleteSprint}
-                />
+            <main className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
+                {/* Home Tab - Dashboard */}
+                {activeTab === 'home' && (
+                    <Dashboard
+                        completedDays={completedDays}
+                        sessionHistory={sessionHistory}
+                        startStack={startStack}
+                        startWorkout={startWorkoutWithWarmup}
+                        startExpressWorkout={startExpressWorkout}
+                        allExercises={allExercises}
+                        customExercises={customExercises}
+                        exerciseDifficulty={exerciseDifficulty}
+                        onSetDifficulty={handleSetDifficulty}
+                        onDeleteExercise={handleDeleteExercise}
+                        onShowAddExercise={onShowAddExercise}
+                        programMode={programMode}
+                        activeProgram={activeProgramKeys}
+                        onShowExerciseLibrary={onShowExerciseLibrary}
+                        onShowProgramManager={onShowProgramManager}
+                        trainingPreferences={trainingPreferences}
+                        customPlans={customPlans}
+                        sprints={sprints}
+                        getExerciseSprintProgress={getExerciseSprintProgress}
+                        ensureSprintExists={ensureSprintExists}
+                        onCompleteSprint={handleCompleteSprint}
+                    />
+                )}
+
+                {/* Workout Tab - Quick Start */}
+                {activeTab === 'workout' && (
+                    <WorkoutQuickStart
+                        completedDays={completedDays}
+                        sessionHistory={sessionHistory}
+                        allExercises={allExercises}
+                        activeProgram={activeProgramKeys}
+                        trainingPreferences={trainingPreferences}
+                        startStack={startStack}
+                        startExpressWorkout={startExpressWorkout}
+                        startWorkout={startWorkoutWithWarmup}
+                        theme={theme}
+                    />
+                )}
+
+                {/* Progress Tab */}
+                {activeTab === 'progress' && (
+                    <Progress
+                        completedDays={completedDays}
+                        sessionHistory={sessionHistory}
+                        allExercises={allExercises}
+                        activeProgram={activeProgramKeys}
+                        startWorkout={startWorkoutWithWarmup}
+                        theme={theme}
+                    />
+                )}
             </main>
+
+            {/* Bottom Navigation - Hide during workout */}
+            {!currentSession && onboardingComplete && (
+                <BottomNav
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    onMenuClick={() => setShowDrawer(true)}
+                    theme={theme}
+                />
+            )}
+
+            {/* Side Drawer */}
+            <SideDrawer
+                isOpen={showDrawer}
+                onClose={() => setShowDrawer(false)}
+                stats={drawerStats}
+                onShowCalendar={() => { setActiveTab('progress'); setShowDrawer(false); }}
+                onShowGuide={() => { setShowGuide(true); setShowDrawer(false); }}
+                onShowAchievements={() => { setActiveTab('progress'); setShowDrawer(false); }}
+                onShowTrainingSettings={() => { setShowTrainingSettings(true); setShowDrawer(false); }}
+                onShowBodyMetrics={() => { setShowBodyMetrics(true); setShowDrawer(false); }}
+                onShowAccessibility={() => { setShowAccessibility(true); setShowDrawer(false); }}
+                onExport={handleExport}
+                onExportCSV={handleExportCSV}
+                onImport={handleImport}
+                onFactoryReset={handleFactoryReset}
+                theme={theme}
+            />
 
             {/* Add Exercise Modal */}
             {showAddExercise && (
@@ -1263,6 +1332,29 @@ const App = () => {
                     recommendedRoutine={pendingWorkout ? getRecommendedWarmupForExercise(pendingWorkout.overrideKey) : 'quick'}
                     audioEnabled={audioEnabled}
                 />
+            )}
+
+            {/* Guide Modal */}
+            {showGuide && (
+                <div className="fixed inset-0 z-50 bg-slate-950 overflow-y-auto">
+                    <div className="min-h-screen">
+                        <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
+                            <h2 className="text-lg font-bold text-white">Exercise Guide</h2>
+                            <button
+                                onClick={() => setShowGuide(false)}
+                                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-white transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <Guide
+                                allExercises={allExercises}
+                                activeProgram={activeProgramKeys}
+                            />
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Achievement Modal */}

@@ -17,7 +17,7 @@ import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { vibrate, copyToClipboard } from '../../utils/device';
 import { EXERCISE_PLANS, EXERCISE_ACHIEVEMENTS } from '../../data/exercises.jsx';
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js';
-import { calculateStats, getUnlockedBadges, BADGES } from '../../utils/gamification';
+import { calculateStats, getUnlockedBadges, BADGES, getLastWorkoutForExercise, getPersonalRecords } from '../../utils/gamification';
 import Confetti from '../Visuals/Confetti';
 
 const VideoModal = ({ exercise, onClose }) => {
@@ -513,6 +513,38 @@ const WorkoutSession = ({
                         <div key={i} className={`h-full flex-1 transition-all ${i <= currentSession.setIndex ? 'bg-cyan-500' : 'bg-slate-700/50'}`} />
                     ))}
                 </div>
+
+                {/* Previous Performance Banner - Show at set 0 */}
+                {currentSession.setIndex === 0 && (() => {
+                    const lastWorkout = getLastWorkoutForExercise(currentSession.exerciseKey, sessionHistory);
+                    const prs = getPersonalRecords(sessionHistory);
+                    const pr = prs[currentSession.exerciseKey];
+
+                    if (!lastWorkout && !pr) return null;
+
+                    return (
+                        <div className="px-4 py-3 bg-slate-800/50 border-b border-slate-700/50 flex items-center justify-center gap-6 text-sm">
+                            {lastWorkout && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-slate-500">Last time:</span>
+                                    <span className="font-bold text-white">{lastWorkout.volume}</span>
+                                    <span className="text-slate-400">{lastWorkout.unit}</span>
+                                    {lastWorkout.daysSince !== undefined && (
+                                        <span className="text-xs text-slate-600">
+                                            ({lastWorkout.daysSince === 0 ? 'today' : `${lastWorkout.daysSince}d ago`})
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            {pr && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-amber-500">PR:</span>
+                                    <span className="font-bold text-amber-400">{pr.volume}</span>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
 
                 {/* Main Content */}
                 <div className="p-8 md:p-12 min-h-[500px] flex flex-col items-center justify-center bg-slate-900/30">

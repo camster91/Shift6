@@ -1206,6 +1206,8 @@ const App = () => {
                         activeProgram={activeProgramKeys}
                         startWorkout={startWorkoutWithWarmup}
                         theme={theme}
+                        sprints={sprints}
+                        getExerciseSprintProgress={getExerciseSprintProgress}
                     />
                 )}
             </main>

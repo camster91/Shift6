@@ -1,9 +1,10 @@
 import { useState, memo } from 'react'
-import { Trophy, Flame, Target, TrendingUp, Calendar as CalendarIcon, ChevronDown, ChevronUp, Award, Zap } from 'lucide-react'
+import { Trophy, Flame, Target, TrendingUp, Calendar as CalendarIcon, ChevronDown, ChevronUp, Award, Zap, Dumbbell } from 'lucide-react'
 import { calculateStats, getUnlockedBadges, BADGES, calculateStreakWithGrace, getStreakStatus, getPersonalRecords } from '../../utils/gamification'
 import CalendarView from './CalendarView'
 import ProgressChart from '../Visuals/ProgressChart'
 import NeonBadge from '../Visuals/NeonBadge'
+import NeoIcon from '../Visuals/NeoIcon'
 
 // Stats card component
 const StatCard = ({ icon: Icon, label, value, subValue, color = 'cyan' }) => {
@@ -70,13 +71,28 @@ const BadgeItem = ({ badge, isUnlocked }) => {
     )
 }
 
+// Color classes for exercise themes
+const colorClasses = {
+    blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', solid: 'bg-blue-500' },
+    orange: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400', solid: 'bg-orange-500' },
+    cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', solid: 'bg-cyan-500' },
+    emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', solid: 'bg-emerald-500' },
+    yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', solid: 'bg-yellow-500' },
+    teal: { bg: 'bg-teal-500/10', border: 'border-teal-500/30', text: 'text-teal-400', solid: 'bg-teal-500' },
+    purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', solid: 'bg-purple-500' },
+    pink: { bg: 'bg-pink-500/10', border: 'border-pink-500/30', text: 'text-pink-400', solid: 'bg-pink-500' },
+    indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', solid: 'bg-indigo-500' },
+}
+
 const Progress = ({
     completedDays,
     sessionHistory,
     allExercises,
     activeProgram,
     startWorkout,
-    theme = 'dark'
+    theme = 'dark',
+    sprints = {},
+    getExerciseSprintProgress = null
 }) => {
     const [showAllBadges, setShowAllBadges] = useState(false)
     const [activeSection, setActiveSection] = useState('overview') // overview, achievements, calendar
@@ -223,6 +239,71 @@ const Progress = ({
                             </div>
                         </div>
                     )}
+
+                    {/* Active Sprints - 6-week progression cycles */}
+                    {(() => {
+                        const activeSprints = Object.values(sprints).filter(s => s.status === 'active')
+                        if (activeSprints.length === 0 || !getExerciseSprintProgress) return null
+
+                        return (
+                            <div className={`${cardBg} rounded-xl border overflow-hidden`}>
+                                <div className="p-4 border-b border-slate-800">
+                                    <h3 className="font-semibold text-white flex items-center gap-2">
+                                        <Target size={18} className="text-cyan-400" />
+                                        Active Training Cycles
+                                    </h3>
+                                    <p className="text-xs text-slate-500 mt-1">6-week progressive programs</p>
+                                </div>
+                                <div className="p-4 space-y-3">
+                                    {activeSprints.map(sprint => {
+                                        const exercise = allExercises[sprint.exerciseKey]
+                                        if (!exercise) return null
+                                        const colors = colorClasses[exercise.color] || colorClasses.cyan
+                                        const progressData = getExerciseSprintProgress(sprint.exerciseKey)
+                                        const progress = progressData?.progress
+
+                                        return (
+                                            <div key={sprint.id} className={`p-3 rounded-lg ${colors.bg} border ${colors.border}`}>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+                                                            {exercise.image?.startsWith('neo:') ? (
+                                                                <NeoIcon name={exercise.image.replace('neo:', '')} size={16} className={colors.text} />
+                                                            ) : (
+                                                                <Dumbbell className={colors.text} size={16} />
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <p className={`text-sm font-bold ${colors.text}`}>{exercise.name}</p>
+                                                            <p className="text-xs text-slate-500">
+                                                                Week {(sprint.currentWeek || 0) + 1}/6 · Day {(sprint.currentDay || 0) + 1}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-xs text-slate-400">Target</p>
+                                                        <p className={`text-sm font-bold ${colors.text}`}>{sprint.targetMax} {exercise.unit}</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Progress bar */}
+                                                <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full ${colors.solid} transition-all`}
+                                                        style={{ width: `${progress?.percentComplete || 0}%` }}
+                                                    />
+                                                </div>
+                                                <div className="flex justify-between text-xs text-slate-500 mt-1">
+                                                    <span>{sprint.startingMax} → {sprint.targetMax}</span>
+                                                    <span>{progress?.percentComplete || 0}%</span>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )
+                    })()}
                 </div>
             )}
 

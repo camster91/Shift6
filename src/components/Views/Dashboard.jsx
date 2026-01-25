@@ -1,4 +1,4 @@
-import { useState, memo, useEffect } from 'react'
+import { useState, memo } from 'react'
 import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info, Clock, Flame, MapPin, Home, Building2, RotateCcw } from 'lucide-react'
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx'
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise, isTrainingDay } from '../../utils/schedule'
@@ -284,8 +284,10 @@ const Dashboard = ({
     trainingPreferences = null,
     // eslint-disable-next-line no-unused-vars
     customPlans = null,
-    // Sprint progression props
+    // Sprint progression props (now displayed in Progress view)
+    // eslint-disable-next-line no-unused-vars
     sprints = {},
+    // eslint-disable-next-line no-unused-vars
     getExerciseSprintProgress = null,
     // eslint-disable-next-line no-unused-vars
     ensureSprintExists = null,
@@ -334,10 +336,6 @@ const Dashboard = ({
 
     // Determine if it's a rest day (use training preferences if available)
     const isRestDay = !isTrainingDay(preferredDays)
-
-    // Get active sprints for display
-    const activeSprints = Object.values(sprints).filter(s => s.status === 'active')
-    const hasActiveSprints = activeSprints.length > 0
 
     // Check if user has express mode enabled
     const userPersona = trainingPreferences?.persona
@@ -470,63 +468,6 @@ const Dashboard = ({
                             Want to do more? →
                         </button>
                     )}
-                </div>
-            )}
-
-            {/* Sprint Progress Section */}
-            {hasActiveSprints && getExerciseSprintProgress && (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-                    <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                        <Zap size={16} className="text-cyan-400" />
-                        Active Sprints
-                    </h3>
-                    <div className="space-y-3">
-                        {activeSprints.slice(0, 3).map(sprint => {
-                            const exercise = allExercises[sprint.exerciseKey]
-                            if (!exercise) return null
-                            const colors = colorClasses[exercise.color] || colorClasses.cyan
-                            const progressData = getExerciseSprintProgress(sprint.exerciseKey)
-                            const progress = progressData?.progress
-
-                            return (
-                                <div key={sprint.id} className={`p-3 rounded-lg ${colors.bg} border ${colors.border}`}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
-                                                {exercise.image?.startsWith('neo:') ? (
-                                                    <NeoIcon name={exercise.image.replace('neo:', '')} size={16} className={colors.text} />
-                                                ) : (
-                                                    <Dumbbell className={colors.text} size={16} />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p className={`text-sm font-bold ${colors.text}`}>{exercise.name}</p>
-                                                <p className="text-xs text-slate-500">
-                                                    Week {(sprint.currentWeek || 0) + 1}/6 • Day {(sprint.currentDay || 0) + 1}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-xs text-slate-400">Target</p>
-                                            <p className={`text-sm font-bold ${colors.text}`}>{sprint.targetMax} reps</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Progress bar */}
-                                    <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full ${colors.solid} transition-all`}
-                                            style={{ width: `${progress?.percentComplete || 0}%` }}
-                                        />
-                                    </div>
-                                    <div className="flex justify-between text-xs text-slate-500 mt-1">
-                                        <span>{sprint.startingMax} → {sprint.targetMax}</span>
-                                        <span>{progress?.percentComplete || 0}% complete</span>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
                 </div>
             )}
 

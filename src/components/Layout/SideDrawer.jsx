@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, memo } from 'react'
 import {
     X,
     Trophy,
@@ -252,4 +252,4 @@ const SideDrawer = ({
     )
 }
 
-export default SideDrawer
+export default memo(SideDrawer)

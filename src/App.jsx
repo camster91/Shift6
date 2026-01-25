@@ -981,7 +981,7 @@ const App = () => {
 
     // ---------------- DATA MANAGEMENT ----------------
 
-    const handleExport = () => {
+    const handleExport = useCallback(() => {
         const data = {
             progress: completedDays,
             introDismissed: localStorage.getItem('shift6_intro_dismissed'),
@@ -997,9 +997,9 @@ const App = () => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    };
+    }, [completedDays]);
 
-    const handleExportCSV = () => {
+    const handleExportCSV = useCallback(() => {
         if (sessionHistory.length === 0) {
             alert('No workout history to export.');
             return;
@@ -1025,9 +1025,9 @@ const App = () => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    };
+    }, [sessionHistory]);
 
-    const handleImport = (file) => {
+    const handleImport = useCallback((file) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
@@ -1045,9 +1045,9 @@ const App = () => {
             }
         };
         reader.readAsText(file);
-    };
+    }, []);
 
-    const handleFactoryReset = () => {
+    const handleFactoryReset = useCallback(() => {
         if (window.confirm('WARNING: This will permanently delete ALL workout history and progress. This cannot be undone. Are you absolutely sure?')) {
             setCompletedDays({});
             setSessionHistory([]);
@@ -1055,7 +1055,7 @@ const App = () => {
             alert('Aura Cleansed. Progress Reset.');
             window.location.reload();
         }
-    };
+    }, []);
 
     // ⚡ Bolt: Memoize modal handlers to prevent Dashboard re-renders.
     const onShowAddExercise = useCallback(() => setShowAddExercise(true), []);
@@ -1064,6 +1064,15 @@ const App = () => {
     const onShowTrainingSettings = useCallback(() => setShowTrainingSettings(true), []);
     const onShowBodyMetrics = useCallback(() => setShowBodyMetrics(true), []);
     const onShowAccessibility = useCallback(() => setShowAccessibility(true), []);
+
+    // ⚡ Bolt: Memoize SideDrawer callbacks to prevent re-renders.
+    const onSideDrawerClose = useCallback(() => setShowDrawer(false), []);
+    const onShowCalendar = useCallback(() => { setActiveTab('progress'); setShowDrawer(false); }, []);
+    const onShowGuide = useCallback(() => { setShowGuide(true); setShowDrawer(false); }, []);
+    const onShowAchievements = useCallback(() => { setActiveTab('progress'); setShowDrawer(false); }, []);
+    const onShowTrainingSettingsForDrawer = useCallback(() => { setShowTrainingSettings(true); setShowDrawer(false); }, []);
+    const onShowBodyMetricsForDrawer = useCallback(() => { setShowBodyMetrics(true); setShowDrawer(false); }, []);
+    const onShowAccessibilityForDrawer = useCallback(() => { setShowAccessibility(true); setShowDrawer(false); }, []);
 
     // ---------------- SPRINT MANAGEMENT ----------------
 
@@ -1225,14 +1234,14 @@ const App = () => {
             {/* Side Drawer */}
             <SideDrawer
                 isOpen={showDrawer}
-                onClose={() => setShowDrawer(false)}
+                onClose={onSideDrawerClose}
                 stats={drawerStats}
-                onShowCalendar={() => { setActiveTab('progress'); setShowDrawer(false); }}
-                onShowGuide={() => { setShowGuide(true); setShowDrawer(false); }}
-                onShowAchievements={() => { setActiveTab('progress'); setShowDrawer(false); }}
-                onShowTrainingSettings={() => { setShowTrainingSettings(true); setShowDrawer(false); }}
-                onShowBodyMetrics={() => { setShowBodyMetrics(true); setShowDrawer(false); }}
-                onShowAccessibility={() => { setShowAccessibility(true); setShowDrawer(false); }}
+                onShowCalendar={onShowCalendar}
+                onShowGuide={onShowGuide}
+                onShowAchievements={onShowAchievements}
+                onShowTrainingSettings={onShowTrainingSettingsForDrawer}
+                onShowBodyMetrics={onShowBodyMetricsForDrawer}
+                onShowAccessibility={onShowAccessibilityForDrawer}
                 onExport={handleExport}
                 onExportCSV={handleExportCSV}
                 onImport={handleImport}

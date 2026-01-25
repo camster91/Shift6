@@ -4,7 +4,6 @@ import {
     Trophy,
     Calendar,
     BookOpen,
-    Settings,
     Scale,
     Eye,
     Download,
@@ -13,8 +12,7 @@ import {
     Trash2,
     Dumbbell,
     ChevronRight,
-    User,
-    Flame
+    User
 } from 'lucide-react'
 
 const SideDrawer = ({

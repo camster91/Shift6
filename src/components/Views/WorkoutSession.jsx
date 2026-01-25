@@ -91,6 +91,40 @@ const ProgressRing = ({ progress, size = 200, stroke = 8, color = "currentColor"
     );
 };
 
+// Exit Confirmation Modal
+const ExitConfirmModal = ({ onConfirm, onCancel }) => (
+    <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4" onClick={onCancel}>
+        <div
+            className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}
+        >
+            <div className="text-center mb-6">
+                <div className="w-14 h-14 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <X className="text-amber-400" size={28} />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Exit Workout?</h3>
+                <p className="text-sm text-slate-400">
+                    Your progress for this session will be lost.
+                </p>
+            </div>
+            <div className="flex gap-3">
+                <button
+                    onClick={onCancel}
+                    className="flex-1 py-3 px-4 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium hover:bg-slate-700 transition-colors"
+                >
+                    Keep Going
+                </button>
+                <button
+                    onClick={onConfirm}
+                    className="flex-1 py-3 px-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 font-medium hover:bg-red-500/30 transition-colors"
+                >
+                    Exit
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
 const WorkoutSession = ({
     currentSession,
     setCurrentSession,
@@ -125,6 +159,7 @@ const WorkoutSession = ({
     const [showTips, setShowTips] = useState(false);
     const [showAchievements, setShowAchievements] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
+    const [showExitConfirm, setShowExitConfirm] = useState(false);
 
     // Gym workout state - track reps completed for each set
     const [gymSetReps, setGymSetReps] = useState([]);
@@ -496,12 +531,9 @@ const WorkoutSession = ({
                         <h2 className="text-xl font-bold text-white">Week {currentSession.week}</h2>
                     </div>
                     <button
-                        onClick={() => {
-                            if (window.confirm('Exit workout? Progress will be lost.')) {
-                                setCurrentSession(null);
-                            }
-                        }}
+                        onClick={() => setShowExitConfirm(true)}
                         className="p-2 hover:bg-cyan-500/10 transition-colors rounded"
+                        aria-label="Exit workout"
                     >
                         <X size={20} />
                     </button>
@@ -1192,6 +1224,17 @@ const WorkoutSession = ({
                 {/* Video Modal */}
                 {showVideo && currentExercise && (
                     <VideoModal exercise={currentExercise} onClose={() => setShowVideo(false)} />
+                )}
+
+                {/* Exit Confirmation Modal */}
+                {showExitConfirm && (
+                    <ExitConfirmModal
+                        onConfirm={() => {
+                            setShowExitConfirm(false);
+                            setCurrentSession(null);
+                        }}
+                        onCancel={() => setShowExitConfirm(false)}
+                    />
                 )}
             </div>
         </div>

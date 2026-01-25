@@ -1,4 +1,3 @@
-import React from 'react'
 import { Home, Zap, BarChart3, Menu } from 'lucide-react'
 
 const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark' }) => {

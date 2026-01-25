@@ -14,7 +14,7 @@ import { applyFitnessLevelPreset } from '../../utils/preferences.js'
 import { EXERCISE_LIBRARY, GOAL_ICONS } from '../../data/exerciseLibrary.js'
 import { EXERCISES } from '../../data/exerciseDatabase.js'
 import { generateSmartProgram } from '../../utils/smartProgramGenerator.js'
-import { detectPersona, getPersonaDefaults, isExpressPersona, PERSONA_INFO } from '../../utils/personas.js'
+import { detectPersona, getPersonaDefaults, isExpressPersona } from '../../utils/personas.js'
 import TemplateCard from '../Visuals/TemplateCard'
 import CustomProgramBuilder from './CustomProgramBuilder'
 
@@ -745,16 +745,6 @@ const Onboarding = ({ programModes, equipment, templates, onComplete }) => {
                         </div>
 
                         <div className="bg-slate-800/50 rounded-xl p-4 space-y-3">
-                            {/* Show detected persona */}
-                            {detectedPersona && PERSONA_INFO[detectedPersona] && (
-                                <div className="flex justify-between items-center pb-3 border-b border-slate-700">
-                                    <span className="text-slate-400">Your Profile</span>
-                                    <span className="text-white font-medium flex items-center gap-2">
-                                        <span>{PERSONA_INFO[detectedPersona].icon}</span>
-                                        {PERSONA_INFO[detectedPersona].shortTitle}
-                                    </span>
-                                </div>
-                            )}
                             <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Session Length</span>
                                 <span className="text-white font-medium">

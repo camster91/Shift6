@@ -236,6 +236,70 @@ export const getPersonalRecords = (sessionHistory = []) => {
 };
 
 /**
+ * Gets the most recent workout for a specific exercise.
+ * @param {string} exerciseKey - The exercise to look up
+ * @param {SessionHistoryItem[]} sessionHistory - Array of session history items
+ * @returns {Object|null} Last workout info or null if never done
+ */
+export const getLastWorkoutForExercise = (exerciseKey, sessionHistory = []) => {
+    // Filter to only this exercise and sort by date (newest first)
+    const exerciseHistory = sessionHistory
+        .filter(s => s.exerciseKey === exerciseKey)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (exerciseHistory.length === 0) return null;
+
+    const last = exerciseHistory[0];
+    const daysSince = Math.floor((Date.now() - new Date(last.date).getTime()) / MS_PER_DAY);
+
+    return {
+        volume: last.volume,
+        unit: last.unit || 'reps',
+        date: last.date,
+        dayId: last.dayId,
+        daysSince,
+        reps: last.reps || [], // Individual set reps if available
+        amrapReps: last.amrapReps || 0
+    };
+};
+
+/**
+ * Gets workout history summary for an exercise (last 5 workouts).
+ * @param {string} exerciseKey - The exercise to look up
+ * @param {SessionHistoryItem[]} sessionHistory - Array of session history items
+ * @returns {Object} Summary with trend info
+ */
+export const getExerciseHistorySummary = (exerciseKey, sessionHistory = []) => {
+    const exerciseHistory = sessionHistory
+        .filter(s => s.exerciseKey === exerciseKey)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5);
+
+    if (exerciseHistory.length === 0) {
+        return { workouts: [], trend: 'none', average: 0 };
+    }
+
+    const volumes = exerciseHistory.map(s => s.volume);
+    const average = Math.round(volumes.reduce((a, b) => a + b, 0) / volumes.length);
+
+    // Calculate trend (comparing last 2 workouts)
+    let trend = 'stable';
+    if (volumes.length >= 2) {
+        const diff = volumes[0] - volumes[1];
+        if (diff > volumes[1] * 0.05) trend = 'improving';
+        else if (diff < -volumes[1] * 0.05) trend = 'declining';
+    }
+
+    return {
+        workouts: exerciseHistory,
+        trend,
+        average,
+        best: Math.max(...volumes),
+        count: exerciseHistory.length
+    };
+};
+
+/**
  * Checks if a given volume is a new personal record for an exercise.
  * @param {string} exerciseKey - The exercise key
  * @param {number} volume - The volume to check

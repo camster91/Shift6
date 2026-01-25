@@ -230,6 +230,93 @@ html.font-extra-large {
   font-size: 22px;
 }
 
+/* Ensure text doesn't overflow in large font modes */
+html.font-large,
+html.font-extra-large {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Scale key text elements appropriately */
+html.font-large .text-xs {
+  font-size: 0.875rem !important;
+}
+
+html.font-extra-large .text-xs {
+  font-size: 1rem !important;
+}
+
+html.font-large .text-sm {
+  font-size: 1rem !important;
+}
+
+html.font-extra-large .text-sm {
+  font-size: 1.125rem !important;
+}
+
+/* Ensure large numbers in workout display scale but don't break layout */
+html.font-large .text-\[120px\],
+html.font-extra-large .text-\[120px\] {
+  font-size: clamp(60px, 15vw, 100px) !important;
+  line-height: 1 !important;
+}
+
+/* Increase spacing for readability */
+html.font-large .space-y-2 > * + * {
+  margin-top: 0.625rem !important;
+}
+
+html.font-extra-large .space-y-2 > * + * {
+  margin-top: 0.75rem !important;
+}
+
+html.font-large .space-y-4 > * + * {
+  margin-top: 1.25rem !important;
+}
+
+html.font-extra-large .space-y-4 > * + * {
+  margin-top: 1.5rem !important;
+}
+
+/* Ensure cards have proper padding in large modes */
+html.font-large .p-4 {
+  padding: 1.25rem !important;
+}
+
+html.font-extra-large .p-4 {
+  padding: 1.5rem !important;
+}
+
+/* Increase line height for readability */
+html.font-large p,
+html.font-large span,
+html.font-large label {
+  line-height: 1.6 !important;
+}
+
+html.font-extra-large p,
+html.font-extra-large span,
+html.font-extra-large label {
+  line-height: 1.7 !important;
+}
+
+/* Ensure bottom nav is visible in large font mode */
+html.font-large nav,
+html.font-extra-large nav {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem) !important;
+}
+
+/* Increase icon sizes in large modes */
+html.font-large svg:not(.no-scale) {
+  min-width: 1.25em;
+  min-height: 1.25em;
+}
+
+html.font-extra-large svg:not(.no-scale) {
+  min-width: 1.5em;
+  min-height: 1.5em;
+}
+
 /* High contrast mode */
 html.high-contrast {
   --bg-primary: #000000;

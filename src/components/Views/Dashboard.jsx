@@ -1,13 +1,122 @@
 import { useState, memo } from 'react'
-import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info, Clock, Flame } from 'lucide-react'
+import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info, Clock, Flame, MapPin, Home, Building2, RotateCcw } from 'lucide-react'
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx'
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise, isTrainingDay } from '../../utils/schedule'
 import { vibrate } from '../../utils/device'
-import { calculateStreakWithGrace, getStreakStatus, getRemainingFreezeTokens, checkComeback, getPersonalRecords } from '../../utils/gamification'
+import { calculateStreakWithGrace, getStreakStatus, getRemainingFreezeTokens, checkComeback, getPersonalRecords, getLastWorkoutForExercise } from '../../utils/gamification'
 import { EXPRESS_MODE_CONFIG, STORAGE_KEYS, WORKOUT_LOCATIONS } from '../../utils/constants'
 import { isExpressPersona, isHybridPersona } from '../../utils/personas'
 import LocationSelector, { getExercisesForLocation, getLocationColor } from '../UI/LocationSelector'
 import NeoIcon from '../Visuals/NeoIcon'
+
+// Floating Quick Start Button - appears after scroll or always visible
+const QuickStartFAB = ({ onClick, exerciseCount, isVisible }) => {
+    if (!isVisible || exerciseCount === 0) return null
+
+    return (
+        <button
+            onClick={() => {
+                vibrate(50)
+                onClick()
+            }}
+            className="fixed bottom-24 right-4 z-30 w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full shadow-xl shadow-cyan-500/30 flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-transform"
+            aria-label={`Start workout with ${exerciseCount} exercises`}
+        >
+            <div className="relative">
+                <Play size={28} className="fill-current ml-1" />
+                <span className="absolute -top-2 -right-2 w-5 h-5 bg-white text-cyan-600 text-xs font-bold rounded-full flex items-center justify-center">
+                    {exerciseCount}
+                </span>
+            </div>
+        </button>
+    )
+}
+
+// Resume Workout Banner - shows when there's an interrupted session
+const ResumeWorkoutBanner = ({ session, onResume, onDiscard, allExercises }) => {
+    if (!session) return null
+
+    const exercise = allExercises[session.exerciseKey]
+    const colors = colorClasses[exercise?.color] || colorClasses.cyan
+
+    return (
+        <div className={`${colors.bg} border ${colors.border} rounded-xl p-4 mb-4 animate-pulse-slow`}>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+                        <RotateCcw className={colors.text} size={20} />
+                    </div>
+                    <div>
+                        <p className={`font-bold ${colors.text}`}>Resume Workout</p>
+                        <p className="text-xs text-slate-400">
+                            {exercise?.name} - Set {(session.setIndex || 0) + 1}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={onDiscard}
+                        className="px-3 py-2 text-xs text-slate-400 hover:text-white transition-colors"
+                    >
+                        Discard
+                    </button>
+                    <button
+                        onClick={() => {
+                            vibrate(30)
+                            onResume()
+                        }}
+                        className={`px-4 py-2 ${colors.solid} text-white rounded-lg text-sm font-bold`}
+                    >
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// Location Quick Switch - prominent for hybrid users
+const LocationQuickSwitch = ({ currentLocation, onSwitch, exerciseCounts }) => {
+    const locations = [
+        { id: WORKOUT_LOCATIONS.HOME, icon: Home, label: 'Home', color: 'emerald' },
+        { id: WORKOUT_LOCATIONS.GYM, icon: Building2, label: 'Gym', color: 'purple' }
+    ]
+
+    return (
+        <div className="flex gap-2 mb-4">
+            {locations.map(loc => {
+                const Icon = loc.icon
+                const isActive = currentLocation === loc.id
+                const count = exerciseCounts[loc.id] || 0
+
+                return (
+                    <button
+                        key={loc.id}
+                        onClick={() => {
+                            vibrate(20)
+                            onSwitch(loc.id)
+                        }}
+                        className={`flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                            isActive
+                                ? `border-${loc.color}-500 bg-${loc.color}-500/10`
+                                : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                        }`}
+                    >
+                        <Icon size={18} className={isActive ? `text-${loc.color}-400` : 'text-slate-400'} />
+                        <span className={`font-medium ${isActive ? `text-${loc.color}-400` : 'text-slate-400'}`}>
+                            {loc.label}
+                        </span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                            isActive ? `bg-${loc.color}-500/20 text-${loc.color}-400` : 'bg-slate-700 text-slate-500'
+                        }`}>
+                            {count}
+                        </span>
+                    </button>
+                )
+            })}
+        </div>
+    )
+}
 
 // Color classes for exercise themes
 const colorClasses = {
@@ -175,19 +284,26 @@ const Dashboard = ({
     trainingPreferences = null,
     // eslint-disable-next-line no-unused-vars
     customPlans = null,
-    // Sprint progression props
+    // Sprint progression props (now displayed in Progress view)
+    // eslint-disable-next-line no-unused-vars
     sprints = {},
+    // eslint-disable-next-line no-unused-vars
     getExerciseSprintProgress = null,
     // eslint-disable-next-line no-unused-vars
     ensureSprintExists = null,
     // eslint-disable-next-line no-unused-vars
-    onCompleteSprint = null
+    onCompleteSprint = null,
+    // Session resume props
+    pendingSession = null,
+    onResumeSession = null,
+    onDiscardSession = null
 }) => {
     const preferredDays = trainingPreferences?.preferredDays || []
     const dailyStack = getDailyStack(completedDays, allExercises, activeProgram, trainingPreferences)
     const personalRecords = getPersonalRecords(sessionHistory)
     const [showAllExercises, setShowAllExercises] = useState(false)
     const [selectedExercise, setSelectedExercise] = useState(null)
+    const [showFAB, setShowFAB] = useState(true)
 
     // Location state for hybrid users
     const [currentLocation, setCurrentLocation] = useState(() => {
@@ -199,6 +315,12 @@ const Dashboard = ({
     const handleLocationChange = (location) => {
         setCurrentLocation(location)
         localStorage.setItem(STORAGE_KEYS.currentLocation, location)
+    }
+
+    // Count exercises per location for hybrid users
+    const exerciseCountsByLocation = {
+        [WORKOUT_LOCATIONS.HOME]: getExercisesForLocation(WORKOUT_LOCATIONS.HOME, allExercises).length,
+        [WORKOUT_LOCATIONS.GYM]: getExercisesForLocation(WORKOUT_LOCATIONS.GYM, allExercises).length
     }
 
     // Show only active program exercises (or all if no activeProgram)
@@ -215,10 +337,6 @@ const Dashboard = ({
     // Determine if it's a rest day (use training preferences if available)
     const isRestDay = !isTrainingDay(preferredDays)
 
-    // Get active sprints for display
-    const activeSprints = Object.values(sprints).filter(s => s.status === 'active')
-    const hasActiveSprints = activeSprints.length > 0
-
     // Check if user has express mode enabled
     const userPersona = trainingPreferences?.persona
     const isExpressModeUser = trainingPreferences?.expressMode || isExpressPersona(userPersona)
@@ -233,6 +351,64 @@ const Dashboard = ({
 
     return (
         <div className="space-y-6 pb-8">
+            {/* Resume Workout Banner - Shows when there's an interrupted session */}
+            {pendingSession && onResumeSession && (
+                <ResumeWorkoutBanner
+                    session={pendingSession}
+                    onResume={onResumeSession}
+                    onDiscard={onDiscardSession}
+                    allExercises={allExercises}
+                />
+            )}
+
+            {/* Location Quick Switch - Prominent for hybrid users */}
+            {isHybridUser && (
+                <div className="bg-gradient-to-r from-emerald-500/5 to-purple-500/5 border border-slate-700 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <MapPin size={16} className="text-cyan-400" />
+                        <h3 className="text-sm font-semibold text-white">Where are you training?</h3>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleLocationChange(WORKOUT_LOCATIONS.HOME)}
+                            className={`flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                                currentLocation === WORKOUT_LOCATIONS.HOME
+                                    ? 'border-emerald-500 bg-emerald-500/10'
+                                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                            }`}
+                        >
+                            <Home size={18} className={currentLocation === WORKOUT_LOCATIONS.HOME ? 'text-emerald-400' : 'text-slate-400'} />
+                            <span className={`font-medium ${currentLocation === WORKOUT_LOCATIONS.HOME ? 'text-emerald-400' : 'text-slate-400'}`}>
+                                Home
+                            </span>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                                currentLocation === WORKOUT_LOCATIONS.HOME ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-500'
+                            }`}>
+                                {exerciseCountsByLocation[WORKOUT_LOCATIONS.HOME]}
+                            </span>
+                        </button>
+                        <button
+                            onClick={() => handleLocationChange(WORKOUT_LOCATIONS.GYM)}
+                            className={`flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                                currentLocation === WORKOUT_LOCATIONS.GYM
+                                    ? 'border-purple-500 bg-purple-500/10'
+                                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                            }`}
+                        >
+                            <Building2 size={18} className={currentLocation === WORKOUT_LOCATIONS.GYM ? 'text-purple-400' : 'text-slate-400'} />
+                            <span className={`font-medium ${currentLocation === WORKOUT_LOCATIONS.GYM ? 'text-purple-400' : 'text-slate-400'}`}>
+                                Gym
+                            </span>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                                currentLocation === WORKOUT_LOCATIONS.GYM ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-700 text-slate-500'
+                            }`}>
+                                {exerciseCountsByLocation[WORKOUT_LOCATIONS.GYM]}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Express Mode Quick Start - Show for express mode users */}
             {isExpressModeUser && dailyStack.length > 0 && startExpressWorkout && (
                 <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-5">
@@ -263,22 +439,12 @@ const Dashboard = ({
                 </div>
             )}
 
-            {/* Location Selector - Show for hybrid users */}
-            {isHybridUser && (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold text-white">Current Location</h3>
-                        <span className={`text-xs px-2 py-1 rounded-full border ${getLocationColor(currentLocation)}`}>
-                            {locationFilteredExercises.length} exercises available
-                        </span>
-                    </div>
-                    <LocationSelector
-                        currentLocation={currentLocation}
-                        onSelect={handleLocationChange}
-                        variant="compact"
-                    />
-                </div>
-            )}
+            {/* Quick Start FAB */}
+            <QuickStartFAB
+                onClick={startStack}
+                exerciseCount={dailyStack.length}
+                isVisible={showFAB && dailyStack.length > 0 && !pendingSession}
+            />
 
             {/* Today's Summary - Only show if worked out today */}
             {todayWorkouts.length > 0 && (
@@ -302,63 +468,6 @@ const Dashboard = ({
                             Want to do more? →
                         </button>
                     )}
-                </div>
-            )}
-
-            {/* Sprint Progress Section */}
-            {hasActiveSprints && getExerciseSprintProgress && (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-                    <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                        <Zap size={16} className="text-cyan-400" />
-                        Active Sprints
-                    </h3>
-                    <div className="space-y-3">
-                        {activeSprints.slice(0, 3).map(sprint => {
-                            const exercise = allExercises[sprint.exerciseKey]
-                            if (!exercise) return null
-                            const colors = colorClasses[exercise.color] || colorClasses.cyan
-                            const progressData = getExerciseSprintProgress(sprint.exerciseKey)
-                            const progress = progressData?.progress
-
-                            return (
-                                <div key={sprint.id} className={`p-3 rounded-lg ${colors.bg} border ${colors.border}`}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
-                                                {exercise.image?.startsWith('neo:') ? (
-                                                    <NeoIcon name={exercise.image.replace('neo:', '')} size={16} className={colors.text} />
-                                                ) : (
-                                                    <Dumbbell className={colors.text} size={16} />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p className={`text-sm font-bold ${colors.text}`}>{exercise.name}</p>
-                                                <p className="text-xs text-slate-500">
-                                                    Week {(sprint.currentWeek || 0) + 1}/6 • Day {(sprint.currentDay || 0) + 1}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-xs text-slate-400">Target</p>
-                                            <p className={`text-sm font-bold ${colors.text}`}>{sprint.targetMax} reps</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Progress bar */}
-                                    <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full ${colors.solid} transition-all`}
-                                            style={{ width: `${progress?.percentComplete || 0}%` }}
-                                        />
-                                    </div>
-                                    <div className="flex justify-between text-xs text-slate-500 mt-1">
-                                        <span>{sprint.startingMax} → {sprint.targetMax}</span>
-                                        <span>{progress?.percentComplete || 0}% complete</span>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
                 </div>
             )}
 

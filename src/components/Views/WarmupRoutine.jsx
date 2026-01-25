@@ -148,83 +148,46 @@ const WarmupRoutine = ({
     ? ((currentExerciseIndex + (timeLeft === 0 && !isComplete ? 1 : 0)) / totalExercises) * 100
     : 0
 
-  // Routine selection view
+  // Routine selection view - simplified to 2 options
   if (!selectedRoutine) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
-        <div className="fixed inset-0 bg-slate-950 md:inset-4 md:rounded-2xl overflow-hidden flex flex-col">
+      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-slate-900 rounded-2xl w-full max-w-sm overflow-hidden border border-slate-800">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-slate-800">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-500/20 rounded-lg">
-                <Flame className="w-5 h-5 text-orange-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">Warm Up</h2>
-                <p className="text-xs text-slate-500">Prep your body for the workout</p>
-              </div>
+          <div className="p-5 text-center border-b border-slate-800">
+            <div className="w-14 h-14 mx-auto mb-3 bg-orange-500/20 rounded-full flex items-center justify-center">
+              <Flame className="w-7 h-7 text-orange-400" />
             </div>
-            <button
-              onClick={onSkip}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-400" />
-            </button>
+            <h2 className="text-xl font-bold text-white">Warm Up First?</h2>
+            <p className="text-sm text-slate-400 mt-1">Prep your muscles and joints</p>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            <p className="text-sm text-slate-400 mb-4">
-              Choose a warm-up routine to prepare your muscles and joints:
-            </p>
-
-            {Object.values(WARMUP_ROUTINES).map((r) => {
-              const isRecommended = r.id === recommendedRoutine
-              const totalDuration = calculateWarmupDuration(r.id)
-
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => setSelectedRoutine(r.id)}
-                  className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                    isRecommended
-                      ? 'border-orange-500/50 bg-orange-500/10 hover:bg-orange-500/20'
-                      : 'border-slate-700 hover:border-slate-600 hover:bg-slate-800/50'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-white">{r.name}</h3>
-                        {isRecommended && (
-                          <span className="text-xs px-2 py-0.5 bg-orange-500/30 text-orange-400 rounded-full">
-                            Recommended
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-400 mt-1">{r.description}</p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <Clock size={12} />
-                          ~{Math.ceil(totalDuration / 60)} min
-                        </span>
-                        <span>{r.exercises.length} exercises</span>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-slate-500 mt-1" />
-                  </div>
-                </button>
-              )
-            })}
+          {/* Options - 2 side by side buttons */}
+          <div className="p-4 flex gap-3">
+            {Object.values(WARMUP_ROUTINES).map((r) => (
+              <button
+                key={r.id}
+                onClick={() => setSelectedRoutine(r.id)}
+                className={`flex-1 p-4 rounded-xl border-2 transition-all text-center ${
+                  r.id === recommendedRoutine
+                    ? 'border-orange-500 bg-orange-500/10'
+                    : 'border-slate-700 hover:border-slate-600'
+                }`}
+              >
+                <p className="text-2xl font-bold text-white">{r.duration}</p>
+                <p className="text-xs text-slate-400">min</p>
+                <p className="text-sm font-medium text-white mt-2">{r.name}</p>
+              </button>
+            ))}
           </div>
 
           {/* Skip button */}
-          <div className="p-4 border-t border-slate-800">
+          <div className="p-4 pt-0">
             <button
               onClick={onSkip}
-              className="w-full py-3 text-slate-400 hover:text-white transition-colors"
+              className="w-full py-3 text-slate-500 hover:text-white transition-colors text-sm"
             >
-              Skip warm-up and start workout
+              Skip and start workout
             </button>
           </div>
         </div>

@@ -1,12 +1,11 @@
 import { useState, memo } from 'react'
-import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info, Clock, Flame, MapPin, Home, Building2, RotateCcw } from 'lucide-react'
+import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info, Clock, RotateCcw } from 'lucide-react'
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx'
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise, isTrainingDay } from '../../utils/schedule'
 import { vibrate } from '../../utils/device'
-import { calculateStreakWithGrace, getStreakStatus, getRemainingFreezeTokens, checkComeback, getPersonalRecords, getLastWorkoutForExercise } from '../../utils/gamification'
-import { EXPRESS_MODE_CONFIG, STORAGE_KEYS, WORKOUT_LOCATIONS } from '../../utils/constants'
-import { isExpressPersona, isHybridPersona } from '../../utils/personas'
-import LocationSelector, { getExercisesForLocation, getLocationColor } from '../UI/LocationSelector'
+import { calculateStreakWithGrace, getStreakStatus, getRemainingFreezeTokens, checkComeback, getPersonalRecords } from '../../utils/gamification'
+import { EXPRESS_MODE_CONFIG } from '../../utils/constants'
+import { isExpressPersona } from '../../utils/personas'
 import NeoIcon from '../Visuals/NeoIcon'
 
 // Floating Quick Start Button - appears after scroll or always visible
@@ -71,49 +70,6 @@ const ResumeWorkoutBanner = ({ session, onResume, onDiscard, allExercises }) => 
                     </button>
                 </div>
             </div>
-        </div>
-    )
-}
-
-// Location Quick Switch - prominent for hybrid users
-const LocationQuickSwitch = ({ currentLocation, onSwitch, exerciseCounts }) => {
-    const locations = [
-        { id: WORKOUT_LOCATIONS.HOME, icon: Home, label: 'Home', color: 'emerald' },
-        { id: WORKOUT_LOCATIONS.GYM, icon: Building2, label: 'Gym', color: 'purple' }
-    ]
-
-    return (
-        <div className="flex gap-2 mb-4">
-            {locations.map(loc => {
-                const Icon = loc.icon
-                const isActive = currentLocation === loc.id
-                const count = exerciseCounts[loc.id] || 0
-
-                return (
-                    <button
-                        key={loc.id}
-                        onClick={() => {
-                            vibrate(20)
-                            onSwitch(loc.id)
-                        }}
-                        className={`flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
-                            isActive
-                                ? `border-${loc.color}-500 bg-${loc.color}-500/10`
-                                : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                        }`}
-                    >
-                        <Icon size={18} className={isActive ? `text-${loc.color}-400` : 'text-slate-400'} />
-                        <span className={`font-medium ${isActive ? `text-${loc.color}-400` : 'text-slate-400'}`}>
-                            {loc.label}
-                        </span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                            isActive ? `bg-${loc.color}-500/20 text-${loc.color}-400` : 'bg-slate-700 text-slate-500'
-                        }`}>
-                            {count}
-                        </span>
-                    </button>
-                )
-            })}
         </div>
     )
 }
@@ -303,25 +259,6 @@ const Dashboard = ({
     const personalRecords = getPersonalRecords(sessionHistory)
     const [showAllExercises, setShowAllExercises] = useState(false)
     const [selectedExercise, setSelectedExercise] = useState(null)
-    const [showFAB, setShowFAB] = useState(true)
-
-    // Location state for hybrid users
-    const [currentLocation, setCurrentLocation] = useState(() => {
-        const saved = localStorage.getItem(STORAGE_KEYS.currentLocation)
-        return saved || WORKOUT_LOCATIONS.HOME
-    })
-
-    // Save location to localStorage when it changes
-    const handleLocationChange = (location) => {
-        setCurrentLocation(location)
-        localStorage.setItem(STORAGE_KEYS.currentLocation, location)
-    }
-
-    // Count exercises per location for hybrid users
-    const exerciseCountsByLocation = {
-        [WORKOUT_LOCATIONS.HOME]: getExercisesForLocation(WORKOUT_LOCATIONS.HOME, allExercises).length,
-        [WORKOUT_LOCATIONS.GYM]: getExercisesForLocation(WORKOUT_LOCATIONS.GYM, allExercises).length
-    }
 
     // Show only active program exercises (or all if no activeProgram)
     const programExercises = activeProgram
@@ -341,14 +278,6 @@ const Dashboard = ({
     const userPersona = trainingPreferences?.persona
     const isExpressModeUser = trainingPreferences?.expressMode || isExpressPersona(userPersona)
 
-    // Check if user is hybrid (uses multiple locations)
-    const isHybridUser = isHybridPersona(userPersona) || trainingPreferences?.programMode === 'mixed'
-
-    // Get location-filtered exercises for hybrid users
-    const locationFilteredExercises = isHybridUser
-        ? getExercisesForLocation(currentLocation, allExercises)
-        : Object.keys(allExercises)
-
     return (
         <div className="space-y-6 pb-8">
             {/* Resume Workout Banner - Shows when there's an interrupted session */}
@@ -359,54 +288,6 @@ const Dashboard = ({
                     onDiscard={onDiscardSession}
                     allExercises={allExercises}
                 />
-            )}
-
-            {/* Location Quick Switch - Prominent for hybrid users */}
-            {isHybridUser && (
-                <div className="bg-gradient-to-r from-emerald-500/5 to-purple-500/5 border border-slate-700 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                        <MapPin size={16} className="text-cyan-400" />
-                        <h3 className="text-sm font-semibold text-white">Where are you training?</h3>
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => handleLocationChange(WORKOUT_LOCATIONS.HOME)}
-                            className={`flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
-                                currentLocation === WORKOUT_LOCATIONS.HOME
-                                    ? 'border-emerald-500 bg-emerald-500/10'
-                                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                            }`}
-                        >
-                            <Home size={18} className={currentLocation === WORKOUT_LOCATIONS.HOME ? 'text-emerald-400' : 'text-slate-400'} />
-                            <span className={`font-medium ${currentLocation === WORKOUT_LOCATIONS.HOME ? 'text-emerald-400' : 'text-slate-400'}`}>
-                                Home
-                            </span>
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                                currentLocation === WORKOUT_LOCATIONS.HOME ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-500'
-                            }`}>
-                                {exerciseCountsByLocation[WORKOUT_LOCATIONS.HOME]}
-                            </span>
-                        </button>
-                        <button
-                            onClick={() => handleLocationChange(WORKOUT_LOCATIONS.GYM)}
-                            className={`flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
-                                currentLocation === WORKOUT_LOCATIONS.GYM
-                                    ? 'border-purple-500 bg-purple-500/10'
-                                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                            }`}
-                        >
-                            <Building2 size={18} className={currentLocation === WORKOUT_LOCATIONS.GYM ? 'text-purple-400' : 'text-slate-400'} />
-                            <span className={`font-medium ${currentLocation === WORKOUT_LOCATIONS.GYM ? 'text-purple-400' : 'text-slate-400'}`}>
-                                Gym
-                            </span>
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                                currentLocation === WORKOUT_LOCATIONS.GYM ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-700 text-slate-500'
-                            }`}>
-                                {exerciseCountsByLocation[WORKOUT_LOCATIONS.GYM]}
-                            </span>
-                        </button>
-                    </div>
-                </div>
             )}
 
             {/* Express Mode Quick Start - Show for express mode users */}
@@ -443,7 +324,7 @@ const Dashboard = ({
             <QuickStartFAB
                 onClick={startStack}
                 exerciseCount={dailyStack.length}
-                isVisible={showFAB && dailyStack.length > 0 && !pendingSession}
+                isVisible={dailyStack.length > 0 && !pendingSession}
             />
 
             {/* Today's Summary - Only show if worked out today */}
@@ -559,6 +440,13 @@ const Dashboard = ({
                             ? 'Take it easy today. Recovery is part of the process.'
                             : 'Great job! Check back tomorrow or browse all exercises below.'}
                     </p>
+                    {/* Option to workout anyway */}
+                    <button
+                        onClick={() => setShowAllExercises(true)}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm text-slate-300 transition-colors"
+                    >
+                        {isRestDay ? 'Workout anyway' : 'Browse exercises'}
+                    </button>
                 </div>
             )}
 

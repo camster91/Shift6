@@ -1,12 +1,21 @@
 import { useState, useMemo } from 'react'
-import { X, Search, Plus, Check, Filter } from 'lucide-react'
+import { X, Search, Plus, Check, Filter, Home, Building2 } from 'lucide-react'
 import { EXERCISE_CATEGORIES } from '../../data/exercises.jsx'
 import NeoIcon from '../Visuals/NeoIcon'
+
+// Location filter options
+const LOCATION_FILTERS = [
+    { id: 'all', label: 'All', icon: null },
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'gym', label: 'Gym', icon: Building2 }
+]
 
 const ExerciseLibrary = ({
     allExercises,
     activeProgram,
+    // eslint-disable-next-line no-unused-vars
     programMode,
+    // eslint-disable-next-line no-unused-vars
     userEquipment,
     onAddToProgram,
     onRemoveFromProgram,
@@ -14,27 +23,42 @@ const ExerciseLibrary = ({
 }) => {
     const [searchQuery, setSearchQuery] = useState('')
     const [categoryFilter, setCategoryFilter] = useState('all')
+    const [locationFilter, setLocationFilter] = useState('all')
     const [showFilters, setShowFilters] = useState(false)
 
-    // Filter exercises based on program mode, equipment, category, and search
+    // Helper to determine exercise location compatibility
+    const getExerciseLocation = (exercise) => {
+        // Check if exercise has explicit mode setting
+        if (exercise.modes) {
+            if (exercise.modes.includes('gym') && !exercise.modes.includes('bodyweight')) {
+                return 'gym'
+            }
+            if (exercise.modes.includes('bodyweight') && !exercise.modes.includes('gym')) {
+                return 'home'
+            }
+        }
+        // Check equipment requirements
+        if (exercise.equipment) {
+            if (exercise.equipment.includes('none') || exercise.equipment.length === 0) {
+                return 'home'
+            }
+            // Has equipment requirements - likely gym
+            return 'gym'
+        }
+        // Default: bodyweight exercises are home-compatible
+        if (exercise.progressionType === 'bodyweight' || exercise.isBuiltIn) {
+            return 'home'
+        }
+        return 'both'
+    }
+
+    // Filter exercises - show ALL by default, apply user filters
     const filteredExercises = useMemo(() => {
         return Object.entries(allExercises).filter(([, exercise]) => {
-            // Filter by program mode
-            if (exercise.modes && !exercise.modes.includes(programMode)) {
-                return false
-            }
-
-            // Filter by equipment (user must have at least one required equipment)
-            if (exercise.equipment && programMode !== 'bodyweight') {
-                const hasEquipment = exercise.equipment.every(eq =>
-                    eq === 'none' || userEquipment.includes(eq)
-                )
-                if (!hasEquipment) return false
-            }
-
-            // For bodyweight mode, only show exercises that require no equipment
-            if (programMode === 'bodyweight' && exercise.equipment) {
-                if (!exercise.equipment.includes('none') && !exercise.isBuiltIn) {
+            // Filter by location preference
+            if (locationFilter !== 'all') {
+                const exerciseLocation = getExerciseLocation(exercise)
+                if (exerciseLocation !== 'both' && exerciseLocation !== locationFilter) {
                     return false
                 }
             }
@@ -61,7 +85,7 @@ const ExerciseLibrary = ({
             if (!aInProgram && bInProgram) return 1
             return a[1].name.localeCompare(b[1].name)
         })
-    }, [allExercises, programMode, userEquipment, categoryFilter, searchQuery, activeProgram])
+    }, [allExercises, locationFilter, categoryFilter, searchQuery, activeProgram])
 
     const isInProgram = (key) => activeProgram.includes(key)
 
@@ -105,6 +129,33 @@ const ExerciseLibrary = ({
 
                 {/* Search & Filters */}
                 <div className="p-4 border-b border-slate-800 space-y-3">
+                    {/* Location Filter - Prominent */}
+                    <div className="flex gap-2 bg-slate-800/50 p-1 rounded-xl">
+                        {LOCATION_FILTERS.map((loc) => {
+                            const Icon = loc.icon
+                            const isActive = locationFilter === loc.id
+                            return (
+                                <button
+                                    key={loc.id}
+                                    onClick={() => setLocationFilter(loc.id)}
+                                    className={`flex-1 py-2.5 px-3 rounded-lg font-medium text-sm transition-all flex items-center justify-center gap-2 ${
+                                        isActive
+                                            ? loc.id === 'home'
+                                                ? 'bg-emerald-500 text-white'
+                                                : loc.id === 'gym'
+                                                    ? 'bg-purple-500 text-white'
+                                                    : 'bg-cyan-500 text-white'
+                                            : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                                    }`}
+                                >
+                                    {Icon && <Icon size={16} />}
+                                    {loc.label}
+                                </button>
+                            )
+                        })}
+                    </div>
+
+                    {/* Search */}
                     <div className="flex gap-2">
                         <div className="flex-1 relative">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -129,31 +180,33 @@ const ExerciseLibrary = ({
                     </div>
 
                     {/* Category Filters */}
-                    <div className="flex gap-2 overflow-x-auto pb-1">
-                        <button
-                            onClick={() => setCategoryFilter('all')}
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                                categoryFilter === 'all'
-                                    ? 'bg-cyan-500 text-white'
-                                    : 'bg-slate-800 text-slate-400 hover:text-white'
-                            }`}
-                        >
-                            All
-                        </button>
-                        {Object.entries(EXERCISE_CATEGORIES).map(([id, cat]) => (
+                    {showFilters && (
+                        <div className="flex gap-2 overflow-x-auto pb-1">
                             <button
-                                key={id}
-                                onClick={() => setCategoryFilter(id)}
+                                onClick={() => setCategoryFilter('all')}
                                 className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                                    categoryFilter === id
+                                    categoryFilter === 'all'
                                         ? 'bg-cyan-500 text-white'
                                         : 'bg-slate-800 text-slate-400 hover:text-white'
                                 }`}
                             >
-                                {cat.icon} {cat.name}
+                                All Categories
                             </button>
-                        ))}
-                    </div>
+                            {Object.entries(EXERCISE_CATEGORIES).map(([id, cat]) => (
+                                <button
+                                    key={id}
+                                    onClick={() => setCategoryFilter(id)}
+                                    className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                                        categoryFilter === id
+                                            ? 'bg-cyan-500 text-white'
+                                            : 'bg-slate-800 text-slate-400 hover:text-white'
+                                    }`}
+                                >
+                                    {cat.icon} {cat.name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Exercise Grid */}
@@ -169,6 +222,7 @@ const ExerciseLibrary = ({
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             {filteredExercises.map(([key, exercise]) => {
                                 const inProgram = isInProgram(key)
+                                const exerciseLocation = getExerciseLocation(exercise)
                                 return (
                                     <button
                                         key={key}
@@ -179,8 +233,28 @@ const ExerciseLibrary = ({
                                                 : 'border-slate-700 hover:border-slate-600'
                                         } ${getColorClass(exercise.color)}`}
                                     >
+                                        {/* Location badge */}
+                                        <div className="absolute top-2 left-2">
+                                            {exerciseLocation === 'home' && (
+                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                                    <Home size={10} />
+                                                </span>
+                                            )}
+                                            {exerciseLocation === 'gym' && (
+                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                                    <Building2 size={10} />
+                                                </span>
+                                            )}
+                                            {exerciseLocation === 'both' && (
+                                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                                                    <Home size={10} />
+                                                    <Building2 size={10} />
+                                                </span>
+                                            )}
+                                        </div>
+
                                         {/* Icon */}
-                                        <div className="w-12 h-12 mb-3 flex items-center justify-center">
+                                        <div className="w-12 h-12 mb-3 mt-2 flex items-center justify-center">
                                             <NeoIcon
                                                 exerciseKey={key}
                                                 color={exercise.color}
@@ -197,13 +271,6 @@ const ExerciseLibrary = ({
                                         <p className="text-xs text-slate-400 capitalize">
                                             {exercise.category}
                                         </p>
-
-                                        {/* Equipment badge */}
-                                        {exercise.equipment && !exercise.equipment.includes('none') && (
-                                            <div className="text-xs text-slate-500 mt-1 truncate">
-                                                {exercise.equipment.length} equipment
-                                            </div>
-                                        )}
 
                                         {/* In Program indicator */}
                                         <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all ${

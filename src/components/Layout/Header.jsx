@@ -1,20 +1,15 @@
-import { Volume2, VolumeX, Sun, Moon, Dumbbell, Home } from 'lucide-react'
+import { Volume2, VolumeX, Sun, Moon, RotateCcw } from 'lucide-react'
 
 const Header = ({
     audioEnabled,
     setAudioEnabled,
     theme,
     setTheme,
-    programMode,
-    onChangeProgramMode
+    onSwitchMode,
+    showSwitchMode = false
 }) => {
     const handleHomeClick = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-
-    const toggleMode = () => {
-        const newMode = programMode === 'bodyweight' ? 'gym' : 'bodyweight'
-        onChangeProgramMode?.(newMode)
     }
 
     const bgColor = theme === 'light'
@@ -37,28 +32,19 @@ const Header = ({
                 </button>
 
                 <div className="flex items-center gap-2">
-                    {/* Quick Mode Toggle */}
-                    {programMode && onChangeProgramMode && (
+                    {/* Switch Mode Button */}
+                    {showSwitchMode && onSwitchMode && (
                         <button
-                            onClick={toggleMode}
+                            onClick={onSwitchMode}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                                programMode === 'gym'
-                                    ? 'bg-purple-500/20 border-purple-500/50 text-purple-400'
-                                    : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
+                                theme === 'light'
+                                    ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
+                                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
                             }`}
-                            title={`Switch to ${programMode === 'gym' ? 'Home' : 'Gym'} mode`}
+                            title="Switch workout mode"
                         >
-                            {programMode === 'gym' ? (
-                                <>
-                                    <Dumbbell size={14} />
-                                    <span className="hidden sm:inline">Gym</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Home size={14} />
-                                    <span className="hidden sm:inline">Home</span>
-                                </>
-                            )}
+                            <RotateCcw size={14} />
+                            <span className="hidden sm:inline">Switch</span>
                         </button>
                     )}
 

@@ -1354,8 +1354,6 @@ const App = () => {
                         setAudioEnabled={setAudioEnabled}
                         theme={theme}
                         setTheme={setTheme}
-                        programMode={programMode}
-                        onChangeProgramMode={handleChangeProgramMode}
                         onSwitchMode={handleSwitchMode}
                         showSwitchMode={true}
                     />

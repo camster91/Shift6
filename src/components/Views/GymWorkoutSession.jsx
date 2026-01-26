@@ -161,6 +161,20 @@ const GymWorkoutSession = ({
 
   const bgClass = theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'
   const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
+  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
+  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+
+  // Confirm exit if workout in progress
+  const handleExit = () => {
+    const completedCount = Object.values(completedSets).flat().length
+    if (completedCount > 0) {
+      if (window.confirm('Exit workout? Your progress will be lost.')) {
+        onExit()
+      }
+    } else {
+      onExit()
+    }
+  }
 
   if (!currentExercise && !showSummary) {
     return (
@@ -187,21 +201,21 @@ const GymWorkoutSession = ({
             <Trophy className="w-10 h-10 text-white" />
           </div>
 
-          <h1 className="text-3xl font-bold text-white mb-2">Workout Complete!</h1>
-          <p className="text-slate-400 mb-8">{workout.dayName}</p>
+          <h1 className={`text-3xl font-bold ${textPrimary} mb-2`}>Workout Complete!</h1>
+          <p className={`${textSecondary} mb-8`}>{workout.dayName}</p>
 
           <div className="grid grid-cols-3 gap-4 mb-8 w-full max-w-sm">
             <div className={`${cardBg} rounded-xl p-4 text-center`}>
               <p className="text-2xl font-bold text-purple-400">{Object.keys(completedSets).length}</p>
-              <p className="text-xs text-slate-500">Exercises</p>
+              <p className={`text-xs ${textSecondary}`}>Exercises</p>
             </div>
             <div className={`${cardBg} rounded-xl p-4 text-center`}>
               <p className="text-2xl font-bold text-purple-400">{totalReps}</p>
-              <p className="text-xs text-slate-500">Total Reps</p>
+              <p className={`text-xs ${textSecondary}`}>Total Reps</p>
             </div>
             <div className={`${cardBg} rounded-xl p-4 text-center`}>
               <p className="text-2xl font-bold text-purple-400">{Math.round(totalVolume)}</p>
-              <p className="text-xs text-slate-500">Volume (kg)</p>
+              <p className={`text-xs ${textSecondary}`}>Volume (kg)</p>
             </div>
           </div>
 
@@ -209,8 +223,8 @@ const GymWorkoutSession = ({
           <div className="w-full max-w-sm space-y-2 mb-8">
             {Object.entries(completedSets).map(([exId, sets]) => (
               <div key={exId} className={`${cardBg} rounded-lg p-3 flex justify-between items-center`}>
-                <span className="text-white text-sm">{GYM_EXERCISES[exId]?.shortName || exId}</span>
-                <span className="text-slate-400 text-sm">
+                <span className={`${textPrimary} text-sm`}>{GYM_EXERCISES[exId]?.shortName || exId}</span>
+                <span className={`${textSecondary} text-sm`}>
                   {sets.length} sets × {sets[0]?.weight}kg
                 </span>
               </div>
@@ -236,26 +250,26 @@ const GymWorkoutSession = ({
       <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
         {/* Header */}
         <div className="flex items-center justify-between p-4">
-          <button onClick={onExit} className="p-2">
-            <X className="w-6 h-6 text-slate-400" />
+          <button onClick={handleExit} className="p-2">
+            <X className={`w-6 h-6 ${textSecondary}`} />
           </button>
-          <span className="text-slate-400">
+          <span className={textSecondary}>
             {currentExerciseIndex + 1}/{totalExercises} exercises
           </span>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center p-6">
           <Timer className="w-16 h-16 text-purple-400 mb-4" />
-          <h2 className="text-xl text-slate-400 mb-2">Rest</h2>
-          <p className="text-7xl font-bold text-white mb-8">{formatTime(restTimeLeft)}</p>
+          <h2 className={`text-xl ${textSecondary} mb-2`}>Rest</h2>
+          <p className={`text-7xl font-bold ${textPrimary} mb-8`}>{formatTime(restTimeLeft)}</p>
 
-          <p className="text-slate-500 mb-4">
+          <p className={`${textSecondary} mb-4`}>
             Next: Set {currentSetIndex + 1} of {totalSets}
           </p>
 
           <button
             onClick={skipRest}
-            className="px-8 py-3 rounded-xl bg-slate-800 text-white font-medium"
+            className={`px-8 py-3 rounded-xl ${cardBg} ${textPrimary} font-medium`}
           >
             Skip Rest
           </button>
@@ -266,17 +280,19 @@ const GymWorkoutSession = ({
 
   // Main Workout Screen
   const completedSetsForCurrent = completedSets[currentExerciseId]?.length || 0
+  const buttonBg = theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'
+  const borderColor = theme === 'light' ? 'border-slate-200' : 'border-slate-800'
 
   return (
     <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-800">
-        <button onClick={onExit} className="p-2">
-          <X className="w-6 h-6 text-slate-400" />
+      <div className={`flex items-center justify-between p-4 border-b ${borderColor}`}>
+        <button onClick={handleExit} className="p-2">
+          <X className={`w-6 h-6 ${textSecondary}`} />
         </button>
         <div className="text-center">
-          <p className="text-white font-semibold">{workout.dayName}</p>
-          <p className="text-slate-500 text-sm">
+          <p className={`${textPrimary} font-semibold`}>{workout.dayName}</p>
+          <p className={`${textSecondary} text-sm`}>
             Exercise {currentExerciseIndex + 1} of {totalExercises}
           </p>
         </div>
@@ -284,9 +300,9 @@ const GymWorkoutSession = ({
       </div>
 
       {/* Exercise Info */}
-      <div className="p-6 border-b border-slate-800">
-        <h1 className="text-2xl font-bold text-white mb-1">{currentExercise.name}</h1>
-        <p className="text-slate-400 text-sm mb-4">{currentExercise.cue}</p>
+      <div className={`p-6 border-b ${borderColor}`}>
+        <h1 className={`text-2xl font-bold ${textPrimary} mb-1`}>{currentExercise.name}</h1>
+        <p className={`${textSecondary} text-sm mb-4`}>{currentExercise.cue}</p>
 
         {/* Set Progress */}
         <div className="flex gap-2">
@@ -298,67 +314,67 @@ const GymWorkoutSession = ({
                   ? 'bg-purple-500'
                   : i === completedSetsForCurrent
                     ? 'bg-purple-500/50'
-                    : 'bg-slate-700'
+                    : theme === 'light' ? 'bg-slate-200' : 'bg-slate-700'
               }`}
             />
           ))}
         </div>
-        <p className="text-slate-500 text-sm mt-2">
+        <p className={`${textSecondary} text-sm mt-2`}>
           Set {completedSetsForCurrent + 1} of {totalSets}
         </p>
       </div>
 
       {/* Weight Input */}
-      <div className="flex-1 p-6 flex flex-col gap-6">
+      <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
         {/* Weight */}
         <div className={`${cardBg} rounded-xl p-4`}>
-          <p className="text-slate-400 text-sm mb-2">Weight (kg)</p>
+          <p className={`${textSecondary} text-sm mb-2`}>Weight (kg)</p>
           <div className="flex items-center justify-between">
             <button
               onClick={() => adjustWeight(-1)}
-              className="w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center"
+              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center`}
             >
-              <ChevronDown className="w-8 h-8 text-white" />
+              <ChevronDown className={`w-8 h-8 ${textPrimary}`} />
             </button>
-            <span className="text-5xl font-bold text-white">{currentWeight}</span>
+            <span className={`text-5xl font-bold ${textPrimary}`}>{currentWeight}</span>
             <button
               onClick={() => adjustWeight(1)}
-              className="w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center"
+              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center`}
             >
-              <ChevronUp className="w-8 h-8 text-white" />
+              <ChevronUp className={`w-8 h-8 ${textPrimary}`} />
             </button>
           </div>
-          <p className="text-slate-500 text-xs text-center mt-2">
+          <p className={`${textSecondary} text-xs text-center mt-2`}>
             Last: {gymWeights[currentExerciseId] || currentExercise.defaultWeight}kg
           </p>
         </div>
 
         {/* Reps */}
         <div className={`${cardBg} rounded-xl p-4`}>
-          <p className="text-slate-400 text-sm mb-2">Reps</p>
+          <p className={`${textSecondary} text-sm mb-2`}>Reps</p>
           <div className="flex items-center justify-between">
             <button
               onClick={() => adjustReps(-1)}
-              className="w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center"
+              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center`}
             >
-              <ChevronDown className="w-8 h-8 text-white" />
+              <ChevronDown className={`w-8 h-8 ${textPrimary}`} />
             </button>
-            <span className="text-5xl font-bold text-white">{currentReps}</span>
+            <span className={`text-5xl font-bold ${textPrimary}`}>{currentReps}</span>
             <button
               onClick={() => adjustReps(1)}
-              className="w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center"
+              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center`}
             >
-              <ChevronUp className="w-8 h-8 text-white" />
+              <ChevronUp className={`w-8 h-8 ${textPrimary}`} />
             </button>
           </div>
-          <p className="text-slate-500 text-xs text-center mt-2">
+          <p className={`${textSecondary} text-xs text-center mt-2`}>
             Target: {currentExercise.defaultReps?.[currentSetIndex] || 8} reps
           </p>
         </div>
 
         {/* RPE (optional) */}
         <div className={`${cardBg} rounded-xl p-4`}>
-          <p className="text-slate-400 text-sm mb-3">RPE (Rate of Perceived Exertion)</p>
+          <p className={`${textSecondary} text-sm mb-3`}>RPE (Rate of Perceived Exertion)</p>
           <div className="flex gap-2">
             {[6, 7, 8, 9, 10].map(rpe => (
               <button
@@ -367,7 +383,7 @@ const GymWorkoutSession = ({
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                   currentRpe === rpe
                     ? 'bg-purple-500 text-white'
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                    : `${buttonBg} ${textSecondary} hover:opacity-80`
                 }`}
               >
                 {rpe}

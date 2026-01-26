@@ -47,6 +47,12 @@ import AccessibilitySettings from './components/Views/AccessibilitySettings';
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
 import { getRecommendedWarmup } from './data/warmupRoutines';
 
+// Gym Mode Components
+import ModeSelector from './components/Views/ModeSelector';
+import GymDashboard from './components/Views/GymDashboard';
+import GymOnboarding from './components/Views/GymOnboarding';
+import GymWorkoutSession from './components/Views/GymWorkoutSession';
+
 const STORAGE_PREFIX = 'shift6_';
 
 const App = () => {
@@ -72,6 +78,7 @@ const App = () => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}rest_timer`);
         return saved !== null ? JSON.parse(saved) : null;
     });
+    void setRestTimerOverride; // Settings panel TODO
 
     const [theme, setTheme] = useState(() => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}theme`);
@@ -119,6 +126,7 @@ const App = () => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}warmup_enabled`);
         return saved !== null ? JSON.parse(saved) : true;
     });
+    void setWarmupEnabled; // Settings panel TODO
 
     // Body metrics (weight, measurements)
     const [bodyMetrics, setBodyMetrics] = useState(() => {
@@ -177,6 +185,52 @@ const App = () => {
     const [newBadges, setNewBadges] = useState([]);
     const prevStatsRef = useRef(null);
 
+    // ============ GYM MODE STATE ============
+    // Current mode selection (null = show selector on launch)
+    const [currentMode, setCurrentMode] = useState(() => {
+        // Check if we should remember the mode for today
+        const remembered = localStorage.getItem(`${STORAGE_PREFIX}remember_mode_today`);
+        const rememberedDate = localStorage.getItem(`${STORAGE_PREFIX}remember_mode_date`);
+        const today = new Date().toDateString();
+        if (remembered && rememberedDate === today) {
+            return remembered;
+        }
+        return null; // Show mode selector
+    });
+
+    // Gym onboarding complete flag
+    const [gymOnboardingComplete, setGymOnboardingComplete] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_onboarding_complete`);
+        return saved === 'true';
+    });
+
+    // Gym program state
+    const [gymProgram, setGymProgram] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_program`);
+        return saved ? JSON.parse(saved) : null;
+    });
+
+    // Gym weights (last used weight per exercise)
+    const [gymWeights, setGymWeights] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_weights`);
+        return saved ? JSON.parse(saved) : {};
+    });
+
+    // Gym workout history
+    const [gymHistory, setGymHistory] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_history`);
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    // Gym streak
+    const [gymStreak, setGymStreak] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_streak`);
+        return saved ? JSON.parse(saved) : 0;
+    });
+
+    // Current gym workout session
+    const [currentGymSession, setCurrentGymSession] = useState(null);
+
     // Bootstrap Sprints for Active Program (Dynamic Engine Migration)
     useEffect(() => {
         if (!activeProgram || !trainingPreferences || !allExercises) return;
@@ -185,12 +239,6 @@ const App = () => {
         const timer = setTimeout(() => {
             let hasChanges = false;
             const updatedSprints = { ...sprints };
-            const prs = calculateStats(completedDays, sessionHistory).personalRecords || {};
-            // Note: calculateStats returns count, not values. We need getPersonalRecords from gamification
-            // Actually getPersonalRecords is exported but not imported in App.jsx yet maybe?
-            // Wait, calculateStats returns { personalRecords: count }. We need the lookup.
-            // Let's import getPersonalRecords or just scan sessionHistory here.
-
             // Simple PR scan from history
             const historyPRs = {};
             sessionHistory.forEach(s => {
@@ -237,6 +285,7 @@ const App = () => {
         }, 2000); // Delay 2s to allow load
 
         return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeProgram, trainingPreferences, sessionHistory.length]); // Dependency on history length to trigger updates
 
     // Merge built-in, library, database, and custom exercises
@@ -358,6 +407,29 @@ const App = () => {
     useEffect(() => {
         saveCustomPlans(customPlans);
     }, [customPlans]);
+
+    // ============ GYM MODE EFFECTS ============
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}gym_onboarding_complete`, String(gymOnboardingComplete));
+    }, [gymOnboardingComplete]);
+
+    useEffect(() => {
+        if (gymProgram) {
+            localStorage.setItem(`${STORAGE_PREFIX}gym_program`, JSON.stringify(gymProgram));
+        }
+    }, [gymProgram]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}gym_weights`, JSON.stringify(gymWeights));
+    }, [gymWeights]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}gym_history`, JSON.stringify(gymHistory));
+    }, [gymHistory]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}gym_streak`, JSON.stringify(gymStreak));
+    }, [gymStreak]);
 
     // UI State
     const [workoutQueue, setWorkoutQueue] = useState(() => {
@@ -549,6 +621,7 @@ const App = () => {
         setExerciseTimeLeft(0);
         setIsExerciseTimerRunning(false);
         setExerciseTimerStarted(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeExercise, allExercises, completedDays, exerciseDifficulty, restTimerOverride, customPlans, trainingPreferences]);
 
     // Add custom exercise
@@ -1016,9 +1089,6 @@ const App = () => {
     const onShowAddExercise = useCallback(() => setShowAddExercise(true), []);
     const onShowExerciseLibrary = useCallback(() => setShowExerciseLibrary(true), []);
     const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
-    const onShowTrainingSettings = useCallback(() => setShowTrainingSettings(true), []);
-    const onShowBodyMetrics = useCallback(() => setShowBodyMetrics(true), []);
-    const onShowAccessibility = useCallback(() => setShowAccessibility(true), []);
 
     // ---------------- SPRINT MANAGEMENT ----------------
 
@@ -1080,6 +1150,127 @@ const App = () => {
         };
     }, [sprints]);
 
+    // ============ GYM MODE HANDLERS ============
+
+    // Handle mode selection from ModeSelector
+    const handleSelectMode = useCallback((mode) => {
+        setCurrentMode(mode);
+    }, []);
+
+    // Handle gym onboarding completion
+    const handleGymOnboardingComplete = useCallback((gymData) => {
+        setGymProgram({
+            programId: gymData.programId,
+            currentWeek: gymData.currentWeek || 1,
+            currentDay: gymData.currentDay || 1,
+            startDate: gymData.startDate || new Date().toISOString(),
+            experienceLevel: gymData.experienceLevel
+        });
+        setGymOnboardingComplete(true);
+    }, []);
+
+    // Start gym workout
+    const handleStartGymWorkout = useCallback((workout) => {
+        setCurrentGymSession(workout);
+    }, []);
+
+    // Complete gym workout
+    const handleCompleteGymWorkout = useCallback((workoutData, completedSets) => {
+        // Update gym history
+        setGymHistory(prev => [workoutData, ...prev].slice(0, 100));
+
+        // Update weights from completed sets
+        const newWeights = { ...gymWeights };
+        Object.entries(completedSets).forEach(([exerciseId, sets]) => {
+            if (sets.length > 0) {
+                // Use the weight from the last set
+                newWeights[exerciseId] = sets[sets.length - 1].weight;
+            }
+        });
+        setGymWeights(newWeights);
+
+        // Update streak
+        const today = new Date().toDateString();
+        const lastWorkout = gymHistory[0];
+        if (lastWorkout) {
+            const lastDate = new Date(lastWorkout.date).toDateString();
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toDateString();
+
+            if (lastDate === today) {
+                // Already worked out today, no streak change
+            } else if (lastDate === yesterdayStr) {
+                // Consecutive day, increase streak
+                setGymStreak(prev => prev + 1);
+            } else {
+                // Streak broken, reset to 1
+                setGymStreak(1);
+            }
+        } else {
+            // First workout
+            setGymStreak(1);
+        }
+
+        // Advance program day
+        if (gymProgram) {
+            setGymProgram(prev => {
+                const newDay = prev.currentDay + 1;
+                // Assuming 7-day weeks, advance week when needed
+                const daysPerWeek = 7;
+                if (newDay > daysPerWeek) {
+                    return {
+                        ...prev,
+                        currentWeek: prev.currentWeek + 1,
+                        currentDay: 1
+                    };
+                }
+                return { ...prev, currentDay: newDay };
+            });
+        }
+
+        // Clear session
+        setCurrentGymSession(null);
+    }, [gymWeights, gymHistory, gymProgram]);
+
+    // Change gym program
+    const handleChangeGymProgram = useCallback((programId) => {
+        setGymProgram({
+            programId,
+            currentWeek: 1,
+            currentDay: 1,
+            startDate: new Date().toISOString()
+        });
+    }, []);
+
+    // Switch between home and gym mode
+    const handleSwitchMode = useCallback(() => {
+        // Clear the remembered mode
+        localStorage.removeItem(`${STORAGE_PREFIX}remember_mode_today`);
+        localStorage.removeItem(`${STORAGE_PREFIX}remember_mode_date`);
+        setCurrentMode(null);
+    }, []);
+
+    // Calculate home mode streak (for display in mode selector)
+    const homeStreak = useMemo(() => {
+        const stats = calculateStats(completedDays, sessionHistory);
+        return stats.currentStreak;
+    }, [completedDays, sessionHistory]);
+
+    // Get today's home workout name (for mode selector preview)
+    const todayHomeWorkout = useMemo(() => {
+        const stack = getDailyStack(completedDays, allExercises, activeProgramKeys, trainingPreferences);
+        if (stack.length === 0) return 'Rest Day';
+        return stack.slice(0, 2).map(s => allExercises[s.exerciseKey]?.name).filter(Boolean).join(', ');
+    }, [completedDays, allExercises, activeProgramKeys, trainingPreferences]);
+
+    // Get today's gym workout name (for mode selector preview)
+    const todayGymWorkout = useMemo(() => {
+        if (!gymProgram?.programId) return null;
+        // This would need to look up the program schedule
+        return gymProgram.programId ? 'Ready to train' : null;
+    }, [gymProgram]);
+
     // ---------------- RENDER ----------------
 
     // Calculate stats for drawer
@@ -1094,22 +1285,83 @@ const App = () => {
         };
     }, [completedDays, sessionHistory]);
 
+    // Determine if we should show mode selector
+    // Show when: onboarded for home mode, no mode currently selected, and no active session
+    const shouldShowModeSelector = onboardingComplete && currentMode === null && !currentSession && !currentGymSession;
+
+    // Determine if we should show gym onboarding
+    const shouldShowGymOnboarding = currentMode === 'gym' && !gymOnboardingComplete;
+
+    // Determine if we're in gym mode (and onboarded)
+    const isGymMode = currentMode === 'gym' && gymOnboardingComplete;
+
     return (
         <div className={`min-h-screen font-sans selection:bg-cyan-500/30 ${theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
             }`}>
-            <Header
-                audioEnabled={audioEnabled}
-                setAudioEnabled={setAudioEnabled}
-                theme={theme}
-                setTheme={setTheme}
-                programMode={programMode}
-                onChangeProgramMode={handleChangeProgramMode}
-            />
 
-            <main className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
-                {/* Home Tab - Dashboard */}
-                {activeTab === 'home' && (
-                    <Dashboard
+            {/* Mode Selector - Show on app launch for onboarded users */}
+            {shouldShowModeSelector && (
+                <ModeSelector
+                    onSelectMode={handleSelectMode}
+                    homeStreak={homeStreak}
+                    gymStreak={gymStreak}
+                    todayHomeWorkout={todayHomeWorkout}
+                    todayGymWorkout={todayGymWorkout}
+                    theme={theme}
+                />
+            )}
+
+            {/* Gym Onboarding - First time gym mode setup */}
+            {shouldShowGymOnboarding && (
+                <GymOnboarding
+                    onComplete={handleGymOnboardingComplete}
+                    theme={theme}
+                />
+            )}
+
+            {/* Gym Workout Session - Fullscreen Overlay */}
+            {currentGymSession && (
+                <GymWorkoutSession
+                    workout={currentGymSession}
+                    gymWeights={gymWeights}
+                    gymHistory={gymHistory}
+                    onComplete={handleCompleteGymWorkout}
+                    onExit={() => setCurrentGymSession(null)}
+                    audioEnabled={audioEnabled}
+                    theme={theme}
+                />
+            )}
+
+            {/* Gym Dashboard - Main gym mode view */}
+            {isGymMode && !currentGymSession && (
+                <GymDashboard
+                    gymProgram={gymProgram}
+                    gymWeights={gymWeights}
+                    gymHistory={gymHistory}
+                    gymStreak={gymStreak}
+                    onStartWorkout={handleStartGymWorkout}
+                    onChangeProgram={handleChangeGymProgram}
+                    onSwitchMode={handleSwitchMode}
+                    theme={theme}
+                />
+            )}
+
+            {/* Home Mode - Original app content */}
+            {currentMode === 'home' && !shouldShowModeSelector && (
+                <>
+                    <Header
+                        audioEnabled={audioEnabled}
+                        setAudioEnabled={setAudioEnabled}
+                        theme={theme}
+                        setTheme={setTheme}
+                        onSwitchMode={handleSwitchMode}
+                        showSwitchMode={true}
+                    />
+
+                    <main className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
+                        {/* Home Tab - Dashboard */}
+                        {activeTab === 'home' && (
+                            <Dashboard
                         completedDays={completedDays}
                         sessionHistory={sessionHistory}
                         startStack={startStack}
@@ -1152,48 +1404,50 @@ const App = () => {
                     />
                 )}
 
-                {/* Progress Tab */}
-                {activeTab === 'progress' && (
-                    <Progress
-                        completedDays={completedDays}
-                        sessionHistory={sessionHistory}
-                        allExercises={allExercises}
-                        activeProgram={activeProgramKeys}
-                        startWorkout={startWorkoutWithWarmup}
+                    {/* Progress Tab */}
+                    {activeTab === 'progress' && (
+                        <Progress
+                            completedDays={completedDays}
+                            sessionHistory={sessionHistory}
+                            allExercises={allExercises}
+                            activeProgram={activeProgramKeys}
+                            startWorkout={startWorkoutWithWarmup}
+                            theme={theme}
+                            sprints={sprints}
+                            getExerciseSprintProgress={getExerciseSprintProgress}
+                        />
+                    )}
+                </main>
+
+                {/* Bottom Navigation - Hide during workout */}
+                {!currentSession && onboardingComplete && (
+                    <BottomNav
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        onMenuClick={() => setShowDrawer(true)}
                         theme={theme}
-                        sprints={sprints}
-                        getExerciseSprintProgress={getExerciseSprintProgress}
                     />
                 )}
-            </main>
 
-            {/* Bottom Navigation - Hide during workout */}
-            {!currentSession && onboardingComplete && (
-                <BottomNav
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    onMenuClick={() => setShowDrawer(true)}
+                {/* Side Drawer */}
+                <SideDrawer
+                    isOpen={showDrawer}
+                    onClose={() => setShowDrawer(false)}
+                    stats={drawerStats}
+                    onShowCalendar={() => { setActiveTab('progress'); setShowDrawer(false); }}
+                    onShowGuide={() => { setShowGuide(true); setShowDrawer(false); }}
+                    onShowAchievements={() => { setActiveTab('progress'); setShowDrawer(false); }}
+                    onShowTrainingSettings={() => { setShowTrainingSettings(true); setShowDrawer(false); }}
+                    onShowBodyMetrics={() => { setShowBodyMetrics(true); setShowDrawer(false); }}
+                    onShowAccessibility={() => { setShowAccessibility(true); setShowDrawer(false); }}
+                    onExport={handleExport}
+                    onExportCSV={handleExportCSV}
+                    onImport={handleImport}
+                    onFactoryReset={handleFactoryReset}
                     theme={theme}
                 />
+            </>
             )}
-
-            {/* Side Drawer */}
-            <SideDrawer
-                isOpen={showDrawer}
-                onClose={() => setShowDrawer(false)}
-                stats={drawerStats}
-                onShowCalendar={() => { setActiveTab('progress'); setShowDrawer(false); }}
-                onShowGuide={() => { setShowGuide(true); setShowDrawer(false); }}
-                onShowAchievements={() => { setActiveTab('progress'); setShowDrawer(false); }}
-                onShowTrainingSettings={() => { setShowTrainingSettings(true); setShowDrawer(false); }}
-                onShowBodyMetrics={() => { setShowBodyMetrics(true); setShowDrawer(false); }}
-                onShowAccessibility={() => { setShowAccessibility(true); setShowDrawer(false); }}
-                onExport={handleExport}
-                onExportCSV={handleExportCSV}
-                onImport={handleImport}
-                onFactoryReset={handleFactoryReset}
-                theme={theme}
-            />
 
             {/* Add Exercise Modal */}
             {showAddExercise && (

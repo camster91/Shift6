@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Home, Dumbbell, TreePine, Plane } from 'lucide-react'
 import { WORKOUT_LOCATIONS } from '../../utils/constants'
 import { vibrate } from '../../utils/device'

@@ -1,9 +1,8 @@
 import { useState, memo } from 'react'
-import { Trophy, Flame, Target, TrendingUp, Calendar as CalendarIcon, ChevronDown, ChevronUp, Award, Zap, Dumbbell } from 'lucide-react'
+import { Trophy, Target, TrendingUp, Calendar as CalendarIcon, ChevronDown, ChevronUp, Award, Zap, Dumbbell } from 'lucide-react'
 import { calculateStats, getUnlockedBadges, BADGES, calculateStreakWithGrace, getStreakStatus, getPersonalRecords } from '../../utils/gamification'
 import CalendarView from './CalendarView'
 import ProgressChart from '../Visuals/ProgressChart'
-import NeonBadge from '../Visuals/NeonBadge'
 import NeoIcon from '../Visuals/NeoIcon'
 
 // Stats card component
@@ -117,7 +116,6 @@ const Progress = ({
         legendary: 'text-amber-400'
     }
 
-    const bgColor = theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'
     const cardBg = theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
 
     return (

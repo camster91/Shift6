@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench, Shuffle, Clock, Home, Building2 } from 'lucide-react'
+import { ChevronRight, Check, Dumbbell, ChevronLeft, Sparkles, LayoutGrid, Wrench, Shuffle, Clock, Home } from 'lucide-react'
 import {
     REP_SCHEME_CONFIGS,
     FITNESS_LEVEL_PRESETS,
@@ -25,10 +25,10 @@ const TIME_OPTIONS = [
     { id: 'long', label: '45+ minutes', sublabel: 'Comprehensive training', icon: '🏆', duration: 50 }
 ]
 
-// Location/mode options - Calisthenics focused
-const LOCATION_OPTIONS = [
-    { id: 'bodyweight', label: 'At Home', sublabel: 'No equipment needed', icon: Home },
-    { id: 'outdoor', label: 'Outdoor/Park', sublabel: 'Pull-up bar, dip bars', icon: Building2 },
+// Training setup options - Calisthenics focused
+const SETUP_OPTIONS = [
+    { id: 'minimal', label: 'Minimal Setup', sublabel: 'No equipment needed', icon: Home, equipment: ['none'] },
+    { id: 'basic', label: 'Basic Setup', sublabel: 'Pull-up bar + dip station', icon: Dumbbell, equipment: ['pullupBar', 'dipBars'] },
 ]
 
 const Onboarding = ({ equipment, templates, onComplete }) => {
@@ -37,7 +37,8 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
 
     // User selections
     const [selectedTime, setSelectedTime] = useState(null)
-    const [selectedMode, setSelectedMode] = useState(null)
+    const [selectedMode, setSelectedMode] = useState('bodyweight') // Always bodyweight for calisthenics
+    const [selectedSetup, setSelectedSetup] = useState(null)
     const [selectedEquipment, setSelectedEquipment] = useState(['none'])
     const [selectedTemplate, setSelectedTemplate] = useState(null)
     const [trainingPreferences, setTrainingPreferences] = useState({ ...DEFAULT_TRAINING_PREFERENCES })
@@ -74,11 +75,11 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
         if (selectedTime === 'express') {
             return [1, 6, 7, 8] // Time → Schedule → Program → Confirm
         }
-        // Bodyweight-only users skip equipment
-        if (selectedMode === 'bodyweight') {
+        // Minimal setup skips equipment selection, basic setup shows it to customize
+        if (selectedSetup === 'minimal') {
             return [1, 2, 4, 5, 6, 7, 8]
         }
-        // Full flow for gym and mixed
+        // Basic setup shows equipment step to let users customize
         return [1, 2, 3, 4, 5, 6, 7, 8]
     }
 
@@ -144,13 +145,17 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
         }
     }
 
-    const handleModeSelect = (mode) => {
-        setSelectedMode(mode)
-        if (mode === 'bodyweight') {
+    const handleSetupSelect = (setupId) => {
+        setSelectedSetup(setupId)
+        // Set equipment based on selected setup
+        const setupOption = SETUP_OPTIONS.find(o => o.id === setupId)
+        if (setupOption?.equipment) {
+            setSelectedEquipment(setupOption.equipment)
+        } else {
             setSelectedEquipment(['none'])
         }
-        // Set default template for the selected mode
-        const modeTemplates = Object.entries(templates).filter(([, t]) => t.mode === mode)
+        // Set default template for bodyweight
+        const modeTemplates = Object.entries(templates).filter(([, t]) => t.mode === 'bodyweight')
         if (modeTemplates.length > 0) {
             const recommended = modeTemplates.find(([, t]) => t.recommended)
             setSelectedTemplate(recommended ? recommended[0] : modeTemplates[0][0])
@@ -345,7 +350,7 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                         </div>
 
                         <p className="text-center text-slate-500 text-xs">
-                            We'll customize your program based on your available time
+                            Your program will be customized based on your available time
                         </p>
                     </div>
                 )}
@@ -354,31 +359,31 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                 {step === 2 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Where will you work out?</h2>
-                            <p className="text-slate-400">We'll find the right exercises for your setup</p>
+                            <h2 className="text-2xl font-bold text-white">What equipment do you have?</h2>
+                            <p className="text-slate-400">Select your training setup</p>
                         </div>
 
                         <div className="space-y-3">
-                            {LOCATION_OPTIONS.map((option) => {
+                            {SETUP_OPTIONS.map((option) => {
                                 const Icon = option.icon
                                 return (
                                     <button
                                         key={option.id}
-                                        onClick={() => handleModeSelect(option.id)}
-                                        className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedMode === option.id
+                                        onClick={() => handleSetupSelect(option.id)}
+                                        className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedSetup === option.id
                                             ? 'border-cyan-500 bg-cyan-500/10'
                                             : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                                         }`}
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedMode === option.id ? 'bg-cyan-500/20' : 'bg-slate-700'}`}>
-                                                <Icon className={`w-6 h-6 ${selectedMode === option.id ? 'text-cyan-400' : 'text-slate-400'}`} />
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedSetup === option.id ? 'bg-cyan-500/20' : 'bg-slate-700'}`}>
+                                                <Icon className={`w-6 h-6 ${selectedSetup === option.id ? 'text-cyan-400' : 'text-slate-400'}`} />
                                             </div>
                                             <div className="flex-1">
                                                 <h3 className="font-semibold text-white">{option.label}</h3>
                                                 <p className="text-sm text-slate-400">{option.sublabel}</p>
                                             </div>
-                                            {selectedMode === option.id && (
+                                            {selectedSetup === option.id && (
                                                 <Check className="w-5 h-5 text-cyan-500" />
                                             )}
                                         </div>
@@ -419,7 +424,7 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                         </div>
 
                         <p className="text-center text-slate-500 text-sm">
-                            Don't have equipment yet? No problem - we'll include bodyweight alternatives
+                            No equipment yet? No problem - bodyweight alternatives included
                         </p>
                     </div>
                 )}
@@ -428,8 +433,8 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                 {step === 4 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">What's your experience level?</h2>
-                            <p className="text-slate-400">Be honest - we'll scale everything appropriately</p>
+                            <h2 className="text-2xl font-bold text-white">What is your experience level?</h2>
+                            <p className="text-slate-400">Be honest - everything scales to your level</p>
                         </div>
 
                         <div className="space-y-3">
@@ -462,7 +467,7 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                 {step === 5 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">What's your main goal?</h2>
+                            <h2 className="text-2xl font-bold text-white">What is your main goal?</h2>
                             <p className="text-slate-400">This affects your rep ranges and rest times</p>
                         </div>
 
@@ -738,7 +743,7 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
                                 <Check className="w-10 h-10 text-white" />
                             </div>
-                            <h2 className="text-2xl font-bold text-white">You're all set!</h2>
+                            <h2 className="text-2xl font-bold text-white">All set!</h2>
                             <p className="text-slate-400">Your personalized program is ready</p>
                         </div>
 
@@ -750,9 +755,9 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-slate-400">Location</span>
+                                <span className="text-slate-400">Setup</span>
                                 <span className="text-white font-medium">
-                                    {LOCATION_OPTIONS.find(o => o.id === selectedMode)?.label}
+                                    {SETUP_OPTIONS.find(o => o.id === selectedSetup)?.label || 'Minimal Setup'}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">

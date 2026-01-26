@@ -17,11 +17,15 @@ import {
 
 // Equipment types - calisthenics only
 export const EQUIPMENT = {
-  none: { id: 'none', name: 'No Equipment', icon: '🏃' },
-  pullupBar: { id: 'pullupBar', name: 'Pull-up Bar', icon: '🔩' },
-  dipBars: { id: 'dipBars', name: 'Dip Bars/Chairs', icon: '⬛' },
-  resistanceBands: { id: 'resistanceBands', name: 'Resistance Bands', icon: '➿' },
-  parallettes: { id: 'parallettes', name: 'Parallettes', icon: '🔲' },
+  none: { id: 'none', name: 'No Equipment', icon: '🏃', desc: 'Bodyweight only' },
+  pullupBar: { id: 'pullupBar', name: 'Pull-up Bar', icon: '🔩', desc: 'Door frame or wall mounted' },
+  dipBars: { id: 'dipBars', name: 'Dip Station', icon: '⬛', desc: 'Parallel bars or sturdy chairs' },
+  rings: { id: 'rings', name: 'Gymnastic Rings', icon: '⭕', desc: 'Suspended rings for advanced moves' },
+  parallettes: { id: 'parallettes', name: 'Parallettes', icon: '🔲', desc: 'Low bars for L-sits and push-ups' },
+  resistanceBands: { id: 'resistanceBands', name: 'Resistance Bands', icon: '➿', desc: 'Assist pull-ups or add resistance' },
+  abWheel: { id: 'abWheel', name: 'Ab Wheel', icon: '🎡', desc: 'Core rollouts' },
+  weightedVest: { id: 'weightedVest', name: 'Weighted Vest', icon: '🦺', desc: 'Add load to any exercise' },
+  plyo: { id: 'plyo', name: 'Plyo Box', icon: '📦', desc: 'Box jumps and step-ups' },
 }
 
 // Re-export movement patterns from exercises.jsx
@@ -55,88 +59,177 @@ function getProgressionLevel(exerciseKey) {
   return 1 // Standalone exercises default to level 1
 }
 
-// Starter templates - calisthenics focused with progression paths
+/**
+ * Smart Calisthenics Program Templates
+ *
+ * Based on research-backed programming principles:
+ * - Beginners: 3x/week full body, 4-5 exercises, 3 sets of 8-15 reps
+ * - Intermediate: 4x/week upper/lower, 5-6 exercises, 4 sets
+ * - Advanced: 5-6x/week PPL, harder progressions, skill work
+ *
+ * Progression hierarchy:
+ * 1. Increase reps (volume) - most important for beginners
+ * 2. Exercise variation (leverage changes)
+ * 3. External loading (weighted vest)
+ */
 export const STARTER_TEMPLATES = {
-  'calisthenics-beginner': {
-    id: 'calisthenics-beginner',
-    name: 'Beginner Foundations',
-    desc: 'Start your calisthenics journey with the basics',
+  // ========== BEGINNER PROGRAMS (3 days/week) ==========
+  'beginner-full-body': {
+    id: 'beginner-full-body',
+    name: 'Beginner Full Body',
+    desc: 'Perfect starting point - build strength foundations',
+    longDesc: 'A balanced full-body program focusing on the 5 fundamental movement patterns. Train 3 days per week with a day of rest between sessions.',
     goal: 'balanced',
     difficulty: 'beginner',
-    exercises: ['wallPushups', 'squats', 'deadHangs', 'gluteBridges', 'plank'],
+    daysPerWeek: 3,
+    sessionDuration: 20,
+    exercises: ['kneePushups', 'squats', 'australianRows', 'gluteBridges', 'plank'],
+    sets: 3,
+    repRange: [8, 15],
+    restSeconds: 60,
     recommended: true,
+    tags: ['no-equipment', 'home-friendly'],
+  },
+  'beginner-minimal': {
+    id: 'beginner-minimal',
+    name: 'Minimalist Start',
+    desc: '4 essential movements for busy schedules',
+    longDesc: 'The bare minimum for building strength. Just 4 compound exercises covering all major movement patterns.',
+    goal: 'balanced',
+    difficulty: 'beginner',
+    daysPerWeek: 2,
+    sessionDuration: 15,
+    exercises: ['pushups', 'squats', 'plank', 'gluteBridges'],
+    sets: 3,
+    repRange: [10, 20],
+    restSeconds: 45,
+    tags: ['no-equipment', 'quick', 'home-friendly'],
+  },
+
+  // ========== INTERMEDIATE PROGRAMS (4 days/week) ==========
+  'intermediate-upper-lower': {
+    id: 'intermediate-upper-lower',
+    name: 'Upper/Lower Split',
+    desc: 'Classic 4-day split for balanced development',
+    longDesc: 'Alternate between upper and lower body days. Allows more volume per muscle group while maintaining balance.',
+    goal: 'hypertrophy',
+    difficulty: 'intermediate',
+    daysPerWeek: 4,
+    sessionDuration: 35,
+    exercises: ['pushups', 'dips', 'pullups', 'australianRows', 'squats', 'lunges', 'gluteBridges', 'plank', 'vups'],
+    sets: 4,
+    repRange: [8, 12],
+    restSeconds: 60,
+    tags: ['pull-up-bar', 'balanced'],
+  },
+  'intermediate-ppl': {
+    id: 'intermediate-ppl',
+    name: 'Push/Pull/Legs',
+    desc: 'Train each pattern twice per week',
+    longDesc: 'The gold standard split for muscle building. Push (chest/shoulders), Pull (back/biceps), Legs each get dedicated days.',
+    goal: 'hypertrophy',
+    difficulty: 'intermediate',
+    daysPerWeek: 3,
+    sessionDuration: 30,
+    exercises: ['pushups', 'diamondPushups', 'dips', 'pullups', 'chinups', 'australianRows', 'squats', 'lunges', 'gluteBridges', 'plank'],
+    sets: 4,
+    repRange: [8, 12],
+    restSeconds: 60,
+    tags: ['pull-up-bar', 'dip-station'],
+  },
+  'intermediate-strength': {
+    id: 'intermediate-strength',
+    name: 'Strength Builder',
+    desc: 'Lower reps, harder progressions',
+    longDesc: 'Focus on building maximal strength with challenging exercise variations and lower rep ranges.',
+    goal: 'strength',
+    difficulty: 'intermediate',
+    daysPerWeek: 4,
+    sessionDuration: 40,
+    exercises: ['diamondPushups', 'dips', 'pullups', 'bulgarianSplitSquats', 'singleLegGluteBridge', 'hollowBodyHold'],
+    sets: 5,
+    repRange: [5, 8],
+    restSeconds: 90,
+    tags: ['pull-up-bar', 'dip-station', 'strength-focus'],
+  },
+
+  // ========== ADVANCED PROGRAMS (5-6 days/week) ==========
+  'advanced-skills': {
+    id: 'advanced-skills',
+    name: 'Skills & Strength',
+    desc: 'Master advanced calisthenics movements',
+    longDesc: 'For experienced athletes ready to tackle pistol squats, L-sits, and archer variations. Requires solid foundation.',
+    goal: 'strength',
+    difficulty: 'advanced',
+    daysPerWeek: 5,
+    sessionDuration: 45,
+    exercises: ['archerPushups', 'pullups', 'pistolSquats', 'lSits', 'dragonFlags', 'nordicCurls'],
+    sets: 4,
+    repRange: [5, 8],
+    restSeconds: 90,
+    tags: ['advanced', 'skill-work'],
+  },
+  'advanced-muscle': {
+    id: 'advanced-muscle',
+    name: 'Hypertrophy Focus',
+    desc: 'High volume for muscle growth',
+    longDesc: 'Maximum muscle stimulus with higher volume and moderate rep ranges. Add a weighted vest for extra challenge.',
+    goal: 'hypertrophy',
+    difficulty: 'advanced',
+    daysPerWeek: 6,
+    sessionDuration: 50,
+    exercises: ['pushups', 'diamondPushups', 'dips', 'pullups', 'chinups', 'australianRows', 'squats', 'bulgarianSplitSquats', 'lunges', 'gluteBridges', 'vups', 'plank'],
+    sets: 4,
+    repRange: [10, 15],
+    restSeconds: 60,
+    tags: ['high-volume', 'weighted-vest-optional'],
+  },
+
+  // ========== SPECIALTY PROGRAMS ==========
+  'core-progression': {
+    id: 'core-progression',
+    name: 'Core Mastery',
+    desc: 'Progressive core development',
+    longDesc: 'From basic planks to dragon flags. Build a rock-solid core through progressive overload.',
+    goal: 'core',
+    difficulty: 'intermediate',
+    daysPerWeek: 3,
+    sessionDuration: 20,
+    exercises: ['plank', 'sidePlank', 'hollowBodyHold', 'vups', 'lSits', 'mountainClimbers'],
+    sets: 3,
+    repRange: [10, 20],
+    restSeconds: 45,
+    tags: ['core-focus', 'no-equipment'],
+  },
+  'conditioning-circuit': {
+    id: 'conditioning-circuit',
+    name: 'Endurance Circuit',
+    desc: 'High reps, minimal rest',
+    longDesc: 'Build muscular endurance and work capacity with high rep circuits. Great for fat loss and conditioning.',
+    goal: 'endurance',
+    difficulty: 'beginner',
+    daysPerWeek: 3,
+    sessionDuration: 25,
+    exercises: ['squats', 'pushups', 'mountainClimbers', 'burpees', 'plank', 'lunges'],
+    sets: 3,
+    repRange: [15, 25],
+    restSeconds: 30,
+    tags: ['no-equipment', 'cardio', 'fat-loss'],
   },
   'shift6-classic': {
     id: 'shift6-classic',
     name: 'Shift6 Classic',
     desc: 'The original 9 foundational exercises',
+    longDesc: 'The proven Shift6 program - 9 exercises covering all movement patterns with progressive overload built in.',
     goal: 'balanced',
     difficulty: 'intermediate',
-    exercises: ['pushups', 'squats', 'pullups', 'dips', 'vups', 'glutebridge', 'plank', 'lunges', 'supermans'],
-  },
-  'minimalist': {
-    id: 'minimalist',
-    name: 'Minimalist',
-    desc: '4 compound movements for busy schedules',
-    goal: 'balanced',
-    difficulty: 'beginner',
-    exercises: ['pushups', 'squats', 'australianRows', 'plank'],
-  },
-  'push-pull-legs': {
-    id: 'push-pull-legs',
-    name: 'Push/Pull/Legs',
-    desc: 'Balanced training split',
-    goal: 'balanced',
-    difficulty: 'intermediate',
-    exercises: ['pushups', 'dips', 'pullups', 'australianRows', 'squats', 'lunges', 'plank', 'vups'],
-  },
-  'strength-focus': {
-    id: 'strength-focus',
-    name: 'Strength Focus',
-    desc: 'Build raw strength with harder progressions',
-    goal: 'strength',
-    difficulty: 'intermediate',
-    exercises: ['diamondPushups', 'dips', 'chinups', 'bulgarianSplitSquats', 'hollowBodyHold', 'glutebridge'],
-  },
-  'advanced-calisthenics': {
-    id: 'advanced-calisthenics',
-    name: 'Advanced Skills',
-    desc: 'For experienced athletes seeking mastery',
-    goal: 'strength',
-    difficulty: 'advanced',
-    exercises: ['archerPushups', 'pullups', 'pistolSquats', 'lSits', 'dragonFlags', 'nordicCurls'],
-  },
-  'core-master': {
-    id: 'core-master',
-    name: 'Core Mastery',
-    desc: 'Complete core progression path',
-    goal: 'core',
-    difficulty: 'intermediate',
-    exercises: ['plank', 'sidePlank', 'hollowBodyHold', 'vups', 'lSits', 'mountainClimbers'],
-  },
-  'upper-body': {
-    id: 'upper-body',
-    name: 'Upper Body Focus',
-    desc: 'Push and pull for upper body development',
-    goal: 'hypertrophy',
-    difficulty: 'intermediate',
-    exercises: ['pushups', 'diamondPushups', 'dips', 'pullups', 'australianRows', 'supermans'],
-  },
-  'lower-body': {
-    id: 'lower-body',
-    name: 'Lower Body Focus',
-    desc: 'Legs and glutes development',
-    goal: 'hypertrophy',
-    difficulty: 'intermediate',
-    exercises: ['squats', 'lunges', 'bulgarianSplitSquats', 'gluteBridges', 'glutebridge', 'pistolSquats'],
-  },
-  'conditioning': {
-    id: 'conditioning',
-    name: 'Conditioning Circuit',
-    desc: 'High rep endurance and cardio',
-    goal: 'endurance',
-    difficulty: 'beginner',
-    exercises: ['squats', 'pushups', 'mountainClimbers', 'burpees', 'plank', 'lunges'],
+    daysPerWeek: 3,
+    sessionDuration: 30,
+    exercises: ['pushups', 'squats', 'pullups', 'dips', 'vups', 'gluteBridges', 'plank', 'lunges', 'supermans'],
+    sets: 4,
+    repRange: [8, 15],
+    restSeconds: 60,
+    tags: ['classic', 'pull-up-bar', 'dip-station'],
   },
 }
 

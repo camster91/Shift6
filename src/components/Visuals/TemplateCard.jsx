@@ -95,6 +95,20 @@ const TemplateCard = ({
               </span>
             )}
 
+            {/* Days Per Week */}
+            {template.daysPerWeek && (
+              <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400">
+                {template.daysPerWeek}x/week
+              </span>
+            )}
+
+            {/* Session Duration */}
+            {template.sessionDuration && (
+              <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400">
+                ~{template.sessionDuration} min
+              </span>
+            )}
+
             {/* Exercise Count */}
             <span className="text-xs text-slate-500">
               {template.exercises.length} exercises

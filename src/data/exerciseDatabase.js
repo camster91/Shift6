@@ -5,34 +5,34 @@
  * Organized by movement patterns for balanced program generation.
  */
 
-// Equipment types
+// Equipment types - calisthenics focused
 export const EQUIPMENT = {
-  none: { id: 'none', name: 'No Equipment', icon: '🏃' },
-  pullupBar: { id: 'pullupBar', name: 'Pull-up Bar', icon: '🔩' },
-  dipBars: { id: 'dipBars', name: 'Dip Bars', icon: '⬛' },
-  dumbbells: { id: 'dumbbells', name: 'Dumbbells', icon: '🏋️' },
-  bench: { id: 'bench', name: 'Weight Bench', icon: '🛋️' },
-  cables: { id: 'cables', name: 'Cable Machine', icon: '🔗' },
-  machines: { id: 'machines', name: 'Gym Machines', icon: '⚙️' },
+  none: { id: 'none', name: 'No Equipment', icon: '🏃', desc: 'Bodyweight only' },
+  pullupBar: { id: 'pullupBar', name: 'Pull-up Bar', icon: '🔩', desc: 'Door frame or wall mounted' },
+  dipBars: { id: 'dipBars', name: 'Dip Station', icon: '⬛', desc: 'Parallel bars or sturdy chairs' },
+  rings: { id: 'rings', name: 'Gymnastic Rings', icon: '⭕', desc: 'Suspended rings for advanced moves' },
+  parallettes: { id: 'parallettes', name: 'Parallettes', icon: '🔲', desc: 'Low bars for L-sits and push-ups' },
+  resistanceBands: { id: 'resistanceBands', name: 'Resistance Bands', icon: '➿', desc: 'Assist pull-ups or add resistance' },
+  abWheel: { id: 'abWheel', name: 'Ab Wheel', icon: '🎡', desc: 'Core rollouts' },
+  weightedVest: { id: 'weightedVest', name: 'Weighted Vest', icon: '🦺', desc: 'Add load to any exercise' },
+  plyo: { id: 'plyo', name: 'Plyo Box', icon: '📦', desc: 'Box jumps and step-ups' },
 }
 
-// Program modes
+// Program modes - calisthenics only
 export const PROGRAM_MODES = {
-  bodyweight: { id: 'bodyweight', name: 'Bodyweight Only', desc: 'No equipment needed', icon: '🏃' },
-  mixed: { id: 'mixed', name: 'Mixed Training', desc: 'Bodyweight + gym', icon: '💪' },
-  gym: { id: 'gym', name: 'Gym Training', desc: 'Equipment-based', icon: '🏋️' },
+  bodyweight: { id: 'bodyweight', name: 'Calisthenics', desc: 'Bodyweight training - train anywhere', icon: '🏃' },
 }
 
 // Movement patterns for balanced programming
 export const MOVEMENT_PATTERNS = {
-  knee_dominant: { name: 'Squats & Lunges', muscles: ['quads', 'glutes'] },
-  hip_dominant: { name: 'Hip Hinges', muscles: ['hamstrings', 'glutes', 'lower_back'] },
-  horizontal_push: { name: 'Chest Press', muscles: ['chest', 'triceps'] },
-  vertical_push: { name: 'Shoulder Press', muscles: ['shoulders', 'triceps'] },
-  horizontal_pull: { name: 'Rows', muscles: ['back', 'biceps'] },
-  vertical_pull: { name: 'Pull-ups', muscles: ['lats', 'biceps'] },
-  core_stability: { name: 'Core Stability', muscles: ['abs', 'obliques'] },
-  core_flexion: { name: 'Core Flexion', muscles: ['abs'] },
+  knee_dominant: { name: 'Squats & Lunges', shortName: 'Legs', muscles: ['quads', 'glutes'] },
+  hip_dominant: { name: 'Hip Hinges & Bridges', shortName: 'Posterior', muscles: ['hamstrings', 'glutes', 'lower_back'] },
+  horizontal_push: { name: 'Push-ups & Dips', shortName: 'Chest', muscles: ['chest', 'triceps'] },
+  vertical_push: { name: 'Handstands & Pike Push', shortName: 'Shoulders', muscles: ['shoulders', 'triceps'] },
+  horizontal_pull: { name: 'Rows', shortName: 'Back', muscles: ['back', 'biceps'] },
+  vertical_pull: { name: 'Pull-ups & Chin-ups', shortName: 'Lats', muscles: ['lats', 'biceps'] },
+  core_stability: { name: 'Planks & Holds', shortName: 'Core', muscles: ['abs', 'obliques'] },
+  core_flexion: { name: 'Crunches & V-ups', shortName: 'Abs', muscles: ['abs'] },
 }
 
 // Difficulty levels

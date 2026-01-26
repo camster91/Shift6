@@ -17,6 +17,29 @@ import { detectPersona, getPersonaDefaults } from '../../utils/personas.js'
 import TemplateCard from '../Visuals/TemplateCard'
 import CustomProgramBuilder from './CustomProgramBuilder'
 
+/**
+ * Convert camelCase exercise key to readable name
+ * e.g., "kneePushup" -> "Knee Push-up", "vUp" -> "V-Up"
+ */
+const formatExerciseName = (key) => {
+    if (!key) return ''
+    // Handle special cases
+    const specialCases = {
+        'vUp': 'V-Up',
+        'vups': 'V-Ups',
+        'lSit': 'L-Sit',
+    }
+    if (specialCases[key]) return specialCases[key]
+
+    // Convert camelCase to Title Case with spaces
+    return key
+        .replace(/([A-Z])/g, ' $1') // Add space before capitals
+        .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+        .replace(/push ?up/gi, 'Push-up')
+        .replace(/pull ?up/gi, 'Pull-up')
+        .trim()
+}
+
 // Time options for the first question
 const TIME_OPTIONS = [
     { id: 'express', label: '10-15 minutes', sublabel: 'Quick & efficient', icon: '⚡', duration: 10 },
@@ -28,7 +51,11 @@ const TIME_OPTIONS = [
 // Training setup options - Calisthenics focused
 const SETUP_OPTIONS = [
     { id: 'minimal', label: 'Minimal Setup', sublabel: 'No equipment needed', icon: Home, equipment: ['none'] },
-    { id: 'basic', label: 'Basic Setup', sublabel: 'Pull-up bar + dip station', icon: Dumbbell, equipment: ['pullupBar', 'dipBars'] },
+    { id: 'pullupOnly', label: 'Pull-up Bar Only', sublabel: 'Door frame or wall mounted bar', icon: Dumbbell, equipment: ['pullupBar'] },
+    { id: 'basic', label: 'Bar + Dip Station', sublabel: 'Pull-up bar + parallel bars', icon: Dumbbell, equipment: ['pullupBar', 'dipBars'] },
+    { id: 'rings', label: 'Rings Setup', sublabel: 'Pull-up bar + gymnastic rings', icon: Dumbbell, equipment: ['pullupBar', 'rings'] },
+    { id: 'park', label: 'Calisthenics Park', sublabel: 'Bars, dip station + plyo box', icon: Dumbbell, equipment: ['pullupBar', 'dipBars', 'plyo'] },
+    { id: 'full', label: 'Full Home Gym', sublabel: 'All calisthenics equipment', icon: Dumbbell, equipment: ['pullupBar', 'dipBars', 'rings', 'parallettes', 'resistanceBands', 'plyo'] },
 ]
 
 const Onboarding = ({ equipment, templates, onComplete }) => {
@@ -142,6 +169,11 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                 fitnessLevel: 'beginner',
                 repScheme: 'endurance'
             }))
+            // Express mode skips to schedule
+            setTimeout(() => setStep(6), 150)
+        } else {
+            // Auto-advance to equipment setup
+            setTimeout(() => setStep(2), 150)
         }
     }
 
@@ -159,6 +191,12 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
         if (modeTemplates.length > 0) {
             const recommended = modeTemplates.find(([, t]) => t.recommended)
             setSelectedTemplate(recommended ? recommended[0] : modeTemplates[0][0])
+        }
+        // Auto-advance: minimal setup skips equipment customization
+        if (setupId === 'minimal') {
+            setTimeout(() => setStep(4), 150)
+        } else {
+            setTimeout(() => setStep(3), 150)
         }
     }
 
@@ -179,6 +217,14 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
     const handleFitnessLevelSelect = (level) => {
         const updated = applyFitnessLevelPreset(level, trainingPreferences)
         setTrainingPreferences(updated)
+        // Auto-advance to goal step
+        setTimeout(() => setStep(5), 150)
+    }
+
+    const handleGoalSelect = (goal) => {
+        setTrainingPreferences(prev => ({ ...prev, repScheme: goal }))
+        // Auto-advance to schedule step
+        setTimeout(() => setStep(6), 150)
     }
 
     const togglePreferredDay = (dayIndex) => {
@@ -475,7 +521,7 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                             {Object.entries(REP_SCHEME_CONFIGS).map(([key, config]) => (
                                 <button
                                     key={key}
-                                    onClick={() => handlePreferenceChange('repScheme', key)}
+                                    onClick={() => handleGoalSelect(key)}
                                     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${trainingPreferences.repScheme === key
                                         ? 'border-cyan-500 bg-cyan-500/10'
                                         : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
@@ -653,7 +699,7 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                                                                 className="flex items-center gap-3 bg-slate-800/50 rounded-lg p-2"
                                                             >
                                                                 <span className="text-xs text-slate-500 w-5">{index + 1}.</span>
-                                                                <span className="flex-1 text-sm text-white">{exercise?.name || exKey}</span>
+                                                                <span className="flex-1 text-sm text-white">{exercise?.name || formatExerciseName(exKey)}</span>
                                                                 <span className="text-xs text-slate-400 capitalize">{exercise?.category}</span>
                                                             </div>
                                                         )

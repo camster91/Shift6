@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { X, Play, Pause, SkipForward, ChevronRight, Flame, Clock, CheckCircle2, RotateCcw } from 'lucide-react'
-import { WARMUP_EXERCISES, WARMUP_ROUTINES, calculateWarmupDuration } from '../../data/warmupRoutines'
+import { X, Play, Pause, SkipForward, Flame, CheckCircle2, RotateCcw } from 'lucide-react'
+import { WARMUP_EXERCISES, WARMUP_ROUTINES } from '../../data/warmupRoutines'
 import { playBeep, playSuccess } from '../../utils/audio'
 import { vibrate } from '../../utils/device'
 

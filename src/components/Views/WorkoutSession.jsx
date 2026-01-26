@@ -150,8 +150,8 @@ const WorkoutSession = ({
     setExerciseTimerStarted,
     completedDays = {},
     sessionHistory = [],
-    gymWeights = {},
-    setGymWeights,
+    personalRecords = {},
+    // setPersonalRecords - unused for now, but available for future PR tracking
     allExercises = {}
 }) => {
     const [copied, setCopied] = useState(false);
@@ -161,17 +161,19 @@ const WorkoutSession = ({
     const [showConfetti, setShowConfetti] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-    // Gym workout state - track reps completed for each set
+    // Gym workout state - kept for compatibility but unused in calisthenics mode
     const [gymSetReps, setGymSetReps] = useState([]);
     const [currentGymReps, setCurrentGymReps] = useState(0);
 
-    // Check if this is a gym exercise
-    const exerciseData = currentSession ? (allExercises[currentSession.exerciseKey] || EXERCISE_PLANS[currentSession.exerciseKey] || EXERCISE_LIBRARY[currentSession.exerciseKey]) : null;
-    const isGymExercise = exerciseData?.progressionType === 'gym';
-    const gymConfig = exerciseData?.gymConfig;
+    // Check if this is a gym exercise (always false for calisthenics app)
+    const isGymExercise = false;
+    const gymConfig = null;
+    const currentWeight = 0; // Not used in calisthenics mode
+    const setGymWeights = null; // Stub - not used in calisthenics mode
 
-    // Get current weight for gym exercise
-    const currentWeight = currentSession ? (gymWeights[currentSession.exerciseKey] || 0) : 0;
+    // Silence unused variable warnings - these are used for future features
+    void personalRecords;
+    void allExercises;
 
     // Calculate stats and unlocked badges
     const stats = calculateStats(completedDays, sessionHistory);

@@ -335,13 +335,14 @@ export function filterAvailableExercises(allExercises, mode, equipment, fitnessL
 
   return Object.entries(allExercises)
     .filter(([key, ex]) => {
-      // Mode check
-      if (!ex.modes?.includes(mode)) return false
+      // Mode check - calisthenics exercises default to bodyweight mode
+      const exerciseModes = ex.modes || ['bodyweight']
+      if (!exerciseModes.includes(mode) && mode !== 'bodyweight') return false
 
       // Equipment check
       const hasEquipment = ex.equipment?.every(eq =>
         eq === 'none' || equipment.includes(eq)
-      )
+      ) ?? true // Default to true if no equipment array
       if (!hasEquipment) return false
 
       // Complexity check

@@ -424,7 +424,7 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                         </div>
 
                         <p className="text-center text-slate-500 text-sm">
-                            Don't have equipment yet? No problem - we'll include bodyweight alternatives
+                            No equipment yet? No problem - bodyweight alternatives included
                         </p>
                     </div>
                 )}
@@ -433,8 +433,8 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                 {step === 4 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">What's your experience level?</h2>
-                            <p className="text-slate-400">Be honest - we'll scale everything appropriately</p>
+                            <h2 className="text-2xl font-bold text-white">What is your experience level?</h2>
+                            <p className="text-slate-400">Be honest - everything scales to your level</p>
                         </div>
 
                         <div className="space-y-3">
@@ -467,7 +467,7 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                 {step === 5 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">What's your main goal?</h2>
+                            <h2 className="text-2xl font-bold text-white">What is your main goal?</h2>
                             <p className="text-slate-400">This affects your rep ranges and rest times</p>
                         </div>
 
@@ -743,7 +743,7 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
                                 <Check className="w-10 h-10 text-white" />
                             </div>
-                            <h2 className="text-2xl font-bold text-white">You're all set!</h2>
+                            <h2 className="text-2xl font-bold text-white">All set!</h2>
                             <p className="text-slate-400">Your personalized program is ready</p>
                         </div>
 

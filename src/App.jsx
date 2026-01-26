@@ -72,6 +72,7 @@ const App = () => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}rest_timer`);
         return saved !== null ? JSON.parse(saved) : null;
     });
+    void setRestTimerOverride; // Settings panel TODO
 
     const [theme, setTheme] = useState(() => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}theme`);
@@ -119,6 +120,7 @@ const App = () => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}warmup_enabled`);
         return saved !== null ? JSON.parse(saved) : true;
     });
+    void setWarmupEnabled; // Settings panel TODO
 
     // Body metrics (weight, measurements)
     const [bodyMetrics, setBodyMetrics] = useState(() => {
@@ -185,12 +187,6 @@ const App = () => {
         const timer = setTimeout(() => {
             let hasChanges = false;
             const updatedSprints = { ...sprints };
-            const prs = calculateStats(completedDays, sessionHistory).personalRecords || {};
-            // Note: calculateStats returns count, not values. We need getPersonalRecords from gamification
-            // Actually getPersonalRecords is exported but not imported in App.jsx yet maybe?
-            // Wait, calculateStats returns { personalRecords: count }. We need the lookup.
-            // Let's import getPersonalRecords or just scan sessionHistory here.
-
             // Simple PR scan from history
             const historyPRs = {};
             sessionHistory.forEach(s => {
@@ -237,6 +233,7 @@ const App = () => {
         }, 2000); // Delay 2s to allow load
 
         return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeProgram, trainingPreferences, sessionHistory.length]); // Dependency on history length to trigger updates
 
     // Merge built-in, library, database, and custom exercises
@@ -549,6 +546,7 @@ const App = () => {
         setExerciseTimeLeft(0);
         setIsExerciseTimerRunning(false);
         setExerciseTimerStarted(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeExercise, allExercises, completedDays, exerciseDifficulty, restTimerOverride, customPlans, trainingPreferences]);
 
     // Add custom exercise
@@ -1016,9 +1014,6 @@ const App = () => {
     const onShowAddExercise = useCallback(() => setShowAddExercise(true), []);
     const onShowExerciseLibrary = useCallback(() => setShowExerciseLibrary(true), []);
     const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
-    const onShowTrainingSettings = useCallback(() => setShowTrainingSettings(true), []);
-    const onShowBodyMetrics = useCallback(() => setShowBodyMetrics(true), []);
-    const onShowAccessibility = useCallback(() => setShowAccessibility(true), []);
 
     // ---------------- SPRINT MANAGEMENT ----------------
 

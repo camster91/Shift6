@@ -1082,6 +1082,17 @@ const App = () => {
 
     // ---------------- RENDER ----------------
 
+    // ⚡ Bolt: Memoize SideDrawer callbacks to prevent re-renders.
+    const onSideDrawerClose = useCallback(() => setShowDrawer(false), []);
+    const onShowCalendar = useCallback(() => { setActiveTab('progress'); setShowDrawer(false); }, []);
+    const onShowGuideFromDrawer = useCallback(() => { setShowGuide(true); setShowDrawer(false); }, []);
+    const onShowAchievements = useCallback(() => { setActiveTab('progress'); setShowDrawer(false); }, []);
+    // Note: onShowTrainingSettings, onShowBodyMetrics, onShowAccessibility are already memoized for other components
+    // but the drawer needs to close itself, so we create new handlers.
+    const onShowTrainingSettingsFromDrawer = useCallback(() => { setShowTrainingSettings(true); setShowDrawer(false); }, []);
+    const onShowBodyMetricsFromDrawer = useCallback(() => { setShowBodyMetrics(true); setShowDrawer(false); }, []);
+    const onShowAccessibilityFromDrawer = useCallback(() => { setShowAccessibility(true); setShowDrawer(false); }, []);
+
     // Calculate stats for drawer
     const drawerStats = useMemo(() => {
         const stats = calculateStats(completedDays, sessionHistory);
@@ -1180,14 +1191,14 @@ const App = () => {
             {/* Side Drawer */}
             <SideDrawer
                 isOpen={showDrawer}
-                onClose={() => setShowDrawer(false)}
+                onClose={onSideDrawerClose}
                 stats={drawerStats}
-                onShowCalendar={() => { setActiveTab('progress'); setShowDrawer(false); }}
-                onShowGuide={() => { setShowGuide(true); setShowDrawer(false); }}
-                onShowAchievements={() => { setActiveTab('progress'); setShowDrawer(false); }}
-                onShowTrainingSettings={() => { setShowTrainingSettings(true); setShowDrawer(false); }}
-                onShowBodyMetrics={() => { setShowBodyMetrics(true); setShowDrawer(false); }}
-                onShowAccessibility={() => { setShowAccessibility(true); setShowDrawer(false); }}
+                onShowCalendar={onShowCalendar}
+                onShowGuide={onShowGuideFromDrawer}
+                onShowAchievements={onShowAchievements}
+                onShowTrainingSettings={onShowTrainingSettingsFromDrawer}
+                onShowBodyMetrics={onShowBodyMetricsFromDrawer}
+                onShowAccessibility={onShowAccessibilityFromDrawer}
                 onExport={handleExport}
                 onExportCSV={handleExportCSV}
                 onImport={handleImport}

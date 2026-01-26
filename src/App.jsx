@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { EXERCISE_PLANS, DIFFICULTY_LEVELS, generateProgression, getCustomRest } from './data/exercises.jsx';
+import { EXERCISE_PLANS, DIFFICULTY_LEVELS, getCustomRest } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
-import { EXERCISES } from './data/exerciseDatabase.js';
 import { getDailyStack } from './utils/schedule';
 import { calculateStats, getUnlockedBadges } from './utils/gamification';
 import {
@@ -91,9 +90,9 @@ const App = () => {
         return saved ? JSON.parse(saved) : {};
     });
 
-    // Gym weights per exercise (stores current weight for gym progression)
-    const [gymWeights, setGymWeights] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_weights`);
+    // Personal records per exercise (max reps achieved)
+    const [personalRecords, setPersonalRecords] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}personal_records`);
         return saved ? JSON.parse(saved) : {};
     });
 
@@ -244,26 +243,13 @@ const App = () => {
     const allExercises = useMemo(() => {
         const merged = { ...EXERCISE_PLANS };
 
-        // Add library exercises (with generated progressions)
+        // Add library exercises (these may have additional metadata from progression system)
         Object.entries(EXERCISE_LIBRARY).forEach(([key, ex]) => {
-            if (!merged[key]) {
+            if (!merged[key] && ex.weeks) {
                 merged[key] = {
                     ...ex,
-                    weeks: generateProgression(ex.startReps, ex.finalGoal),
-                    image: `neo:${key}`,
-                    finalGoal: `${ex.finalGoal} ${ex.unit === 'seconds' ? 'Seconds' : 'Reps'}`,
-                };
-            }
-        });
-
-        // Add exercises from expanded database (with generated progressions)
-        Object.entries(EXERCISES).forEach(([key, ex]) => {
-            if (!merged[key]) {
-                merged[key] = {
-                    ...ex,
-                    weeks: generateProgression(ex.startReps, ex.finalGoal),
-                    image: `neo:${key}`,
-                    finalGoal: `${ex.finalGoal} ${ex.unit === 'seconds' ? 'Seconds' : 'Reps'}`,
+                    image: ex.image || `neo:${key}`,
+                    finalGoal: ex.finalGoal || `${ex.startReps} ${ex.unit === 'seconds' ? 'Seconds' : 'Reps'}`,
                 };
             }
         });
@@ -290,8 +276,8 @@ const App = () => {
     }, [exerciseDifficulty]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_weights`, JSON.stringify(gymWeights));
-    }, [gymWeights]);
+        localStorage.setItem(`${STORAGE_PREFIX}personal_records`, JSON.stringify(personalRecords));
+    }, [personalRecords]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}body_metrics`, JSON.stringify(bodyMetrics));
@@ -515,38 +501,7 @@ const App = () => {
             }
         }
 
-        // Handle gym exercises (progressive overload, no fixed days)
-        if (exercise.progressionType === 'gym') {
-            const gymConfig = exercise.gymConfig || { sets: 3, repRange: [8, 12], restSeconds: 90 };
-            setCurrentSession({
-                exerciseKey: exKey,
-                exerciseName: exercise.name,
-                week: 0,
-                dayIndex: 0,
-                setIndex: 0,
-                rest: restTimerOverride !== null ? restTimerOverride : gymConfig.restSeconds,
-                baseReps: [],
-                reps: [],
-                dayId: `gym_${exKey}_${Date.now()}`,
-                isFinal: false,
-                color: exercise.color,
-                unit: exercise.unit,
-                difficulty: 3,
-                step: 'workout',
-                isGym: true,
-                gymConfig
-            });
-            setAmrapValue('');
-            setTestInput('');
-            setTimeLeft(0);
-            setWorkoutNotes('');
-            setExerciseTimeLeft(0);
-            setIsExerciseTimerRunning(false);
-            setExerciseTimerStarted(false);
-            return;
-        }
-
-        // Handle bodyweight exercises (18-day progression)
+        // Handle calisthenics exercises (18-day progression)
         // Use customPlans if available, otherwise fall back to exercise.weeks
         const exerciseWeeks = customPlans[exKey]?.weeks || exercise.weeks;
         const weekData = exerciseWeeks?.find(w => w.week === week);
@@ -1276,8 +1231,8 @@ const App = () => {
                         setExerciseTimerStarted={setExerciseTimerStarted}
                         completedDays={completedDays}
                         sessionHistory={sessionHistory}
-                        gymWeights={gymWeights}
-                        setGymWeights={setGymWeights}
+                        personalRecords={personalRecords}
+                        setPersonalRecords={setPersonalRecords}
                         allExercises={allExercises}
                     />
                 </div>
@@ -1323,7 +1278,6 @@ const App = () => {
             {/* Onboarding - Fullscreen for new users */}
             {!onboardingComplete && (
                 <Onboarding
-                    programModes={PROGRAM_MODES}
                     equipment={EQUIPMENT}
                     templates={STARTER_TEMPLATES}
                     onComplete={handleCompleteOnboarding}

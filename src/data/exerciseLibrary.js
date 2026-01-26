@@ -1,1394 +1,148 @@
 /**
- * Exercise Library - Comprehensive database of bodyweight and gym exercises
- * with equipment tags, program modes, and starter templates.
+ * Calisthenics Exercise Library
+ *
+ * Organized by movement patterns with clear progression paths.
+ * Users unlock harder exercises by mastering easier ones.
  */
 
-// Equipment types
+import {
+  EXERCISE_PLANS,
+  PROGRESSION_CHAINS,
+  MOVEMENT_PATTERNS,
+  isExerciseUnlocked,
+  getStarterExercises,
+  getNextProgression,
+  getExercisesByPattern
+} from './exercises.jsx'
+
+// Equipment types - calisthenics only
 export const EQUIPMENT = {
   none: { id: 'none', name: 'No Equipment', icon: '🏃' },
   pullupBar: { id: 'pullupBar', name: 'Pull-up Bar', icon: '🔩' },
-  dipBars: { id: 'dipBars', name: 'Dip Bars', icon: '⬛' },
-  dumbbells: { id: 'dumbbells', name: 'Dumbbells', icon: '🏋️' },
-  barbell: { id: 'barbell', name: 'Barbell', icon: '🏋️‍♂️' },
-  bench: { id: 'bench', name: 'Weight Bench', icon: '🛋️' },
-  cables: { id: 'cables', name: 'Cable Machine', icon: '🔗' },
-  kettlebell: { id: 'kettlebell', name: 'Kettlebell', icon: '🔔' },
+  dipBars: { id: 'dipBars', name: 'Dip Bars/Chairs', icon: '⬛' },
   resistanceBands: { id: 'resistanceBands', name: 'Resistance Bands', icon: '➿' },
+  parallettes: { id: 'parallettes', name: 'Parallettes', icon: '🔲' },
 }
 
-// Program modes
-export const PROGRAM_MODES = {
-  bodyweight: { id: 'bodyweight', name: 'Bodyweight Only', desc: 'No equipment needed - train anywhere', icon: '🏃' },
-  mixed: { id: 'mixed', name: 'Bodyweight + Gym', desc: 'Best of both worlds', icon: '💪' },
-  gym: { id: 'gym', name: 'Gym Only', desc: 'Equipment-based training', icon: '🏋️' },
-}
+// Re-export movement patterns from exercises.jsx
+export { MOVEMENT_PATTERNS }
 
 /**
- * Exercise Library Database
- * Each exercise has: name, category, equipment, modes, startReps, finalGoal, unit, color, instructions, tips
+ * Build exercise library from EXERCISE_PLANS
+ * This creates a structured library with all metadata
  */
-export const EXERCISE_LIBRARY = {
-  // ============================================================
-  // BODYWEIGHT EXERCISES - PUSH (12)
-  // ============================================================
-  wallPushups: {
-    name: 'Wall Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 10,
-    finalGoal: 50,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'a6YHbXD2XlU',
-    instructions: 'Stand facing a wall at arms length. Place hands on wall at shoulder height and width. Bend elbows to bring chest toward wall, then push back.',
-    tips: ['Keep core tight', 'Great for beginners', 'Progress to incline push-ups'],
-  },
-  kneePushups: {
-    name: 'Knee Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 8,
-    finalGoal: 40,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'jWxvty2KROs',
-    instructions: 'Start in push-up position with knees on ground. Lower chest to floor keeping back straight, then push back up.',
-    tips: ['Keep hips in line with shoulders', 'Great stepping stone to full push-ups'],
-  },
-  diamondPushups: {
-    name: 'Diamond Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 40,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'J0DnG1_S92I',
-    instructions: 'Place hands together forming a diamond shape with thumbs and index fingers. Perform push-ups with elbows close to body.',
-    tips: ['Emphasizes triceps', 'Keep elbows tucked', 'Great for arm definition'],
-  },
-  widePushups: {
-    name: 'Wide Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 8,
-    finalGoal: 50,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'pfPvbS5MNPA',
-    instructions: 'Perform push-ups with hands placed wider than shoulder width. Lower chest to ground and push back up.',
-    tips: ['Emphasizes chest', 'Keep core engaged', 'Dont flare elbows too much'],
-  },
-  declinePushups: {
-    name: 'Decline Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 40,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'SKPab2YC8BE',
-    instructions: 'Place feet on elevated surface (bench, step, chair). Perform push-ups with hands on ground.',
-    tips: ['Targets upper chest and shoulders', 'Higher elevation = harder', 'Keep core tight'],
-  },
-  pikePushups: {
-    name: 'Pike Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 30,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'sposDXWEB0A',
-    instructions: 'Start in downward dog position with hips high. Bend elbows to lower head toward ground, then push back up.',
-    tips: ['Great for shoulder strength', 'Progression to handstand push-ups', 'Keep legs straight'],
-  },
-  archerPushups: {
-    name: 'Archer Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 3,
-    finalGoal: 20,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'ykI7YW0ECcE',
-    instructions: 'Start in wide push-up position. Lower toward one hand while extending the other arm out straight. Alternate sides.',
-    tips: ['Progression to one-arm push-ups', 'Keep extended arm straight', 'Control the movement'],
-  },
-  hinduPushups: {
-    name: 'Hindu Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 30,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: '2s1wQCcycWU',
-    instructions: 'Start in downward dog. Swoop down and forward, bringing chest through hands, then press up into upward dog. Reverse the motion.',
-    tips: ['Full body movement', 'Great for flexibility', 'Smooth flowing motion'],
-  },
-  clapPushups: {
-    name: 'Clap Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 3,
-    finalGoal: 25,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'EYwWCgM198U',
-    instructions: 'Perform explosive push-up, pushing hard enough to clap hands before landing. Absorb landing softly.',
-    tips: ['Builds explosive power', 'Land with soft elbows', 'Master regular push-ups first'],
-  },
-  pseudoPlanchePushups: {
-    name: 'Pseudo Planche Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 3,
-    finalGoal: 20,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'Cdmg0CfMZeo',
-    instructions: 'Place hands by hips with fingers pointing to sides or back. Lean forward and perform push-ups with body extended forward.',
-    tips: ['Advanced exercise', 'Builds towards planche', 'Wrist flexibility important'],
-  },
-  oneArmPushups: {
-    name: 'One-Arm Push-Ups',
-    category: 'push',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 1,
-    finalGoal: 15,
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'WJmbiMnSuKg',
-    instructions: 'Take wide stance, place one hand behind back. Lower chest toward ground using single arm, then push back up.',
-    tips: ['Elite exercise', 'Wide stance helps balance', 'Keep hips level'],
-  },
+export const EXERCISE_LIBRARY = Object.entries(EXERCISE_PLANS).reduce((acc, [key, exercise]) => {
+  acc[key] = {
+    key,
+    ...exercise,
+    // Add progression metadata
+    progressionLevel: getProgressionLevel(key),
+    movementPattern: exercise.category,
+  }
+  return acc
+}, {})
 
-  // ============================================================
-  // BODYWEIGHT EXERCISES - PULL (8)
-  // ============================================================
-  chinups: {
-    name: 'Chin-Ups',
-    category: 'pull',
-    equipment: ['pullupBar'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 3,
-    finalGoal: 30,
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'brhRXlOhsAM',
-    instructions: 'Hang from bar with palms facing you (supinated grip). Pull up until chin clears bar, then lower with control.',
-    tips: ['Emphasizes biceps', 'Easier than pull-ups for most', 'Full range of motion'],
-  },
-  negativePullups: {
-    name: 'Negative Pull-Ups',
-    category: 'pull',
-    equipment: ['pullupBar'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 3,
-    finalGoal: 20,
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'gbPURTSxQLY',
-    instructions: 'Jump or step up to top position of pull-up. Lower yourself as slowly as possible (5+ seconds) to full hang.',
-    tips: ['Great for building pull-up strength', 'Focus on slow controlled descent', '5-10 second negatives'],
-  },
-  australianRows: {
-    name: 'Australian Rows',
-    category: 'pull',
-    equipment: ['pullupBar'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 8,
-    finalGoal: 40,
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'hXTc1mDnZCw',
-    instructions: 'Set bar at waist height. Hang underneath with feet on ground, body straight. Pull chest to bar, then lower.',
-    tips: ['Also called inverted rows', 'Lower bar = harder', 'Great pull-up progression'],
-  },
-  commandoPullups: {
-    name: 'Commando Pull-Ups',
-    category: 'pull',
-    equipment: ['pullupBar'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 3,
-    finalGoal: 20,
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'wG3HlDvTgP8',
-    instructions: 'Grip bar with hands in line (one in front of other). Pull up bringing head to one side of bar, alternate sides each rep.',
-    tips: ['Works grip differently', 'Alternate which shoulder goes up', 'Good for variety'],
-  },
-  lsitPullups: {
-    name: 'L-Sit Pull-Ups',
-    category: 'pull',
-    equipment: ['pullupBar'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 2,
-    finalGoal: 15,
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'Q7Bh--3pxeI',
-    instructions: 'Hang from bar with legs extended straight in front (L position). Perform pull-ups while maintaining L-sit.',
-    tips: ['Intense core engagement', 'Keep legs parallel to ground', 'Advanced exercise'],
-  },
-  deadHangs: {
-    name: 'Dead Hangs',
-    category: 'pull',
-    equipment: ['pullupBar'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 20,
-    finalGoal: 120,
-    unit: 'seconds',
-    color: 'yellow',
-    youtubeId: 'nPpkPdeP9dg',
-    instructions: 'Hang from bar with arms fully extended, shoulders engaged. Hold as long as possible.',
-    tips: ['Builds grip strength', 'Good for shoulder health', 'Decompress spine'],
-  },
-  scapularPulls: {
-    name: 'Scapular Pulls',
-    category: 'pull',
-    equipment: ['pullupBar'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 8,
-    finalGoal: 30,
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'V_ZpG0V7K5g',
-    instructions: 'Hang from bar with arms straight. Without bending elbows, squeeze shoulder blades down and back to raise body slightly.',
-    tips: ['Activates back muscles', 'Foundation for pull-ups', 'Small controlled movement'],
-  },
-  towelPullups: {
-    name: 'Towel Pull-Ups',
-    category: 'pull',
-    equipment: ['pullupBar'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 2,
-    finalGoal: 15,
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: '6bK0uMfopnE',
-    instructions: 'Drape towel over bar, grip towel with both hands. Perform pull-ups while gripping towel.',
-    tips: ['Extreme grip challenge', 'Use sturdy towel', 'Great for forearms'],
-  },
-
-  // ============================================================
-  // BODYWEIGHT EXERCISES - LEGS (12)
-  // ============================================================
-  jumpSquats: {
-    name: 'Jump Squats',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 8,
-    finalGoal: 50,
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'A-cFYWvaHr0',
-    instructions: 'Perform squat, then explode upward into a jump. Land softly and immediately go into next squat.',
-    tips: ['Builds explosive power', 'Land softly', 'Keep knees tracking over toes'],
-  },
-  splitSquats: {
-    name: 'Split Squats',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 8,
-    finalGoal: 40,
-    unit: 'reps/leg',
-    color: 'orange',
-    youtubeId: '1FGJJnbvqfM',
-    instructions: 'Stand in staggered stance, one foot forward. Lower back knee toward ground, then push back up. Complete all reps on one side.',
-    tips: ['Keep torso upright', 'Front knee over ankle', 'Great for balance'],
-  },
-  stepUps: {
-    name: 'Step-Ups',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 10,
-    finalGoal: 40,
-    unit: 'reps/leg',
-    color: 'orange',
-    youtubeId: 'WCFCdxzFBa4',
-    instructions: 'Step onto elevated surface with one leg, drive up to standing. Step down with control. Complete all reps on one side.',
-    tips: ['Higher surface = harder', 'Drive through heel', 'Dont push off back foot'],
-  },
-  pistolSquats: {
-    name: 'Pistol Squats',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 1,
-    finalGoal: 20,
-    unit: 'reps/leg',
-    color: 'orange',
-    youtubeId: 'qDcniqppFPA',
-    instructions: 'Stand on one leg, extend other leg forward. Lower into deep single-leg squat, then stand back up.',
-    tips: ['Advanced exercise', 'Use support if needed', 'Requires flexibility and strength'],
-  },
-  cossackSquats: {
-    name: 'Cossack Squats',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 30,
-    unit: 'reps/leg',
-    color: 'orange',
-    youtubeId: 'tpczTeSkHz0',
-    instructions: 'Take wide stance. Shift weight to one side, squatting deep on that leg while keeping other leg straight. Alternate sides.',
-    tips: ['Great for hip mobility', 'Keep heel down on squatting leg', 'Go as deep as comfortable'],
-  },
-  wallSits: {
-    name: 'Wall Sits',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 30,
-    finalGoal: 180,
-    unit: 'seconds',
-    color: 'orange',
-    youtubeId: 'y-wV4Lz6g0w',
-    instructions: 'Lean against wall with feet shoulder width apart. Slide down until thighs are parallel to ground. Hold position.',
-    tips: ['90 degree knee angle', 'Keep back flat against wall', 'Builds endurance'],
-  },
-  calfRaises: {
-    name: 'Calf Raises',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 15,
-    finalGoal: 100,
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'gwLzBJYoWlI',
-    instructions: 'Stand on edge of step with heels hanging off. Rise up onto toes as high as possible, then lower heels below step level.',
-    tips: ['Full range of motion', 'Pause at top', 'Can do single leg for challenge'],
-  },
-  boxJumps: {
-    name: 'Box Jumps',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 30,
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: '52r_Ul5k03g',
-    instructions: 'Stand facing sturdy box or platform. Jump onto box landing softly with both feet. Step down and repeat.',
-    tips: ['Land softly', 'Step down to save knees', 'Start with lower box'],
-  },
-  shrimpSquats: {
-    name: 'Shrimp Squats',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 1,
-    finalGoal: 15,
-    unit: 'reps/leg',
-    color: 'orange',
-    youtubeId: 'k-GJe4ACEyA',
-    instructions: 'Stand on one leg, grab opposite foot behind you. Lower until back knee touches ground, then stand back up.',
-    tips: ['Very advanced', 'Similar difficulty to pistol squats', 'Use support at first'],
-  },
-  reverseNordicCurls: {
-    name: 'Reverse Nordic Curls',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 25,
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: '6k-5i2VmISU',
-    instructions: 'Kneel on ground with torso upright. Lean back slowly as far as you can control, then return to upright.',
-    tips: ['Targets quads', 'Keep hips extended', 'Great for knee health'],
-  },
-  gluteBridges: {
-    name: 'Glute Bridges',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 12,
-    finalGoal: 50,
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'wPM8icPu6H8',
-    instructions: 'Lie on back with knees bent, feet flat on floor. Drive through heels to lift hips toward ceiling. Squeeze glutes at top.',
-    tips: ['Pause and squeeze at top', 'Dont hyperextend lower back', 'Can do single leg'],
-  },
-  broadJumps: {
-    name: 'Broad Jumps',
-    category: 'legs',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 25,
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: '96zJo3nlmHI',
-    instructions: 'Stand with feet shoulder width. Swing arms and jump forward as far as possible. Land softly and reset.',
-    tips: ['Explosive power', 'Land softly with bent knees', 'Drive arms forward'],
-  },
-
-  // ============================================================
-  // BODYWEIGHT EXERCISES - CORE (12)
-  // ============================================================
-  hollowBodyHold: {
-    name: 'Hollow Body Hold',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 15,
-    finalGoal: 90,
-    unit: 'seconds',
-    color: 'emerald',
-    youtubeId: 'LlDNef_Ztsc',
-    instructions: 'Lie on back, press lower back into floor. Raise legs and shoulders off ground, arms extended overhead. Hold position.',
-    tips: ['Lower back stays pressed down', 'Bend knees to make easier', 'Foundation for gymnastics'],
-  },
-  deadBugs: {
-    name: 'Dead Bugs',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 10,
-    finalGoal: 40,
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'I5xbsA71v1A',
-    instructions: 'Lie on back with arms and legs raised. Slowly lower opposite arm and leg toward ground while keeping back flat. Alternate.',
-    tips: ['Keep lower back pressed down', 'Move slowly with control', 'Great for core stability'],
-  },
-  mountainClimbers: {
-    name: 'Mountain Climbers',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 20,
-    finalGoal: 100,
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'nmwgirgXLYM',
-    instructions: 'Start in push-up position. Drive one knee toward chest, then quickly switch legs in running motion.',
-    tips: ['Keep hips low', 'Can go slow or fast', 'Great cardio'],
-  },
-  bicycleCrunches: {
-    name: 'Bicycle Crunches',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 15,
-    finalGoal: 60,
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: '9FGilxCbdz8',
-    instructions: 'Lie on back with hands behind head. Bring elbow to opposite knee while extending other leg. Alternate in cycling motion.',
-    tips: ['Dont pull on neck', 'Touch elbow to knee', 'Control the movement'],
-  },
-  legRaises: {
-    name: 'Leg Raises',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 8,
-    finalGoal: 40,
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'JB2oyawG9KI',
-    instructions: 'Lie on back with legs straight. Keeping legs together, raise them to vertical then lower with control. Dont let feet touch ground.',
-    tips: ['Keep lower back pressed down', 'Bend knees to make easier', 'Hands under hips for support'],
-  },
-  flutterKicks: {
-    name: 'Flutter Kicks',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 20,
-    finalGoal: 100,
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'ANVdMDaYRts',
-    instructions: 'Lie on back with legs extended slightly off ground. Alternately kick legs up and down in small controlled movements.',
-    tips: ['Keep lower back pressed down', 'Small controlled kicks', 'Head can rest on ground'],
-  },
-  russianTwists: {
-    name: 'Russian Twists',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 15,
-    finalGoal: 60,
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'wkD8rjkodUI',
-    instructions: 'Sit with knees bent, feet off ground, leaning back slightly. Rotate torso side to side, touching ground beside hips.',
-    tips: ['Keep chest up', 'Can hold weight for challenge', 'Control the rotation'],
-  },
-  sidePlank: {
-    name: 'Side Plank',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 20,
-    finalGoal: 90,
-    unit: 'seconds',
-    color: 'emerald',
-    youtubeId: 'K2VljzCC16g',
-    instructions: 'Lie on side, prop up on elbow directly under shoulder. Raise hips off ground, body in straight line. Hold.',
-    tips: ['Stack feet or stagger', 'Dont let hips drop', 'Do both sides'],
-  },
-  lSits: {
-    name: 'L-Sits',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 45,
-    unit: 'seconds',
-    color: 'emerald',
-    youtubeId: 'IUZJoSP66HI',
-    instructions: 'Sit with legs extended. Place hands beside hips, push down to lift body off ground with legs extended forward. Hold.',
-    tips: ['Very challenging', 'Can use parallettes', 'Keep legs straight'],
-  },
-  reverseCrunches: {
-    name: 'Reverse Crunches',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 10,
-    finalGoal: 40,
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'hyv14e2QDq0',
-    instructions: 'Lie on back with knees bent. Contract abs to curl hips off ground toward chest, then lower with control.',
-    tips: ['Lift hips not just legs', 'Control the movement', 'Targets lower abs'],
-  },
-  dragonFlags: {
-    name: 'Dragon Flags',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 2,
-    finalGoal: 15,
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'pvz7k5gO-DE',
-    instructions: 'Lie on bench holding edge behind head. Keep body straight and rigid, lower legs toward ground, then raise back up.',
-    tips: ['Very advanced', 'Start with negatives', 'Keep body straight as a board'],
-  },
-  toesToBar: {
-    name: 'Toes to Bar',
-    category: 'core',
-    equipment: ['pullupBar'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 3,
-    finalGoal: 25,
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'oUb0-_EelJE',
-    instructions: 'Hang from pull-up bar. Keeping legs straight, raise feet up to touch the bar, then lower with control.',
-    tips: ['Can kip or strict', 'Bend knees to make easier', 'Strong grip needed'],
-  },
-
-  // ============================================================
-  // BODYWEIGHT EXERCISES - FULL BODY (6)
-  // ============================================================
-  burpees: {
-    name: 'Burpees',
-    category: 'full',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 50,
-    unit: 'reps',
-    color: 'purple',
-    youtubeId: 'dZgVxmf6jkA',
-    instructions: 'From standing, drop to push-up position, perform push-up, jump feet to hands, then jump up with arms overhead.',
-    tips: ['Full body exercise', 'Can modify by stepping', 'Great for conditioning'],
-  },
-  bearCrawls: {
-    name: 'Bear Crawls',
-    category: 'full',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 20,
-    finalGoal: 100,
-    unit: 'reps',
-    color: 'purple',
-    youtubeId: 'Pb3YdBLdL4U',
-    instructions: 'Start on all fours with knees hovering. Move forward by stepping opposite hand and foot together. Keep hips low.',
-    tips: ['Keep hips low and level', 'Move opposite limbs', 'Great for coordination'],
-  },
-  inchworms: {
-    name: 'Inchworms',
-    category: 'full',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 5,
-    finalGoal: 30,
-    unit: 'reps',
-    color: 'purple',
-    youtubeId: 'VSp0z7Mp5IU',
-    instructions: 'From standing, bend over and walk hands out to push-up position. Walk feet up to hands, then stand up.',
-    tips: ['Keep legs as straight as possible', 'Great warm-up', 'Add push-up for challenge'],
-  },
-  jumpingJacks: {
-    name: 'Jumping Jacks',
-    category: 'full',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 25,
-    finalGoal: 150,
-    unit: 'reps',
-    color: 'purple',
-    youtubeId: 'c4DAnQ6DtF8',
-    instructions: 'Jump while spreading legs wide and raising arms overhead. Jump back to starting position. Repeat rhythmically.',
-    tips: ['Land softly', 'Keep core engaged', 'Great cardio warm-up'],
-  },
-  highKnees: {
-    name: 'High Knees',
-    category: 'full',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 30,
-    finalGoal: 150,
-    unit: 'reps',
-    color: 'purple',
-    youtubeId: 'oDdkytliOqE',
-    instructions: 'Run in place bringing knees up to hip level with each step. Pump arms in running motion.',
-    tips: ['Drive knees up high', 'Stay on balls of feet', 'Great cardio'],
-  },
-  skaterJumps: {
-    name: 'Skater Jumps',
-    category: 'full',
-    equipment: ['none'],
-    modes: ['bodyweight', 'mixed'],
-    startReps: 10,
-    finalGoal: 50,
-    unit: 'reps',
-    color: 'purple',
-    youtubeId: '18MLdeaGW74',
-    instructions: 'Jump laterally from one foot to the other, landing softly and swinging arms for balance. Like speed skating motion.',
-    tips: ['Land softly on one foot', 'Swing arms across body', 'Great for lateral power'],
-  },
-
-  // ============================================================
-  // GYM EXERCISES - PUSH (10)
-  // Gym exercises use progressionType: 'gym' with gymConfig
-  // Progress by increasing weight when final set > 12 reps
-  // ============================================================
-  benchPress: {
-    name: 'Bench Press',
-    category: 'push',
-    equipment: ['barbell', 'bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'rT7DgCr-3pg',
-    instructions: 'Lie on bench, grip bar slightly wider than shoulders. Lower bar to chest, then press up to full extension.',
-    tips: ['Arch back slightly', 'Drive feet into floor', 'Control the descent'],
-  },
-  inclineBenchPress: {
-    name: 'Incline Bench Press',
-    category: 'push',
-    equipment: ['barbell', 'bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'SrqOu55lrYU',
-    instructions: 'Set bench to 30-45 degrees. Grip bar and lower to upper chest, then press up.',
-    tips: ['Targets upper chest', 'Keep shoulders back', 'Dont bounce off chest'],
-  },
-  dumbbellPress: {
-    name: 'Dumbbell Press',
-    category: 'push',
-    equipment: ['dumbbells', 'bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'VmB1G1K7v94',
-    instructions: 'Lie on bench holding dumbbells at chest level. Press up and together, then lower with control.',
-    tips: ['Greater range of motion', 'Squeeze at top', 'Control both dumbbells'],
-  },
-  overheadPress: {
-    name: 'Overhead Press',
-    category: 'push',
-    equipment: ['barbell'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: '_RlRDWO2jfg',
-    instructions: 'Stand with bar at shoulders, grip just outside shoulders. Press bar overhead to full lockout.',
-    tips: ['Keep core tight', 'Move head out of bar path', 'Full lockout at top'],
-  },
-  dumbbellFlyes: {
-    name: 'Dumbbell Flyes',
-    category: 'push',
-    equipment: ['dumbbells', 'bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [10, 15], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'eozdVDA78K0',
-    instructions: 'Lie on bench with dumbbells above chest, slight bend in elbows. Lower arms out to sides in arc, then bring back together.',
-    tips: ['Keep slight elbow bend', 'Feel the stretch', 'Squeeze chest at top'],
-  },
-  cableFlyes: {
-    name: 'Cable Flyes',
-    category: 'push',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [10, 15], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'Iwe6AmxVf7o',
-    instructions: 'Stand between cable stations, grab handles. Bring hands together in front of chest in hugging motion.',
-    tips: ['Constant tension', 'Squeeze at center', 'Control both directions'],
-  },
-  tricepPushdowns: {
-    name: 'Tricep Pushdowns',
-    category: 'push',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [10, 15], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: '2-LAMcpzODU',
-    instructions: 'Face cable machine, grip bar or rope at chest height. Push down until arms are straight, then return with control.',
-    tips: ['Keep elbows at sides', 'Squeeze at bottom', 'Dont lean forward'],
-  },
-  skullCrushers: {
-    name: 'Skull Crushers',
-    category: 'push',
-    equipment: ['barbell', 'bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'd_KZxkY_0cM',
-    instructions: 'Lie on bench with bar overhead, arms straight. Bend elbows to lower bar toward forehead, then extend back up.',
-    tips: ['Keep upper arms still', 'Control the weight', 'Can use EZ bar'],
-  },
-  closeGripBench: {
-    name: 'Close Grip Bench Press',
-    category: 'push',
-    equipment: ['barbell', 'bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'nEF0bv2FW94',
-    instructions: 'Lie on bench, grip bar with hands 8-12 inches apart. Lower to chest keeping elbows close, then press up.',
-    tips: ['Emphasizes triceps', 'Keep elbows tucked', 'Lighter weight than regular bench'],
-  },
-  weightedDips: {
-    name: 'Weighted Dips',
-    category: 'push',
-    equipment: ['dipBars', 'dumbbells'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [6, 10], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'blue',
-    youtubeId: 'lVhrjC_1FH8',
-    instructions: 'Add weight via belt or hold dumbbell between feet. Perform dips lowering until shoulders are below elbows.',
-    tips: ['Lean forward for chest focus', 'Upright for tricep focus', 'Go deep but not too deep'],
-  },
-
-  // ============================================================
-  // GYM EXERCISES - PULL (10)
-  // ============================================================
-  deadlift: {
-    name: 'Deadlift',
-    category: 'pull',
-    equipment: ['barbell'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [5, 8], restSeconds: 120, weightIncrement: 10 },
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'op9kVnSso6Q',
-    instructions: 'Stand with feet hip width, bar over mid-foot. Hinge at hips, grip bar. Drive through floor to stand up, keeping bar close.',
-    tips: ['Keep back flat', 'Drive through heels', 'Bar stays close to body'],
-  },
-  barbellRows: {
-    name: 'Barbell Rows',
-    category: 'pull',
-    equipment: ['barbell'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'FWJR5Ve8bnQ',
-    instructions: 'Hinge forward at hips, grip bar wider than shoulders. Pull bar to lower chest, squeeze shoulder blades, then lower.',
-    tips: ['Keep back flat', 'Pull to lower chest', 'Dont swing the weight'],
-  },
-  dumbbellRows: {
-    name: 'Dumbbell Rows',
-    category: 'pull',
-    equipment: ['dumbbells', 'bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'pYcpY20QaE8',
-    instructions: 'Place one hand and knee on bench. Row dumbbell from arm extended to hip, squeezing shoulder blade.',
-    tips: ['Keep back flat', 'Pull to hip not chest', 'Dont rotate torso'],
-  },
-  latPulldowns: {
-    name: 'Lat Pulldowns',
-    category: 'pull',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'CAwf7n6Luuc',
-    instructions: 'Sit at lat pulldown machine, grip bar wide. Pull bar to upper chest, squeeze lats, then return with control.',
-    tips: ['Lean back slightly', 'Pull with elbows', 'Full stretch at top'],
-  },
-  cableRows: {
-    name: 'Cable Rows',
-    category: 'pull',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'GZbfZ033f74',
-    instructions: 'Sit at cable row machine with feet on platform. Pull handle to stomach, squeeze shoulder blades, then extend arms.',
-    tips: ['Keep back straight', 'Squeeze at contraction', 'Control the negative'],
-  },
-  facePulls: {
-    name: 'Face Pulls',
-    category: 'pull',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [12, 20], restSeconds: 60, weightIncrement: 2.5 },
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'rep-qVOkqgk',
-    instructions: 'Set cable at face height with rope. Pull toward face, separating hands and rotating shoulders externally.',
-    tips: ['Great for rear delts', 'External rotation important', 'Light weight, high reps'],
-  },
-  bicepCurls: {
-    name: 'Bicep Curls',
-    category: 'pull',
-    equipment: ['dumbbells'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 60, weightIncrement: 2.5 },
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'ykJmrZ5v0Oo',
-    instructions: 'Stand with dumbbells at sides, palms forward. Curl weight to shoulders keeping elbows at sides, then lower.',
-    tips: ['Keep elbows still', 'Full range of motion', 'Dont swing'],
-  },
-  hammerCurls: {
-    name: 'Hammer Curls',
-    category: 'pull',
-    equipment: ['dumbbells'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 60, weightIncrement: 2.5 },
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'zC3nLlEvin4',
-    instructions: 'Stand with dumbbells at sides, palms facing body (neutral grip). Curl weight to shoulders, then lower.',
-    tips: ['Works brachialis', 'Keep palms facing body', 'Alternate or together'],
-  },
-  weightedPullups: {
-    name: 'Weighted Pull-Ups',
-    category: 'pull',
-    equipment: ['pullupBar', 'dumbbells'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [5, 8], restSeconds: 120, weightIncrement: 2.5 },
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'Hdc7Mw6BIEE',
-    instructions: 'Add weight via belt or hold dumbbell between feet. Perform pull-ups with added resistance.',
-    tips: ['Master bodyweight first', 'Control the negative', 'Start with light weight'],
-  },
-  shrugs: {
-    name: 'Shrugs',
-    category: 'pull',
-    equipment: ['dumbbells'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [10, 15], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'yellow',
-    youtubeId: 'cJRVVxmytaM',
-    instructions: 'Stand holding heavy dumbbells at sides. Shrug shoulders straight up toward ears, squeeze at top, then lower.',
-    tips: ['Dont roll shoulders', 'Straight up and down', 'Pause at top'],
-  },
-
-  // ============================================================
-  // GYM EXERCISES - LEGS (12)
-  // ============================================================
-  backSquat: {
-    name: 'Back Squat',
-    category: 'legs',
-    equipment: ['barbell'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [6, 10], restSeconds: 120, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'bEv6CCg2BC8',
-    instructions: 'Bar on upper back, feet shoulder width. Squat down until thighs are parallel or below, then drive back up.',
-    tips: ['Chest up', 'Knees track over toes', 'Drive through whole foot'],
-  },
-  frontSquat: {
-    name: 'Front Squat',
-    category: 'legs',
-    equipment: ['barbell'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [6, 10], restSeconds: 120, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'm4ytaCJZpl0',
-    instructions: 'Bar rests on front of shoulders with arms crossed or clean grip. Squat down keeping torso upright.',
-    tips: ['Elbows up', 'More quad focused', 'Requires flexibility'],
-  },
-  legPress: {
-    name: 'Leg Press',
-    category: 'legs',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 10 },
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'IZxyjW7MPJQ',
-    instructions: 'Sit in leg press machine with feet on platform. Lower weight until knees reach 90 degrees, then press back up.',
-    tips: ['Dont lock out knees', 'Keep lower back on pad', 'Foot placement changes focus'],
-  },
-  romanianDeadlift: {
-    name: 'Romanian Deadlift',
-    category: 'legs',
-    equipment: ['barbell'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'JCXUYuzwNrM',
-    instructions: 'Hold bar at hips, feet hip width. Hinge at hips lowering bar along legs until hamstring stretch, then return.',
-    tips: ['Keep back flat', 'Slight knee bend', 'Feel the hamstring stretch'],
-  },
-  legCurls: {
-    name: 'Leg Curls',
-    category: 'legs',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [10, 15], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: '1Tq3QdYUuHs',
-    instructions: 'Lie on leg curl machine face down. Curl heels toward glutes, squeeze hamstrings, then lower with control.',
-    tips: ['Squeeze at top', 'Control the negative', 'Targets hamstrings'],
-  },
-  legExtensions: {
-    name: 'Leg Extensions',
-    category: 'legs',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [10, 15], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'YyvSfVjQeL0',
-    instructions: 'Sit on leg extension machine. Extend legs until straight, squeeze quads, then lower with control.',
-    tips: ['Squeeze at top', 'Dont lock out violently', 'Targets quads'],
-  },
-  hipThrusts: {
-    name: 'Hip Thrusts',
-    category: 'legs',
-    equipment: ['barbell', 'bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 10 },
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'xDmFkJxPzeM',
-    instructions: 'Upper back on bench, bar over hips. Drive through heels to lift hips until body is straight, squeeze glutes.',
-    tips: ['Use bar pad', 'Squeeze glutes at top', 'Chin slightly tucked'],
-  },
-  gobletSquats: {
-    name: 'Goblet Squats',
-    category: 'legs',
-    equipment: ['dumbbells'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'MeIiIdhvXT4',
-    instructions: 'Hold dumbbell or kettlebell at chest like a goblet. Squat down between legs, elbows inside knees.',
-    tips: ['Great for depth', 'Elbows push knees out', 'Keep chest up'],
-  },
-  bulgarianSplitSquats: {
-    name: 'Bulgarian Split Squats',
-    category: 'legs',
-    equipment: ['dumbbells', 'bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps/leg',
-    color: 'orange',
-    youtubeId: '2C-uNgKwPLE',
-    instructions: 'Rear foot elevated on bench. Hold dumbbells and squat down until rear knee nearly touches ground.',
-    tips: ['Keep torso upright', 'Most weight on front leg', 'Very challenging'],
-  },
-  weightedCalfRaises: {
-    name: 'Weighted Calf Raises',
-    category: 'legs',
-    equipment: ['dumbbells'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [12, 20], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'orange',
-    youtubeId: 'wxwY7GXxL4k',
-    instructions: 'Stand on edge of platform holding dumbbells. Rise onto toes, squeeze calves, then lower below platform level.',
-    tips: ['Full range of motion', 'Pause at top', 'Go slow'],
-  },
-  weightedLunges: {
-    name: 'Weighted Lunges',
-    category: 'legs',
-    equipment: ['dumbbells'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps/leg',
-    color: 'orange',
-    youtubeId: 'D7KaRcUTQeE',
-    instructions: 'Hold dumbbells at sides. Step forward into lunge position until both knees at 90 degrees, then drive back up.',
-    tips: ['Keep torso upright', 'Step far enough forward', 'Control the movement'],
-  },
-  weightedStepUps: {
-    name: 'Weighted Step-Ups',
-    category: 'legs',
-    equipment: ['dumbbells', 'bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 12], restSeconds: 90, weightIncrement: 5 },
-    unit: 'reps/leg',
-    color: 'orange',
-    youtubeId: 'dQqApCGd5Ss',
-    instructions: 'Hold dumbbells, step onto elevated surface driving through heel. Stand fully, then lower with control.',
-    tips: ['Dont push off back foot', 'Drive through heel', 'Control the descent'],
-  },
-
-  // ============================================================
-  // GYM EXERCISES - CORE (8)
-  // Gym core exercises use progressionType: 'gym' with gymConfig
-  // Progress by increasing weight when final set > rep range max
-  // ============================================================
-  cableWoodchops: {
-    name: 'Cable Woodchops',
-    category: 'core',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [10, 15], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'pAplQXk3dkU',
-    instructions: 'Set cable high, grab with both hands. Pull diagonally across body from high to low in chopping motion.',
-    tips: ['Rotate from core', 'Arms stay straight', 'Do both directions'],
-  },
-  hangingLegRaises: {
-    name: 'Hanging Leg Raises',
-    category: 'core',
-    equipment: ['pullupBar'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 15], restSeconds: 60, weightIncrement: 2.5 },
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'hdng3Nm1x_E',
-    instructions: 'Hang from pull-up bar. Keeping legs straight, raise them until parallel to ground or higher, then lower.',
-    tips: ['Dont swing', 'Bend knees to make easier', 'Control the descent'],
-  },
-  abWheelRollouts: {
-    name: 'Ab Wheel Rollouts',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [8, 15], restSeconds: 60, weightIncrement: 0 },
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'rqiTPdK1c_I',
-    instructions: 'Kneel with ab wheel in front. Roll forward extending body, keeping core tight, then roll back to start.',
-    tips: ['Keep core tight', 'Dont arch back', 'Start with small range'],
-  },
-  weightedPlanks: {
-    name: 'Weighted Planks',
-    category: 'core',
-    equipment: ['none'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [30, 60], restSeconds: 60, weightIncrement: 5 },
-    unit: 'seconds',
-    color: 'emerald',
-    youtubeId: 'pSHjTRCQxIw',
-    instructions: 'Get into plank position with weight plate on upper back. Hold position with body straight.',
-    tips: ['Dont let hips sag', 'Have partner place weight', 'Keep core engaged'],
-  },
-  cableCrunches: {
-    name: 'Cable Crunches',
-    category: 'core',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [12, 20], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'AV5PmrIVQtU',
-    instructions: 'Kneel facing cable machine with rope behind head. Crunch down bringing elbows toward knees.',
-    tips: ['Focus on crunching not pulling', 'Round the spine', 'Squeeze abs at bottom'],
-  },
-  pallofPress: {
-    name: 'Pallof Press',
-    category: 'core',
-    equipment: ['cables'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [10, 15], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'g921oqINXFQ',
-    instructions: 'Stand sideways to cable at chest height. Press handle straight out, resisting rotation, then return.',
-    tips: ['Anti-rotation exercise', 'Brace core hard', 'Do both sides'],
-  },
-  weightedRussianTwists: {
-    name: 'Weighted Russian Twists',
-    category: 'core',
-    equipment: ['dumbbells'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [12, 20], restSeconds: 60, weightIncrement: 2.5 },
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'wkD8rjkodUI',
-    instructions: 'Sit with knees bent holding weight, lean back slightly. Rotate torso touching weight to ground each side.',
-    tips: ['Keep chest up', 'Control the rotation', 'Can lift feet for challenge'],
-  },
-  declineSitups: {
-    name: 'Decline Sit-Ups',
-    category: 'core',
-    equipment: ['bench'],
-    modes: ['gym', 'mixed'],
-    progressionType: 'gym',
-    gymConfig: { sets: 3, repRange: [10, 20], restSeconds: 60, weightIncrement: 5 },
-    unit: 'reps',
-    color: 'emerald',
-    youtubeId: 'QRdANuAg1sw',
-    instructions: 'Hook feet under pads on decline bench. Lower torso back, then sit up bringing chest toward knees.',
-    tips: ['Cross arms on chest', 'Control the descent', 'Can hold weight for challenge'],
-  },
+/**
+ * Get progression level (1-6) based on position in chain
+ */
+function getProgressionLevel(exerciseKey) {
+  for (const chain of Object.values(PROGRESSION_CHAINS)) {
+    const index = chain.findIndex(p => p.key === exerciseKey)
+    if (index !== -1) {
+      return index + 1
+    }
+  }
+  return 1 // Standalone exercises default to level 1
 }
 
-// Starter templates
+// Starter templates - calisthenics focused with progression paths
 export const STARTER_TEMPLATES = {
+  'calisthenics-beginner': {
+    id: 'calisthenics-beginner',
+    name: 'Beginner Foundations',
+    desc: 'Start your calisthenics journey with the basics',
+    goal: 'balanced',
+    difficulty: 'beginner',
+    exercises: ['wallPushups', 'squats', 'deadHangs', 'gluteBridges', 'plank'],
+    recommended: true,
+  },
   'shift6-classic': {
     id: 'shift6-classic',
     name: 'Shift6 Classic',
     desc: 'The original 9 foundational exercises',
-    mode: 'bodyweight',
     goal: 'balanced',
-    difficulty: 'beginner',
+    difficulty: 'intermediate',
     exercises: ['pushups', 'squats', 'pullups', 'dips', 'vups', 'glutebridge', 'plank', 'lunges', 'supermans'],
-    recommended: true,
   },
   'minimalist': {
     id: 'minimalist',
     name: 'Minimalist',
     desc: '4 compound movements for busy schedules',
-    mode: 'bodyweight',
     goal: 'balanced',
     difficulty: 'beginner',
-    exercises: ['pushups', 'squats', 'pullups', 'plank'],
-  },
-  'bodyweight-complete': {
-    id: 'bodyweight-complete',
-    name: 'Complete Bodyweight',
-    desc: '12 exercises for full-body development',
-    mode: 'bodyweight',
-    goal: 'balanced',
-    difficulty: 'intermediate',
-    exercises: ['pushups', 'diamondPushups', 'pikePushups', 'squats', 'lunges', 'pistolSquats', 'pullups', 'chinups', 'australianRows', 'dips', 'vups', 'plank'],
-  },
-  'gym-basics': {
-    id: 'gym-basics',
-    name: 'Gym Basics',
-    desc: '5 essential compound lifts',
-    mode: 'gym',
-    goal: 'strength',
-    difficulty: 'beginner',
-    exercises: ['benchPress', 'backSquat', 'deadlift', 'overheadPress', 'barbellRows'],
-  },
-  'gym-complete': {
-    id: 'gym-complete',
-    name: 'Complete Gym',
-    desc: '10 exercises covering all muscle groups',
-    mode: 'gym',
-    goal: 'hypertrophy',
-    difficulty: 'intermediate',
-    exercises: ['benchPress', 'inclineBenchPress', 'backSquat', 'romanianDeadlift', 'deadlift', 'barbellRows', 'latPulldowns', 'overheadPress', 'bicepCurls', 'cableCrunches'],
-  },
-  'hybrid': {
-    id: 'hybrid',
-    name: 'Hybrid Athlete',
-    desc: 'Best of bodyweight and gym',
-    mode: 'mixed',
-    goal: 'balanced',
-    exercises: ['pushups', 'benchPress', 'squats', 'deadlift', 'pullups', 'barbellRows', 'dips', 'overheadPress', 'vups', 'plank'],
-  },
-
-  // === NEW BODYWEIGHT TEMPLATES ===
-  'bodyweight-strength': {
-    id: 'bodyweight-strength',
-    name: 'Strength Foundation',
-    desc: 'Build raw strength with progressive overload',
-    mode: 'bodyweight',
-    goal: 'strength',
-    difficulty: 'intermediate',
-    exercises: ['pushups', 'archerPushups', 'pullups', 'pistolSquats', 'dips', 'plank', 'lSits'],
-  },
-  'bodyweight-endurance': {
-    id: 'bodyweight-endurance',
-    name: 'Endurance Builder',
-    desc: 'High-rep circuits for stamina and conditioning',
-    mode: 'bodyweight',
-    goal: 'endurance',
-    difficulty: 'beginner',
-    exercises: ['pushups', 'squats', 'burpees', 'mountainClimbers', 'jumpingJacks', 'highKnees', 'plank'],
-  },
-  'upper-body-focus': {
-    id: 'upper-body-focus',
-    name: 'Upper Body Blast',
-    desc: 'Chest, back, shoulders, and arms focus',
-    mode: 'bodyweight',
-    goal: 'hypertrophy',
-    focus: 'upper',
-    exercises: ['pushups', 'diamondPushups', 'pikePushups', 'pullups', 'chinups', 'dips', 'australianRows'],
-  },
-  'lower-body-focus': {
-    id: 'lower-body-focus',
-    name: 'Leg Day',
-    desc: 'Quads, glutes, hamstrings, and calves',
-    mode: 'bodyweight',
-    goal: 'hypertrophy',
-    focus: 'lower',
-    exercises: ['squats', 'lunges', 'glutebridge', 'pistolSquats', 'calfRaises', 'wallSits', 'boxJumps'],
-  },
-
-  // === NEW GYM TEMPLATES ===
-  'gym-strength': {
-    id: 'gym-strength',
-    name: 'Powerlifting Prep',
-    desc: 'Focus on the big 3 plus accessories',
-    mode: 'gym',
-    goal: 'strength',
-    difficulty: 'intermediate',
-    exercises: ['backSquat', 'benchPress', 'deadlift', 'overheadPress', 'barbellRows', 'weightedDips'],
-  },
-  'gym-hypertrophy': {
-    id: 'gym-hypertrophy',
-    name: 'Muscle Builder',
-    desc: 'High volume for maximum growth',
-    mode: 'gym',
-    goal: 'hypertrophy',
-    difficulty: 'intermediate',
-    exercises: ['benchPress', 'inclineBenchPress', 'latPulldowns', 'barbellRows', 'legPress', 'bicepCurls', 'tricepPushdowns', 'cableCrunches'],
-  },
-  'gym-functional': {
-    id: 'gym-functional',
-    name: 'Functional Fitness',
-    desc: 'Athletic movements for real-world strength',
-    mode: 'gym',
-    goal: 'functional',
-    difficulty: 'beginner',
-    exercises: ['deadlift', 'gobletSquats', 'dumbbellRows', 'overheadPress', 'romanianDeadlift', 'facePulls'],
-  },
-
-  // === NEW MIXED/HYBRID TEMPLATES ===
-  'hybrid-strength': {
-    id: 'hybrid-strength',
-    name: 'Hybrid Strength',
-    desc: 'Bodyweight skills plus heavy compounds',
-    mode: 'mixed',
-    goal: 'strength',
-    difficulty: 'intermediate',
-    recommended: true,
-    exercises: ['pullups', 'deadlift', 'dips', 'backSquat', 'pushups', 'overheadPress', 'plank'],
-  },
-  'hybrid-athletic': {
-    id: 'hybrid-athletic',
-    name: 'Complete Athlete',
-    desc: 'Well-rounded fitness for sports performance',
-    mode: 'mixed',
-    goal: 'athletic',
-    difficulty: 'intermediate',
-    exercises: ['pushups', 'squats', 'pullups', 'deadlift', 'burpees', 'boxJumps', 'plank', 'barbellRows'],
-  },
-  'hybrid-minimal': {
-    id: 'hybrid-minimal',
-    name: 'Home Gym Essentials',
-    desc: 'For those with basic home equipment',
-    mode: 'mixed',
-    goal: 'balanced',
-    difficulty: 'beginner',
-    equipment: ['dumbbells', 'pullupBar'],
-    exercises: ['pushups', 'pullups', 'dumbbellPress', 'dumbbellRows', 'gobletSquats', 'lunges', 'plank'],
+    exercises: ['pushups', 'squats', 'australianRows', 'plank'],
   },
   'push-pull-legs': {
     id: 'push-pull-legs',
     name: 'Push/Pull/Legs',
-    desc: 'Classic bodybuilding split structure',
-    mode: 'mixed',
+    desc: 'Balanced training split',
+    goal: 'balanced',
+    difficulty: 'intermediate',
+    exercises: ['pushups', 'dips', 'pullups', 'australianRows', 'squats', 'lunges', 'plank', 'vups'],
+  },
+  'strength-focus': {
+    id: 'strength-focus',
+    name: 'Strength Focus',
+    desc: 'Build raw strength with harder progressions',
+    goal: 'strength',
+    difficulty: 'intermediate',
+    exercises: ['diamondPushups', 'dips', 'chinups', 'bulgarianSplitSquats', 'hollowBodyHold', 'glutebridge'],
+  },
+  'advanced-calisthenics': {
+    id: 'advanced-calisthenics',
+    name: 'Advanced Skills',
+    desc: 'For experienced athletes seeking mastery',
+    goal: 'strength',
+    difficulty: 'advanced',
+    exercises: ['archerPushups', 'pullups', 'pistolSquats', 'lSits', 'dragonFlags', 'nordicCurls'],
+  },
+  'core-master': {
+    id: 'core-master',
+    name: 'Core Mastery',
+    desc: 'Complete core progression path',
+    goal: 'core',
+    difficulty: 'intermediate',
+    exercises: ['plank', 'sidePlank', 'hollowBodyHold', 'vups', 'lSits', 'mountainClimbers'],
+  },
+  'upper-body': {
+    id: 'upper-body',
+    name: 'Upper Body Focus',
+    desc: 'Push and pull for upper body development',
     goal: 'hypertrophy',
     difficulty: 'intermediate',
-    exercises: ['benchPress', 'pushups', 'overheadPress', 'pullups', 'barbellRows', 'deadlift', 'backSquat', 'lunges'],
+    exercises: ['pushups', 'diamondPushups', 'dips', 'pullups', 'australianRows', 'supermans'],
   },
+  'lower-body': {
+    id: 'lower-body',
+    name: 'Lower Body Focus',
+    desc: 'Legs and glutes development',
+    goal: 'hypertrophy',
+    difficulty: 'intermediate',
+    exercises: ['squats', 'lunges', 'bulgarianSplitSquats', 'gluteBridges', 'glutebridge', 'pistolSquats'],
+  },
+  'conditioning': {
+    id: 'conditioning',
+    name: 'Conditioning Circuit',
+    desc: 'High rep endurance and cardio',
+    goal: 'endurance',
+    difficulty: 'beginner',
+    exercises: ['squats', 'pushups', 'mountainClimbers', 'burpees', 'plank', 'lunges'],
+  },
+}
+
+// Program mode - calisthenics only (kept for compatibility)
+export const PROGRAM_MODES = {
+  bodyweight: { id: 'bodyweight', name: 'Calisthenics', desc: 'Bodyweight training - train anywhere', icon: '🏃' },
 }
 
 // Goal icons for UI display
@@ -1397,34 +151,29 @@ export const GOAL_ICONS = {
   endurance: '🏃',
   hypertrophy: '🎯',
   balanced: '⚖️',
-  athletic: '🏆',
-  functional: '🔄',
+  core: '🎯',
 }
 
 // Difficulty labels
 export const DIFFICULTY_LABELS = {
-  beginner: { name: 'Beginner', color: 'emerald' },
-  intermediate: { name: 'Intermediate', color: 'cyan' },
-  advanced: { name: 'Advanced', color: 'orange' },
+  beginner: { name: 'Beginner', color: 'emerald', icon: '🌱' },
+  intermediate: { name: 'Intermediate', color: 'cyan', icon: '💪' },
+  advanced: { name: 'Advanced', color: 'orange', icon: '🏆' },
 }
 
 /**
- * Get exercises filtered by program mode and user equipment
- * @param {string} mode - 'bodyweight' | 'mixed' | 'gym'
+ * Get exercises filtered by user equipment
  * @param {string[]} userEquipment - Array of equipment IDs user has
  * @returns {Object} Filtered exercises
  */
-export const getAvailableExercises = (mode, userEquipment = ['none']) => {
+export const getAvailableExercises = (userEquipment = ['none']) => {
   const available = {}
 
   Object.entries(EXERCISE_LIBRARY).forEach(([key, exercise]) => {
-    // Check if exercise is available in this mode
-    if (!exercise.modes.includes(mode)) return
-
     // Check if user has required equipment
-    const hasEquipment = exercise.equipment.every(eq =>
+    const hasEquipment = exercise.equipment?.every(eq =>
       eq === 'none' || userEquipment.includes(eq)
-    )
+    ) ?? true
 
     if (hasEquipment) {
       available[key] = exercise
@@ -1435,18 +184,125 @@ export const getAvailableExercises = (mode, userEquipment = ['none']) => {
 }
 
 /**
- * Get templates filtered by program mode
- * @param {string} mode - 'bodyweight' | 'mixed' | 'gym'
- * @returns {Object} Filtered templates
+ * Get exercises unlocked for a user based on their progress
+ * @param {string[]} userEquipment - Equipment user has
+ * @param {Object} completedDays - User's completed days per exercise
+ * @param {Object} personalRecords - User's PRs per exercise
+ * @returns {Object} { available: [], locked: [] }
  */
-export const getTemplatesForMode = (mode) => {
-  const filtered = {}
+export const getExercisesByUnlockStatus = (userEquipment = ['none'], completedDays = {}, personalRecords = {}) => {
+  const available = []
+  const locked = []
 
-  Object.entries(STARTER_TEMPLATES).forEach(([key, template]) => {
-    if (template.mode === mode) {
-      filtered[key] = template
+  Object.entries(EXERCISE_LIBRARY).forEach(([key, exercise]) => {
+    // Check equipment
+    const hasEquipment = exercise.equipment?.every(eq =>
+      eq === 'none' || userEquipment.includes(eq)
+    ) ?? true
+
+    if (!hasEquipment) {
+      locked.push({ key, exercise, reason: 'Missing equipment' })
+      return
+    }
+
+    // Check progression unlock
+    const unlockStatus = isExerciseUnlocked(key, completedDays, personalRecords)
+
+    if (unlockStatus.unlocked) {
+      available.push({ key, exercise, unlockReason: unlockStatus.reason })
+    } else {
+      locked.push({ key, exercise, reason: unlockStatus.reason, prerequisite: unlockStatus.prerequisite })
     }
   })
 
-  return filtered
+  return { available, locked }
+}
+
+/**
+ * Get all exercises grouped by movement pattern
+ * @returns {Object} Exercises grouped by pattern
+ */
+export const getExercisesByMovementPattern = () => {
+  const grouped = {}
+
+  Object.keys(MOVEMENT_PATTERNS).forEach(pattern => {
+    grouped[pattern] = {
+      ...MOVEMENT_PATTERNS[pattern],
+      exercises: getExercisesByPattern(pattern),
+      chain: PROGRESSION_CHAINS[pattern] || []
+    }
+  })
+
+  return grouped
+}
+
+/**
+ * Get recommended next exercises for a user
+ * Based on what they've completed and what's unlocked
+ * @param {Object} completedDays - User's completed days per exercise
+ * @param {Object} personalRecords - User's PRs
+ * @param {string[]} userEquipment - Equipment user has
+ * @returns {Array} Recommended exercise keys
+ */
+export const getRecommendedNextExercises = (completedDays = {}, personalRecords = {}, userEquipment = ['none']) => {
+  const recommendations = []
+
+  // For each active exercise, check if next progression is available
+  Object.keys(completedDays).forEach(exerciseKey => {
+    const nextKey = getNextProgression(exerciseKey)
+    if (!nextKey) return
+
+    const exercise = EXERCISE_PLANS[nextKey]
+    if (!exercise) return
+
+    // Check equipment
+    const hasEquipment = exercise.equipment?.every(eq =>
+      eq === 'none' || userEquipment.includes(eq)
+    ) ?? true
+
+    if (!hasEquipment) return
+
+    // Check if unlocked
+    const unlockStatus = isExerciseUnlocked(nextKey, completedDays, personalRecords)
+
+    if (unlockStatus.unlocked && !completedDays[nextKey]?.length) {
+      recommendations.push({
+        key: nextKey,
+        name: exercise.name,
+        reason: `Next progression from ${EXERCISE_PLANS[exerciseKey]?.name}`,
+        category: exercise.category
+      })
+    }
+  })
+
+  return recommendations
+}
+
+/**
+ * Get starter exercises that are always available
+ * @returns {Array} Array of starter exercise keys
+ */
+export const getStarterExercisesList = () => {
+  return getStarterExercises().map(key => ({
+    key,
+    ...EXERCISE_PLANS[key]
+  })).filter(e => e.name)
+}
+
+/**
+ * Get template with full exercise data
+ * @param {string} templateId - Template ID
+ * @returns {Object} Template with full exercise data
+ */
+export const getTemplateWithExercises = (templateId) => {
+  const template = STARTER_TEMPLATES[templateId]
+  if (!template) return null
+
+  return {
+    ...template,
+    exerciseData: template.exercises.map(key => ({
+      key,
+      ...EXERCISE_PLANS[key]
+    })).filter(e => e.name)
+  }
 }

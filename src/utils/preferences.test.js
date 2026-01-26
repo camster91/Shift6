@@ -180,8 +180,8 @@ describe('preferences utilities', () => {
         });
 
         it('returns false when only non-affecting keys change', () => {
-            const old = { preferredDays: [1, 2], targetSessionDuration: 30 };
-            const newP = { preferredDays: [1, 3], targetSessionDuration: 45 };
+            const old = { preferredDays: [1, 2], restBetweenSets: 60 };
+            const newP = { preferredDays: [1, 3], restBetweenSets: 90 };
             expect(requiresPlanRegeneration(old, newP)).toBe(false);
         });
     });

@@ -243,7 +243,9 @@ export const requiresPlanRegeneration = (oldPrefs, newPrefs) => {
         'programDuration',
         'repScheme',
         'setsPerExercise',
-        'progressionRate'
+        'progressionRate',
+        'fitnessLevel',
+        'targetSessionDuration'
     ];
 
     return affectingKeys.some(key => oldPrefs[key] !== newPrefs[key]);
@@ -266,14 +268,20 @@ export const regenerateAllPlans = (exercises, activeProgram, calibrations, prefe
 
         // Get starting reps (use calibration if available)
         const calibration = calibrations[exKey] || 1.0;
+        // Try direct startReps first (exerciseDatabase format), then fallback to weeks structure
         const firstWeek = exercise.weeks?.[0];
         const firstDay = firstWeek?.days?.[0];
-        const baseStartReps = firstDay?.reps?.[1] || 10; // Middle rep of first day
-        const startReps = Math.round(baseStartReps * calibration);
+        const baseStartReps = exercise.startReps || firstDay?.reps?.[1] || 10;
+        const startReps = Math.max(5, Math.round(baseStartReps * calibration)); // Minimum 5 for any exercise
 
-        // Parse final goal
-        const finalGoalMatch = exercise.finalGoal?.match(/(\d+)/);
-        const finalGoal = finalGoalMatch ? parseInt(finalGoalMatch[1], 10) : 100;
+        // Parse final goal (supports both "180 Seconds" string format and numeric)
+        let finalGoal = 100;
+        if (typeof exercise.finalGoal === 'number') {
+            finalGoal = exercise.finalGoal;
+        } else if (typeof exercise.finalGoal === 'string') {
+            const finalGoalMatch = exercise.finalGoal.match(/(\d+)/);
+            finalGoal = finalGoalMatch ? parseInt(finalGoalMatch[1], 10) : 100;
+        }
 
         // Generate custom progression
         customPlans[exKey] = {

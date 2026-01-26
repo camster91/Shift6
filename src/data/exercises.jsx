@@ -35,18 +35,18 @@ export const getRest = (week) => (week <= 3 ? 60 : 90);
 // ============================================
 
 export const REP_SCHEME_CONFIGS = {
-    endurance: {
-        id: 'endurance',
-        name: 'Endurance',
-        desc: 'Higher reps, builds stamina and muscular endurance',
-        longDesc: 'Focus on muscular endurance with higher rep ranges. Great for building work capacity and stamina.',
-        repRange: [15, 25],
-        defaultSets: 3,
-        restSeconds: 30,
-        multiplier: 1.3,
-        progressionStyle: 'volume',
-        icon: '🏃',
-        color: 'emerald'
+    balanced: {
+        id: 'balanced',
+        name: 'Balanced',
+        desc: 'Mix of all rep ranges for general fitness',
+        longDesc: 'A well-rounded approach that builds strength, muscle, and endurance together.',
+        repRange: [8, 15],
+        defaultSets: 5,
+        restSeconds: 60,
+        multiplier: 1.0,
+        progressionStyle: 'standard',
+        icon: '⚖️',
+        color: 'cyan'
     },
     hypertrophy: {
         id: 'hypertrophy',
@@ -74,18 +74,18 @@ export const REP_SCHEME_CONFIGS = {
         icon: '🏋️',
         color: 'orange'
     },
-    balanced: {
-        id: 'balanced',
-        name: 'Balanced',
-        desc: 'Mix of all rep ranges for general fitness',
-        longDesc: 'A well-rounded approach that builds strength, muscle, and endurance together.',
-        repRange: [8, 15],
-        defaultSets: 5,
-        restSeconds: 60,
-        multiplier: 1.0,
-        progressionStyle: 'standard',
-        icon: '⚖️',
-        color: 'cyan'
+    endurance: {
+        id: 'endurance',
+        name: 'Endurance',
+        desc: 'Higher reps, builds stamina and muscular endurance',
+        longDesc: 'Focus on muscular endurance with higher rep ranges. Great for building work capacity and stamina.',
+        repRange: [15, 25],
+        defaultSets: 3,
+        restSeconds: 30,
+        multiplier: 1.3,
+        progressionStyle: 'volume',
+        icon: '🏃',
+        color: 'emerald'
     }
 };
 
@@ -318,7 +318,8 @@ export const generateCustomProgression = (startReps, finalGoal, preferences = {}
     const rateConfig = PROGRESSION_RATES[progressionRate] || PROGRESSION_RATES.moderate;
 
     const adjustedGoal = Math.round(finalGoal * schemeConfig.multiplier);
-    const adjustedStart = Math.max(1, startReps);
+    // Minimum of 5 to avoid unrealistic starting points (1 second plank, 1 rep pushup, etc.)
+    const adjustedStart = Math.max(5, startReps);
     const totalDays = programDuration * trainingDaysPerWeek;
 
     const weeks = [];

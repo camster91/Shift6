@@ -252,10 +252,10 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
                       {program.daysPerWeek}x/week
                     </span>
                     <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400">
-                      {program.level}
+                      {program.difficulty}
                     </span>
                     <span className="text-xs text-slate-500">
-                      {program.schedule.filter(d => !d.isRest).length} training days
+                      {program.split.length} training days
                     </span>
                   </div>
                 </button>

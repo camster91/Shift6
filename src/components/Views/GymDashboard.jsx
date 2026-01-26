@@ -34,8 +34,8 @@ const GymDashboard = ({
   const todaysWorkout = useMemo(() => {
     if (!currentProgram || !gymProgram) return null
 
-    const dayIndex = (gymProgram.currentDay - 1) % currentProgram.schedule.length
-    const daySchedule = currentProgram.schedule[dayIndex]
+    const dayIndex = (gymProgram.currentDay - 1) % currentProgram.split.length
+    const daySchedule = currentProgram.split[dayIndex]
 
     if (!daySchedule || daySchedule.isRest) {
       return { isRest: true, dayName: 'Rest Day' }
@@ -124,7 +124,7 @@ const GymDashboard = ({
                       {program.daysPerWeek}x/week
                     </span>
                     <span className="text-xs text-slate-500">
-                      {program.level}
+                      {program.difficulty}
                     </span>
                   </div>
                 </div>
@@ -187,7 +187,7 @@ const GymDashboard = ({
               <div
                 className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all"
                 style={{
-                  width: `${(gymProgram.currentDay / (currentProgram.schedule.length * 4)) * 100}%`
+                  width: `${(gymProgram.currentDay / (currentProgram.split.length * 4)) * 100}%`
                 }}
               />
             </div>

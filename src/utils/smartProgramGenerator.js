@@ -24,60 +24,60 @@ export const SPLIT_TEMPLATES = {
   // 2 days: Full body x2
   2: {
     name: 'Full Body',
-    description: '2 full body sessions per week',
+    description: 'Complete workouts twice per week',
     days: [
-      { name: 'Full Body A', patterns: ['horizontal_push', 'horizontal_pull', 'knee_dominant', 'core_stability'] },
-      { name: 'Full Body B', patterns: ['vertical_push', 'vertical_pull', 'hip_dominant', 'core_flexion'] },
+      { name: 'Full Body A', patterns: ['horizontal_push', 'horizontal_pull', 'knee_dominant', 'core_stability'], focus: 'full' },
+      { name: 'Full Body B', patterns: ['vertical_push', 'vertical_pull', 'hip_dominant', 'core_flexion'], focus: 'full' },
     ],
   },
 
-  // 3 days: Push/Pull/Legs or Full Body x3
+  // 3 days: Push/Pull/Legs
   3: {
-    name: 'Push/Pull/Legs',
-    description: 'Classic PPL split',
+    name: 'Push / Pull / Legs',
+    description: 'Classic balanced training split',
     days: [
-      { name: 'Push', patterns: ['horizontal_push', 'vertical_push', 'isolation_arms'], focus: 'push' },
-      { name: 'Pull', patterns: ['horizontal_pull', 'vertical_pull', 'isolation_arms'], focus: 'pull' },
-      { name: 'Legs', patterns: ['knee_dominant', 'hip_dominant', 'isolation_legs', 'core_flexion'], focus: 'legs' },
+      { name: 'Push Day', patterns: ['horizontal_push', 'vertical_push', 'isolation_arms'], focus: 'push' },
+      { name: 'Pull Day', patterns: ['horizontal_pull', 'vertical_pull', 'isolation_arms'], focus: 'pull' },
+      { name: 'Legs Day', patterns: ['knee_dominant', 'hip_dominant', 'core_flexion'], focus: 'legs' },
     ],
   },
 
   // 4 days: Upper/Lower x2
   4: {
-    name: 'Upper/Lower',
-    description: 'Upper and lower body split',
+    name: 'Upper / Lower',
+    description: 'Alternate upper and lower body',
     days: [
-      { name: 'Upper A', patterns: ['horizontal_push', 'horizontal_pull', 'vertical_push', 'isolation_arms'], focus: 'upper' },
-      { name: 'Lower A', patterns: ['knee_dominant', 'hip_dominant', 'core_stability'], focus: 'lower' },
-      { name: 'Upper B', patterns: ['vertical_push', 'vertical_pull', 'horizontal_push', 'isolation_arms'], focus: 'upper' },
-      { name: 'Lower B', patterns: ['hip_dominant', 'knee_dominant', 'core_flexion', 'isolation_legs'], focus: 'lower' },
+      { name: 'Upper Body A', patterns: ['horizontal_push', 'horizontal_pull', 'vertical_push', 'isolation_arms'], focus: 'upper' },
+      { name: 'Lower Body A', patterns: ['knee_dominant', 'hip_dominant', 'core_stability'], focus: 'lower' },
+      { name: 'Upper Body B', patterns: ['vertical_push', 'vertical_pull', 'horizontal_push', 'isolation_arms'], focus: 'upper' },
+      { name: 'Lower Body B', patterns: ['hip_dominant', 'knee_dominant', 'core_flexion', 'isolation_legs'], focus: 'lower' },
     ],
   },
 
   // 5 days: Push/Pull/Legs/Upper/Lower
   5: {
-    name: 'PPLUL',
-    description: 'Push, Pull, Legs, Upper, Lower',
+    name: 'Push / Pull / Legs / Upper / Lower',
+    description: 'High frequency varied training',
     days: [
-      { name: 'Push', patterns: ['horizontal_push', 'vertical_push', 'isolation_arms'], focus: 'push' },
-      { name: 'Pull', patterns: ['horizontal_pull', 'vertical_pull', 'isolation_arms'], focus: 'pull' },
-      { name: 'Legs', patterns: ['knee_dominant', 'hip_dominant', 'isolation_legs'], focus: 'legs' },
-      { name: 'Upper', patterns: ['horizontal_push', 'horizontal_pull', 'vertical_push', 'vertical_pull'], focus: 'upper' },
-      { name: 'Lower + Core', patterns: ['knee_dominant', 'hip_dominant', 'core_stability', 'core_flexion'], focus: 'lower' },
+      { name: 'Push Day', patterns: ['horizontal_push', 'vertical_push', 'isolation_arms'], focus: 'push' },
+      { name: 'Pull Day', patterns: ['horizontal_pull', 'vertical_pull', 'isolation_arms'], focus: 'pull' },
+      { name: 'Legs Day', patterns: ['knee_dominant', 'hip_dominant', 'isolation_legs'], focus: 'legs' },
+      { name: 'Upper Body', patterns: ['horizontal_push', 'horizontal_pull', 'vertical_push', 'vertical_pull'], focus: 'upper' },
+      { name: 'Lower & Core', patterns: ['knee_dominant', 'hip_dominant', 'core_stability', 'core_flexion'], focus: 'lower' },
     ],
   },
 
   // 6 days: Push/Pull/Legs x2
   6: {
-    name: 'PPL x2',
-    description: 'Push, Pull, Legs twice per week',
+    name: 'Push / Pull / Legs (2x)',
+    description: 'Each muscle group twice per week',
     days: [
-      { name: 'Push A', patterns: ['horizontal_push', 'vertical_push', 'isolation_arms'], focus: 'push' },
-      { name: 'Pull A', patterns: ['horizontal_pull', 'vertical_pull', 'isolation_arms'], focus: 'pull' },
-      { name: 'Legs A', patterns: ['knee_dominant', 'hip_dominant', 'core_stability'], focus: 'legs' },
-      { name: 'Push B', patterns: ['vertical_push', 'horizontal_push', 'isolation_arms'], focus: 'push' },
-      { name: 'Pull B', patterns: ['vertical_pull', 'horizontal_pull', 'isolation_arms'], focus: 'pull' },
-      { name: 'Legs B', patterns: ['hip_dominant', 'knee_dominant', 'core_flexion', 'isolation_legs'], focus: 'legs' },
+      { name: 'Push Day A', patterns: ['horizontal_push', 'vertical_push', 'isolation_arms'], focus: 'push' },
+      { name: 'Pull Day A', patterns: ['horizontal_pull', 'vertical_pull', 'isolation_arms'], focus: 'pull' },
+      { name: 'Legs Day A', patterns: ['knee_dominant', 'hip_dominant', 'core_stability'], focus: 'legs' },
+      { name: 'Push Day B', patterns: ['vertical_push', 'horizontal_push', 'isolation_arms'], focus: 'push' },
+      { name: 'Pull Day B', patterns: ['vertical_pull', 'horizontal_pull', 'isolation_arms'], focus: 'pull' },
+      { name: 'Legs Day B', patterns: ['hip_dominant', 'knee_dominant', 'core_flexion', 'isolation_legs'], focus: 'legs' },
     ],
   },
 }
@@ -86,47 +86,52 @@ export const SPLIT_TEMPLATES = {
 export const BODYWEIGHT_SPLITS = {
   2: {
     name: 'Full Body',
+    description: 'Complete full body workouts twice per week',
     days: [
-      { name: 'Full Body A', patterns: ['horizontal_push', 'vertical_pull', 'knee_dominant', 'core_stability'] },
-      { name: 'Full Body B', patterns: ['vertical_push', 'horizontal_pull', 'hip_dominant', 'core_flexion'] },
+      { name: 'Full Body A', patterns: ['horizontal_push', 'vertical_pull', 'knee_dominant', 'core_stability'], focus: 'full' },
+      { name: 'Full Body B', patterns: ['vertical_push', 'horizontal_pull', 'hip_dominant', 'core_flexion'], focus: 'full' },
     ],
   },
   3: {
-    name: 'Full Body',
+    name: 'Push / Pull / Legs',
+    description: 'Classic balanced split for calisthenics',
     days: [
-      { name: 'Push + Core', patterns: ['horizontal_push', 'vertical_push', 'core_stability', 'core_flexion'] },
-      { name: 'Pull + Core', patterns: ['vertical_pull', 'horizontal_pull', 'core_stability'] },
-      { name: 'Legs + Core', patterns: ['knee_dominant', 'hip_dominant', 'core_flexion'] },
+      { name: 'Push Day', patterns: ['horizontal_push', 'vertical_push', 'core_stability'], focus: 'push' },
+      { name: 'Pull Day', patterns: ['vertical_pull', 'horizontal_pull', 'core_flexion'], focus: 'pull' },
+      { name: 'Legs Day', patterns: ['knee_dominant', 'hip_dominant', 'core_stability'], focus: 'legs' },
     ],
   },
   4: {
-    name: 'Upper/Lower',
+    name: 'Upper / Lower',
+    description: 'Alternate between upper and lower body focus',
     days: [
-      { name: 'Upper Push', patterns: ['horizontal_push', 'vertical_push', 'core_stability'] },
-      { name: 'Lower', patterns: ['knee_dominant', 'hip_dominant', 'core_flexion'] },
-      { name: 'Upper Pull', patterns: ['vertical_pull', 'horizontal_pull', 'core_stability'] },
-      { name: 'Lower + Core', patterns: ['hip_dominant', 'knee_dominant', 'core_stability', 'core_flexion'] },
+      { name: 'Upper Body A', patterns: ['horizontal_push', 'vertical_pull', 'core_stability'], focus: 'upper' },
+      { name: 'Lower Body A', patterns: ['knee_dominant', 'hip_dominant', 'core_flexion'], focus: 'lower' },
+      { name: 'Upper Body B', patterns: ['vertical_push', 'horizontal_pull', 'core_stability'], focus: 'upper' },
+      { name: 'Lower Body B', patterns: ['hip_dominant', 'knee_dominant', 'core_flexion'], focus: 'lower' },
     ],
   },
   5: {
-    name: 'Specialization',
+    name: 'Push / Pull / Legs / Upper / Lower',
+    description: 'High frequency training with varied focus',
     days: [
-      { name: 'Push', patterns: ['horizontal_push', 'vertical_push'] },
-      { name: 'Pull', patterns: ['vertical_pull', 'horizontal_pull'] },
-      { name: 'Legs', patterns: ['knee_dominant', 'hip_dominant'] },
-      { name: 'Upper', patterns: ['horizontal_push', 'vertical_pull'] },
-      { name: 'Core + Legs', patterns: ['core_stability', 'core_flexion', 'knee_dominant'] },
+      { name: 'Push Day', patterns: ['horizontal_push', 'vertical_push'], focus: 'push' },
+      { name: 'Pull Day', patterns: ['vertical_pull', 'horizontal_pull'], focus: 'pull' },
+      { name: 'Legs Day', patterns: ['knee_dominant', 'hip_dominant'], focus: 'legs' },
+      { name: 'Upper Body', patterns: ['horizontal_push', 'vertical_pull'], focus: 'upper' },
+      { name: 'Lower & Core', patterns: ['core_stability', 'core_flexion', 'knee_dominant'], focus: 'lower' },
     ],
   },
   6: {
-    name: 'Daily Focus',
+    name: 'Daily Specialization',
+    description: 'Focus on specific muscle groups each day',
     days: [
-      { name: 'Horizontal Push', patterns: ['horizontal_push', 'core_stability'] },
-      { name: 'Vertical Pull', patterns: ['vertical_pull', 'core_flexion'] },
-      { name: 'Legs A', patterns: ['knee_dominant', 'hip_dominant'] },
-      { name: 'Vertical Push', patterns: ['vertical_push', 'core_stability'] },
-      { name: 'Horizontal Pull', patterns: ['horizontal_pull', 'core_flexion'] },
-      { name: 'Legs B', patterns: ['hip_dominant', 'knee_dominant', 'core_stability'] },
+      { name: 'Chest & Triceps', patterns: ['horizontal_push', 'core_stability'], focus: 'push' },
+      { name: 'Back & Biceps', patterns: ['vertical_pull', 'core_flexion'], focus: 'pull' },
+      { name: 'Quads & Glutes', patterns: ['knee_dominant', 'hip_dominant'], focus: 'legs' },
+      { name: 'Shoulders & Core', patterns: ['vertical_push', 'core_stability'], focus: 'push' },
+      { name: 'Back & Core', patterns: ['horizontal_pull', 'core_flexion'], focus: 'pull' },
+      { name: 'Hamstrings & Core', patterns: ['hip_dominant', 'knee_dominant', 'core_stability'], focus: 'legs' },
     ],
   },
 }

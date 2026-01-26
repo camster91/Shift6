@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Home, Dumbbell, ChevronRight, Flame } from 'lucide-react'
 
 /**
@@ -15,17 +15,6 @@ const ModeSelector = ({
 }) => {
   const [selectedMode, setSelectedMode] = useState(null)
   const [rememberToday, setRememberToday] = useState(false)
-
-  // Auto-select last mode if remember was checked
-  useEffect(() => {
-    const remembered = localStorage.getItem('shift6_remember_mode_today')
-    const rememberedDate = localStorage.getItem('shift6_remember_mode_date')
-    const today = new Date().toDateString()
-
-    if (remembered && rememberedDate === today) {
-      onSelectMode(remembered, false)
-    }
-  }, [onSelectMode])
 
   const handleSelect = (mode) => {
     setSelectedMode(mode)
@@ -44,13 +33,15 @@ const ModeSelector = ({
 
   const bgClass = theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'
   const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
+  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
+  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
 
   return (
     <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
       {/* Header */}
       <div className="pt-12 pb-6 px-6 text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">Ready to Train?</h1>
-        <p className="text-slate-400">Where are you working out today?</p>
+        <h1 className={`text-3xl font-bold ${textPrimary} mb-2`}>Ready to Train?</h1>
+        <p className={textSecondary}>Where are you working out today?</p>
       </div>
 
       {/* Mode Cards */}
@@ -79,12 +70,12 @@ const ModeSelector = ({
           </div>
 
           <h2 className={`text-2xl font-bold mb-2 text-left ${
-            selectedMode === 'home' ? 'text-white' : 'text-white'
+            selectedMode === 'home' ? 'text-white' : textPrimary
           }`}>
             Home
           </h2>
           <p className={`text-left mb-4 ${
-            selectedMode === 'home' ? 'text-cyan-100' : 'text-slate-400'
+            selectedMode === 'home' ? 'text-cyan-100' : textSecondary
           }`}>
             Calisthenics & bodyweight training
           </p>
@@ -122,12 +113,12 @@ const ModeSelector = ({
           </div>
 
           <h2 className={`text-2xl font-bold mb-2 text-left ${
-            selectedMode === 'gym' ? 'text-white' : 'text-white'
+            selectedMode === 'gym' ? 'text-white' : textPrimary
           }`}>
             Gym
           </h2>
           <p className={`text-left mb-4 ${
-            selectedMode === 'gym' ? 'text-purple-100' : 'text-slate-400'
+            selectedMode === 'gym' ? 'text-purple-100' : textSecondary
           }`}>
             Weights, machines & equipment
           </p>
@@ -152,7 +143,7 @@ const ModeSelector = ({
             onChange={(e) => setRememberToday(e.target.checked)}
             className="w-5 h-5 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
           />
-          <span className="text-slate-400 text-sm">Remember my choice for today</span>
+          <span className={`text-sm ${textSecondary}`}>Remember my choice for today</span>
         </label>
 
         {/* Continue Button */}

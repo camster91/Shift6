@@ -8,21 +8,30 @@ const EXPERIENCE_LEVELS = [
     name: 'Beginner',
     desc: 'New to weight training or less than 6 months experience',
     icon: Zap,
-    color: 'emerald'
+    ringClass: 'ring-emerald-500',
+    bgClass: 'bg-emerald-500/10',
+    iconBgClass: 'bg-emerald-500/20',
+    textClass: 'text-emerald-400'
   },
   {
     id: 'intermediate',
     name: 'Intermediate',
     desc: '6 months to 2 years of consistent training',
     icon: Target,
-    color: 'blue'
+    ringClass: 'ring-blue-500',
+    bgClass: 'bg-blue-500/10',
+    iconBgClass: 'bg-blue-500/20',
+    textClass: 'text-blue-400'
   },
   {
     id: 'advanced',
     name: 'Advanced',
     desc: '2+ years of structured weight training',
     icon: Trophy,
-    color: 'purple'
+    ringClass: 'ring-purple-500',
+    bgClass: 'bg-purple-500/10',
+    iconBgClass: 'bg-purple-500/20',
+    textClass: 'text-purple-400'
   }
 ]
 
@@ -140,16 +149,16 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
                   onClick={() => setExperienceLevel(level.id)}
                   className={`w-full ${cardBg} rounded-xl p-4 text-left transition-all ${
                     isSelected
-                      ? `ring-2 ring-${level.color}-500 bg-${level.color}-500/10`
+                      ? `ring-2 ${level.ringClass} ${level.bgClass}`
                       : 'hover:ring-2 hover:ring-slate-600'
                   }`}
                 >
                   <div className="flex items-start gap-4">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      isSelected ? `bg-${level.color}-500/20` : 'bg-slate-800'
+                      isSelected ? level.iconBgClass : 'bg-slate-800'
                     }`}>
                       <Icon className={`w-6 h-6 ${
-                        isSelected ? `text-${level.color}-400` : 'text-slate-400'
+                        isSelected ? level.textClass : 'text-slate-400'
                       }`} />
                     </div>
                     <div className="flex-1">
@@ -157,7 +166,7 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
                       <p className={`text-sm ${textSecondary}`}>{level.desc}</p>
                     </div>
                     {isSelected && (
-                      <Check className={`w-5 h-5 text-${level.color}-400`} />
+                      <Check className={`w-5 h-5 ${level.textClass}`} />
                     )}
                   </div>
                 </button>

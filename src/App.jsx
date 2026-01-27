@@ -187,16 +187,13 @@ const App = () => {
     const prevStatsRef = useRef(null);
 
     // ============ GYM MODE STATE ============
-    // Current mode selection (null = show selector on launch)
+    // Current mode selection - permanently remembered, defaults to 'home' for onboarded users
     const [currentMode, setCurrentMode] = useState(() => {
-        // Check if we should remember the mode for today
-        const remembered = localStorage.getItem(`${STORAGE_PREFIX}remember_mode_today`);
-        const rememberedDate = localStorage.getItem(`${STORAGE_PREFIX}remember_mode_date`);
-        const today = new Date().toDateString();
-        if (remembered && rememberedDate === today) {
-            return remembered;
-        }
-        return null; // Show mode selector
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}current_mode`);
+        if (saved) return saved;
+        // Default to 'home' for users who have completed onboarding
+        const onboarded = localStorage.getItem(`${STORAGE_PREFIX}onboarding_complete`);
+        return onboarded === 'true' ? 'home' : null;
     });
 
     // Gym onboarding complete flag
@@ -465,6 +462,13 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}gym_streak`, JSON.stringify(gymStreak));
     }, [gymStreak]);
+
+    // Persist current mode selection
+    useEffect(() => {
+        if (currentMode) {
+            localStorage.setItem(`${STORAGE_PREFIX}current_mode`, currentMode);
+        }
+    }, [currentMode]);
 
     // UI State
     const [workoutQueue, setWorkoutQueue] = useState(() => {
@@ -831,6 +835,8 @@ const App = () => {
         } finally {
             // Always complete onboarding even if there were errors
             setOnboardingComplete(true);
+            // Set default mode to home after onboarding
+            setCurrentMode('home');
         }
     };
 
@@ -1304,10 +1310,7 @@ const App = () => {
 
     // Switch between home and gym mode
     const handleSwitchMode = useCallback(() => {
-        // Clear the remembered mode
-        localStorage.removeItem(`${STORAGE_PREFIX}remember_mode_today`);
-        localStorage.removeItem(`${STORAGE_PREFIX}remember_mode_date`);
-        setCurrentMode(null);
+        setCurrentMode(prev => prev === 'home' ? 'gym' : 'home');
     }, []);
 
     // Calculate home mode streak (for display in mode selector)
@@ -1344,9 +1347,9 @@ const App = () => {
         };
     }, [completedDays, sessionHistory]);
 
-    // Determine if we should show mode selector
-    // Show when: onboarded for home mode, no mode currently selected, and no active session
-    const shouldShowModeSelector = onboardingComplete && currentMode === null && !currentSession && !currentGymSession;
+    // Mode selector is no longer shown on app launch - mode is remembered permanently
+    // Mode can be switched via the SideDrawer menu
+    const shouldShowModeSelector = false;
 
     // Determine if we should show gym onboarding
     const shouldShowGymOnboarding = currentMode === 'gym' && !gymOnboardingComplete;
@@ -1396,16 +1399,54 @@ const App = () => {
 
             {/* Gym Dashboard - Main gym mode view */}
             {isGymMode && !currentGymSession && (
-                <GymDashboard
-                    gymProgram={gymProgram}
-                    gymWeights={gymWeights}
-                    gymHistory={gymHistory}
-                    gymStreak={gymStreak}
-                    onStartWorkout={handleStartGymWorkout}
-                    onChangeProgram={handleChangeGymProgram}
-                    onSwitchMode={handleSwitchMode}
-                    theme={theme}
-                />
+                <>
+                    <Header
+                        audioEnabled={audioEnabled}
+                        setAudioEnabled={setAudioEnabled}
+                        theme={theme}
+                        setTheme={setTheme}
+                        onSwitchMode={handleSwitchMode}
+                        showSwitchMode={true}
+                        currentMode="gym"
+                    />
+                    <main className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
+                        <GymDashboard
+                            gymProgram={gymProgram}
+                            gymWeights={gymWeights}
+                            gymHistory={gymHistory}
+                            gymStreak={gymStreak}
+                            onStartWorkout={handleStartGymWorkout}
+                            onChangeProgram={handleChangeGymProgram}
+                            onSwitchMode={handleSwitchMode}
+                            theme={theme}
+                        />
+                    </main>
+                    <BottomNav
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        onMenuClick={() => setShowDrawer(true)}
+                        theme={theme}
+                        mode="gym"
+                    />
+                    <SideDrawer
+                        isOpen={showDrawer}
+                        onClose={handleCloseDrawer}
+                        stats={drawerStats}
+                        onShowCalendar={handleShowCalendar}
+                        onShowGuide={handleShowGuide}
+                        onShowAchievements={handleShowAchievements}
+                        onShowTrainingSettings={handleShowTrainingSettings}
+                        onShowBodyMetrics={handleShowBodyMetrics}
+                        onShowAccessibility={handleShowAccessibility}
+                        currentMode={currentMode}
+                        onSwitchMode={handleSwitchMode}
+                        onExport={handleExport}
+                        onExportCSV={handleExportCSV}
+                        onImport={handleImport}
+                        onFactoryReset={handleFactoryReset}
+                        theme={theme}
+                    />
+                </>
             )}
 
             {/* Home Mode - Original app content */}
@@ -1449,6 +1490,7 @@ const App = () => {
                         pendingSession={pendingSession}
                         onResumeSession={handleResumeSession}
                         onDiscardSession={handleDiscardSession}
+                        theme={theme}
                     />
                 )}
 
@@ -1489,6 +1531,7 @@ const App = () => {
                         setActiveTab={setActiveTab}
                         onMenuClick={() => setShowDrawer(true)}
                         theme={theme}
+                        mode="home"
                     />
                 )}
 
@@ -1503,6 +1546,8 @@ const App = () => {
                     onShowTrainingSettings={handleShowTrainingSettings}
                     onShowBodyMetrics={handleShowBodyMetrics}
                     onShowAccessibility={handleShowAccessibility}
+                    currentMode={currentMode}
+                    onSwitchMode={handleSwitchMode}
                     onExport={handleExport}
                     onExportCSV={handleExportCSV}
                     onImport={handleImport}

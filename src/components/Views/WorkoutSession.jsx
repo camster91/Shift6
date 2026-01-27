@@ -491,7 +491,11 @@ const WorkoutSession = ({
 
                     <div className="space-y-3">
                         <button
-                            onClick={() => setCurrentSession(prev => ({ ...prev, step: 'workout' }))}
+                            onClick={() => setCurrentSession(prev => ({
+                                ...prev,
+                                // Sprint sessions go to readiness check, regular sessions go to workout
+                                step: prev.sprintId ? 'readiness' : 'workout'
+                            }))}
                             className="w-full bg-cyan-500 rounded-lg py-4 text-slate-900 font-bold hover:bg-cyan-600 transition-colors uppercase tracking-wider"
                         >
                             Start Day 1 Now

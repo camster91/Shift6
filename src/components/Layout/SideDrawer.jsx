@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, memo } from 'react'
 import {
     X,
     Trophy,
@@ -252,4 +252,6 @@ const SideDrawer = ({
     )
 }
 
-export default SideDrawer
+// ⚡ Bolt: Memoize SideDrawer to prevent re-renders from App.jsx state changes.
+// All callback props must be wrapped in useCallback in the parent component.
+export default memo(SideDrawer)

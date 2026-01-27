@@ -401,12 +401,12 @@ const Onboarding = ({ equipment, templates, onComplete }) => {
                     </div>
                 )}
 
-                {/* Step 2: Where will you work out? */}
+                {/* Step 2: Training Setup */}
                 {step === 2 && (
                     <div className="w-full max-w-md space-y-6 animate-fadeIn">
                         <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">What equipment do you have?</h2>
-                            <p className="text-slate-400">Select your training setup</p>
+                            <h2 className="text-2xl font-bold text-white">Choose Your Setup</h2>
+                            <p className="text-slate-400">Select your training environment</p>
                         </div>
 
                         <div className="space-y-3">

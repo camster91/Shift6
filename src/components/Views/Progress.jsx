@@ -1,12 +1,13 @@
 import { useState, memo } from 'react'
 import { Trophy, Target, TrendingUp, Calendar as CalendarIcon, ChevronDown, ChevronUp, Award, Zap, Dumbbell } from 'lucide-react'
 import { calculateStats, getUnlockedBadges, BADGES, calculateStreakWithGrace, getStreakStatus, getPersonalRecords } from '../../utils/gamification'
+import { exerciseColorClasses, getThemeClasses } from '../../utils/colors'
 import CalendarView from './CalendarView'
 import ProgressChart from '../Visuals/ProgressChart'
 import NeoIcon from '../Visuals/NeoIcon'
 
 // Stats card component
-const StatCard = ({ icon: Icon, label, value, subValue, color = 'cyan' }) => {
+const StatCard = ({ icon: Icon, label, value, subValue, color = 'cyan', theme = 'dark' }) => {
     const colorClasses = {
         cyan: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
         orange: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
@@ -14,6 +15,7 @@ const StatCard = ({ icon: Icon, label, value, subValue, color = 'cyan' }) => {
         purple: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
         amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
     }
+    const themeClasses = getThemeClasses(theme)
 
     return (
         <div className={`p-4 rounded-xl border ${colorClasses[color]} flex items-center gap-3`}>
@@ -22,15 +24,16 @@ const StatCard = ({ icon: Icon, label, value, subValue, color = 'cyan' }) => {
             </div>
             <div>
                 <p className={`text-2xl font-bold ${colorClasses[color].split(' ')[0]}`}>{value}</p>
-                <p className="text-xs text-slate-500">{label}</p>
-                {subValue && <p className="text-[10px] text-slate-600">{subValue}</p>}
+                <p className={`text-xs ${themeClasses.textMuted}`}>{label}</p>
+                {subValue && <p className={`text-[10px] ${themeClasses.textMuted}`}>{subValue}</p>}
             </div>
         </div>
     )
 }
 
 // Badge display component
-const BadgeItem = ({ badge, isUnlocked }) => {
+const BadgeItem = ({ badge, isUnlocked, theme = 'dark' }) => {
+    const themeClasses = getThemeClasses(theme)
     const rarityColors = {
         common: 'from-slate-400 to-slate-500',
         uncommon: 'from-emerald-400 to-emerald-500',
@@ -43,15 +46,19 @@ const BadgeItem = ({ badge, isUnlocked }) => {
         <div
             className={`relative p-3 rounded-xl border transition-all ${
                 isUnlocked
-                    ? 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
-                    : 'bg-slate-900/50 border-slate-800/50 opacity-40'
+                    ? theme === 'light'
+                        ? 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                        : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                    : theme === 'light'
+                        ? 'bg-slate-100/50 border-slate-200/50 opacity-40'
+                        : 'bg-slate-900/50 border-slate-800/50 opacity-40'
             }`}
             title={badge.desc}
         >
             <div className="flex items-center gap-2">
                 <span className="text-xl">{badge.icon}</span>
                 <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-bold truncate ${isUnlocked ? 'text-white' : 'text-slate-500'}`}>
+                    <p className={`text-xs font-bold truncate ${isUnlocked ? themeClasses.textPrimary : themeClasses.textMuted}`}>
                         {badge.name}
                     </p>
                     {isUnlocked && badge.rarity && (
@@ -63,25 +70,15 @@ const BadgeItem = ({ badge, isUnlocked }) => {
             </div>
             {!isUnlocked && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-slate-600 text-lg">?</span>
+                    <span className={themeClasses.textMuted + " text-lg"}>?</span>
                 </div>
             )}
         </div>
     )
 }
 
-// Color classes for exercise themes
-const colorClasses = {
-    blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', solid: 'bg-blue-500' },
-    orange: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400', solid: 'bg-orange-500' },
-    cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', solid: 'bg-cyan-500' },
-    emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', solid: 'bg-emerald-500' },
-    yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', solid: 'bg-yellow-500' },
-    teal: { bg: 'bg-teal-500/10', border: 'border-teal-500/30', text: 'text-teal-400', solid: 'bg-teal-500' },
-    purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', solid: 'bg-purple-500' },
-    pink: { bg: 'bg-pink-500/10', border: 'border-pink-500/30', text: 'text-pink-400', solid: 'bg-pink-500' },
-    indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', solid: 'bg-indigo-500' },
-}
+// Use centralized color classes
+const colorClasses = exerciseColorClasses
 
 const Progress = ({
     completedDays,
@@ -116,7 +113,9 @@ const Progress = ({
         legendary: 'text-amber-400'
     }
 
-    const cardBg = theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+    // Theme-aware styling
+    const themeClasses = getThemeClasses(theme)
+    const cardBg = `${themeClasses.cardBg} ${themeClasses.borderColor}`
 
     return (
         <div className="space-y-6 pb-24">
@@ -129,9 +128,7 @@ const Progress = ({
                         className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all capitalize ${
                             activeSection === section
                                 ? 'bg-cyan-500/20 text-cyan-400'
-                                : theme === 'light'
-                                    ? 'text-slate-600 hover:bg-slate-100'
-                                    : 'text-slate-400 hover:bg-slate-800'
+                                : `${themeClasses.textSecondary} ${themeClasses.hoverBg}`
                         }`}
                     >
                         {section}
@@ -150,9 +147,9 @@ const Progress = ({
                         <p className={`text-5xl font-black ${streakColors[streakStatus.status]}`}>
                             {streakData.streak}
                         </p>
-                        <p className="text-sm text-slate-400 mt-1">Day Streak</p>
+                        <p className={`text-sm ${themeClasses.textSecondary} mt-1`}>Day Streak</p>
                         {streakData.message && (
-                            <p className="text-xs text-slate-500 mt-2">{streakData.message}</p>
+                            <p className={`text-xs ${themeClasses.textMuted} mt-2`}>{streakData.message}</p>
                         )}
                         {streakData.isAtRisk && streakData.streak > 0 && (
                             <p className={`text-xs mt-3 ${streakStatus.status === 'danger' ? 'text-red-400' : 'text-yellow-400'}`}>
@@ -171,31 +168,35 @@ const Progress = ({
                             label="Total Workouts"
                             value={stats.totalSessions}
                             color="cyan"
+                            theme={theme}
                         />
                         <StatCard
                             icon={Trophy}
                             label="Plans Mastered"
                             value={stats.completedPlans}
                             color="emerald"
+                            theme={theme}
                         />
                         <StatCard
                             icon={Award}
                             label="Achievements"
                             value={`${unlockedBadges.length}/${BADGES.length}`}
                             color="purple"
+                            theme={theme}
                         />
                         <StatCard
                             icon={Zap}
                             label="Personal Records"
                             value={prCount}
                             color="amber"
+                            theme={theme}
                         />
                     </div>
 
                     {/* Progress Chart */}
                     <div className={`${cardBg} rounded-xl border overflow-hidden`}>
-                        <div className="p-4 border-b border-slate-800">
-                            <h3 className="font-semibold text-white flex items-center gap-2">
+                        <div className={`p-4 border-b ${themeClasses.borderColor}`}>
+                            <h3 className={`font-semibold ${themeClasses.textPrimary} flex items-center gap-2`}>
                                 <TrendingUp size={18} className="text-cyan-400" />
                                 Volume Over Time
                             </h3>
@@ -212,8 +213,8 @@ const Progress = ({
                     {/* Recent Personal Records */}
                     {prCount > 0 && (
                         <div className={`${cardBg} rounded-xl border overflow-hidden`}>
-                            <div className="p-4 border-b border-slate-800">
-                                <h3 className="font-semibold text-white flex items-center gap-2">
+                            <div className={`p-4 border-b ${themeClasses.borderColor}`}>
+                                <h3 className={`font-semibold ${themeClasses.textPrimary} flex items-center gap-2`}>
                                     <Zap size={18} className="text-amber-400" />
                                     Personal Records
                                 </h3>
@@ -227,7 +228,7 @@ const Progress = ({
                                             key={key}
                                             className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg"
                                         >
-                                            <p className="text-xs text-slate-400 truncate">{exercise.name}</p>
+                                            <p className={`text-xs ${themeClasses.textSecondary} truncate`}>{exercise.name}</p>
                                             <p className="text-lg font-bold text-amber-400">
                                                 {pr.volume} <span className="text-xs font-normal">{pr.unit}</span>
                                             </p>
@@ -245,12 +246,12 @@ const Progress = ({
 
                         return (
                             <div className={`${cardBg} rounded-xl border overflow-hidden`}>
-                                <div className="p-4 border-b border-slate-800">
-                                    <h3 className="font-semibold text-white flex items-center gap-2">
+                                <div className={`p-4 border-b ${themeClasses.borderColor}`}>
+                                    <h3 className={`font-semibold ${themeClasses.textPrimary} flex items-center gap-2`}>
                                         <Target size={18} className="text-cyan-400" />
                                         Active Training Cycles
                                     </h3>
-                                    <p className="text-xs text-slate-500 mt-1">6-week progressive programs</p>
+                                    <p className={`text-xs ${themeClasses.textMuted} mt-1`}>6-week progressive programs</p>
                                 </div>
                                 <div className="p-4 space-y-3">
                                     {activeSprints.map(sprint => {
@@ -314,8 +315,8 @@ const Progress = ({
                             <Trophy size={32} className="text-purple-400" />
                         </div>
                         <p className="text-4xl font-black text-purple-400">{unlockedBadges.length}</p>
-                        <p className="text-sm text-slate-400">of {BADGES.length} achievements unlocked</p>
-                        <div className="mt-4 h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <p className={`text-sm ${themeClasses.textSecondary}`}>of {BADGES.length} achievements unlocked</p>
+                        <div className={`mt-4 h-2 ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'} rounded-full overflow-hidden`}>
                             <div
                                 className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 transition-all"
                                 style={{ width: `${(unlockedBadges.length / BADGES.length) * 100}%` }}
@@ -326,12 +327,12 @@ const Progress = ({
                     {/* Unlocked Badges */}
                     {unlockedBadges.length > 0 && (
                         <div className={`${cardBg} rounded-xl border overflow-hidden`}>
-                            <div className="p-4 border-b border-slate-800">
-                                <h3 className="font-semibold text-white">Unlocked</h3>
+                            <div className={`p-4 border-b ${themeClasses.borderColor}`}>
+                                <h3 className={`font-semibold ${themeClasses.textPrimary}`}>Unlocked</h3>
                             </div>
                             <div className="p-4 grid grid-cols-2 gap-2">
                                 {unlockedBadges.map((badge) => (
-                                    <BadgeItem key={badge.id} badge={badge} isUnlocked />
+                                    <BadgeItem key={badge.id} badge={badge} isUnlocked theme={theme} />
                                 ))}
                             </div>
                         </div>
@@ -341,21 +342,21 @@ const Progress = ({
                     <div className={`${cardBg} rounded-xl border overflow-hidden`}>
                         <button
                             onClick={() => setShowAllBadges(!showAllBadges)}
-                            className="w-full p-4 border-b border-slate-800 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
+                            className={`w-full p-4 border-b ${themeClasses.borderColor} flex items-center justify-between ${themeClasses.hoverBg} transition-colors`}
                         >
-                            <h3 className="font-semibold text-white">
+                            <h3 className={`font-semibold ${themeClasses.textPrimary}`}>
                                 Locked ({BADGES.length - unlockedBadges.length})
                             </h3>
                             {showAllBadges ? (
-                                <ChevronUp size={18} className="text-slate-400" />
+                                <ChevronUp size={18} className={themeClasses.textSecondary} />
                             ) : (
-                                <ChevronDown size={18} className="text-slate-400" />
+                                <ChevronDown size={18} className={themeClasses.textSecondary} />
                             )}
                         </button>
                         {showAllBadges && (
                             <div className="p-4 grid grid-cols-2 gap-2">
                                 {BADGES.filter(b => !b.condition(stats)).map((badge) => (
-                                    <BadgeItem key={badge.id} badge={badge} isUnlocked={false} />
+                                    <BadgeItem key={badge.id} badge={badge} isUnlocked={false} theme={theme} />
                                 ))}
                             </div>
                         )}
@@ -372,11 +373,12 @@ const Progress = ({
                         allExercises={allExercises}
                         activeProgram={activeProgram}
                         startWorkout={startWorkout}
+                        theme={theme}
                     />
 
                     {/* Monthly Stats */}
                     <div className={`${cardBg} rounded-xl border p-4`}>
-                        <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+                        <h3 className={`font-semibold ${themeClasses.textPrimary} mb-3 flex items-center gap-2`}>
                             <CalendarIcon size={18} className="text-cyan-400" />
                             This Month
                         </h3>
@@ -388,19 +390,21 @@ const Progress = ({
                                 const monthVolume = monthWorkouts.reduce((sum, s) => sum + (s.volume || 0), 0)
                                 const uniqueDays = new Set(monthWorkouts.map(s => s.date.split('T')[0])).size
 
+                                const statBg = theme === 'light' ? 'bg-slate-100' : 'bg-slate-800/50'
+
                                 return (
                                     <>
-                                        <div className="text-center p-3 bg-slate-800/50 rounded-lg">
+                                        <div className={`text-center p-3 ${statBg} rounded-lg`}>
                                             <p className="text-xl font-bold text-cyan-400">{monthWorkouts.length}</p>
-                                            <p className="text-[10px] text-slate-500">Workouts</p>
+                                            <p className={`text-[10px] ${themeClasses.textMuted}`}>Workouts</p>
                                         </div>
-                                        <div className="text-center p-3 bg-slate-800/50 rounded-lg">
+                                        <div className={`text-center p-3 ${statBg} rounded-lg`}>
                                             <p className="text-xl font-bold text-emerald-400">{uniqueDays}</p>
-                                            <p className="text-[10px] text-slate-500">Active Days</p>
+                                            <p className={`text-[10px] ${themeClasses.textMuted}`}>Active Days</p>
                                         </div>
-                                        <div className="text-center p-3 bg-slate-800/50 rounded-lg">
+                                        <div className={`text-center p-3 ${statBg} rounded-lg`}>
                                             <p className="text-xl font-bold text-orange-400">{monthVolume.toLocaleString()}</p>
-                                            <p className="text-[10px] text-slate-500">Total Volume</p>
+                                            <p className={`text-[10px] ${themeClasses.textMuted}`}>Total Volume</p>
                                         </div>
                                     </>
                                 )

@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { Home, Dumbbell, ChevronRight, Flame } from 'lucide-react'
+import { Home, Dumbbell, Flame } from 'lucide-react'
 
 /**
  * ModeSelector - Launch screen for choosing workout location
  * Shown on each app launch for onboarded users
+ * Auto-advances on selection for streamlined UX
  */
 const ModeSelector = ({
   onSelectMode,
@@ -13,22 +13,9 @@ const ModeSelector = ({
   todayGymWorkout = null,
   theme = 'dark'
 }) => {
-  const [selectedMode, setSelectedMode] = useState(null)
-  const [rememberToday, setRememberToday] = useState(false)
-
   const handleSelect = (mode) => {
-    setSelectedMode(mode)
-  }
-
-  const handleContinue = () => {
-    if (!selectedMode) return
-
-    if (rememberToday) {
-      localStorage.setItem('shift6_remember_mode_today', selectedMode)
-      localStorage.setItem('shift6_remember_mode_date', new Date().toDateString())
-    }
-
-    onSelectMode(selectedMode, true)
+    // Auto-advance immediately on selection
+    onSelectMode(mode, true)
   }
 
   const bgClass = theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'
@@ -49,17 +36,11 @@ const ModeSelector = ({
         {/* Home Mode Card */}
         <button
           onClick={() => handleSelect('home')}
-          className={`flex-1 rounded-2xl p-6 transition-all ${
-            selectedMode === 'home'
-              ? 'bg-gradient-to-br from-cyan-600 to-teal-700 ring-4 ring-cyan-400/50'
-              : `${cardBg} border-2 border-slate-700 hover:border-cyan-500/50`
-          }`}
+          className="flex-1 rounded-2xl p-6 transition-all bg-gradient-to-br from-cyan-600 to-teal-700 hover:from-cyan-500 hover:to-teal-600 active:scale-[0.98]"
         >
           <div className="flex items-start justify-between mb-4">
-            <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${
-              selectedMode === 'home' ? 'bg-white/20' : 'bg-cyan-500/20'
-            }`}>
-              <Home className={`w-8 h-8 ${selectedMode === 'home' ? 'text-white' : 'text-cyan-400'}`} />
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-white/20">
+              <Home className="w-8 h-8 text-white" />
             </div>
             {homeStreak > 0 && (
               <div className="flex items-center gap-1 text-orange-400">
@@ -69,21 +50,15 @@ const ModeSelector = ({
             )}
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 text-left ${
-            selectedMode === 'home' ? 'text-white' : textPrimary
-          }`}>
+          <h2 className="text-2xl font-bold mb-2 text-left text-white">
             Home
           </h2>
-          <p className={`text-left mb-4 ${
-            selectedMode === 'home' ? 'text-cyan-100' : textSecondary
-          }`}>
+          <p className="text-left mb-4 text-cyan-100">
             Calisthenics & bodyweight training
           </p>
 
           {todayHomeWorkout && (
-            <div className={`text-left text-sm ${
-              selectedMode === 'home' ? 'text-cyan-200' : 'text-slate-500'
-            }`}>
+            <div className="text-left text-sm text-cyan-200">
               Today: {todayHomeWorkout}
             </div>
           )}
@@ -92,17 +67,11 @@ const ModeSelector = ({
         {/* Gym Mode Card */}
         <button
           onClick={() => handleSelect('gym')}
-          className={`flex-1 rounded-2xl p-6 transition-all ${
-            selectedMode === 'gym'
-              ? 'bg-gradient-to-br from-purple-600 to-pink-700 ring-4 ring-purple-400/50'
-              : `${cardBg} border-2 border-slate-700 hover:border-purple-500/50`
-          }`}
+          className={`flex-1 rounded-2xl p-6 transition-all ${cardBg} border-2 border-slate-700 hover:border-purple-500/50 active:scale-[0.98]`}
         >
           <div className="flex items-start justify-between mb-4">
-            <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${
-              selectedMode === 'gym' ? 'bg-white/20' : 'bg-purple-500/20'
-            }`}>
-              <Dumbbell className={`w-8 h-8 ${selectedMode === 'gym' ? 'text-white' : 'text-purple-400'}`} />
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-purple-500/20">
+              <Dumbbell className="w-8 h-8 text-purple-400" />
             </div>
             {gymStreak > 0 && (
               <div className="flex items-center gap-1 text-orange-400">
@@ -112,55 +81,26 @@ const ModeSelector = ({
             )}
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 text-left ${
-            selectedMode === 'gym' ? 'text-white' : textPrimary
-          }`}>
+          <h2 className={`text-2xl font-bold mb-2 text-left ${textPrimary}`}>
             Gym
           </h2>
-          <p className={`text-left mb-4 ${
-            selectedMode === 'gym' ? 'text-purple-100' : textSecondary
-          }`}>
+          <p className={`text-left mb-4 ${textSecondary}`}>
             Weights, machines & equipment
           </p>
 
           {todayGymWorkout && (
-            <div className={`text-left text-sm ${
-              selectedMode === 'gym' ? 'text-purple-200' : 'text-slate-500'
-            }`}>
+            <div className="text-left text-sm text-slate-500">
               Today: {todayGymWorkout}
             </div>
           )}
         </button>
       </div>
 
-      {/* Bottom Section */}
+      {/* Bottom hint */}
       <div className="px-6 pb-8 max-w-lg mx-auto w-full">
-        {/* Remember Toggle */}
-        <label className="flex items-center gap-3 mb-6 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={rememberToday}
-            onChange={(e) => setRememberToday(e.target.checked)}
-            className="w-5 h-5 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
-          />
-          <span className={`text-sm ${textSecondary}`}>Remember my choice for today</span>
-        </label>
-
-        {/* Continue Button */}
-        <button
-          onClick={handleContinue}
-          disabled={!selectedMode}
-          className={`w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-all ${
-            selectedMode
-              ? selectedMode === 'home'
-                ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-400 hover:to-teal-400'
-                : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400'
-              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-          }`}
-        >
-          {selectedMode ? "Let's Go" : 'Select a Mode'}
-          {selectedMode && <ChevronRight className="w-5 h-5" />}
-        </button>
+        <p className={`text-center text-sm ${textSecondary}`}>
+          Tap to start your workout
+        </p>
       </div>
     </div>
   )

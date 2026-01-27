@@ -554,11 +554,22 @@ const App = () => {
         const exercise = allExercises[exKey];
         if (!exercise) return;
 
+        // Check if Day 1 assessment is needed (before any workout flow)
+        // Assessment is required when: no calibration exists AND no completed days
+        const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+        const hasCalibration = calibrations[exKey] !== undefined;
+        const hasCompletedDays = (completedDays[exKey]?.length || 0) > 0;
+        const needsAssessment = !hasCalibration && !hasCompletedDays;
+
         // Dynamic Engine: Check for active sprint
         const activeSprint = getActiveSprint(sprints, exKey);
         if (activeSprint) {
             const sprintSession = getCurrentWorkout(activeSprint);
             if (sprintSession) {
+                // If assessment is needed, show assessment screen first
+                // (even with active sprint, first workout needs calibration)
+                const initialStep = needsAssessment ? 'assessment' : 'readiness';
+
                 // Construct session from dynamic sprint data
                 setCurrentSession({
                     exerciseKey: exKey,
@@ -574,7 +585,7 @@ const App = () => {
                     color: exercise.color,
                     unit: exercise.unit,
                     difficulty: 3, // Difficulty is managed by the sprint engine
-                    step: 'readiness', // Phase 3: Auto-Regulation - check readiness first
+                    step: initialStep, // Assessment first if needed, otherwise readiness
                     sprintId: activeSprint.id
                 });
                 setAmrapValue('');
@@ -602,10 +613,8 @@ const App = () => {
         const multiplier = DIFFICULTY_LEVELS[difficultyLevel]?.multiplier || 1.0;
         const scaledReps = day.reps.map(r => Math.max(1, Math.round(r * multiplier)));
 
-        // Check if assessment already done (calibration exists)
-        const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
-        const hasCalibration = calibrations[exKey] !== undefined;
-        const needsAssessment = !isFinal && (completedDays[exKey]?.length || 0) === 0 && !hasCalibration;
+        // Use assessment check from earlier (but also skip assessment for final test days)
+        const shouldShowAssessment = needsAssessment && !isFinal;
 
         // Calculate rest time: user override > custom preferences > default
         const restTime = restTimerOverride !== null
@@ -626,7 +635,7 @@ const App = () => {
             color: exercise.color,
             unit: exercise.unit,
             difficulty: difficultyLevel,
-            step: needsAssessment ? 'assessment' : 'workout'
+            step: shouldShowAssessment ? 'assessment' : 'workout'
         });
         setAmrapValue('');
         setTestInput('');
@@ -999,9 +1008,11 @@ const App = () => {
         calibrations[currentSession.exerciseKey] = factor;
         localStorage.setItem(`${STORAGE_PREFIX}calibrations`, JSON.stringify(calibrations));
 
-        // If using default, skip confirmation and go straight to workout
+        // If using default, skip confirmation and go straight to workout/readiness
         if (skipConfirmation) {
-            setCurrentSession(prev => ({ ...prev, reps: newReps, step: 'workout' }));
+            // Sprint sessions go to readiness check, regular sessions go to workout
+            const nextStep = currentSession.sprintId ? 'readiness' : 'workout';
+            setCurrentSession(prev => ({ ...prev, reps: newReps, step: nextStep }));
         } else {
             // Show assessment complete screen with option to start or exit
             setCurrentSession(prev => ({ ...prev, reps: newReps, step: 'assessment-complete' }));

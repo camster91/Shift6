@@ -272,7 +272,10 @@ export const regenerateAllPlans = (exercises, activeProgram, calibrations, prefe
         const firstWeek = exercise.weeks?.[0];
         const firstDay = firstWeek?.days?.[0];
         const baseStartReps = exercise.startReps || firstDay?.reps?.[1] || 10;
-        const startReps = Math.max(5, Math.round(baseStartReps * calibration)); // Minimum 5 for any exercise
+        // Use appropriate minimum based on exercise unit (timed exercises need higher minimum)
+        const isTimedExercise = exercise.unit?.includes('second') || exercise.unit?.includes('sec');
+        const minValue = isTimedExercise ? 10 : 3; // 10 seconds minimum for timed, 3 reps for others
+        const startReps = Math.max(minValue, Math.round(baseStartReps * calibration));
 
         // Parse final goal (supports both "180 Seconds" string format and numeric)
         let finalGoal = 100;

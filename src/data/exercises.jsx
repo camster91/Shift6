@@ -318,8 +318,8 @@ export const generateCustomProgression = (startReps, finalGoal, preferences = {}
     const rateConfig = PROGRESSION_RATES[progressionRate] || PROGRESSION_RATES.moderate;
 
     const adjustedGoal = Math.round(finalGoal * schemeConfig.multiplier);
-    // Minimum of 5 to avoid unrealistic starting points (1 second plank, 1 rep pushup, etc.)
-    const adjustedStart = Math.max(5, startReps);
+    // Minimum of 3 as safety net (caller should apply smarter minimums based on exercise type)
+    const adjustedStart = Math.max(3, startReps);
     const totalDays = programDuration * trainingDaysPerWeek;
 
     const weeks = [];

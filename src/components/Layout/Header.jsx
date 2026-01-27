@@ -1,4 +1,4 @@
-import { Volume2, VolumeX, Sun, Moon, RotateCcw } from 'lucide-react'
+import { Volume2, VolumeX, Sun, Moon, Home, Dumbbell } from 'lucide-react'
 
 const Header = ({
     audioEnabled,
@@ -6,7 +6,8 @@ const Header = ({
     theme,
     setTheme,
     onSwitchMode,
-    showSwitchMode = false
+    showSwitchMode = false,
+    currentMode = 'home'
 }) => {
     const handleHomeClick = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -36,15 +37,24 @@ const Header = ({
                     {showSwitchMode && onSwitchMode && (
                         <button
                             onClick={onSwitchMode}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                                theme === 'light'
-                                    ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
-                                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                currentMode === 'home'
+                                    ? 'bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500/20'
+                                    : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20'
                             }`}
-                            title="Switch workout mode"
+                            title={currentMode === 'home' ? 'Switch to Gym Mode' : 'Switch to Home Mode'}
                         >
-                            <RotateCcw size={14} />
-                            <span className="hidden sm:inline">Switch</span>
+                            {currentMode === 'home' ? (
+                                <>
+                                    <Dumbbell size={14} />
+                                    <span>Gym</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Home size={14} />
+                                    <span>Home</span>
+                                </>
+                            )}
                         </button>
                     )}
 

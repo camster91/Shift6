@@ -144,28 +144,41 @@ const GymDashboard = ({
   return (
     <div className={`min-h-screen ${bgClass} pb-24`}>
       {/* Header */}
-      <div className="p-4 flex items-center justify-between">
-        <button
-          onClick={onSwitchMode}
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
-        >
-          <Home className="w-5 h-5" />
-          <span className="text-sm">Home Mode</span>
-        </button>
+      <div className={`${cardBg} border-b border-slate-800 sticky top-0 z-20`}>
+        <div className="p-4 flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-1 font-black tracking-tighter">
+            <span className="text-xl text-purple-500">SHIFT</span>
+            <span className={`text-xl ${textPrimary}`}>6</span>
+            <span className="text-xs text-purple-400 ml-2 font-bold">GYM</span>
+          </div>
 
-        <div className="flex items-center gap-4">
-          {gymStreak > 0 && (
-            <div className="flex items-center gap-1 text-orange-400">
-              <Flame className="w-5 h-5" />
-              <span className="font-bold">{gymStreak}</span>
-            </div>
-          )}
-          <button
-            onClick={() => setShowProgramSelect(true)}
-            className="p-2 text-slate-400 hover:text-white"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Switch to Home Mode */}
+            <button
+              onClick={onSwitchMode}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+            >
+              <Home className="w-4 h-4" />
+              <span>Home</span>
+            </button>
+
+            {/* Streak */}
+            {gymStreak > 0 && (
+              <div className="flex items-center gap-1 text-orange-400 px-2">
+                <Flame className="w-4 h-4" />
+                <span className="font-bold text-sm">{gymStreak}</span>
+              </div>
+            )}
+
+            {/* Settings */}
+            <button
+              onClick={() => setShowProgramSelect(true)}
+              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 

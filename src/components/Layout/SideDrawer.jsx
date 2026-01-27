@@ -12,7 +12,9 @@ import {
     Trash2,
     Dumbbell,
     ChevronRight,
-    User
+    User,
+    Home,
+    RefreshCw
 } from 'lucide-react'
 
 const SideDrawer = ({
@@ -27,6 +29,9 @@ const SideDrawer = ({
     onShowTrainingSettings,
     onShowBodyMetrics,
     onShowAccessibility,
+    // Mode switching
+    currentMode = 'home',
+    onSwitchMode,
     // Data callbacks
     onExport,
     onExportCSV,
@@ -182,7 +187,12 @@ const SideDrawer = ({
                         Settings
                     </p>
                     <MenuItem
-                        icon={Dumbbell}
+                        icon={currentMode === 'home' ? Dumbbell : Home}
+                        label={`Switch to ${currentMode === 'home' ? 'Gym' : 'Home'} Mode`}
+                        onClick={onSwitchMode}
+                    />
+                    <MenuItem
+                        icon={RefreshCw}
                         label="Training Settings"
                         onClick={onShowTrainingSettings}
                     />

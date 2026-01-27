@@ -142,50 +142,11 @@ const GymDashboard = ({
   }
 
   return (
-    <div className={`min-h-screen ${bgClass} pb-24`}>
-      {/* Header */}
-      <div className={`${cardBg} border-b border-slate-800 sticky top-0 z-20`}>
-        <div className="p-4 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-1 font-black tracking-tighter">
-            <span className="text-xl text-purple-500">SHIFT</span>
-            <span className={`text-xl ${textPrimary}`}>6</span>
-            <span className="text-xs text-purple-400 ml-2 font-bold">GYM</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Switch to Home Mode */}
-            <button
-              onClick={onSwitchMode}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-colors"
-            >
-              <Home className="w-4 h-4" />
-              <span>Home</span>
-            </button>
-
-            {/* Streak */}
-            {gymStreak > 0 && (
-              <div className="flex items-center gap-1 text-orange-400 px-2">
-                <Flame className="w-4 h-4" />
-                <span className="font-bold text-sm">{gymStreak}</span>
-              </div>
-            )}
-
-            {/* Settings */}
-            <button
-              onClick={() => setShowProgramSelect(true)}
-              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-6 pb-8">
       {/* Current Program */}
       {currentProgram ? (
-        <div className="px-4 mb-6">
-          <div className={`${cardBg} rounded-2xl p-5`}>
+        <div>
+          <div className={`${cardBg} rounded-2xl p-5 border ${theme === 'light' ? 'border-slate-200' : 'border-slate-800'}`}>
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className={`text-sm ${textSecondary}`}>Current Program</p>
@@ -209,7 +170,7 @@ const GymDashboard = ({
           </div>
         </div>
       ) : (
-        <div className="px-4 mb-6">
+        <div>
           <button
             onClick={() => setShowProgramSelect(true)}
             className={`w-full ${cardBg} rounded-2xl p-6 text-center border-2 border-dashed border-slate-700 hover:border-purple-500 transition-colors`}
@@ -223,11 +184,11 @@ const GymDashboard = ({
 
       {/* Today's Workout */}
       {todaysWorkout && (
-        <div className="px-4 mb-6">
+        <div>
           <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>Today&apos;s Workout</h3>
 
           {todaysWorkout.isRest ? (
-            <div className={`${cardBg} rounded-2xl p-6 text-center`}>
+            <div className={`${cardBg} rounded-2xl p-6 text-center border ${theme === 'light' ? 'border-slate-200' : 'border-slate-800'}`}>
               <RotateCcw className="w-12 h-12 text-slate-500 mx-auto mb-3" />
               <h3 className={`font-semibold ${textPrimary} mb-1`}>Rest Day</h3>
               <p className={`text-sm ${textSecondary}`}>Recovery is part of the process</p>
@@ -266,18 +227,18 @@ const GymDashboard = ({
       )}
 
       {/* Weekly Stats */}
-      <div className="px-4 mb-6">
+      <div>
         <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>This Week</h3>
         <div className="grid grid-cols-3 gap-3">
-          <div className={`${cardBg} rounded-xl p-4 text-center`}>
+          <div className={`${cardBg} rounded-xl p-4 text-center border ${theme === 'light' ? 'border-slate-200' : 'border-slate-800'}`}>
             <p className="text-2xl font-bold text-purple-400">{weeklyStats.workouts}</p>
             <p className={`text-xs ${textSecondary}`}>Workouts</p>
           </div>
-          <div className={`${cardBg} rounded-xl p-4 text-center`}>
+          <div className={`${cardBg} rounded-xl p-4 text-center border ${theme === 'light' ? 'border-slate-200' : 'border-slate-800'}`}>
             <p className="text-2xl font-bold text-purple-400">{weeklyStats.totalSets}</p>
             <p className={`text-xs ${textSecondary}`}>Sets</p>
           </div>
-          <div className={`${cardBg} rounded-xl p-4 text-center`}>
+          <div className={`${cardBg} rounded-xl p-4 text-center border ${theme === 'light' ? 'border-slate-200' : 'border-slate-800'}`}>
             <p className="text-2xl font-bold text-purple-400">
               {weeklyStats.totalVolume >= 1000
                 ? `${(weeklyStats.totalVolume / 1000).toFixed(1)}k`
@@ -290,7 +251,7 @@ const GymDashboard = ({
 
       {/* Recent Workouts */}
       {recentWorkouts.length > 0 && (
-        <div className="px-4">
+        <div>
           <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>Recent Workouts</h3>
           <div className="space-y-2">
             {recentWorkouts.map((workout, idx) => {
@@ -301,7 +262,7 @@ const GymDashboard = ({
               const totalVolume = workout.exercises?.reduce((sum, e) => sum + (e.totalVolume || 0), 0) || 0
 
               return (
-                <div key={idx} className={`${cardBg} rounded-xl p-4 flex items-center justify-between`}>
+                <div key={idx} className={`${cardBg} rounded-xl p-4 flex items-center justify-between border ${theme === 'light' ? 'border-slate-200' : 'border-slate-800'}`}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
                       <Calendar className="w-5 h-5 text-purple-400" />
@@ -324,10 +285,11 @@ const GymDashboard = ({
 
       {/* Empty state for no history */}
       {recentWorkouts.length === 0 && currentProgram && (
-        <div className="px-4">
-          <div className={`${cardBg} rounded-xl p-6 text-center`}>
+        <div>
+          <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>Recent Workouts</h3>
+          <div className={`${cardBg} rounded-xl p-6 text-center border ${theme === 'light' ? 'border-slate-200' : 'border-slate-800'}`}>
             <TrendingUp className="w-10 h-10 text-slate-500 mx-auto mb-3" />
-            <p className={`${textSecondary}`}>Complete your first workout to see history</p>
+            <p className={textSecondary}>Complete your first workout to see history</p>
           </div>
         </div>
       )}

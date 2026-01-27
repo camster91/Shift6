@@ -1,5 +1,5 @@
-import { useState, memo } from 'react'
-import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info, Clock, RotateCcw } from 'lucide-react'
+import { useState, useMemo, memo } from 'react'
+import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, Info, Clock, RotateCcw, Flame, Calendar, TrendingUp } from 'lucide-react'
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx'
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise, isTrainingDay } from '../../utils/schedule'
 import { vibrate } from '../../utils/device'
@@ -252,13 +252,21 @@ const Dashboard = ({
     // Session resume props
     pendingSession = null,
     onResumeSession = null,
-    onDiscardSession = null
+    onDiscardSession = null,
+    // Theme
+    theme = 'dark'
 }) => {
     const preferredDays = trainingPreferences?.preferredDays || []
     const dailyStack = getDailyStack(completedDays, allExercises, activeProgram, trainingPreferences)
     const personalRecords = getPersonalRecords(sessionHistory)
     const [showAllExercises, setShowAllExercises] = useState(false)
     const [selectedExercise, setSelectedExercise] = useState(null)
+
+    // Theme-aware styling (matching GymDashboard)
+    const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
+    const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
+    const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+    const borderColor = theme === 'light' ? 'border-slate-200' : 'border-slate-800'
 
     // Show only active program exercises (or all if no activeProgram)
     const programExercises = activeProgram
@@ -278,6 +286,33 @@ const Dashboard = ({
     const userPersona = trainingPreferences?.persona
     const isExpressModeUser = trainingPreferences?.expressMode || isExpressPersona(userPersona)
 
+    // Calculate weekly stats (matching GymDashboard pattern)
+    const weeklyStats = useMemo(() => {
+        const now = new Date()
+        const weekStart = new Date(now)
+        weekStart.setDate(now.getDate() - now.getDay())
+        weekStart.setHours(0, 0, 0, 0)
+
+        const thisWeekWorkouts = sessionHistory.filter(w => {
+            const workoutDate = new Date(w.date)
+            return workoutDate >= weekStart
+        })
+
+        const totalVolume = thisWeekWorkouts.reduce((sum, w) => sum + (w.volume || 0), 0)
+
+        return {
+            workouts: thisWeekWorkouts.length,
+            totalVolume,
+            exercises: new Set(thisWeekWorkouts.map(w => w.exerciseKey)).size
+        }
+    }, [sessionHistory])
+
+    // Get recent workouts (last 5)
+    const recentWorkouts = sessionHistory.slice(0, 5)
+
+    // Get current streak
+    const streakData = calculateStreakWithGrace(sessionHistory)
+
     return (
         <div className="space-y-6 pb-8">
             {/* Resume Workout Banner - Shows when there's an interrupted session */}
@@ -290,32 +325,209 @@ const Dashboard = ({
                 />
             )}
 
-            {/* Express Mode Quick Start - Show for express mode users */}
-            {isExpressModeUser && dailyStack.length > 0 && startExpressWorkout && (
-                <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-5">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 bg-yellow-500/20 rounded-xl flex items-center justify-center">
-                                <Zap className="text-yellow-400" size={28} />
+            {/* Current Program Overview - matches GymDashboard style */}
+            <div className={`${cardBg} rounded-2xl p-5 border ${borderColor}`}>
+                <div className="flex items-start justify-between mb-4">
+                    <div>
+                        <p className={`text-sm ${textSecondary}`}>Current Program</p>
+                        <h2 className={`text-xl font-bold ${textPrimary}`}>
+                            {exerciseCount} Exercise{exerciseCount !== 1 ? 's' : ''}
+                        </h2>
+                    </div>
+                    <div className="text-right flex items-center gap-2">
+                        {streakData.streak > 0 && (
+                            <div className="flex items-center gap-1 text-orange-400">
+                                <Flame className="w-4 h-4" />
+                                <span className="font-bold">{streakData.streak}</span>
                             </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Progress bar showing completed vs total days */}
+                {(() => {
+                    const totalDays = exerciseCount * 18
+                    const completedTotal = Object.values(completedDays).reduce((sum, days) => sum + days.length, 0)
+                    const progressPercent = totalDays > 0 ? (completedTotal / totalDays) * 100 : 0
+                    return (
+                        <>
+                            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full transition-all"
+                                    style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                                />
+                            </div>
+                            <p className={`text-xs ${textSecondary} mt-2`}>
+                                {completedTotal} / {totalDays} days completed
+                            </p>
+                        </>
+                    )
+                })()}
+            </div>
+
+            {/* Today's Workout - Gradient button matching GymDashboard */}
+            {dailyStack.length > 0 ? (
+                <div>
+                    <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>Today&apos;s Workout</h3>
+                    <button
+                        onClick={() => { vibrate(20); startStack() }}
+                        className="w-full bg-gradient-to-br from-cyan-600 to-teal-600 rounded-2xl p-5 text-left hover:from-cyan-500 hover:to-teal-500 transition-all"
+                    >
+                        <div className="flex items-center justify-between mb-4">
                             <div>
-                                <p className="text-yellow-400 font-bold text-lg">Express Workout</p>
-                                <p className="text-slate-400 text-sm flex items-center gap-2">
-                                    <Clock size={14} />
-                                    {EXPRESS_MODE_CONFIG.targetDuration} min • {EXPRESS_MODE_CONFIG.sets} sets • {EXPRESS_MODE_CONFIG.maxExercises} exercises
-                                </p>
+                                <p className="text-cyan-200 text-sm">{getScheduleFocus(preferredDays)}</p>
+                                <h3 className="text-xl font-bold text-white">
+                                    {dailyStack.length} exercise{dailyStack.length > 1 ? 's' : ''} ready
+                                </h3>
                             </div>
+                            <ChevronRight className="w-6 h-6 text-white" />
                         </div>
+
+                        <div className="flex flex-wrap gap-2">
+                            {dailyStack.slice(0, 4).map((item, i) => {
+                                const ex = allExercises[item.exerciseKey]
+                                return (
+                                    <span
+                                        key={i}
+                                        className="text-xs px-2 py-1 bg-white/20 rounded-lg text-white"
+                                    >
+                                        {ex?.name}
+                                    </span>
+                                )
+                            })}
+                            {dailyStack.length > 4 && (
+                                <span className="text-xs px-2 py-1 bg-white/10 rounded-lg text-cyan-200">
+                                    +{dailyStack.length - 4} more
+                                </span>
+                            )}
+                        </div>
+                    </button>
+
+                    {/* Express Mode Quick Start - Show for express mode users */}
+                    {isExpressModeUser && startExpressWorkout && (
                         <button
                             onClick={() => {
                                 vibrate(50)
                                 startExpressWorkout()
                             }}
-                            className="px-5 py-3 bg-yellow-500 text-slate-900 rounded-xl font-bold hover:bg-yellow-400 transition-colors flex items-center gap-2"
+                            className="w-full mt-3 flex items-center justify-between px-4 py-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-400 hover:bg-yellow-500/20 transition-colors"
                         >
-                            <Play size={18} />
-                            Go
+                            <div className="flex items-center gap-3">
+                                <Zap size={18} />
+                                <span className="font-medium">Express Mode</span>
+                                <span className={`text-xs ${textSecondary}`}>
+                                    {EXPRESS_MODE_CONFIG.targetDuration} min
+                                </span>
+                            </div>
+                            <ChevronRight size={18} />
                         </button>
+                    )}
+                </div>
+            ) : (
+                /* Rest Day / All Caught Up - matching GymDashboard style */
+                <div>
+                    <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>Today&apos;s Workout</h3>
+                    <div className={`${cardBg} rounded-2xl p-6 text-center border ${borderColor}`}>
+                        <RotateCcw className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                        <h3 className={`font-semibold ${textPrimary} mb-1`}>
+                            {isRestDay ? 'Rest Day' : 'All Caught Up!'}
+                        </h3>
+                        <p className={`text-sm ${textSecondary}`}>
+                            {isRestDay
+                                ? 'Recovery is part of the process'
+                                : 'Great job! Browse exercises below'}
+                        </p>
+                        <button
+                            onClick={() => setShowAllExercises(true)}
+                            className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm text-slate-300 transition-colors"
+                        >
+                            {isRestDay ? 'Workout anyway' : 'Browse exercises'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Today's Summary - Only show if worked out today */}
+            {todayWorkouts.length > 0 && (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                            <Trophy className="text-emerald-400" size={20} />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-emerald-400 text-sm font-bold">Great work today!</p>
+                            <p className={`text-xs ${textSecondary}`}>
+                                Completed {todayWorkouts.map(w => allExercises[w.exerciseKey]?.name || w.exerciseKey).join(', ')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Weekly Stats - matching GymDashboard style */}
+            <div>
+                <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>This Week</h3>
+                <div className="grid grid-cols-3 gap-3">
+                    <div className={`${cardBg} rounded-xl p-4 text-center border ${borderColor}`}>
+                        <p className="text-2xl font-bold text-cyan-400">{weeklyStats.workouts}</p>
+                        <p className={`text-xs ${textSecondary}`}>Workouts</p>
+                    </div>
+                    <div className={`${cardBg} rounded-xl p-4 text-center border ${borderColor}`}>
+                        <p className="text-2xl font-bold text-cyan-400">{weeklyStats.exercises}</p>
+                        <p className={`text-xs ${textSecondary}`}>Exercises</p>
+                    </div>
+                    <div className={`${cardBg} rounded-xl p-4 text-center border ${borderColor}`}>
+                        <p className="text-2xl font-bold text-cyan-400">
+                            {weeklyStats.totalVolume >= 1000
+                                ? `${(weeklyStats.totalVolume / 1000).toFixed(1)}k`
+                                : weeklyStats.totalVolume}
+                        </p>
+                        <p className={`text-xs ${textSecondary}`}>Total Reps</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Recent Workouts - matching GymDashboard style */}
+            {recentWorkouts.length > 0 && (
+                <div>
+                    <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>Recent Workouts</h3>
+                    <div className="space-y-2">
+                        {recentWorkouts.slice(0, 5).map((workout, idx) => {
+                            const date = new Date(workout.date)
+                            const isToday = date.toDateString() === new Date().toDateString()
+                            const dayName = isToday ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                            const exerciseName = allExercises[workout.exerciseKey]?.name || workout.exerciseKey
+                            const colors = colorClasses[allExercises[workout.exerciseKey]?.color] || colorClasses.cyan
+
+                            return (
+                                <div key={idx} className={`${cardBg} rounded-xl p-4 flex items-center justify-between border ${borderColor}`}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-lg ${colors.bg} flex items-center justify-center`}>
+                                            <Calendar className={`w-5 h-5 ${colors.text}`} />
+                                        </div>
+                                        <div>
+                                            <p className={`font-medium ${textPrimary}`}>{exerciseName}</p>
+                                            <p className={`text-sm ${textSecondary}`}>{dayName}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-cyan-400 font-medium">{workout.volume} {workout.unit}</p>
+                                        <p className={`text-xs ${textSecondary}`}>Day {workout.dayId}</p>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Empty state for no history */}
+            {recentWorkouts.length === 0 && (
+                <div>
+                    <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>Recent Workouts</h3>
+                    <div className={`${cardBg} rounded-xl p-6 text-center border ${borderColor}`}>
+                        <TrendingUp className="w-10 h-10 text-slate-500 mx-auto mb-3" />
+                        <p className={textSecondary}>Complete your first workout to see history</p>
                     </div>
                 </div>
             )}
@@ -327,234 +539,27 @@ const Dashboard = ({
                 isVisible={dailyStack.length > 0 && !pendingSession}
             />
 
-            {/* Today's Summary - Only show if worked out today */}
-            {todayWorkouts.length > 0 && (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                            <Trophy className="text-emerald-400" size={20} />
-                        </div>
-                        <div>
-                            <p className="text-emerald-400 text-sm font-bold">Great work today!</p>
-                            <p className="text-slate-300 text-xs">
-                                You completed {todayWorkouts.map(w => allExercises[w.exerciseKey]?.name || w.exerciseKey).join(' & ')}
-                            </p>
-                        </div>
-                    </div>
-                    {dailyStack.length > 0 && (
-                        <button
-                            onClick={() => { vibrate(20); startStack() }}
-                            className="mt-3 w-full py-2 text-sm font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
-                        >
-                            Want to do more? →
-                        </button>
-                    )}
-                </div>
-            )}
-
-            {/* Main CTA - Next Workout */}
-            {dailyStack.length > 0 ? (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                    <div className="p-6 border-b border-slate-800">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="px-3 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded-full text-xs font-bold text-cyan-400 uppercase tracking-wider">
-                                        Today
-                                    </span>
-                                    <span className="text-sm font-semibold text-white">
-                                        {getScheduleFocus(preferredDays)}
-                                    </span>
-                                </div>
-                                <h1 className="text-3xl font-black text-white">
-                                    {dailyStack.length} exercise{dailyStack.length > 1 ? 's' : ''} ready
-                                </h1>
-                            </div>
-                            <button
-                                onClick={() => { vibrate(20); startStack() }}
-                                className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 rounded-xl font-bold text-sm transition-colors flex items-center gap-2 shadow-lg shadow-cyan-500/20"
-                            >
-                                <Zap size={18} className="fill-current" />
-                                Start
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Next Workout Cards */}
-                    <div className="p-4 space-y-3">
-                        {dailyStack.map((item, i) => {
-                            const ex = allExercises[item.exerciseKey]
-                            const pr = personalRecords[item.exerciseKey]
-                            const dayNum = (completedDays[item.exerciseKey]?.length || 0) + 1
-                            const colors = colorClasses[ex.color] || colorClasses.cyan
-
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => {
-                                        vibrate(10)
-                                        setSelectedExercise({ ...ex, key: item.exerciseKey })
-                                    }}
-                                    className="w-full flex items-center gap-4 p-4 bg-slate-800/50 hover:bg-slate-800 rounded-xl transition-all group"
-                                >
-                                    {/* Exercise Icon */}
-                                    <div className={`w-12 h-12 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0`}>
-                                        {ex.image?.startsWith('neo:') ? (
-                                            <NeoIcon name={ex.image.replace('neo:', '')} size={20} className={colors.text} />
-                                        ) : (
-                                            <span className={colors.text}>{ex.icon}</span>
-                                        )}
-                                    </div>
-
-                                    {/* Exercise Info */}
-                                    <div className="flex-1 text-left">
-                                        <h3 className="text-white font-bold">{ex.name}</h3>
-                                        <p className="text-xs text-slate-400">
-                                            Day {dayNum} of 18
-                                            {pr && <span className="text-amber-400 ml-2">PR: {pr.volume}</span>}
-                                        </p>
-                                    </div>
-
-                                    {/* Info Icon */}
-                                    <Info className="text-slate-500 group-hover:text-cyan-400 transition-colors" size={18} />
-                                </button>
-                            )
-                        })}
-                    </div>
-                </div>
-            ) : (
-                /* Rest Day / All Caught Up */
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center">
-                    <div className="w-16 h-16 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                        {isRestDay ? (
-                            <span className="text-3xl">😴</span>
-                        ) : (
-                            <Trophy className="text-cyan-400" size={28} />
-                        )}
-                    </div>
-                    <h2 className="text-xl font-bold text-white mb-2">
-                        {isRestDay ? 'Rest Day' : 'All Caught Up!'}
-                    </h2>
-                    <p className="text-sm text-slate-400 mb-4">
-                        {isRestDay
-                            ? 'Take it easy today. Recovery is part of the process.'
-                            : 'Great job! Check back tomorrow or browse all exercises below.'}
-                    </p>
-                    {/* Option to workout anyway */}
-                    <button
-                        onClick={() => setShowAllExercises(true)}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm text-slate-300 transition-colors"
-                    >
-                        {isRestDay ? 'Workout anyway' : 'Browse exercises'}
-                    </button>
-                </div>
-            )}
-
-            {/* Compassionate Streak Display */}
-            {(() => {
-                const streakData = calculateStreakWithGrace(sessionHistory)
-                const streakStatus = getStreakStatus(streakData)
-                const freezeTokens = getRemainingFreezeTokens()
-                const comebackInfo = checkComeback(sessionHistory)
-
-                // Color mapping based on status
-                const statusColors = {
-                    inactive: 'text-slate-400',
-                    danger: 'text-red-400',
-                    warning: 'text-yellow-400',
-                    active: 'text-orange-400',
-                    hot: 'text-orange-500',
-                    legendary: 'text-amber-400'
-                }
-
-                const bgColors = {
-                    inactive: 'bg-slate-800/50 border-slate-700',
-                    danger: 'bg-red-500/10 border-red-500/30',
-                    warning: 'bg-yellow-500/10 border-yellow-500/30',
-                    active: 'bg-orange-500/10 border-orange-500/30',
-                    hot: 'bg-orange-500/15 border-orange-500/40',
-                    legendary: 'bg-amber-500/20 border-amber-500/50'
-                }
-
-                // Show comeback message if returning after break
-                if (comebackInfo) {
-                    return (
-                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl">🦅</span>
-                                <div>
-                                    <p className="text-emerald-400 font-bold">Welcome back!</p>
-                                    <p className="text-slate-400 text-sm">{comebackInfo.message}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                }
-
-                return (
-                    <div className={`rounded-xl p-4 border ${bgColors[streakStatus.status]}`}>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl">{streakStatus.emoji}</span>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-2xl font-bold ${statusColors[streakStatus.status]}`}>
-                                            {streakData.streak}
-                                        </span>
-                                        <span className="text-slate-400 text-sm">day streak</span>
-                                    </div>
-                                    {streakData.message && (
-                                        <p className="text-xs text-slate-500 mt-0.5">{streakData.message}</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Streak freeze tokens */}
-                            {freezeTokens > 0 && (
-                                <div className="flex items-center gap-1" title={`${freezeTokens} streak freeze${freezeTokens > 1 ? 's' : ''} available`}>
-                                    {Array.from({ length: freezeTokens }).map((_, i) => (
-                                        <span key={i} className="text-blue-400 text-sm">❄️</span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* At-risk warning */}
-                        {streakData.isAtRisk && streakData.streak > 0 && (
-                            <div className={`mt-3 pt-3 border-t ${streakStatus.status === 'danger' ? 'border-red-500/30' : 'border-yellow-500/30'}`}>
-                                <p className={`text-xs ${streakStatus.status === 'danger' ? 'text-red-400' : 'text-yellow-400'}`}>
-                                    {streakStatus.status === 'danger'
-                                        ? '⚠️ Work out today to keep your streak!'
-                                        : `💡 Grace period active (${streakData.graceRemaining} day${streakData.graceRemaining > 1 ? 's' : ''} left)`
-                                    }
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                )
-            })()}
-
             {/* My Program Section */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            <div className={`${cardBg} border ${borderColor} rounded-xl overflow-hidden`}>
                 <button
                     onClick={() => setShowAllExercises(!showAllExercises)}
-                    className="w-full p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
+                    className={`w-full p-4 flex items-center justify-between ${theme === 'light' ? 'hover:bg-slate-100' : 'hover:bg-slate-800/50'} transition-colors`}
                 >
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-slate-800 rounded-lg">
+                        <div className={`p-2 ${theme === 'light' ? 'bg-slate-100' : 'bg-slate-800'} rounded-lg`}>
                             <Dumbbell size={18} className="text-cyan-400" />
                         </div>
                         <div className="text-left">
-                            <h3 className="font-bold text-white">My Program</h3>
-                            <p className="text-xs text-slate-500">
+                            <h3 className={`font-bold ${textPrimary}`}>My Program</h3>
+                            <p className={`text-xs ${textSecondary}`}>
                                 {exerciseCount} exercises {customCount > 0 && `(${customCount} custom)`}
                             </p>
                         </div>
                     </div>
                     {showAllExercises ? (
-                        <ChevronUp size={20} className="text-slate-400" />
+                        <ChevronUp size={20} className={textSecondary} />
                     ) : (
-                        <ChevronDown size={20} className="text-slate-400" />
+                        <ChevronDown size={20} className={textSecondary} />
                     )}
                 </button>
 

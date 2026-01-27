@@ -1,8 +1,17 @@
-import { Home, Zap, BarChart3, Menu } from 'lucide-react'
+import { Home, Zap, BarChart3, Menu, Dumbbell } from 'lucide-react'
 
-const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark' }) => {
+const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode = 'home' }) => {
+    // Mode-specific styling
+    const isGymMode = mode === 'gym'
+    const accentColor = isGymMode ? 'purple' : 'cyan'
+    const activeTextClass = isGymMode ? 'text-purple-400' : 'text-cyan-400'
+    const activeBgClass = isGymMode ? 'bg-purple-500/10' : 'bg-cyan-500/10'
+    const activeGlowClass = isGymMode
+        ? 'drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]'
+        : 'drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]'
+
     const tabs = [
-        { id: 'home', label: 'Home', icon: Home },
+        { id: 'home', label: isGymMode ? 'Gym' : 'Home', icon: isGymMode ? Dumbbell : Home },
         { id: 'workout', label: 'Workout', icon: Zap },
         { id: 'progress', label: 'Progress', icon: BarChart3 },
         { id: 'menu', label: 'Menu', icon: Menu, isMenu: true },
@@ -34,7 +43,7 @@ const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark' }) => 
                                 onClick={handleClick}
                                 className={`relative flex-1 py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
                                     isActive
-                                        ? 'text-cyan-400'
+                                        ? activeTextClass
                                         : theme === 'light'
                                             ? 'text-slate-500 hover:text-slate-700'
                                             : 'text-slate-400 hover:text-slate-200'
@@ -43,16 +52,16 @@ const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark' }) => 
                             >
                                 {/* Active background */}
                                 {isActive && (
-                                    <div className="absolute inset-1 bg-cyan-500/10 rounded-xl -z-10 animate-in fade-in zoom-in-95 duration-200" />
+                                    <div className={`absolute inset-1 ${activeBgClass} rounded-xl -z-10 animate-in fade-in zoom-in-95 duration-200`} />
                                 )}
 
                                 <Icon
                                     size={isActive ? 22 : 20}
                                     strokeWidth={isActive ? 2.5 : 2}
-                                    className={isActive ? 'drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]' : ''}
+                                    className={isActive ? activeGlowClass : ''}
                                 />
                                 <span className={`text-[10px] font-semibold tracking-wide ${
-                                    isActive ? 'text-cyan-400' : ''
+                                    isActive ? activeTextClass : ''
                                 }`}>
                                     {tab.label}
                                 </span>

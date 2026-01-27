@@ -17,6 +17,7 @@ import {
     SESSION_DURATION_OPTIONS,
     SETS_PER_EXERCISE_OPTIONS
 } from './constants.js';
+import { calculateStartingPoint } from './progressionAlgorithms.js';
 
 /**
  * Validates training preferences object
@@ -261,39 +262,56 @@ export const requiresPlanRegeneration = (oldPrefs, newPrefs) => {
  */
 export const regenerateAllPlans = (exercises, activeProgram, calibrations, preferences) => {
     const customPlans = {};
+    const fitnessLevel = preferences.fitnessLevel || 'beginner';
 
     activeProgram.forEach(exKey => {
         const exercise = exercises[exKey];
         if (!exercise) return;
 
-        // Get starting reps (use calibration if available)
-        const calibration = calibrations[exKey] || 1.0;
-        // Try direct startReps first (exerciseDatabase format), then fallback to weeks structure
-        const firstWeek = exercise.weeks?.[0];
-        const firstDay = firstWeek?.days?.[0];
-        const baseStartReps = exercise.startReps || firstDay?.reps?.[1] || 10;
-        // Use appropriate minimum based on exercise unit (timed exercises need higher minimum)
-        const isTimedExercise = exercise.unit?.includes('second') || exercise.unit?.includes('sec');
-        const minValue = isTimedExercise ? 10 : 3; // 10 seconds minimum for timed, 3 reps for others
-        const startReps = Math.max(minValue, Math.round(baseStartReps * calibration));
+        // Use the smart starting point calculator
+        // Check for assessment/calibration data first
+        const assessmentResult = calibrations[exKey] ?
+            (exercise.startReps || 10) * calibrations[exKey] : null;
 
-        // Parse final goal (supports both "180 Seconds" string format and numeric)
-        let finalGoal = 100;
-        if (typeof exercise.finalGoal === 'number') {
-            finalGoal = exercise.finalGoal;
-        } else if (typeof exercise.finalGoal === 'string') {
-            const finalGoalMatch = exercise.finalGoal.match(/(\d+)/);
-            finalGoal = finalGoalMatch ? parseInt(finalGoalMatch[1], 10) : 100;
-        }
+        const startingPoint = calculateStartingPoint(
+            {
+                startReps: exercise.startReps || exercise.weeks?.[0]?.days?.[0]?.reps?.[1] || 10,
+                finalGoal: parseFinalGoal(exercise.finalGoal),
+                unit: exercise.unit || 'reps'
+            },
+            fitnessLevel,
+            assessmentResult
+        );
 
-        // Generate custom progression
+        const finalGoal = parseFinalGoal(exercise.finalGoal);
+
+        // Generate custom progression with smart starting point
         customPlans[exKey] = {
-            weeks: generateCustomProgression(startReps, finalGoal, preferences),
-            generatedAt: new Date().toISOString()
+            weeks: generateCustomProgression(startingPoint.startReps, finalGoal, preferences),
+            generatedAt: new Date().toISOString(),
+            basedOn: startingPoint.basedOn,
+            estimatedMax: startingPoint.estimatedMax,
+            weeklyIncrement: startingPoint.weeklyIncrement
         };
     });
 
     return customPlans;
+};
+
+/**
+ * Parse final goal from various formats
+ * @param {number|string} finalGoal - Goal value or string like "180 Seconds"
+ * @returns {number} Parsed goal value
+ */
+const parseFinalGoal = (finalGoal) => {
+    if (typeof finalGoal === 'number') {
+        return finalGoal;
+    }
+    if (typeof finalGoal === 'string') {
+        const match = finalGoal.match(/(\d+)/);
+        return match ? parseInt(match[1], 10) : 100;
+    }
+    return 100;
 };
 
 /**

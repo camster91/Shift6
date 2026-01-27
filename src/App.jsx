@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { EXERCISE_PLANS, DIFFICULTY_LEVELS, getCustomRest } from './data/exercises.jsx';
+import { EXERCISE_PLANS, DIFFICULTY_LEVELS, getCustomRest, generateProgression } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
+import { EXERCISES as DATABASE_EXERCISES } from './data/exerciseDatabase.js';
 import { getDailyStack } from './utils/schedule';
 import { calculateStats, getUnlockedBadges } from './utils/gamification';
 import {
@@ -299,6 +300,20 @@ const App = () => {
                     ...ex,
                     image: ex.image || `neo:${key}`,
                     finalGoal: ex.finalGoal || `${ex.startReps} ${ex.unit === 'seconds' ? 'Seconds' : 'Reps'}`,
+                };
+            }
+        });
+
+        // Add database exercises (from smartProgramGenerator) - these have simpler structure
+        Object.entries(DATABASE_EXERCISES).forEach(([key, ex]) => {
+            if (!merged[key]) {
+                merged[key] = {
+                    ...ex,
+                    key,
+                    image: ex.image || `neo:${key}`,
+                    finalGoal: ex.finalGoal || `${ex.startReps} ${ex.unit === 'seconds' ? 'Seconds' : 'Reps'}`,
+                    // Generate simple progression weeks if not present
+                    weeks: ex.weeks || generateProgression(ex.startReps, ex.finalGoal),
                 };
             }
         });
@@ -1356,6 +1371,7 @@ const App = () => {
                         setTheme={setTheme}
                         onSwitchMode={handleSwitchMode}
                         showSwitchMode={true}
+                        currentMode="home"
                     />
 
                     <main className="max-w-6xl mx-auto p-4 md:p-8 pb-24">

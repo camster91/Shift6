@@ -13,12 +13,15 @@ import {
     PROGRAM_DURATION_OPTIONS
 } from '../../utils/constants.js'
 import { applyFitnessLevelPreset } from '../../utils/preferences.js'
+import { getThemeClasses, getModeAccentClasses } from '../../utils/colors'
 
 const TrainingSettings = ({
     preferences,
     onSave,
     onClose,
-    hasProgress = false
+    hasProgress = false,
+    theme = 'dark',
+    mode = 'home'
 }) => {
     const [tempPrefs, setTempPrefs] = useState({ ...preferences })
     const [showAdvanced, setShowAdvanced] = useState(false)
@@ -66,6 +69,10 @@ const TrainingSettings = ({
         onClose()
     }
 
+    // Theme and mode-specific styling
+    const themeClasses = getThemeClasses(theme)
+    const accent = getModeAccentClasses(mode)
+
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const restOptions = [
         { value: 'auto', label: 'Auto' },
@@ -78,13 +85,13 @@ const TrainingSettings = ({
 
     return (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center">
-            <div className="w-full max-w-lg bg-slate-950 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col">
+            <div className={`w-full max-w-lg ${themeClasses.cardBg} rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col`}>
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-800">
-                    <h2 className="text-xl font-bold text-white">Training Settings</h2>
+                <div className={`flex items-center justify-between p-4 border-b ${themeClasses.borderColor}`}>
+                    <h2 className={`text-xl font-bold ${themeClasses.textPrimary}`}>Training Settings</h2>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg hover:bg-slate-800 text-slate-400"
+                        className={`p-2 rounded-lg ${themeClasses.hoverBg} ${themeClasses.textSecondary}`}
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -93,10 +100,10 @@ const TrainingSettings = ({
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
                     {/* Quick Apply - Fitness Level */}
-                    <div className="bg-slate-900/50 rounded-xl p-4">
+                    <div className={`${accent.accentBg} rounded-xl p-4`}>
                         <div className="flex items-center gap-2 mb-3">
-                            <Sparkles className="w-4 h-4 text-cyan-400" />
-                            <span className="text-sm font-medium text-white">Quick Setup</span>
+                            <Sparkles className={`w-4 h-4 ${accent.accentText}`} />
+                            <span className={`text-sm font-medium ${themeClasses.textPrimary}`}>Quick Setup</span>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                             {Object.entries(FITNESS_LEVEL_PRESETS).map(([key, preset]) => (
@@ -105,8 +112,8 @@ const TrainingSettings = ({
                                     onClick={() => handleFitnessLevelSelect(key)}
                                     className={`p-3 rounded-lg text-center transition-all ${
                                         tempPrefs.fitnessLevel === key
-                                            ? 'bg-cyan-500 text-white'
-                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                            ? `${accent.accentSolid} text-white`
+                                            : `${themeClasses.cardBg} ${themeClasses.textSecondary} ${themeClasses.hoverBg}`
                                     }`}
                                 >
                                     <span className="text-xl block">{preset.icon}</span>
@@ -118,7 +125,7 @@ const TrainingSettings = ({
 
                     {/* Training Goal */}
                     <div>
-                        <label className="text-sm text-slate-400 block mb-2">Training Goal</label>
+                        <label className={`text-sm ${themeClasses.textSecondary} block mb-2`}>Training Goal</label>
                         <div className="grid grid-cols-2 gap-2">
                             {Object.entries(REP_SCHEME_CONFIGS).map(([key, config]) => (
                                 <button
@@ -126,15 +133,15 @@ const TrainingSettings = ({
                                     onClick={() => handleChange('repScheme', key)}
                                     className={`p-3 rounded-lg text-left transition-all ${
                                         tempPrefs.repScheme === key
-                                            ? 'bg-cyan-500/20 border-2 border-cyan-500'
-                                            : 'bg-slate-800 border-2 border-transparent hover:border-slate-700'
+                                            ? `${accent.accentBg} border-2 ${accent.accentBorder}`
+                                            : `${themeClasses.cardBg} border-2 border-transparent ${themeClasses.hoverBg}`
                                     }`}
                                 >
                                     <div className="flex items-center gap-2">
                                         <span>{config.icon}</span>
-                                        <span className="font-medium text-white text-sm">{config.name}</span>
+                                        <span className={`font-medium ${themeClasses.textPrimary} text-sm`}>{config.name}</span>
                                     </div>
-                                    <p className="text-xs text-slate-400 mt-1">
+                                    <p className={`text-xs ${themeClasses.textSecondary} mt-1`}>
                                         {config.repRange[0]}-{config.repRange[1]} reps
                                     </p>
                                 </button>
@@ -144,7 +151,7 @@ const TrainingSettings = ({
 
                     {/* Schedule */}
                     <div>
-                        <label className="text-sm text-slate-400 block mb-2">Training Days per Week</label>
+                        <label className={`text-sm ${themeClasses.textSecondary} block mb-2`}>Training Days per Week</label>
                         <div className="flex gap-2">
                             {TRAINING_DAYS_OPTIONS.map(num => (
                                 <button
@@ -152,8 +159,8 @@ const TrainingSettings = ({
                                     onClick={() => handleChange('trainingDaysPerWeek', num)}
                                     className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
                                         tempPrefs.trainingDaysPerWeek === num
-                                            ? 'bg-cyan-500 text-white'
-                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                            ? `${accent.accentSolid} text-white`
+                                            : `${themeClasses.cardBg} ${themeClasses.textSecondary} ${themeClasses.hoverBg}`
                                     }`}
                                 >
                                     {num}
@@ -164,7 +171,7 @@ const TrainingSettings = ({
 
                     {/* Preferred Days */}
                     <div>
-                        <label className="text-sm text-slate-400 block mb-2">Preferred Days (optional)</label>
+                        <label className={`text-sm ${themeClasses.textSecondary} block mb-2`}>Preferred Days (optional)</label>
                         <div className="flex gap-1">
                             {daysOfWeek.map((day, idx) => (
                                 <button
@@ -172,8 +179,8 @@ const TrainingSettings = ({
                                     onClick={() => togglePreferredDay(idx)}
                                     className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
                                         tempPrefs.preferredDays?.includes(idx)
-                                            ? 'bg-cyan-500 text-white'
-                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                            ? `${accent.accentSolid} text-white`
+                                            : `${themeClasses.cardBg} ${themeClasses.textSecondary} ${themeClasses.hoverBg}`
                                     }`}
                                 >
                                     {day}
@@ -184,7 +191,7 @@ const TrainingSettings = ({
 
                     {/* Progression Rate */}
                     <div>
-                        <label className="text-sm text-slate-400 block mb-2">Progression Speed</label>
+                        <label className={`text-sm ${themeClasses.textSecondary} block mb-2`}>Progression Speed</label>
                         <div className="grid grid-cols-3 gap-2">
                             {Object.entries(PROGRESSION_RATES).map(([key, config]) => (
                                 <button
@@ -192,8 +199,8 @@ const TrainingSettings = ({
                                     onClick={() => handleChange('progressionRate', key)}
                                     className={`p-3 rounded-lg text-center transition-all ${
                                         tempPrefs.progressionRate === key
-                                            ? 'bg-cyan-500 text-white'
-                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                            ? `${accent.accentSolid} text-white`
+                                            : `${themeClasses.cardBg} ${themeClasses.textSecondary} ${themeClasses.hoverBg}`
                                     }`}
                                 >
                                     <span className="text-lg block">{config.icon}</span>
@@ -206,7 +213,7 @@ const TrainingSettings = ({
                     {/* Advanced Settings Toggle */}
                     <button
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="w-full flex items-center justify-between py-3 px-4 bg-slate-800/50 rounded-lg text-slate-400 hover:bg-slate-800"
+                        className={`w-full flex items-center justify-between py-3 px-4 ${themeClasses.cardBg} rounded-lg ${themeClasses.textSecondary} ${themeClasses.hoverBg}`}
                     >
                         <span className="text-sm font-medium">Advanced Settings</span>
                         {showAdvanced ? (
@@ -221,7 +228,7 @@ const TrainingSettings = ({
                         <div className="space-y-6 animate-fadeIn">
                             {/* Program Duration */}
                             <div>
-                                <label className="text-sm text-slate-400 block mb-2">Program Duration (weeks)</label>
+                                <label className={`text-sm ${themeClasses.textSecondary} block mb-2`}>Program Duration (weeks)</label>
                                 <div className="flex gap-2">
                                     {PROGRAM_DURATION_OPTIONS.map(weeks => (
                                         <button
@@ -229,8 +236,8 @@ const TrainingSettings = ({
                                             onClick={() => handleChange('programDuration', weeks)}
                                             className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
                                                 tempPrefs.programDuration === weeks
-                                                    ? 'bg-cyan-500 text-white'
-                                                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                                    ? `${accent.accentSolid} text-white`
+                                                    : `${themeClasses.cardBg} ${themeClasses.textSecondary} ${themeClasses.hoverBg}`
                                             }`}
                                         >
                                             {weeks}
@@ -241,7 +248,7 @@ const TrainingSettings = ({
 
                             {/* Sets per Exercise */}
                             <div>
-                                <label className="text-sm text-slate-400 block mb-2">Sets per Exercise</label>
+                                <label className={`text-sm ${themeClasses.textSecondary} block mb-2`}>Sets per Exercise</label>
                                 <div className="flex gap-2">
                                     {SETS_PER_EXERCISE_OPTIONS.map(sets => (
                                         <button
@@ -249,8 +256,8 @@ const TrainingSettings = ({
                                             onClick={() => handleChange('setsPerExercise', sets)}
                                             className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
                                                 tempPrefs.setsPerExercise === sets
-                                                    ? 'bg-cyan-500 text-white'
-                                                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                                    ? `${accent.accentSolid} text-white`
+                                                    : `${themeClasses.cardBg} ${themeClasses.textSecondary} ${themeClasses.hoverBg}`
                                             }`}
                                         >
                                             {sets}
@@ -261,7 +268,7 @@ const TrainingSettings = ({
 
                             {/* Session Duration */}
                             <div>
-                                <label className="text-sm text-slate-400 block mb-2">Target Session Length</label>
+                                <label className={`text-sm ${themeClasses.textSecondary} block mb-2`}>Target Session Length</label>
                                 <div className="grid grid-cols-5 gap-2">
                                     {SESSION_DURATION_OPTIONS.map(mins => (
                                         <button
@@ -269,8 +276,8 @@ const TrainingSettings = ({
                                             onClick={() => handleChange('targetSessionDuration', mins)}
                                             className={`py-2 rounded-lg text-sm transition-all ${
                                                 tempPrefs.targetSessionDuration === mins
-                                                    ? 'bg-cyan-500 text-white'
-                                                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                                    ? `${accent.accentSolid} text-white`
+                                                    : `${themeClasses.cardBg} ${themeClasses.textSecondary} ${themeClasses.hoverBg}`
                                             }`}
                                         >
                                             {mins}m
@@ -281,7 +288,7 @@ const TrainingSettings = ({
 
                             {/* Rest Between Sets */}
                             <div>
-                                <label className="text-sm text-slate-400 block mb-2">Rest Between Sets</label>
+                                <label className={`text-sm ${themeClasses.textSecondary} block mb-2`}>Rest Between Sets</label>
                                 <div className="grid grid-cols-6 gap-2">
                                     {restOptions.map(opt => (
                                         <button
@@ -289,8 +296,8 @@ const TrainingSettings = ({
                                             onClick={() => handleChange('restBetweenSets', opt.value)}
                                             className={`py-2 rounded-lg text-sm transition-all ${
                                                 tempPrefs.restBetweenSets === opt.value
-                                                    ? 'bg-cyan-500 text-white'
-                                                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                                    ? `${accent.accentSolid} text-white`
+                                                    : `${themeClasses.cardBg} ${themeClasses.textSecondary} ${themeClasses.hoverBg}`
                                             }`}
                                         >
                                             {opt.label}
@@ -312,10 +319,10 @@ const TrainingSettings = ({
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-slate-800 flex gap-3">
+                <div className={`p-4 border-t ${themeClasses.borderColor} flex gap-3`}>
                     <button
                         onClick={handleReset}
-                        className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-700 text-slate-400 hover:bg-slate-800 transition-colors"
+                        className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border ${themeClasses.borderColor} ${themeClasses.textSecondary} ${themeClasses.hoverBg} transition-colors`}
                     >
                         <RotateCcw className="w-4 h-4" />
                         Reset
@@ -325,8 +332,8 @@ const TrainingSettings = ({
                         disabled={!hasChanges}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-semibold transition-all ${
                             hasChanges
-                                ? 'bg-cyan-500 text-white hover:bg-cyan-600'
-                                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                ? `${accent.accentSolid} text-white ${accent.gradientHover}`
+                                : `${themeClasses.cardBg} ${themeClasses.textMuted} cursor-not-allowed`
                         }`}
                     >
                         <Save className="w-4 h-4" />

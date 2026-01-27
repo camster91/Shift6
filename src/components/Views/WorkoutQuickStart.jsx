@@ -3,20 +3,11 @@ import { Play, Zap, Clock, Dumbbell, ChevronRight, Trophy, Flame } from 'lucide-
 import { getDailyStack, getScheduleFocus, isTrainingDay } from '../../utils/schedule'
 import { EXPRESS_MODE_CONFIG } from '../../utils/constants'
 import { vibrate } from '../../utils/device'
+import { exerciseColorClasses, getThemeClasses } from '../../utils/colors'
 import NeoIcon from '../Visuals/NeoIcon'
 
-// Color classes for exercise themes
-const colorClasses = {
-    blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', solid: 'bg-blue-500' },
-    orange: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400', solid: 'bg-orange-500' },
-    cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', solid: 'bg-cyan-500' },
-    emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', solid: 'bg-emerald-500' },
-    yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', solid: 'bg-yellow-500' },
-    teal: { bg: 'bg-teal-500/10', border: 'border-teal-500/30', text: 'text-teal-400', solid: 'bg-teal-500' },
-    purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', solid: 'bg-purple-500' },
-    pink: { bg: 'bg-pink-500/10', border: 'border-pink-500/30', text: 'text-pink-400', solid: 'bg-pink-500' },
-    indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', solid: 'bg-indigo-500' },
-}
+// Use centralized color classes
+const colorClasses = exerciseColorClasses
 
 const WorkoutQuickStart = ({
     completedDays,
@@ -37,7 +28,9 @@ const WorkoutQuickStart = ({
     const today = new Date().toISOString().split('T')[0]
     const todayWorkouts = sessionHistory.filter(s => s.date.startsWith(today))
 
-    const cardBg = theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+    // Theme-aware styling
+    const themeClasses = getThemeClasses(theme)
+    const cardBg = `${themeClasses.cardBg} ${themeClasses.borderColor}`
 
     // No workouts available
     if (dailyStack.length === 0) {
@@ -51,10 +44,10 @@ const WorkoutQuickStart = ({
                             <Trophy className="text-cyan-400" size={36} />
                         )}
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
+                    <h2 className={`text-2xl font-bold ${themeClasses.textPrimary} mb-2`}>
                         {isRestDay ? 'Rest Day' : 'All Caught Up!'}
                     </h2>
-                    <p className="text-slate-400 max-w-xs mx-auto">
+                    <p className={`${themeClasses.textSecondary} max-w-xs mx-auto`}>
                         {isRestDay
                             ? 'Take it easy today. Recovery is part of the process.'
                             : "You've completed all scheduled workouts. Great job!"}
@@ -71,7 +64,7 @@ const WorkoutQuickStart = ({
                 <p className="text-xs text-cyan-400 uppercase tracking-widest font-semibold mb-1">
                     {getScheduleFocus(preferredDays)}
                 </p>
-                <h1 className="text-3xl font-black text-white">
+                <h1 className={`text-3xl font-black ${themeClasses.textPrimary}`}>
                     Ready to Train?
                 </h1>
                 {todayWorkouts.length > 0 && (
@@ -88,7 +81,7 @@ const WorkoutQuickStart = ({
                     vibrate(50)
                     startStack()
                 }}
-                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all active:scale-[0.98]"
+                className="w-full bg-gradient-to-br from-cyan-600 to-teal-600 rounded-2xl p-6 text-white shadow-xl shadow-cyan-500/20 hover:from-cyan-500 hover:to-teal-500 transition-all active:scale-[0.98]"
             >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -121,8 +114,8 @@ const WorkoutQuickStart = ({
                                 <Clock size={22} className="text-yellow-400" />
                             </div>
                             <div className="text-left">
-                                <p className="font-bold text-white">Express Mode</p>
-                                <p className="text-xs text-slate-400">
+                                <p className={`font-bold ${themeClasses.textPrimary}`}>Express Mode</p>
+                                <p className={`text-xs ${themeClasses.textSecondary}`}>
                                     {EXPRESS_MODE_CONFIG.targetDuration} min quick workout
                                 </p>
                             </div>
@@ -136,9 +129,9 @@ const WorkoutQuickStart = ({
 
             {/* Divider */}
             <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-slate-800" />
-                <span className="text-xs text-slate-500 uppercase tracking-wider">Or pick one</span>
-                <div className="flex-1 h-px bg-slate-800" />
+                <div className={`flex-1 h-px ${themeClasses.divider}`} />
+                <span className={`text-xs ${themeClasses.textMuted} uppercase tracking-wider`}>Or pick one</span>
+                <div className={`flex-1 h-px ${themeClasses.divider}`} />
             </div>
 
             {/* Individual Exercise Cards */}
@@ -171,8 +164,8 @@ const WorkoutQuickStart = ({
 
                                 {/* Exercise Info */}
                                 <div className="flex-1 text-left">
-                                    <h3 className="font-bold text-white">{exercise.name}</h3>
-                                    <p className="text-xs text-slate-400">
+                                    <h3 className={`font-bold ${themeClasses.textPrimary}`}>{exercise.name}</h3>
+                                    <p className={`text-xs ${themeClasses.textSecondary}`}>
                                         Day {dayNum} of 18 • {exercise.unit}
                                     </p>
                                 </div>
@@ -184,7 +177,7 @@ const WorkoutQuickStart = ({
                             </div>
 
                             {/* Progress Bar */}
-                            <div className="mt-3 h-1 bg-slate-800 rounded-full overflow-hidden">
+                            <div className={`mt-3 h-1 ${themeClasses.divider} rounded-full overflow-hidden`}>
                                 <div
                                     className={`h-full ${colors.solid} transition-all`}
                                     style={{ width: `${((dayNum - 1) / 18) * 100}%` }}

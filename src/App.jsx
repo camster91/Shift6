@@ -217,6 +217,18 @@ const App = () => {
         return saved ? JSON.parse(saved) : {};
     });
 
+    // Gym reps (last used reps per exercise)
+    const [gymReps, setGymReps] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_reps`);
+        return saved ? JSON.parse(saved) : {};
+    });
+
+    // Weight unit preference (kg or lbs)
+    const [gymWeightUnit, setGymWeightUnit] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_weight_unit`);
+        return saved || 'kg';
+    });
+
     // Gym workout history
     const [gymHistory, setGymHistory] = useState(() => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_history`);
@@ -437,6 +449,14 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}gym_weights`, JSON.stringify(gymWeights));
     }, [gymWeights]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}gym_reps`, JSON.stringify(gymReps));
+    }, [gymReps]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}gym_weight_unit`, gymWeightUnit);
+    }, [gymWeightUnit]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}gym_history`, JSON.stringify(gymHistory));
@@ -1214,15 +1234,19 @@ const App = () => {
         // Update gym history
         setGymHistory(prev => [workoutData, ...prev].slice(0, 100));
 
-        // Update weights from completed sets
+        // Update weights and reps from completed sets
         const newWeights = { ...gymWeights };
+        const newReps = { ...gymReps };
         Object.entries(completedSets).forEach(([exerciseId, sets]) => {
             if (sets.length > 0) {
-                // Use the weight from the last set
+                // Use the weight and reps from the last set
                 newWeights[exerciseId] = sets[sets.length - 1].weight;
+                // Store all reps for the exercise as an array
+                newReps[exerciseId] = sets.map(s => s.reps);
             }
         });
         setGymWeights(newWeights);
+        setGymReps(newReps);
 
         // Update streak
         const today = new Date().toDateString();
@@ -1266,7 +1290,7 @@ const App = () => {
 
         // Clear session
         setCurrentGymSession(null);
-    }, [gymWeights, gymHistory, gymProgram]);
+    }, [gymWeights, gymReps, gymHistory, gymProgram]);
 
     // Change gym program
     const handleChangeGymProgram = useCallback((programId) => {
@@ -1359,6 +1383,9 @@ const App = () => {
                 <GymWorkoutSession
                     workout={currentGymSession}
                     gymWeights={gymWeights}
+                    gymReps={gymReps}
+                    gymWeightUnit={gymWeightUnit}
+                    onWeightUnitChange={setGymWeightUnit}
                     gymHistory={gymHistory}
                     onComplete={handleCompleteGymWorkout}
                     onExit={() => setCurrentGymSession(null)}

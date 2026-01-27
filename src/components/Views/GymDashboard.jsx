@@ -45,11 +45,13 @@ const GymDashboard = ({
       isRest: false,
       dayName: daySchedule.name,
       exercises: daySchedule.exercises,
-      exerciseDetails: daySchedule.exercises.map(exId => ({
-        id: exId,
-        ...GYM_EXERCISES[exId],
-        lastWeight: gymWeights[exId] || GYM_EXERCISES[exId]?.defaultWeight
-      }))
+      exerciseDetails: daySchedule.exercises
+        .filter(exId => GYM_EXERCISES[exId]) // Filter out undefined exercises
+        .map(exId => ({
+          id: exId,
+          ...GYM_EXERCISES[exId],
+          lastWeight: gymWeights[exId] || GYM_EXERCISES[exId]?.defaultWeight
+        }))
     }
   }, [currentProgram, gymProgram, gymWeights])
 

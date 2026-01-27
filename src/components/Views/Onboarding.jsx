@@ -1,6 +1,28 @@
 import { useState } from 'react'
-import { ChevronRight, Check, Home, ChevronLeft, Zap, Trophy, Target } from 'lucide-react'
+import { ChevronRight, Check, Home, ChevronLeft, Zap, Trophy, Target, Clock } from 'lucide-react'
 import { FITNESS_LEVEL_PRESETS } from '../../data/exercises.jsx'
+
+// Step progress indicator component
+const StepIndicator = ({ currentStep, totalSteps }) => (
+  <div className="flex items-center justify-center gap-2 py-4">
+    {Array.from({ length: totalSteps }).map((_, idx) => (
+      <div key={idx} className="flex items-center">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+          idx < currentStep
+            ? 'bg-cyan-500 text-white'
+            : idx === currentStep
+              ? 'bg-cyan-500/20 text-cyan-400 ring-2 ring-cyan-500'
+              : 'bg-slate-800 text-slate-500'
+        }`}>
+          {idx < currentStep ? <Check className="w-4 h-4" /> : idx + 1}
+        </div>
+        {idx < totalSteps - 1 && (
+          <div className={`w-8 h-0.5 ${idx < currentStep ? 'bg-cyan-500' : 'bg-slate-800'}`} />
+        )}
+      </div>
+    ))}
+  </div>
+)
 
 // Experience levels matching gym mode structure
 const EXPERIENCE_LEVELS = [
@@ -43,7 +65,7 @@ const PROGRAM_RECOMMENDATIONS = {
   advanced: ['shift6-classic', 'push-pull', 'full-body']
 }
 
-// Home mode programs with descriptions
+// Home mode programs with descriptions and duration estimates
 const HOME_PROGRAMS = {
   'shift6-classic': {
     id: 'shift6-classic',
@@ -51,6 +73,7 @@ const HOME_PROGRAMS = {
     desc: 'The original 9-exercise full body program',
     exercises: ['pushups', 'squats', 'pullups', 'dips', 'vups', 'glutebridge', 'plank', 'lunges', 'supermans'],
     daysPerWeek: 3,
+    duration: 30,
     difficulty: 'All levels'
   },
   'shift6-beginner': {
@@ -59,6 +82,7 @@ const HOME_PROGRAMS = {
     desc: 'Simplified program to build your foundation',
     exercises: ['pushups', 'squats', 'plank', 'lunges', 'glutebridge'],
     daysPerWeek: 3,
+    duration: 20,
     difficulty: 'Beginner'
   },
   'minimal-start': {
@@ -67,6 +91,7 @@ const HOME_PROGRAMS = {
     desc: 'Just 3 exercises to get started',
     exercises: ['pushups', 'squats', 'plank'],
     daysPerWeek: 2,
+    duration: 10,
     difficulty: 'Beginner'
   },
   'push-pull': {
@@ -75,6 +100,7 @@ const HOME_PROGRAMS = {
     desc: 'Alternate pushing and pulling movements',
     exercises: ['pushups', 'pullups', 'dips', 'squats', 'lunges', 'vups'],
     daysPerWeek: 4,
+    duration: 25,
     difficulty: 'Intermediate'
   },
   'upper-lower': {
@@ -83,6 +109,7 @@ const HOME_PROGRAMS = {
     desc: 'Focus on upper or lower body each session',
     exercises: ['pushups', 'pullups', 'dips', 'squats', 'lunges', 'glutebridge', 'vups'],
     daysPerWeek: 4,
+    duration: 30,
     difficulty: 'Intermediate'
   },
   'full-body': {
@@ -91,6 +118,7 @@ const HOME_PROGRAMS = {
     desc: 'Hit all muscle groups every session',
     exercises: ['pushups', 'squats', 'pullups', 'dips', 'vups', 'glutebridge', 'plank', 'lunges', 'supermans'],
     daysPerWeek: 5,
+    duration: 35,
     difficulty: 'Advanced'
   }
 }
@@ -174,7 +202,7 @@ const Onboarding = ({ onComplete }) => {
   if (step === 1) {
     return (
       <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
-        <div className="p-4">
+        <div className="flex items-center justify-between p-4">
           <button
             onClick={() => setStep(0)}
             className="flex items-center gap-1 text-slate-400 hover:text-white"
@@ -182,6 +210,8 @@ const Onboarding = ({ onComplete }) => {
             <ChevronLeft className="w-5 h-5" />
             Back
           </button>
+          <StepIndicator currentStep={1} totalSteps={3} />
+          <div className="w-12" />
         </div>
 
         <div className="flex-1 p-6">
@@ -251,7 +281,7 @@ const Onboarding = ({ onComplete }) => {
   if (step === 2) {
     return (
       <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
-        <div className="p-4">
+        <div className="flex items-center justify-between p-4">
           <button
             onClick={() => setStep(1)}
             className="flex items-center gap-1 text-slate-400 hover:text-white"
@@ -259,6 +289,8 @@ const Onboarding = ({ onComplete }) => {
             <ChevronLeft className="w-5 h-5" />
             Back
           </button>
+          <StepIndicator currentStep={2} totalSteps={3} />
+          <div className="w-12" />
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
@@ -307,6 +339,10 @@ const Onboarding = ({ onComplete }) => {
                     </span>
                     <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400">
                       {program.daysPerWeek}x/week
+                    </span>
+                    <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      ~{program.duration}min
                     </span>
                     <span className="text-xs text-slate-500">
                       {program.difficulty}

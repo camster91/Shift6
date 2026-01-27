@@ -441,12 +441,15 @@ const GymWorkoutSession = ({
               <ChevronUp className={`w-8 h-8 ${textPrimary}`} />
             </button>
           </div>
-          <p className={`${textSecondary} text-xs text-center mt-2`}>
-            {hasLastWorkout
-              ? `Last: ${lastReps[currentSetIndex] || lastReps[lastReps.length - 1]} reps`
-              : `Target: ${currentExercise.defaultReps?.[currentSetIndex] || 8} reps`
-            }
-          </p>
+          <div className={`${textSecondary} text-xs text-center mt-2 flex items-center justify-center gap-3`}>
+            <span>Target: {currentExercise.defaultReps?.[currentSetIndex] || 8}</span>
+            {hasLastWorkout && (
+              <>
+                <span className="text-slate-600">•</span>
+                <span>Last: {lastReps[currentSetIndex] || lastReps[lastReps.length - 1]}</span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* RPE (optional) */}

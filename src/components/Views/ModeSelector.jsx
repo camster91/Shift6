@@ -19,7 +19,6 @@ const ModeSelector = ({
   }
 
   const bgClass = theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'
-  const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
   const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
   const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
 
@@ -31,19 +30,19 @@ const ModeSelector = ({
         <p className={textSecondary}>Where are you working out today?</p>
       </div>
 
-      {/* Mode Cards */}
+      {/* Mode Cards - Both with equal visual prominence */}
       <div className="flex-1 px-6 pb-6 flex flex-col gap-4 max-w-lg mx-auto w-full">
         {/* Home Mode Card */}
         <button
           onClick={() => handleSelect('home')}
-          className="flex-1 rounded-2xl p-6 transition-all bg-gradient-to-br from-cyan-600 to-teal-700 hover:from-cyan-500 hover:to-teal-600 active:scale-[0.98]"
+          className="flex-1 rounded-2xl p-6 transition-all bg-gradient-to-br from-cyan-600 to-teal-700 hover:from-cyan-500 hover:to-teal-600 active:scale-[0.98] shadow-lg shadow-cyan-500/20"
         >
           <div className="flex items-start justify-between mb-4">
             <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-white/20">
               <Home className="w-8 h-8 text-white" />
             </div>
             {homeStreak > 0 && (
-              <div className="flex items-center gap-1 text-orange-400">
+              <div className="flex items-center gap-1 text-orange-300">
                 <Flame className="w-5 h-5" />
                 <span className="font-bold">{homeStreak}</span>
               </div>
@@ -59,38 +58,38 @@ const ModeSelector = ({
 
           {todayHomeWorkout && (
             <div className="text-left text-sm text-cyan-200">
-              Today: {todayHomeWorkout}
+              Next: {todayHomeWorkout}
             </div>
           )}
         </button>
 
-        {/* Gym Mode Card */}
+        {/* Gym Mode Card - Now with gradient to match Home */}
         <button
           onClick={() => handleSelect('gym')}
-          className={`flex-1 rounded-2xl p-6 transition-all ${cardBg} border-2 border-slate-700 hover:border-purple-500/50 active:scale-[0.98]`}
+          className="flex-1 rounded-2xl p-6 transition-all bg-gradient-to-br from-purple-600 to-pink-700 hover:from-purple-500 hover:to-pink-600 active:scale-[0.98] shadow-lg shadow-purple-500/20"
         >
           <div className="flex items-start justify-between mb-4">
-            <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-purple-500/20">
-              <Dumbbell className="w-8 h-8 text-purple-400" />
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-white/20">
+              <Dumbbell className="w-8 h-8 text-white" />
             </div>
             {gymStreak > 0 && (
-              <div className="flex items-center gap-1 text-orange-400">
+              <div className="flex items-center gap-1 text-orange-300">
                 <Flame className="w-5 h-5" />
                 <span className="font-bold">{gymStreak}</span>
               </div>
             )}
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 text-left ${textPrimary}`}>
+          <h2 className="text-2xl font-bold mb-2 text-left text-white">
             Gym
           </h2>
-          <p className={`text-left mb-4 ${textSecondary}`}>
+          <p className="text-left mb-4 text-purple-100">
             Weights, machines & equipment
           </p>
 
           {todayGymWorkout && (
-            <div className="text-left text-sm text-slate-500">
-              Today: {todayGymWorkout}
+            <div className="text-left text-sm text-purple-200">
+              Next: {todayGymWorkout}
             </div>
           )}
         </button>

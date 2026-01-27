@@ -1,6 +1,39 @@
 import { useState } from 'react'
-import { Dumbbell, ChevronRight, ChevronLeft, Check, Zap, Trophy, Target } from 'lucide-react'
+import { Dumbbell, ChevronRight, ChevronLeft, Check, Zap, Trophy, Target, Clock } from 'lucide-react'
 import { GYM_PROGRAMS } from '../../data/gymExercises'
+
+// Step progress indicator component
+const StepIndicator = ({ currentStep, totalSteps, theme = 'dark' }) => {
+  const activeColor = 'bg-purple-500'
+  const activeRing = 'ring-purple-500'
+  const activeBg = 'bg-purple-500/20'
+  const activeText = 'text-purple-400'
+  const inactiveBg = theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'
+  const inactiveText = theme === 'light' ? 'text-slate-400' : 'text-slate-500'
+  const lineActive = 'bg-purple-500'
+  const lineInactive = theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'
+
+  return (
+    <div className="flex items-center justify-center gap-2 py-4">
+      {Array.from({ length: totalSteps }).map((_, idx) => (
+        <div key={idx} className="flex items-center">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+            idx < currentStep
+              ? `${activeColor} text-white`
+              : idx === currentStep
+                ? `${activeBg} ${activeText} ring-2 ${activeRing}`
+                : `${inactiveBg} ${inactiveText}`
+          }`}>
+            {idx < currentStep ? <Check className="w-4 h-4" /> : idx + 1}
+          </div>
+          {idx < totalSteps - 1 && (
+            <div className={`w-8 h-0.5 ${idx < currentStep ? lineActive : lineInactive}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 const EXPERIENCE_LEVELS = [
   {
@@ -54,6 +87,10 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
   const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
   const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
   const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+  const backButtonClass = theme === 'light'
+    ? 'text-slate-600 hover:text-slate-900'
+    : 'text-slate-400 hover:text-white'
+  const tagBg = theme === 'light' ? 'bg-slate-200/50' : 'bg-slate-700/50'
 
   const handleComplete = () => {
     onComplete({
@@ -120,14 +157,16 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
   if (step === 1) {
     return (
       <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
-        <div className="p-4">
+        <div className="flex items-center justify-between p-4">
           <button
             onClick={() => setStep(0)}
-            className="flex items-center gap-1 text-slate-400 hover:text-white"
+            className={`flex items-center gap-1 ${backButtonClass}`}
           >
             <ChevronLeft className="w-5 h-5" />
             Back
           </button>
+          <StepIndicator currentStep={1} totalSteps={3} theme={theme} />
+          <div className="w-12" />
         </div>
 
         <div className="flex-1 p-6">
@@ -142,6 +181,8 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
             {EXPERIENCE_LEVELS.map((level) => {
               const Icon = level.icon
               const isSelected = experienceLevel === level.id
+              const iconBgUnselected = theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'
+              const iconTextUnselected = theme === 'light' ? 'text-slate-400' : 'text-slate-400'
 
               return (
                 <button
@@ -155,10 +196,10 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
                 >
                   <div className="flex items-start gap-4">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      isSelected ? level.iconBgClass : 'bg-slate-800'
+                      isSelected ? level.iconBgClass : iconBgUnselected
                     }`}>
                       <Icon className={`w-6 h-6 ${
-                        isSelected ? level.textClass : 'text-slate-400'
+                        isSelected ? level.textClass : iconTextUnselected
                       }`} />
                     </div>
                     <div className="flex-1">
@@ -182,7 +223,9 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
             className={`w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-all ${
               experienceLevel
                 ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                : theme === 'light'
+                  ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
             }`}
           >
             Continue
@@ -197,14 +240,16 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
   if (step === 2) {
     return (
       <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
-        <div className="p-4">
+        <div className="flex items-center justify-between p-4">
           <button
             onClick={() => setStep(1)}
-            className="flex items-center gap-1 text-slate-400 hover:text-white"
+            className={`flex items-center gap-1 ${backButtonClass}`}
           >
             <ChevronLeft className="w-5 h-5" />
             Back
           </button>
+          <StepIndicator currentStep={2} totalSteps={3} theme={theme} />
+          <div className="w-12" />
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
@@ -248,14 +293,15 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
                   </div>
 
                   <div className="flex items-center gap-3 mt-3">
-                    <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400">
+                    <span className={`text-xs px-2 py-1 ${tagBg} rounded ${textSecondary}`}>
                       {program.daysPerWeek}x/week
                     </span>
-                    <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400">
-                      {program.difficulty}
+                    <span className={`text-xs px-2 py-1 ${tagBg} rounded ${textSecondary} flex items-center gap-1`}>
+                      <Clock className="w-3 h-3" />
+                      ~45min
                     </span>
-                    <span className="text-xs text-slate-500">
-                      {program.split.length} training days
+                    <span className={`text-xs ${textSecondary}`}>
+                      {program.difficulty}
                     </span>
                   </div>
                 </button>
@@ -271,7 +317,9 @@ const GymOnboarding = ({ onComplete, theme = 'dark' }) => {
             className={`w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-all ${
               selectedProgram
                 ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                : theme === 'light'
+                  ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
             }`}
           >
             Start Training

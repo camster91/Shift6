@@ -16,7 +16,6 @@ import {
   calculateAmrapProgression,
   calculateStartingPoint,
   FAILURE_THRESHOLDS,
-  AMRAP_THRESHOLDS,
 } from './progressionAlgorithms.js'
 
 describe('Progression Trees', () => {

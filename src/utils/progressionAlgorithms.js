@@ -323,9 +323,9 @@ export function checkVolumeStatus(muscleVolume, goal = 'growth') {
   const warnings = []
   const suggestions = []
 
-  const targetRange = goal === 'maintenance' ? VOLUME_LANDMARKS.MV :
-                      goal === 'growth' ? VOLUME_LANDMARKS.MAV :
-                      VOLUME_LANDMARKS.MRV
+  // Goal parameter available for future enhancement of target-specific recommendations
+  // Currently uses fixed MEV/MRV thresholds for all goals
+  void goal
 
   Object.entries(muscleVolume).forEach(([muscle, volume]) => {
     if (volume < VOLUME_LANDMARKS.MEV.min) {
@@ -361,6 +361,8 @@ export const AMRAP_THRESHOLDS = {
  * @returns {Object} { increment, progressionType, message }
  */
 export function calculateAmrapProgression(amrapReps, targetReps = 5, standardIncrement = 5) {
+  // targetReps available for future dynamic threshold calculation
+  void targetReps
   const { MINIMUM_SUCCESS, DOUBLE_PROGRESSION, TRIPLE_PROGRESSION } = AMRAP_THRESHOLDS
 
   if (amrapReps < MINIMUM_SUCCESS) {

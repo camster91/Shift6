@@ -1035,7 +1035,7 @@ const App = () => {
 
     // ---------------- DATA MANAGEMENT ----------------
 
-    const handleExport = () => {
+    const handleExport = useCallback(() => {
         const data = {
             progress: completedDays,
             introDismissed: localStorage.getItem('shift6_intro_dismissed'),
@@ -1051,9 +1051,9 @@ const App = () => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    };
+    }, [completedDays]);
 
-    const handleExportCSV = () => {
+    const handleExportCSV = useCallback(() => {
         if (sessionHistory.length === 0) {
             alert('No workout history to export.');
             return;
@@ -1079,9 +1079,9 @@ const App = () => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    };
+    }, [sessionHistory]);
 
-    const handleImport = (file) => {
+    const handleImport = useCallback((file) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
@@ -1099,9 +1099,9 @@ const App = () => {
             }
         };
         reader.readAsText(file);
-    };
+    }, []);
 
-    const handleFactoryReset = () => {
+    const handleFactoryReset = useCallback(() => {
         if (window.confirm('WARNING: This will permanently delete ALL workout history and progress. This cannot be undone. Are you absolutely sure?')) {
             setCompletedDays({});
             setSessionHistory([]);
@@ -1109,7 +1109,16 @@ const App = () => {
             alert('Aura Cleansed. Progress Reset.');
             window.location.reload();
         }
-    };
+    }, []);
+
+    // ⚡ Bolt: Memoize SideDrawer handlers to prevent re-renders.
+    const handleCloseDrawer = useCallback(() => setShowDrawer(false), []);
+    const handleShowCalendar = useCallback(() => { setActiveTab('progress'); setShowDrawer(false); }, []);
+    const handleShowGuide = useCallback(() => { setShowGuide(true); setShowDrawer(false); }, []);
+    const handleShowAchievements = useCallback(() => { setActiveTab('progress'); setShowDrawer(false); }, []);
+    const handleShowTrainingSettings = useCallback(() => { setShowTrainingSettings(true); setShowDrawer(false); }, []);
+    const handleShowBodyMetrics = useCallback(() => { setShowBodyMetrics(true); setShowDrawer(false); }, []);
+    const handleShowAccessibility = useCallback(() => { setShowAccessibility(true); setShowDrawer(false); }, []);
 
     // ⚡ Bolt: Memoize modal handlers to prevent Dashboard re-renders.
     const onShowAddExercise = useCallback(() => setShowAddExercise(true), []);
@@ -1459,14 +1468,14 @@ const App = () => {
                 {/* Side Drawer */}
                 <SideDrawer
                     isOpen={showDrawer}
-                    onClose={() => setShowDrawer(false)}
+                    onClose={handleCloseDrawer}
                     stats={drawerStats}
-                    onShowCalendar={() => { setActiveTab('progress'); setShowDrawer(false); }}
-                    onShowGuide={() => { setShowGuide(true); setShowDrawer(false); }}
-                    onShowAchievements={() => { setActiveTab('progress'); setShowDrawer(false); }}
-                    onShowTrainingSettings={() => { setShowTrainingSettings(true); setShowDrawer(false); }}
-                    onShowBodyMetrics={() => { setShowBodyMetrics(true); setShowDrawer(false); }}
-                    onShowAccessibility={() => { setShowAccessibility(true); setShowDrawer(false); }}
+                    onShowCalendar={handleShowCalendar}
+                    onShowGuide={handleShowGuide}
+                    onShowAchievements={handleShowAchievements}
+                    onShowTrainingSettings={handleShowTrainingSettings}
+                    onShowBodyMetrics={handleShowBodyMetrics}
+                    onShowAccessibility={handleShowAccessibility}
                     onExport={handleExport}
                     onExportCSV={handleExportCSV}
                     onImport={handleImport}

@@ -1,8 +1,33 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Check, ChevronUp, ChevronDown, Timer, Trophy } from 'lucide-react'
+import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw } from 'lucide-react'
 import { playBeep, playSuccess } from '../../utils/audio'
 import { vibrate } from '../../utils/device'
 import { GYM_EXERCISES } from '../../data/gymExercises'
+import { KG_TO_LBS, LBS_TO_KG } from '../../utils/constants'
+
+/**
+ * Convert weight between kg and lbs
+ */
+const convertWeight = (weight, fromUnit, toUnit) => {
+  if (fromUnit === toUnit) return weight
+  if (fromUnit === 'kg' && toUnit === 'lbs') {
+    return Math.round(weight * KG_TO_LBS * 2) / 2 // Round to nearest 0.5
+  }
+  if (fromUnit === 'lbs' && toUnit === 'kg') {
+    return Math.round(weight * LBS_TO_KG * 2) / 2 // Round to nearest 0.5
+  }
+  return weight
+}
+
+/**
+ * Get weight increment based on unit
+ */
+const getWeightIncrement = (unit, exerciseIncrement = 2.5) => {
+  if (unit === 'lbs') {
+    return 5 // 5 lb increments
+  }
+  return exerciseIncrement // kg increment from exercise config
+}
 
 /**
  * GymWorkoutSession - Weight-based workout tracking
@@ -10,7 +35,10 @@ import { GYM_EXERCISES } from '../../data/gymExercises'
  */
 const GymWorkoutSession = ({
   workout, // { dayName, exercises: [exerciseId, ...] }
-  gymWeights = {}, // { [exerciseId]: lastWeight }
+  gymWeights = {}, // { [exerciseId]: lastWeight (in kg) }
+  gymReps = {}, // { [exerciseId]: [reps per set] }
+  gymWeightUnit = 'kg',
+  onWeightUnitChange,
   onComplete,
   onExit,
   audioEnabled = true,
@@ -21,8 +49,8 @@ const GymWorkoutSession = ({
   const [currentSetIndex, setCurrentSetIndex] = useState(0)
   const [completedSets, setCompletedSets] = useState({}) // { [exerciseId]: [{ reps, weight, rpe }, ...] }
 
-  // Weight and reps input
-  const [currentWeight, setCurrentWeight] = useState(0)
+  // Weight and reps input (weight stored in kg internally)
+  const [currentWeightKg, setCurrentWeightKg] = useState(0)
   const [currentReps, setCurrentReps] = useState(0)
   const [currentRpe, setCurrentRpe] = useState(null) // Rate of Perceived Exertion
 
@@ -40,14 +68,26 @@ const GymWorkoutSession = ({
   const totalExercises = workout?.exercises?.length || 0
   const totalSets = currentExercise?.defaultSets || 4
 
-  // Initialize weight from history or default
+  // Get display weight (convert from kg to user's preferred unit)
+  const displayWeight = convertWeight(currentWeightKg, 'kg', gymWeightUnit)
+  const weightIncrement = getWeightIncrement(gymWeightUnit, currentExercise?.weightIncrement)
+
+  // Initialize weight and reps from history or default
   useEffect(() => {
     if (currentExercise) {
-      const lastWeight = gymWeights[currentExerciseId] || currentExercise.defaultWeight || 20
-      setCurrentWeight(lastWeight)
-      setCurrentReps(currentExercise.defaultReps?.[currentSetIndex] || 8)
+      // Get last used weight (stored in kg)
+      const lastWeightKg = gymWeights[currentExerciseId] || currentExercise.defaultWeight || 20
+      setCurrentWeightKg(lastWeightKg)
+
+      // Get last used reps for this set, or default
+      const lastReps = gymReps[currentExerciseId]
+      if (lastReps && lastReps[currentSetIndex] !== undefined) {
+        setCurrentReps(lastReps[currentSetIndex])
+      } else {
+        setCurrentReps(currentExercise.defaultReps?.[currentSetIndex] || 8)
+      }
     }
-  }, [currentExerciseId, currentExercise, currentSetIndex, gymWeights])
+  }, [currentExerciseId, currentExercise, currentSetIndex, gymWeights, gymReps])
 
   // Rest timer logic
   useEffect(() => {
@@ -80,7 +120,7 @@ const GymWorkoutSession = ({
 
     const setData = {
       reps: currentReps,
-      weight: currentWeight,
+      weight: currentWeightKg, // Always store in kg
       rpe: currentRpe,
       timestamp: Date.now()
     }
@@ -115,7 +155,7 @@ const GymWorkoutSession = ({
       setCurrentRpe(null)
       startRest(currentExercise?.restSeconds || 90)
     }
-  }, [currentExerciseId, currentReps, currentWeight, currentRpe, completedSets, totalSets, currentExerciseIndex, totalExercises, currentExercise, audioEnabled])
+  }, [currentExerciseId, currentReps, currentWeightKg, currentRpe, completedSets, totalSets, currentExerciseIndex, totalExercises, currentExercise, audioEnabled])
 
   const startRest = (seconds) => {
     setRestTimeLeft(seconds)
@@ -129,12 +169,21 @@ const GymWorkoutSession = ({
   }
 
   const adjustWeight = (delta) => {
-    const increment = currentExercise?.weightIncrement || 2.5
-    setCurrentWeight(prev => Math.max(0, prev + (delta * increment)))
+    // Convert increment to kg for storage
+    const incrementKg = gymWeightUnit === 'lbs'
+      ? weightIncrement * LBS_TO_KG
+      : weightIncrement
+    setCurrentWeightKg(prev => Math.max(0, prev + (delta * incrementKg)))
   }
 
   const adjustReps = (delta) => {
     setCurrentReps(prev => Math.max(1, prev + delta))
+  }
+
+  const toggleWeightUnit = () => {
+    if (onWeightUnitChange) {
+      onWeightUnitChange(gymWeightUnit === 'kg' ? 'lbs' : 'kg')
+    }
   }
 
   const handleComplete = () => {
@@ -157,6 +206,12 @@ const GymWorkoutSession = ({
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  // Format weight for display
+  const formatWeight = (weightKg) => {
+    const converted = convertWeight(weightKg, 'kg', gymWeightUnit)
+    return `${converted}${gymWeightUnit}`
   }
 
   const bgClass = theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'
@@ -214,8 +269,8 @@ const GymWorkoutSession = ({
               <p className={`text-xs ${textSecondary}`}>Total Reps</p>
             </div>
             <div className={`${cardBg} rounded-xl p-4 text-center`}>
-              <p className="text-2xl font-bold text-purple-400">{Math.round(totalVolume)}</p>
-              <p className={`text-xs ${textSecondary}`}>Volume (kg)</p>
+              <p className="text-2xl font-bold text-purple-400">{formatWeight(totalVolume)}</p>
+              <p className={`text-xs ${textSecondary}`}>Volume</p>
             </div>
           </div>
 
@@ -225,7 +280,7 @@ const GymWorkoutSession = ({
               <div key={exId} className={`${cardBg} rounded-lg p-3 flex justify-between items-center`}>
                 <span className={`${textPrimary} text-sm`}>{GYM_EXERCISES[exId]?.shortName || exId}</span>
                 <span className={`${textSecondary} text-sm`}>
-                  {sets.length} sets × {sets[0]?.weight}kg
+                  {sets.length} sets × {formatWeight(sets[0]?.weight || 0)}
                 </span>
               </div>
             ))}
@@ -283,6 +338,11 @@ const GymWorkoutSession = ({
   const buttonBg = theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'
   const borderColor = theme === 'light' ? 'border-slate-200' : 'border-slate-800'
 
+  // Get last recorded values for display
+  const lastWeightKg = gymWeights[currentExerciseId] || currentExercise.defaultWeight
+  const lastReps = gymReps[currentExerciseId]
+  const hasLastWorkout = lastReps && lastReps.length > 0
+
   return (
     <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
       {/* Header */}
@@ -328,24 +388,38 @@ const GymWorkoutSession = ({
       <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
         {/* Weight */}
         <div className={`${cardBg} rounded-xl p-4`}>
-          <p className={`${textSecondary} text-sm mb-2`}>Weight (kg)</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className={`${textSecondary} text-sm`}>Weight</p>
+            <button
+              onClick={toggleWeightUnit}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg ${buttonBg} text-xs font-medium ${textSecondary} hover:opacity-80 transition-opacity`}
+            >
+              <RefreshCw className="w-3 h-3" />
+              {gymWeightUnit.toUpperCase()}
+            </button>
+          </div>
           <div className="flex items-center justify-between">
             <button
               onClick={() => adjustWeight(-1)}
-              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center`}
+              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
             >
               <ChevronDown className={`w-8 h-8 ${textPrimary}`} />
             </button>
-            <span className={`text-5xl font-bold ${textPrimary}`}>{currentWeight}</span>
+            <div className="text-center">
+              <span className={`text-5xl font-bold ${textPrimary}`}>
+                {Math.round(displayWeight * 2) / 2}
+              </span>
+              <span className={`text-2xl ${textSecondary} ml-1`}>{gymWeightUnit}</span>
+            </div>
             <button
               onClick={() => adjustWeight(1)}
-              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center`}
+              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
             >
               <ChevronUp className={`w-8 h-8 ${textPrimary}`} />
             </button>
           </div>
           <p className={`${textSecondary} text-xs text-center mt-2`}>
-            Last: {gymWeights[currentExerciseId] || currentExercise.defaultWeight}kg
+            Last: {formatWeight(lastWeightKg)}
           </p>
         </div>
 
@@ -355,26 +429,29 @@ const GymWorkoutSession = ({
           <div className="flex items-center justify-between">
             <button
               onClick={() => adjustReps(-1)}
-              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center`}
+              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
             >
               <ChevronDown className={`w-8 h-8 ${textPrimary}`} />
             </button>
             <span className={`text-5xl font-bold ${textPrimary}`}>{currentReps}</span>
             <button
               onClick={() => adjustReps(1)}
-              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center`}
+              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
             >
               <ChevronUp className={`w-8 h-8 ${textPrimary}`} />
             </button>
           </div>
           <p className={`${textSecondary} text-xs text-center mt-2`}>
-            Target: {currentExercise.defaultReps?.[currentSetIndex] || 8} reps
+            {hasLastWorkout
+              ? `Last: ${lastReps[currentSetIndex] || lastReps[lastReps.length - 1]} reps`
+              : `Target: ${currentExercise.defaultReps?.[currentSetIndex] || 8} reps`
+            }
           </p>
         </div>
 
         {/* RPE (optional) */}
         <div className={`${cardBg} rounded-xl p-4`}>
-          <p className={`${textSecondary} text-sm mb-3`}>RPE (Rate of Perceived Exertion)</p>
+          <p className={`${textSecondary} text-sm mb-3`}>RPE (optional)</p>
           <div className="flex gap-2">
             {[6, 7, 8, 9, 10].map(rpe => (
               <button
@@ -397,7 +474,7 @@ const GymWorkoutSession = ({
       <div className="p-6">
         <button
           onClick={logSet}
-          className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-lg flex items-center justify-center gap-2"
+          className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
         >
           <Check className="w-5 h-5" />
           Log Set

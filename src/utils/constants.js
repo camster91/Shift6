@@ -40,6 +40,8 @@ export const STORAGE_KEYS = {
     trainingPreferences: 'shift6_training_preferences',
     customPlans: 'shift6_custom_plans',
     gymWeights: 'shift6_gym_weights',
+    gymReps: 'shift6_gym_reps',
+    gymWeightUnit: 'shift6_gym_weight_unit',
     customExercises: 'shift6_custom_exercises',
     // Persona system keys
     userPersona: 'shift6_user_persona',
@@ -47,6 +49,16 @@ export const STORAGE_KEYS = {
     accessibility: 'shift6_accessibility',
     streakFreezes: 'shift6_streak_freezes'
 };
+
+// Weight unit options
+export const WEIGHT_UNITS = {
+    KG: 'kg',
+    LBS: 'lbs'
+};
+
+// Conversion factor: 1 kg = 2.20462 lbs
+export const KG_TO_LBS = 2.20462;
+export const LBS_TO_KG = 1 / KG_TO_LBS;
 
 // Express mode configuration
 export const EXPRESS_MODE_CONFIG = {

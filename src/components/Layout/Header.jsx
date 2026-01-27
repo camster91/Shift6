@@ -28,8 +28,11 @@ const Header = ({
                     className="flex items-center gap-1 font-black tracking-tighter hover:opacity-80 transition-opacity"
                     aria-label="Go to home"
                 >
-                    <span className="text-xl text-cyan-500">SHIFT</span>
+                    <span className={`text-xl ${currentMode === 'gym' ? 'text-purple-500' : 'text-cyan-500'}`}>SHIFT</span>
                     <span className={`text-xl ${textColor}`}>6</span>
+                    {currentMode === 'gym' && (
+                        <span className="text-xs text-purple-400 ml-2 font-bold">GYM</span>
+                    )}
                 </button>
 
                 <div className="flex items-center gap-2">

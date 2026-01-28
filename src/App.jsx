@@ -1392,6 +1392,7 @@ const App = () => {
             {shouldShowGymOnboarding && (
                 <GymOnboarding
                     onComplete={handleGymOnboardingComplete}
+                    onSwitchToHome={() => setCurrentMode('home')}
                     theme={theme}
                 />
             )}
@@ -1660,6 +1661,10 @@ const App = () => {
                     equipment={EQUIPMENT}
                     templates={STARTER_TEMPLATES}
                     onComplete={handleCompleteOnboarding}
+                    onSelectGym={() => {
+                        setCurrentMode('gym')
+                        setOnboardingComplete(true)
+                    }}
                 />
             )}
 

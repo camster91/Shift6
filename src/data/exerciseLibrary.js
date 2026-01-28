@@ -95,7 +95,7 @@ export const STARTER_TEMPLATES = {
     adaptiveProgression: true,
   },
 
-  // ========== BEGINNER PROGRAMS (3 days/week) ==========
+  // ========== BEGINNER PROGRAMS (2-3 days/week) ==========
   'beginner-full-body': {
     id: 'beginner-full-body',
     name: 'Beginner Full Body',
@@ -105,7 +105,7 @@ export const STARTER_TEMPLATES = {
     difficulty: 'beginner',
     daysPerWeek: 3,
     sessionDuration: 20,
-    exercises: ['kneePushups', 'squats', 'australianRows', 'gluteBridges', 'plank'],
+    exercises: ['pushups', 'squats', 'gluteBridges', 'plank', 'lunges'],
     sets: 3,
     repRange: [8, 15],
     restSeconds: 60,
@@ -127,8 +127,69 @@ export const STARTER_TEMPLATES = {
     restSeconds: 45,
     tags: ['no-equipment', 'quick', 'home-friendly'],
   },
+  'beginner-ease-in': {
+    id: 'beginner-ease-in',
+    name: 'Ease Into Fitness',
+    desc: 'Gentle start for total beginners',
+    longDesc: 'Perfect if you\'re brand new to exercise or returning after a long break. Low volume, simple movements, and plenty of rest days.',
+    goal: 'balanced',
+    difficulty: 'beginner',
+    daysPerWeek: 2,
+    sessionDuration: 10,
+    exercises: ['squats', 'plank', 'gluteBridges'],
+    sets: 2,
+    repRange: [5, 10],
+    restSeconds: 60,
+    adaptiveProgression: true,
+    tags: ['no-equipment', 'low-volume', 'home-friendly', 'gentle'],
+  },
+  'beginner-core-focus': {
+    id: 'beginner-core-focus',
+    name: 'Core Foundation',
+    desc: 'Build a strong core first',
+    longDesc: 'Focus on developing core stability before adding more demanding exercises. Great for those with weak midsections.',
+    goal: 'core',
+    difficulty: 'beginner',
+    daysPerWeek: 3,
+    sessionDuration: 15,
+    exercises: ['plank', 'gluteBridges', 'supermans', 'squats'],
+    sets: 3,
+    repRange: [8, 15],
+    restSeconds: 45,
+    tags: ['no-equipment', 'core-focus', 'home-friendly'],
+  },
+  'beginner-upper-body': {
+    id: 'beginner-upper-body',
+    name: 'Upper Body Starter',
+    desc: 'Focus on arms, chest, and back',
+    longDesc: 'Develop upper body strength with push-ups and basic pulling movements. Ideal if your upper body needs extra work.',
+    goal: 'strength',
+    difficulty: 'beginner',
+    daysPerWeek: 3,
+    sessionDuration: 20,
+    exercises: ['pushups', 'plank', 'supermans', 'gluteBridges'],
+    sets: 3,
+    repRange: [8, 12],
+    restSeconds: 60,
+    tags: ['no-equipment', 'upper-focus', 'home-friendly'],
+  },
+  'beginner-lower-body': {
+    id: 'beginner-lower-body',
+    name: 'Legs & Glutes Starter',
+    desc: 'Build strong legs and glutes',
+    longDesc: 'Emphasize lower body development with squats, lunges, and bridges. Perfect for runners or those wanting stronger legs.',
+    goal: 'strength',
+    difficulty: 'beginner',
+    daysPerWeek: 3,
+    sessionDuration: 20,
+    exercises: ['squats', 'lunges', 'gluteBridges', 'plank'],
+    sets: 3,
+    repRange: [10, 15],
+    restSeconds: 45,
+    tags: ['no-equipment', 'lower-focus', 'home-friendly'],
+  },
 
-  // ========== INTERMEDIATE PROGRAMS (4 days/week) ==========
+  // ========== INTERMEDIATE PROGRAMS (3-4 days/week) ==========
   'intermediate-upper-lower': {
     id: 'intermediate-upper-lower',
     name: 'Upper/Lower Split',
@@ -138,7 +199,7 @@ export const STARTER_TEMPLATES = {
     difficulty: 'intermediate',
     daysPerWeek: 4,
     sessionDuration: 35,
-    exercises: ['pushups', 'dips', 'pullups', 'australianRows', 'squats', 'lunges', 'gluteBridges', 'plank', 'vups'],
+    exercises: ['pushups', 'dips', 'pullups', 'squats', 'lunges', 'gluteBridges', 'plank', 'vups'],
     sets: 4,
     repRange: [8, 12],
     restSeconds: 60,
@@ -153,7 +214,7 @@ export const STARTER_TEMPLATES = {
     difficulty: 'intermediate',
     daysPerWeek: 3,
     sessionDuration: 30,
-    exercises: ['pushups', 'diamondPushups', 'dips', 'pullups', 'chinups', 'australianRows', 'squats', 'lunges', 'gluteBridges', 'plank'],
+    exercises: ['pushups', 'dips', 'pullups', 'squats', 'lunges', 'gluteBridges', 'plank'],
     sets: 4,
     repRange: [8, 12],
     restSeconds: 60,
@@ -168,11 +229,73 @@ export const STARTER_TEMPLATES = {
     difficulty: 'intermediate',
     daysPerWeek: 4,
     sessionDuration: 40,
-    exercises: ['diamondPushups', 'dips', 'pullups', 'bulgarianSplitSquats', 'singleLegGluteBridge', 'hollowBodyHold'],
+    exercises: ['pushups', 'dips', 'pullups', 'squats', 'lunges', 'gluteBridges', 'plank', 'vups'],
     sets: 5,
     repRange: [5, 8],
     restSeconds: 90,
     tags: ['pull-up-bar', 'dip-station', 'strength-focus'],
+  },
+  'intermediate-full-body': {
+    id: 'intermediate-full-body',
+    name: 'Full Body Plus',
+    desc: 'All major movements, 3 days per week',
+    longDesc: 'A comprehensive full-body program with pull-ups and dips added. Perfect step up from beginner programs.',
+    goal: 'balanced',
+    difficulty: 'intermediate',
+    daysPerWeek: 3,
+    sessionDuration: 35,
+    exercises: ['pushups', 'pullups', 'squats', 'dips', 'lunges', 'gluteBridges', 'plank', 'supermans'],
+    sets: 4,
+    repRange: [8, 12],
+    restSeconds: 60,
+    adaptiveProgression: true,
+    tags: ['pull-up-bar', 'dip-station', 'balanced'],
+  },
+  'intermediate-daily': {
+    id: 'intermediate-daily',
+    name: 'Daily Challenge',
+    desc: '5 days per week, varied intensity',
+    longDesc: 'Train 5 days with strategically varied intensity. Includes easier recovery days and harder push days.',
+    goal: 'balanced',
+    difficulty: 'intermediate',
+    daysPerWeek: 5,
+    sessionDuration: 25,
+    exercises: ['pushups', 'pullups', 'squats', 'dips', 'lunges', 'gluteBridges', 'plank', 'vups', 'supermans'],
+    sets: 3,
+    repRange: [10, 15],
+    restSeconds: 45,
+    maxExercisesPerDay: 3,
+    tags: ['pull-up-bar', 'dip-station', 'daily'],
+  },
+  'intermediate-home-only': {
+    id: 'intermediate-home-only',
+    name: 'Home Warrior',
+    desc: 'No equipment needed, intermediate difficulty',
+    longDesc: 'Challenging bodyweight program without any equipment. Uses advanced progressions of basic movements.',
+    goal: 'balanced',
+    difficulty: 'intermediate',
+    daysPerWeek: 4,
+    sessionDuration: 30,
+    exercises: ['pushups', 'squats', 'lunges', 'gluteBridges', 'plank', 'vups', 'supermans'],
+    sets: 4,
+    repRange: [12, 20],
+    restSeconds: 45,
+    tags: ['no-equipment', 'home-friendly'],
+  },
+  'intermediate-endurance': {
+    id: 'intermediate-endurance',
+    name: 'Endurance Builder',
+    desc: 'High reps for muscular endurance',
+    longDesc: 'Build work capacity and muscular endurance with higher rep ranges and shorter rest periods.',
+    goal: 'endurance',
+    difficulty: 'intermediate',
+    daysPerWeek: 4,
+    sessionDuration: 30,
+    exercises: ['pushups', 'squats', 'lunges', 'plank', 'vups', 'gluteBridges', 'supermans'],
+    sets: 3,
+    repRange: [15, 25],
+    restSeconds: 30,
+    tags: ['no-equipment', 'endurance', 'fat-loss'],
   },
 
   // ========== ADVANCED PROGRAMS (5-6 days/week) ==========
@@ -185,7 +308,7 @@ export const STARTER_TEMPLATES = {
     difficulty: 'advanced',
     daysPerWeek: 5,
     sessionDuration: 45,
-    exercises: ['archerPushups', 'pullups', 'pistolSquats', 'lSits', 'dragonFlags', 'nordicCurls'],
+    exercises: ['pushups', 'pullups', 'dips', 'squats', 'lunges', 'plank', 'vups', 'gluteBridges'],
     sets: 4,
     repRange: [5, 8],
     restSeconds: 90,
@@ -200,11 +323,72 @@ export const STARTER_TEMPLATES = {
     difficulty: 'advanced',
     daysPerWeek: 6,
     sessionDuration: 50,
-    exercises: ['pushups', 'diamondPushups', 'dips', 'pullups', 'chinups', 'australianRows', 'squats', 'bulgarianSplitSquats', 'lunges', 'gluteBridges', 'vups', 'plank'],
+    exercises: ['pushups', 'dips', 'pullups', 'squats', 'lunges', 'gluteBridges', 'vups', 'plank', 'supermans'],
     sets: 4,
     repRange: [10, 15],
     restSeconds: 60,
-    tags: ['high-volume', 'weighted-vest-optional'],
+    tags: ['high-volume', 'pull-up-bar', 'dip-station'],
+  },
+  'advanced-strength-focus': {
+    id: 'advanced-strength-focus',
+    name: 'Pure Strength',
+    desc: 'Maximum strength with low reps',
+    longDesc: 'Build peak strength with low rep ranges and longer rest periods. Focus on quality over quantity.',
+    goal: 'strength',
+    difficulty: 'advanced',
+    daysPerWeek: 4,
+    sessionDuration: 45,
+    exercises: ['pushups', 'pullups', 'dips', 'squats', 'lunges', 'gluteBridges', 'plank'],
+    sets: 5,
+    repRange: [3, 6],
+    restSeconds: 120,
+    tags: ['strength', 'pull-up-bar', 'dip-station'],
+  },
+  'advanced-athlete': {
+    id: 'advanced-athlete',
+    name: 'Complete Athlete',
+    desc: 'Strength, power, and endurance combined',
+    longDesc: 'A balanced advanced program combining strength work, explosive movements, and conditioning. For well-rounded fitness.',
+    goal: 'balanced',
+    difficulty: 'advanced',
+    daysPerWeek: 5,
+    sessionDuration: 45,
+    exercises: ['pushups', 'pullups', 'dips', 'squats', 'lunges', 'gluteBridges', 'plank', 'vups', 'supermans'],
+    sets: 4,
+    repRange: [8, 12],
+    restSeconds: 60,
+    tags: ['balanced', 'pull-up-bar', 'dip-station'],
+  },
+  'advanced-minimalist': {
+    id: 'advanced-minimalist',
+    name: 'Elite Essentials',
+    desc: '5 key movements, maximum intensity',
+    longDesc: 'Focused program using only essential movements with high intensity. Efficient training for busy advanced athletes.',
+    goal: 'strength',
+    difficulty: 'advanced',
+    daysPerWeek: 4,
+    sessionDuration: 30,
+    exercises: ['pushups', 'pullups', 'squats', 'plank', 'vups'],
+    sets: 5,
+    repRange: [6, 10],
+    restSeconds: 90,
+    tags: ['minimalist', 'pull-up-bar'],
+  },
+  'advanced-daily-grind': {
+    id: 'advanced-daily-grind',
+    name: 'Daily Grind',
+    desc: '6 days per week, high frequency',
+    longDesc: 'Train nearly every day with smart volume management. Each muscle group hit multiple times per week.',
+    goal: 'hypertrophy',
+    difficulty: 'advanced',
+    daysPerWeek: 6,
+    sessionDuration: 35,
+    exercises: ['pushups', 'pullups', 'dips', 'squats', 'lunges', 'gluteBridges', 'plank', 'vups', 'supermans'],
+    sets: 3,
+    repRange: [10, 15],
+    restSeconds: 45,
+    maxExercisesPerDay: 3,
+    tags: ['high-frequency', 'pull-up-bar', 'dip-station'],
   },
 
   // ========== SPECIALTY PROGRAMS ==========
@@ -512,5 +696,88 @@ export const getTemplateWithExercises = (templateId) => {
       key,
       ...EXERCISE_PLANS[key]
     })).filter(e => e.name)
+  }
+}
+
+/**
+ * Get programs filtered by difficulty level
+ * @param {string} difficulty - 'beginner' | 'intermediate' | 'advanced' | 'all'
+ * @param {Object} options - Filter options
+ * @param {boolean} options.includeSpecialty - Include specialty programs (default: false)
+ * @param {boolean} options.noEquipment - Only programs with no equipment (default: false)
+ * @returns {Array} Array of program objects
+ */
+export const getProgramsByDifficulty = (difficulty = 'all', options = {}) => {
+  const { includeSpecialty = false, noEquipment = false } = options
+
+  return Object.entries(STARTER_TEMPLATES)
+    .filter(([id, program]) => {
+      // Filter by difficulty
+      if (difficulty !== 'all' && program.difficulty !== difficulty) {
+        return false
+      }
+
+      // Filter out specialty programs unless requested
+      if (!includeSpecialty && (
+        id.includes('core-') ||
+        id.includes('conditioning-') ||
+        id.includes('iron-') ||
+        id.includes('tactical-') ||
+        id.includes('operator-')
+      )) {
+        return false
+      }
+
+      // Filter by equipment
+      if (noEquipment) {
+        const tags = program.tags || []
+        const needsEquipment = tags.some(t =>
+          t.includes('pull-up') || t.includes('dip-')
+        )
+        if (needsEquipment) return false
+      }
+
+      return true
+    })
+    .map(([id, program]) => ({ id, ...program }))
+    .sort((a, b) => {
+      // Sort recommended first, then by days per week
+      if (a.recommended && !b.recommended) return -1
+      if (!a.recommended && b.recommended) return 1
+      if (a.isDefault && !b.isDefault) return -1
+      if (!a.isDefault && b.isDefault) return 1
+      return (a.daysPerWeek || 3) - (b.daysPerWeek || 3)
+    })
+}
+
+/**
+ * Get recommended program for a given experience level
+ * @param {string} experienceLevel - 'beginner' | 'intermediate' | 'advanced'
+ * @returns {Object|null} Recommended program
+ */
+export const getRecommendedProgram = (experienceLevel) => {
+  const programs = getProgramsByDifficulty(experienceLevel)
+  // Return the first program (sorted by recommendation)
+  return programs[0] || getProgramsByDifficulty('beginner')[0]
+}
+
+/**
+ * Get all programs grouped by difficulty level
+ * @returns {Object} Programs grouped by difficulty
+ */
+export const getAllProgramsByDifficulty = () => {
+  return {
+    beginner: getProgramsByDifficulty('beginner'),
+    intermediate: getProgramsByDifficulty('intermediate'),
+    advanced: getProgramsByDifficulty('advanced'),
+    specialty: Object.entries(STARTER_TEMPLATES)
+      .filter(([id]) =>
+        id.includes('core-') ||
+        id.includes('conditioning-') ||
+        id.includes('iron-') ||
+        id.includes('tactical-') ||
+        id.includes('operator-')
+      )
+      .map(([id, program]) => ({ id, ...program }))
   }
 }

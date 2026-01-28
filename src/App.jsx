@@ -63,6 +63,7 @@ import ModeSelector from './components/Views/ModeSelector';
 import GymDashboard from './components/Views/GymDashboard';
 import GymOnboarding from './components/Views/GymOnboarding';
 import GymWorkoutSession from './components/Views/GymWorkoutSession';
+import GymProgramManager from './components/Views/GymProgramManager';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -262,6 +263,15 @@ const App = () => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_streak`);
         return saved ? JSON.parse(saved) : 0;
     });
+
+    // Custom gym programs (user-created)
+    const [customGymPrograms, setCustomGymPrograms] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}custom_gym_programs`);
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    // Show gym program manager modal
+    const [showGymProgramManager, setShowGymProgramManager] = useState(false);
 
     // Current gym workout session (with localStorage persistence to prevent data loss)
     const [currentGymSession, setCurrentGymSession] = useState(() => {
@@ -528,6 +538,11 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}gym_streak`, JSON.stringify(gymStreak));
     }, [gymStreak]);
+
+    // Persist custom gym programs
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}custom_gym_programs`, JSON.stringify(customGymPrograms));
+    }, [customGymPrograms]);
 
     // Persist gym workout session (prevents data loss on refresh)
     useEffect(() => {
@@ -1392,13 +1407,43 @@ const App = () => {
     }, [gymWeights, gymReps, gymHistory, gymProgram]);
 
     // Change gym program
-    const handleChangeGymProgram = useCallback((programId) => {
+    const handleChangeGymProgram = useCallback((programId, programData = null) => {
         setGymProgram({
             programId,
             currentWeek: 1,
             currentDay: 1,
-            startDate: new Date().toISOString()
+            startDate: new Date().toISOString(),
+            isCustom: programData?.isCustom || false
         });
+    }, []);
+
+    // Save custom gym program
+    const handleSaveCustomGymProgram = useCallback((program) => {
+        setCustomGymPrograms(prev => {
+            // If updating existing program
+            const existingIndex = prev.findIndex(p => p.id === program.id);
+            if (existingIndex >= 0) {
+                const updated = [...prev];
+                updated[existingIndex] = program;
+                return updated;
+            }
+            // Add new program
+            return [...prev, program];
+        });
+    }, []);
+
+    // Delete custom gym program
+    const handleDeleteCustomGymProgram = useCallback((programId) => {
+        setCustomGymPrograms(prev => prev.filter(p => p.id !== programId));
+        // If currently using this program, clear it
+        if (gymProgram?.programId === programId) {
+            setGymProgram(null);
+        }
+    }, [gymProgram]);
+
+    // Show gym program manager
+    const handleShowGymProgramManager = useCallback(() => {
+        setShowGymProgramManager(true);
     }, []);
 
     // Switch between home and gym mode
@@ -1518,8 +1563,10 @@ const App = () => {
                             gymWeights={gymWeights}
                             gymHistory={gymHistory}
                             gymStreak={gymStreak}
+                            customGymPrograms={customGymPrograms}
                             onStartWorkout={handleStartGymWorkout}
                             onChangeProgram={handleChangeGymProgram}
+                            onShowProgramManager={handleShowGymProgramManager}
                             onSwitchMode={handleSwitchMode}
                             theme={theme}
                         />
@@ -1722,7 +1769,7 @@ const App = () => {
                 />
             )}
 
-            {/* Program Manager Modal */}
+            {/* Program Manager Modal (Home Mode) */}
             {showProgramManager && (
                 <ProgramManager
                     allExercises={allExercises}
@@ -1743,6 +1790,19 @@ const App = () => {
                         setShowExerciseLibrary(true);
                     }}
                     onClose={() => setShowProgramManager(false)}
+                />
+            )}
+
+            {/* Gym Program Manager Modal */}
+            {showGymProgramManager && (
+                <GymProgramManager
+                    currentProgram={gymProgram}
+                    customGymPrograms={customGymPrograms}
+                    onSelectProgram={handleChangeGymProgram}
+                    onSaveCustomProgram={handleSaveCustomGymProgram}
+                    onDeleteCustomProgram={handleDeleteCustomGymProgram}
+                    onClose={() => setShowGymProgramManager(false)}
+                    theme={theme}
                 />
             )}
 

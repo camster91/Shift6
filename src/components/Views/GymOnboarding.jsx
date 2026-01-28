@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Dumbbell, ChevronRight, ChevronLeft, Zap, Trophy, Target, Clock, Home, Flame, Calendar, TrendingUp } from 'lucide-react'
 import {
-  GYM_PROGRAMS,
   getGymProgramsByDifficulty,
-  getRecommendedGymProgram,
   GYM_DIFFICULTY_LABELS
 } from '../../data/gymExercises'
 
@@ -207,10 +205,10 @@ const GymOnboarding = ({ onComplete, onSwitchToHome, theme = 'dark' }) => {
 
         <div className="flex-1 p-6 flex flex-col">
           <h2 className={`text-2xl font-bold ${textPrimary} mb-2 text-center`}>
-            What's your experience level?
+            What&apos;s your experience level?
           </h2>
           <p className={`${textSecondary} mb-8 text-center`}>
-            We'll recommend the perfect program for you
+            We&apos;ll recommend the perfect program for you
           </p>
 
           <div className="space-y-4 flex-1">

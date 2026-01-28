@@ -48,7 +48,15 @@ import WarmupRoutine from './components/Views/WarmupRoutine';
 import AccessibilitySettings from './components/Views/AccessibilitySettings';
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
 import UpdateNotification from './components/Visuals/UpdateNotification';
+import NotificationSettings from './components/Visuals/NotificationSettings';
 import { getRecommendedWarmup } from './data/warmupRoutines';
+import {
+    checkStreakNotification,
+    notifyBadgeEarned,
+    showDailyReminder,
+    registerNotificationChecks,
+    calculateStreakForNotification
+} from './utils/notifications';
 
 // Gym Mode Components
 import ModeSelector from './components/Views/ModeSelector';
@@ -120,6 +128,7 @@ const App = () => {
     const [showProgramManager, setShowProgramManager] = useState(false);
     const [showTrainingSettings, setShowTrainingSettings] = useState(false);
     const [showProgramSwitcher, setShowProgramSwitcher] = useState(false);
+    const [showNotificationSettings, setShowNotificationSettings] = useState(false);
     const [showBodyMetrics, setShowBodyMetrics] = useState(false);
     const [showAccessibility, setShowAccessibility] = useState(false);
     const [showWarmup, setShowWarmup] = useState(false);
@@ -254,8 +263,11 @@ const App = () => {
         return saved ? JSON.parse(saved) : 0;
     });
 
-    // Current gym workout session
-    const [currentGymSession, setCurrentGymSession] = useState(null);
+    // Current gym workout session (with localStorage persistence to prevent data loss)
+    const [currentGymSession, setCurrentGymSession] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}current_gym_session`);
+        return saved ? JSON.parse(saved) : null;
+    });
 
     // Bootstrap Sprints for Active Program (Dynamic Engine Migration)
     useEffect(() => {
@@ -399,14 +411,48 @@ const App = () => {
             // Update seen badges
             setSeenBadgeIds(unlockedIds);
             localStorage.setItem(`${STORAGE_PREFIX}seen_badges`, JSON.stringify(unlockedIds));
+
+            // Send badge notifications (async, non-blocking)
+            newlyUnlocked.forEach(badge => {
+                notifyBadgeEarned(badge);
+            });
         } else if (prevStatsRef.current === null) {
             // First load - just update seen badges without showing toast
             setSeenBadgeIds(unlockedIds);
             localStorage.setItem(`${STORAGE_PREFIX}seen_badges`, JSON.stringify(unlockedIds));
         }
 
+        // Check streak status for notifications
+        const streakData = calculateStreakForNotification(sessionHistory);
+        checkStreakNotification(streakData);
+
         prevStatsRef.current = stats;
     }, [completedDays, sessionHistory, seenBadgeIds]);
+
+    // Daily reminder check and notification registration
+    useEffect(() => {
+        // Register periodic notification checks
+        const cleanup = registerNotificationChecks();
+
+        // Check for daily reminder on app load (after short delay)
+        const timer = setTimeout(() => {
+            const todaysSessions = sessionHistory.filter(s => {
+                const sessionDate = new Date(s.date).toDateString();
+                const today = new Date().toDateString();
+                return sessionDate === today;
+            });
+
+            showDailyReminder({
+                workoutsCompleted: todaysSessions.length,
+                dailyGoal
+            });
+        }, 5000);
+
+        return () => {
+            cleanup();
+            clearTimeout(timer);
+        };
+    }, [sessionHistory, dailyGoal]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}audio_enabled`, JSON.stringify(audioEnabled));
@@ -482,6 +528,15 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}gym_streak`, JSON.stringify(gymStreak));
     }, [gymStreak]);
+
+    // Persist gym workout session (prevents data loss on refresh)
+    useEffect(() => {
+        if (currentGymSession) {
+            localStorage.setItem(`${STORAGE_PREFIX}current_gym_session`, JSON.stringify(currentGymSession));
+        } else {
+            localStorage.removeItem(`${STORAGE_PREFIX}current_gym_session`);
+        }
+    }, [currentGymSession]);
 
     // Persist current mode selection
     useEffect(() => {
@@ -1167,6 +1222,7 @@ const App = () => {
     const handleShowAccessibility = useCallback(() => { setShowAccessibility(true); setShowDrawer(false); }, []);
     const handleShowHelp = useCallback(() => { setShowHelp(true); setShowDrawer(false); }, []);
     const handleShowProgramSwitcher = useCallback(() => { setShowProgramSwitcher(true); setShowDrawer(false); }, []);
+    const handleShowNotifications = useCallback(() => { setShowNotificationSettings(true); setShowDrawer(false); }, []);
 
     // Handle program switch with progress preservation
     const handleSwitchProgram = useCallback((programId, programData) => {
@@ -1432,6 +1488,13 @@ const App = () => {
                     gymHistory={gymHistory}
                     onComplete={handleCompleteGymWorkout}
                     onExit={() => setCurrentGymSession(null)}
+                    onStateChange={(internalState) => {
+                        // Persist internal workout state for crash/refresh recovery
+                        setCurrentGymSession(prev => ({
+                            ...prev,
+                            internalState
+                        }));
+                    }}
                     audioEnabled={audioEnabled}
                     theme={theme}
                 />
@@ -1480,6 +1543,7 @@ const App = () => {
                         onShowBodyMetrics={handleShowBodyMetrics}
                         onShowAccessibility={handleShowAccessibility}
                         onShowProgramSwitcher={handleShowProgramSwitcher}
+                        onShowNotifications={handleShowNotifications}
                         currentMode={currentMode}
                         onSwitchMode={handleSwitchMode}
                         onExport={handleExport}
@@ -1590,6 +1654,7 @@ const App = () => {
                     onShowBodyMetrics={handleShowBodyMetrics}
                     onShowAccessibility={handleShowAccessibility}
                     onShowProgramSwitcher={handleShowProgramSwitcher}
+                    onShowNotifications={handleShowNotifications}
                     currentMode={currentMode}
                     onSwitchMode={handleSwitchMode}
                     onExport={handleExport}
@@ -1739,6 +1804,15 @@ const App = () => {
                 />
             )}
 
+            {/* Notification Settings Modal */}
+            {showNotificationSettings && (
+                <NotificationSettings
+                    onClose={() => setShowNotificationSettings(false)}
+                    theme={theme}
+                    mode={currentMode}
+                />
+            )}
+
             {/* Warmup Routine Modal */}
             {showWarmup && (
                 <WarmupRoutine
@@ -1826,7 +1900,7 @@ const App = () => {
                                     <li>• Focus on form over speed - quality reps build strength</li>
                                     <li>• Use the warmup routine before intense workouts</li>
                                     <li>• Track your body metrics to see progress over time</li>
-                                    <li>• Rest days are important - don't skip them!</li>
+                                    <li>• Rest days are important - don&apos;t skip them!</li>
                                 </ul>
                             </div>
 

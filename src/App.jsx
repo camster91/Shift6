@@ -276,7 +276,21 @@ const App = () => {
     // Current gym workout session (with localStorage persistence to prevent data loss)
     const [currentGymSession, setCurrentGymSession] = useState(() => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}current_gym_session`);
-        return saved ? JSON.parse(saved) : null;
+        if (!saved) return null;
+        try {
+            const parsed = JSON.parse(saved);
+            // Validate that the session has a valid exercises array
+            if (!parsed || !Array.isArray(parsed.exercises) || parsed.exercises.length === 0) {
+                // Invalid session data - clear it
+                localStorage.removeItem(`${STORAGE_PREFIX}current_gym_session`);
+                return null;
+            }
+            return parsed;
+        } catch (e) {
+            // Corrupt JSON - clear it
+            localStorage.removeItem(`${STORAGE_PREFIX}current_gym_session`);
+            return null;
+        }
     });
 
     // Bootstrap Sprints for Active Program (Dynamic Engine Migration)

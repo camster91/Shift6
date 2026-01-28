@@ -279,13 +279,13 @@ const Onboarding = ({ onComplete, onSelectGym }) => {
                       </div>
                       <p className="text-sm text-slate-400 mb-2">{level.desc}</p>
                       {recommended && (
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className={`${level.textClass}`}>Recommended:</span>
-                          <span className="text-slate-300">{recommended.name}</span>
-                          <span className="text-slate-500">•</span>
-                          <span className="text-slate-400">{recommended.daysPerWeek}x/week</span>
-                          <span className="text-slate-500">•</span>
-                          <span className="text-slate-400">{recommended.sessionDuration}min</span>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                          <span className={`${level.textClass} flex-shrink-0`}>Recommended:</span>
+                          <span className="text-slate-300 truncate max-w-[120px]">{recommended.name}</span>
+                          <span className="text-slate-500 hidden sm:inline">•</span>
+                          <span className="text-slate-400 flex-shrink-0">{recommended.daysPerWeek}x/week</span>
+                          <span className="text-slate-500 hidden sm:inline">•</span>
+                          <span className="text-slate-400 flex-shrink-0">{recommended.sessionDuration}min</span>
                         </div>
                       )}
                     </div>

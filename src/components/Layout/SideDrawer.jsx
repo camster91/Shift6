@@ -15,7 +15,8 @@ import {
     User,
     Home,
     RefreshCw,
-    HelpCircle
+    HelpCircle,
+    ArrowLeftRight
 } from 'lucide-react'
 
 const SideDrawer = ({
@@ -31,6 +32,7 @@ const SideDrawer = ({
     onShowTrainingSettings,
     onShowBodyMetrics,
     onShowAccessibility,
+    onShowProgramSwitcher,
     // Mode switching
     currentMode = 'home',
     onSwitchMode,
@@ -193,6 +195,11 @@ const SideDrawer = ({
                     <p className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${subTextColor}`}>
                         Settings
                     </p>
+                    <MenuItem
+                        icon={ArrowLeftRight}
+                        label="Switch Program"
+                        onClick={onShowProgramSwitcher}
+                    />
                     <MenuItem
                         icon={currentMode === 'home' ? Dumbbell : Home}
                         label={`Switch to ${currentMode === 'home' ? 'Gym' : 'Home'} Mode`}

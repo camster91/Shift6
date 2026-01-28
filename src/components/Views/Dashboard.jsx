@@ -257,8 +257,8 @@ const Dashboard = ({
     theme = 'dark'
 }) => {
     const preferredDays = trainingPreferences?.preferredDays || []
-    const dailyStack = getDailyStack(completedDays, allExercises, activeProgram, trainingPreferences)
-    const personalRecords = getPersonalRecords(sessionHistory)
+    const dailyStack = useMemo(() => getDailyStack(completedDays, allExercises, activeProgram, trainingPreferences), [completedDays, allExercises, activeProgram, trainingPreferences]);
+    const personalRecords = useMemo(() => getPersonalRecords(sessionHistory), [sessionHistory]);
     const [showAllExercises, setShowAllExercises] = useState(false)
     const [selectedExercise, setSelectedExercise] = useState(null)
 
@@ -269,15 +269,15 @@ const Dashboard = ({
     const borderColor = theme === 'light' ? 'border-slate-200' : 'border-slate-800'
 
     // Show only active program exercises (or all if no activeProgram)
-    const programExercises = activeProgram
+    const programExercises = useMemo(() => activeProgram
         ? Object.fromEntries(activeProgram.map(k => [k, allExercises[k]]).filter(([, v]) => v))
-        : allExercises
+        : allExercises, [activeProgram, allExercises]);
     const exerciseCount = Object.keys(programExercises).length
     const customCount = Object.keys(customExercises).length
 
     // Get today's completed workouts
     const today = new Date().toISOString().split('T')[0]
-    const todayWorkouts = sessionHistory.filter(s => s.date.startsWith(today))
+    const todayWorkouts = useMemo(() => sessionHistory.filter(s => s.date.startsWith(today)), [sessionHistory, today]);
 
     // Determine if it's a rest day (use training preferences if available)
     const isRestDay = !isTrainingDay(preferredDays)
@@ -311,7 +311,7 @@ const Dashboard = ({
     const recentWorkouts = sessionHistory.slice(0, 5)
 
     // Get current streak
-    const streakData = calculateStreakWithGrace(sessionHistory)
+    const streakData = useMemo(() => calculateStreakWithGrace(sessionHistory), [sessionHistory]);
 
     return (
         <div className="space-y-6 pb-8">

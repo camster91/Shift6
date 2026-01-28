@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw } from 'lucide-react'
+import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw, Youtube } from 'lucide-react'
 import { playBeep, playSuccess } from '../../utils/audio'
 import { vibrate } from '../../utils/device'
 import { GYM_EXERCISES } from '../../data/gymExercises'
@@ -27,6 +27,52 @@ const getWeightIncrement = (unit, exerciseIncrement = 2.5) => {
     return 5 // 5 lb increments
   }
   return exerciseIncrement // kg increment from exercise config
+}
+
+/**
+ * VideoModal - YouTube form guide modal
+ */
+const VideoModal = ({ exercise, onClose, theme = 'dark' }) => {
+  if (!exercise || !exercise.videoId) return null
+
+  const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
+  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
+  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+  const borderColor = theme === 'light' ? 'border-slate-200' : 'border-slate-700'
+
+  return (
+    <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4" onClick={onClose}>
+      <div className={`${cardBg} border ${borderColor} rounded-xl w-full max-w-2xl overflow-hidden`} onClick={e => e.stopPropagation()}>
+        <div className={`flex items-center justify-between p-4 border-b ${borderColor}`}>
+          <h3 className={`text-lg font-bold ${textPrimary}`}>{exercise.name} - Form Guide</h3>
+          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+            <X size={20} className={textSecondary} />
+          </button>
+        </div>
+        <div className="aspect-video bg-black">
+          <iframe
+            src={`https://www.youtube.com/embed/${exercise.videoId}?rel=0`}
+            title={`${exercise.name} form guide`}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+        <div className="p-4 space-y-3">
+          <p className={`text-sm ${textSecondary}`}>{exercise.cue}</p>
+          {exercise.tips && (
+            <div className="flex flex-wrap gap-2">
+              {exercise.tips.map((tip, i) => (
+                <span key={i} className={`text-xs px-2 py-1 ${theme === 'light' ? 'bg-slate-100 border-slate-200' : 'bg-slate-800 border-slate-700'} border rounded-full ${textSecondary}`}>
+                  {tip}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 /**
@@ -71,6 +117,7 @@ const GymWorkoutSession = ({
   const [showSummary, setShowSummary] = useState(false)
   const [isLogging, setIsLogging] = useState(false) // Debounce for log button
   const [showExitConfirm, setShowExitConfirm] = useState(false) // Custom exit modal
+  const [showVideo, setShowVideo] = useState(false) // YouTube form video modal
 
   const currentExerciseId = workout?.exercises?.[currentExerciseIndex]
   const currentExercise = currentExerciseId ? GYM_EXERCISES[currentExerciseId] : null
@@ -422,7 +469,18 @@ const GymWorkoutSession = ({
 
       {/* Exercise Info */}
       <div className={`p-6 border-b ${borderColor}`}>
-        <h1 className={`text-2xl font-bold ${textPrimary} mb-1`}>{currentExercise.name}</h1>
+        <div className="flex items-start justify-between mb-1">
+          <h1 className={`text-2xl font-bold ${textPrimary}`}>{currentExercise.name}</h1>
+          {currentExercise.videoId && (
+            <button
+              onClick={() => setShowVideo(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors"
+            >
+              <Youtube size={16} />
+              <span className="text-xs font-medium">Watch</span>
+            </button>
+          )}
+        </div>
         <p className={`${textSecondary} text-sm mb-4`}>{currentExercise.cue}</p>
 
         {/* Set Progress */}
@@ -577,6 +635,15 @@ const GymWorkoutSession = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Video Modal */}
+      {showVideo && currentExercise && (
+        <VideoModal
+          exercise={currentExercise}
+          onClose={() => setShowVideo(false)}
+          theme={theme}
+        />
       )}
     </div>
   )

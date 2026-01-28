@@ -9,7 +9,8 @@ import {
   Trophy,
   Target,
   Play,
-  Zap
+  Zap,
+  Settings
 } from 'lucide-react'
 import { GYM_EXERCISES, GYM_PROGRAMS, getGymProgram, GYM_DIFFICULTY_LABELS } from '../../data/gymExercises'
 import { vibrate } from '../../utils/device'
@@ -59,18 +60,29 @@ const StreakBadge = ({ streak, theme }) => {
  * Shows current program, today's workout, recent history
  */
 const GymDashboard = ({
-  gymProgram = null, // { programId, currentWeek, currentDay, startDate }
+  gymProgram = null, // { programId, currentWeek, currentDay, startDate, isCustom }
   gymWeights = {}, // { [exerciseId]: lastWeight }
   gymHistory = [], // [{ date, dayName, exercises, duration, totalVolume }]
   gymStreak = 0,
+  customGymPrograms = [], // User-created programs
   onStartWorkout,
   onChangeProgram,
+  onShowProgramManager, // Open the full program manager
   theme = 'dark'
 }) => {
   const [showProgramSelect, setShowProgramSelect] = useState(false)
 
-  // Get current program details
-  const currentProgram = gymProgram?.programId ? getGymProgram(gymProgram.programId) : null
+  // Get current program details (check custom programs first)
+  const currentProgram = useMemo(() => {
+    if (!gymProgram?.programId) return null
+
+    // Check custom programs first
+    const customMatch = customGymPrograms?.find(p => p.id === gymProgram.programId)
+    if (customMatch) return { ...customMatch, isCustom: true }
+
+    // Fall back to built-in programs
+    return getGymProgram(gymProgram.programId)
+  }, [gymProgram?.programId, customGymPrograms])
 
   // Calculate today's workout
   const todaysWorkout = useMemo(() => {
@@ -259,7 +271,14 @@ const GymDashboard = ({
                 </div>
                 <div>
                   <p className={`text-xs ${textSecondary} uppercase tracking-wider`}>Current Program</p>
-                  <h2 className={`text-lg font-bold ${textPrimary}`}>{currentProgram.name}</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className={`text-lg font-bold ${textPrimary}`}>{currentProgram.name}</h2>
+                    {currentProgram.isCustom && (
+                      <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">
+                        Custom
+                      </span>
+                    )}
+                  </div>
                   <p className={`text-xs ${textSecondary}`}>{currentProgram.difficulty} • {currentProgram.daysPerWeek}x/week</p>
                 </div>
               </div>
@@ -289,17 +308,36 @@ const GymDashboard = ({
                 {Math.round((gymProgram.currentDay / (currentProgram.split.length * 4)) * 100)}%
               </span>
             </div>
+
+            {/* Manage Programs Button */}
+            {onShowProgramManager && (
+              <button
+                onClick={() => {
+                  vibrate(30)
+                  onShowProgramManager()
+                }}
+                className={`mt-4 w-full py-2 px-4 rounded-xl border ${
+                  theme === 'light' ? 'border-slate-200 hover:bg-slate-100' : 'border-slate-700 hover:bg-slate-800'
+                } ${textSecondary} text-sm flex items-center justify-center gap-2 transition-colors`}
+              >
+                <Settings className="w-4 h-4" />
+                Manage Programs
+              </button>
+            )}
           </div>
         </div>
       ) : (
         <div>
           <button
-            onClick={() => setShowProgramSelect(true)}
+            onClick={() => {
+              vibrate(30)
+              onShowProgramManager ? onShowProgramManager() : setShowProgramSelect(true)
+            }}
             className={`w-full ${cardBg} rounded-2xl p-6 text-center border-2 border-dashed border-slate-700 hover:border-purple-500 transition-colors`}
           >
             <Dumbbell className="w-12 h-12 text-purple-400 mx-auto mb-3" />
             <h3 className={`font-semibold ${textPrimary} mb-1`}>Select a Program</h3>
-            <p className={`text-sm ${textSecondary}`}>Choose your training split to get started</p>
+            <p className={`text-sm ${textSecondary}`}>Choose a template or create your own</p>
           </button>
         </div>
       )}

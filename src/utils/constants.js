@@ -47,8 +47,90 @@ export const STORAGE_KEYS = {
     userPersona: 'shift6_user_persona',
     currentLocation: 'shift6_current_location',
     accessibility: 'shift6_accessibility',
-    streakFreezes: 'shift6_streak_freezes'
+    streakFreezes: 'shift6_streak_freezes',
+    // Daily goals
+    dailyGoal: 'shift6_daily_goal',
+    restDays: 'shift6_rest_days',
+    warmupEnabled: 'shift6_warmup_enabled'
 };
+
+// Daily goal options (workouts per day)
+export const DAILY_GOAL_OPTIONS = [1, 2, 3, 4, 5, 6];
+export const DEFAULT_DAILY_GOAL = 1;
+
+// Rest timer options (in seconds, 'auto' for dynamic)
+export const REST_TIMER_OPTIONS = [
+    { value: 'auto', label: 'Auto' },
+    { value: 30, label: '30s' },
+    { value: 45, label: '45s' },
+    { value: 60, label: '60s' },
+    { value: 90, label: '90s' },
+    { value: 120, label: '2min' }
+];
+
+// XP rewards for gamification
+export const XP_REWARDS = {
+    workoutComplete: 100,
+    exerciseComplete: 25,
+    setComplete: 5,
+    streakBonus: 50, // Per day of streak
+    dailyGoalMet: 75,
+    personalRecord: 150,
+    badgeEarned: 200,
+    firstWorkout: 500,
+    weekComplete: 300,
+};
+
+// Level thresholds (XP needed for each level)
+export const LEVEL_THRESHOLDS = [
+    0,      // Level 1
+    500,    // Level 2
+    1200,   // Level 3
+    2100,   // Level 4
+    3200,   // Level 5
+    4500,   // Level 6
+    6000,   // Level 7
+    7700,   // Level 8
+    9600,   // Level 9
+    11700,  // Level 10
+    14000,  // Level 11
+    16500,  // Level 12
+    19200,  // Level 13
+    22100,  // Level 14
+    25200,  // Level 15
+    28500,  // Level 16
+    32000,  // Level 17
+    35700,  // Level 18
+    39600,  // Level 19
+    43700,  // Level 20
+];
+
+// Level titles
+export const LEVEL_TITLES = [
+    'Newcomer',         // 1
+    'Beginner',         // 2
+    'Apprentice',       // 3
+    'Trainee',          // 4
+    'Regular',          // 5
+    'Dedicated',        // 6
+    'Committed',        // 7
+    'Strong',           // 8
+    'Powerful',         // 9
+    'Elite',            // 10
+    'Champion',         // 11
+    'Master',           // 12
+    'Expert',           // 13
+    'Veteran',          // 14
+    'Legend',           // 15
+    'Hero',             // 16
+    'Titan',            // 17
+    'Olympian',         // 18
+    'Demigod',          // 19
+    'Immortal',         // 20
+];
+
+// Streak milestones for special rewards
+export const STREAK_MILESTONES = [3, 7, 14, 21, 30, 60, 90, 180, 365];
 
 // Weight unit options
 export const WEIGHT_UNITS = {

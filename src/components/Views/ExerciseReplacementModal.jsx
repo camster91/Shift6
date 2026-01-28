@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react'
-import { X, ArrowRight, Check, ChevronDown, ChevronUp, Undo2 } from 'lucide-react'
+import { X, ArrowRight, Check, Undo2 } from 'lucide-react'
 import { EXERCISE_PLANS } from '../../data/exercises.jsx'
 import {
   EXERCISE_ALTERNATIVES,
-  getExerciseAlternatives,
   saveExerciseReplacement,
   clearExerciseReplacement,
 } from '../../data/exerciseLibrary.js'
@@ -55,7 +54,7 @@ const ExerciseReplacementModal = ({
       sameLevel: getDetails(altData.sameLevel || []),
       harder: getDetails(altData.harder || []),
     }
-  }, [exerciseKey, altData])
+  }, [altData])
 
   // Filter alternatives based on selected filter
   const filteredAlternatives = useMemo(() => {
@@ -215,7 +214,7 @@ const ExerciseReplacementModal = ({
           {filteredAlternatives.length === 0 ? (
             <div className={`text-center py-8 ${textSecondary}`}>
               <p>No alternatives available for this filter.</p>
-              <p className="text-sm mt-1">Try selecting "All" to see more options.</p>
+              <p className="text-sm mt-1">Try selecting &quot;All&quot; to see more options.</p>
             </div>
           ) : (
             <div className="space-y-2">

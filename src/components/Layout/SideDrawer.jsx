@@ -16,7 +16,8 @@ import {
     Home,
     RefreshCw,
     HelpCircle,
-    ArrowLeftRight
+    ArrowLeftRight,
+    Bell
 } from 'lucide-react'
 
 const SideDrawer = ({
@@ -33,6 +34,7 @@ const SideDrawer = ({
     onShowBodyMetrics,
     onShowAccessibility,
     onShowProgramSwitcher,
+    onShowNotifications,
     // Mode switching
     currentMode = 'home',
     onSwitchMode,
@@ -219,6 +221,11 @@ const SideDrawer = ({
                         icon={Eye}
                         label="Accessibility"
                         onClick={onShowAccessibility}
+                    />
+                    <MenuItem
+                        icon={Bell}
+                        label="Notifications"
+                        onClick={onShowNotifications}
                     />
 
                     <Divider />

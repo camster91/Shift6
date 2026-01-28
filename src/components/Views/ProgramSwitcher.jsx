@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { X, ChevronRight, Check, Clock, Flame, ArrowLeftRight, BookOpen, Play } from 'lucide-react'
-import { getAllProgramsWithProgress, getProgramProgress, STARTER_TEMPLATES } from '../../data/exerciseLibrary.js'
+import { getAllProgramsWithProgress } from '../../data/exerciseLibrary.js'
 import { vibrate } from '../../utils/device'
 
 /**

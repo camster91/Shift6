@@ -238,11 +238,11 @@ const GymOnboarding = ({ onComplete, onSwitchToHome, theme = 'dark' }) => {
                       </div>
                       <p className={`text-sm ${textSecondary} mb-2`}>{level.desc}</p>
                       {recommended && (
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className={level.textClass}>Recommended:</span>
-                          <span className={theme === 'light' ? 'text-slate-700' : 'text-slate-300'}>{recommended.name}</span>
-                          <span className={textSecondary}>•</span>
-                          <span className={textSecondary}>{recommended.daysPerWeek}x/week</span>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                          <span className={`${level.textClass} flex-shrink-0`}>Recommended:</span>
+                          <span className={`${theme === 'light' ? 'text-slate-700' : 'text-slate-300'} truncate max-w-[120px]`}>{recommended.name}</span>
+                          <span className={`${textSecondary} hidden sm:inline`}>•</span>
+                          <span className={`${textSecondary} flex-shrink-0`}>{recommended.daysPerWeek}x/week</span>
                         </div>
                       )}
                     </div>

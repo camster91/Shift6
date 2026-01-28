@@ -34,20 +34,27 @@ const getWeightIncrement = (unit, exerciseIncrement = 2.5) => {
  * Handles sets, reps, weight tracking with rest timers
  */
 const GymWorkoutSession = ({
-  workout, // { dayName, exercises: [exerciseId, ...] }
+  workout, // { dayName, exercises: [exerciseId, ...], internalState?: {...} }
   gymWeights = {}, // { [exerciseId]: lastWeight (in kg) }
   gymReps = {}, // { [exerciseId]: [reps per set] }
   gymWeightUnit = 'kg',
   onWeightUnitChange,
   onComplete,
   onExit,
+  onStateChange, // Callback to persist internal state changes
   audioEnabled = true,
   theme = 'dark'
 }) => {
-  // Current exercise state
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
-  const [currentSetIndex, setCurrentSetIndex] = useState(0)
-  const [completedSets, setCompletedSets] = useState({}) // { [exerciseId]: [{ reps, weight, rpe }, ...] }
+  // Current exercise state (initialized from saved state if resuming)
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(
+    workout?.internalState?.currentExerciseIndex || 0
+  )
+  const [currentSetIndex, setCurrentSetIndex] = useState(
+    workout?.internalState?.currentSetIndex || 0
+  )
+  const [completedSets, setCompletedSets] = useState(
+    workout?.internalState?.completedSets || {}
+  ) // { [exerciseId]: [{ reps, weight, rpe }, ...] }
 
   // Weight and reps input (weight stored in kg internally)
   const [currentWeightKg, setCurrentWeightKg] = useState(0)
@@ -62,6 +69,8 @@ const GymWorkoutSession = ({
   // Workout state
   const [workoutStartTime] = useState(Date.now())
   const [showSummary, setShowSummary] = useState(false)
+  const [isLogging, setIsLogging] = useState(false) // Debounce for log button
+  const [showExitConfirm, setShowExitConfirm] = useState(false) // Custom exit modal
 
   const currentExerciseId = workout?.exercises?.[currentExerciseIndex]
   const currentExercise = currentExerciseId ? GYM_EXERCISES[currentExerciseId] : null
@@ -72,14 +81,21 @@ const GymWorkoutSession = ({
   const displayWeight = convertWeight(currentWeightKg, 'kg', gymWeightUnit)
   const weightIncrement = getWeightIncrement(gymWeightUnit, currentExercise?.weightIncrement)
 
-  // Initialize weight and reps from history or default
+  // Initialize weight ONLY when exercise changes (NOT on set change!)
+  // This fixes the bug where weight would reset after each logged set
   useEffect(() => {
-    if (currentExercise) {
-      // Get last used weight (stored in kg)
+    if (currentExercise && currentExerciseId) {
+      // Get last used weight (stored in kg) - only set on exercise change
       const lastWeightKg = gymWeights[currentExerciseId] || currentExercise.defaultWeight || 20
       setCurrentWeightKg(lastWeightKg)
+      setCurrentRpe(null) // Reset RPE for new exercise
+    }
+  }, [currentExerciseId, currentExercise, gymWeights])
+  // NOTE: currentSetIndex intentionally NOT in dependencies - weight persists across sets
 
-      // Get last used reps for this set, or default
+  // Initialize target reps per set (can update per set since targets may differ)
+  useEffect(() => {
+    if (currentExercise && currentExerciseId) {
       const lastReps = gymReps[currentExerciseId]
       if (lastReps && lastReps[currentSetIndex] !== undefined) {
         setCurrentReps(lastReps[currentSetIndex])
@@ -87,7 +103,18 @@ const GymWorkoutSession = ({
         setCurrentReps(currentExercise.defaultReps?.[currentSetIndex] || 8)
       }
     }
-  }, [currentExerciseId, currentExercise, currentSetIndex, gymWeights, gymReps])
+  }, [currentExerciseId, currentExercise, currentSetIndex, gymReps])
+
+  // Persist internal state changes (for crash/refresh recovery)
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        currentExerciseIndex,
+        currentSetIndex,
+        completedSets,
+      })
+    }
+  }, [currentExerciseIndex, currentSetIndex, completedSets, onStateChange])
 
   // Rest timer logic
   useEffect(() => {
@@ -114,9 +141,37 @@ const GymWorkoutSession = ({
     return () => clearInterval(restTimerRef.current)
   }, [isResting, restTimeLeft, audioEnabled])
 
-  // Log a completed set
+  // Validate input before logging
+  const validateSet = useCallback(() => {
+    if (currentReps < 1) {
+      return { valid: false, message: 'Please enter at least 1 rep' }
+    }
+    if (currentReps > 100) {
+      return { valid: false, message: 'Reps seem too high. Please check.' }
+    }
+    if (currentWeightKg < 0) {
+      return { valid: false, message: 'Weight cannot be negative' }
+    }
+    if (currentWeightKg > 500) {
+      return { valid: false, message: 'Weight seems too high. Please check.' }
+    }
+    return { valid: true }
+  }, [currentReps, currentWeightKg])
+
+  // Log a completed set (with debounce and validation)
   const logSet = useCallback(() => {
-    if (!currentExerciseId) return
+    // Debounce check - prevent double-tap
+    if (!currentExerciseId || isLogging) return
+
+    // Validate inputs
+    const validation = validateSet()
+    if (!validation.valid) {
+      vibrate('light')
+      alert(validation.message)
+      return
+    }
+
+    setIsLogging(true)
 
     const setData = {
       reps: currentReps,
@@ -155,7 +210,10 @@ const GymWorkoutSession = ({
       setCurrentRpe(null)
       startRest(currentExercise?.restSeconds || 90)
     }
-  }, [currentExerciseId, currentReps, currentWeightKg, currentRpe, completedSets, totalSets, currentExerciseIndex, totalExercises, currentExercise, audioEnabled])
+
+    // Reset debounce after short delay
+    setTimeout(() => setIsLogging(false), 500)
+  }, [currentExerciseId, currentReps, currentWeightKg, currentRpe, completedSets, totalSets, currentExerciseIndex, totalExercises, currentExercise, audioEnabled, isLogging, validateSet])
 
   const startRest = (seconds) => {
     setRestTimeLeft(seconds)
@@ -223,12 +281,15 @@ const GymWorkoutSession = ({
   const handleExit = () => {
     const completedCount = Object.values(completedSets).flat().length
     if (completedCount > 0) {
-      if (window.confirm('Exit workout? Your progress will be lost.')) {
-        onExit()
-      }
+      setShowExitConfirm(true)
     } else {
       onExit()
     }
+  }
+
+  const confirmExit = () => {
+    setShowExitConfirm(false)
+    onExit()
   }
 
   if (!currentExercise && !showSummary) {
@@ -477,12 +538,46 @@ const GymWorkoutSession = ({
       <div className="p-6">
         <button
           onClick={logSet}
-          className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          disabled={isLogging}
+          className={`w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${
+            isLogging ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
           <Check className="w-5 h-5" />
-          Log Set
+          {isLogging ? 'Logging...' : 'Log Set'}
         </button>
       </div>
+
+      {/* Exit Confirmation Modal */}
+      {showExitConfirm && (
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+          <div className={`${cardBg} rounded-2xl w-full max-w-sm overflow-hidden`}>
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <X className="w-8 h-8 text-white" />
+              </div>
+              <h3 className={`text-xl font-bold ${textPrimary} mb-2`}>Exit Workout?</h3>
+              <p className={textSecondary}>
+                You have {Object.values(completedSets).flat().length} sets logged. Your progress will be lost.
+              </p>
+            </div>
+            <div className={`flex border-t ${theme === 'light' ? 'border-slate-200' : 'border-slate-700'}`}>
+              <button
+                onClick={() => setShowExitConfirm(false)}
+                className={`flex-1 py-4 ${textSecondary} hover:bg-slate-800/50 transition-colors`}
+              >
+                Keep Training
+              </button>
+              <button
+                onClick={confirmExit}
+                className="flex-1 py-4 bg-amber-500 text-white font-semibold"
+              >
+                Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

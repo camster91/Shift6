@@ -73,6 +73,28 @@ function getProgressionLevel(exerciseKey) {
  * 3. External loading (weighted vest)
  */
 export const STARTER_TEMPLATES = {
+  // ========== RECOMMENDED: DAILY QUICK PROGRAM ==========
+  'daily-quick': {
+    id: 'daily-quick',
+    name: 'Daily Quick',
+    desc: 'Recommended - gentle progression for sustainable results',
+    longDesc: 'The recommended starting program for most people. Focuses on 2-3 exercises per day with gentler progression. Perfect for building a consistent habit without overwhelming volume.',
+    goal: 'balanced',
+    difficulty: 'beginner',
+    daysPerWeek: 5,
+    sessionDuration: 15,
+    exercises: ['pushups', 'squats', 'plank', 'gluteBridges', 'lunges', 'supermans'],
+    sets: 3,
+    repRange: [5, 12],
+    restSeconds: 45,
+    recommended: true,
+    isDefault: true,
+    maxExercisesPerDay: 2,
+    progressionRate: 'conservative',
+    tags: ['no-equipment', 'home-friendly', 'beginner', 'recommended', 'daily'],
+    adaptiveProgression: true,
+  },
+
   // ========== BEGINNER PROGRAMS (3 days/week) ==========
   'beginner-full-body': {
     id: 'beginner-full-body',
@@ -87,7 +109,7 @@ export const STARTER_TEMPLATES = {
     sets: 3,
     repRange: [8, 15],
     restSeconds: 60,
-    recommended: true,
+    adaptiveProgression: true,
     tags: ['no-equipment', 'home-friendly'],
   },
   'beginner-minimal': {
@@ -219,8 +241,8 @@ export const STARTER_TEMPLATES = {
   'shift6-classic': {
     id: 'shift6-classic',
     name: 'Shift6 Classic',
-    desc: 'The original 9 foundational exercises',
-    longDesc: 'The proven Shift6 program - 9 exercises covering all movement patterns with progressive overload built in.',
+    desc: 'The original 9 foundational exercises - challenging',
+    longDesc: 'The proven Shift6 program - 9 exercises covering all movement patterns with progressive overload built in. Best for those with some training experience.',
     goal: 'balanced',
     difficulty: 'intermediate',
     daysPerWeek: 3,
@@ -229,6 +251,7 @@ export const STARTER_TEMPLATES = {
     sets: 4,
     repRange: [8, 15],
     restSeconds: 60,
+    adaptiveProgression: true,
     tags: ['classic', 'pull-up-bar', 'dip-station'],
   },
 

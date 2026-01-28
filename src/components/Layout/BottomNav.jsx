@@ -3,7 +3,6 @@ import { Home, Zap, BarChart3, Menu, Dumbbell } from 'lucide-react'
 const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode = 'home' }) => {
     // Mode-specific styling
     const isGymMode = mode === 'gym'
-    const accentColor = isGymMode ? 'purple' : 'cyan'
     const activeTextClass = isGymMode ? 'text-purple-400' : 'text-cyan-400'
     const activeBgClass = isGymMode ? 'bg-purple-500/10' : 'bg-cyan-500/10'
     const activeGlowClass = isGymMode

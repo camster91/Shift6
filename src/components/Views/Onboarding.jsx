@@ -1,25 +1,17 @@
 import { useState } from 'react'
-import { ChevronRight, Check, Home, ChevronLeft, Zap, Trophy, Target, Clock } from 'lucide-react'
+import { ChevronRight, Home, ChevronLeft, Zap, Trophy, Target, Clock, Dumbbell } from 'lucide-react'
 import { FITNESS_LEVEL_PRESETS } from '../../data/exercises.jsx'
 
-// Step progress indicator component
+// Minimal step indicator - just dots
 const StepIndicator = ({ currentStep, totalSteps }) => (
-  <div className="flex items-center justify-center gap-2 py-4">
+  <div className="flex items-center justify-center gap-2 py-2">
     {Array.from({ length: totalSteps }).map((_, idx) => (
-      <div key={idx} className="flex items-center">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
-          idx < currentStep
-            ? 'bg-cyan-500 text-white'
-            : idx === currentStep
-              ? 'bg-cyan-500/20 text-cyan-400 ring-2 ring-cyan-500'
-              : 'bg-slate-800 text-slate-500'
-        }`}>
-          {idx < currentStep ? <Check className="w-4 h-4" /> : idx + 1}
-        </div>
-        {idx < totalSteps - 1 && (
-          <div className={`w-8 h-0.5 ${idx < currentStep ? 'bg-cyan-500' : 'bg-slate-800'}`} />
-        )}
-      </div>
+      <div
+        key={idx}
+        className={`w-2 h-2 rounded-full transition-all ${
+          idx <= currentStep ? 'bg-cyan-500' : 'bg-slate-700'
+        }`}
+      />
     ))}
   </div>
 )
@@ -58,65 +50,49 @@ const EXPERIENCE_LEVELS = [
   }
 ]
 
-// Program recommendations based on experience
+// Program recommendations based on experience - Daily Quick is default for beginners
 const PROGRAM_RECOMMENDATIONS = {
-  beginner: ['shift6-beginner', 'shift6-classic', 'minimal-start'],
-  intermediate: ['shift6-classic', 'push-pull', 'upper-lower'],
-  advanced: ['shift6-classic', 'push-pull', 'full-body']
+  beginner: ['daily-quick', 'minimal-start'],
+  intermediate: ['daily-quick', 'shift6-classic'],
+  advanced: ['shift6-classic', 'full-body']
 }
 
-// Home mode programs with descriptions and duration estimates
+// Home mode programs with descriptions - Daily Quick is the recommended default
 const HOME_PROGRAMS = {
+  'daily-quick': {
+    id: 'daily-quick',
+    name: 'Daily Quick',
+    desc: 'Recommended: 2 exercises per day, gentle progression',
+    exercises: ['pushups', 'squats', 'plank', 'gluteBridges', 'lunges', 'supermans'],
+    daysPerWeek: 5,
+    duration: 15,
+    difficulty: 'All levels',
+    maxExercisesPerDay: 2,
+    isRecommended: true
+  },
   'shift6-classic': {
     id: 'shift6-classic',
     name: 'Shift6 Classic',
     desc: 'The original 9-exercise full body program',
-    exercises: ['pushups', 'squats', 'pullups', 'dips', 'vups', 'glutebridge', 'plank', 'lunges', 'supermans'],
+    exercises: ['pushups', 'squats', 'pullups', 'dips', 'vups', 'gluteBridges', 'plank', 'lunges', 'supermans'],
     daysPerWeek: 3,
     duration: 30,
-    difficulty: 'All levels'
-  },
-  'shift6-beginner': {
-    id: 'shift6-beginner',
-    name: 'Beginner Start',
-    desc: 'Simplified program to build your foundation',
-    exercises: ['pushups', 'squats', 'plank', 'lunges', 'glutebridge'],
-    daysPerWeek: 3,
-    duration: 20,
-    difficulty: 'Beginner'
+    difficulty: 'Intermediate'
   },
   'minimal-start': {
     id: 'minimal-start',
     name: 'Minimal Start',
-    desc: 'Just 3 exercises to get started',
+    desc: 'Just 3 exercises to build the habit',
     exercises: ['pushups', 'squats', 'plank'],
-    daysPerWeek: 2,
+    daysPerWeek: 3,
     duration: 10,
     difficulty: 'Beginner'
   },
-  'push-pull': {
-    id: 'push-pull',
-    name: 'Push/Pull Split',
-    desc: 'Alternate pushing and pulling movements',
-    exercises: ['pushups', 'pullups', 'dips', 'squats', 'lunges', 'vups'],
-    daysPerWeek: 4,
-    duration: 25,
-    difficulty: 'Intermediate'
-  },
-  'upper-lower': {
-    id: 'upper-lower',
-    name: 'Upper/Lower Split',
-    desc: 'Focus on upper or lower body each session',
-    exercises: ['pushups', 'pullups', 'dips', 'squats', 'lunges', 'glutebridge', 'vups'],
-    daysPerWeek: 4,
-    duration: 30,
-    difficulty: 'Intermediate'
-  },
   'full-body': {
     id: 'full-body',
-    name: 'Full Body Daily',
-    desc: 'Hit all muscle groups every session',
-    exercises: ['pushups', 'squats', 'pullups', 'dips', 'vups', 'glutebridge', 'plank', 'lunges', 'supermans'],
+    name: 'Full Body',
+    desc: 'All 9 exercises, 5 days per week',
+    exercises: ['pushups', 'squats', 'pullups', 'dips', 'vups', 'gluteBridges', 'plank', 'lunges', 'supermans'],
     daysPerWeek: 5,
     duration: 35,
     difficulty: 'Advanced'
@@ -124,81 +100,122 @@ const HOME_PROGRAMS = {
 }
 
 /**
- * Onboarding - Simplified first-time setup for home mode
- * 3 steps: Welcome → Experience Level → Program Selection
+ * Onboarding - Simplified setup
+ * Step 0: Mode Selection (Home vs Gym) - one click
+ * Step 1: Experience Level - one click, auto-advances
+ * Step 2: Program Selection - one click to complete
  */
-const Onboarding = ({ onComplete }) => {
+const Onboarding = ({ onComplete, onSelectGym }) => {
   const [step, setStep] = useState(0)
   const [experienceLevel, setExperienceLevel] = useState(null)
-  const [selectedProgram, setSelectedProgram] = useState(null)
 
-  const handleComplete = () => {
-    const program = HOME_PROGRAMS[selectedProgram] || HOME_PROGRAMS['shift6-classic']
+  // Handle mode selection - clicking Home continues, clicking Gym exits to gym onboarding
+  const handleSelectMode = (mode) => {
+    if (mode === 'gym') {
+      // Exit to gym onboarding if handler provided
+      if (onSelectGym) {
+        onSelectGym()
+      }
+      return
+    }
+    // Home mode - continue to experience selection
+    setStep(1)
+  }
+
+  // Handle experience selection - auto-advance with recommended program
+  const handleSelectExperience = (level) => {
+    setExperienceLevel(level)
+
+    // Auto-select recommended program and complete
+    const recommended = PROGRAM_RECOMMENDATIONS[level]?.[0] || 'daily-quick'
+    const program = HOME_PROGRAMS[recommended] || HOME_PROGRAMS['daily-quick']
+    const fitnessPreset = FITNESS_LEVEL_PRESETS[level] || FITNESS_LEVEL_PRESETS.beginner
+
+    const trainingPreferences = {
+      fitnessLevel: level,
+      trainingDaysPerWeek: program.daysPerWeek,
+      repScheme: fitnessPreset.defaultRepScheme || 'balanced',
+      targetSessionDuration: program.duration,
+      maxExercisesPerDay: program.maxExercisesPerDay || 0
+    }
+
+    // Complete onboarding with recommended program
+    onComplete('bodyweight', ['none'], null, trainingPreferences, program.exercises)
+  }
+
+  // Handle program selection (if user wants to change from recommended)
+  const handleSelectProgram = (programId) => {
+    const program = HOME_PROGRAMS[programId] || HOME_PROGRAMS['daily-quick']
     const fitnessPreset = FITNESS_LEVEL_PRESETS[experienceLevel] || FITNESS_LEVEL_PRESETS.beginner
 
     const trainingPreferences = {
       fitnessLevel: experienceLevel,
       trainingDaysPerWeek: program.daysPerWeek,
       repScheme: fitnessPreset.defaultRepScheme || 'balanced',
-      targetSessionDuration: 30
+      targetSessionDuration: program.duration,
+      maxExercisesPerDay: program.maxExercisesPerDay || 0
     }
 
-    // Pass program mode, equipment (bodyweight = none), template, preferences, and exercises
     onComplete('bodyweight', ['none'], null, trainingPreferences, program.exercises)
   }
 
-  // Get recommended programs based on experience
-  const recommendedPrograms = experienceLevel
-    ? PROGRAM_RECOMMENDATIONS[experienceLevel]
-    : Object.keys(HOME_PROGRAMS)
-
-  // Step 0: Welcome
+  // Step 0: Mode Selection (Home vs Gym)
   if (step === 0) {
     return (
       <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center mb-8">
-            <Home className="w-12 h-12 text-white" />
-          </div>
-
-          <h1 className="text-3xl font-bold text-white mb-4">
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <h1 className="text-3xl font-bold text-white mb-2 text-center">
             Welcome to Shift6
           </h1>
-          <p className="text-slate-400 max-w-sm mb-8">
-            Build strength anywhere with progressive bodyweight training that adapts to your level.
+          <p className="text-slate-400 mb-12 text-center">
+            Choose your training style
           </p>
 
-          <div className="space-y-3 text-left max-w-sm w-full">
-            {[
-              'No equipment needed',
-              '6-week progressive programs',
-              'Track reps and personal records',
-              'Automatic progression'
-            ].map((feature, idx) => (
-              <div key={idx} className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                  <Check className="w-4 h-4 text-cyan-400" />
+          <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
+            {/* Home Mode - Primary option */}
+            <button
+              onClick={() => handleSelectMode('home')}
+              className="bg-gradient-to-br from-cyan-600 to-teal-600 rounded-2xl p-6 text-left hover:from-cyan-500 hover:to-teal-500 transition-all group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Home className="w-8 h-8 text-white" />
                 </div>
-                <span className="text-slate-400">{feature}</span>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-white">Home</h3>
+                  <p className="text-cyan-100 text-sm">
+                    Bodyweight training, no equipment
+                  </p>
+                </div>
+                <ChevronRight className="w-6 h-6 text-white/70 group-hover:translate-x-1 transition-transform" />
               </div>
-            ))}
-          </div>
-        </div>
+            </button>
 
-        <div className="p-6">
-          <button
-            onClick={() => setStep(1)}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-600 text-white font-semibold text-lg flex items-center justify-center gap-2"
-          >
-            Get Started
-            <ChevronRight className="w-5 h-5" />
-          </button>
+            {/* Gym Mode - Secondary option */}
+            <button
+              onClick={() => handleSelectMode('gym')}
+              className="bg-slate-900 border border-slate-700 rounded-2xl p-6 text-left hover:border-purple-500/50 hover:bg-purple-500/5 transition-all group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Dumbbell className="w-8 h-8 text-purple-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-white">Gym</h3>
+                  <p className="text-slate-400 text-sm">
+                    Weights, machines & equipment
+                  </p>
+                </div>
+                <ChevronRight className="w-6 h-6 text-slate-500 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     )
   }
 
-  // Step 1: Experience Level
+  // Step 1: Experience Level - one click to complete with recommended program
   if (step === 1) {
     return (
       <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
@@ -208,76 +225,64 @@ const Onboarding = ({ onComplete }) => {
             className="flex items-center gap-1 text-slate-400 hover:text-white"
           >
             <ChevronLeft className="w-5 h-5" />
-            Back
           </button>
-          <StepIndicator currentStep={1} totalSteps={3} />
-          <div className="w-12" />
+          <StepIndicator currentStep={1} totalSteps={2} />
+          <div className="w-8" />
         </div>
 
-        <div className="flex-1 p-6">
-          <h2 className="text-2xl font-bold text-white mb-2">
-            What is your experience level?
+        <div className="flex-1 p-6 flex flex-col">
+          <h2 className="text-2xl font-bold text-white mb-2 text-center">
+            Your experience level?
           </h2>
-          <p className="text-slate-400 mb-6">
-            This helps us recommend the right program for you.
+          <p className="text-slate-400 mb-8 text-center">
+            Tap to start with the perfect program for you
           </p>
 
-          <div className="space-y-3">
+          <div className="space-y-4 flex-1">
             {EXPERIENCE_LEVELS.map((level) => {
               const Icon = level.icon
-              const isSelected = experienceLevel === level.id
+              const recommended = PROGRAM_RECOMMENDATIONS[level.id]?.[0] || 'daily-quick'
+              const program = HOME_PROGRAMS[recommended]
 
               return (
                 <button
                   key={level.id}
-                  onClick={() => setExperienceLevel(level.id)}
-                  className={`w-full bg-slate-900 rounded-xl p-4 text-left transition-all ${
-                    isSelected
-                      ? `ring-2 ${level.ringClass} ${level.bgClass}`
-                      : 'hover:ring-2 hover:ring-slate-600'
-                  }`}
+                  onClick={() => handleSelectExperience(level.id)}
+                  className={`w-full bg-slate-900 rounded-xl p-5 text-left transition-all hover:ring-2 ${level.ringClass} ${level.bgClass.replace('/10', '/5')}`}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      isSelected ? level.iconBgClass : 'bg-slate-800'
-                    }`}>
-                      <Icon className={`w-6 h-6 ${
-                        isSelected ? level.textClass : 'text-slate-400'
-                      }`} />
+                  <div className="flex items-center gap-4">
+                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${level.iconBgClass}`}>
+                      <Icon className={`w-7 h-7 ${level.textClass}`} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-white">{level.name}</h3>
+                      <h3 className="font-bold text-white text-lg">{level.name}</h3>
                       <p className="text-sm text-slate-400">{level.desc}</p>
+                      {program && (
+                        <p className="text-xs text-cyan-400 mt-1">
+                          → {program.name} • {program.duration}min • {program.daysPerWeek}x/week
+                        </p>
+                      )}
                     </div>
-                    {isSelected && (
-                      <Check className={`w-5 h-5 ${level.textClass}`} />
-                    )}
+                    <ChevronRight className={`w-5 h-5 ${level.textClass}`} />
                   </div>
                 </button>
               )
             })}
           </div>
-        </div>
 
-        <div className="p-6">
+          {/* Option to see all programs */}
           <button
             onClick={() => setStep(2)}
-            disabled={!experienceLevel}
-            className={`w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-all ${
-              experienceLevel
-                ? 'bg-gradient-to-r from-cyan-500 to-teal-600 text-white'
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-            }`}
+            className="mt-4 text-center text-sm text-slate-500 hover:text-slate-300 transition-colors"
           >
-            Continue
-            <ChevronRight className="w-5 h-5" />
+            Or browse all programs →
           </button>
         </div>
       </div>
     )
   }
 
-  // Step 2: Program Selection
+  // Step 2: Program Selection (optional - if user wants to pick manually)
   if (step === 2) {
     return (
       <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
@@ -287,86 +292,60 @@ const Onboarding = ({ onComplete }) => {
             className="flex items-center gap-1 text-slate-400 hover:text-white"
           >
             <ChevronLeft className="w-5 h-5" />
-            Back
           </button>
-          <StepIndicator currentStep={2} totalSteps={3} />
-          <div className="w-12" />
+          <StepIndicator currentStep={2} totalSteps={2} />
+          <div className="w-8" />
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
-          <h2 className="text-2xl font-bold text-white mb-2">
+          <h2 className="text-2xl font-bold text-white mb-2 text-center">
             Choose Your Program
           </h2>
-          <p className="text-slate-400 mb-6">
-            Select a training program that fits your goals.
+          <p className="text-slate-400 mb-6 text-center">
+            Tap a program to start
           </p>
 
           <div className="space-y-3">
-            {Object.entries(HOME_PROGRAMS).map(([id, program]) => {
-              const isSelected = selectedProgram === id
-              const isRecommended = recommendedPrograms.includes(id)
-
-              return (
-                <button
-                  key={id}
-                  onClick={() => setSelectedProgram(id)}
-                  className={`w-full bg-slate-900 rounded-xl p-4 text-left transition-all ${
-                    isSelected
-                      ? 'ring-2 ring-cyan-500 bg-cyan-500/10'
-                      : 'hover:ring-2 hover:ring-slate-600'
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white">{program.name}</h3>
-                        {isRecommended && (
-                          <span className="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full">
-                            Recommended
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-400 mt-1">{program.desc}</p>
+            {Object.entries(HOME_PROGRAMS).map(([id, program]) => (
+              <button
+                key={id}
+                onClick={() => handleSelectProgram(id)}
+                className={`w-full bg-slate-900 rounded-xl p-4 text-left transition-all hover:ring-2 ${
+                  program.isRecommended
+                    ? 'ring-2 ring-cyan-500 bg-cyan-500/10'
+                    : 'hover:ring-slate-600'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-white">{program.name}</h3>
+                      {program.isRecommended && (
+                        <span className="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full">
+                          Recommended
+                        </span>
+                      )}
                     </div>
-                    {isSelected && (
-                      <Check className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                    )}
+                    <p className="text-sm text-slate-400 mt-1">{program.desc}</p>
                   </div>
+                  <ChevronRight className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                </div>
 
-                  <div className="flex items-center gap-3 mt-3">
-                    <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400">
-                      {program.exercises.length} exercises
-                    </span>
-                    <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400">
-                      {program.daysPerWeek}x/week
-                    </span>
-                    <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      ~{program.duration}min
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      {program.difficulty}
-                    </span>
-                  </div>
-                </button>
-              )
-            })}
+                <div className="flex items-center gap-3 mt-3">
+                  <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400">
+                    {program.exercises.length} exercises
+                  </span>
+                  <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400">
+                    {program.daysPerWeek}x/week
+                  </span>
+                  <span className="text-xs px-2 py-1 bg-slate-700/50 rounded text-slate-400 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    ~{program.duration}min
+                  </span>
+                </div>
+              </button>
+            ))}
           </div>
-        </div>
-
-        <div className="p-6">
-          <button
-            onClick={handleComplete}
-            disabled={!selectedProgram}
-            className={`w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-all ${
-              selectedProgram
-                ? 'bg-gradient-to-r from-cyan-500 to-teal-600 text-white'
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-            }`}
-          >
-            Start Training
-            <Home className="w-5 h-5" />
-          </button>
         </div>
       </div>
     )

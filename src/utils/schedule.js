@@ -97,8 +97,8 @@ export const getScheduleFocus = (preferredDays = []) => {
 
 /**
  * Builds a workout stack for today based on schedule, progress, and preferences.
- * Returns ALL active exercises that still have incomplete sessions.
- * Respects preferred training days if specified.
+ * Returns exercises that still have incomplete sessions.
+ * Respects preferred training days and maxExercisesPerDay limit if specified.
  * @param {Object.<string, string[]>} completedDays - Map of exercise keys to completed day IDs
  * @param {Object} [exercisePlans] - Optional exercise plans object (defaults to EXERCISE_PLANS)
  * @param {string[]} [activeProgram] - Optional array of exercise keys in user's active program
@@ -107,6 +107,7 @@ export const getScheduleFocus = (preferredDays = []) => {
  */
 export const getDailyStack = (completedDays, exercisePlans = EXERCISE_PLANS, activeProgram = null, trainingPreferences = null) => {
     const preferredDays = trainingPreferences?.preferredDays || [];
+    const maxExercisesPerDay = trainingPreferences?.maxExercisesPerDay || 0; // 0 = no limit
 
     // Check if today is a valid training day
     if (!isTrainingDay(preferredDays)) {
@@ -116,11 +117,27 @@ export const getDailyStack = (completedDays, exercisePlans = EXERCISE_PLANS, act
     // Get all active program exercises (or default 9)
     const programKeys = activeProgram || Object.keys(EXERCISE_PLANS);
 
-    // Return all exercises that have incomplete sessions
-    const stack = [];
+    // Build stack of all exercises with incomplete sessions
+    const allAvailable = [];
     programKeys.forEach(key => {
         const next = getNextSessionForExercise(key, completedDays, exercisePlans);
-        if (next) stack.push(next);
+        if (next) allAvailable.push(next);
     });
-    return stack;
+
+    // Apply maxExercisesPerDay limit if set
+    // Rotate exercises based on day of week to ensure variety
+    if (maxExercisesPerDay > 0 && allAvailable.length > maxExercisesPerDay) {
+        const dayOfWeek = new Date().getDay();
+        const startIndex = (dayOfWeek * maxExercisesPerDay) % allAvailable.length;
+        const selected = [];
+
+        for (let i = 0; i < maxExercisesPerDay; i++) {
+            const idx = (startIndex + i) % allAvailable.length;
+            selected.push(allAvailable[idx]);
+        }
+
+        return selected;
+    }
+
+    return allAvailable;
 };

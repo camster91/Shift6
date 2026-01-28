@@ -743,6 +743,139 @@ function getTrendMessage(trend, avgRatio) {
 }
 
 // ============================================================
+// ADAPTIVE DIFFICULTY LEVEL ADJUSTMENT
+// ============================================================
+
+/**
+ * Analyze performance history and recommend difficulty level change
+ * Difficulty levels: 1 (Assisted) - 6 (Elite)
+ * @param {string} exerciseKey - Exercise identifier
+ * @param {Object[]} sessionHistory - Full session history
+ * @param {number} currentDifficulty - Current difficulty level (1-6)
+ * @returns {Object|null} Recommendation or null if no change needed
+ */
+export function analyzeAdaptiveDifficulty(exerciseKey, sessionHistory, currentDifficulty = 3) {
+  // Get last 5 sessions for this exercise
+  const recentSessions = sessionHistory
+    .filter(s => s.exerciseKey === exerciseKey)
+    .slice(0, 5);
+
+  if (recentSessions.length < 3) {
+    return null; // Not enough data
+  }
+
+  // Calculate performance metrics
+  let exceedingCount = 0;
+  let strugglingCount = 0;
+  let totalRatio = 0;
+
+  recentSessions.forEach(session => {
+    const actual = session.actualReps?.reduce((a, b) => a + b, 0) || session.volume || 0;
+    const target = session.targetReps?.reduce((a, b) => a + b, 0) || actual;
+
+    if (target > 0) {
+      const ratio = actual / target;
+      totalRatio += ratio;
+
+      if (ratio >= 1.2) exceedingCount++;
+      if (ratio < 0.7) strugglingCount++;
+    }
+  });
+
+  const avgRatio = totalRatio / recentSessions.length;
+
+  // Upgrade: Consistently exceeding targets (3+ sessions at 120%+ OR avg above 115%)
+  if ((exceedingCount >= 3 || avgRatio >= 1.15) && currentDifficulty < 6) {
+    return {
+      action: 'upgrade',
+      currentLevel: currentDifficulty,
+      recommendedLevel: currentDifficulty + 1,
+      reason: exceedingCount >= 3
+        ? 'You have exceeded targets 3+ times in a row!'
+        : `Your average performance is ${Math.round(avgRatio * 100)}% of target`,
+      message: 'Ready for a bigger challenge?',
+      stats: { avgRatio, exceedingCount, strugglingCount }
+    };
+  }
+
+  // Downgrade: Consistently struggling (3+ sessions at <70% OR avg below 75%)
+  if ((strugglingCount >= 3 || avgRatio < 0.75) && currentDifficulty > 1) {
+    return {
+      action: 'downgrade',
+      currentLevel: currentDifficulty,
+      recommendedLevel: currentDifficulty - 1,
+      reason: strugglingCount >= 3
+        ? 'The last few sessions have been challenging'
+        : `Your average is at ${Math.round(avgRatio * 100)}% of target`,
+      message: 'Adjusting difficulty for better progress',
+      stats: { avgRatio, exceedingCount, strugglingCount }
+    };
+  }
+
+  return null; // No change needed
+}
+
+/**
+ * Auto-apply difficulty adjustment based on analysis
+ * @param {Object} recommendation - From analyzeAdaptiveDifficulty
+ * @param {function} setDifficultyFn - State setter function
+ * @param {string} exerciseKey - Exercise identifier
+ * @param {boolean} autoApply - If true, apply without prompting
+ * @returns {boolean} Whether adjustment was applied
+ */
+export function applyDifficultyAdjustment(recommendation, setDifficultyFn, exerciseKey, autoApply = false) {
+  if (!recommendation) return false;
+
+  if (autoApply) {
+    setDifficultyFn(exerciseKey, recommendation.recommendedLevel);
+    return true;
+  }
+
+  // Return recommendation for UI to handle
+  return false;
+}
+
+/**
+ * Check if exercise should auto-progress to next progression chain
+ * @param {string} exerciseKey - Current exercise
+ * @param {Object} completedDays - Completed days per exercise
+ * @param {Object} personalRecords - PRs per exercise
+ * @param {Object} progressionChains - Progression chain data
+ * @returns {Object|null} Next exercise recommendation or null
+ */
+export function checkProgressionUnlock(exerciseKey, completedDays, personalRecords, progressionChains) {
+  const exerciseCompleted = completedDays[exerciseKey]?.length >= 18;
+  const exercisePR = personalRecords[exerciseKey] || 0;
+
+  if (!progressionChains) return null;
+
+  // Find this exercise in a chain
+  for (const [, chain] of Object.entries(progressionChains)) {
+    const currentIndex = chain.findIndex(p => p.key === exerciseKey);
+    if (currentIndex === -1) continue;
+
+    const current = chain[currentIndex];
+    const next = chain[currentIndex + 1];
+
+    if (!next) continue; // Already at end of chain
+
+    // Check unlock conditions
+    if (exerciseCompleted || (current.unlockReps && exercisePR >= current.unlockReps)) {
+      return {
+        currentExercise: exerciseKey,
+        nextExercise: next.key,
+        reason: exerciseCompleted
+          ? 'You have mastered this exercise!'
+          : `You hit ${exercisePR} reps - unlocking the next level!`,
+        unlockReps: current.unlockReps
+      };
+    }
+  }
+
+  return null;
+}
+
+// ============================================================
 // STORAGE HELPERS
 // ============================================================
 

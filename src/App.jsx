@@ -46,6 +46,7 @@ import BodyMetrics from './components/Views/BodyMetrics';
 import WarmupRoutine from './components/Views/WarmupRoutine';
 import AccessibilitySettings from './components/Views/AccessibilitySettings';
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
+import UpdateNotification from './components/Visuals/UpdateNotification';
 import { getRecommendedWarmup } from './data/warmupRoutines';
 
 // Gym Mode Components
@@ -1360,6 +1361,8 @@ const App = () => {
     return (
         <div className={`min-h-screen font-sans selection:bg-cyan-500/30 ${theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
             }`}>
+            {/* PWA Update Notification */}
+            <UpdateNotification theme={theme} />
 
             {/* Mode Selector - Show on app launch for onboarded users */}
             {shouldShowModeSelector && (

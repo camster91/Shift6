@@ -408,6 +408,61 @@ export const generateProgression = (startReps, finalGoal) => {
     return weeks;
 };
 
+/**
+ * Generate a gentler progression for Daily Quick program
+ * - 3 sets instead of 5
+ * - Slower increment (conservative rate)
+ * - More achievable daily targets
+ * @param {number} startReps - Starting rep count
+ * @param {number} finalGoal - Final goal reps
+ * @param {Object} options - Optional configuration
+ * @returns {Array} Weeks array with progression plan
+ */
+export const generateQuickProgression = (startReps, finalGoal, options = {}) => {
+    const {
+        weeks: numWeeks = 8, // Longer program, more spread out
+        daysPerWeek = 5,
+        sets = 3
+    } = options;
+
+    const weeks = [];
+    const totalDays = numWeeks * daysPerWeek;
+    // Conservative progression - only aim for 70% of final goal in the plan
+    // Users can progress further via adaptive difficulty
+    const targetGoal = Math.round(finalGoal * 0.7);
+
+    let dayCount = 0;
+    for (let week = 1; week <= numWeeks; week++) {
+        const days = [];
+        for (let d = 0; d < daysPerWeek; d++) {
+            // Non-linear curve - slower progress early, picks up mid-program
+            const progress = dayCount / (totalDays - 1);
+            const curveAdjusted = Math.pow(progress, 0.8); // Slightly front-loaded
+            const baseRep = Math.max(1, Math.round(startReps + (targetGoal - startReps) * curveAdjusted));
+            const isFinal = week === numWeeks && d === daysPerWeek - 1;
+
+            if (isFinal) {
+                days.push({
+                    id: `q${week}d${d + 1}`,
+                    reps: [targetGoal],
+                    isFinal: true
+                });
+            } else {
+                // 3 sets with gentle pattern: 90%, 100%, 110%
+                const reps = [];
+                for (let s = 0; s < sets; s++) {
+                    const factor = s === 0 ? 0.9 : s === sets - 1 ? 1.1 : 1.0;
+                    reps.push(Math.max(1, Math.round(baseRep * factor)));
+                }
+                days.push({ id: `q${week}d${d + 1}`, reps });
+            }
+            dayCount++;
+        }
+        weeks.push({ week, days });
+    }
+    return weeks;
+};
+
 // ============================================
 // ACHIEVEMENTS
 // ============================================

@@ -2,12 +2,9 @@ import { useState, useMemo } from 'react'
 import {
   Dumbbell,
   ChevronRight,
-  Flame,
   Calendar,
   TrendingUp,
-  RotateCcw,
-  Settings,
-  Home
+  RotateCcw
 } from 'lucide-react'
 import { GYM_EXERCISES, GYM_PROGRAMS, getGymProgram } from '../../data/gymExercises'
 
@@ -19,9 +16,11 @@ const GymDashboard = ({
   gymProgram = null, // { programId, currentWeek, currentDay, startDate }
   gymWeights = {}, // { [exerciseId]: lastWeight }
   gymHistory = [], // [{ date, dayName, exercises, duration, totalVolume }]
+  // eslint-disable-next-line no-unused-vars
   gymStreak = 0,
   onStartWorkout,
   onChangeProgram,
+  // eslint-disable-next-line no-unused-vars
   onSwitchMode,
   theme = 'dark'
 }) => {

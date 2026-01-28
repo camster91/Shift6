@@ -2,12 +2,8 @@ import { useState, useMemo } from 'react'
 import { ChevronRight, Home, ChevronLeft, Zap, Trophy, Target, Clock, Dumbbell, Flame, Users, Heart, ChevronDown, ChevronUp, Info, Check, ArrowLeftRight } from 'lucide-react'
 import { FITNESS_LEVEL_PRESETS, EXERCISE_PLANS } from '../../data/exercises.jsx'
 import {
-  STARTER_TEMPLATES,
   DIFFICULTY_LABELS,
   getProgramsByDifficulty,
-  getRecommendedProgram,
-  getProgramWithDetails,
-  getAllProgramsWithProgress,
 } from '../../data/exerciseLibrary.js'
 
 // Minimal step indicator - just dots
@@ -91,12 +87,6 @@ const Onboarding = ({ onComplete, onSelectGym }) => {
     advanced: getProgramsByDifficulty('advanced')
   }), [])
 
-  // Get recommended program for selected level
-  const recommendedProgram = useMemo(() => {
-    if (!experienceLevel) return null
-    return getRecommendedProgram(experienceLevel)
-  }, [experienceLevel])
-
   // Handle mode selection - clicking Home continues, clicking Gym exits to gym onboarding
   const handleSelectMode = (mode) => {
     if (mode === 'gym') {
@@ -114,14 +104,6 @@ const Onboarding = ({ onComplete, onSelectGym }) => {
   const handleSelectExperience = (level) => {
     setExperienceLevel(level)
     setStep(2) // Go to program selection
-  }
-
-  // Handle quick start with recommended program
-  const handleQuickStart = (level) => {
-    const program = getRecommendedProgram(level)
-    if (program) {
-      completeWithProgram(program, level)
-    }
   }
 
   // Handle program selection
@@ -251,10 +233,10 @@ const Onboarding = ({ onComplete, onSelectGym }) => {
 
         <div className="flex-1 p-6 flex flex-col">
           <h2 className="text-2xl font-bold text-white mb-2 text-center">
-            What's your experience level?
+            What&apos;s your experience level?
           </h2>
           <p className="text-slate-400 mb-8 text-center">
-            We'll recommend the perfect program for you
+            We&apos;ll recommend the perfect program for you
           </p>
 
           <div className="space-y-4 flex-1">
@@ -474,7 +456,7 @@ const Onboarding = ({ onComplete, onSelectGym }) => {
                       {/* Note about customization */}
                       <p className="text-xs text-slate-500 mt-4 flex items-center gap-1">
                         <ArrowLeftRight className="w-3 h-3" />
-                        You can swap exercises you don't like after starting
+                        You can swap exercises you don&apos;t like after starting
                       </p>
                     </div>
                   )}

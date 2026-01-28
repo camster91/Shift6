@@ -65,7 +65,6 @@ const GymDashboard = ({
   gymStreak = 0,
   onStartWorkout,
   onChangeProgram,
-  onSwitchMode,
   theme = 'dark'
 }) => {
   const [showProgramSelect, setShowProgramSelect] = useState(false)
@@ -316,7 +315,7 @@ const GymDashboard = ({
                 <RotateCcw className="w-8 h-8 text-emerald-400" />
               </div>
               <h3 className={`font-semibold ${textPrimary} mb-1`}>Rest Day</h3>
-              <p className={`text-sm ${textSecondary}`}>Recovery is part of the process. You've earned it!</p>
+              <p className={`text-sm ${textSecondary}`}>Recovery is part of the process. You&apos;ve earned it!</p>
             </div>
           ) : (
             <button

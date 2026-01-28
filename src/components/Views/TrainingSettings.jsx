@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, ChevronDown, ChevronUp, Save, RotateCcw, Sparkles } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, Save, RotateCcw, Sparkles, Target, Timer, Flame } from 'lucide-react'
 import {
     REP_SCHEME_CONFIGS,
     PROGRESSION_RATES,
@@ -10,7 +10,9 @@ import {
     TRAINING_DAYS_OPTIONS,
     SESSION_DURATION_OPTIONS,
     SETS_PER_EXERCISE_OPTIONS,
-    PROGRAM_DURATION_OPTIONS
+    PROGRAM_DURATION_OPTIONS,
+    DAILY_GOAL_OPTIONS,
+    REST_TIMER_OPTIONS
 } from '../../utils/constants.js'
 import { applyFitnessLevelPreset } from '../../utils/preferences.js'
 import { getThemeClasses, getModeAccentClasses } from '../../utils/colors'
@@ -21,15 +23,25 @@ const TrainingSettings = ({
     onClose,
     hasProgress = false,
     theme = 'dark',
-    mode = 'home'
+    mode = 'home',
+    // New settings
+    dailyGoal = 1,
+    onDailyGoalChange,
+    restTimerOverride = null,
+    onRestTimerChange,
+    warmupEnabled = true,
+    onWarmupChange
 }) => {
     const [tempPrefs, setTempPrefs] = useState({ ...preferences })
+    const [tempDailyGoal, setTempDailyGoal] = useState(dailyGoal)
+    const [tempRestTimer, setTempRestTimer] = useState(restTimerOverride)
+    const [tempWarmup, setTempWarmup] = useState(warmupEnabled)
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [hasChanges, setHasChanges] = useState(false)
 
     useEffect(() => {
         // Check if preferences have changed (handles arrays like preferredDays)
-        const changed = Object.keys(tempPrefs).some(key => {
+        const prefsChanged = Object.keys(tempPrefs).some(key => {
             const tempVal = tempPrefs[key]
             const prefVal = preferences[key]
             // Handle array comparison
@@ -38,8 +50,14 @@ const TrainingSettings = ({
             }
             return tempVal !== prefVal
         })
-        setHasChanges(changed)
-    }, [tempPrefs, preferences])
+
+        // Check if other settings changed
+        const goalChanged = tempDailyGoal !== dailyGoal
+        const restChanged = tempRestTimer !== restTimerOverride
+        const warmupChanged = tempWarmup !== warmupEnabled
+
+        setHasChanges(prefsChanged || goalChanged || restChanged || warmupChanged)
+    }, [tempPrefs, preferences, tempDailyGoal, dailyGoal, tempRestTimer, restTimerOverride, tempWarmup, warmupEnabled])
 
     const handleChange = (key, value) => {
         setTempPrefs(prev => ({ ...prev, [key]: value }))
@@ -62,10 +80,17 @@ const TrainingSettings = ({
 
     const handleReset = () => {
         setTempPrefs({ ...DEFAULT_TRAINING_PREFERENCES })
+        setTempDailyGoal(1)
+        setTempRestTimer(null)
+        setTempWarmup(true)
     }
 
     const handleSave = () => {
         onSave(tempPrefs)
+        // Save other settings if handlers provided
+        if (onDailyGoalChange) onDailyGoalChange(tempDailyGoal)
+        if (onRestTimerChange) onRestTimerChange(tempRestTimer)
+        if (onWarmupChange) onWarmupChange(tempWarmup)
         onClose()
     }
 
@@ -120,6 +145,87 @@ const TrainingSettings = ({
                                     <span className="text-xs">{preset.name}</span>
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Daily Goal */}
+                    <div className={`${themeClasses.cardBg} rounded-xl p-4 border ${themeClasses.borderColor}`}>
+                        <div className="flex items-center gap-2 mb-3">
+                            <Target className={`w-4 h-4 ${accent.accentText}`} />
+                            <span className={`text-sm font-medium ${themeClasses.textPrimary}`}>Daily Workout Goal</span>
+                        </div>
+                        <p className={`text-xs ${themeClasses.textSecondary} mb-3`}>
+                            How many workouts do you aim to complete each day?
+                        </p>
+                        <div className="flex gap-2">
+                            {DAILY_GOAL_OPTIONS.map(num => (
+                                <button
+                                    key={num}
+                                    onClick={() => setTempDailyGoal(num)}
+                                    className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
+                                        tempDailyGoal === num
+                                            ? `${accent.accentSolid} text-white`
+                                            : `${themeClasses.hoverBg} ${themeClasses.textSecondary}`
+                                    }`}
+                                >
+                                    {num}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Rest Timer & Warmup Settings */}
+                    <div className={`${themeClasses.cardBg} rounded-xl p-4 border ${themeClasses.borderColor}`}>
+                        <div className="flex items-center gap-2 mb-3">
+                            <Timer className={`w-4 h-4 ${accent.accentText}`} />
+                            <span className={`text-sm font-medium ${themeClasses.textPrimary}`}>Workout Settings</span>
+                        </div>
+
+                        {/* Rest Timer Override */}
+                        <div className="mb-4">
+                            <label className={`text-xs ${themeClasses.textSecondary} block mb-2`}>
+                                Rest Timer Between Sets
+                            </label>
+                            <div className="grid grid-cols-6 gap-1">
+                                {REST_TIMER_OPTIONS.map(opt => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => setTempRestTimer(opt.value === 'auto' ? null : opt.value)}
+                                        className={`py-2 rounded-lg text-xs transition-all ${
+                                            (opt.value === 'auto' && tempRestTimer === null) || tempRestTimer === opt.value
+                                                ? `${accent.accentSolid} text-white`
+                                                : `${themeClasses.hoverBg} ${themeClasses.textSecondary}`
+                                        }`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Warmup Toggle */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <Flame className={`w-4 h-4 ${tempWarmup ? accent.accentText : themeClasses.textSecondary}`} />
+                                    <span className={`text-sm font-medium ${themeClasses.textPrimary}`}>
+                                        Warmup Routine
+                                    </span>
+                                </div>
+                                <p className={`text-xs ${themeClasses.textSecondary} mt-1`}>
+                                    Show warmup before workouts
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setTempWarmup(!tempWarmup)}
+                                className={`relative w-12 h-7 rounded-full transition-colors ${
+                                    tempWarmup ? accent.accentSolid : 'bg-slate-600'
+                                }`}
+                            >
+                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${
+                                    tempWarmup ? 'left-6' : 'left-1'
+                                }`} />
+                            </button>
                         </div>
                     </div>
 

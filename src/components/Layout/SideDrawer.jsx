@@ -14,7 +14,8 @@ import {
     ChevronRight,
     User,
     Home,
-    RefreshCw
+    RefreshCw,
+    HelpCircle
 } from 'lucide-react'
 
 const SideDrawer = ({
@@ -25,6 +26,7 @@ const SideDrawer = ({
     onShowCalendar,
     onShowGuide,
     onShowAchievements,
+    onShowHelp,
     // Settings callbacks
     onShowTrainingSettings,
     onShowBodyMetrics,
@@ -178,6 +180,11 @@ const SideDrawer = ({
                         icon={BookOpen}
                         label="Exercise Guide"
                         onClick={onShowGuide}
+                    />
+                    <MenuItem
+                        icon={HelpCircle}
+                        label="Help & Support"
+                        onClick={onShowHelp}
                     />
 
                     <Divider />

@@ -80,7 +80,12 @@ const App = () => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}rest_timer`);
         return saved !== null ? JSON.parse(saved) : null;
     });
-    void setRestTimerOverride; // Settings panel TODO
+
+    // Daily workout goal
+    const [dailyGoal, setDailyGoal] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}daily_goal`);
+        return saved !== null ? JSON.parse(saved) : 1;
+    });
 
     const [theme, setTheme] = useState(() => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}theme`);
@@ -128,7 +133,9 @@ const App = () => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}warmup_enabled`);
         return saved !== null ? JSON.parse(saved) : true;
     });
-    void setWarmupEnabled; // Settings panel TODO
+
+    // Help modal state
+    const [showHelp, setShowHelp] = useState(false);
 
     // Body metrics (weight, measurements)
     const [bodyMetrics, setBodyMetrics] = useState(() => {
@@ -400,6 +407,10 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}rest_timer`, JSON.stringify(restTimerOverride));
     }, [restTimerOverride]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}daily_goal`, JSON.stringify(dailyGoal));
+    }, [dailyGoal]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}theme`, theme);
@@ -1146,6 +1157,7 @@ const App = () => {
     const handleShowTrainingSettings = useCallback(() => { setShowTrainingSettings(true); setShowDrawer(false); }, []);
     const handleShowBodyMetrics = useCallback(() => { setShowBodyMetrics(true); setShowDrawer(false); }, []);
     const handleShowAccessibility = useCallback(() => { setShowAccessibility(true); setShowDrawer(false); }, []);
+    const handleShowHelp = useCallback(() => { setShowHelp(true); setShowDrawer(false); }, []);
 
     // ⚡ Bolt: Memoize modal handlers to prevent Dashboard re-renders.
     const onShowAddExercise = useCallback(() => setShowAddExercise(true), []);
@@ -1438,6 +1450,7 @@ const App = () => {
                         onShowCalendar={handleShowCalendar}
                         onShowGuide={handleShowGuide}
                         onShowAchievements={handleShowAchievements}
+                        onShowHelp={handleShowHelp}
                         onShowTrainingSettings={handleShowTrainingSettings}
                         onShowBodyMetrics={handleShowBodyMetrics}
                         onShowAccessibility={handleShowAccessibility}
@@ -1546,6 +1559,7 @@ const App = () => {
                     onShowCalendar={handleShowCalendar}
                     onShowGuide={handleShowGuide}
                     onShowAchievements={handleShowAchievements}
+                    onShowHelp={handleShowHelp}
                     onShowTrainingSettings={handleShowTrainingSettings}
                     onShowBodyMetrics={handleShowBodyMetrics}
                     onShowAccessibility={handleShowAccessibility}
@@ -1656,6 +1670,14 @@ const App = () => {
                     onSave={handleTrainingPreferencesChange}
                     onClose={() => setShowTrainingSettings(false)}
                     hasProgress={Object.keys(completedDays).length > 0}
+                    theme={theme}
+                    mode={currentMode}
+                    dailyGoal={dailyGoal}
+                    onDailyGoalChange={setDailyGoal}
+                    restTimerOverride={restTimerOverride}
+                    onRestTimerChange={setRestTimerOverride}
+                    warmupEnabled={warmupEnabled}
+                    onWarmupChange={setWarmupEnabled}
                 />
             )}
 
@@ -1704,6 +1726,86 @@ const App = () => {
                                 allExercises={allExercises}
                                 activeProgram={activeProgramKeys}
                             />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Help Modal */}
+            {showHelp && (
+                <div className="fixed inset-0 z-50 bg-slate-950 overflow-y-auto">
+                    <div className="min-h-screen">
+                        <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
+                            <h2 className="text-lg font-bold text-white">Help & Support</h2>
+                            <button
+                                onClick={() => setShowHelp(false)}
+                                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-white transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <div className="p-4 space-y-6">
+                            {/* Getting Started */}
+                            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                                <h3 className="text-lg font-semibold text-cyan-400 mb-3">Getting Started</h3>
+                                <ul className="space-y-2 text-sm text-slate-300">
+                                    <li>• Select your experience level during onboarding to get personalized programs</li>
+                                    <li>• Tap any exercise card on the home screen to start a workout</li>
+                                    <li>• Follow the sets and reps shown, rest between sets as indicated</li>
+                                    <li>• Complete all sets to mark the day as done</li>
+                                </ul>
+                            </div>
+
+                            {/* Daily Goals */}
+                            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                                <h3 className="text-lg font-semibold text-emerald-400 mb-3">Daily Goals</h3>
+                                <ul className="space-y-2 text-sm text-slate-300">
+                                    <li>• Set your daily workout goal in Training Settings</li>
+                                    <li>• Track your progress on the home screen</li>
+                                    <li>• Build streaks by working out consistently</li>
+                                    <li>• Earn badges for reaching milestones</li>
+                                </ul>
+                            </div>
+
+                            {/* Programs */}
+                            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                                <h3 className="text-lg font-semibold text-purple-400 mb-3">Programs</h3>
+                                <ul className="space-y-2 text-sm text-slate-300">
+                                    <li>• <span className="text-emerald-400">Beginner:</span> Start with foundational movements, 2-3 days/week</li>
+                                    <li>• <span className="text-cyan-400">Intermediate:</span> More volume and exercises, 3-4 days/week</li>
+                                    <li>• <span className="text-purple-400">Advanced:</span> High intensity training, 4-6 days/week</li>
+                                    <li>• Change programs anytime in Training Settings</li>
+                                </ul>
+                            </div>
+
+                            {/* Tips */}
+                            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                                <h3 className="text-lg font-semibold text-orange-400 mb-3">Tips for Success</h3>
+                                <ul className="space-y-2 text-sm text-slate-300">
+                                    <li>• Focus on form over speed - quality reps build strength</li>
+                                    <li>• Use the warmup routine before intense workouts</li>
+                                    <li>• Track your body metrics to see progress over time</li>
+                                    <li>• Rest days are important - don't skip them!</li>
+                                </ul>
+                            </div>
+
+                            {/* Support */}
+                            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                                <h3 className="text-lg font-semibold text-pink-400 mb-3">Need More Help?</h3>
+                                <p className="text-sm text-slate-300 mb-3">
+                                    Check the Exercise Guide for detailed form instructions and tips for each movement.
+                                </p>
+                                <button
+                                    onClick={() => { setShowHelp(false); setShowGuide(true); }}
+                                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-white transition-colors"
+                                >
+                                    Open Exercise Guide
+                                </button>
+                            </div>
+
+                            <p className="text-center text-xs text-slate-500 pt-4">
+                                Shift6 v2.0 - Made with care for your fitness journey
+                            </p>
                         </div>
                     </div>
                 </div>

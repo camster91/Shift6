@@ -403,10 +403,17 @@ const GymWorkoutSession = ({
     onExit()
   }
 
-  if (!currentExercise && !showSummary) {
+  // Handle invalid workout data (no exercises)
+  if ((!currentExercise && !showSummary) || !workout?.exercises?.length) {
     return (
-      <div className={`fixed inset-0 ${bgClass} z-50 flex items-center justify-center`}>
-        <p className="text-slate-400">No exercises in workout</p>
+      <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col items-center justify-center gap-4`}>
+        <p className={textSecondary}>No exercises in workout</p>
+        <button
+          onClick={onExit}
+          className="px-6 py-2 rounded-lg bg-purple-500 text-white font-medium hover:bg-purple-600 transition-colors"
+        >
+          Go Back
+        </button>
       </div>
     )
   }

@@ -781,3 +781,387 @@ export const getAllProgramsByDifficulty = () => {
       .map(([id, program]) => ({ id, ...program }))
   }
 }
+
+// ============================================================
+// EXERCISE ALTERNATIVES & SUBSTITUTES DATABASE
+// ============================================================
+
+/**
+ * Exercise alternatives database - maps each exercise to suitable replacements
+ * Grouped by movement pattern and difficulty
+ */
+export const EXERCISE_ALTERNATIVES = {
+  // PUSH exercises
+  pushups: {
+    alternatives: ['kneePushups', 'wallPushups', 'inclinePushups', 'diamondPushups', 'widePushups'],
+    easier: ['kneePushups', 'wallPushups', 'inclinePushups'],
+    harder: ['diamondPushups', 'archerPushups', 'declinePushups'],
+    sameLevel: ['widePushups'],
+    category: 'push',
+    muscles: ['chest', 'shoulders', 'triceps'],
+  },
+  wallPushups: {
+    alternatives: ['kneePushups', 'inclinePushups'],
+    easier: [],
+    harder: ['kneePushups', 'inclinePushups', 'pushups'],
+    sameLevel: [],
+    category: 'push',
+    muscles: ['chest', 'shoulders'],
+  },
+  kneePushups: {
+    alternatives: ['wallPushups', 'inclinePushups', 'pushups'],
+    easier: ['wallPushups'],
+    harder: ['pushups', 'diamondPushups'],
+    sameLevel: ['inclinePushups'],
+    category: 'push',
+    muscles: ['chest', 'shoulders', 'triceps'],
+  },
+  diamondPushups: {
+    alternatives: ['pushups', 'closePushups', 'tricepDips'],
+    easier: ['pushups', 'closePushups'],
+    harder: ['archerPushups', 'oneArmPushups'],
+    sameLevel: ['declinePushups'],
+    category: 'push',
+    muscles: ['triceps', 'chest'],
+  },
+  pikePushups: {
+    alternatives: ['pushups', 'declinePushups', 'shoulderTaps'],
+    easier: ['pushups'],
+    harder: ['wallHandstandPushups'],
+    sameLevel: ['declinePushups'],
+    category: 'push',
+    muscles: ['shoulders', 'triceps'],
+  },
+  dips: {
+    alternatives: ['benchDips', 'tricepDips', 'diamondPushups'],
+    easier: ['benchDips', 'assistedDips'],
+    harder: ['weightedDips', 'ringDips'],
+    sameLevel: ['straightBarDips'],
+    category: 'push',
+    muscles: ['triceps', 'chest', 'shoulders'],
+  },
+
+  // PULL exercises
+  pullups: {
+    alternatives: ['chinups', 'australianRows', 'negativePullups', 'bandAssistedPullups'],
+    easier: ['australianRows', 'negativePullups', 'bandAssistedPullups', 'deadHangs'],
+    harder: ['archerPullups', 'muscleUps', 'weightedPullups'],
+    sameLevel: ['chinups'],
+    category: 'pull',
+    muscles: ['back', 'biceps', 'forearms'],
+  },
+  chinups: {
+    alternatives: ['pullups', 'australianRows', 'negativeChinups'],
+    easier: ['australianRows', 'negativeChinups', 'bandAssistedChinups'],
+    harder: ['closeGripChinups', 'weightedChinups'],
+    sameLevel: ['pullups'],
+    category: 'pull',
+    muscles: ['biceps', 'back'],
+  },
+  australianRows: {
+    alternatives: ['pullups', 'chinups', 'doorRows', 'towelRows'],
+    easier: ['doorRows', 'towelRows'],
+    harder: ['pullups', 'chinups', 'archerRows'],
+    sameLevel: ['ringRows'],
+    category: 'pull',
+    muscles: ['back', 'biceps'],
+  },
+
+  // SQUAT/LEG exercises
+  squats: {
+    alternatives: ['gobletSquats', 'wallSits', 'splitSquats', 'boxSquats'],
+    easier: ['wallSits', 'boxSquats', 'assistedSquats'],
+    harder: ['jumpSquats', 'bulgarianSplitSquats', 'pistolSquats'],
+    sameLevel: ['gobletSquats', 'sumoSquats'],
+    category: 'squat',
+    muscles: ['quads', 'glutes', 'hamstrings'],
+  },
+  lunges: {
+    alternatives: ['splitSquats', 'stepUps', 'reverseLunges', 'walkingLunges'],
+    easier: ['splitSquats', 'assistedLunges'],
+    harder: ['jumpLunges', 'bulgarianSplitSquats', 'walkingLunges'],
+    sameLevel: ['reverseLunges', 'stepUps'],
+    category: 'squat',
+    muscles: ['quads', 'glutes', 'hamstrings'],
+  },
+  jumpSquats: {
+    alternatives: ['squats', 'boxJumps', 'splitJumps'],
+    easier: ['squats', 'calfRaises'],
+    harder: ['boxJumps', 'tuckJumps', 'pistolSquats'],
+    sameLevel: ['splitJumps'],
+    category: 'squat',
+    muscles: ['quads', 'glutes', 'calves'],
+  },
+
+  // HINGE exercises
+  gluteBridges: {
+    alternatives: ['hipThrusts', 'singleLegBridge', 'romanianDeadlifts'],
+    easier: [],
+    harder: ['singleLegBridge', 'hipThrusts', 'nordicCurls'],
+    sameLevel: ['floorHipThrusts'],
+    category: 'hinge',
+    muscles: ['glutes', 'hamstrings'],
+  },
+  singleLegBridge: {
+    alternatives: ['gluteBridges', 'hipThrusts'],
+    easier: ['gluteBridges'],
+    harder: ['nordicCurls', 'slidingLegCurls'],
+    sameLevel: ['elevatedBridge'],
+    category: 'hinge',
+    muscles: ['glutes', 'hamstrings'],
+  },
+
+  // CORE exercises
+  plank: {
+    alternatives: ['sidePlank', 'deadBug', 'birdDog', 'mountainClimbers'],
+    easier: ['kneePlank', 'wallPlank'],
+    harder: ['sidePlank', 'plankShoulderTaps', 'commandoPlank'],
+    sameLevel: ['deadBug', 'birdDog'],
+    category: 'core',
+    muscles: ['core', 'shoulders'],
+  },
+  vups: {
+    alternatives: ['crunches', 'bicycleCrunches', 'legRaises', 'situps'],
+    easier: ['crunches', 'deadBug', 'kneeRaises'],
+    harder: ['toeToBar', 'lSits', 'dragonFlag'],
+    sameLevel: ['bicycleCrunches', 'russianTwists'],
+    category: 'core',
+    muscles: ['abs', 'hip flexors'],
+  },
+  supermans: {
+    alternatives: ['birdDog', 'reverseHypers', 'backExtensions'],
+    easier: ['birdDog'],
+    harder: ['reverseHypers', 'hyperextensions'],
+    sameLevel: ['proneYRaise'],
+    category: 'core',
+    muscles: ['lower back', 'glutes'],
+  },
+  mountainClimbers: {
+    alternatives: ['highKnees', 'burpees', 'plank'],
+    easier: ['plank', 'slowMountainClimbers'],
+    harder: ['burpees', 'crossBodyMountainClimbers'],
+    sameLevel: ['highKnees'],
+    category: 'core',
+    muscles: ['core', 'hip flexors', 'shoulders'],
+  },
+  burpees: {
+    alternatives: ['squat', 'mountainClimbers', 'jumpSquats'],
+    easier: ['mountainClimbers', 'squatThrusts'],
+    harder: ['burpeePullups', 'burpeeBoxJumps'],
+    sameLevel: ['manMakers'],
+    category: 'full-body',
+    muscles: ['full body'],
+  },
+}
+
+/**
+ * Get alternatives for an exercise
+ * @param {string} exerciseKey - The exercise to find alternatives for
+ * @param {string} filterBy - 'all' | 'easier' | 'harder' | 'sameLevel'
+ * @returns {Array} Array of alternative exercise keys with their data
+ */
+export const getExerciseAlternatives = (exerciseKey, filterBy = 'all') => {
+  const altData = EXERCISE_ALTERNATIVES[exerciseKey]
+  if (!altData) return []
+
+  let alternativeKeys = []
+
+  switch (filterBy) {
+    case 'easier':
+      alternativeKeys = altData.easier || []
+      break
+    case 'harder':
+      alternativeKeys = altData.harder || []
+      break
+    case 'sameLevel':
+      alternativeKeys = altData.sameLevel || []
+      break
+    default:
+      alternativeKeys = altData.alternatives || []
+  }
+
+  return alternativeKeys
+    .map(key => {
+      const exercise = EXERCISE_PLANS[key]
+      if (!exercise) return null
+      return {
+        key,
+        name: exercise.name,
+        color: exercise.color,
+        category: exercise.category,
+        equipment: exercise.equipment,
+        image: exercise.image,
+      }
+    })
+    .filter(Boolean)
+}
+
+/**
+ * Apply exercise replacements to a program
+ * @param {Object} program - The program to modify
+ * @param {Object} replacements - Map of original -> replacement exercise keys
+ * @returns {Object} Modified program with replacements applied
+ */
+export const applyExerciseReplacements = (program, replacements = {}) => {
+  if (!program || !program.exercises) return program
+
+  const modifiedExercises = program.exercises.map(exerciseKey => {
+    return replacements[exerciseKey] || exerciseKey
+  })
+
+  return {
+    ...program,
+    exercises: modifiedExercises,
+    isCustomized: Object.keys(replacements).length > 0,
+    replacements,
+  }
+}
+
+/**
+ * Get program with full exercise details for display
+ * @param {string} programId - Program ID
+ * @param {Object} replacements - User's exercise replacements
+ * @returns {Object} Program with full exercise data and replacements applied
+ */
+export const getProgramWithDetails = (programId, replacements = {}) => {
+  const program = STARTER_TEMPLATES[programId]
+  if (!program) return null
+
+  // Apply any user replacements
+  const modifiedProgram = applyExerciseReplacements(program, replacements)
+
+  // Get full exercise data for each exercise
+  const exerciseDetails = modifiedProgram.exercises.map(key => {
+    const exercise = EXERCISE_PLANS[key]
+    const originalKey = Object.keys(replacements).find(k => replacements[k] === key)
+
+    return {
+      key,
+      originalKey: originalKey || null,
+      isReplacement: !!originalKey,
+      name: exercise?.name || key,
+      color: exercise?.color || 'cyan',
+      category: exercise?.category,
+      equipment: exercise?.equipment || ['none'],
+      image: exercise?.image,
+      unit: exercise?.unit,
+      alternatives: getExerciseAlternatives(originalKey || key),
+    }
+  })
+
+  return {
+    ...modifiedProgram,
+    exerciseDetails,
+    totalExercises: exerciseDetails.length,
+    equipmentNeeded: [...new Set(exerciseDetails.flatMap(e => e.equipment))],
+  }
+}
+
+// ============================================================
+// MULTI-PROGRAM PROGRESS STORAGE
+// ============================================================
+
+/**
+ * Storage key for program-specific progress
+ */
+export const PROGRAM_PROGRESS_KEY = 'shift6_program_progress'
+export const EXERCISE_REPLACEMENTS_KEY = 'shift6_exercise_replacements'
+
+/**
+ * Get progress for a specific program
+ * @param {string} programId - Program ID
+ * @returns {Object} Progress data for the program
+ */
+export const getProgramProgress = (programId) => {
+  try {
+    const allProgress = JSON.parse(localStorage.getItem(PROGRAM_PROGRESS_KEY) || '{}')
+    return allProgress[programId] || {
+      completedDays: {},
+      lastWorkout: null,
+      startDate: null,
+      currentDay: 1,
+      totalWorkouts: 0,
+    }
+  } catch {
+    return {
+      completedDays: {},
+      lastWorkout: null,
+      startDate: null,
+      currentDay: 1,
+      totalWorkouts: 0,
+    }
+  }
+}
+
+/**
+ * Save progress for a specific program
+ * @param {string} programId - Program ID
+ * @param {Object} progress - Progress data to save
+ */
+export const saveProgramProgress = (programId, progress) => {
+  try {
+    const allProgress = JSON.parse(localStorage.getItem(PROGRAM_PROGRESS_KEY) || '{}')
+    allProgress[programId] = {
+      ...allProgress[programId],
+      ...progress,
+      lastUpdated: new Date().toISOString(),
+    }
+    localStorage.setItem(PROGRAM_PROGRESS_KEY, JSON.stringify(allProgress))
+  } catch (e) {
+    console.error('Failed to save program progress:', e)
+  }
+}
+
+/**
+ * Get all programs with their progress data
+ * @returns {Array} Programs with progress attached
+ */
+export const getAllProgramsWithProgress = () => {
+  const allProgress = JSON.parse(localStorage.getItem(PROGRAM_PROGRESS_KEY) || '{}')
+
+  return Object.entries(STARTER_TEMPLATES).map(([id, program]) => ({
+    id,
+    ...program,
+    progress: allProgress[id] || null,
+    hasProgress: !!allProgress[id]?.totalWorkouts,
+  }))
+}
+
+/**
+ * Get user's exercise replacements
+ * @returns {Object} Map of original exercise -> replacement exercise
+ */
+export const getExerciseReplacements = () => {
+  try {
+    return JSON.parse(localStorage.getItem(EXERCISE_REPLACEMENTS_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Save an exercise replacement
+ * @param {string} originalKey - Original exercise key
+ * @param {string} replacementKey - Replacement exercise key
+ */
+export const saveExerciseReplacement = (originalKey, replacementKey) => {
+  try {
+    const replacements = getExerciseReplacements()
+    if (replacementKey) {
+      replacements[originalKey] = replacementKey
+    } else {
+      delete replacements[originalKey]
+    }
+    localStorage.setItem(EXERCISE_REPLACEMENTS_KEY, JSON.stringify(replacements))
+  } catch (e) {
+    console.error('Failed to save exercise replacement:', e)
+  }
+}
+
+/**
+ * Clear a specific exercise replacement (revert to original)
+ * @param {string} originalKey - Original exercise key to revert
+ */
+export const clearExerciseReplacement = (originalKey) => {
+  saveExerciseReplacement(originalKey, null)
+}

@@ -42,6 +42,7 @@ import Onboarding from './components/Views/Onboarding';
 import ExerciseLibrary from './components/Views/ExerciseLibrary';
 import ProgramManager from './components/Views/ProgramManager';
 import TrainingSettings from './components/Views/TrainingSettings';
+import ProgramSwitcher from './components/Views/ProgramSwitcher';
 import BodyMetrics from './components/Views/BodyMetrics';
 import WarmupRoutine from './components/Views/WarmupRoutine';
 import AccessibilitySettings from './components/Views/AccessibilitySettings';
@@ -118,6 +119,7 @@ const App = () => {
     const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
     const [showProgramManager, setShowProgramManager] = useState(false);
     const [showTrainingSettings, setShowTrainingSettings] = useState(false);
+    const [showProgramSwitcher, setShowProgramSwitcher] = useState(false);
     const [showBodyMetrics, setShowBodyMetrics] = useState(false);
     const [showAccessibility, setShowAccessibility] = useState(false);
     const [showWarmup, setShowWarmup] = useState(false);
@@ -163,6 +165,12 @@ const App = () => {
     const [activeProgram, setActiveProgram] = useState(() => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}active_program`);
         return saved ? JSON.parse(saved) : null; // null = use default 9
+    });
+
+    // Current Program ID: which program template is selected
+    const [currentProgramId, setCurrentProgramId] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}current_program_id`);
+        return saved || null; // null = default/custom program
     });
 
     // User Equipment: array of equipment IDs user has access to
@@ -1158,6 +1166,22 @@ const App = () => {
     const handleShowBodyMetrics = useCallback(() => { setShowBodyMetrics(true); setShowDrawer(false); }, []);
     const handleShowAccessibility = useCallback(() => { setShowAccessibility(true); setShowDrawer(false); }, []);
     const handleShowHelp = useCallback(() => { setShowHelp(true); setShowDrawer(false); }, []);
+    const handleShowProgramSwitcher = useCallback(() => { setShowProgramSwitcher(true); setShowDrawer(false); }, []);
+
+    // Handle program switch with progress preservation
+    const handleSwitchProgram = useCallback((programId, programData) => {
+        // Save current program ID
+        setCurrentProgramId(programId);
+        localStorage.setItem(`${STORAGE_PREFIX}current_program_id`, programId);
+
+        // Update active program with new program's exercises if available
+        if (programData?.exercises) {
+            setActiveProgram(programData.exercises);
+            localStorage.setItem(`${STORAGE_PREFIX}active_program`, JSON.stringify(programData.exercises));
+        }
+
+        setShowProgramSwitcher(false);
+    }, []);
 
     // ⚡ Bolt: Memoize modal handlers to prevent Dashboard re-renders.
     const onShowAddExercise = useCallback(() => setShowAddExercise(true), []);
@@ -1392,6 +1416,7 @@ const App = () => {
             {shouldShowGymOnboarding && (
                 <GymOnboarding
                     onComplete={handleGymOnboardingComplete}
+                    onSwitchToHome={() => setCurrentMode('home')}
                     theme={theme}
                 />
             )}
@@ -1454,6 +1479,7 @@ const App = () => {
                         onShowTrainingSettings={handleShowTrainingSettings}
                         onShowBodyMetrics={handleShowBodyMetrics}
                         onShowAccessibility={handleShowAccessibility}
+                        onShowProgramSwitcher={handleShowProgramSwitcher}
                         currentMode={currentMode}
                         onSwitchMode={handleSwitchMode}
                         onExport={handleExport}
@@ -1563,6 +1589,7 @@ const App = () => {
                     onShowTrainingSettings={handleShowTrainingSettings}
                     onShowBodyMetrics={handleShowBodyMetrics}
                     onShowAccessibility={handleShowAccessibility}
+                    onShowProgramSwitcher={handleShowProgramSwitcher}
                     currentMode={currentMode}
                     onSwitchMode={handleSwitchMode}
                     onExport={handleExport}
@@ -1660,6 +1687,10 @@ const App = () => {
                     equipment={EQUIPMENT}
                     templates={STARTER_TEMPLATES}
                     onComplete={handleCompleteOnboarding}
+                    onSelectGym={() => {
+                        setCurrentMode('gym')
+                        setOnboardingComplete(true)
+                    }}
                 />
             )}
 
@@ -1678,6 +1709,16 @@ const App = () => {
                     onRestTimerChange={setRestTimerOverride}
                     warmupEnabled={warmupEnabled}
                     onWarmupChange={setWarmupEnabled}
+                />
+            )}
+
+            {/* Program Switcher Modal */}
+            {showProgramSwitcher && (
+                <ProgramSwitcher
+                    currentProgramId={currentProgramId}
+                    onSelectProgram={handleSwitchProgram}
+                    onClose={() => setShowProgramSwitcher(false)}
+                    theme={theme}
                 />
             )}
 

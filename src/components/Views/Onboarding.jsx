@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react'
-import { ChevronRight, Home, ChevronLeft, Zap, Trophy, Target, Clock, Dumbbell, Flame, Users, Heart } from 'lucide-react'
-import { FITNESS_LEVEL_PRESETS } from '../../data/exercises.jsx'
+import { ChevronRight, Home, ChevronLeft, Zap, Trophy, Target, Clock, Dumbbell, Flame, Users, Heart, ChevronDown, ChevronUp, Info, Check, ArrowLeftRight } from 'lucide-react'
+import { FITNESS_LEVEL_PRESETS, EXERCISE_PLANS } from '../../data/exercises.jsx'
 import {
   STARTER_TEMPLATES,
   DIFFICULTY_LABELS,
   getProgramsByDifficulty,
-  getRecommendedProgram
+  getRecommendedProgram,
+  getProgramWithDetails,
+  getAllProgramsWithProgress,
 } from '../../data/exerciseLibrary.js'
 
 // Minimal step indicator - just dots
@@ -80,6 +82,7 @@ const GOAL_ICONS = {
 const Onboarding = ({ onComplete, onSelectGym }) => {
   const [step, setStep] = useState(0)
   const [experienceLevel, setExperienceLevel] = useState(null)
+  const [expandedProgram, setExpandedProgram] = useState(null)
 
   // Get programs for each level
   const programsByLevel = useMemo(() => ({
@@ -279,13 +282,13 @@ const Onboarding = ({ onComplete, onSelectGym }) => {
                       </div>
                       <p className="text-sm text-slate-400 mb-2">{level.desc}</p>
                       {recommended && (
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className={`${level.textClass}`}>Recommended:</span>
-                          <span className="text-slate-300">{recommended.name}</span>
-                          <span className="text-slate-500">•</span>
-                          <span className="text-slate-400">{recommended.daysPerWeek}x/week</span>
-                          <span className="text-slate-500">•</span>
-                          <span className="text-slate-400">{recommended.sessionDuration}min</span>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                          <span className={`${level.textClass} flex-shrink-0`}>Recommended:</span>
+                          <span className="text-slate-300 truncate max-w-[120px]">{recommended.name}</span>
+                          <span className="text-slate-500 hidden sm:inline">•</span>
+                          <span className="text-slate-400 flex-shrink-0">{recommended.daysPerWeek}x/week</span>
+                          <span className="text-slate-500 hidden sm:inline">•</span>
+                          <span className="text-slate-400 flex-shrink-0">{recommended.sessionDuration}min</span>
                         </div>
                       )}
                     </div>
@@ -305,6 +308,14 @@ const Onboarding = ({ onComplete, onSelectGym }) => {
     const programs = programsByLevel[experienceLevel] || []
     const levelInfo = EXPERIENCE_LEVELS.find(l => l.id === experienceLevel)
     const difficultyLabel = DIFFICULTY_LABELS[experienceLevel] || DIFFICULTY_LABELS.beginner
+
+    // Get exercise details for expanded program
+    const getExerciseDetails = (exerciseKeys) => {
+      return exerciseKeys.map(key => {
+        const exercise = EXERCISE_PLANS[key]
+        return exercise ? { key, name: exercise.name, color: exercise.color } : null
+      }).filter(Boolean)
+    }
 
     return (
       <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
@@ -326,69 +337,148 @@ const Onboarding = ({ onComplete, onSelectGym }) => {
               {levelInfo?.name} Programs
             </h2>
           </div>
-          <p className="text-slate-400 mb-6 text-center">
+          <p className="text-slate-400 mb-2 text-center">
             Choose a program that fits your schedule
+          </p>
+          <p className="text-xs text-slate-500 mb-6 text-center flex items-center justify-center gap-1">
+            <ArrowLeftRight className="w-3 h-3" />
+            You can switch programs anytime and keep your progress
           </p>
 
           <div className="space-y-3">
             {programs.map((program, index) => {
               const GoalIcon = GOAL_ICONS[program.goal] || Target
               const isRecommended = index === 0
+              const isExpanded = expandedProgram === program.id
+              const exerciseDetails = isExpanded ? getExerciseDetails(program.exercises) : []
 
               return (
-                <button
+                <div
                   key={program.id}
-                  onClick={() => handleSelectProgram(program)}
-                  className={`w-full bg-slate-900 rounded-xl p-4 text-left transition-all hover:ring-2 ${
+                  className={`bg-slate-900 rounded-xl overflow-hidden transition-all ${
                     isRecommended
                       ? `ring-2 ${levelInfo?.ringClass || 'ring-cyan-500'} ${levelInfo?.bgClass || 'bg-cyan-500/10'}`
-                      : 'hover:ring-slate-600'
+                      : ''
                   }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      isRecommended ? levelInfo?.iconBgClass || 'bg-cyan-500/20' : 'bg-slate-800'
-                    }`}>
-                      <GoalIcon className={`w-5 h-5 ${
-                        isRecommended ? levelInfo?.textClass || 'text-cyan-400' : 'text-slate-400'
-                      }`} />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-white">{program.name}</h3>
-                        {isRecommended && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            levelInfo?.bgClass || 'bg-cyan-500/20'
-                          } ${levelInfo?.textClass || 'text-cyan-400'}`}>
-                            Recommended
-                          </span>
-                        )}
+                  {/* Program Header */}
+                  <div className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        isRecommended ? levelInfo?.iconBgClass || 'bg-cyan-500/20' : 'bg-slate-800'
+                      }`}>
+                        <GoalIcon className={`w-5 h-5 ${
+                          isRecommended ? levelInfo?.textClass || 'text-cyan-400' : 'text-slate-400'
+                        }`} />
                       </div>
-                      <p className="text-sm text-slate-400 mb-3">{program.desc}</p>
 
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs px-2 py-1 bg-slate-800 rounded text-slate-300">
-                          {program.exercises.length} exercises
-                        </span>
-                        <span className="text-xs px-2 py-1 bg-slate-800 rounded text-slate-300">
-                          {program.daysPerWeek}x/week
-                        </span>
-                        <span className="text-xs px-2 py-1 bg-slate-800 rounded text-slate-300 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {program.sessionDuration}min
-                        </span>
-                        {program.sets && (
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-white">{program.name}</h3>
+                          {isRecommended && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              levelInfo?.bgClass || 'bg-cyan-500/20'
+                            } ${levelInfo?.textClass || 'text-cyan-400'}`}>
+                              Recommended
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-400 mb-3">{program.desc}</p>
+
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs px-2 py-1 bg-slate-800 rounded text-slate-300">
-                            {program.sets} sets
+                            {program.exercises.length} exercises
                           </span>
-                        )}
+                          <span className="text-xs px-2 py-1 bg-slate-800 rounded text-slate-300">
+                            {program.daysPerWeek}x/week
+                          </span>
+                          <span className="text-xs px-2 py-1 bg-slate-800 rounded text-slate-300 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {program.sessionDuration}min
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <ChevronRight className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 mt-4">
+                      <button
+                        onClick={() => setExpandedProgram(isExpanded ? null : program.id)}
+                        className="flex items-center gap-1 px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors"
+                      >
+                        <Info className="w-3 h-3" />
+                        {isExpanded ? 'Hide' : 'View'} Details
+                        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+                      <button
+                        onClick={() => handleSelectProgram(program)}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          isRecommended
+                            ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-400 hover:to-teal-400'
+                            : 'bg-slate-700 text-white hover:bg-slate-600'
+                        }`}
+                      >
+                        <Check className="w-4 h-4" />
+                        Select Program
+                      </button>
+                    </div>
                   </div>
-                </button>
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="px-4 pb-4 border-t border-slate-800 pt-4 animate-fadeIn">
+                      {/* Long Description */}
+                      {program.longDesc && (
+                        <p className="text-sm text-slate-400 mb-4">{program.longDesc}</p>
+                      )}
+
+                      {/* Exercise List */}
+                      <div className="mb-4">
+                        <h4 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Exercises Included</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {exerciseDetails.map((exercise, idx) => (
+                            <span
+                              key={idx}
+                              className={`text-xs px-2 py-1 rounded-lg bg-${exercise.color}-500/20 text-${exercise.color}-400 border border-${exercise.color}-500/30`}
+                            >
+                              {exercise.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Program Features */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-slate-800/50 rounded-lg p-2">
+                          <span className="text-slate-500">Sets per exercise</span>
+                          <p className="text-slate-300 font-medium">{program.sets || 3} sets</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-2">
+                          <span className="text-slate-500">Rest between sets</span>
+                          <p className="text-slate-300 font-medium">{program.restSeconds || 60}s</p>
+                        </div>
+                        {program.repRange && (
+                          <div className="bg-slate-800/50 rounded-lg p-2">
+                            <span className="text-slate-500">Rep range</span>
+                            <p className="text-slate-300 font-medium">{program.repRange[0]}-{program.repRange[1]} reps</p>
+                          </div>
+                        )}
+                        {program.progressionRate && (
+                          <div className="bg-slate-800/50 rounded-lg p-2">
+                            <span className="text-slate-500">Progression</span>
+                            <p className="text-slate-300 font-medium capitalize">{program.progressionRate}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Note about customization */}
+                      <p className="text-xs text-slate-500 mt-4 flex items-center gap-1">
+                        <ArrowLeftRight className="w-3 h-3" />
+                        You can swap exercises you don't like after starting
+                      </p>
+                    </div>
+                  )}
+                </div>
               )
             })}
           </div>
@@ -402,7 +492,10 @@ const Onboarding = ({ onComplete, onSelectGym }) => {
               {EXPERIENCE_LEVELS.filter(l => l.id !== experienceLevel).map((level) => (
                 <button
                   key={level.id}
-                  onClick={() => setExperienceLevel(level.id)}
+                  onClick={() => {
+                    setExperienceLevel(level.id)
+                    setExpandedProgram(null)
+                  }}
                   className={`px-3 py-2 rounded-lg text-sm ${level.bgClass} ${level.textClass} transition-colors hover:opacity-80`}
                 >
                   {level.name}

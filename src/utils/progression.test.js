@@ -46,14 +46,16 @@ describe('progression', () => {
       expect(beginnerFactor).toBeGreaterThan(advancedFactor)
     })
 
-    it('returns at least 0.05 for near-max users', () => {
+    it('returns at least 0.03 for near-max users (realistic cap)', () => {
       const factor = getImprovementFactor(95, 'pushups', { finalGoal: 100 })
-      expect(factor).toBeGreaterThanOrEqual(0.05)
+      // Realistic cap: 3% weekly for advanced users (was 5%)
+      expect(factor).toBeGreaterThanOrEqual(0.03)
     })
 
-    it('returns up to 0.45 for complete beginners', () => {
+    it('returns max 0.10 for complete beginners (realistic cap)', () => {
       const factor = getImprovementFactor(5, 'pushups', { finalGoal: 100 })
-      expect(factor).toBeLessThanOrEqual(0.45)
+      // Realistic cap: 10% weekly max (was 45% - way too aggressive!)
+      expect(factor).toBeLessThanOrEqual(0.10)
     })
 
     it('scales based on progress toward final goal', () => {

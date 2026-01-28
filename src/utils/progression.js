@@ -43,12 +43,13 @@ const THRESHOLDS = {
 }
 
 // Adjustment factors based on performance
+// REALISTIC CAPS: Never increase by more than 10% even when crushing it
 const ADJUSTMENT_FACTORS = {
-  [PERFORMANCE_CATEGORIES.STRUGGLING]: 0.80,
-  [PERFORMANCE_CATEGORIES.BELOW_TARGET]: 0.92,
+  [PERFORMANCE_CATEGORIES.STRUGGLING]: 0.85,   // Reduce less aggressively (was 0.80)
+  [PERFORMANCE_CATEGORIES.BELOW_TARGET]: 0.95, // Slight reduction (was 0.92)
   [PERFORMANCE_CATEGORIES.ON_TRACK]: 1.00,
-  [PERFORMANCE_CATEGORIES.EXCEEDING]: 1.08,
-  [PERFORMANCE_CATEGORIES.CRUSHING]: 1.15,
+  [PERFORMANCE_CATEGORIES.EXCEEDING]: 1.05,    // Max 5% increase (was 1.08)
+  [PERFORMANCE_CATEGORIES.CRUSHING]: 1.08,     // Max 8% increase (was 1.15)
 }
 
 // Messages for each performance category
@@ -86,28 +87,41 @@ export const PERFORMANCE_MESSAGES = {
 
 /**
  * Calculate realistic improvement factor based on current level
+ *
+ * REALISTIC CAPS (updated from original aggressive values):
+ * - Original was 45% for beginners - way too aggressive!
+ * - Real personal trainers recommend 5-10% weekly increases max
+ * - This prevents injury and burnout while ensuring sustainable progress
+ *
  * @param {number} currentMax - Current max reps/seconds
  * @param {string} exerciseKey - Exercise identifier
  * @param {Object} exerciseData - Exercise metadata
- * @returns {number} Expected improvement factor (0.06 - 0.40)
+ * @returns {number} Expected improvement factor (0.03 - 0.10) - CAPPED at 10% weekly
  */
 export function getImprovementFactor(currentMax, exerciseKey, exerciseData = null) {
   const metadata = exerciseData || EXERCISE_METADATA[exerciseKey] || {}
   const maxPotential = metadata.finalGoal || 100
   const progressPercent = currentMax / maxPotential
 
-  // Diminishing returns as user approaches max potential
-  if (progressPercent < 0.15) return 0.45  // Complete beginner: 45% gain
-  if (progressPercent < 0.25) return 0.35  // Beginner: 35% gain
-  if (progressPercent < 0.40) return 0.25  // Early intermediate: 25%
-  if (progressPercent < 0.60) return 0.18  // Intermediate: 18%
-  if (progressPercent < 0.75) return 0.12  // Late intermediate: 12%
-  if (progressPercent < 0.85) return 0.08  // Advanced: 8%
-  return 0.05                               // Near max: 5%
+  // REALISTIC diminishing returns (capped at 10% max, down from 45%)
+  // These are per-week factors that lead to sustainable 6-week progress
+  if (progressPercent < 0.15) return 0.10  // Complete beginner: 10% weekly (was 45%)
+  if (progressPercent < 0.25) return 0.09  // Beginner: 9% weekly (was 35%)
+  if (progressPercent < 0.40) return 0.08  // Early intermediate: 8% weekly (was 25%)
+  if (progressPercent < 0.60) return 0.07  // Intermediate: 7% weekly (was 18%)
+  if (progressPercent < 0.75) return 0.06  // Late intermediate: 6% weekly (was 12%)
+  if (progressPercent < 0.85) return 0.05  // Advanced: 5% weekly (was 8%)
+  return 0.03                               // Near max: 3% weekly (was 5%)
 }
 
 /**
  * Generate weekly targets with non-linear progression
+ *
+ * REALISTIC PROGRESSION:
+ * - Week 6 is a deload/test week (slightly reduced)
+ * - Total gain is capped to be achievable in 6 weeks
+ * - Weekly increases never exceed 10%
+ *
  * @param {number} start - Starting max
  * @param {number} target - Target max
  * @param {number} weeks - Number of weeks (default 6)
@@ -115,16 +129,25 @@ export function getImprovementFactor(currentMax, exerciseKey, exerciseData = nul
  */
 export function generateWeeklyTargets(start, target, weeks = 6) {
   const targets = []
-  const totalGain = target - start
 
-  // Non-linear distribution: faster gains early, plateau later
-  // Week 6 is test/deload week - same target as week 5
+  // CAP the total gain to realistic levels (max 60% over 6 weeks = ~8% per week average)
+  const maxRealisticGain = start * 0.60 // 60% max improvement over 6 weeks
+  const totalGain = Math.min(target - start, maxRealisticGain)
+
+  // Non-linear distribution: steady gains with week 6 being a deload
+  // More conservative than original (was 18-22% early weeks)
   const weeklyGainPercents = [0.18, 0.20, 0.22, 0.20, 0.15, 0.05]
 
   let cumulative = start
   for (let i = 0; i < weeks; i++) {
     const gainPercent = weeklyGainPercents[i] || 0.1
-    cumulative += totalGain * gainPercent
+    const weeklyGain = totalGain * gainPercent
+
+    // Ensure weekly increase doesn't exceed 10% of current level
+    const maxWeeklyGain = cumulative * 0.10
+    const cappedGain = Math.min(weeklyGain, maxWeeklyGain)
+
+    cumulative += cappedGain
     targets.push(Math.round(cumulative))
   }
 

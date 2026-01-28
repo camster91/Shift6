@@ -605,9 +605,42 @@ export const GYM_EXERCISES = {
 
 /**
  * Gym Program Templates
+ * Organized by difficulty level with recommended defaults
  */
 export const GYM_PROGRAMS = {
-  // Push/Pull/Legs Split
+  // ========== RECOMMENDED DEFAULT ==========
+  'gym-starter': {
+    id: 'gym-starter',
+    name: 'Gym Starter',
+    desc: 'Recommended - Perfect introduction to weight training',
+    longDesc: 'The ideal starting program for gym beginners. Learn proper form on fundamental movements with manageable volume. Builds a solid strength foundation.',
+    difficulty: 'beginner',
+    daysPerWeek: 3,
+    sessionDuration: 40,
+    goal: 'strength',
+    recommended: true,
+    isDefault: true,
+    split: [
+      {
+        name: 'Day A - Upper',
+        muscleGroups: ['chest', 'back', 'shoulders'],
+        exercises: ['benchPress', 'latPulldown', 'dbShoulderPress', 'seatedRow'],
+      },
+      {
+        name: 'Day B - Lower',
+        muscleGroups: ['quads', 'hamstrings', 'glutes'],
+        exercises: ['squat', 'romanianDeadlift', 'legPress', 'calfRaise'],
+      },
+      {
+        name: 'Day C - Full Body',
+        muscleGroups: ['chest', 'back', 'legs', 'arms'],
+        exercises: ['dbBenchPress', 'barbellRow', 'legPress', 'barbellCurl', 'tricepPushdown'],
+      },
+    ],
+    tags: ['recommended', 'beginner-friendly', 'foundation'],
+  },
+
+  // ========== BEGINNER PROGRAMS (2-3 days/week) ==========
   'ppl-beginner': {
     id: 'ppl-beginner',
     name: 'Push/Pull/Legs',
@@ -814,6 +847,408 @@ export const GYM_PROGRAMS = {
     ],
     tags: ['strength', 'beginner', '5x5', 'simple'],
   },
+
+  // ========== MORE BEGINNER PROGRAMS ==========
+  'beginner-machines': {
+    id: 'beginner-machines',
+    name: 'Machine Starter',
+    desc: 'Learn gym basics with guided machines',
+    longDesc: 'Perfect for complete beginners. Machine exercises provide stability and safety while you learn movement patterns.',
+    difficulty: 'beginner',
+    daysPerWeek: 3,
+    sessionDuration: 35,
+    goal: 'hypertrophy',
+    split: [
+      {
+        name: 'Upper Body',
+        muscleGroups: ['chest', 'back', 'shoulders'],
+        exercises: ['chestPressMachine', 'latPulldown', 'shoulderPressMachine', 'seatedRow'],
+      },
+      {
+        name: 'Lower Body',
+        muscleGroups: ['quads', 'hamstrings', 'calves'],
+        exercises: ['legPress', 'legExtension', 'legCurl', 'calfRaise'],
+      },
+      {
+        name: 'Full Body',
+        muscleGroups: ['chest', 'back', 'legs', 'arms'],
+        exercises: ['chestPressMachine', 'seatedRow', 'legPress', 'bicepCurlMachine', 'tricepPushdown'],
+      },
+    ],
+    tags: ['beginner', 'machines', 'safe', 'guided'],
+  },
+
+  'beginner-dumbbells': {
+    id: 'beginner-dumbbells',
+    name: 'Dumbbell Only',
+    desc: 'Full program using just dumbbells',
+    longDesc: 'No barbells needed. Great for home gyms or crowded commercial gyms. Dumbbells allow natural movement patterns.',
+    difficulty: 'beginner',
+    daysPerWeek: 3,
+    sessionDuration: 40,
+    goal: 'hypertrophy',
+    split: [
+      {
+        name: 'Push Day',
+        muscleGroups: ['chest', 'shoulders', 'triceps'],
+        exercises: ['dbBenchPress', 'dbShoulderPress', 'dbInclinePress', 'lateralRaise', 'overheadTricepExt'],
+      },
+      {
+        name: 'Pull Day',
+        muscleGroups: ['back', 'biceps'],
+        exercises: ['dbRow', 'dbPullover', 'dbCurl', 'hammerCurl', 'facePull'],
+      },
+      {
+        name: 'Legs Day',
+        muscleGroups: ['quads', 'hamstrings', 'glutes'],
+        exercises: ['dbGobletSquat', 'dbRomanianDeadlift', 'dbLunge', 'dbHipThrust', 'calfRaise'],
+      },
+    ],
+    tags: ['beginner', 'dumbbells', 'minimal-equipment'],
+  },
+
+  // ========== INTERMEDIATE PROGRAMS (3-5 days/week) ==========
+  'intermediate-hypertrophy': {
+    id: 'intermediate-hypertrophy',
+    name: 'Hypertrophy Focus',
+    desc: 'High volume training for muscle growth',
+    longDesc: 'Designed for building muscle mass with moderate weights and higher rep ranges. Perfect for those past the beginner gains phase.',
+    difficulty: 'intermediate',
+    daysPerWeek: 4,
+    sessionDuration: 55,
+    goal: 'hypertrophy',
+    split: [
+      {
+        name: 'Chest & Triceps',
+        muscleGroups: ['chest', 'triceps'],
+        exercises: ['benchPress', 'inclineBenchPress', 'dbBenchPress', 'cableFly', 'tricepPushdown', 'skullCrusher'],
+      },
+      {
+        name: 'Back & Biceps',
+        muscleGroups: ['back', 'biceps'],
+        exercises: ['deadlift', 'latPulldown', 'barbellRow', 'seatedRow', 'barbellCurl', 'hammerCurl'],
+      },
+      {
+        name: 'Shoulders & Arms',
+        muscleGroups: ['shoulders', 'biceps', 'triceps'],
+        exercises: ['overheadPress', 'lateralRaise', 'rearDeltFly', 'facePull', 'dbCurl', 'overheadTricepExt'],
+      },
+      {
+        name: 'Legs',
+        muscleGroups: ['quads', 'hamstrings', 'glutes', 'calves'],
+        exercises: ['squat', 'romanianDeadlift', 'legPress', 'legExtension', 'legCurl', 'calfRaise'],
+      },
+    ],
+    tags: ['intermediate', 'muscle-building', 'high-volume'],
+  },
+
+  'intermediate-strength': {
+    id: 'intermediate-strength',
+    name: 'Strength & Power',
+    desc: 'Build raw strength with progressive overload',
+    longDesc: 'Focus on the big compound lifts with lower reps and heavier weights. Includes accessory work for balanced development.',
+    difficulty: 'intermediate',
+    daysPerWeek: 4,
+    sessionDuration: 60,
+    goal: 'strength',
+    split: [
+      {
+        name: 'Squat Day',
+        muscleGroups: ['quads', 'glutes', 'core'],
+        exercises: ['squat', 'frontSquat', 'legPress', 'legExtension', 'cableCrunch'],
+      },
+      {
+        name: 'Bench Day',
+        muscleGroups: ['chest', 'shoulders', 'triceps'],
+        exercises: ['benchPress', 'inclineBenchPress', 'dbShoulderPress', 'tricepPushdown', 'lateralRaise'],
+      },
+      {
+        name: 'Deadlift Day',
+        muscleGroups: ['back', 'hamstrings', 'glutes'],
+        exercises: ['deadlift', 'barbellRow', 'romanianDeadlift', 'latPulldown', 'facePull'],
+      },
+      {
+        name: 'Overhead Day',
+        muscleGroups: ['shoulders', 'triceps', 'back'],
+        exercises: ['overheadPress', 'pullUp', 'lateralRaise', 'rearDeltFly', 'skullCrusher'],
+      },
+    ],
+    tags: ['intermediate', 'strength', 'powerlifting'],
+  },
+
+  'arnold-split': {
+    id: 'arnold-split',
+    name: 'Arnold Split',
+    desc: 'Classic 6-day bodybuilding split',
+    longDesc: 'The legendary split used by Arnold Schwarzenegger. High volume, high frequency, maximum gains.',
+    difficulty: 'intermediate',
+    daysPerWeek: 6,
+    sessionDuration: 60,
+    goal: 'hypertrophy',
+    split: [
+      {
+        name: 'Chest & Back',
+        muscleGroups: ['chest', 'back'],
+        exercises: ['benchPress', 'pullUp', 'inclineBenchPress', 'barbellRow', 'cableFly', 'latPulldown'],
+      },
+      {
+        name: 'Shoulders & Arms',
+        muscleGroups: ['shoulders', 'biceps', 'triceps'],
+        exercises: ['overheadPress', 'barbellCurl', 'skullCrusher', 'lateralRaise', 'dbCurl', 'tricepPushdown'],
+      },
+      {
+        name: 'Legs',
+        muscleGroups: ['quads', 'hamstrings', 'calves'],
+        exercises: ['squat', 'legPress', 'romanianDeadlift', 'legCurl', 'legExtension', 'calfRaise'],
+      },
+      {
+        name: 'Chest & Back 2',
+        muscleGroups: ['chest', 'back'],
+        exercises: ['dbBenchPress', 'seatedRow', 'cableFly', 'dbRow', 'chestDip', 'facePull'],
+      },
+      {
+        name: 'Shoulders & Arms 2',
+        muscleGroups: ['shoulders', 'biceps', 'triceps'],
+        exercises: ['dbShoulderPress', 'hammerCurl', 'overheadTricepExt', 'rearDeltFly', 'preacherCurl', 'tricepDip'],
+      },
+      {
+        name: 'Legs 2',
+        muscleGroups: ['quads', 'hamstrings', 'glutes', 'calves'],
+        exercises: ['frontSquat', 'hipThrust', 'legCurl', 'legExtension', 'dbLunge', 'calfRaise'],
+      },
+    ],
+    tags: ['intermediate', 'classic', 'bodybuilding', 'high-frequency'],
+  },
+
+  'push-pull': {
+    id: 'push-pull',
+    name: 'Push/Pull',
+    desc: '4-day alternating push and pull movements',
+    longDesc: 'Simple yet effective. Push days hit chest, shoulders, triceps, and quads. Pull days work back, biceps, and hamstrings.',
+    difficulty: 'intermediate',
+    daysPerWeek: 4,
+    sessionDuration: 50,
+    goal: 'balanced',
+    split: [
+      {
+        name: 'Push A',
+        muscleGroups: ['chest', 'shoulders', 'triceps', 'quads'],
+        exercises: ['benchPress', 'squat', 'overheadPress', 'legPress', 'tricepPushdown'],
+      },
+      {
+        name: 'Pull A',
+        muscleGroups: ['back', 'biceps', 'hamstrings'],
+        exercises: ['deadlift', 'latPulldown', 'barbellRow', 'legCurl', 'barbellCurl'],
+      },
+      {
+        name: 'Push B',
+        muscleGroups: ['chest', 'shoulders', 'triceps', 'quads'],
+        exercises: ['dbBenchPress', 'frontSquat', 'dbShoulderPress', 'lateralRaise', 'skullCrusher'],
+      },
+      {
+        name: 'Pull B',
+        muscleGroups: ['back', 'biceps', 'hamstrings'],
+        exercises: ['barbellRow', 'pullUp', 'romanianDeadlift', 'seatedRow', 'hammerCurl'],
+      },
+    ],
+    tags: ['intermediate', 'balanced', '4-day'],
+  },
+
+  // ========== ADVANCED PROGRAMS (5-6 days/week) ==========
+  'advanced-powerbuilding': {
+    id: 'advanced-powerbuilding',
+    name: 'Powerbuilding',
+    desc: 'Strength meets hypertrophy - best of both worlds',
+    longDesc: 'Combines heavy compound lifts for strength with higher volume accessory work for muscle growth. For experienced lifters.',
+    difficulty: 'advanced',
+    daysPerWeek: 5,
+    sessionDuration: 70,
+    goal: 'balanced',
+    split: [
+      {
+        name: 'Heavy Squat',
+        muscleGroups: ['quads', 'glutes', 'core'],
+        exercises: ['squat', 'frontSquat', 'legPress', 'legExtension', 'hangingLegRaise'],
+      },
+      {
+        name: 'Heavy Bench',
+        muscleGroups: ['chest', 'shoulders', 'triceps'],
+        exercises: ['benchPress', 'inclineBenchPress', 'dbBenchPress', 'tricepPushdown', 'lateralRaise'],
+      },
+      {
+        name: 'Heavy Deadlift',
+        muscleGroups: ['back', 'hamstrings', 'glutes'],
+        exercises: ['deadlift', 'romanianDeadlift', 'barbellRow', 'latPulldown', 'legCurl'],
+      },
+      {
+        name: 'Volume Upper',
+        muscleGroups: ['chest', 'back', 'shoulders', 'arms'],
+        exercises: ['dbBenchPress', 'pullUp', 'dbShoulderPress', 'seatedRow', 'barbellCurl', 'skullCrusher'],
+      },
+      {
+        name: 'Volume Lower',
+        muscleGroups: ['quads', 'hamstrings', 'glutes', 'calves'],
+        exercises: ['legPress', 'hipThrust', 'legExtension', 'legCurl', 'dbLunge', 'calfRaise'],
+      },
+    ],
+    tags: ['advanced', 'powerbuilding', 'strength', 'hypertrophy'],
+  },
+
+  'advanced-ppl-intense': {
+    id: 'advanced-ppl-intense',
+    name: 'Intense PPL',
+    desc: '6-day PPL with advanced techniques',
+    longDesc: 'High intensity PPL split with drop sets, rest-pause, and progressive overload. For advanced lifters seeking maximum gains.',
+    difficulty: 'advanced',
+    daysPerWeek: 6,
+    sessionDuration: 60,
+    goal: 'hypertrophy',
+    split: [
+      {
+        name: 'Push - Strength',
+        muscleGroups: ['chest', 'shoulders', 'triceps'],
+        exercises: ['benchPress', 'overheadPress', 'dbBenchPress', 'lateralRaise', 'tricepPushdown', 'cableFly'],
+      },
+      {
+        name: 'Pull - Strength',
+        muscleGroups: ['back', 'biceps'],
+        exercises: ['deadlift', 'pullUp', 'barbellRow', 'facePull', 'barbellCurl', 'hammerCurl'],
+      },
+      {
+        name: 'Legs - Strength',
+        muscleGroups: ['quads', 'hamstrings', 'glutes', 'calves'],
+        exercises: ['squat', 'romanianDeadlift', 'legPress', 'legCurl', 'hipThrust', 'calfRaise'],
+      },
+      {
+        name: 'Push - Volume',
+        muscleGroups: ['chest', 'shoulders', 'triceps'],
+        exercises: ['inclineBenchPress', 'dbShoulderPress', 'cableFly', 'rearDeltFly', 'skullCrusher', 'chestDip'],
+      },
+      {
+        name: 'Pull - Volume',
+        muscleGroups: ['back', 'biceps'],
+        exercises: ['latPulldown', 'seatedRow', 'dbRow', 'facePull', 'dbCurl', 'preacherCurl'],
+      },
+      {
+        name: 'Legs - Volume',
+        muscleGroups: ['quads', 'hamstrings', 'glutes', 'calves'],
+        exercises: ['frontSquat', 'hipThrust', 'legExtension', 'legCurl', 'dbLunge', 'calfRaise'],
+      },
+    ],
+    tags: ['advanced', 'high-intensity', 'ppl', '6-day'],
+  },
+
+  'advanced-athlete': {
+    id: 'advanced-athlete',
+    name: 'Athletic Performance',
+    desc: 'Power, strength, and conditioning combined',
+    longDesc: 'Designed for athletes seeking functional strength, explosive power, and conditioning. Includes compound movements and athletic drills.',
+    difficulty: 'advanced',
+    daysPerWeek: 5,
+    sessionDuration: 65,
+    goal: 'strength',
+    split: [
+      {
+        name: 'Power Day',
+        muscleGroups: ['full body'],
+        exercises: ['deadlift', 'benchPress', 'pullUp', 'overheadPress', 'barbellRow'],
+      },
+      {
+        name: 'Lower Strength',
+        muscleGroups: ['quads', 'hamstrings', 'glutes'],
+        exercises: ['squat', 'romanianDeadlift', 'legPress', 'hipThrust', 'calfRaise'],
+      },
+      {
+        name: 'Upper Strength',
+        muscleGroups: ['chest', 'back', 'shoulders'],
+        exercises: ['benchPress', 'pullUp', 'overheadPress', 'barbellRow', 'facePull'],
+      },
+      {
+        name: 'Lower Volume',
+        muscleGroups: ['quads', 'hamstrings', 'glutes', 'calves'],
+        exercises: ['frontSquat', 'legCurl', 'legExtension', 'dbLunge', 'calfRaise'],
+      },
+      {
+        name: 'Upper Volume',
+        muscleGroups: ['chest', 'back', 'shoulders', 'arms'],
+        exercises: ['dbBenchPress', 'seatedRow', 'lateralRaise', 'barbellCurl', 'tricepPushdown'],
+      },
+    ],
+    tags: ['advanced', 'athletic', 'performance', 'functional'],
+  },
+
+  'advanced-specialization': {
+    id: 'advanced-specialization',
+    name: 'Chest Specialization',
+    desc: 'Extra chest volume for lagging development',
+    longDesc: 'A program for advanced lifters wanting to bring up their chest. Increased frequency and volume for chest while maintaining other muscle groups.',
+    difficulty: 'advanced',
+    daysPerWeek: 5,
+    sessionDuration: 55,
+    goal: 'hypertrophy',
+    split: [
+      {
+        name: 'Chest Focus',
+        muscleGroups: ['chest', 'triceps'],
+        exercises: ['benchPress', 'inclineBenchPress', 'dbBenchPress', 'cableFly', 'tricepPushdown'],
+      },
+      {
+        name: 'Back & Biceps',
+        muscleGroups: ['back', 'biceps'],
+        exercises: ['deadlift', 'pullUp', 'barbellRow', 'seatedRow', 'barbellCurl'],
+      },
+      {
+        name: 'Legs',
+        muscleGroups: ['quads', 'hamstrings', 'glutes', 'calves'],
+        exercises: ['squat', 'romanianDeadlift', 'legPress', 'legCurl', 'calfRaise'],
+      },
+      {
+        name: 'Chest & Shoulders',
+        muscleGroups: ['chest', 'shoulders'],
+        exercises: ['inclineBenchPress', 'dbBenchPress', 'overheadPress', 'lateralRaise', 'cableFly'],
+      },
+      {
+        name: 'Arms & Accessories',
+        muscleGroups: ['biceps', 'triceps', 'shoulders'],
+        exercises: ['barbellCurl', 'skullCrusher', 'hammerCurl', 'facePull', 'rearDeltFly'],
+      },
+    ],
+    tags: ['advanced', 'specialization', 'chest-focus'],
+  },
+
+  'advanced-minimalist': {
+    id: 'advanced-minimalist',
+    name: 'Minimalist Strength',
+    desc: 'Maximum results with minimum exercises',
+    longDesc: 'For busy advanced lifters. Focus only on the most effective compound movements. High intensity, low volume, maximum efficiency.',
+    difficulty: 'advanced',
+    daysPerWeek: 4,
+    sessionDuration: 45,
+    goal: 'strength',
+    split: [
+      {
+        name: 'Squat & Press',
+        muscleGroups: ['quads', 'chest', 'triceps'],
+        exercises: ['squat', 'benchPress', 'dbShoulderPress'],
+      },
+      {
+        name: 'Hinge & Pull',
+        muscleGroups: ['back', 'hamstrings', 'biceps'],
+        exercises: ['deadlift', 'pullUp', 'barbellRow'],
+      },
+      {
+        name: 'Press & Squat',
+        muscleGroups: ['chest', 'shoulders', 'quads'],
+        exercises: ['benchPress', 'overheadPress', 'frontSquat'],
+      },
+      {
+        name: 'Pull & Hinge',
+        muscleGroups: ['back', 'hamstrings', 'glutes'],
+        exercises: ['barbellRow', 'romanianDeadlift', 'latPulldown'],
+      },
+    ],
+    tags: ['advanced', 'minimalist', 'efficient', 'strength'],
+  },
 }
 
 /**
@@ -840,8 +1275,61 @@ export function getGymProgram(id) {
 }
 
 /**
- * Filter programs by difficulty
+ * Filter programs by difficulty (legacy)
  */
 export function filterProgramsByDifficulty(difficulty) {
   return Object.values(GYM_PROGRAMS).filter(p => p.difficulty === difficulty)
+}
+
+/**
+ * Get gym programs filtered by difficulty level
+ * @param {string} difficulty - 'beginner' | 'intermediate' | 'advanced' | 'all'
+ * @returns {Array} Array of program objects sorted by recommendation
+ */
+export function getGymProgramsByDifficulty(difficulty = 'all') {
+  return Object.entries(GYM_PROGRAMS)
+    .filter(([, program]) => {
+      if (difficulty === 'all') return true
+      return program.difficulty === difficulty
+    })
+    .map(([id, program]) => ({ id, ...program }))
+    .sort((a, b) => {
+      // Sort recommended first, then by days per week
+      if (a.recommended && !b.recommended) return -1
+      if (!a.recommended && b.recommended) return 1
+      if (a.isDefault && !b.isDefault) return -1
+      if (!a.isDefault && b.isDefault) return 1
+      return (a.daysPerWeek || 3) - (b.daysPerWeek || 3)
+    })
+}
+
+/**
+ * Get recommended gym program for experience level
+ * @param {string} experienceLevel - 'beginner' | 'intermediate' | 'advanced'
+ * @returns {Object|null} Recommended program
+ */
+export function getRecommendedGymProgram(experienceLevel) {
+  const programs = getGymProgramsByDifficulty(experienceLevel)
+  return programs[0] || getGymProgramsByDifficulty('beginner')[0]
+}
+
+/**
+ * Get all gym programs grouped by difficulty
+ * @returns {Object} Programs grouped by difficulty level
+ */
+export function getAllGymProgramsByDifficulty() {
+  return {
+    beginner: getGymProgramsByDifficulty('beginner'),
+    intermediate: getGymProgramsByDifficulty('intermediate'),
+    advanced: getGymProgramsByDifficulty('advanced')
+  }
+}
+
+/**
+ * Gym difficulty labels for UI
+ */
+export const GYM_DIFFICULTY_LABELS = {
+  beginner: { name: 'Beginner', color: 'emerald', icon: '🌱' },
+  intermediate: { name: 'Intermediate', color: 'blue', icon: '💪' },
+  advanced: { name: 'Advanced', color: 'purple', icon: '🏆' },
 }

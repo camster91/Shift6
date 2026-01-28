@@ -118,7 +118,7 @@ const NotificationSettings = ({ onClose, theme = 'dark', mode = 'home' }) => {
                 <span className="font-medium">Notifications Not Supported</span>
               </div>
               <p className="text-sm text-amber-400/70 mt-1">
-                Your browser doesn't support notifications.
+                Your browser doesn&apos;t support notifications.
               </p>
             </div>
           ) : permissionStatus === 'denied' ? (

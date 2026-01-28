@@ -1900,7 +1900,7 @@ const App = () => {
                                     <li>• Focus on form over speed - quality reps build strength</li>
                                     <li>• Use the warmup routine before intense workouts</li>
                                     <li>• Track your body metrics to see progress over time</li>
-                                    <li>• Rest days are important - don't skip them!</li>
+                                    <li>• Rest days are important - don&apos;t skip them!</li>
                                 </ul>
                             </div>
 

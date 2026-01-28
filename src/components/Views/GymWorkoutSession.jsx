@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw } from 'lucide-react'
+import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { playBeep, playSuccess } from '../../utils/audio'
 import { vibrate } from '../../utils/device'
 import { GYM_EXERCISES } from '../../data/gymExercises'
 import { KG_TO_LBS, LBS_TO_KG } from '../../utils/constants'
+import { getWeightSuggestion, checkForGymPR, savePR, getRandomPRMessage, getRandomWeightMessage } from '../../utils/progressionCoach'
 
 /**
  * Convert weight between kg and lbs
@@ -27,6 +28,52 @@ const getWeightIncrement = (unit, exerciseIncrement = 2.5) => {
     return 5 // 5 lb increments
   }
   return exerciseIncrement // kg increment from exercise config
+}
+
+/**
+ * VideoModal - YouTube form guide modal
+ */
+const VideoModal = ({ exercise, onClose, theme = 'dark' }) => {
+  if (!exercise || !exercise.videoId) return null
+
+  const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
+  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
+  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+  const borderColor = theme === 'light' ? 'border-slate-200' : 'border-slate-700'
+
+  return (
+    <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4" onClick={onClose}>
+      <div className={`${cardBg} border ${borderColor} rounded-xl w-full max-w-2xl overflow-hidden`} onClick={e => e.stopPropagation()}>
+        <div className={`flex items-center justify-between p-4 border-b ${borderColor}`}>
+          <h3 className={`text-lg font-bold ${textPrimary}`}>{exercise.name} - Form Guide</h3>
+          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+            <X size={20} className={textSecondary} />
+          </button>
+        </div>
+        <div className="aspect-video bg-black">
+          <iframe
+            src={`https://www.youtube.com/embed/${exercise.videoId}?rel=0`}
+            title={`${exercise.name} form guide`}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+        <div className="p-4 space-y-3">
+          <p className={`text-sm ${textSecondary}`}>{exercise.cue}</p>
+          {exercise.tips && (
+            <div className="flex flex-wrap gap-2">
+              {exercise.tips.map((tip, i) => (
+                <span key={i} className={`text-xs px-2 py-1 ${theme === 'light' ? 'bg-slate-100 border-slate-200' : 'bg-slate-800 border-slate-700'} border rounded-full ${textSecondary}`}>
+                  {tip}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 /**
@@ -71,6 +118,10 @@ const GymWorkoutSession = ({
   const [showSummary, setShowSummary] = useState(false)
   const [isLogging, setIsLogging] = useState(false) // Debounce for log button
   const [showExitConfirm, setShowExitConfirm] = useState(false) // Custom exit modal
+  const [showVideo, setShowVideo] = useState(false) // YouTube form video modal
+  const [weightSuggestion, setWeightSuggestion] = useState(null) // Smart weight suggestion
+  const [showPRCelebration, setShowPRCelebration] = useState(null) // PR celebration modal
+  const [sessionPRs, setSessionPRs] = useState([]) // PRs achieved this session
 
   const currentExerciseId = workout?.exercises?.[currentExerciseIndex]
   const currentExercise = currentExerciseId ? GYM_EXERCISES[currentExerciseId] : null
@@ -189,6 +240,66 @@ const GymWorkoutSession = ({
 
     // Check if all sets done for this exercise
     if (completedSetsForExercise >= totalSets) {
+      // Get all sets for this exercise including the one just completed
+      const allSetsForExercise = [...(completedSets[currentExerciseId] || []), setData]
+
+      // Calculate total volume for PR check
+      const totalReps = allSetsForExercise.reduce((sum, s) => sum + s.reps, 0)
+      const avgWeight = allSetsForExercise.reduce((sum, s) => sum + s.weight, 0) / allSetsForExercise.length
+      const avgRpe = allSetsForExercise.filter(s => s.rpe).reduce((sum, s) => sum + s.rpe, 0) / (allSetsForExercise.filter(s => s.rpe).length || 1)
+
+      // Check for PR (best set of the exercise)
+      const bestSet = allSetsForExercise.reduce((best, s) => {
+        const current1RM = s.weight * (1 + s.reps / 30)
+        const best1RM = best.weight * (1 + best.reps / 30)
+        return current1RM > best1RM ? s : best
+      }, allSetsForExercise[0])
+
+      const gymPRs = JSON.parse(localStorage.getItem('shift6_gym_prs') || '{}')
+      const prCheck = checkForGymPR(currentExerciseId, bestSet.weight, bestSet.reps, gymPRs)
+
+      if (prCheck.isNewPR) {
+        // Save the PR
+        savePR(currentExerciseId, { weight: bestSet.weight, reps: bestSet.reps }, true)
+
+        // Show PR celebration
+        setShowPRCelebration({
+          exerciseName: currentExercise?.name,
+          message: prCheck.message,
+          type: prCheck.type,
+          estimated1RM: prCheck.estimated1RM
+        })
+        setSessionPRs(prev => [...prev, { exerciseId: currentExerciseId, ...prCheck }])
+
+        if (audioEnabled) {
+          playSuccess()
+          vibrate([100, 50, 100, 50, 100, 50, 200])
+        }
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => setShowPRCelebration(null), 3000)
+      }
+
+      // Calculate weight suggestion for next time
+      const targetReps = currentExercise?.defaultReps?.[0] || 8
+      const suggestion = getWeightSuggestion({
+        targetReps,
+        actualReps: Math.round(totalReps / allSetsForExercise.length),
+        rpe: Math.round(avgRpe),
+        currentWeight: avgWeight,
+        weightIncrement: currentExercise?.weightIncrement || 2.5,
+        recentSessions: [] // Would need gym history for this
+      })
+
+      if (suggestion.action !== 'maintain') {
+        setWeightSuggestion({
+          exerciseName: currentExercise?.name,
+          exerciseId: currentExerciseId,
+          ...suggestion,
+          message: getRandomWeightMessage(suggestion.action)
+        })
+      }
+
       // Move to next exercise
       if (currentExerciseIndex < totalExercises - 1) {
         setCurrentExerciseIndex(prev => prev + 1)
@@ -198,7 +309,7 @@ const GymWorkoutSession = ({
         startRest(currentExercise?.restSeconds || 90)
       } else {
         // Workout complete
-        if (audioEnabled) {
+        if (audioEnabled && !prCheck.isNewPR) {
           playSuccess()
           vibrate([200, 100, 200, 100, 400])
         }
@@ -335,6 +446,24 @@ const GymWorkoutSession = ({
             </div>
           </div>
 
+          {/* PRs achieved this session */}
+          {sessionPRs.length > 0 && (
+            <div className="w-full max-w-sm mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy className="w-5 h-5 text-yellow-400" />
+                <span className={`${textPrimary} font-semibold`}>Personal Records!</span>
+              </div>
+              <div className="space-y-2">
+                {sessionPRs.map((pr, i) => (
+                  <div key={i} className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2">
+                    <span className="text-yellow-400 text-sm">{GYM_EXERCISES[pr.exerciseId]?.shortName || pr.exerciseId}</span>
+                    <span className={`text-xs ${textSecondary}`}>- {pr.type === 'weight' ? 'Weight PR' : pr.type === 'reps' ? 'Rep PR' : 'New 1RM'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Exercise breakdown */}
           <div className="w-full max-w-sm space-y-2 mb-8">
             {Object.entries(completedSets).map(([exId, sets]) => (
@@ -422,7 +551,18 @@ const GymWorkoutSession = ({
 
       {/* Exercise Info */}
       <div className={`p-6 border-b ${borderColor}`}>
-        <h1 className={`text-2xl font-bold ${textPrimary} mb-1`}>{currentExercise.name}</h1>
+        <div className="flex items-start justify-between mb-1">
+          <h1 className={`text-2xl font-bold ${textPrimary}`}>{currentExercise.name}</h1>
+          {currentExercise.videoId && (
+            <button
+              onClick={() => setShowVideo(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors"
+            >
+              <Youtube size={16} />
+              <span className="text-xs font-medium">Watch</span>
+            </button>
+          )}
+        </div>
         <p className={`${textSecondary} text-sm mb-4`}>{currentExercise.cue}</p>
 
         {/* Set Progress */}
@@ -575,6 +715,78 @@ const GymWorkoutSession = ({
                 Exit
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Modal */}
+      {showVideo && currentExercise && (
+        <VideoModal
+          exercise={currentExercise}
+          onClose={() => setShowVideo(false)}
+          theme={theme}
+        />
+      )}
+
+      {/* PR Celebration Modal */}
+      {showPRCelebration && (
+        <div className="fixed inset-0 z-[80] bg-black/80 flex items-center justify-center p-4 animate-pulse">
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <Trophy className="w-12 h-12 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-yellow-400 mb-2">{getRandomPRMessage()}</h2>
+            <p className="text-xl text-white mb-2">{showPRCelebration.exerciseName}</p>
+            <p className="text-lg text-slate-300">{showPRCelebration.message}</p>
+            {showPRCelebration.estimated1RM && (
+              <p className="text-sm text-slate-400 mt-2">Est. 1RM: {showPRCelebration.estimated1RM}kg</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Weight Suggestion Banner */}
+      {weightSuggestion && (
+        <div className="fixed bottom-24 left-4 right-4 z-[60] animate-slide-up">
+          <div className={`${cardBg} rounded-xl p-4 border ${
+            weightSuggestion.action === 'increase' ? 'border-green-500/50' :
+            weightSuggestion.action === 'decrease' ? 'border-red-500/50' :
+            weightSuggestion.action === 'deload' ? 'border-amber-500/50' :
+            'border-slate-700'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  weightSuggestion.action === 'increase' ? 'bg-green-500/20' :
+                  weightSuggestion.action === 'decrease' ? 'bg-red-500/20' :
+                  weightSuggestion.action === 'deload' ? 'bg-amber-500/20' :
+                  'bg-slate-700'
+                }`}>
+                  {weightSuggestion.action === 'increase' && <TrendingUp className="w-5 h-5 text-green-400" />}
+                  {weightSuggestion.action === 'decrease' && <TrendingDown className="w-5 h-5 text-red-400" />}
+                  {weightSuggestion.action === 'deload' && <Minus className="w-5 h-5 text-amber-400" />}
+                </div>
+                <div>
+                  <p className={`font-semibold ${textPrimary}`}>
+                    {weightSuggestion.action === 'increase' ? 'Ready to Progress!' :
+                     weightSuggestion.action === 'decrease' ? 'Lower Weight' :
+                     weightSuggestion.action === 'deload' ? 'Deload Suggested' : 'Suggestion'}
+                  </p>
+                  <p className={`text-sm ${textSecondary}`}>{weightSuggestion.message}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setWeightSuggestion(null)}
+                className={`p-2 ${textSecondary} hover:opacity-70`}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            {weightSuggestion.action === 'increase' && weightSuggestion.newWeight && (
+              <p className={`mt-2 text-sm ${textSecondary}`}>
+                Next time: Try {Math.round(weightSuggestion.newWeight * 10) / 10}kg
+              </p>
+            )}
           </div>
         </div>
       )}

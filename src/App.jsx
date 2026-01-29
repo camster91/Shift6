@@ -285,8 +285,11 @@ const App = () => {
     const [showGymAssessment, setShowGymAssessment] = useState(false);
     const [assessmentExercises, setAssessmentExercises] = useState([]);
 
-    // Current gym workout session (with localStorage persistence to prevent data loss)
-    const [currentGymSession, setCurrentGymSession] = useState(() => {
+    // Current gym workout session - null until user starts or resumes
+    const [currentGymSession, setCurrentGymSession] = useState(null);
+
+    // Pending gym session from previous app session (loaded from localStorage)
+    const [pendingGymSession, setPendingGymSession] = useState(() => {
         const saved = localStorage.getItem(`${STORAGE_PREFIX}current_gym_session`);
         if (!saved) return null;
         try {
@@ -579,10 +582,15 @@ const App = () => {
     useEffect(() => {
         if (currentGymSession) {
             localStorage.setItem(`${STORAGE_PREFIX}current_gym_session`, JSON.stringify(currentGymSession));
-        } else {
-            localStorage.removeItem(`${STORAGE_PREFIX}current_gym_session`);
         }
     }, [currentGymSession]);
+
+    // Clear localStorage when gym session ends (currentGymSession becomes null)
+    useEffect(() => {
+        if (currentGymSession === null && !pendingGymSession) {
+            localStorage.removeItem(`${STORAGE_PREFIX}current_gym_session`);
+        }
+    }, [currentGymSession, pendingGymSession]);
 
     // Persist current mode selection
     useEffect(() => {
@@ -619,6 +627,38 @@ const App = () => {
         setPendingSession(null);
         localStorage.removeItem(`${STORAGE_PREFIX}current_session`);
     }, []);
+
+    // Save home session for later (exit without losing progress)
+    const handleSaveSession = useCallback(() => {
+        if (currentSession) {
+            // Move active session to pending, clearing the active state
+            setPendingSession(currentSession);
+            setCurrentSession(null);
+        }
+    }, [currentSession]);
+
+    // Resume a pending gym session
+    const handleResumeGymSession = useCallback(() => {
+        if (pendingGymSession) {
+            setCurrentGymSession(pendingGymSession);
+            setPendingGymSession(null);
+        }
+    }, [pendingGymSession]);
+
+    // Discard a pending gym session
+    const handleDiscardGymSession = useCallback(() => {
+        setPendingGymSession(null);
+        localStorage.removeItem(`${STORAGE_PREFIX}current_gym_session`);
+    }, []);
+
+    // Save gym session for later (exit without losing progress)
+    const handleSaveGymSession = useCallback(() => {
+        if (currentGymSession) {
+            // Session is already persisted via the useEffect, just clear the active session
+            setPendingGymSession(currentGymSession);
+            setCurrentGymSession(null);
+        }
+    }, [currentGymSession]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}queue`, JSON.stringify(workoutQueue));
@@ -1663,6 +1703,7 @@ const App = () => {
                     onRecordGymResult={handleRecordGymResult}
                     onComplete={handleCompleteGymWorkout}
                     onExit={() => setCurrentGymSession(null)}
+                    onSaveForLater={handleSaveGymSession}
                     onStateChange={(internalState) => {
                         // Persist internal workout state for crash/refresh recovery
                         setCurrentGymSession(prev => ({
@@ -1701,6 +1742,9 @@ const App = () => {
                             onChangeProgram={handleChangeGymProgram}
                             onShowProgramManager={handleShowGymProgramManager}
                             onSwitchMode={handleSwitchMode}
+                            pendingSession={pendingGymSession}
+                            onResumeSession={handleResumeGymSession}
+                            onDiscardSession={handleDiscardGymSession}
                             theme={theme}
                         />
                     </main>
@@ -1885,6 +1929,7 @@ const App = () => {
                         personalRecords={personalRecords}
                         setPersonalRecords={setPersonalRecords}
                         allExercises={allExercises}
+                        onSaveForLater={handleSaveSession}
                     />
                 </div>
             )}

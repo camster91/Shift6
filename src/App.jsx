@@ -753,10 +753,50 @@ const App = () => {
         const day = weekData.days[dayIndex];
         const isFinal = day.isFinal || false;
 
-        // Apply difficulty scaling
+        // Apply difficulty scaling AND calibration
         const difficultyLevel = exerciseDifficulty[exKey] || 3;
-        const multiplier = DIFFICULTY_LEVELS[difficultyLevel]?.multiplier || 1.0;
-        const scaledReps = day.reps.map(r => Math.max(1, Math.round(r * multiplier)));
+        const difficultyMultiplier = DIFFICULTY_LEVELS[difficultyLevel]?.multiplier || 1.0;
+        // Apply calibration factor from assessment (if exists)
+        let calibrationFactor = calibrations[exKey] || 1.0;
+
+        // Safeguard: If calibration results in extremely low reps (likely bad/old data),
+        // clear the bad calibration and trigger re-assessment
+        const testRep = Math.round(day.reps[0] * difficultyMultiplier * calibrationFactor);
+        if (testRep < 3 && calibrationFactor < 1.0) {
+            // Invalid calibration detected - clear it and trigger re-assessment
+            const updatedCalibrations = { ...calibrations };
+            delete updatedCalibrations[exKey];
+            localStorage.setItem(`${STORAGE_PREFIX}calibrations`, JSON.stringify(updatedCalibrations));
+
+            // Show assessment to recalibrate
+            setCurrentSession({
+                exerciseKey: exKey,
+                exerciseName: exercise.name,
+                week,
+                dayIndex,
+                setIndex: 0,
+                rest: restTimerOverride !== null ? restTimerOverride : getCustomRest(week, trainingPreferences),
+                baseReps: day.reps,
+                reps: day.reps, // Use unscaled for assessment
+                dayId: day.id,
+                isFinal: false,
+                color: exercise.color,
+                unit: exercise.unit,
+                difficulty: difficultyLevel,
+                step: 'assessment' // Force assessment
+            });
+            setAmrapValue('');
+            setTestInput('');
+            setTimeLeft(0);
+            setWorkoutNotes('');
+            setExerciseTimeLeft(0);
+            setIsExerciseTimerRunning(false);
+            setExerciseTimerStarted(false);
+            return; // Exit early - assessment will handle the rest
+        }
+
+        const totalMultiplier = difficultyMultiplier * calibrationFactor;
+        const scaledReps = day.reps.map(r => Math.max(1, Math.round(r * totalMultiplier)));
 
         // Use assessment check from earlier (but also skip assessment for final test days)
         const shouldShowAssessment = needsAssessment && !isFinal;
@@ -1172,10 +1212,16 @@ const App = () => {
         const userMax = parseFloat(testInput);
         if (isNaN(userMax) || userMax <= 0) return;
 
+        // Calculate calibration factor based on user's max vs plan's starting point
+        // This creates appropriate volume for the user's fitness level
         const planMaxRep = Math.max(...currentSession.baseReps);
-        const estimatedPlanMax = planMaxRep / 0.7;
-        const scalingFactor = userMax / estimatedPlanMax;
-        const clampedFactor = Math.max(0.5, Math.min(scalingFactor, 2.5));
+
+        // Target working sets at ~60% of user's max
+        const targetWorkingReps = Math.round(userMax * 0.6);
+        // Calculate multiplier to reach that target from plan's max rep
+        const scalingFactor = targetWorkingReps / planMaxRep;
+        // Allow wider range: 0.3x to 15x (supports beginners to advanced)
+        const clampedFactor = Math.max(0.3, Math.min(scalingFactor, 15));
 
         applyCalibration(clampedFactor);
     };

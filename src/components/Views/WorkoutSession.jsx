@@ -223,11 +223,13 @@ const WorkoutSession = ({
         if (testInput && currentSession) {
             const userMax = parseFloat(testInput);
             if (!isNaN(userMax) && userMax > 0) {
-                // Calculate calibration factor (same logic as handleTestSubmit)
+                // Calculate calibration factor based on user's max
+                // Target working sets at ~60% of user's max
                 const planMaxRep = Math.max(...currentSession.baseReps);
-                const estimatedPlanMax = planMaxRep / 0.7;
-                const scalingFactor = userMax / estimatedPlanMax;
-                const clampedFactor = Math.max(0.5, Math.min(scalingFactor, 2.5));
+                const targetWorkingReps = Math.round(userMax * 0.6);
+                const scalingFactor = targetWorkingReps / planMaxRep;
+                // Allow wider range: 0.3x to 15x (supports beginners to advanced)
+                const clampedFactor = Math.max(0.3, Math.min(scalingFactor, 15));
 
                 // Save calibration to localStorage
                 const calibrations = JSON.parse(localStorage.getItem('shift6_calibrations') || '{}');

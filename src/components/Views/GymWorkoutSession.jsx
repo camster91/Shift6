@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus, Target } from 'lucide-react'
 import { playBeep, playSuccess } from '../../utils/audio'
 import { vibrate } from '../../utils/device'
 import { GYM_EXERCISES } from '../../data/gymExercises'
 import { KG_TO_LBS, LBS_TO_KG } from '../../utils/constants'
 import { getWeightSuggestion, checkForGymPR, savePR, getRandomPRMessage, getRandomWeightMessage } from '../../utils/progressionCoach'
+import { getCurrentTarget, getCurrentWeek } from '../../utils/gymProgression'
 
 /**
  * Convert weight between kg and lbs
@@ -86,6 +87,8 @@ const GymWorkoutSession = ({
   gymReps = {}, // { [exerciseId]: [reps per set] }
   gymWeightUnit = 'kg',
   onWeightUnitChange,
+  gymGoals = {}, // { [exerciseId]: goal } - 6-week progression goals
+  onRecordGymResult, // Callback to record workout result against goal
   onComplete,
   onExit,
   onStateChange, // Callback to persist internal state changes
@@ -122,6 +125,7 @@ const GymWorkoutSession = ({
   const [weightSuggestion, setWeightSuggestion] = useState(null) // Smart weight suggestion
   const [showPRCelebration, setShowPRCelebration] = useState(null) // PR celebration modal
   const [sessionPRs, setSessionPRs] = useState([]) // PRs achieved this session
+  const [goalProgress, setGoalProgress] = useState({}) // Track goal progress per exercise
 
   const currentExerciseId = workout?.exercises?.[currentExerciseIndex]
   const currentExercise = currentExerciseId ? GYM_EXERCISES[currentExerciseId] : null
@@ -300,6 +304,24 @@ const GymWorkoutSession = ({
         })
       }
 
+      // Record workout result against 6-week goal (if goal exists)
+      if (onRecordGymResult && gymGoals[currentExerciseId]) {
+        const avgRepsPerSet = Math.round(totalReps / allSetsForExercise.length)
+        const updatedGoal = onRecordGymResult(currentExerciseId, avgWeight, avgRepsPerSet, Math.round(avgRpe) || null)
+
+        // Track goal progress for summary
+        if (updatedGoal?.lastWorkout?.analysis) {
+          setGoalProgress(prev => ({
+            ...prev,
+            [currentExerciseId]: {
+              status: updatedGoal.lastWorkout.analysis.status,
+              message: updatedGoal.lastWorkout.analysis.message,
+              volumeDiff: updatedGoal.lastWorkout.analysis.volumeDiff
+            }
+          }))
+        }
+      }
+
       // Move to next exercise
       if (currentExerciseIndex < totalExercises - 1) {
         setCurrentExerciseIndex(prev => prev + 1)
@@ -324,7 +346,7 @@ const GymWorkoutSession = ({
 
     // Reset debounce after short delay
     setTimeout(() => setIsLogging(false), 500)
-  }, [currentExerciseId, currentReps, currentWeightKg, currentRpe, completedSets, totalSets, currentExerciseIndex, totalExercises, currentExercise, audioEnabled, isLogging, validateSet])
+  }, [currentExerciseId, currentReps, currentWeightKg, currentRpe, completedSets, totalSets, currentExerciseIndex, totalExercises, currentExercise, audioEnabled, isLogging, validateSet, onRecordGymResult, gymGoals])
 
   const startRest = (seconds) => {
     setRestTimeLeft(seconds)
@@ -471,16 +493,47 @@ const GymWorkoutSession = ({
             </div>
           )}
 
-          {/* Exercise breakdown */}
+          {/* Exercise breakdown with goal progress */}
           <div className="w-full max-w-sm space-y-2 mb-8">
-            {Object.entries(completedSets).map(([exId, sets]) => (
-              <div key={exId} className={`${cardBg} rounded-lg p-3 flex justify-between items-center`}>
-                <span className={`${textPrimary} text-sm`}>{GYM_EXERCISES[exId]?.shortName || exId}</span>
-                <span className={`${textSecondary} text-sm`}>
-                  {sets.length} sets × {formatWeight(sets[0]?.weight || 0)}
-                </span>
-              </div>
-            ))}
+            {Object.entries(completedSets).map(([exId, sets]) => {
+              const progress = goalProgress[exId]
+              const statusColors = {
+                ahead: 'text-green-400',
+                on_track: 'text-cyan-400',
+                behind: 'text-amber-400',
+                struggling: 'text-red-400'
+              }
+              const statusIcons = {
+                ahead: <TrendingUp size={14} className="text-green-400" />,
+                on_track: <Check size={14} className="text-cyan-400" />,
+                behind: <Minus size={14} className="text-amber-400" />,
+                struggling: <TrendingDown size={14} className="text-red-400" />
+              }
+
+              return (
+                <div key={exId} className={`${cardBg} rounded-lg p-3`}>
+                  <div className="flex justify-between items-center">
+                    <span className={`${textPrimary} text-sm`}>{GYM_EXERCISES[exId]?.shortName || exId}</span>
+                    <span className={`${textSecondary} text-sm`}>
+                      {sets.length} sets × {formatWeight(sets[0]?.weight || 0)}
+                    </span>
+                  </div>
+                  {progress && (
+                    <div className={`flex items-center gap-2 mt-1.5 pt-1.5 border-t ${theme === 'light' ? 'border-slate-100' : 'border-slate-800'}`}>
+                      {statusIcons[progress.status]}
+                      <span className={`text-xs ${statusColors[progress.status]}`}>
+                        {progress.message}
+                      </span>
+                      {progress.volumeDiff !== 0 && (
+                        <span className={`text-xs ${progress.volumeDiff > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          ({progress.volumeDiff > 0 ? '+' : ''}{progress.volumeDiff}%)
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -540,6 +593,11 @@ const GymWorkoutSession = ({
   const lastReps = gymReps[currentExerciseId]
   const hasLastWorkout = lastReps && lastReps.length > 0
 
+  // Get 6-week goal target for current exercise (if goal exists)
+  const currentGoal = gymGoals[currentExerciseId]
+  const weeklyTarget = currentGoal ? getCurrentTarget(currentGoal) : null
+  const currentWeek = currentGoal ? getCurrentWeek(currentGoal) : null
+
   return (
     <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
       {/* Header */}
@@ -570,7 +628,29 @@ const GymWorkoutSession = ({
             </button>
           )}
         </div>
-        <p className={`${textSecondary} text-sm mb-4`}>{currentExercise.cue}</p>
+        <p className={`${textSecondary} text-sm mb-2`}>{currentExercise.cue}</p>
+
+        {/* 6-Week Goal Target Banner */}
+        {weeklyTarget && (
+          <div className={`flex items-center gap-3 mb-4 p-3 rounded-lg ${theme === 'light' ? 'bg-cyan-50 border border-cyan-200' : 'bg-cyan-500/10 border border-cyan-500/30'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${theme === 'light' ? 'bg-cyan-100' : 'bg-cyan-500/20'}`}>
+              <Target size={16} className="text-cyan-500" />
+            </div>
+            <div className="flex-1">
+              <p className={`text-xs ${theme === 'light' ? 'text-cyan-700' : 'text-cyan-400'} font-medium`}>
+                Week {currentWeek}/6 Target
+              </p>
+              <p className={`text-sm ${textPrimary} font-semibold`}>
+                {formatWeight(weeklyTarget.targetWeight)} × {weeklyTarget.targetReps} reps
+              </p>
+            </div>
+            {weeklyTarget.isDeloadWeek && (
+              <span className={`text-xs px-2 py-1 rounded-full ${theme === 'light' ? 'bg-amber-100 text-amber-700' : 'bg-amber-500/20 text-amber-400'}`}>
+                Deload
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Set Progress */}
         <div className="flex gap-2">

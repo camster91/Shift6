@@ -178,6 +178,7 @@ const GoalsProgress = ({ exercises, gymGoals, gymWeightUnit, onStartAssessment, 
 const GymDashboard = ({
   gymProgram = null, // { programId, currentWeek, currentDay, startDate, isCustom }
   gymWeights = {}, // { [exerciseId]: lastWeight }
+  gymWeightUnit = 'kg', // 'kg' | 'lbs'
   gymHistory = [], // [{ date, dayName, exercises, duration, totalVolume }]
   gymStreak = 0,
   gymGoals = {}, // { [exerciseId]: goal }
@@ -540,7 +541,7 @@ const GymDashboard = ({
         <GoalsProgress
           exercises={todaysWorkout.exercises}
           gymGoals={gymGoals}
-          gymWeightUnit="kg"
+          gymWeightUnit={gymWeightUnit}
           onStartAssessment={onStartAssessment}
           theme={theme}
         />

@@ -48,7 +48,11 @@ const GymGoalSetter = ({
   theme = 'dark'
 }) => {
   const [editMode, setEditMode] = useState(false)
-  const [customTarget, setCustomTarget] = useState(goal?.targetWeight || 0)
+  // Initialize customTarget in display units (convert from kg if needed)
+  const [customTarget, setCustomTarget] = useState(() => {
+    const weightKg = goal?.targetWeight || 0
+    return convertWeight(weightKg, 'kg', gymWeightUnit)
+  })
   const [showConfirm, setShowConfirm] = useState(null) // 'increase' | 'decrease' | 'extend' | 'new'
 
   const exercise = goal ? GYM_EXERCISES[goal.exerciseId] : null
@@ -211,14 +215,14 @@ const GymGoalSetter = ({
               {editMode ? (
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setCustomTarget(prev => Math.max(0, prev - 2.5))}
+                    onClick={() => setCustomTarget(prev => Math.max(0, prev - (gymWeightUnit === 'lbs' ? 5 : 2.5)))}
                     className={`p-1 rounded ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-700'}`}
                   >
                     <ChevronDown size={16} className={textSecondary} />
                   </button>
-                  <span className="text-xl font-bold text-purple-400">{customTarget}</span>
+                  <span className="text-xl font-bold text-purple-400">{customTarget}{gymWeightUnit}</span>
                   <button
-                    onClick={() => setCustomTarget(prev => prev + 2.5)}
+                    onClick={() => setCustomTarget(prev => prev + (gymWeightUnit === 'lbs' ? 5 : 2.5))}
                     className={`p-1 rounded ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-700'}`}
                   >
                     <ChevronUp size={16} className={textSecondary} />

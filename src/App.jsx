@@ -1645,6 +1645,7 @@ const App = () => {
                         <GymDashboard
                             gymProgram={gymProgram}
                             gymWeights={gymWeights}
+                            gymWeightUnit={gymWeightUnit}
                             gymHistory={gymHistory}
                             gymStreak={gymStreak}
                             gymGoals={gymGoals}
@@ -1898,6 +1899,7 @@ const App = () => {
                     exercises={assessmentExercises}
                     gymWeights={gymWeights}
                     gymWeightUnit={gymWeightUnit}
+                    onWeightUnitChange={setGymWeightUnit}
                     fitnessLevel="beginner"
                     onComplete={handleCompleteGymAssessment}
                     onSkip={() => {

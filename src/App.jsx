@@ -1515,7 +1515,6 @@ const App = () => {
     }, []);
 
     // Record workout result and update goal (used by GymWorkoutSession post-workout)
-    // eslint-disable-next-line no-unused-vars
     const handleRecordGymResult = useCallback((exerciseId, weight, reps, rpe) => {
         const goal = gymGoals[exerciseId];
         if (!goal) return null;
@@ -1614,6 +1613,8 @@ const App = () => {
                     gymWeightUnit={gymWeightUnit}
                     onWeightUnitChange={setGymWeightUnit}
                     gymHistory={gymHistory}
+                    gymGoals={gymGoals}
+                    onRecordGymResult={handleRecordGymResult}
                     onComplete={handleCompleteGymWorkout}
                     onExit={() => setCurrentGymSession(null)}
                     onStateChange={(internalState) => {

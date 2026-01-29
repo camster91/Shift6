@@ -753,10 +753,13 @@ const App = () => {
         const day = weekData.days[dayIndex];
         const isFinal = day.isFinal || false;
 
-        // Apply difficulty scaling
+        // Apply difficulty scaling AND calibration
         const difficultyLevel = exerciseDifficulty[exKey] || 3;
-        const multiplier = DIFFICULTY_LEVELS[difficultyLevel]?.multiplier || 1.0;
-        const scaledReps = day.reps.map(r => Math.max(1, Math.round(r * multiplier)));
+        const difficultyMultiplier = DIFFICULTY_LEVELS[difficultyLevel]?.multiplier || 1.0;
+        // Apply calibration factor from assessment (if exists)
+        const calibrationFactor = calibrations[exKey] || 1.0;
+        const totalMultiplier = difficultyMultiplier * calibrationFactor;
+        const scaledReps = day.reps.map(r => Math.max(1, Math.round(r * totalMultiplier)));
 
         // Use assessment check from earlier (but also skip assessment for final test days)
         const shouldShowAssessment = needsAssessment && !isFinal;
@@ -1172,10 +1175,16 @@ const App = () => {
         const userMax = parseFloat(testInput);
         if (isNaN(userMax) || userMax <= 0) return;
 
+        // Calculate calibration factor based on user's max vs plan's starting point
+        // This creates appropriate volume for the user's fitness level
         const planMaxRep = Math.max(...currentSession.baseReps);
-        const estimatedPlanMax = planMaxRep / 0.7;
-        const scalingFactor = userMax / estimatedPlanMax;
-        const clampedFactor = Math.max(0.5, Math.min(scalingFactor, 2.5));
+
+        // Target working sets at ~60% of user's max
+        const targetWorkingReps = Math.round(userMax * 0.6);
+        // Calculate multiplier to reach that target from plan's max rep
+        const scalingFactor = targetWorkingReps / planMaxRep;
+        // Allow wider range: 0.3x to 15x (supports beginners to advanced)
+        const clampedFactor = Math.max(0.3, Math.min(scalingFactor, 15));
 
         applyCalibration(clampedFactor);
     };

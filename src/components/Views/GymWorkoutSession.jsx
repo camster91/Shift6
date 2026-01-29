@@ -6,6 +6,7 @@ import { GYM_EXERCISES } from '../../data/gymExercises'
 import { KG_TO_LBS, LBS_TO_KG } from '../../utils/constants'
 import { getWeightSuggestion, checkForGymPR, savePR, getRandomPRMessage, getRandomWeightMessage } from '../../utils/progressionCoach'
 import { getCurrentTarget, getCurrentWeek } from '../../utils/gymProgression'
+import EnhancedRestScreen from './EnhancedRestScreen'
 
 /**
  * Convert weight between kg and lbs
@@ -114,6 +115,7 @@ const GymWorkoutSession = ({
 
   // Rest timer
   const [restTimeLeft, setRestTimeLeft] = useState(0)
+  const [totalRestTime, setTotalRestTime] = useState(0) // Track original rest time for progress
   const [isResting, setIsResting] = useState(false)
   const restTimerRef = useRef(null)
 
@@ -351,6 +353,7 @@ const GymWorkoutSession = ({
 
   const startRest = (seconds) => {
     setRestTimeLeft(seconds)
+    setTotalRestTime(seconds)
     setIsResting(true)
   }
 
@@ -358,6 +361,11 @@ const GymWorkoutSession = ({
     clearInterval(restTimerRef.current)
     setRestTimeLeft(0)
     setIsResting(false)
+  }
+
+  const adjustRestTime = (delta) => {
+    setRestTimeLeft(prev => Math.max(0, prev + delta))
+    setTotalRestTime(prev => Math.max(0, prev + delta))
   }
 
   const adjustWeight = (delta) => {
@@ -550,37 +558,44 @@ const GymWorkoutSession = ({
     )
   }
 
-  // Rest Timer Screen
+  // Rest Timer Screen - Enhanced with scrollable content
   if (isResting) {
+    // Calculate session stats
+    const allCompletedSets = Object.values(completedSets).flat()
+    const sessionStats = {
+      setsCompleted: allCompletedSets.length,
+      totalVolume: allCompletedSets.reduce((sum, s) => sum + (s.reps * s.weight), 0),
+      totalReps: allCompletedSets.reduce((sum, s) => sum + s.reps, 0),
+      elapsedTime: Math.floor((Date.now() - workoutStartTime) / 1000)
+    }
+
+    // Get upcoming exercises
+    const upcomingExercises = workout?.exercises
+      ?.slice(currentExerciseIndex + 1)
+      .map(exId => GYM_EXERCISES[exId])
+      .filter(Boolean) || []
+
+    // Get next set reps
+    const nextSetReps = currentExercise?.defaultReps?.[currentSetIndex] || 8
+    const completedSetsForCurrent = completedSets[currentExerciseId]?.length || 0
+
     return (
-      <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-4">
-          <button onClick={handleExit} className="p-2">
-            <X className={`w-6 h-6 ${textSecondary}`} />
-          </button>
-          <span className={textSecondary}>
-            {currentExerciseIndex + 1}/{totalExercises} exercises
-          </span>
-        </div>
-
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
-          <Timer className="w-16 h-16 text-purple-400 mb-4" />
-          <h2 className={`text-xl ${textSecondary} mb-2`}>Rest</h2>
-          <p className={`text-7xl font-bold ${textPrimary} mb-8`}>{formatTime(restTimeLeft)}</p>
-
-          <p className={`${textSecondary} mb-4`}>
-            Next: Set {currentSetIndex + 1} of {totalSets}
-          </p>
-
-          <button
-            onClick={skipRest}
-            className={`px-8 py-3 rounded-xl ${cardBg} ${textPrimary} font-medium`}
-          >
-            Skip Rest
-          </button>
-        </div>
-      </div>
+      <EnhancedRestScreen
+        timeLeft={restTimeLeft}
+        totalTime={totalRestTime}
+        onSkip={skipRest}
+        onExit={handleExit}
+        onAdjustTime={adjustRestTime}
+        onPlayVideo={() => setShowVideo(true)}
+        exercise={currentExercise}
+        currentSet={completedSetsForCurrent + 1}
+        totalSets={totalSets}
+        nextReps={`${nextSetReps} reps × ${formatWeight(currentWeightKg)}`}
+        stats={sessionStats}
+        upcomingExercises={upcomingExercises}
+        accentColor="#a855f7"
+        theme={theme}
+      />
     )
   }
 

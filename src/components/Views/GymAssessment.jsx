@@ -41,6 +41,7 @@ const GymAssessment = ({
   exercises, // Array of exercise IDs to assess
   gymWeights = {}, // Existing weights if any
   gymWeightUnit = 'kg',
+  onWeightUnitChange, // Optional callback to toggle weight unit
   fitnessLevel = 'beginner',
   onComplete, // (assessmentResults, goals) => void
   onSkip, // Skip assessment
@@ -96,6 +97,9 @@ const GymAssessment = ({
   // Toggle weight unit
   const toggleUnit = () => {
     vibrate(20)
+    if (onWeightUnitChange) {
+      onWeightUnitChange(gymWeightUnit === 'kg' ? 'lbs' : 'kg')
+    }
   }
 
   // Record assessment result

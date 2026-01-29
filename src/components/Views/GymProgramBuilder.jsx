@@ -51,10 +51,17 @@ const GymProgramBuilder = ({
   const [programDesc, setProgramDesc] = useState(existingProgram?.desc || '')
   const [difficulty, setDifficulty] = useState(existingProgram?.difficulty || 'beginner')
 
-  // Workout days/split
-  const [days, setDays] = useState(existingProgram?.split || [
-    { name: 'Day 1', exercises: [], muscleGroups: [] }
-  ])
+  // Workout days/split (ensure muscleGroups array exists on each day)
+  const [days, setDays] = useState(() => {
+    if (existingProgram?.split) {
+      return existingProgram.split.map(day => ({
+        ...day,
+        exercises: day.exercises || [],
+        muscleGroups: day.muscleGroups || []
+      }))
+    }
+    return [{ name: 'Day 1', exercises: [], muscleGroups: [] }]
+  })
 
   // Current editing state
   const [activeDayIndex, setActiveDayIndex] = useState(0)
@@ -565,11 +572,11 @@ const GymProgramBuilder = ({
         </div>
 
         {/* Footer */}
-        <div className={`p-4 border-t ${borderColor} bg-slate-900/50`}>
+        <div className={`p-4 border-t ${borderColor} ${theme === 'light' ? 'bg-slate-50' : 'bg-slate-900/50'}`}>
           <div className="flex gap-3">
             <button
               onClick={onCancel}
-              className={`flex-1 py-3 border ${borderColor} ${textSecondary} rounded-xl font-medium hover:bg-slate-800 transition-colors`}
+              className={`flex-1 py-3 border ${borderColor} ${textSecondary} rounded-xl font-medium ${theme === 'light' ? 'hover:bg-slate-200' : 'hover:bg-slate-800'} transition-colors`}
             >
               Cancel
             </button>

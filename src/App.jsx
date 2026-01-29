@@ -757,7 +757,44 @@ const App = () => {
         const difficultyLevel = exerciseDifficulty[exKey] || 3;
         const difficultyMultiplier = DIFFICULTY_LEVELS[difficultyLevel]?.multiplier || 1.0;
         // Apply calibration factor from assessment (if exists)
-        const calibrationFactor = calibrations[exKey] || 1.0;
+        let calibrationFactor = calibrations[exKey] || 1.0;
+
+        // Safeguard: If calibration results in extremely low reps (likely bad/old data),
+        // clear the bad calibration and trigger re-assessment
+        const testRep = Math.round(day.reps[0] * difficultyMultiplier * calibrationFactor);
+        if (testRep < 3 && calibrationFactor < 1.0) {
+            // Invalid calibration detected - clear it and trigger re-assessment
+            const updatedCalibrations = { ...calibrations };
+            delete updatedCalibrations[exKey];
+            localStorage.setItem(`${STORAGE_PREFIX}calibrations`, JSON.stringify(updatedCalibrations));
+
+            // Show assessment to recalibrate
+            setCurrentSession({
+                exerciseKey: exKey,
+                exerciseName: exercise.name,
+                week,
+                dayIndex,
+                setIndex: 0,
+                rest: restTimerOverride !== null ? restTimerOverride : getCustomRest(week, trainingPreferences),
+                baseReps: day.reps,
+                reps: day.reps, // Use unscaled for assessment
+                dayId: day.id,
+                isFinal: false,
+                color: exercise.color,
+                unit: exercise.unit,
+                difficulty: difficultyLevel,
+                step: 'assessment' // Force assessment
+            });
+            setAmrapValue('');
+            setTestInput('');
+            setTimeLeft(0);
+            setWorkoutNotes('');
+            setExerciseTimeLeft(0);
+            setIsExerciseTimerRunning(false);
+            setExerciseTimerStarted(false);
+            return; // Exit early - assessment will handle the rest
+        }
+
         const totalMultiplier = difficultyMultiplier * calibrationFactor;
         const scaledReps = day.reps.map(r => Math.max(1, Math.round(r * totalMultiplier)));
 

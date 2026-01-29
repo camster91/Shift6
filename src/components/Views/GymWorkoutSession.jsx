@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus, Target } from 'lucide-react'
+import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus, Target, Save } from 'lucide-react'
 import { playBeep, playSuccess } from '../../utils/audio'
 import { vibrate } from '../../utils/device'
 import { GYM_EXERCISES } from '../../data/gymExercises'
 import { KG_TO_LBS, LBS_TO_KG } from '../../utils/constants'
 import { getWeightSuggestion, checkForGymPR, savePR, getRandomPRMessage, getRandomWeightMessage } from '../../utils/progressionCoach'
 import { getCurrentTarget, getCurrentWeek } from '../../utils/gymProgression'
+import EnhancedRestScreen from './EnhancedRestScreen'
 
 /**
  * Convert weight between kg and lbs
@@ -91,6 +92,7 @@ const GymWorkoutSession = ({
   onRecordGymResult, // Callback to record workout result against goal
   onComplete,
   onExit,
+  onSaveForLater, // Callback to save workout for later without losing progress
   onStateChange, // Callback to persist internal state changes
   audioEnabled = true,
   theme = 'dark'
@@ -113,6 +115,7 @@ const GymWorkoutSession = ({
 
   // Rest timer
   const [restTimeLeft, setRestTimeLeft] = useState(0)
+  const [totalRestTime, setTotalRestTime] = useState(0) // Track original rest time for progress
   const [isResting, setIsResting] = useState(false)
   const restTimerRef = useRef(null)
 
@@ -350,6 +353,7 @@ const GymWorkoutSession = ({
 
   const startRest = (seconds) => {
     setRestTimeLeft(seconds)
+    setTotalRestTime(seconds)
     setIsResting(true)
   }
 
@@ -357,6 +361,11 @@ const GymWorkoutSession = ({
     clearInterval(restTimerRef.current)
     setRestTimeLeft(0)
     setIsResting(false)
+  }
+
+  const adjustRestTime = (delta) => {
+    setRestTimeLeft(prev => Math.max(0, prev + delta))
+    setTotalRestTime(prev => Math.max(0, prev + delta))
   }
 
   const adjustWeight = (delta) => {
@@ -549,37 +558,44 @@ const GymWorkoutSession = ({
     )
   }
 
-  // Rest Timer Screen
+  // Rest Timer Screen - Enhanced with scrollable content
   if (isResting) {
+    // Calculate session stats
+    const allCompletedSets = Object.values(completedSets).flat()
+    const sessionStats = {
+      setsCompleted: allCompletedSets.length,
+      totalVolume: allCompletedSets.reduce((sum, s) => sum + (s.reps * s.weight), 0),
+      totalReps: allCompletedSets.reduce((sum, s) => sum + s.reps, 0),
+      elapsedTime: Math.floor((Date.now() - workoutStartTime) / 1000)
+    }
+
+    // Get upcoming exercises
+    const upcomingExercises = workout?.exercises
+      ?.slice(currentExerciseIndex + 1)
+      .map(exId => GYM_EXERCISES[exId])
+      .filter(Boolean) || []
+
+    // Get next set reps
+    const nextSetReps = currentExercise?.defaultReps?.[currentSetIndex] || 8
+    const completedSetsForCurrent = completedSets[currentExerciseId]?.length || 0
+
     return (
-      <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-4">
-          <button onClick={handleExit} className="p-2">
-            <X className={`w-6 h-6 ${textSecondary}`} />
-          </button>
-          <span className={textSecondary}>
-            {currentExerciseIndex + 1}/{totalExercises} exercises
-          </span>
-        </div>
-
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
-          <Timer className="w-16 h-16 text-purple-400 mb-4" />
-          <h2 className={`text-xl ${textSecondary} mb-2`}>Rest</h2>
-          <p className={`text-7xl font-bold ${textPrimary} mb-8`}>{formatTime(restTimeLeft)}</p>
-
-          <p className={`${textSecondary} mb-4`}>
-            Next: Set {currentSetIndex + 1} of {totalSets}
-          </p>
-
-          <button
-            onClick={skipRest}
-            className={`px-8 py-3 rounded-xl ${cardBg} ${textPrimary} font-medium`}
-          >
-            Skip Rest
-          </button>
-        </div>
-      </div>
+      <EnhancedRestScreen
+        timeLeft={restTimeLeft}
+        totalTime={totalRestTime}
+        onSkip={skipRest}
+        onExit={handleExit}
+        onAdjustTime={adjustRestTime}
+        onPlayVideo={() => setShowVideo(true)}
+        exercise={currentExercise}
+        currentSet={completedSetsForCurrent + 1}
+        totalSets={totalSets}
+        nextReps={`${nextSetReps} reps × ${formatWeight(currentWeightKg)}`}
+        stats={sessionStats}
+        upcomingExercises={upcomingExercises}
+        accentColor="#a855f7"
+        theme={theme}
+      />
     )
   }
 
@@ -785,22 +801,38 @@ const GymWorkoutSession = ({
               </div>
               <h3 className={`text-xl font-bold ${textPrimary} mb-2`}>Exit Workout?</h3>
               <p className={textSecondary}>
-                You have {Object.values(completedSets).flat().length} sets logged. Your progress will be lost.
+                You have {Object.values(completedSets).flat().length} sets logged.
               </p>
             </div>
-            <div className={`flex border-t ${theme === 'light' ? 'border-slate-200' : 'border-slate-700'}`}>
-              <button
-                onClick={() => setShowExitConfirm(false)}
-                className={`flex-1 py-4 ${textSecondary} hover:bg-slate-800/50 transition-colors`}
-              >
-                Keep Training
-              </button>
-              <button
-                onClick={confirmExit}
-                className="flex-1 py-4 bg-amber-500 text-white font-semibold"
-              >
-                Exit
-              </button>
+            <div className="p-4 space-y-2">
+              {/* Save & Exit option - only show if there's progress and handler exists */}
+              {onSaveForLater && Object.values(completedSets).flat().length > 0 && (
+                <button
+                  onClick={() => {
+                    setShowExitConfirm(false)
+                    vibrate(30)
+                    onSaveForLater()
+                  }}
+                  className="w-full py-3 px-4 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-400 font-medium hover:bg-emerald-500/30 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  Save & Exit
+                </button>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowExitConfirm(false)}
+                  className={`flex-1 py-3 px-4 rounded-xl border ${theme === 'light' ? 'border-slate-200' : 'border-slate-700'} ${textSecondary} hover:bg-slate-800/50 transition-colors`}
+                >
+                  Keep Training
+                </button>
+                <button
+                  onClick={confirmExit}
+                  className="flex-1 py-3 px-4 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors"
+                >
+                  Discard & Exit
+                </button>
+              </div>
             </div>
           </div>
         </div>

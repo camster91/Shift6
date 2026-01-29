@@ -19,6 +19,7 @@ import { EXERCISE_PLANS, EXERCISE_ACHIEVEMENTS } from '../../data/exercises.jsx'
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js';
 import { calculateStats, getUnlockedBadges, BADGES, getLastWorkoutForExercise, getPersonalRecords } from '../../utils/gamification';
 import Confetti from '../Visuals/Confetti';
+import EnhancedRestScreen from './EnhancedRestScreen';
 
 const VideoModal = ({ exercise, onClose }) => {
     if (!exercise) return null
@@ -91,8 +92,8 @@ const ProgressRing = ({ progress, size = 200, stroke = 8, color = "currentColor"
     );
 };
 
-// Exit Confirmation Modal
-const ExitConfirmModal = ({ onConfirm, onCancel }) => (
+// Exit Confirmation Modal with Save & Exit option
+const ExitConfirmModal = ({ onConfirm, onCancel, onSave, hasProgress = false }) => (
     <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4" onClick={onCancel}>
         <div
             className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200"
@@ -104,22 +105,34 @@ const ExitConfirmModal = ({ onConfirm, onCancel }) => (
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">Exit Workout?</h3>
                 <p className="text-sm text-slate-400">
-                    Your progress for this session will be lost.
+                    {hasProgress ? 'You have progress in this session.' : 'Your progress for this session will be lost.'}
                 </p>
             </div>
-            <div className="flex gap-3">
-                <button
-                    onClick={onCancel}
-                    className="flex-1 py-3 px-4 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium hover:bg-slate-700 transition-colors"
-                >
-                    Keep Going
-                </button>
-                <button
-                    onClick={onConfirm}
-                    className="flex-1 py-3 px-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 font-medium hover:bg-red-500/30 transition-colors"
-                >
-                    Exit
-                </button>
+            <div className="space-y-2">
+                {/* Save & Exit option - only show if there's progress and handler exists */}
+                {onSave && hasProgress && (
+                    <button
+                        onClick={onSave}
+                        className="w-full py-3 px-4 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-400 font-medium hover:bg-emerald-500/30 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Check size={18} />
+                        Save & Exit
+                    </button>
+                )}
+                <div className="flex gap-3">
+                    <button
+                        onClick={onCancel}
+                        className="flex-1 py-3 px-4 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium hover:bg-slate-700 transition-colors"
+                    >
+                        Keep Going
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="flex-1 py-3 px-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 font-medium hover:bg-red-500/30 transition-colors"
+                    >
+                        Discard & Exit
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -152,7 +165,8 @@ const WorkoutSession = ({
     sessionHistory = [],
     personalRecords = {},
     // setPersonalRecords - unused for now, but available for future PR tracking
-    allExercises = {}
+    allExercises = {},
+    onSaveForLater // Callback to save workout for later without losing progress
 }) => {
     const [copied, setCopied] = useState(false);
     const [showVideo, setShowVideo] = useState(false);
@@ -160,6 +174,8 @@ const WorkoutSession = ({
     const [showAchievements, setShowAchievements] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [workoutStartTime] = useState(Date.now()); // Track session start for stats
+    const [totalRestTime, setTotalRestTime] = useState(0); // Track original rest time for progress ring
 
     // Gym workout state - kept for compatibility but unused in calisthenics mode
     const [gymSetReps, setGymSetReps] = useState([]);
@@ -186,6 +202,13 @@ const WorkoutSession = ({
     const currentExercise = currentSession
         ? (EXERCISE_PLANS[currentSession.exerciseKey] || EXERCISE_LIBRARY[currentSession.exerciseKey])
         : null;
+
+    // Track when rest timer starts to capture total rest time
+    React.useEffect(() => {
+        if (isTimerRunning && timeLeft > 0 && timeLeft === currentSession?.rest) {
+            setTotalRestTime(timeLeft);
+        }
+    }, [isTimerRunning, timeLeft, currentSession?.rest]);
 
     // Audio/Vibrate Effect for Rest Timer
     React.useEffect(() => {
@@ -1242,6 +1265,43 @@ const WorkoutSession = ({
                             setCurrentSession(null);
                         }}
                         onCancel={() => setShowExitConfirm(false)}
+                        onSave={onSaveForLater ? () => {
+                            setShowExitConfirm(false);
+                            vibrate(30);
+                            onSaveForLater();
+                        } : null}
+                        hasProgress={currentSession?.setIndex > 0}
+                    />
+                )}
+
+                {/* Enhanced Rest Screen Overlay */}
+                {isTimerRunning && timeLeft > 0 && currentSession?.step === 'workout' && (
+                    <EnhancedRestScreen
+                        timeLeft={timeLeft}
+                        totalTime={totalRestTime || currentSession.rest}
+                        onSkip={() => { setTimeLeft(0); vibrate(20); }}
+                        onExit={() => setShowExitConfirm(true)}
+                        onAdjustTime={(delta) => {
+                            setTimeLeft(prev => Math.max(0, prev + delta));
+                            setTotalRestTime(prev => Math.max(0, prev + delta));
+                        }}
+                        onPlayVideo={() => setShowVideo(true)}
+                        exercise={currentExercise}
+                        currentSet={currentSession.setIndex + 1}
+                        totalSets={currentSession.reps?.length || 3}
+                        nextReps={currentSession.reps?.[currentSession.setIndex]
+                            ? `${currentSession.reps[currentSession.setIndex]} ${currentSession.unit || 'reps'}`
+                            : null}
+                        stats={{
+                            setsCompleted: currentSession.setIndex,
+                            totalReps: currentSession.reps?.slice(0, currentSession.setIndex).reduce((a, b) => a + b, 0) || 0,
+                            elapsedTime: Math.floor((Date.now() - workoutStartTime) / 1000)
+                        }}
+                        personalRecord={personalRecords?.[currentSession.exerciseKey]
+                            ? `${personalRecords[currentSession.exerciseKey]} ${currentSession.unit || 'reps'}`
+                            : null}
+                        accentColor={colorClasses[currentSession.color]?.solid?.replace('bg-', '#').replace('-500', '') || '#06b6d4'}
+                        theme="dark"
                     />
                 )}
             </div>

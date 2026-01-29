@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { GYM_EXERCISES, GYM_PROGRAMS, getGymProgram, GYM_DIFFICULTY_LABELS } from '../../data/gymExercises'
 import { vibrate } from '../../utils/device'
+import { getCurrentWeek, getCurrentTarget, calculateProgress, getGoalsSummary } from '../../utils/gymProgression'
 
 // Floating Quick Start Button - matches Home mode style
 const QuickStartFAB = ({ onClick, exerciseCount, isVisible }) => {
@@ -55,6 +56,121 @@ const StreakBadge = ({ streak, theme }) => {
   )
 }
 
+// 6-Week Goals Progress component
+const GoalsProgress = ({ exercises, gymGoals, gymWeightUnit, onStartAssessment, theme }) => {
+  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
+  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+  const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
+  const borderColor = theme === 'light' ? 'border-slate-200' : 'border-slate-800'
+
+  // Find exercises with and without goals
+  const exercisesWithGoals = exercises?.filter(exId => gymGoals[exId]) || []
+  const exercisesWithoutGoals = exercises?.filter(exId => !gymGoals[exId]) || []
+
+  // Calculate summary for exercises with goals
+  const summary = getGoalsSummary(
+    exercisesWithGoals.reduce((acc, exId) => {
+      acc[exId] = gymGoals[exId]
+      return acc
+    }, {})
+  )
+
+  if (exercises?.length === 0) return null
+
+  return (
+    <div className="animate-fadeIn">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className={`text-sm font-medium ${textSecondary} uppercase tracking-wider`}>6-Week Goals</h3>
+        {summary.active > 0 && (
+          <span className={`text-xs ${textSecondary}`}>
+            {summary.averageProgress}% avg progress
+          </span>
+        )}
+      </div>
+
+      {/* Show prompt to set up goals if exercises have no goals */}
+      {exercisesWithoutGoals.length > 0 && (
+        <button
+          onClick={() => {
+            vibrate(30)
+            onStartAssessment?.(exercisesWithoutGoals)
+          }}
+          className={`w-full ${cardBg} rounded-xl p-4 mb-3 border-2 border-dashed ${borderColor} hover:border-purple-500 transition-colors flex items-center gap-3`}
+        >
+          <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+            <Target className="w-5 h-5 text-purple-400" />
+          </div>
+          <div className="text-left flex-1">
+            <p className={`font-medium ${textPrimary}`}>Set Up Your Goals</p>
+            <p className={`text-xs ${textSecondary}`}>
+              {exercisesWithoutGoals.length} exercise{exercisesWithoutGoals.length !== 1 ? 's' : ''} need assessment
+            </p>
+          </div>
+          <ChevronRight className={`w-5 h-5 ${textSecondary}`} />
+        </button>
+      )}
+
+      {/* Show progress for exercises with goals */}
+      {exercisesWithGoals.length > 0 && (
+        <div className="space-y-2">
+          {exercisesWithGoals.slice(0, 3).map(exId => {
+            const goal = gymGoals[exId]
+            const exercise = GYM_EXERCISES[exId]
+            if (!goal || !exercise) return null
+
+            const progress = calculateProgress(goal)
+            const currentWeek = getCurrentWeek(goal)
+            const target = getCurrentTarget(goal)
+
+            return (
+              <div
+                key={exId}
+                className={`${cardBg} rounded-xl p-3 border ${borderColor} hover:border-purple-500/30 transition-colors`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`font-medium ${textPrimary} text-sm`}>
+                    {exercise.shortName || exercise.name}
+                  </span>
+                  <span className={`text-xs ${textSecondary}`}>
+                    Week {Math.min(currentWeek, 6)}/6
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div className={`h-2 ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-700'} rounded-full overflow-hidden mb-1`}>
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      progress >= 100 ? 'bg-emerald-500' :
+                      progress >= 50 ? 'bg-purple-500' :
+                      'bg-purple-500/70'
+                    }`}
+                    style={{ width: `${Math.min(progress, 100)}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <span className={textSecondary}>
+                    Target: {target.targetWeight}{gymWeightUnit} × {target.targetReps}
+                  </span>
+                  <span className={progress >= 100 ? 'text-emerald-400' : 'text-purple-400'}>
+                    {progress}%
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+
+          {exercisesWithGoals.length > 3 && (
+            <p className={`text-xs ${textSecondary} text-center`}>
+              +{exercisesWithGoals.length - 3} more exercise{exercisesWithGoals.length - 3 !== 1 ? 's' : ''} with goals
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /**
  * GymDashboard - Main view for gym mode
  * Shows current program, today's workout, recent history
@@ -62,10 +178,13 @@ const StreakBadge = ({ streak, theme }) => {
 const GymDashboard = ({
   gymProgram = null, // { programId, currentWeek, currentDay, startDate, isCustom }
   gymWeights = {}, // { [exerciseId]: lastWeight }
+  gymWeightUnit = 'kg', // 'kg' | 'lbs'
   gymHistory = [], // [{ date, dayName, exercises, duration, totalVolume }]
   gymStreak = 0,
+  gymGoals = {}, // { [exerciseId]: goal }
   customGymPrograms = [], // User-created programs
   onStartWorkout,
+  onStartAssessment, // (exerciseIds) => void
   onChangeProgram,
   onShowProgramManager, // Open the full program manager
   theme = 'dark'
@@ -414,6 +533,17 @@ const GymDashboard = ({
           }}
           exerciseCount={todaysWorkout.exerciseDetails?.length || 0}
           isVisible={true}
+        />
+      )}
+
+      {/* 6-Week Goals Progress */}
+      {currentProgram && todaysWorkout && !todaysWorkout.isRest && (
+        <GoalsProgress
+          exercises={todaysWorkout.exercises}
+          gymGoals={gymGoals}
+          gymWeightUnit={gymWeightUnit}
+          onStartAssessment={onStartAssessment}
+          theme={theme}
         />
       )}
 

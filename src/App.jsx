@@ -64,6 +64,8 @@ import GymDashboard from './components/Views/GymDashboard';
 import GymOnboarding from './components/Views/GymOnboarding';
 import GymWorkoutSession from './components/Views/GymWorkoutSession';
 import GymProgramManager from './components/Views/GymProgramManager';
+import GymAssessment from './components/Views/GymAssessment';
+import { recordWorkoutResult as recordGymWorkoutResult } from './utils/gymProgression';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -272,6 +274,16 @@ const App = () => {
 
     // Show gym program manager modal
     const [showGymProgramManager, setShowGymProgramManager] = useState(false);
+
+    // Gym goals (6-week progression targets per exercise)
+    const [gymGoals, setGymGoals] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_goals`);
+        return saved ? JSON.parse(saved) : {};
+    });
+
+    // Show gym assessment flow
+    const [showGymAssessment, setShowGymAssessment] = useState(false);
+    const [assessmentExercises, setAssessmentExercises] = useState([]);
 
     // Current gym workout session (with localStorage persistence to prevent data loss)
     const [currentGymSession, setCurrentGymSession] = useState(() => {
@@ -557,6 +569,11 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}custom_gym_programs`, JSON.stringify(customGymPrograms));
     }, [customGymPrograms]);
+
+    // Persist gym goals
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}gym_goals`, JSON.stringify(gymGoals));
+    }, [gymGoals]);
 
     // Persist gym workout session (prevents data loss on refresh)
     useEffect(() => {
@@ -1460,6 +1477,57 @@ const App = () => {
         setShowGymProgramManager(true);
     }, []);
 
+    // Start gym assessment for exercises
+    const handleStartGymAssessment = useCallback((exerciseIds) => {
+        setAssessmentExercises(exerciseIds);
+        setShowGymAssessment(true);
+    }, []);
+
+    // Complete gym assessment and save goals
+    const handleCompleteGymAssessment = useCallback((assessmentResults, goals) => {
+        // Save the goals
+        setGymGoals(prev => ({
+            ...prev,
+            ...goals
+        }));
+
+        // Update weights with assessed values
+        const newWeights = { ...gymWeights };
+        Object.entries(assessmentResults).forEach(([exerciseId, result]) => {
+            if (!result.skipped) {
+                newWeights[exerciseId] = result.weight;
+            }
+        });
+        setGymWeights(newWeights);
+
+        // Close assessment
+        setShowGymAssessment(false);
+        setAssessmentExercises([]);
+    }, [gymWeights]);
+
+    // Update a single gym goal (used by GymGoalSetter and GymWorkoutSession)
+    // eslint-disable-next-line no-unused-vars
+    const handleUpdateGymGoal = useCallback((updatedGoal) => {
+        setGymGoals(prev => ({
+            ...prev,
+            [updatedGoal.exerciseId]: updatedGoal
+        }));
+    }, []);
+
+    // Record workout result and update goal (used by GymWorkoutSession post-workout)
+    const handleRecordGymResult = useCallback((exerciseId, weight, reps, rpe) => {
+        const goal = gymGoals[exerciseId];
+        if (!goal) return null;
+
+        const updatedGoal = recordGymWorkoutResult(goal, weight, reps, rpe);
+        setGymGoals(prev => ({
+            ...prev,
+            [exerciseId]: updatedGoal
+        }));
+
+        return updatedGoal;
+    }, [gymGoals]);
+
     // Switch between home and gym mode
     const handleSwitchMode = useCallback(() => {
         setCurrentMode(prev => prev === 'home' ? 'gym' : 'home');
@@ -1545,6 +1613,8 @@ const App = () => {
                     gymWeightUnit={gymWeightUnit}
                     onWeightUnitChange={setGymWeightUnit}
                     gymHistory={gymHistory}
+                    gymGoals={gymGoals}
+                    onRecordGymResult={handleRecordGymResult}
                     onComplete={handleCompleteGymWorkout}
                     onExit={() => setCurrentGymSession(null)}
                     onStateChange={(internalState) => {
@@ -1575,10 +1645,13 @@ const App = () => {
                         <GymDashboard
                             gymProgram={gymProgram}
                             gymWeights={gymWeights}
+                            gymWeightUnit={gymWeightUnit}
                             gymHistory={gymHistory}
                             gymStreak={gymStreak}
+                            gymGoals={gymGoals}
                             customGymPrograms={customGymPrograms}
                             onStartWorkout={handleStartGymWorkout}
+                            onStartAssessment={handleStartGymAssessment}
                             onChangeProgram={handleChangeGymProgram}
                             onShowProgramManager={handleShowGymProgramManager}
                             onSwitchMode={handleSwitchMode}
@@ -1816,6 +1889,28 @@ const App = () => {
                     onSaveCustomProgram={handleSaveCustomGymProgram}
                     onDeleteCustomProgram={handleDeleteCustomGymProgram}
                     onClose={() => setShowGymProgramManager(false)}
+                    theme={theme}
+                />
+            )}
+
+            {/* Gym Assessment Flow */}
+            {showGymAssessment && assessmentExercises.length > 0 && (
+                <GymAssessment
+                    exercises={assessmentExercises}
+                    gymWeights={gymWeights}
+                    gymWeightUnit={gymWeightUnit}
+                    onWeightUnitChange={setGymWeightUnit}
+                    fitnessLevel="beginner"
+                    onComplete={handleCompleteGymAssessment}
+                    onSkip={() => {
+                        setShowGymAssessment(false);
+                        setAssessmentExercises([]);
+                    }}
+                    onExit={() => {
+                        setShowGymAssessment(false);
+                        setAssessmentExercises([]);
+                    }}
+                    audioEnabled={audioEnabled}
                     theme={theme}
                 />
             )}

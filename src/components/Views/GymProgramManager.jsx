@@ -212,7 +212,7 @@ const GymProgramManager = ({
               )}
               <button
                 onClick={() => handleCloneProgram(program)}
-                className={`py-2 px-3 ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-700'} rounded-lg hover:bg-slate-600 transition-colors`}
+                className={`py-2 px-3 ${theme === 'light' ? 'bg-slate-200 hover:bg-slate-300' : 'bg-slate-700 hover:bg-slate-600'} rounded-lg transition-colors`}
                 title="Clone & Edit"
               >
                 <Copy size={16} className={textSecondary} />
@@ -221,7 +221,7 @@ const GymProgramManager = ({
                 <>
                   <button
                     onClick={() => { setEditingProgram(program); setShowBuilder(true) }}
-                    className={`py-2 px-3 ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-700'} rounded-lg hover:bg-slate-600 transition-colors`}
+                    className={`py-2 px-3 ${theme === 'light' ? 'bg-slate-200 hover:bg-slate-300' : 'bg-slate-700 hover:bg-slate-600'} rounded-lg transition-colors`}
                     title="Edit"
                   >
                     <Edit3 size={16} className={textSecondary} />
@@ -250,15 +250,15 @@ const GymProgramManager = ({
           <h2 className={`text-xl font-bold ${textPrimary}`}>Gym Programs</h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+            className={`p-2 rounded-lg ${theme === 'light' ? 'hover:bg-slate-200' : 'hover:bg-slate-800'} transition-colors`}
           >
             <X className={textSecondary} size={20} />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className={`px-4 py-2 border-b ${borderColor} bg-slate-900/50`}>
-          <div className="flex bg-slate-800 rounded-lg p-1">
+        <div className={`px-4 py-2 border-b ${borderColor} ${theme === 'light' ? 'bg-slate-50' : 'bg-slate-900/50'}`}>
+          <div className={`flex ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'} rounded-lg p-1`}>
             {tabs.map(tab => (
               <button
                 key={tab.id}
@@ -379,7 +379,7 @@ const GymProgramManager = ({
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       difficultyFilter === level
                         ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                        : `${cardBg} ${textSecondary} hover:bg-slate-700`
+                        : `${cardBg} ${textSecondary} ${theme === 'light' ? 'hover:bg-slate-200' : 'hover:bg-slate-700'}`
                     }`}
                   >
                     {level === 'all' ? 'All' : GYM_DIFFICULTY_LABELS[level]?.icon + ' ' + GYM_DIFFICULTY_LABELS[level]?.name}
@@ -468,7 +468,7 @@ const GymProgramManager = ({
             <div className={`p-4 border-t ${borderColor} flex gap-3`}>
               <button
                 onClick={() => setConfirmSelect(null)}
-                className={`flex-1 py-2 border ${borderColor} ${textSecondary} rounded-lg hover:bg-slate-800`}
+                className={`flex-1 py-2 border ${borderColor} ${textSecondary} rounded-lg ${theme === 'light' ? 'hover:bg-slate-100' : 'hover:bg-slate-800'}`}
               >
                 Cancel
               </button>
@@ -502,7 +502,7 @@ const GymProgramManager = ({
             <div className={`p-4 border-t ${borderColor} flex gap-3`}>
               <button
                 onClick={() => setConfirmDelete(null)}
-                className={`flex-1 py-2 border ${borderColor} ${textSecondary} rounded-lg hover:bg-slate-800`}
+                className={`flex-1 py-2 border ${borderColor} ${textSecondary} rounded-lg ${theme === 'light' ? 'hover:bg-slate-100' : 'hover:bg-slate-800'}`}
               >
                 Cancel
               </button>

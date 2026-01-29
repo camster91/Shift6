@@ -19,6 +19,7 @@ import { EXERCISE_PLANS, EXERCISE_ACHIEVEMENTS } from '../../data/exercises.jsx'
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js';
 import { calculateStats, getUnlockedBadges, BADGES, getLastWorkoutForExercise, getPersonalRecords } from '../../utils/gamification';
 import Confetti from '../Visuals/Confetti';
+import EnhancedRestScreen from './EnhancedRestScreen';
 
 const VideoModal = ({ exercise, onClose }) => {
     if (!exercise) return null
@@ -173,6 +174,8 @@ const WorkoutSession = ({
     const [showAchievements, setShowAchievements] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [workoutStartTime] = useState(Date.now()); // Track session start for stats
+    const [totalRestTime, setTotalRestTime] = useState(0); // Track original rest time for progress ring
 
     // Gym workout state - kept for compatibility but unused in calisthenics mode
     const [gymSetReps, setGymSetReps] = useState([]);
@@ -199,6 +202,13 @@ const WorkoutSession = ({
     const currentExercise = currentSession
         ? (EXERCISE_PLANS[currentSession.exerciseKey] || EXERCISE_LIBRARY[currentSession.exerciseKey])
         : null;
+
+    // Track when rest timer starts to capture total rest time
+    React.useEffect(() => {
+        if (isTimerRunning && timeLeft > 0 && timeLeft === currentSession?.rest) {
+            setTotalRestTime(timeLeft);
+        }
+    }, [isTimerRunning, timeLeft, currentSession?.rest]);
 
     // Audio/Vibrate Effect for Rest Timer
     React.useEffect(() => {
@@ -1261,6 +1271,37 @@ const WorkoutSession = ({
                             onSaveForLater();
                         } : null}
                         hasProgress={currentSession?.setIndex > 0}
+                    />
+                )}
+
+                {/* Enhanced Rest Screen Overlay */}
+                {isTimerRunning && timeLeft > 0 && currentSession?.step === 'workout' && (
+                    <EnhancedRestScreen
+                        timeLeft={timeLeft}
+                        totalTime={totalRestTime || currentSession.rest}
+                        onSkip={() => { setTimeLeft(0); vibrate(20); }}
+                        onExit={() => setShowExitConfirm(true)}
+                        onAdjustTime={(delta) => {
+                            setTimeLeft(prev => Math.max(0, prev + delta));
+                            setTotalRestTime(prev => Math.max(0, prev + delta));
+                        }}
+                        onPlayVideo={() => setShowVideo(true)}
+                        exercise={currentExercise}
+                        currentSet={currentSession.setIndex + 1}
+                        totalSets={currentSession.reps?.length || 3}
+                        nextReps={currentSession.reps?.[currentSession.setIndex]
+                            ? `${currentSession.reps[currentSession.setIndex]} ${currentSession.unit || 'reps'}`
+                            : null}
+                        stats={{
+                            setsCompleted: currentSession.setIndex,
+                            totalReps: currentSession.reps?.slice(0, currentSession.setIndex).reduce((a, b) => a + b, 0) || 0,
+                            elapsedTime: Math.floor((Date.now() - workoutStartTime) / 1000)
+                        }}
+                        personalRecord={personalRecords?.[currentSession.exerciseKey]
+                            ? `${personalRecords[currentSession.exerciseKey]} ${currentSession.unit || 'reps'}`
+                            : null}
+                        accentColor={colorClasses[currentSession.color]?.solid?.replace('bg-', '#').replace('-500', '') || '#06b6d4'}
+                        theme="dark"
                     />
                 )}
             </div>

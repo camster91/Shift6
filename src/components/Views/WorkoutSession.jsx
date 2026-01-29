@@ -91,8 +91,8 @@ const ProgressRing = ({ progress, size = 200, stroke = 8, color = "currentColor"
     );
 };
 
-// Exit Confirmation Modal
-const ExitConfirmModal = ({ onConfirm, onCancel }) => (
+// Exit Confirmation Modal with Save & Exit option
+const ExitConfirmModal = ({ onConfirm, onCancel, onSave, hasProgress = false }) => (
     <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4" onClick={onCancel}>
         <div
             className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200"
@@ -104,22 +104,34 @@ const ExitConfirmModal = ({ onConfirm, onCancel }) => (
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">Exit Workout?</h3>
                 <p className="text-sm text-slate-400">
-                    Your progress for this session will be lost.
+                    {hasProgress ? 'You have progress in this session.' : 'Your progress for this session will be lost.'}
                 </p>
             </div>
-            <div className="flex gap-3">
-                <button
-                    onClick={onCancel}
-                    className="flex-1 py-3 px-4 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium hover:bg-slate-700 transition-colors"
-                >
-                    Keep Going
-                </button>
-                <button
-                    onClick={onConfirm}
-                    className="flex-1 py-3 px-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 font-medium hover:bg-red-500/30 transition-colors"
-                >
-                    Exit
-                </button>
+            <div className="space-y-2">
+                {/* Save & Exit option - only show if there's progress and handler exists */}
+                {onSave && hasProgress && (
+                    <button
+                        onClick={onSave}
+                        className="w-full py-3 px-4 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-400 font-medium hover:bg-emerald-500/30 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Check size={18} />
+                        Save & Exit
+                    </button>
+                )}
+                <div className="flex gap-3">
+                    <button
+                        onClick={onCancel}
+                        className="flex-1 py-3 px-4 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium hover:bg-slate-700 transition-colors"
+                    >
+                        Keep Going
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="flex-1 py-3 px-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 font-medium hover:bg-red-500/30 transition-colors"
+                    >
+                        Discard & Exit
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -152,7 +164,8 @@ const WorkoutSession = ({
     sessionHistory = [],
     personalRecords = {},
     // setPersonalRecords - unused for now, but available for future PR tracking
-    allExercises = {}
+    allExercises = {},
+    onSaveForLater // Callback to save workout for later without losing progress
 }) => {
     const [copied, setCopied] = useState(false);
     const [showVideo, setShowVideo] = useState(false);
@@ -1242,6 +1255,12 @@ const WorkoutSession = ({
                             setCurrentSession(null);
                         }}
                         onCancel={() => setShowExitConfirm(false)}
+                        onSave={onSaveForLater ? () => {
+                            setShowExitConfirm(false);
+                            vibrate(30);
+                            onSaveForLater();
+                        } : null}
+                        hasProgress={currentSession?.setIndex > 0}
                     />
                 )}
             </div>

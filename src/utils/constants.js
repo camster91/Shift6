@@ -43,6 +43,9 @@ export const STORAGE_KEYS = {
     gymReps: 'shift6_gym_reps',
     gymWeightUnit: 'shift6_gym_weight_unit',
     customExercises: 'shift6_custom_exercises',
+    // Gym mode session keys
+    currentGymSession: 'shift6_current_gym_session',
+    pendingGymSession: 'shift6_pending_gym_session',
     // Persona system keys
     userPersona: 'shift6_user_persona',
     currentLocation: 'shift6_current_location',

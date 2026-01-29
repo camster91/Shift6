@@ -16,6 +16,52 @@ import { GYM_EXERCISES, GYM_PROGRAMS, getGymProgram, GYM_DIFFICULTY_LABELS } fro
 import { vibrate } from '../../utils/device'
 import { getCurrentWeek, getCurrentTarget, calculateProgress, getGoalsSummary } from '../../utils/gymProgression'
 
+// Resume Gym Workout Banner - shows when there's a saved session
+const ResumeGymWorkoutBanner = ({ session, onResume, onDiscard, theme }) => {
+  if (!session) return null
+
+  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
+  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+  const completedSets = Object.values(session.internalState?.completedSets || {}).flat().length
+  const currentExercise = session.exercises?.[session.internalState?.currentExerciseIndex || 0]
+  const exerciseName = currentExercise ? (GYM_EXERCISES[currentExercise]?.shortName || GYM_EXERCISES[currentExercise]?.name || currentExercise) : 'Unknown'
+
+  return (
+    <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-4 animate-pulse-slow">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+            <RotateCcw className="text-purple-400" size={20} />
+          </div>
+          <div>
+            <p className={`font-bold text-purple-400`}>Resume Workout</p>
+            <p className={`text-xs ${textSecondary}`}>
+              {session.dayName} - {exerciseName} • {completedSets} sets done
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={onDiscard}
+            className={`px-3 py-2 text-xs ${textSecondary} hover:${textPrimary} transition-colors`}
+          >
+            Discard
+          </button>
+          <button
+            onClick={() => {
+              vibrate(30)
+              onResume()
+            }}
+            className="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm font-bold hover:bg-purple-600 transition-colors"
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Floating Quick Start Button - matches Home mode style
 const QuickStartFAB = ({ onClick, exerciseCount, isVisible }) => {
   if (!isVisible || exerciseCount === 0) return null
@@ -187,6 +233,9 @@ const GymDashboard = ({
   onStartAssessment, // (exerciseIds) => void
   onChangeProgram,
   onShowProgramManager, // Open the full program manager
+  pendingSession = null, // Saved gym session from previous use
+  onResumeSession = null, // Resume the pending session
+  onDiscardSession = null, // Discard the pending session
   theme = 'dark'
 }) => {
   const [showProgramSelect, setShowProgramSelect] = useState(false)
@@ -362,6 +411,16 @@ const GymDashboard = ({
 
   return (
     <div className="space-y-6 pb-8">
+      {/* Resume Workout Banner - Shows when there's a saved session */}
+      {pendingSession && onResumeSession && (
+        <ResumeGymWorkoutBanner
+          session={pendingSession}
+          onResume={onResumeSession}
+          onDiscard={onDiscardSession}
+          theme={theme}
+        />
+      )}
+
       {/* Streak and Stats Header */}
       {gymStreak > 0 && (
         <div className="flex items-center justify-between animate-fadeIn">

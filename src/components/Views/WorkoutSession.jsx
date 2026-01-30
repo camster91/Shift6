@@ -29,35 +29,30 @@ const VideoModal = ({ exercise, onClose }) => {
     if (!videoId) return null
 
     return (
-        <div className="fixed inset-0 bg-black/90 z-[70] flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between p-4 border-b border-slate-700">
-                    <h3 className="text-lg font-bold text-white">{exercise.name} - Form Guide</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
-                        <X size={20} className="text-slate-400" />
-                    </button>
-                </div>
-                <div className="aspect-video bg-black">
-                    <iframe
-                        src={`https://www.youtube.com/embed/${videoId}?rel=0&autoplay=1`}
-                        title={`${exercise.name} form guide`}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                    />
-                </div>
-                <div className="p-4 space-y-3">
-                    <p className="text-sm text-slate-300">{exercise.instructions || exercise.cue}</p>
-                    {exercise.tips && (
-                        <div className="flex flex-wrap gap-2">
-                            {exercise.tips.map((tip, i) => (
-                                <span key={i} className="text-xs px-2 py-1 bg-slate-800 border border-slate-700 rounded-full text-slate-400">
-                                    {tip}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                </div>
+        <div
+            className="fixed inset-0 bg-black z-[70] flex items-center justify-center"
+            onClick={onClose}
+        >
+            {/* Close button */}
+            <button
+                onClick={onClose}
+                className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors"
+            >
+                <X size={24} className="text-white" />
+            </button>
+
+            {/* Video container - 16:9 aspect ratio, max width */}
+            <div
+                className="w-full max-w-4xl mx-4 aspect-video"
+                onClick={e => e.stopPropagation()}
+            >
+                <iframe
+                    src={`https://www.youtube.com/embed/${videoId}?rel=0&autoplay=1&modestbranding=1`}
+                    title={`${exercise.name} form guide`}
+                    className="w-full h-full rounded-lg"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                />
             </div>
         </div>
     )

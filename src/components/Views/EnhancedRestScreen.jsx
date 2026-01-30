@@ -54,11 +54,18 @@ const VideoCard = ({ videoId, exerciseName, onPlay, theme }) => {
   const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
   const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
 
+  const handlePlay = () => {
+    vibrate(20)
+    if (onPlay) {
+      onPlay()
+    }
+  }
+
   return (
     <div className="space-y-2">
       <p className={`text-xs ${textSecondary} uppercase tracking-wider font-semibold px-1`}>Form Guide</p>
       <button
-        onClick={() => { vibrate(20); onPlay(); }}
+        onClick={handlePlay}
         className="w-full rounded-2xl overflow-hidden border border-slate-700/40 hover:border-red-500/50 transition-all group active:scale-[0.99]"
       >
         <div className="relative aspect-video bg-slate-900">

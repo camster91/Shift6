@@ -1930,6 +1930,7 @@ const App = () => {
                         setPersonalRecords={setPersonalRecords}
                         allExercises={allExercises}
                         onSaveForLater={handleSaveSession}
+                        theme={theme}
                     />
                 </div>
             )}

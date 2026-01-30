@@ -25,7 +25,7 @@ const VideoModal = ({ exercise, onClose }) => {
     if (!exercise) return null
 
     return (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4" onClick={onClose}>
             <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-4 border-b border-slate-700">
                     <h3 className="text-lg font-bold text-white">{exercise.name} - Form Guide</h3>
@@ -166,7 +166,8 @@ const WorkoutSession = ({
     personalRecords = {},
     // setPersonalRecords - unused for now, but available for future PR tracking
     allExercises = {},
-    onSaveForLater // Callback to save workout for later without losing progress
+    onSaveForLater, // Callback to save workout for later without losing progress
+    theme = 'dark' // Theme for consistent styling with rest of app
 }) => {
     const [copied, setCopied] = useState(false);
     const [showVideo, setShowVideo] = useState(false);
@@ -1300,8 +1301,9 @@ const WorkoutSession = ({
                         personalRecord={personalRecords?.[currentSession.exerciseKey]
                             ? `${personalRecords[currentSession.exerciseKey]} ${currentSession.unit || 'reps'}`
                             : null}
+                        upcomingExercises={[]}
                         accentColor={colorClasses[currentSession.color]?.solid?.replace('bg-', '#').replace('-500', '') || '#06b6d4'}
-                        theme="dark"
+                        theme={theme}
                     />
                 )}
             </div>

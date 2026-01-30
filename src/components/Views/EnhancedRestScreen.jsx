@@ -64,9 +64,12 @@ const VideoCard = ({ videoId, exerciseName, onPlay, theme }) => {
   return (
     <div className="space-y-2">
       <p className={`text-xs ${textSecondary} uppercase tracking-wider font-semibold px-1`}>Form Guide</p>
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={handlePlay}
-        className="w-full rounded-2xl overflow-hidden border border-slate-700/40 hover:border-red-500/50 transition-all group active:scale-[0.99]"
+        onKeyDown={(e) => e.key === 'Enter' && handlePlay()}
+        className="w-full rounded-2xl overflow-hidden border border-slate-700/40 hover:border-red-500/50 transition-all group active:scale-[0.99] cursor-pointer select-none"
       >
         <div className="relative aspect-video bg-slate-900">
           <img
@@ -88,7 +91,7 @@ const VideoCard = ({ videoId, exerciseName, onPlay, theme }) => {
             <p className={`text-xs ${textSecondary} mt-1`}>Learn proper technique and common mistakes</p>
           </div>
         </div>
-      </button>
+      </div>
     </div>
   )
 }

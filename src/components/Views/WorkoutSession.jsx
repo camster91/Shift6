@@ -25,7 +25,7 @@ const VideoModal = ({ exercise, onClose }) => {
     if (!exercise) return null
 
     return (
-        <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/90 z-[70] flex items-center justify-center p-4" onClick={onClose}>
             <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-4 border-b border-slate-700">
                     <h3 className="text-lg font-bold text-white">{exercise.name} - Form Guide</h3>
@@ -1253,11 +1253,6 @@ const WorkoutSession = ({
                     </div>
                 </div>
 
-                {/* Video Modal */}
-                {showVideo && currentExercise && (
-                    <VideoModal exercise={currentExercise} onClose={() => setShowVideo(false)} />
-                )}
-
                 {/* Exit Confirmation Modal */}
                 {showExitConfirm && (
                     <ExitConfirmModal
@@ -1305,6 +1300,11 @@ const WorkoutSession = ({
                         accentColor={colorClasses[currentSession.color]?.solid?.replace('bg-', '#').replace('-500', '') || '#06b6d4'}
                         theme={theme}
                     />
+                )}
+
+                {/* Video Modal - Rendered last to ensure it's on top */}
+                {showVideo && currentExercise && (
+                    <VideoModal exercise={currentExercise} onClose={() => setShowVideo(false)} />
                 )}
             </div>
         </div>

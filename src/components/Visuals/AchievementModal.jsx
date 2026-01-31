@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo } from 'react'
 import { X, Star, Trophy, Flame, Zap } from 'lucide-react'
 import { ConfettiBurst } from './Confetti'
 import { playSuccess } from '../../utils/audio'
@@ -283,7 +283,7 @@ const AchievementModal = ({ badge, onClose, autoClose = true }) => {
 /**
  * Multiple achievements modal (for when several are unlocked at once)
  */
-export const MultiAchievementModal = ({ badges = [], onClose }) => {
+export const MultiAchievementModal = memo(({ badges = [], onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
 
   if (!badges || badges.length === 0) return null
@@ -303,6 +303,9 @@ export const MultiAchievementModal = ({ badges = [], onClose }) => {
       autoClose={badges.length === 1}
     />
   )
-}
+})
 
-export default AchievementModal
+MultiAchievementModal.displayName = 'MultiAchievementModal'
+
+// ⚡ Bolt: Memoize AchievementModal to prevent re-renders.
+export default memo(AchievementModal)

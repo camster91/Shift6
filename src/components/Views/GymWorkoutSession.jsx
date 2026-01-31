@@ -580,22 +580,32 @@ const GymWorkoutSession = ({
     const completedSetsForCurrent = completedSets[currentExerciseId]?.length || 0
 
     return (
-      <EnhancedRestScreen
-        timeLeft={restTimeLeft}
-        totalTime={totalRestTime}
-        onSkip={skipRest}
-        onExit={handleExit}
-        onAdjustTime={adjustRestTime}
-        onPlayVideo={() => setShowVideo(true)}
-        exercise={currentExercise}
-        currentSet={completedSetsForCurrent + 1}
-        totalSets={totalSets}
-        nextReps={`${nextSetReps} reps × ${formatWeight(currentWeightKg)}`}
-        stats={sessionStats}
-        upcomingExercises={upcomingExercises}
-        accentColor="#a855f7"
-        theme={theme}
-      />
+      <>
+        <EnhancedRestScreen
+          timeLeft={restTimeLeft}
+          totalTime={totalRestTime}
+          onSkip={skipRest}
+          onExit={handleExit}
+          onAdjustTime={adjustRestTime}
+          onPlayVideo={() => setShowVideo(true)}
+          exercise={currentExercise}
+          currentSet={completedSetsForCurrent + 1}
+          totalSets={totalSets}
+          nextReps={`${nextSetReps} reps × ${formatWeight(currentWeightKg)}`}
+          stats={sessionStats}
+          upcomingExercises={upcomingExercises}
+          accentColor="#a855f7"
+          theme={theme}
+        />
+        {/* Video Modal - must render above rest screen */}
+        {showVideo && currentExercise && (
+          <VideoModal
+            exercise={currentExercise}
+            onClose={() => setShowVideo(false)}
+            theme={theme}
+          />
+        )}
+      </>
     )
   }
 

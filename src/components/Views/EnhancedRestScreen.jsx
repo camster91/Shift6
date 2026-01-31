@@ -2,7 +2,7 @@ import { useState, memo } from 'react'
 import {
   X, Play, Youtube, Droplets, Wind, ChevronDown,
   Target, Dumbbell, Info, Plus, Minus, Trophy,
-  Clock, Flame, CheckCircle2, Zap, ChevronRight,
+  Clock, Flame, CheckCircle2, Zap,
   Sparkles, TrendingUp, Battery
 } from 'lucide-react'
 import { vibrate } from '../../utils/device'
@@ -67,10 +67,10 @@ ProgressRing.displayName = 'ProgressRing'
  * Video Card - Large clickable video thumbnail with fallback
  */
 const VideoCard = memo(({ videoId, exerciseName, onPlay, theme }) => {
-  if (!videoId) return null
-
-  const { textPrimary, textSecondary, border } = getThemeClasses(theme)
   const [imgError, setImgError] = useState(false)
+  const { textSecondary, border } = getThemeClasses(theme)
+
+  if (!videoId) return null
 
   return (
     <div className="space-y-2">
@@ -133,7 +133,7 @@ const TipsCard = memo(({ tips, cue, theme }) => {
             </div>
             <div>
               <p className={`text-sm font-medium ${textPrimary}`}>Key Cue</p>
-              <p className={`text-sm ${textSecondary} italic`}>"{cue}"</p>
+              <p className={`text-sm ${textSecondary} italic`}>&ldquo;{cue}&rdquo;</p>
             </div>
           </div>
         )}
@@ -158,7 +158,7 @@ TipsCard.displayName = 'TipsCard'
  * Stats Card - Session statistics with adaptive grid
  */
 const StatsCard = memo(({ stats, theme }) => {
-  const { textPrimary, textSecondary, cardBg, border, divider } = getThemeClasses(theme)
+  const { textPrimary, textSecondary, cardBg, border } = getThemeClasses(theme)
 
   // Count visible stats to determine grid layout
   const visibleStats = [
@@ -517,8 +517,8 @@ const EnhancedRestScreen = ({
 
       {/* Scrollable Content Feed */}
       {showContent && (
-        <div className="flex-1 overflow-y-auto overscroll-contain">
-          <div className="p-4 pb-8 min-h-full flex flex-col">
+        <div className={`flex-1 overflow-y-auto overscroll-contain min-h-0 ${bgClass}`}>
+          <div className="p-4 pb-8 flex flex-col" style={{ minHeight: '100%' }}>
             {/* Main content section */}
             <div className="space-y-6">
               {/* Video Section */}
@@ -581,6 +581,9 @@ const EnhancedRestScreen = ({
           </div>
         </div>
       )}
+
+      {/* Fallback background when content is collapsed */}
+      {!showContent && <div className={`flex-1 ${bgClass}`} />}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Volume2, VolumeX, Sun, Moon, Home, Dumbbell } from 'lucide-react'
 
 const Header = ({
@@ -92,4 +93,5 @@ const Header = ({
     )
 }
 
-export default Header
+// ⚡ Bolt: Memoize Header to prevent re-renders from App.jsx state changes.
+export default memo(Header)

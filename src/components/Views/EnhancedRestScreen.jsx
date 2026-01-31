@@ -2,7 +2,8 @@ import { useState, memo } from 'react'
 import {
   X, Play, Youtube, Droplets, Wind, ChevronDown,
   Target, Dumbbell, Info, Plus, Minus, Trophy,
-  Clock, Flame, CheckCircle2, Zap, ChevronRight
+  Clock, Flame, CheckCircle2, Zap, ChevronRight,
+  Sparkles, TrendingUp, Battery
 } from 'lucide-react'
 import { vibrate } from '../../utils/device'
 
@@ -294,6 +295,69 @@ const PRCard = memo(({ personalRecord, theme }) => {
 PRCard.displayName = 'PRCard'
 
 /**
+ * Adaptive Rest Insight - Shows why the rest time was recommended
+ */
+const AdaptiveRestInsight = memo(({ adaptiveInfo, theme }) => {
+  if (!adaptiveInfo?.isAdaptive) return null
+
+  const { textPrimary, textSecondary, cardBg, border } = getThemeClasses(theme)
+  const { reasons, multiplier, intensity } = adaptiveInfo
+
+  // Select icon based on primary reason
+  const getIcon = () => {
+    if (reasons.includes('Accumulated fatigue')) return Battery
+    if (reasons.includes('Strong performance')) return TrendingUp
+    if (reasons.includes('Recovery needed')) return Clock
+    return Sparkles
+  }
+  const Icon = getIcon()
+
+  // Get color based on intensity/reason
+  const getColor = () => {
+    if (reasons.includes('Strong performance')) return 'emerald'
+    if (reasons.includes('Recovery needed')) return 'amber'
+    if (intensity === 'high') return 'purple'
+    return 'cyan'
+  }
+  const color = getColor()
+
+  const colorClasses = {
+    emerald: { bg: 'bg-emerald-500/20', text: 'text-emerald-400' },
+    amber: { bg: 'bg-amber-500/20', text: 'text-amber-400' },
+    purple: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
+    cyan: { bg: 'bg-cyan-500/20', text: 'text-cyan-400' }
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className={`text-xs ${textSecondary} uppercase tracking-wider font-semibold px-1`}>Smart Rest</p>
+      <div className={`${cardBg} rounded-2xl border ${border} p-4`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl ${colorClasses[color].bg} flex items-center justify-center flex-shrink-0`}>
+            <Icon className={`w-5 h-5 ${colorClasses[color].text}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-medium ${textPrimary}`}>
+              {reasons[0] || 'Adaptive timing'}
+            </p>
+            <p className={`text-xs ${textSecondary}`}>
+              {multiplier > 1.1 ? 'Extended rest for recovery' :
+               multiplier < 0.95 ? 'Shorter rest - you\'re ready' :
+               'Standard rest period'}
+            </p>
+          </div>
+          <div className={`text-xs font-medium ${colorClasses[color].text} bg-slate-800/50 px-2 py-1 rounded-lg`}>
+            {intensity}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+AdaptiveRestInsight.displayName = 'AdaptiveRestInsight'
+
+/**
  * EnhancedRestScreen - Bottom sheet style with scrollable feed content
  */
 const EnhancedRestScreen = ({
@@ -311,7 +375,8 @@ const EnhancedRestScreen = ({
   personalRecord,
   upcomingExercises = [],
   accentColor = "#a855f7",
-  theme = 'dark'
+  theme = 'dark',
+  adaptiveRestInfo = null
 }) => {
   const [showContent, setShowContent] = useState(true)
 
@@ -328,7 +393,8 @@ const EnhancedRestScreen = ({
   const hasTips = !!(exercise.tips?.length || exercise.cue || exercise.instructions)
   const hasStats = stats.setsCompleted !== undefined || stats.totalReps !== undefined
   const hasUpcoming = upcomingExercises?.length > 0
-  const contentCount = [hasVideo, hasTips, personalRecord, hasStats, hasUpcoming].filter(Boolean).length
+  const hasAdaptiveInfo = adaptiveRestInfo?.isAdaptive
+  const contentCount = [hasVideo, hasTips, personalRecord, hasStats, hasUpcoming, hasAdaptiveInfo].filter(Boolean).length
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
@@ -475,6 +541,9 @@ const EnhancedRestScreen = ({
 
               {/* Session Stats */}
               <StatsCard stats={stats} theme={theme} />
+
+              {/* Adaptive Rest Insight */}
+              <AdaptiveRestInsight adaptiveInfo={adaptiveRestInfo} theme={theme} />
 
               {/* Upcoming Exercises/Sets */}
               <UpcomingCard exercises={upcomingExercises} theme={theme} accentColor={accentColor} />

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import {
   X, Play, Youtube, Droplets, Wind, ChevronDown,
   Target, Dumbbell, Info, Plus, Minus, Trophy,
@@ -7,9 +7,22 @@ import {
 import { vibrate } from '../../utils/device'
 
 /**
+ * Get theme-aware class names
+ * @param {string} theme - 'light' or 'dark'
+ * @returns {Object} Theme class names
+ */
+const getThemeClasses = (theme) => ({
+  textPrimary: theme === 'light' ? 'text-slate-900' : 'text-white',
+  textSecondary: theme === 'light' ? 'text-slate-600' : 'text-slate-400',
+  cardBg: theme === 'light' ? 'bg-white' : 'bg-slate-800/60',
+  buttonBg: theme === 'light' ? 'bg-slate-200/80' : 'bg-slate-800/50',
+  buttonHover: theme === 'light' ? 'hover:bg-slate-300/80' : 'hover:bg-slate-700/50'
+})
+
+/**
  * Progress Ring for timer display
  */
-const ProgressRing = ({ progress, size = 120, stroke = 8, color = "#a855f7", children }) => {
+const ProgressRing = memo(({ progress, size = 120, stroke = 8, color = "#a855f7", children }) => {
   const radius = (size / 2) - (stroke * 2)
   const circumference = radius * 2 * Math.PI
   const offset = circumference - (Math.max(0, Math.min(1, progress)) * circumference)
@@ -43,16 +56,17 @@ const ProgressRing = ({ progress, size = 120, stroke = 8, color = "#a855f7", chi
       </div>
     </div>
   )
-}
+})
+
+ProgressRing.displayName = 'ProgressRing'
 
 /**
  * Video Card - Large clickable video thumbnail
  */
-const VideoCard = ({ videoId, exerciseName, onPlay, theme }) => {
+const VideoCard = memo(({ videoId, exerciseName, onPlay, theme }) => {
   if (!videoId) return null
 
-  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
-  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+  const { textPrimary, textSecondary } = getThemeClasses(theme)
 
   return (
     <div className="space-y-2">
@@ -84,17 +98,17 @@ const VideoCard = ({ videoId, exerciseName, onPlay, theme }) => {
       </button>
     </div>
   )
-}
+})
+
+VideoCard.displayName = 'VideoCard'
 
 /**
  * Tips Card - Shows exercise tips in a nice card
  */
-const TipsCard = ({ tips, cue, exerciseName, theme }) => {
+const TipsCard = memo(({ tips, cue, theme }) => {
   if (!tips?.length && !cue) return null
 
-  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
-  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
-  const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-800/60'
+  const { textPrimary, textSecondary, cardBg } = getThemeClasses(theme)
 
   return (
     <div className="space-y-2">
@@ -124,15 +138,15 @@ const TipsCard = ({ tips, cue, exerciseName, theme }) => {
       </div>
     </div>
   )
-}
+})
+
+TipsCard.displayName = 'TipsCard'
 
 /**
  * Stats Card - Session statistics
  */
-const StatsCard = ({ stats, theme }) => {
-  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
-  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
-  const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-800/60'
+const StatsCard = memo(({ stats, theme }) => {
+  const { textPrimary, textSecondary, cardBg } = getThemeClasses(theme)
 
   const hasStats = stats.setsCompleted !== undefined || stats.totalReps !== undefined || stats.totalVolume !== undefined
 
@@ -183,17 +197,17 @@ const StatsCard = ({ stats, theme }) => {
       </div>
     </div>
   )
-}
+})
+
+StatsCard.displayName = 'StatsCard'
 
 /**
  * Upcoming Exercises Card
  */
-const UpcomingCard = ({ exercises, theme }) => {
+const UpcomingCard = memo(({ exercises, theme }) => {
   if (!exercises?.length) return null
 
-  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
-  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
-  const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-800/60'
+  const { textPrimary, textSecondary, cardBg } = getThemeClasses(theme)
 
   return (
     <div className="space-y-2">
@@ -214,16 +228,17 @@ const UpcomingCard = ({ exercises, theme }) => {
       </div>
     </div>
   )
-}
+})
+
+UpcomingCard.displayName = 'UpcomingCard'
 
 /**
  * Personal Record Card
  */
-const PRCard = ({ personalRecord, theme }) => {
+const PRCard = memo(({ personalRecord, theme }) => {
   if (!personalRecord) return null
 
-  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
-  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+  const { textPrimary, textSecondary } = getThemeClasses(theme)
 
   return (
     <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-2xl p-4">
@@ -238,7 +253,9 @@ const PRCard = ({ personalRecord, theme }) => {
       </div>
     </div>
   )
-}
+})
+
+PRCard.displayName = 'PRCard'
 
 /**
  * EnhancedRestScreen - Bottom sheet style with scrollable feed content
@@ -263,9 +280,8 @@ const EnhancedRestScreen = ({
   const [showContent, setShowContent] = useState(true)
 
   const bgClass = theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'
-  const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
-  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
-  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+  const { textPrimary, textSecondary, cardBg, buttonBg, buttonHover } = getThemeClasses(theme)
+  const headerBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
 
   const progress = totalTime > 0 ? timeLeft / totalTime : 0
   const isLastSet = currentSet >= totalSets
@@ -281,12 +297,13 @@ const EnhancedRestScreen = ({
   return (
     <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
       {/* Sticky Header with Timer */}
-      <div className={`${cardBg} border-b border-slate-700/50 flex-shrink-0`}>
+      <div className={`${headerBg} border-b border-slate-700/50 flex-shrink-0`}>
         {/* Top Bar */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <button
             onClick={onExit}
-            className="w-10 h-10 rounded-xl bg-slate-800/50 flex items-center justify-center hover:bg-slate-700/50 transition-colors"
+            aria-label="Exit workout"
+            className={`w-10 h-10 rounded-xl ${buttonBg} flex items-center justify-center ${buttonHover} transition-colors`}
           >
             <X className={`w-5 h-5 ${textSecondary}`} />
           </button>
@@ -295,21 +312,25 @@ const EnhancedRestScreen = ({
           </div>
           <button
             onClick={() => setShowContent(!showContent)}
-            className="w-10 h-10 rounded-xl bg-slate-800/50 flex items-center justify-center hover:bg-slate-700/50 transition-colors"
+            aria-label={showContent ? 'Collapse content' : 'Expand content'}
+            aria-expanded={showContent}
+            className={`w-10 h-10 rounded-xl ${buttonBg} flex items-center justify-center ${buttonHover} transition-colors`}
           >
             <ChevronDown className={`w-5 h-5 ${textSecondary} transition-transform ${showContent ? '' : 'rotate-180'}`} />
           </button>
         </div>
 
         {/* Timer Section */}
-        <div className="flex items-center justify-center gap-6 py-4">
+        <div className="flex items-center justify-center gap-4 py-4">
           {/* Minus Button */}
           {onAdjustTime && (
             <button
               onClick={() => { vibrate(20); onAdjustTime(-15); }}
-              className="w-12 h-12 rounded-xl bg-slate-800/60 flex items-center justify-center text-slate-400 hover:bg-slate-700/60 transition-colors active:scale-95"
+              aria-label="Subtract 15 seconds"
+              className={`w-14 h-14 rounded-xl ${buttonBg} flex flex-col items-center justify-center ${textSecondary} ${buttonHover} transition-colors active:scale-95`}
             >
-              <Minus className="w-5 h-5" />
+              <Minus className="w-4 h-4" />
+              <span className="text-[10px] font-medium">15s</span>
             </button>
           )}
 
@@ -329,9 +350,11 @@ const EnhancedRestScreen = ({
           {onAdjustTime && (
             <button
               onClick={() => { vibrate(20); onAdjustTime(15); }}
-              className="w-12 h-12 rounded-xl bg-slate-800/60 flex items-center justify-center text-slate-400 hover:bg-slate-700/60 transition-colors active:scale-95"
+              aria-label="Add 15 seconds"
+              className={`w-14 h-14 rounded-xl ${buttonBg} flex flex-col items-center justify-center ${textSecondary} ${buttonHover} transition-colors active:scale-95`}
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
+              <span className="text-[10px] font-medium">15s</span>
             </button>
           )}
         </div>
@@ -358,6 +381,7 @@ const EnhancedRestScreen = ({
           </div>
           <button
             onClick={() => { vibrate(30); onSkip(); }}
+            aria-label="Skip rest timer"
             className="px-6 py-4 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-400 font-semibold hover:bg-purple-500/30 transition-colors active:scale-95"
           >
             Skip
@@ -383,7 +407,6 @@ const EnhancedRestScreen = ({
               <TipsCard
                 tips={exercise.tips}
                 cue={exercise.cue || exercise.instructions}
-                exerciseName={exercise.name}
                 theme={theme}
               />
 

@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { ChevronRight, ChevronUp, ChevronDown, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square, Dumbbell, Plus, Minus, Battery, BatteryLow, BatteryCharging, TrendingUp, TrendingDown } from 'lucide-react';
 
-// Color classes for exercise themes
+// Color classes for exercise themes (hex values match Tailwind -500 colors)
 const colorClasses = {
-    blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', solid: 'bg-blue-500' },
-    orange: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400', solid: 'bg-orange-500' },
-    cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', solid: 'bg-cyan-500' },
-    emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', solid: 'bg-emerald-500' },
-    yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', solid: 'bg-yellow-500' },
-    teal: { bg: 'bg-teal-500/10', border: 'border-teal-500/30', text: 'text-teal-400', solid: 'bg-teal-500' },
-    purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', solid: 'bg-purple-500' },
-    pink: { bg: 'bg-pink-500/10', border: 'border-pink-500/30', text: 'text-pink-400', solid: 'bg-pink-500' },
-    indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', solid: 'bg-indigo-500' },
+    blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', solid: 'bg-blue-500', hex: '#3b82f6' },
+    orange: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400', solid: 'bg-orange-500', hex: '#f97316' },
+    cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', solid: 'bg-cyan-500', hex: '#06b6d4' },
+    emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', solid: 'bg-emerald-500', hex: '#10b981' },
+    yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', solid: 'bg-yellow-500', hex: '#eab308' },
+    teal: { bg: 'bg-teal-500/10', border: 'border-teal-500/30', text: 'text-teal-400', solid: 'bg-teal-500', hex: '#14b8a6' },
+    purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', solid: 'bg-purple-500', hex: '#a855f7' },
+    pink: { bg: 'bg-pink-500/10', border: 'border-pink-500/30', text: 'text-pink-400', solid: 'bg-pink-500', hex: '#ec4899' },
+    indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', solid: 'bg-indigo-500', hex: '#6366f1' },
 };
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
 import { vibrate, copyToClipboard } from '../../utils/device';
@@ -1296,8 +1296,15 @@ const WorkoutSession = ({
                         personalRecord={personalRecords?.[currentSession.exerciseKey]
                             ? `${personalRecords[currentSession.exerciseKey]} ${currentSession.unit || 'reps'}`
                             : null}
-                        upcomingExercises={[]}
-                        accentColor={colorClasses[currentSession.color]?.solid?.replace('bg-', '#').replace('-500', '') || '#06b6d4'}
+                        upcomingExercises={
+                            // Show remaining sets as "upcoming" for home mode
+                            currentSession.reps?.slice(currentSession.setIndex + 1).map((reps, i) => ({
+                                name: `Set ${currentSession.setIndex + 2 + i}`,
+                                shortName: `Set ${currentSession.setIndex + 2 + i}`,
+                                defaultSets: `${reps} ${currentSession.unit || 'reps'}`
+                            })) || []
+                        }
+                        accentColor={colorClasses[currentSession.color]?.hex || '#06b6d4'}
                         theme={theme}
                     />
                 )}

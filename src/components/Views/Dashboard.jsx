@@ -1,11 +1,12 @@
 import { useState, useMemo, memo } from 'react'
-import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, RotateCcw, Flame, Calendar, TrendingUp } from 'lucide-react'
+import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, RotateCcw, Flame, Calendar, TrendingUp, Target, Clock } from 'lucide-react'
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx'
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise, isTrainingDay } from '../../utils/schedule'
 import { vibrate } from '../../utils/device'
 import { calculateStreakWithGrace, getPersonalRecords } from '../../utils/gamification'
 import { EXPRESS_MODE_CONFIG } from '../../utils/constants'
 import { isExpressPersona } from '../../utils/personas'
+import { analyzePace, getProgramSummary, calculateWorkoutFrequency } from '../../utils/goalPrediction'
 import NeoIcon from '../Visuals/NeoIcon'
 
 // Floating Quick Start Button - appears after scroll or always visible
@@ -314,6 +315,11 @@ const Dashboard = ({
     // Get current streak
     const streakData = useMemo(() => calculateStreakWithGrace(sessionHistory), [sessionHistory]);
 
+    // Goal prediction analysis
+    const paceAnalysis = useMemo(() => analyzePace(completedDays, sessionHistory), [completedDays, sessionHistory])
+    const programSummary = useMemo(() => getProgramSummary(completedDays, Object.keys(programExercises)), [completedDays, programExercises])
+    const frequencyData = useMemo(() => calculateWorkoutFrequency(sessionHistory), [sessionHistory])
+
     return (
         <div className="space-y-6 pb-8">
             {/* Resume Workout Banner - Shows when there's an interrupted session */}
@@ -487,6 +493,55 @@ const Dashboard = ({
                     </div>
                 </div>
             </div>
+
+            {/* Pace & Progress Insight */}
+            {paceAnalysis.status !== 'new' && programSummary.completedDays > 0 && (
+                <div className={`${cardBg} rounded-2xl p-4 border ${borderColor}`}>
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                            paceAnalysis.status === 'ahead' ? 'bg-emerald-500/20' :
+                            paceAnalysis.status === 'on-track' ? 'bg-cyan-500/20' :
+                            paceAnalysis.status === 'slightly-behind' ? 'bg-amber-500/20' :
+                            'bg-red-500/20'
+                        }`}>
+                            <Target className={`w-5 h-5 ${
+                                paceAnalysis.status === 'ahead' ? 'text-emerald-400' :
+                                paceAnalysis.status === 'on-track' ? 'text-cyan-400' :
+                                paceAnalysis.status === 'slightly-behind' ? 'text-amber-400' :
+                                'text-red-400'
+                            }`} />
+                        </div>
+                        <div className="flex-1">
+                            <p className={`font-semibold ${textPrimary}`}>{paceAnalysis.message}</p>
+                            <p className={`text-xs ${textSecondary}`}>
+                                {frequencyData.workoutsPerWeek > 0
+                                    ? `${frequencyData.workoutsPerWeek} workouts/week avg`
+                                    : 'Keep going!'}
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <p className={`text-lg font-bold ${
+                                paceAnalysis.status === 'ahead' ? 'text-emerald-400' :
+                                paceAnalysis.status === 'on-track' ? 'text-cyan-400' :
+                                paceAnalysis.status === 'slightly-behind' ? 'text-amber-400' :
+                                'text-red-400'
+                            }`}>
+                                {programSummary.percentComplete}%
+                            </p>
+                            <p className={`text-xs ${textSecondary}`}>complete</p>
+                        </div>
+                    </div>
+                    {/* Days until completion estimate */}
+                    {!programSummary.allComplete && frequencyData.workoutsPerWeek > 0 && (
+                        <div className={`flex items-center gap-2 pt-3 border-t ${borderColor}`}>
+                            <Clock className={`w-4 h-4 ${textSecondary}`} />
+                            <span className={`text-sm ${textSecondary}`}>
+                                ~{Math.ceil((programSummary.totalDays - programSummary.completedDays) / (frequencyData.workoutsPerWeek / 7))} days to complete at current pace
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Recent Workouts - matching GymDashboard style */}
             {recentWorkouts.length > 0 && (

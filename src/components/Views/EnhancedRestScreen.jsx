@@ -368,34 +368,40 @@ const EnhancedRestScreen = ({
       {/* Scrollable Content Feed */}
       {showContent && (
         <div className="flex-1 overflow-y-auto overscroll-contain">
-          <div className="p-4 space-y-6 pb-8">
-            {/* Video Section */}
-            <VideoCard
-              videoId={exercise.videoId || exercise.youtubeId}
-              exerciseName={exercise.name || exercise.shortName}
-              onPlay={onPlayVideo}
-              theme={theme}
-            />
+          <div className="p-4 pb-8 min-h-full flex flex-col">
+            {/* Main content section */}
+            <div className="space-y-6">
+              {/* Video Section */}
+              <VideoCard
+                videoId={exercise.videoId || exercise.youtubeId}
+                exerciseName={exercise.name || exercise.shortName}
+                onPlay={onPlayVideo}
+                theme={theme}
+              />
 
-            {/* Form Tips */}
-            <TipsCard
-              tips={exercise.tips}
-              cue={exercise.cue || exercise.instructions}
-              exerciseName={exercise.name}
-              theme={theme}
-            />
+              {/* Form Tips */}
+              <TipsCard
+                tips={exercise.tips}
+                cue={exercise.cue || exercise.instructions}
+                exerciseName={exercise.name}
+                theme={theme}
+              />
 
-            {/* Personal Record */}
-            <PRCard personalRecord={personalRecord} theme={theme} />
+              {/* Personal Record */}
+              <PRCard personalRecord={personalRecord} theme={theme} />
 
-            {/* Session Stats */}
-            <StatsCard stats={stats} theme={theme} />
+              {/* Session Stats */}
+              <StatsCard stats={stats} theme={theme} />
 
-            {/* Upcoming Exercises */}
-            <UpcomingCard exercises={upcomingExercises} theme={theme} />
+              {/* Upcoming Exercises */}
+              <UpcomingCard exercises={upcomingExercises} theme={theme} />
+            </div>
 
-            {/* Recovery Tips */}
-            <div className="space-y-2">
+            {/* Spacer to push recovery to bottom */}
+            <div className="flex-1 min-h-6" />
+
+            {/* Recovery Tips - anchored to bottom */}
+            <div className="space-y-2 mt-6">
               <p className={`text-xs ${textSecondary} uppercase tracking-wider font-semibold px-1`}>Recovery</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className={`${cardBg} rounded-2xl border border-slate-700/40 p-4 flex items-center gap-3`}>

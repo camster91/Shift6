@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus, Target, Save } from 'lucide-react'
+import { X, Check, ChevronUp, ChevronDown, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus, Target, Save } from 'lucide-react'
 import { playBeep, playSuccess } from '../../utils/audio'
 import { vibrate } from '../../utils/device'
 import { GYM_EXERCISES } from '../../data/gymExercises'
@@ -399,13 +399,6 @@ const GymWorkoutSession = ({
       }))
     }
     onComplete(workoutData, completedSets)
-  }
-
-  // Format time for display
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   // Format weight for display

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Home, Zap, BarChart3, Menu, Dumbbell } from 'lucide-react'
 
 const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode = 'home' }) => {
@@ -73,4 +74,5 @@ const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode 
     )
 }
 
-export default BottomNav
+// ⚡ Bolt: Memoize BottomNav to prevent unnecessary re-renders when parent state (like workout timers) changes.
+export default memo(BottomNav)

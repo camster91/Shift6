@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { RefreshCw, X, WifiOff } from 'lucide-react'
 import { registerUpdateHandler, applyUpdate, isOnline, registerNetworkListeners } from '../../utils/pwa'
 
@@ -107,4 +107,5 @@ const UpdateNotification = ({ theme = 'dark' }) => {
   )
 }
 
-export default UpdateNotification
+// ⚡ Bolt: Memoize UpdateNotification to prevent unnecessary re-renders when parent state (like workout timers) changes.
+export default memo(UpdateNotification)

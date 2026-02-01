@@ -1345,10 +1345,12 @@ const App = () => {
     }, []);
 
     // ⚡ Bolt: Memoize SideDrawer handlers to prevent re-renders.
+    const handleOpenDrawer = useCallback(() => setShowDrawer(true), []);
     const handleCloseDrawer = useCallback(() => setShowDrawer(false), []);
     const handleShowCalendar = useCallback(() => { setActiveTab('progress'); setShowDrawer(false); }, []);
     const handleShowGuide = useCallback(() => { setShowGuide(true); setShowDrawer(false); }, []);
     const handleShowAchievements = useCallback(() => { setActiveTab('progress'); setShowDrawer(false); }, []);
+    const handleCloseAchievementsModal = useCallback(() => setNewBadges([]), []);
     const handleShowTrainingSettings = useCallback(() => { setShowTrainingSettings(true); setShowDrawer(false); }, []);
     const handleShowBodyMetrics = useCallback(() => { setShowBodyMetrics(true); setShowDrawer(false); }, []);
     const handleShowAccessibility = useCallback(() => { setShowAccessibility(true); setShowDrawer(false); }, []);
@@ -1751,7 +1753,7 @@ const App = () => {
                     <BottomNav
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
-                        onMenuClick={() => setShowDrawer(true)}
+                        onMenuClick={handleOpenDrawer}
                         theme={theme}
                         mode="gym"
                     />
@@ -1859,7 +1861,7 @@ const App = () => {
                     <BottomNav
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
-                        onMenuClick={() => setShowDrawer(true)}
+                        onMenuClick={handleOpenDrawer}
                         theme={theme}
                         mode="home"
                     />
@@ -2190,7 +2192,7 @@ const App = () => {
             {/* Achievement Modal */}
             <MultiAchievementModal
                 badges={newBadges}
-                onClose={() => setNewBadges([])}
+                onClose={handleCloseAchievementsModal}
             />
         </div>
     );

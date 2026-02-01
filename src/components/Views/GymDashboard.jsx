@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, memo } from 'react'
 import {
   Dumbbell,
   ChevronRight,
@@ -708,4 +708,5 @@ const GymDashboard = ({
   )
 }
 
-export default GymDashboard
+// ⚡ Bolt: Memoize GymDashboard to prevent unnecessary re-renders when parent state (like workout timers) changes.
+export default memo(GymDashboard)

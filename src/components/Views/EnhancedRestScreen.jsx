@@ -588,4 +588,4 @@ const EnhancedRestScreen = ({
   )
 }
 
-export default EnhancedRestScreen
+export default memo(EnhancedRestScreen)

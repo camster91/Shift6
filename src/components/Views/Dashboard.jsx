@@ -1,5 +1,5 @@
 import { useState, useMemo, memo } from 'react'
-import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, RotateCcw, Flame, Calendar, TrendingUp, Target, Clock } from 'lucide-react'
+import { Zap, ChevronRight, Trophy, ChevronDown, ChevronUp, Dumbbell, Play, X, Plus, Trash2, RotateCcw, Flame, Calendar, TrendingUp, Target, Clock, Award } from 'lucide-react'
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS } from '../../data/exercises.jsx'
 import { getDailyStack, getScheduleFocus, getNextSessionForExercise, isTrainingDay } from '../../utils/schedule'
 import { vibrate } from '../../utils/device'
@@ -8,6 +8,7 @@ import { EXPRESS_MODE_CONFIG } from '../../utils/constants'
 import { isExpressPersona } from '../../utils/personas'
 import { analyzePace, getProgramSummary, calculateWorkoutFrequency } from '../../utils/goalPrediction'
 import NeoIcon from '../Visuals/NeoIcon'
+import HomeGoalSetter from './HomeGoalSetter'
 
 // Floating Quick Start Button - appears after scroll or always visible
 const QuickStartFAB = ({ onClick, exerciseCount, isVisible }) => {
@@ -89,7 +90,7 @@ const colorClasses = {
 }
 
 // Exercise Info Modal
-const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficulty, onSetDifficulty, onDelete, isCustom, allExercises }) => {
+const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficulty, onSetDifficulty, onDelete, isCustom, allExercises, onShowGoal }) => {
     if (!exercise) return null
 
     const colors = colorClasses[exercise.color] || colorClasses.cyan
@@ -177,11 +178,24 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficul
                         </div>
                     </div>
 
-                    {/* Goal */}
-                    <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
-                        <span className="text-xs text-slate-500">Final Goal</span>
-                        <span className={`text-sm font-bold ${colors.text}`}>{exercise.finalGoal}</span>
-                    </div>
+                    {/* Goal - Clickable to open Goal Setter */}
+                    <button
+                        onClick={() => {
+                            vibrate(20)
+                            onShowGoal && onShowGoal(exercise.key)
+                            onClose()
+                        }}
+                        className="w-full flex items-center justify-between p-3 bg-slate-800/50 hover:bg-slate-700/50 rounded-lg transition-colors group"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Award size={16} className="text-cyan-400" />
+                            <span className="text-xs text-slate-500">6-Week Goal</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className={`text-sm font-bold ${colors.text}`}>{exercise.finalGoal}</span>
+                            <ChevronRight size={14} className="text-slate-500 group-hover:text-slate-400 transition-colors" />
+                        </div>
+                    </button>
 
                     {/* Action Buttons */}
                     {!isComplete && nextSession && (
@@ -255,6 +269,10 @@ const Dashboard = ({
     pendingSession = null,
     onResumeSession = null,
     onDiscardSession = null,
+    // Home mode 6-week goals
+    homeGoals = {},
+    onUpdateHomeGoal = null,
+    onCreateNewHomeGoal = null,
     // Theme
     theme = 'dark'
 }) => {
@@ -263,6 +281,7 @@ const Dashboard = ({
     const personalRecords = useMemo(() => getPersonalRecords(sessionHistory), [sessionHistory]);
     const [showAllExercises, setShowAllExercises] = useState(false)
     const [selectedExercise, setSelectedExercise] = useState(null)
+    const [showGoalSetter, setShowGoalSetter] = useState(null) // exerciseKey when open
 
     // Theme-aware styling (matching GymDashboard)
     const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
@@ -648,12 +667,14 @@ const Dashboard = ({
                             {Object.entries(programExercises).map(([key, ex]) => {
                                 if (!ex) return null
                                 const colors = colorClasses[ex.color] || colorClasses.cyan
-                                const dayNum = (completedDays[key]?.length || 0) + 1
+                                const completedCount = completedDays[key]?.length || 0
+                                const dayNum = completedCount + 1
                                 const isComplete = dayNum > 18
                                 const pr = personalRecords[key]
                                 const isCustom = !!customExercises[key]
                                 const difficulty = exerciseDifficulty[key] || 3
                                 const diffLevel = DIFFICULTY_LEVELS[difficulty]
+                                const progressPercent = Math.min((completedCount / 18) * 100, 100)
 
                                 return (
                                     <button
@@ -669,11 +690,28 @@ const Dashboard = ({
                                                     : 'bg-slate-800/30 border-slate-700/50'
                                             }`}
                                     >
-                                        <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0`}>
-                                            {ex.image?.startsWith('neo:') ? (
-                                                <NeoIcon name={ex.image.replace('neo:', '')} size={18} className={colors.text} />
-                                            ) : (
-                                                <Dumbbell className={colors.text} size={18} />
+                                        <div className="relative">
+                                            <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0`}>
+                                                {ex.image?.startsWith('neo:') ? (
+                                                    <NeoIcon name={ex.image.replace('neo:', '')} size={18} className={colors.text} />
+                                                ) : (
+                                                    <Dumbbell className={colors.text} size={18} />
+                                                )}
+                                            </div>
+                                            {/* Mini progress ring */}
+                                            {!isComplete && completedCount > 0 && (
+                                                <svg className="absolute -bottom-1 -right-1 w-5 h-5" viewBox="0 0 20 20">
+                                                    <circle cx="10" cy="10" r="8" fill="rgb(15, 23, 42)" stroke="rgb(51, 65, 85)" strokeWidth="2" />
+                                                    <circle
+                                                        cx="10" cy="10" r="8"
+                                                        fill="none"
+                                                        stroke="rgb(6, 182, 212)"
+                                                        strokeWidth="2"
+                                                        strokeDasharray={`${progressPercent * 0.5} 100`}
+                                                        strokeLinecap="round"
+                                                        transform="rotate(-90 10 10)"
+                                                    />
+                                                </svg>
                                             )}
                                         </div>
                                         <div className="flex-1 text-left min-w-0">
@@ -681,17 +719,23 @@ const Dashboard = ({
                                                 <h4 className="text-sm font-bold text-white truncate">{ex.name}</h4>
                                                 {isCustom && <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded">Custom</span>}
                                             </div>
-                                            <p className="text-xs text-slate-500">
+                                            <div className="flex items-center gap-2 text-xs">
                                                 {isComplete ? (
                                                     <span className="text-emerald-400">Complete</span>
                                                 ) : (
-                                                    `Day ${dayNum}/18`
+                                                    <span className="text-slate-500">Day {dayNum}/18</span>
                                                 )}
                                                 {difficulty !== 3 && (
-                                                    <span className="text-cyan-400 ml-2">{diffLevel.name}</span>
+                                                    <span className="text-cyan-400">{diffLevel.name}</span>
                                                 )}
-                                                {pr && <span className="text-amber-400 ml-2">PR: {pr.volume}</span>}
-                                            </p>
+                                                {pr && <span className="text-amber-400">PR: {pr.volume}</span>}
+                                            </div>
+                                            {/* Goal indicator */}
+                                            {ex.finalGoal && (
+                                                <p className="text-[10px] text-slate-600 mt-0.5">
+                                                    Goal: {ex.finalGoal}
+                                                </p>
+                                            )}
                                         </div>
                                         <ChevronRight size={16} className="text-slate-600 flex-shrink-0" />
                                     </button>
@@ -728,6 +772,21 @@ const Dashboard = ({
                     onClose={() => setSelectedExercise(null)}
                     onStart={startWorkout}
                     allExercises={allExercises}
+                    onShowGoal={setShowGoalSetter}
+                />
+            )}
+
+            {/* Home Goal Setter Modal */}
+            {showGoalSetter && (
+                <HomeGoalSetter
+                    exerciseKey={showGoalSetter}
+                    exercise={allExercises[showGoalSetter]}
+                    completedDays={completedDays[showGoalSetter] || []}
+                    goal={homeGoals[showGoalSetter]}
+                    onUpdateGoal={onUpdateHomeGoal}
+                    onCreateNewGoal={onCreateNewHomeGoal}
+                    onClose={() => setShowGoalSetter(null)}
+                    theme={theme}
                 />
             )}
         </div>

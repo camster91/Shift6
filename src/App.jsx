@@ -122,6 +122,12 @@ const App = () => {
         return saved ? JSON.parse(saved) : {};
     });
 
+    // Home mode 6-week goals per exercise
+    const [homeGoals, setHomeGoals] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}home_goals`);
+        return saved ? JSON.parse(saved) : {};
+    });
+
     // Sprint-based progression system
     const [sprints, setSprints] = useState(() => loadSprints());
 
@@ -418,6 +424,10 @@ const App = () => {
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}personal_records`, JSON.stringify(personalRecords));
     }, [personalRecords]);
+
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}home_goals`, JSON.stringify(homeGoals));
+    }, [homeGoals]);
 
     useEffect(() => {
         localStorage.setItem(`${STORAGE_PREFIX}body_metrics`, JSON.stringify(bodyMetrics));
@@ -915,6 +925,21 @@ const App = () => {
 
     const handleDeleteMetric = useCallback((id) => {
         setBodyMetrics(prev => prev.filter(m => m.id !== id));
+    }, []);
+
+    // Home mode 6-week goal handlers
+    const handleUpdateHomeGoal = useCallback((exerciseKey, updatedGoal) => {
+        setHomeGoals(prev => ({
+            ...prev,
+            [exerciseKey]: updatedGoal
+        }));
+    }, []);
+
+    const handleCreateNewHomeGoal = useCallback((exerciseKey, newGoal) => {
+        setHomeGoals(prev => ({
+            ...prev,
+            [exerciseKey]: newGoal
+        }));
     }, []);
 
     // Start workout with optional warmup
@@ -1820,6 +1845,9 @@ const App = () => {
                         pendingSession={pendingSession}
                         onResumeSession={handleResumeSession}
                         onDiscardSession={handleDiscardSession}
+                        homeGoals={homeGoals}
+                        onUpdateHomeGoal={handleUpdateHomeGoal}
+                        onCreateNewHomeGoal={handleCreateNewHomeGoal}
                         theme={theme}
                     />
                 )}

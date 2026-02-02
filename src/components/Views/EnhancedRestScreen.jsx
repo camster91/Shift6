@@ -517,8 +517,8 @@ const EnhancedRestScreen = ({
 
       {/* Scrollable Content Feed */}
       {showContent && (
-        <div className={`flex-1 overflow-y-auto overscroll-contain min-h-0 ${bgClass}`}>
-          <div className="p-4 pb-8 flex flex-col" style={{ minHeight: '100%' }}>
+        <div className={`flex-1 flex flex-col overflow-y-auto overscroll-contain min-h-0 ${bgClass}`}>
+          <div className="p-4 pb-8 flex flex-col flex-1">
             {/* Main content section */}
             <div className="space-y-6">
               {/* Video Section */}

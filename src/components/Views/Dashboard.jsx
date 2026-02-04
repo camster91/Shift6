@@ -90,11 +90,16 @@ const colorClasses = {
 
 // Exercise Info Modal
 const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficulty, onSetDifficulty, onDelete, isCustom, allExercises }) => {
+    // ⚡ Bolt: Memoize nextSession calculation. This function can be expensive, and memoizing it prevents re-calculation on every modal render, improving UI responsiveness when parent components update.
+    // Moved before early return to comply with React Hook rules.
+    const nextSession = useMemo(() => {
+        if (!exercise) return null
+        return getNextSessionForExercise(exercise.key, completedDays, allExercises)
+    }, [exercise, completedDays, allExercises]);
+
     if (!exercise) return null
 
     const colors = colorClasses[exercise.color] || colorClasses.cyan
-    // ⚡ Bolt: Memoize nextSession calculation. This function can be expensive, and memoizing it prevents re-calculation on every modal render, improving UI responsiveness when parent components update.
-    const nextSession = useMemo(() => getNextSessionForExercise(exercise.key, completedDays, allExercises), [exercise.key, completedDays, allExercises]);
     const isComplete = !nextSession
     const completedCount = completedDays[exercise.key]?.length || 0
     const dayNum = completedCount + 1

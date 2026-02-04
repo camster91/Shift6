@@ -154,7 +154,7 @@ export const calculateAdaptiveRest = ({
  * @returns {string} Human-readable message
  */
 export const getRestMessage = (restData) => {
-  const { recommendedRest, reasons, intensity } = restData
+  const { reasons, intensity } = restData
 
   if (reasons.includes('Recovery needed')) {
     return 'Take extra time to recover'

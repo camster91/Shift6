@@ -1,4 +1,4 @@
-import { useState, memo } from 'react'
+import { useState, useMemo, memo } from 'react'
 import { Trophy, Target, TrendingUp, Calendar as CalendarIcon, ChevronDown, ChevronUp, Award, Zap, Dumbbell } from 'lucide-react'
 import { calculateStats, getUnlockedBadges, BADGES, calculateStreakWithGrace, getStreakStatus, getPersonalRecords } from '../../utils/gamification'
 import { exerciseColorClasses, getThemeClasses } from '../../utils/colors'
@@ -94,14 +94,30 @@ const Progress = ({
     const [activeSection, setActiveSection] = useState('overview') // overview, achievements, calendar
 
     // Calculate all stats
-    const stats = calculateStats(completedDays, sessionHistory)
-    const unlockedBadges = getUnlockedBadges(stats)
-    const personalRecords = getPersonalRecords(sessionHistory)
-    const streakData = calculateStreakWithGrace(sessionHistory)
-    const streakStatus = getStreakStatus(streakData)
+    // ⚡ Bolt: Memoize expensive calculations to prevent redundant processing on every render.
+    // This is especially important as session history grows.
+    const stats = useMemo(() => calculateStats(completedDays, sessionHistory), [completedDays, sessionHistory])
+    const unlockedBadges = useMemo(() => getUnlockedBadges(stats), [stats])
+    const personalRecords = useMemo(() => getPersonalRecords(sessionHistory), [sessionHistory])
+    const streakData = useMemo(() => calculateStreakWithGrace(sessionHistory), [sessionHistory])
+    const streakStatus = useMemo(() => getStreakStatus(streakData), [streakData])
 
     // Count total PRs
-    const prCount = Object.keys(personalRecords).length
+    const prCount = useMemo(() => Object.keys(personalRecords).length, [personalRecords])
+
+    // Calculate monthly statistics
+    const monthlyStats = useMemo(() => {
+        const now = new Date()
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const monthWorkouts = sessionHistory.filter(s => new Date(s.date) >= monthStart)
+        const monthVolume = monthWorkouts.reduce((sum, s) => sum + (s.volume || 0), 0)
+        const uniqueDays = new Set(monthWorkouts.map(s => s.date.split('T')[0])).size
+        return {
+            count: monthWorkouts.length,
+            volume: monthVolume,
+            days: uniqueDays
+        }
+    }, [sessionHistory])
 
     // Streak colors
     const streakColors = {
@@ -384,26 +400,20 @@ const Progress = ({
                         </h3>
                         <div className="grid grid-cols-3 gap-3">
                             {(() => {
-                                const now = new Date()
-                                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-                                const monthWorkouts = sessionHistory.filter(s => new Date(s.date) >= monthStart)
-                                const monthVolume = monthWorkouts.reduce((sum, s) => sum + (s.volume || 0), 0)
-                                const uniqueDays = new Set(monthWorkouts.map(s => s.date.split('T')[0])).size
-
                                 const statBg = theme === 'light' ? 'bg-slate-100' : 'bg-slate-800/50'
 
                                 return (
                                     <>
                                         <div className={`text-center p-3 ${statBg} rounded-lg`}>
-                                            <p className="text-xl font-bold text-cyan-400">{monthWorkouts.length}</p>
+                                            <p className="text-xl font-bold text-cyan-400">{monthlyStats.count}</p>
                                             <p className={`text-[10px] ${themeClasses.textMuted}`}>Workouts</p>
                                         </div>
                                         <div className={`text-center p-3 ${statBg} rounded-lg`}>
-                                            <p className="text-xl font-bold text-emerald-400">{uniqueDays}</p>
+                                            <p className="text-xl font-bold text-emerald-400">{monthlyStats.days}</p>
                                             <p className={`text-[10px] ${themeClasses.textMuted}`}>Active Days</p>
                                         </div>
                                         <div className={`text-center p-3 ${statBg} rounded-lg`}>
-                                            <p className="text-xl font-bold text-orange-400">{monthVolume.toLocaleString()}</p>
+                                            <p className="text-xl font-bold text-orange-400">{monthlyStats.volume.toLocaleString()}</p>
                                             <p className={`text-[10px] ${themeClasses.textMuted}`}>Total Volume</p>
                                         </div>
                                     </>

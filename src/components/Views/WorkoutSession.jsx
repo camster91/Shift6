@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { ChevronRight, ChevronUp, ChevronDown, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square, Dumbbell, Plus, Minus, Battery, BatteryLow, BatteryCharging, TrendingUp, TrendingDown } from 'lucide-react';
 
 // Color classes for exercise themes (hex values match Tailwind -500 colors)
@@ -193,16 +193,45 @@ const WorkoutSession = ({
     void allExercises;
 
     // Calculate stats and unlocked badges
-    const stats = calculateStats(completedDays, sessionHistory);
-    const unlockedBadges = getUnlockedBadges(stats);
+    // ⚡ Bolt: Memoize stats and badges since they only change when session history or completed days change.
+    // This prevents expensive calculations on every timer tick (every second).
+    const stats = useMemo(() => calculateStats(completedDays, sessionHistory), [completedDays, sessionHistory]);
+    const unlockedBadges = useMemo(() => getUnlockedBadges(stats), [stats]);
 
     // Get exercise-specific achievements progress
-    const exerciseCompletedCount = currentSession ? (completedDays[currentSession.exerciseKey]?.length || 0) : 0;
+    const exerciseCompletedCount = useMemo(() =>
+        currentSession ? (completedDays[currentSession.exerciseKey]?.length || 0) : 0,
+        [currentSession, completedDays]
+    );
 
     // Look up exercise from both EXERCISE_PLANS and EXERCISE_LIBRARY
-    const currentExercise = currentSession
-        ? (EXERCISE_PLANS[currentSession.exerciseKey] || EXERCISE_LIBRARY[currentSession.exerciseKey])
-        : null;
+    const currentExercise = useMemo(() =>
+        currentSession
+            ? (EXERCISE_PLANS[currentSession.exerciseKey] || EXERCISE_LIBRARY[currentSession.exerciseKey])
+            : null,
+        [currentSession]
+    );
+
+    // ⚡ Bolt: Memoize props passed to EnhancedRestScreen to prevent unnecessary re-renders of its sub-components.
+    // We use elapsed minutes as a dependency for workoutStats so the object reference remains stable
+    // for 60 seconds at a time, preventing StatsCard from re-rendering every second.
+    const elapsedMinutes = Math.floor((Date.now() - workoutStartTime) / 60000);
+    const workoutStats = useMemo(() => {
+        return {
+            setsCompleted: currentSession?.setIndex || 0,
+            totalReps: currentSession?.reps?.slice(0, currentSession.setIndex).reduce((a, b) => a + b, 0) || 0,
+            elapsedTime: Math.floor((Date.now() - workoutStartTime) / 1000)
+        };
+    }, [currentSession, elapsedMinutes, workoutStartTime]);
+
+    const upcomingExercises = useMemo(() => {
+        if (!currentSession?.reps) return [];
+        return currentSession.reps.slice(currentSession.setIndex + 1).map((reps, i) => ({
+            name: `Set ${currentSession.setIndex + 2 + i}`,
+            shortName: `Set ${currentSession.setIndex + 2 + i}`,
+            defaultSets: `${reps} ${currentSession.unit || 'reps'}`
+        }));
+    }, [currentSession?.reps, currentSession?.setIndex, currentSession?.unit]);
 
     // Track when rest timer starts to capture total rest time
     React.useEffect(() => {
@@ -1288,22 +1317,11 @@ const WorkoutSession = ({
                         nextReps={currentSession.reps?.[currentSession.setIndex]
                             ? `${currentSession.reps[currentSession.setIndex]} ${currentSession.unit || 'reps'}`
                             : null}
-                        stats={{
-                            setsCompleted: currentSession.setIndex,
-                            totalReps: currentSession.reps?.slice(0, currentSession.setIndex).reduce((a, b) => a + b, 0) || 0,
-                            elapsedTime: Math.floor((Date.now() - workoutStartTime) / 1000)
-                        }}
+                        stats={workoutStats}
                         personalRecord={personalRecords?.[currentSession.exerciseKey]
                             ? `${personalRecords[currentSession.exerciseKey]} ${currentSession.unit || 'reps'}`
                             : null}
-                        upcomingExercises={
-                            // Show remaining sets as "upcoming" for home mode
-                            currentSession.reps?.slice(currentSession.setIndex + 1).map((reps, i) => ({
-                                name: `Set ${currentSession.setIndex + 2 + i}`,
-                                shortName: `Set ${currentSession.setIndex + 2 + i}`,
-                                defaultSets: `${reps} ${currentSession.unit || 'reps'}`
-                            })) || []
-                        }
+                        upcomingExercises={upcomingExercises}
                         accentColor={colorClasses[currentSession.color]?.hex || '#06b6d4'}
                         theme={theme}
                     />
@@ -1318,4 +1336,4 @@ const WorkoutSession = ({
     );
 };
 
-export default WorkoutSession;
+export default memo(WorkoutSession);

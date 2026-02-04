@@ -228,7 +228,7 @@ describe('gamification utilities', () => {
 
     describe('getRemainingFreezeTokens', () => {
         beforeEach(() => {
-            localStorage.clear();
+            localStorageMock.clear();
         });
 
         it('returns max tokens when none used', () => {
@@ -239,7 +239,7 @@ describe('gamification utilities', () => {
 
     describe('useStreakFreeze', () => {
         beforeEach(() => {
-            localStorage.clear();
+            localStorageMock.clear();
         });
 
         it('successfully uses a freeze token', () => {

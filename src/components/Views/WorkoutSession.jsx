@@ -374,7 +374,7 @@ const WorkoutSession = ({
         };
 
         return (
-            <div className="max-w-md mx-auto py-12 px-4">
+            <div className="w-full py-12 px-4">
                 <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl p-8 text-center backdrop-blur-sm">
                     <h2 className="text-2xl font-bold mb-2 text-white">Readiness Check</h2>
                     <p className="text-slate-400 mb-8">How is your energy level today?</p>
@@ -435,7 +435,7 @@ const WorkoutSession = ({
     if (currentSession.step === 'assessment') {
         const unitLabel = currentSession.unit === 'seconds' ? 'seconds' : 'reps';
         return (
-            <div className="max-w-md mx-auto py-8 px-4">
+            <div className="w-full py-8 px-4">
                 <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl p-6 md:p-10 text-center backdrop-blur-sm neon-border">
                     {/* Exercise being assessed - prominent display */}
                     <div className={`inline-flex items-center gap-3 px-4 py-2 rounded-full ${colorClasses[currentSession.color]?.bg || 'bg-cyan-500/10'} ${colorClasses[currentSession.color]?.border || 'border-cyan-500/30'} border mb-4`}>
@@ -531,7 +531,7 @@ const WorkoutSession = ({
     // Post-assessment confirmation - option to start workout or exit
     if (currentSession.step === 'assessment-complete') {
         return (
-            <div className="max-w-md mx-auto py-12 px-4">
+            <div className="w-full py-12 px-4">
                 <div className="bg-slate-900/50 border border-emerald-500/20 rounded-xl p-8 md:p-12 text-center backdrop-blur-sm">
                     <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Check className="text-emerald-400" size={32} />
@@ -572,11 +572,11 @@ const WorkoutSession = ({
     }
 
     return (
-        <div className="max-w-3xl mx-auto">
+        <div className="w-full h-full flex flex-col">
             {/* Celebration confetti */}
             <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
 
-            <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl overflow-hidden backdrop-blur-sm neon-border">
+            <div className="bg-slate-900/50 border border-cyan-500/20 rounded-xl overflow-hidden backdrop-blur-sm neon-border flex-1 flex flex-col">
                 {/* Header */}
                 <div className="bg-slate-900/80 text-white p-4 flex justify-between items-center border-b border-cyan-500/20">
                     <div>
@@ -640,10 +640,10 @@ const WorkoutSession = ({
                 })()}
 
                 {/* Main Content */}
-                <div className="p-8 md:p-12 min-h-[500px] flex flex-col items-center justify-center bg-slate-900/30">
+                <div className="p-8 md:p-12 flex-1 flex flex-col items-center justify-center bg-slate-900/30 overflow-y-auto">
                     {/* Gym Exercise Workout UI */}
                     {isGymExercise && gymConfig ? (
-                        <div className="w-full max-w-sm">
+                        <div className="w-full px-4">
                             {timeLeft > 0 ? (
                                 // Rest Timer for Gym
                                 <div className="space-y-6 flex flex-col items-center w-full">
@@ -919,7 +919,7 @@ const WorkoutSession = ({
                             </button>
                         </div>
                     ) : (
-                        <div className="w-full max-w-sm">
+                        <div className="w-full px-4">
                             {currentSession.setIndex === currentSession.reps.length - 1 ? (
                                 <div className="space-y-6 text-center">
                                     <div className="w-16 h-16 bg-cyan-500/10 border border-cyan-500/30 rounded-lg flex items-center justify-center mx-auto">
@@ -1167,7 +1167,7 @@ const WorkoutSession = ({
                     )}
 
                     {/* Form Tips, Video & Achievements - always visible */}
-                    <div className="w-full max-w-sm mx-auto mt-6 space-y-3">
+                    <div className="w-full px-4 mt-6 space-y-3">
                         {/* Watch Video Button */}
                         {currentExercise?.youtubeId && (
                             <button

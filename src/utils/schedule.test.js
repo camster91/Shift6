@@ -61,12 +61,12 @@ describe('schedule utilities', () => {
         })
 
         it('returns Rest & Recovery on Sunday', () => {
-            vi.setSystemTime(new Date('2024-01-07')) // Sunday
+            vi.setSystemTime(new Date(2024, 0, 7)) // Sunday (month is 0-indexed)
             expect(getScheduleFocus()).toBe('Rest & Recovery')
         })
 
         it('returns Full Program on Monday', () => {
-            vi.setSystemTime(new Date('2024-01-08')) // Monday
+            vi.setSystemTime(new Date(2024, 0, 8)) // Monday (month is 0-indexed)
             expect(getScheduleFocus()).toBe('Full Program')
         })
 
@@ -106,13 +106,13 @@ describe('schedule utilities', () => {
         })
 
         it('returns empty stack on Sunday', () => {
-            vi.setSystemTime(new Date('2024-01-07')) // Sunday
+            vi.setSystemTime(new Date(2024, 0, 7)) // Sunday (month is 0-indexed)
             const stack = getDailyStack({})
             expect(stack).toEqual([])
         })
 
         it('returns all exercises on Monday', () => {
-            vi.setSystemTime(new Date('2024-01-08')) // Monday
+            vi.setSystemTime(new Date(2024, 0, 8)) // Monday (month is 0-indexed)
             const stack = getDailyStack({})
             const exerciseKeys = stack.map(s => s.exerciseKey)
             // Should contain core exercises from the calisthenics library
@@ -130,7 +130,7 @@ describe('schedule utilities', () => {
         })
 
         it('returns all exercises on Tuesday', () => {
-            vi.setSystemTime(new Date('2024-01-09')) // Tuesday
+            vi.setSystemTime(new Date(2024, 0, 9)) // Tuesday (month is 0-indexed)
             const stack = getDailyStack({})
             const exerciseKeys = stack.map(s => s.exerciseKey)
             // Should contain core exercises
@@ -141,7 +141,7 @@ describe('schedule utilities', () => {
         })
 
         it('excludes completed exercises from stack', () => {
-            vi.setSystemTime(new Date('2024-01-08')) // Monday
+            vi.setSystemTime(new Date(2024, 0, 8)) // Monday (month is 0-indexed)
             // Complete all pushups days
             const allPushupDays = [
                 'p11', 'p12', 'p13', 'p21', 'p22', 'p23',

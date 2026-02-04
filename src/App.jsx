@@ -1904,7 +1904,7 @@ const App = () => {
 
             {/* Workout Session - Fullscreen Overlay */}
             {currentSession && (
-                <div className="fixed inset-0 z-50 bg-slate-950">
+                <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
                     <WorkoutSession
                         currentSession={currentSession}
                         setCurrentSession={setCurrentSession}

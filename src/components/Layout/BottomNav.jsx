@@ -21,9 +21,9 @@ const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode 
         : 'bg-slate-900/95 border-slate-700/50'
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-40 pb-[env(safe-area-inset-bottom)]">
-            <div className={`mx-auto max-w-lg px-4 pb-2`}>
-                <div className={`${bgColor} backdrop-blur-xl border rounded-2xl shadow-2xl p-1 flex justify-between items-center`}>
+        <nav className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}>
+            <div className="mx-auto max-w-lg px-3">
+                <div className={`${bgColor} backdrop-blur-xl border rounded-2xl shadow-2xl p-1.5 flex justify-around items-center`}>
                     {tabs.map((tab) => {
                         const Icon = tab.icon
                         const isActive = activeTab === tab.id && !tab.isMenu
@@ -40,7 +40,7 @@ const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode 
                             <button
                                 key={tab.id}
                                 onClick={handleClick}
-                                className={`relative flex-1 py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
+                                className={`relative flex-1 min-w-0 py-2.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all duration-200 ${
                                     isActive
                                         ? activeTextClass
                                         : theme === 'light'
@@ -51,15 +51,15 @@ const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode 
                             >
                                 {/* Active background */}
                                 {isActive && (
-                                    <div className={`absolute inset-1 ${activeBgClass} rounded-xl -z-10 animate-in fade-in zoom-in-95 duration-200`} />
+                                    <div className={`absolute inset-0.5 ${activeBgClass} rounded-xl -z-10 animate-in fade-in zoom-in-95 duration-200`} />
                                 )}
 
                                 <Icon
                                     size={isActive ? 22 : 20}
                                     strokeWidth={isActive ? 2.5 : 2}
-                                    className={isActive ? activeGlowClass : ''}
+                                    className={`flex-shrink-0 ${isActive ? activeGlowClass : ''}`}
                                 />
-                                <span className={`text-[10px] font-semibold tracking-wide ${
+                                <span className={`text-[11px] font-medium leading-tight whitespace-nowrap ${
                                     isActive ? activeTextClass : ''
                                 }`}>
                                     {tab.label}

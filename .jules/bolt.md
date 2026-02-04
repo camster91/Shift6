@@ -1,0 +1,3 @@
+## 2025-02-04 - [Pattern] Memoizing derived state in View components
+**Learning:** In this codebase, main view components (like `Progress.jsx` and `Dashboard.jsx`) often receive large state objects (`sessionHistory`, `completedDays`) and perform multiple expensive calculations (`calculateStats`, `calculateStreakWithGrace`) directly in the component body. These calculations are triggered on every render, even for local state changes like tab switching.
+**Action:** Always check if these calculations are wrapped in `useMemo`. If not, it's a high-impact, low-risk optimization to add it, especially for components with multiple UI states or tabs.

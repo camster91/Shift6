@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { Volume2, VolumeX, Sun, Moon, Home, Dumbbell } from 'lucide-react'
 
-const Header = ({
+const Header = memo(({
     audioEnabled,
     setAudioEnabled,
     theme,
@@ -90,6 +91,8 @@ const Header = ({
             </div>
         </header>
     )
-}
+})
+
+Header.displayName = 'Header'
 
 export default Header

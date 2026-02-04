@@ -1138,7 +1138,7 @@ const App = () => {
         setExerciseTimerStarted(false);
     }, [completedDays, allExercises, activeProgramKeys, trainingPreferences, customPlans, exerciseDifficulty]);
 
-    const completeWorkout = (actualRepsPerSet = null, feedback = null) => {
+    const completeWorkout = useCallback((actualRepsPerSet = null, feedback = null) => {
         if (!currentSession || isProcessing) return;
         setIsProcessing(true);
 
@@ -1224,9 +1224,9 @@ const App = () => {
         }
 
         setTimeout(() => setIsProcessing(false), 1000);
-    };
+    }, [currentSession, isProcessing, amrapValue, workoutNotes, completedDays, sprints, workoutQueue, startWorkout]);
 
-    const applyCalibration = (factor, skipConfirmation = false) => {
+    const applyCalibration = useCallback((factor, skipConfirmation = false) => {
         if (!currentSession) return;
         const newReps = currentSession.baseReps.map(r => Math.ceil(r * factor));
 
@@ -1244,9 +1244,9 @@ const App = () => {
             // Show assessment complete screen with option to start or exit
             setCurrentSession(prev => ({ ...prev, reps: newReps, step: 'assessment-complete' }));
         }
-    };
+    }, [currentSession]);
 
-    const handleTestSubmit = (e) => {
+    const handleTestSubmit = useCallback((e) => {
         e.preventDefault();
         if (!testInput) return;
         const userMax = parseFloat(testInput);
@@ -1264,7 +1264,7 @@ const App = () => {
         const clampedFactor = Math.max(0.3, Math.min(scalingFactor, 15));
 
         applyCalibration(clampedFactor);
-    };
+    }, [testInput, currentSession, applyCalibration]);
 
     // ---------------- DATA MANAGEMENT ----------------
 

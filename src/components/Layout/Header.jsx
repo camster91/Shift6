@@ -95,4 +95,5 @@ const Header = memo(({
 
 Header.displayName = 'Header'
 
-export default Header
+// ⚡ Bolt: Memoize Header to prevent re-renders from App.jsx state changes.
+export default memo(Header)

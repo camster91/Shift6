@@ -1060,7 +1060,7 @@ const App = () => {
     }, [trainingPreferences, allExercises, activeProgramKeys]);
 
     // Change program mode
-    const handleChangeProgramMode = (newMode) => {
+    const handleChangeProgramMode = useCallback((newMode) => {
         setProgramMode(newMode);
         // Filter active program to only include compatible exercises
         if (activeProgram) {
@@ -1070,7 +1070,7 @@ const App = () => {
             });
             setActiveProgram(filtered.length > 0 ? filtered : null);
         }
-    };
+    }, [activeProgram, allExercises]);
 
     const startStack = useCallback(() => {
         const stack = getDailyStack(completedDays, allExercises, activeProgramKeys, trainingPreferences);
@@ -1345,6 +1345,7 @@ const App = () => {
     }, []);
 
     // ⚡ Bolt: Memoize SideDrawer handlers to prevent re-renders.
+    const handleOpenDrawer = useCallback(() => setShowDrawer(true), []);
     const handleCloseDrawer = useCallback(() => setShowDrawer(false), []);
     const handleShowCalendar = useCallback(() => { setActiveTab('progress'); setShowDrawer(false); }, []);
     const handleShowGuide = useCallback(() => { setShowGuide(true); setShowDrawer(false); }, []);
@@ -1375,6 +1376,9 @@ const App = () => {
     const onShowAddExercise = useCallback(() => setShowAddExercise(true), []);
     const onShowExerciseLibrary = useCallback(() => setShowExerciseLibrary(true), []);
     const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
+
+    // ⚡ Bolt: Memoize badge closing handler.
+    const handleCloseBadges = useCallback(() => setNewBadges([]), []);
 
     // ---------------- SPRINT MANAGEMENT ----------------
 
@@ -1751,7 +1755,7 @@ const App = () => {
                     <BottomNav
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
-                        onMenuClick={() => setShowDrawer(true)}
+                        onMenuClick={handleOpenDrawer}
                         theme={theme}
                         mode="gym"
                     />
@@ -1859,7 +1863,7 @@ const App = () => {
                     <BottomNav
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
-                        onMenuClick={() => setShowDrawer(true)}
+                        onMenuClick={handleOpenDrawer}
                         theme={theme}
                         mode="home"
                     />
@@ -2190,7 +2194,7 @@ const App = () => {
             {/* Achievement Modal */}
             <MultiAchievementModal
                 badges={newBadges}
-                onClose={() => setNewBadges([])}
+                onClose={handleCloseBadges}
             />
         </div>
     );

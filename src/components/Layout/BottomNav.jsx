@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Home, Zap, BarChart3, Menu, Dumbbell } from 'lucide-react'
 
 const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode = 'home' }) => {
@@ -73,4 +74,6 @@ const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode 
     )
 }
 
-export default BottomNav
+// ⚡ Bolt: Memoize BottomNav to prevent re-renders from App.jsx state changes.
+// All callback props must be wrapped in useCallback in the parent component.
+export default memo(BottomNav)

@@ -605,6 +605,52 @@ const GymWorkoutSession = ({
             theme={theme}
           />
         )}
+        {/* Exit Confirmation Modal - render on top of rest screen */}
+        {showExitConfirm && (
+          <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+            <div className={`${cardBg} rounded-2xl w-full max-w-sm overflow-hidden`}>
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <X className="w-8 h-8 text-white" />
+                </div>
+                <h3 className={`text-xl font-bold ${textPrimary} mb-2`}>Exit Workout?</h3>
+                <p className={textSecondary}>
+                  You have {Object.values(completedSets).flat().length} sets logged.
+                </p>
+              </div>
+              <div className="p-4 space-y-2">
+                {/* Save & Exit option - only show if there's progress and handler exists */}
+                {onSaveForLater && Object.values(completedSets).flat().length > 0 && (
+                  <button
+                    onClick={() => {
+                      setShowExitConfirm(false)
+                      vibrate(30)
+                      onSaveForLater()
+                    }}
+                    className="w-full py-3 px-4 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-400 font-medium hover:bg-emerald-500/30 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    Save & Exit
+                  </button>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowExitConfirm(false)}
+                    className={`flex-1 py-3 px-4 rounded-xl border ${theme === 'light' ? 'border-slate-200' : 'border-slate-700'} ${textSecondary} hover:bg-slate-800/50 transition-colors`}
+                  >
+                    Keep Training
+                  </button>
+                  <button
+                    onClick={confirmExit}
+                    className="flex-1 py-3 px-4 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors"
+                  >
+                    Discard & Exit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     )
   }

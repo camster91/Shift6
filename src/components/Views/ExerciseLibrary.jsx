@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, memo } from 'react'
 import { X, Search, Plus, Check, Filter, Home, Building2 } from 'lucide-react'
 import { EXERCISE_CATEGORIES } from '../../data/exercises.jsx'
 import NeoIcon from '../Visuals/NeoIcon'
@@ -53,38 +53,46 @@ const ExerciseLibrary = ({
     }
 
     // Filter exercises - show ALL by default, apply user filters
+    // ⚡ Bolt: Optimized computation by using a Set for O(1) program checks and pre-calculating locations.
     const filteredExercises = useMemo(() => {
-        return Object.entries(allExercises).filter(([, exercise]) => {
-            // Filter by location preference
-            if (locationFilter !== 'all') {
-                const exerciseLocation = getExerciseLocation(exercise)
-                if (exerciseLocation !== 'both' && exerciseLocation !== locationFilter) {
+        const activeProgramSet = new Set(activeProgram)
+
+        return Object.entries(allExercises)
+            .map(([key, exercise]) => ({
+                key,
+                exercise,
+                location: getExerciseLocation(exercise),
+                inProgram: activeProgramSet.has(key)
+            }))
+            .filter(({ exercise, location }) => {
+                // Filter by location preference
+                if (locationFilter !== 'all') {
+                    if (location !== 'both' && location !== locationFilter) {
+                        return false
+                    }
+                }
+
+                // Filter by category
+                if (categoryFilter !== 'all' && exercise.category !== categoryFilter) {
                     return false
                 }
-            }
 
-            // Filter by category
-            if (categoryFilter !== 'all' && exercise.category !== categoryFilter) {
-                return false
-            }
+                // Filter by search
+                if (searchQuery) {
+                    const query = searchQuery.toLowerCase()
+                    const nameMatch = exercise.name.toLowerCase().includes(query)
+                    const categoryMatch = exercise.category?.toLowerCase().includes(query)
+                    if (!nameMatch && !categoryMatch) return false
+                }
 
-            // Filter by search
-            if (searchQuery) {
-                const query = searchQuery.toLowerCase()
-                const nameMatch = exercise.name.toLowerCase().includes(query)
-                const categoryMatch = exercise.category?.toLowerCase().includes(query)
-                if (!nameMatch && !categoryMatch) return false
-            }
-
-            return true
-        }).sort((a, b) => {
-            // Sort: in-program first, then alphabetically
-            const aInProgram = activeProgram.includes(a[0])
-            const bInProgram = activeProgram.includes(b[0])
-            if (aInProgram && !bInProgram) return -1
-            if (!aInProgram && bInProgram) return 1
-            return a[1].name.localeCompare(b[1].name)
-        })
+                return true
+            })
+            .sort((a, b) => {
+                // Sort: in-program first, then alphabetically
+                if (a.inProgram && !b.inProgram) return -1
+                if (!a.inProgram && b.inProgram) return 1
+                return a.exercise.name.localeCompare(b.exercise.name)
+            })
     }, [allExercises, locationFilter, categoryFilter, searchQuery, activeProgram])
 
     const isInProgram = (key) => activeProgram.includes(key)
@@ -220,9 +228,7 @@ const ExerciseLibrary = ({
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            {filteredExercises.map(([key, exercise]) => {
-                                const inProgram = isInProgram(key)
-                                const exerciseLocation = getExerciseLocation(exercise)
+                            {filteredExercises.map(({ key, exercise, location, inProgram }) => {
                                 return (
                                     <button
                                         key={key}
@@ -235,17 +241,17 @@ const ExerciseLibrary = ({
                                     >
                                         {/* Location badge */}
                                         <div className="absolute top-2 left-2">
-                                            {exerciseLocation === 'home' && (
+                                            {location === 'home' && (
                                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                                                     <Home size={10} />
                                                 </span>
                                             )}
-                                            {exerciseLocation === 'gym' && (
+                                            {location === 'gym' && (
                                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
                                                     <Building2 size={10} />
                                                 </span>
                                             )}
-                                            {exerciseLocation === 'both' && (
+                                            {location === 'both' && (
                                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
                                                     <Home size={10} />
                                                     <Building2 size={10} />
@@ -256,7 +262,7 @@ const ExerciseLibrary = ({
                                         {/* Icon */}
                                         <div className="w-12 h-12 mb-3 mt-2 flex items-center justify-center">
                                             <NeoIcon
-                                                exerciseKey={key}
+                                                name={key}
                                                 color={exercise.color}
                                                 size={48}
                                             />
@@ -310,4 +316,5 @@ const ExerciseLibrary = ({
     )
 }
 
-export default ExerciseLibrary
+// ⚡ Bolt: Memoize ExerciseLibrary to prevent re-renders from App.jsx state changes.
+export default memo(ExerciseLibrary)

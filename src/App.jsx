@@ -874,12 +874,12 @@ const App = () => {
     }, [activeExercise, allExercises, completedDays, exerciseDifficulty, restTimerOverride, customPlans, trainingPreferences]);
 
     // Add custom exercise
-    const handleAddExercise = (exercise) => {
+    const handleAddExercise = useCallback((exercise) => {
         setCustomExercises(prev => ({
             ...prev,
             [exercise.key]: exercise
         }));
-    };
+    }, []);
 
     // Delete custom exercise
     // ⚡ Bolt: Memoize handleDeleteExercise to prevent Dashboard re-renders.
@@ -969,40 +969,40 @@ const App = () => {
     }, [allExercises]);
 
     // Add exercise to active program
-    const handleAddToProgram = (exerciseKey) => {
+    const handleAddToProgram = useCallback((exerciseKey) => {
         setActiveProgram(prev => {
             const current = prev || Object.keys(EXERCISE_PLANS);
             if (current.includes(exerciseKey)) return current;
             return [...current, exerciseKey];
         });
-    };
+    }, []);
 
     // Remove exercise from active program
-    const handleRemoveFromProgram = (exerciseKey) => {
+    const handleRemoveFromProgram = useCallback((exerciseKey) => {
         setActiveProgram(prev => {
             const current = prev || Object.keys(EXERCISE_PLANS);
             return current.filter(k => k !== exerciseKey);
         });
-    };
+    }, []);
 
     // Apply a starter template
-    const handleApplyTemplate = (templateId) => {
+    const handleApplyTemplate = useCallback((templateId) => {
         const template = STARTER_TEMPLATES[templateId];
         if (template) {
             setProgramMode(template.mode);
             setActiveProgram([...template.exercises]);
         }
-    };
+    }, []);
 
     // Apply custom program from ProgramManager
-    const handleApplyCustomProgram = (exercises) => {
+    const handleApplyCustomProgram = useCallback((exercises) => {
         if (exercises && exercises.length >= 3) {
             setActiveProgram([...exercises]);
         }
-    };
+    }, []);
 
     // Complete onboarding
-    const handleCompleteOnboarding = (mode, equipment, templateId, preferences = null, customExerciseList = null) => {
+    const handleCompleteOnboarding = useCallback((mode, equipment, templateId, preferences = null, customExerciseList = null) => {
         try {
             setProgramMode(mode || 'bodyweight');
             setUserEquipment(equipment || ['none']);
@@ -1039,7 +1039,7 @@ const App = () => {
             // Set default mode to home after onboarding
             setCurrentMode('home');
         }
-    };
+    }, []);
 
     // Handle training preferences change
     const handleTrainingPreferencesChange = useCallback((newPrefs) => {

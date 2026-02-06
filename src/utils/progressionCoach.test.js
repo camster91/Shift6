@@ -238,6 +238,60 @@ describe('progressionCoach utilities', () => {
     })
   })
 
+  describe('edge cases and safety guards', () => {
+    it('getWeightSuggestion handles targetReps=0 without division by zero', () => {
+      const result = getWeightSuggestion({
+        targetReps: 0,
+        actualReps: 5,
+        rpe: 7,
+        currentWeight: 60,
+        weightIncrement: 2.5
+      })
+      expect(result.action).toBeDefined()
+      expect(Number.isFinite(result.newWeight)).toBe(true)
+    })
+
+    it('getRealisticRepTarget handles startReps=0', () => {
+      const result = getRealisticRepTarget(0, 100, 3, 6)
+      expect(result.cappedTarget).toBe(100)
+      expect(result.isRealistic).toBe(false)
+      expect(result.weeklyIncreasePercent).toBe(0)
+    })
+
+    it('getRealisticRepTarget handles negative startReps', () => {
+      const result = getRealisticRepTarget(-5, 100, 3, 6)
+      expect(result.cappedTarget).toBe(100)
+      expect(result.isRealistic).toBe(false)
+    })
+
+    it('checkForGymPR handles null/undefined PR weight', () => {
+      const gymPRs = { benchPress: { weight: null, reps: 8 } }
+      const result = checkForGymPR('benchPress', 60, 8, gymPRs)
+      expect(result.isNewPR).toBe(true)
+      expect(result.type).toBe('first')
+    })
+
+    it('checkForGymPR handles missing reps in PR', () => {
+      const gymPRs = { benchPress: { weight: 60 } }
+      const result = checkForGymPR('benchPress', 65, 8, gymPRs)
+      expect(result.isNewPR).toBe(true)
+      expect(result.type).toBe('first')
+    })
+
+    it('checkForNewPR handles zero volume', () => {
+      const result = checkForNewPR('pushups', 0, {})
+      expect(result.isNewPR).toBe(false)
+      expect(result.message).toBe(null)
+    })
+
+    it('checkForNewPR handles missing volume in existing PR', () => {
+      const prs = { pushups: { date: '2024-01-01' } }
+      const result = checkForNewPR('pushups', 25, prs)
+      expect(result.isNewPR).toBe(true)
+      expect(result.message).toBe('First workout recorded!')
+    })
+  })
+
   describe('PROGRESSION_CONFIG', () => {
     it('has realistic weekly increase caps', () => {
       expect(PROGRESSION_CONFIG.maxWeeklyIncreasePercent).toBeLessThanOrEqual(10)

@@ -145,6 +145,9 @@ const App = () => {
     const [sprints, setSprints] = useState(() => loadSprints());
 
     // UI State for Add Exercise modal
+    // Generic confirmation modal: { title, message, onConfirm, confirmText, danger }
+    const [pendingConfirm, setPendingConfirm] = useState(null);
+
     const [showAddExercise, setShowAddExercise] = useState(false);
     const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
     const [showProgramManager, setShowProgramManager] = useState(false);
@@ -895,19 +898,26 @@ const App = () => {
     // Delete custom exercise
     // ⚡ Bolt: Memoize handleDeleteExercise to prevent Dashboard re-renders.
     const handleDeleteExercise = useCallback((key) => {
-        if (window.confirm('Delete this custom exercise? This cannot be undone.')) {
-            setCustomExercises(prev => {
-                const updated = { ...prev };
-                delete updated[key];
-                return updated;
-            });
-            // Also clean up progress for this exercise
-            setCompletedDays(prev => {
-                const updated = { ...prev };
-                delete updated[key];
-                return updated;
-            });
-        }
+        setPendingConfirm({
+            title: 'Delete Exercise',
+            message: 'Delete this custom exercise? This cannot be undone.',
+            danger: true,
+            confirmText: 'Delete',
+            onConfirm: () => {
+                setCustomExercises(prev => {
+                    const updated = { ...prev };
+                    delete updated[key];
+                    return updated;
+                });
+                // Also clean up progress for this exercise
+                setCompletedDays(prev => {
+                    const updated = { ...prev };
+                    delete updated[key];
+                    return updated;
+                });
+                setPendingConfirm(null);
+            }
+        });
     }, []);
 
     // Change difficulty for an exercise
@@ -1208,20 +1218,38 @@ const App = () => {
             // Phase 4: Plateau Detector
             const intervention = detectPlateau(updatedSprint);
             if (intervention) {
-                // Ask user if they want to apply the intervention
-                if (window.confirm(`${intervention.message}\n\n${intervention.suggestion}\n\nApply this change?`)) {
-                    updatedSprint = intervention.apply(updatedSprint);
-                }
+                // Defer sprint update until user responds to modal
+                const sprintBeforeIntervention = updatedSprint;
+                setPendingConfirm({
+                    title: 'Plateau Detected',
+                    message: `${intervention.message}\n\n${intervention.suggestion}`,
+                    confirmText: 'Apply Change',
+                    onConfirm: () => {
+                        const adjusted = intervention.apply(sprintBeforeIntervention);
+                        const advanced = advanceSprint(adjusted);
+                        setSprints(prev => ({
+                            ...prev,
+                            [advanced.id]: advanced
+                        }));
+                        setPendingConfirm(null);
+                    },
+                    onCancel: () => {
+                        const advanced = advanceSprint(sprintBeforeIntervention);
+                        setSprints(prev => ({
+                            ...prev,
+                            [advanced.id]: advanced
+                        }));
+                        setPendingConfirm(null);
+                    }
+                });
+            } else {
+                // No intervention - advance immediately
+                updatedSprint = advanceSprint(updatedSprint);
+                setSprints(prev => ({
+                    ...prev,
+                    [updatedSprint.id]: updatedSprint
+                }));
             }
-
-            // Advance to next day/week
-            updatedSprint = advanceSprint(updatedSprint);
-
-            // Update sprints state
-            setSprints(prev => ({
-                ...prev,
-                [updatedSprint.id]: updatedSprint
-            }));
         }
 
         // Update home goal progress if active
@@ -1355,13 +1383,19 @@ const App = () => {
     }, []);
 
     const handleFactoryReset = useCallback(() => {
-        if (window.confirm('WARNING: This will permanently delete ALL workout history and progress. This cannot be undone. Are you absolutely sure?')) {
-            setCompletedDays({});
-            setSessionHistory([]);
-            localStorage.clear();
-            alert('Aura Cleansed. Progress Reset.');
-            window.location.reload();
-        }
+        setPendingConfirm({
+            title: 'Factory Reset',
+            message: 'WARNING: This will permanently delete ALL workout history and progress. This cannot be undone. Are you absolutely sure?',
+            danger: true,
+            confirmText: 'Reset Everything',
+            onConfirm: () => {
+                setCompletedDays({});
+                setSessionHistory([]);
+                localStorage.clear();
+                setPendingConfirm(null);
+                window.location.reload();
+            }
+        });
     }, []);
 
     // ⚡ Bolt: Memoize SideDrawer handlers to prevent re-renders.
@@ -2237,6 +2271,58 @@ const App = () => {
                             <p className="text-center text-xs text-slate-500 pt-4">
                                 Shift6 v2.0 - Made with care for your fitness journey
                             </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirm Modal */}
+            {pendingConfirm && (
+                <div
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={pendingConfirm.title}
+                >
+                    <div className={`w-full max-w-sm rounded-2xl p-6 shadow-2xl border ${
+                        theme === 'light'
+                            ? 'bg-white border-slate-200'
+                            : 'bg-slate-900 border-slate-700'
+                    }`}>
+                        <h3 className={`text-lg font-bold mb-2 ${
+                            pendingConfirm.danger ? 'text-red-400' : 'text-cyan-400'
+                        }`}>
+                            {pendingConfirm.title}
+                        </h3>
+                        <p className={`text-sm mb-6 whitespace-pre-line ${
+                            theme === 'light' ? 'text-slate-600' : 'text-slate-300'
+                        }`}>
+                            {pendingConfirm.message}
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    pendingConfirm.onCancel?.();
+                                    setPendingConfirm(null);
+                                }}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                                    theme === 'light'
+                                        ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                                }`}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={pendingConfirm.onConfirm}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+                                    pendingConfirm.danger
+                                        ? 'bg-red-600 hover:bg-red-500 text-white'
+                                        : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                                }`}
+                            >
+                                {pendingConfirm.confirmText || 'Confirm'}
+                            </button>
                         </div>
                     </div>
                 </div>

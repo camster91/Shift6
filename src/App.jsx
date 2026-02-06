@@ -71,34 +71,49 @@ import { recordHomeGoalResult } from './utils/homeGoals';
 
 const STORAGE_PREFIX = 'shift6_';
 
+/** Safely parse JSON from localStorage, returning fallback on any error */
+const safeLoadJSON = (key, fallback) => {
+    try {
+        const saved = localStorage.getItem(key);
+        if (saved === null) return fallback;
+        return JSON.parse(saved);
+    } catch {
+        return fallback;
+    }
+};
+
+/** Safely write to localStorage, silently handling quota errors */
+const safeSetItem = (key, value) => {
+    try {
+        localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+    } catch (e) {
+        console.warn('localStorage write failed:', key, e?.name);
+    }
+};
+
 const App = () => {
     // ---------------- STATE ----------------
     // Persistent Progress
     const [completedDays, setCompletedDays] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}progress`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}progress`, {});
     });
 
     const [sessionHistory, setSessionHistory] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}history`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}history`, []);
     });
 
     // Settings
     const [audioEnabled, setAudioEnabled] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}audio_enabled`);
-        return saved !== null ? JSON.parse(saved) : true;
+        return safeLoadJSON(`${STORAGE_PREFIX}audio_enabled`, true);
     });
 
     const [restTimerOverride, setRestTimerOverride] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}rest_timer`);
-        return saved !== null ? JSON.parse(saved) : null;
+        return safeLoadJSON(`${STORAGE_PREFIX}rest_timer`, null);
     });
 
     // Daily workout goal
     const [dailyGoal, setDailyGoal] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}daily_goal`);
-        return saved !== null ? JSON.parse(saved) : 1;
+        return safeLoadJSON(`${STORAGE_PREFIX}daily_goal`, 1);
     });
 
     const [theme, setTheme] = useState(() => {
@@ -108,32 +123,31 @@ const App = () => {
 
     // Custom exercises added by user
     const [customExercises, setCustomExercises] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}custom_exercises`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}custom_exercises`, {});
     });
 
     // Difficulty level per exercise (1-6, default 3 = Standard)
     const [exerciseDifficulty, setExerciseDifficulty] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}difficulty`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}difficulty`, {});
     });
 
     // Personal records per exercise (max reps achieved)
     const [personalRecords, setPersonalRecords] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}personal_records`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}personal_records`, {});
     });
 
     // Home mode 6-week goals (per exercise)
     const [homeGoals, setHomeGoals] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}home_goals`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}home_goals`, {});
     });
 
     // Sprint-based progression system
     const [sprints, setSprints] = useState(() => loadSprints());
 
     // UI State for Add Exercise modal
+    // Generic confirmation modal: { title, message, onConfirm, confirmText, danger }
+    const [pendingConfirm, setPendingConfirm] = useState(null);
+
     const [showAddExercise, setShowAddExercise] = useState(false);
     const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
     const [showProgramManager, setShowProgramManager] = useState(false);
@@ -153,8 +167,7 @@ const App = () => {
 
     // Warm-up preference (enabled by default)
     const [warmupEnabled, setWarmupEnabled] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}warmup_enabled`);
-        return saved !== null ? JSON.parse(saved) : true;
+        return safeLoadJSON(`${STORAGE_PREFIX}warmup_enabled`, true);
     });
 
     // Help modal state
@@ -162,8 +175,7 @@ const App = () => {
 
     // Body metrics (weight, measurements)
     const [bodyMetrics, setBodyMetrics] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}body_metrics`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}body_metrics`, []);
     });
 
     // Training Preferences (with migration for existing users)
@@ -184,8 +196,7 @@ const App = () => {
 
     // Active Program: array of exercise keys in current program
     const [activeProgram, setActiveProgram] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}active_program`);
-        return saved ? JSON.parse(saved) : null; // null = use default 9
+        return safeLoadJSON(`${STORAGE_PREFIX}active_program`, null); // null = use default 9
     });
 
     // Current Program ID: which program template is selected
@@ -196,8 +207,7 @@ const App = () => {
 
     // User Equipment: array of equipment IDs user has access to
     const [userEquipment, setUserEquipment] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}user_equipment`);
-        return saved ? JSON.parse(saved) : ['none'];
+        return safeLoadJSON(`${STORAGE_PREFIX}user_equipment`, ['none']);
     });
 
     // Onboarding Complete flag
@@ -206,10 +216,10 @@ const App = () => {
         const hasProgress = localStorage.getItem(`${STORAGE_PREFIX}progress`);
         const onboarded = localStorage.getItem(`${STORAGE_PREFIX}onboarding_complete`);
         if (onboarded === 'true') return true;
-        if (hasProgress && Object.keys(JSON.parse(hasProgress)).length > 0) {
+        if (hasProgress && Object.keys(safeLoadJSON(`${STORAGE_PREFIX}progress`, {})).length > 0) {
             // Existing user - mark as onboarded and set bodyweight mode
-            localStorage.setItem(`${STORAGE_PREFIX}onboarding_complete`, 'true');
-            localStorage.setItem(`${STORAGE_PREFIX}program_mode`, 'bodyweight');
+            safeSetItem(`${STORAGE_PREFIX}onboarding_complete`, 'true');
+            safeSetItem(`${STORAGE_PREFIX}program_mode`, 'bodyweight');
             return true;
         }
         return false;
@@ -217,8 +227,7 @@ const App = () => {
 
     // Track unlocked badges to detect new ones
     const [seenBadgeIds, setSeenBadgeIds] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}seen_badges`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}seen_badges`, []);
     });
     const [newBadges, setNewBadges] = useState([]);
     const prevStatsRef = useRef(null);
@@ -241,20 +250,17 @@ const App = () => {
 
     // Gym program state
     const [gymProgram, setGymProgram] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_program`);
-        return saved ? JSON.parse(saved) : null;
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_program`, null);
     });
 
     // Gym weights (last used weight per exercise)
     const [gymWeights, setGymWeights] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_weights`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_weights`, {});
     });
 
     // Gym reps (last used reps per exercise)
     const [gymReps, setGymReps] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_reps`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_reps`, {});
     });
 
     // Weight unit preference (kg or lbs)
@@ -265,20 +271,17 @@ const App = () => {
 
     // Gym workout history
     const [gymHistory, setGymHistory] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_history`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_history`, []);
     });
 
     // Gym streak
     const [gymStreak, setGymStreak] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_streak`);
-        return saved ? JSON.parse(saved) : 0;
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_streak`, 0);
     });
 
     // Custom gym programs (user-created)
     const [customGymPrograms, setCustomGymPrograms] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}custom_gym_programs`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}custom_gym_programs`, []);
     });
 
     // Show gym program manager modal
@@ -286,8 +289,7 @@ const App = () => {
 
     // Gym goals (6-week progression targets per exercise)
     const [gymGoals, setGymGoals] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_goals`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_goals`, {});
     });
 
     // Show gym assessment flow
@@ -343,7 +345,7 @@ const App = () => {
                 // Determine starting max from history or default
                 const historyMax = historyPRs[exKey] || 0;
                 // If no history, checking if we have calibration
-                const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+                const calibrations = safeLoadJSON(`${STORAGE_PREFIX}calibrations`, {});
                 const calibrationFactor = calibrations[exKey] || 1.0;
 
                 // Base start reps scaled by calibration, or history max
@@ -413,31 +415,31 @@ const App = () => {
     }, [activeProgram]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}progress`, JSON.stringify(completedDays));
+        safeSetItem(`${STORAGE_PREFIX}progress`, completedDays);
     }, [completedDays]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}custom_exercises`, JSON.stringify(customExercises));
+        safeSetItem(`${STORAGE_PREFIX}custom_exercises`, customExercises);
     }, [customExercises]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}difficulty`, JSON.stringify(exerciseDifficulty));
+        safeSetItem(`${STORAGE_PREFIX}difficulty`, exerciseDifficulty);
     }, [exerciseDifficulty]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}personal_records`, JSON.stringify(personalRecords));
+        safeSetItem(`${STORAGE_PREFIX}personal_records`, personalRecords);
     }, [personalRecords]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}body_metrics`, JSON.stringify(bodyMetrics));
+        safeSetItem(`${STORAGE_PREFIX}body_metrics`, bodyMetrics);
     }, [bodyMetrics]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}warmup_enabled`, JSON.stringify(warmupEnabled));
+        safeSetItem(`${STORAGE_PREFIX}warmup_enabled`, warmupEnabled);
     }, [warmupEnabled]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
+        safeSetItem(`${STORAGE_PREFIX}history`, sessionHistory);
     }, [sessionHistory]);
 
     // Save sprints when they change
@@ -447,7 +449,7 @@ const App = () => {
 
     // Save home goals when they change
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}home_goals`, JSON.stringify(homeGoals));
+        safeSetItem(`${STORAGE_PREFIX}home_goals`, homeGoals);
     }, [homeGoals]);
 
     // Detect new badges when stats change
@@ -463,7 +465,7 @@ const App = () => {
             setNewBadges(newlyUnlocked);
             // Update seen badges
             setSeenBadgeIds(unlockedIds);
-            localStorage.setItem(`${STORAGE_PREFIX}seen_badges`, JSON.stringify(unlockedIds));
+            safeSetItem(`${STORAGE_PREFIX}seen_badges`, unlockedIds);
 
             // Send badge notifications (async, non-blocking)
             newlyUnlocked.forEach(badge => {
@@ -472,7 +474,7 @@ const App = () => {
         } else if (prevStatsRef.current === null) {
             // First load - just update seen badges without showing toast
             setSeenBadgeIds(unlockedIds);
-            localStorage.setItem(`${STORAGE_PREFIX}seen_badges`, JSON.stringify(unlockedIds));
+            safeSetItem(`${STORAGE_PREFIX}seen_badges`, unlockedIds);
         }
 
         // Check streak status for notifications
@@ -508,39 +510,39 @@ const App = () => {
     }, [sessionHistory, dailyGoal]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}audio_enabled`, JSON.stringify(audioEnabled));
+        safeSetItem(`${STORAGE_PREFIX}audio_enabled`, audioEnabled);
     }, [audioEnabled]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}rest_timer`, JSON.stringify(restTimerOverride));
+        safeSetItem(`${STORAGE_PREFIX}rest_timer`, restTimerOverride);
     }, [restTimerOverride]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}daily_goal`, JSON.stringify(dailyGoal));
+        safeSetItem(`${STORAGE_PREFIX}daily_goal`, dailyGoal);
     }, [dailyGoal]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}theme`, theme);
+        safeSetItem(`${STORAGE_PREFIX}theme`, theme);
         document.documentElement.classList.remove('dark', 'light');
         document.documentElement.classList.add(theme);
     }, [theme]);
 
     useEffect(() => {
-        if (programMode) localStorage.setItem(`${STORAGE_PREFIX}program_mode`, programMode);
+        if (programMode) safeSetItem(`${STORAGE_PREFIX}program_mode`, programMode);
     }, [programMode]);
 
     useEffect(() => {
         if (activeProgram) {
-            localStorage.setItem(`${STORAGE_PREFIX}active_program`, JSON.stringify(activeProgram));
+            safeSetItem(`${STORAGE_PREFIX}active_program`, activeProgram);
         }
     }, [activeProgram]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}user_equipment`, JSON.stringify(userEquipment));
+        safeSetItem(`${STORAGE_PREFIX}user_equipment`, userEquipment);
     }, [userEquipment]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}onboarding_complete`, String(onboardingComplete));
+        safeSetItem(`${STORAGE_PREFIX}onboarding_complete`, String(onboardingComplete));
     }, [onboardingComplete]);
 
     useEffect(() => {
@@ -553,49 +555,49 @@ const App = () => {
 
     // ============ GYM MODE EFFECTS ============
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_onboarding_complete`, String(gymOnboardingComplete));
+        safeSetItem(`${STORAGE_PREFIX}gym_onboarding_complete`, String(gymOnboardingComplete));
     }, [gymOnboardingComplete]);
 
     useEffect(() => {
         if (gymProgram) {
-            localStorage.setItem(`${STORAGE_PREFIX}gym_program`, JSON.stringify(gymProgram));
+            safeSetItem(`${STORAGE_PREFIX}gym_program`, gymProgram);
         }
     }, [gymProgram]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_weights`, JSON.stringify(gymWeights));
+        safeSetItem(`${STORAGE_PREFIX}gym_weights`, gymWeights);
     }, [gymWeights]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_reps`, JSON.stringify(gymReps));
+        safeSetItem(`${STORAGE_PREFIX}gym_reps`, gymReps);
     }, [gymReps]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_weight_unit`, gymWeightUnit);
+        safeSetItem(`${STORAGE_PREFIX}gym_weight_unit`, gymWeightUnit);
     }, [gymWeightUnit]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_history`, JSON.stringify(gymHistory));
+        safeSetItem(`${STORAGE_PREFIX}gym_history`, gymHistory);
     }, [gymHistory]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_streak`, JSON.stringify(gymStreak));
+        safeSetItem(`${STORAGE_PREFIX}gym_streak`, gymStreak);
     }, [gymStreak]);
 
     // Persist custom gym programs
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}custom_gym_programs`, JSON.stringify(customGymPrograms));
+        safeSetItem(`${STORAGE_PREFIX}custom_gym_programs`, customGymPrograms);
     }, [customGymPrograms]);
 
     // Persist gym goals
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_goals`, JSON.stringify(gymGoals));
+        safeSetItem(`${STORAGE_PREFIX}gym_goals`, gymGoals);
     }, [gymGoals]);
 
     // Persist gym workout session (prevents data loss on refresh)
     useEffect(() => {
         if (currentGymSession) {
-            localStorage.setItem(`${STORAGE_PREFIX}current_gym_session`, JSON.stringify(currentGymSession));
+            safeSetItem(`${STORAGE_PREFIX}current_gym_session`, currentGymSession);
         }
     }, [currentGymSession]);
 
@@ -609,14 +611,13 @@ const App = () => {
     // Persist current mode selection
     useEffect(() => {
         if (currentMode) {
-            localStorage.setItem(`${STORAGE_PREFIX}current_mode`, currentMode);
+            safeSetItem(`${STORAGE_PREFIX}current_mode`, currentMode);
         }
     }, [currentMode]);
 
     // UI State
     const [workoutQueue, setWorkoutQueue] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}queue`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}queue`, []);
     });
 
     // Current active session - null until user starts or resumes
@@ -624,8 +625,7 @@ const App = () => {
 
     // Pending session from previous app session (loaded from localStorage)
     const [pendingSession, setPendingSession] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}current_session`);
-        return saved ? JSON.parse(saved) : null;
+        return safeLoadJSON(`${STORAGE_PREFIX}current_session`, null);
     });
 
     // Resume a pending session
@@ -675,13 +675,13 @@ const App = () => {
     }, [currentGymSession]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}queue`, JSON.stringify(workoutQueue));
+        safeSetItem(`${STORAGE_PREFIX}queue`, workoutQueue);
     }, [workoutQueue]);
 
     // Persist current session to localStorage
     useEffect(() => {
         if (currentSession) {
-            localStorage.setItem(`${STORAGE_PREFIX}current_session`, JSON.stringify(currentSession));
+            safeSetItem(`${STORAGE_PREFIX}current_session`, currentSession);
         }
     }, [currentSession]);
 
@@ -755,7 +755,7 @@ const App = () => {
 
         // Check if Day 1 assessment is needed (before any workout flow)
         // Assessment is required when: no calibration exists AND no completed days
-        const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+        const calibrations = safeLoadJSON(`${STORAGE_PREFIX}calibrations`, {});
         const hasCalibration = calibrations[exKey] !== undefined;
         const hasCompletedDays = (completedDays[exKey]?.length || 0) > 0;
         const needsAssessment = !hasCalibration && !hasCompletedDays;
@@ -820,7 +820,7 @@ const App = () => {
             // Invalid calibration detected - clear it and trigger re-assessment
             const updatedCalibrations = { ...calibrations };
             delete updatedCalibrations[exKey];
-            localStorage.setItem(`${STORAGE_PREFIX}calibrations`, JSON.stringify(updatedCalibrations));
+            safeSetItem(`${STORAGE_PREFIX}calibrations`, updatedCalibrations);
 
             // Show assessment to recalibrate
             setCurrentSession({
@@ -898,19 +898,26 @@ const App = () => {
     // Delete custom exercise
     // ⚡ Bolt: Memoize handleDeleteExercise to prevent Dashboard re-renders.
     const handleDeleteExercise = useCallback((key) => {
-        if (window.confirm('Delete this custom exercise? This cannot be undone.')) {
-            setCustomExercises(prev => {
-                const updated = { ...prev };
-                delete updated[key];
-                return updated;
-            });
-            // Also clean up progress for this exercise
-            setCompletedDays(prev => {
-                const updated = { ...prev };
-                delete updated[key];
-                return updated;
-            });
-        }
+        setPendingConfirm({
+            title: 'Delete Exercise',
+            message: 'Delete this custom exercise? This cannot be undone.',
+            danger: true,
+            confirmText: 'Delete',
+            onConfirm: () => {
+                setCustomExercises(prev => {
+                    const updated = { ...prev };
+                    delete updated[key];
+                    return updated;
+                });
+                // Also clean up progress for this exercise
+                setCompletedDays(prev => {
+                    const updated = { ...prev };
+                    delete updated[key];
+                    return updated;
+                });
+                setPendingConfirm(null);
+            }
+        });
     }, []);
 
     // Change difficulty for an exercise
@@ -954,7 +961,7 @@ const App = () => {
     // Handle warmup completion
     const handleWarmupComplete = useCallback(() => {
         // Record warmup time
-        localStorage.setItem(`${STORAGE_PREFIX}last_warmup`, Date.now().toString());
+        safeSetItem(`${STORAGE_PREFIX}last_warmup`, Date.now().toString());
         setShowWarmup(false);
 
         // Start the pending workout
@@ -1065,7 +1072,7 @@ const App = () => {
 
         // Check if we need to regenerate plans
         if (requiresPlanRegeneration(oldPrefs, updatedPrefs)) {
-            const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+            const calibrations = safeLoadJSON(`${STORAGE_PREFIX}calibrations`, {});
             const newPlans = regenerateAllPlans(allExercises, activeProgramKeys, calibrations, updatedPrefs);
             setCustomPlans(newPlans);
         }
@@ -1211,20 +1218,38 @@ const App = () => {
             // Phase 4: Plateau Detector
             const intervention = detectPlateau(updatedSprint);
             if (intervention) {
-                // Ask user if they want to apply the intervention
-                if (window.confirm(`${intervention.message}\n\n${intervention.suggestion}\n\nApply this change?`)) {
-                    updatedSprint = intervention.apply(updatedSprint);
-                }
+                // Defer sprint update until user responds to modal
+                const sprintBeforeIntervention = updatedSprint;
+                setPendingConfirm({
+                    title: 'Plateau Detected',
+                    message: `${intervention.message}\n\n${intervention.suggestion}`,
+                    confirmText: 'Apply Change',
+                    onConfirm: () => {
+                        const adjusted = intervention.apply(sprintBeforeIntervention);
+                        const advanced = advanceSprint(adjusted);
+                        setSprints(prev => ({
+                            ...prev,
+                            [advanced.id]: advanced
+                        }));
+                        setPendingConfirm(null);
+                    },
+                    onCancel: () => {
+                        const advanced = advanceSprint(sprintBeforeIntervention);
+                        setSprints(prev => ({
+                            ...prev,
+                            [advanced.id]: advanced
+                        }));
+                        setPendingConfirm(null);
+                    }
+                });
+            } else {
+                // No intervention - advance immediately
+                updatedSprint = advanceSprint(updatedSprint);
+                setSprints(prev => ({
+                    ...prev,
+                    [updatedSprint.id]: updatedSprint
+                }));
             }
-
-            // Advance to next day/week
-            updatedSprint = advanceSprint(updatedSprint);
-
-            // Update sprints state
-            setSprints(prev => ({
-                ...prev,
-                [updatedSprint.id]: updatedSprint
-            }));
         }
 
         // Update home goal progress if active
@@ -1254,9 +1279,9 @@ const App = () => {
         const newReps = currentSession.baseReps.map(r => Math.ceil(r * factor));
 
         // Save calibration factor for this exercise
-        const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+        const calibrations = safeLoadJSON(`${STORAGE_PREFIX}calibrations`, {});
         calibrations[currentSession.exerciseKey] = factor;
-        localStorage.setItem(`${STORAGE_PREFIX}calibrations`, JSON.stringify(calibrations));
+        safeSetItem(`${STORAGE_PREFIX}calibrations`, calibrations);
 
         // If using default, skip confirmation and go straight to workout/readiness
         if (skipConfirmation) {
@@ -1346,7 +1371,7 @@ const App = () => {
                     setCompletedDays(data.progress);
                 }
                 if (data.introDismissed) {
-                    localStorage.setItem('shift6_intro_dismissed', data.introDismissed);
+                    safeSetItem('shift6_intro_dismissed', data.introDismissed);
                 }
                 alert('Data restored successfully!');
             } catch (err) {
@@ -1358,13 +1383,19 @@ const App = () => {
     }, []);
 
     const handleFactoryReset = useCallback(() => {
-        if (window.confirm('WARNING: This will permanently delete ALL workout history and progress. This cannot be undone. Are you absolutely sure?')) {
-            setCompletedDays({});
-            setSessionHistory([]);
-            localStorage.clear();
-            alert('Aura Cleansed. Progress Reset.');
-            window.location.reload();
-        }
+        setPendingConfirm({
+            title: 'Factory Reset',
+            message: 'WARNING: This will permanently delete ALL workout history and progress. This cannot be undone. Are you absolutely sure?',
+            danger: true,
+            confirmText: 'Reset Everything',
+            onConfirm: () => {
+                setCompletedDays({});
+                setSessionHistory([]);
+                localStorage.clear();
+                setPendingConfirm(null);
+                window.location.reload();
+            }
+        });
     }, []);
 
     // ⚡ Bolt: Memoize SideDrawer handlers to prevent re-renders.
@@ -1384,12 +1415,12 @@ const App = () => {
     const handleSwitchProgram = useCallback((programId, programData) => {
         // Save current program ID
         setCurrentProgramId(programId);
-        localStorage.setItem(`${STORAGE_PREFIX}current_program_id`, programId);
+        safeSetItem(`${STORAGE_PREFIX}current_program_id`, programId);
 
         // Update active program with new program's exercises if available
         if (programData?.exercises) {
             setActiveProgram(programData.exercises);
-            localStorage.setItem(`${STORAGE_PREFIX}active_program`, JSON.stringify(programData.exercises));
+            safeSetItem(`${STORAGE_PREFIX}active_program`, programData.exercises);
         }
 
         setShowProgramSwitcher(false);
@@ -2240,6 +2271,58 @@ const App = () => {
                             <p className="text-center text-xs text-slate-500 pt-4">
                                 Shift6 v2.0 - Made with care for your fitness journey
                             </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirm Modal */}
+            {pendingConfirm && (
+                <div
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={pendingConfirm.title}
+                >
+                    <div className={`w-full max-w-sm rounded-2xl p-6 shadow-2xl border ${
+                        theme === 'light'
+                            ? 'bg-white border-slate-200'
+                            : 'bg-slate-900 border-slate-700'
+                    }`}>
+                        <h3 className={`text-lg font-bold mb-2 ${
+                            pendingConfirm.danger ? 'text-red-400' : 'text-cyan-400'
+                        }`}>
+                            {pendingConfirm.title}
+                        </h3>
+                        <p className={`text-sm mb-6 whitespace-pre-line ${
+                            theme === 'light' ? 'text-slate-600' : 'text-slate-300'
+                        }`}>
+                            {pendingConfirm.message}
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    pendingConfirm.onCancel?.();
+                                    setPendingConfirm(null);
+                                }}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                                    theme === 'light'
+                                        ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                                }`}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={pendingConfirm.onConfirm}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+                                    pendingConfirm.danger
+                                        ? 'bg-red-600 hover:bg-red-500 text-white'
+                                        : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                                }`}
+                            >
+                                {pendingConfirm.confirmText || 'Confirm'}
+                            </button>
                         </div>
                     </div>
                 </div>

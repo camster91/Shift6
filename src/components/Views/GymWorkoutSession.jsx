@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Check, ChevronUp, ChevronDown, Timer, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus, Target, Save } from 'lucide-react'
+import { X, Check, ChevronUp, ChevronDown, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus, Target, Save } from 'lucide-react'
 import { playBeep, playSuccess } from '../../utils/audio'
 import { vibrate } from '../../utils/device'
 import { GYM_EXERCISES } from '../../data/gymExercises'
@@ -44,11 +44,11 @@ const VideoModal = ({ exercise, onClose, theme = 'dark' }) => {
   const borderColor = theme === 'light' ? 'border-slate-200' : 'border-slate-700'
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={`${exercise.name} form guide`} onClick={onClose}>
       <div className={`${cardBg} border ${borderColor} rounded-xl w-full max-w-2xl overflow-hidden`} onClick={e => e.stopPropagation()}>
         <div className={`flex items-center justify-between p-4 border-b ${borderColor}`}>
           <h3 className={`text-lg font-bold ${textPrimary}`}>{exercise.name} - Form Guide</h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+          <button onClick={onClose} aria-label="Close video" className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
             <X size={20} className={textSecondary} />
           </button>
         </div>
@@ -402,11 +402,6 @@ const GymWorkoutSession = ({
   }
 
   // Format time for display
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
 
   // Format weight for display
   const formatWeight = (weightKg) => {
@@ -607,7 +602,7 @@ const GymWorkoutSession = ({
         )}
         {/* Exit Confirmation Modal - render on top of rest screen */}
         {showExitConfirm && (
-          <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Exit workout confirmation">
             <div className={`${cardBg} rounded-2xl w-full max-w-sm overflow-hidden`}>
               <div className="p-6 text-center">
                 <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -674,7 +669,7 @@ const GymWorkoutSession = ({
     <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col`}>
       {/* Header */}
       <div className={`flex items-center justify-between p-4 border-b ${borderColor}`}>
-        <button onClick={handleExit} className="p-2">
+        <button onClick={handleExit} className="p-2" aria-label="Exit workout">
           <X className={`w-6 h-6 ${textSecondary}`} />
         </button>
         <div className="text-center">
@@ -725,7 +720,7 @@ const GymWorkoutSession = ({
         )}
 
         {/* Set Progress */}
-        <div className="flex gap-2">
+        <div className="flex gap-2" role="progressbar" aria-valuenow={completedSetsForCurrent} aria-valuemin={0} aria-valuemax={totalSets} aria-label="Set progress">
           {Array.from({ length: totalSets }).map((_, i) => (
             <div
               key={i}
@@ -762,6 +757,7 @@ const GymWorkoutSession = ({
             <button
               onClick={() => adjustWeight(-1)}
               className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
+              aria-label="Decrease weight"
             >
               <ChevronDown className={`w-8 h-8 ${textPrimary}`} />
             </button>
@@ -774,6 +770,7 @@ const GymWorkoutSession = ({
             <button
               onClick={() => adjustWeight(1)}
               className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
+              aria-label="Increase weight"
             >
               <ChevronUp className={`w-8 h-8 ${textPrimary}`} />
             </button>
@@ -790,6 +787,7 @@ const GymWorkoutSession = ({
             <button
               onClick={() => adjustReps(-1)}
               className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
+              aria-label="Decrease reps"
             >
               <ChevronDown className={`w-8 h-8 ${textPrimary}`} />
             </button>
@@ -797,6 +795,7 @@ const GymWorkoutSession = ({
             <button
               onClick={() => adjustReps(1)}
               className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
+              aria-label="Increase reps"
             >
               <ChevronUp className={`w-8 h-8 ${textPrimary}`} />
             </button>
@@ -849,7 +848,7 @@ const GymWorkoutSession = ({
 
       {/* Exit Confirmation Modal */}
       {showExitConfirm && (
-        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Exit workout confirmation">
           <div className={`${cardBg} rounded-2xl w-full max-w-sm overflow-hidden`}>
             <div className="p-6 text-center">
               <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -905,7 +904,7 @@ const GymWorkoutSession = ({
 
       {/* PR Celebration Modal */}
       {showPRCelebration && (
-        <div className="fixed inset-0 z-[80] bg-black/80 flex items-center justify-center p-4 animate-pulse">
+        <div className="fixed inset-0 z-[80] bg-black/80 flex items-center justify-center p-4 animate-pulse" role="dialog" aria-modal="true" aria-label="Personal record celebration">
           <div className="text-center">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 flex items-center justify-center mx-auto mb-4 animate-bounce">
               <Trophy className="w-12 h-12 text-white" />
@@ -953,6 +952,7 @@ const GymWorkoutSession = ({
               <button
                 onClick={() => setWeightSuggestion(null)}
                 className={`p-2 ${textSecondary} hover:opacity-70`}
+                aria-label="Dismiss suggestion"
               >
                 <X size={18} />
               </button>

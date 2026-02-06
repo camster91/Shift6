@@ -39,13 +39,13 @@ Built with **React 18**, **Vite 5**, **TailwindCSS**, and **Capacitor** for nati
 - **Achievement System**: 30+ badges for streaks, milestones, and challenges
 - **Notifications**: Workout reminders, streak alerts, and badge celebrations
 - **Body Metrics**: Optional weight and measurement tracking
-- **Accessibility Settings**: Configurable accessibility options
+- **Accessibility**: ARIA labels on interactive elements, progress indicators, and modals
 - **Onboarding**: Guided setup for both home and gym modes
 - **Native Feel**:
   - Haptics: Tactile feedback on interactions
   - Wake Lock: Screen stays on during workouts
   - Audio Cues: Beeps and fanfares using Web Audio API
-- **Privacy First**: All data stored locally on device
+- **Privacy First**: All data stored locally on device with crash-safe storage
 
 ## Tech Stack
 
@@ -131,9 +131,13 @@ src/
 │   ├── homeGoals.js      # Home mode 6-week goal progression
 │   ├── gymProgression.js # Gym mode 6-week goal progression
 │   ├── progression.js    # Sprint-based progression engine
+│   ├── progressionCoach.js # Weight suggestions, PR detection, rep targets
+│   ├── progressionAlgorithms.js # Adaptive difficulty algorithms
+│   ├── adaptiveRest.js   # Smart rest timer calculations
 │   ├── gamification.js   # Badges, stats, achievements
 │   ├── schedule.js       # Daily workout scheduling
 │   ├── goalPrediction.js # Pace analysis & completion estimates
+│   ├── volumeTracking.js # Volume tracking and deload detection
 │   ├── notifications.js  # Reminders & streak notifications
 │   ├── audio.js          # Web Audio API synth
 │   ├── device.js         # Wake Lock, Vibration, Clipboard
@@ -148,6 +152,14 @@ src/
     └── setup.js          # Vitest + jsdom setup
 ```
 
+## Data Safety
+
+All user data is stored in browser localStorage with built-in resilience:
+
+- **Crash-safe reads**: All `JSON.parse` calls are wrapped in try-catch with fallback defaults. Corrupted storage data won't crash the app.
+- **Quota-safe writes**: All `localStorage.setItem` calls use a safe wrapper that silently handles `QuotaExceededError` and other write failures.
+- **No external APIs**: 100% client-side, privacy-first. Data never leaves the device.
+
 ## Testing
 
 **480 tests** across 17 test files covering all utility modules:
@@ -156,6 +168,17 @@ src/
 npm run test:run    # Single run
 npm test            # Watch mode
 ```
+
+Test coverage includes:
+- Gamification logic, badge unlocking, personal records
+- Sprint-based progression, adaptive difficulty
+- Workout scheduling, daily stack management
+- Goal prediction, pace analysis
+- Adaptive rest timer calculations
+- Volume tracking, deload detection
+- Exercise substitution logic
+- Smart program generation
+- Audio, device APIs, constants validation
 
 ## Deployment
 
@@ -195,6 +218,7 @@ npm run cap:android
 - [ ] Add TypeScript for type safety
 - [ ] Implement code splitting for lazy-loaded views
 - [ ] Migrate localStorage to IndexedDB for larger storage
+- [ ] Replace `window.confirm()` with custom modal dialogs
 
 ## Contributing
 

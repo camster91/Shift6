@@ -44,11 +44,11 @@ const VideoModal = ({ exercise, onClose, theme = 'dark' }) => {
   const borderColor = theme === 'light' ? 'border-slate-200' : 'border-slate-700'
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={`${exercise.name} form guide`} onClick={onClose}>
       <div className={`${cardBg} border ${borderColor} rounded-xl w-full max-w-2xl overflow-hidden`} onClick={e => e.stopPropagation()}>
         <div className={`flex items-center justify-between p-4 border-b ${borderColor}`}>
           <h3 className={`text-lg font-bold ${textPrimary}`}>{exercise.name} - Form Guide</h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+          <button onClick={onClose} aria-label="Close video" className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
             <X size={20} className={textSecondary} />
           </button>
         </div>

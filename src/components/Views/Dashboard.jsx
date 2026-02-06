@@ -7,6 +7,12 @@ import { calculateStreakWithGrace, getPersonalRecords } from '../../utils/gamifi
 import { EXPRESS_MODE_CONFIG } from '../../utils/constants'
 import { isExpressPersona } from '../../utils/personas'
 import { analyzePace, getProgramSummary, calculateWorkoutFrequency } from '../../utils/goalPrediction'
+import {
+    getHomeGoalWeek,
+    getHomeCurrentTarget,
+    calculateHomeProgress,
+    getHomeGoalsSummary
+} from '../../utils/homeGoals'
 import NeoIcon from '../Visuals/NeoIcon'
 
 // Floating Quick Start Button - appears after scroll or always visible
@@ -88,6 +94,179 @@ const colorClasses = {
     indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', solid: 'bg-indigo-500' },
 }
 
+// 6-Week Goals Progress - Home mode equivalent of GymDashboard's GoalsProgress
+const HomeGoalsProgress = ({ exercises, homeGoals, onSetGoal, onViewGoal, theme }) => {
+    const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
+    const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+    const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
+    const borderColor = theme === 'light' ? 'border-slate-200' : 'border-slate-800'
+
+    const exerciseKeys = Object.keys(exercises || {})
+    const exercisesWithGoals = exerciseKeys.filter(k => homeGoals?.[k])
+    const exercisesWithoutGoals = exerciseKeys.filter(k => !homeGoals?.[k])
+
+    const summary = getHomeGoalsSummary(
+        exercisesWithGoals.reduce((acc, k) => {
+            acc[k] = homeGoals[k]
+            return acc
+        }, {})
+    )
+
+    if (exerciseKeys.length === 0) return null
+
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-3">
+                <h3 className={`text-sm font-medium ${textSecondary}`}>6-Week Goals</h3>
+                {summary.active > 0 && (
+                    <span className={`text-xs ${textSecondary}`}>
+                        {summary.averageProgress}% avg progress
+                    </span>
+                )}
+            </div>
+
+            {/* Prompt to set goals */}
+            {exercisesWithoutGoals.length > 0 && exercisesWithGoals.length === 0 && (
+                <button
+                    onClick={() => {
+                        vibrate(30)
+                        // Open goal setter for first exercise without a goal
+                        const firstKey = exercisesWithoutGoals[0]
+                        onSetGoal?.(firstKey)
+                    }}
+                    className={`w-full ${cardBg} rounded-xl p-4 mb-3 border-2 border-dashed ${borderColor} hover:border-cyan-500 transition-colors flex items-center gap-3`}
+                >
+                    <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                        <Target className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div className="text-left flex-1">
+                        <p className={`font-medium ${textPrimary}`}>Set Your 6-Week Goals</p>
+                        <p className={`text-xs ${textSecondary}`}>
+                            Track progress for {exercisesWithoutGoals.length} exercise{exercisesWithoutGoals.length !== 1 ? 's' : ''}
+                        </p>
+                    </div>
+                    <ChevronRight className={`w-5 h-5 ${textSecondary}`} />
+                </button>
+            )}
+
+            {/* Goal progress cards */}
+            {exercisesWithGoals.length > 0 && (
+                <div className="space-y-2">
+                    {exercisesWithGoals.slice(0, 3).map(exKey => {
+                        const goal = homeGoals[exKey]
+                        const ex = exercises[exKey]
+                        if (!goal || !ex) return null
+
+                        const progress = calculateHomeProgress(goal)
+                        const currentWeek = getHomeGoalWeek(goal)
+                        const target = getHomeCurrentTarget(goal)
+                        const colors = colorClasses[ex.color] || colorClasses.cyan
+                        const unitLabel = goal.unit === 'seconds' ? 'sec' : goal.unit
+
+                        return (
+                            <button
+                                key={exKey}
+                                onClick={() => {
+                                    vibrate(10)
+                                    onViewGoal?.(exKey)
+                                }}
+                                className={`w-full ${cardBg} rounded-xl p-3 border ${borderColor} hover:border-cyan-500/30 transition-colors text-left`}
+                            >
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${colors.solid}`} />
+                                        <span className={`font-medium ${textPrimary} text-sm`}>
+                                            {ex.name}
+                                        </span>
+                                    </div>
+                                    <span className={`text-xs ${textSecondary}`}>
+                                        Week {Math.min(currentWeek, 6)}/6
+                                    </span>
+                                </div>
+
+                                {/* Progress bar */}
+                                <div className={`h-2 ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-700'} rounded-full overflow-hidden mb-1`}>
+                                    <div
+                                        className={`h-full rounded-full transition-all ${
+                                            progress >= 100 ? 'bg-emerald-500' :
+                                            progress >= 50 ? 'bg-cyan-500' :
+                                            'bg-cyan-500/70'
+                                        }`}
+                                        style={{ width: `${Math.min(progress, 100)}%` }}
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className={textSecondary}>
+                                        Target: {target.targetValue} {unitLabel}
+                                    </span>
+                                    <span className={progress >= 100 ? 'text-emerald-400' : 'text-cyan-400'}>
+                                        {progress}%
+                                    </span>
+                                </div>
+                            </button>
+                        )
+                    })}
+
+                    {exercisesWithGoals.length > 3 && (
+                        <p className={`text-xs ${textSecondary} text-center`}>
+                            +{exercisesWithGoals.length - 3} more with goals
+                        </p>
+                    )}
+
+                    {/* Add more goals prompt */}
+                    {exercisesWithoutGoals.length > 0 && (
+                        <button
+                            onClick={() => {
+                                vibrate(10)
+                                onSetGoal?.(exercisesWithoutGoals[0])
+                            }}
+                            className={`w-full text-center text-xs py-2 ${textSecondary} hover:text-cyan-400 transition-colors`}
+                        >
+                            + Set goals for {exercisesWithoutGoals.length} more exercise{exercisesWithoutGoals.length !== 1 ? 's' : ''}
+                        </button>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
+
+// Placeholder Exercise Image - premium placeholder for future exercise imagery
+const ExerciseImagePlaceholder = ({ exercise, size = 'md', className = '' }) => {
+    const colors = colorClasses[exercise?.color] || colorClasses.cyan
+    const sizeClasses = {
+        sm: 'w-12 h-12 rounded-lg',
+        md: 'w-full h-32 rounded-xl',
+        lg: 'w-full h-44 rounded-2xl'
+    }
+
+    return (
+        <div className={`${sizeClasses[size]} ${colors.bg} border ${colors.border} flex flex-col items-center justify-center relative overflow-hidden ${className}`}>
+            {/* Subtle gradient overlay */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} opacity-50`} />
+
+            {/* Icon */}
+            <div className="relative z-10 flex flex-col items-center gap-1.5">
+                {exercise?.image?.startsWith('neo:') ? (
+                    <NeoIcon name={exercise.image.replace('neo:', '')} size={size === 'sm' ? 18 : 32} className={colors.text} />
+                ) : (
+                    <Dumbbell className={colors.text} size={size === 'sm' ? 18 : 32} />
+                )}
+                {size !== 'sm' && (
+                    <span className={`text-[10px] ${colors.text} opacity-60 uppercase tracking-wider`}>
+                        {exercise?.category || 'Exercise'}
+                    </span>
+                )}
+            </div>
+
+            {/* Corner accent */}
+            <div className={`absolute top-0 right-0 w-8 h-8 ${colors.solid} opacity-10 rounded-bl-2xl`} />
+            <div className={`absolute bottom-0 left-0 w-6 h-6 ${colors.solid} opacity-5 rounded-tr-2xl`} />
+        </div>
+    )
+}
+
 // Exercise Info Modal
 const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficulty, onSetDifficulty, onDelete, isCustom, allExercises }) => {
     // ⚡ Bolt: Memoize nextSession calculation. This function can be expensive, and memoizing it prevents re-calculation on every modal render, improving UI responsiveness when parent components update.
@@ -110,6 +289,9 @@ const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficul
                 className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}
             >
+                {/* Exercise Image Placeholder */}
+                <ExerciseImagePlaceholder exercise={exercise} size="lg" className="rounded-none rounded-t-xl" />
+
                 <div className={`p-6 ${colors.bg} border-b ${colors.border}`}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -259,6 +441,10 @@ const Dashboard = ({
     pendingSession = null,
     onResumeSession = null,
     onDiscardSession = null,
+    // Home Goals (6-week)
+    homeGoals = {},
+    onSetHomeGoal = null,
+    onViewHomeGoal = null,
     // Theme
     theme = 'dark'
 }) => {
@@ -498,6 +684,17 @@ const Dashboard = ({
                 </div>
             </div>
 
+            {/* 6-Week Goals Section */}
+            {onSetHomeGoal && (
+                <HomeGoalsProgress
+                    exercises={programExercises}
+                    homeGoals={homeGoals}
+                    onSetGoal={onSetHomeGoal}
+                    onViewGoal={onViewHomeGoal}
+                    theme={theme}
+                />
+            )}
+
             {/* Pace & Progress Insight */}
             {paceAnalysis.status !== 'new' && programSummary.completedDays > 0 && (
                 <div className={`${cardBg} rounded-2xl p-4 border ${borderColor}`}>
@@ -651,13 +848,14 @@ const Dashboard = ({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {Object.entries(programExercises).map(([key, ex]) => {
                                 if (!ex) return null
-                                const colors = colorClasses[ex.color] || colorClasses.cyan
                                 const dayNum = (completedDays[key]?.length || 0) + 1
                                 const isComplete = dayNum > 18
                                 const pr = personalRecords[key]
                                 const isCustom = !!customExercises[key]
                                 const difficulty = exerciseDifficulty[key] || 3
                                 const diffLevel = DIFFICULTY_LEVELS[difficulty]
+                                const hasGoal = homeGoals?.[key]
+                                const goalProgress = hasGoal ? calculateHomeProgress(homeGoals[key]) : null
 
                                 return (
                                     <button
@@ -666,38 +864,49 @@ const Dashboard = ({
                                             vibrate(10)
                                             setSelectedExercise({ ...ex, key, isCustom })
                                         }}
-                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:bg-slate-800/50 ${isComplete
+                                        className={`rounded-xl border transition-all hover:bg-slate-800/50 overflow-hidden ${isComplete
                                                 ? 'bg-emerald-500/5 border-emerald-500/20'
                                                 : isCustom
                                                     ? 'bg-purple-500/5 border-purple-500/20'
                                                     : 'bg-slate-800/30 border-slate-700/50'
                                             }`}
                                     >
-                                        <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0`}>
-                                            {ex.image?.startsWith('neo:') ? (
-                                                <NeoIcon name={ex.image.replace('neo:', '')} size={18} className={colors.text} />
-                                            ) : (
-                                                <Dumbbell className={colors.text} size={18} />
-                                            )}
-                                        </div>
-                                        <div className="flex-1 text-left min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="text-sm font-bold text-white truncate">{ex.name}</h4>
-                                                {isCustom && <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded">Custom</span>}
+                                        {/* Placeholder Image Slot */}
+                                        <ExerciseImagePlaceholder exercise={ex} size="md" />
+
+                                        {/* Exercise Info */}
+                                        <div className="flex items-center gap-3 p-3">
+                                            <div className="flex-1 text-left min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className={`text-sm font-bold ${textPrimary} truncate`}>{ex.name}</h4>
+                                                    {isCustom && <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded">Custom</span>}
+                                                </div>
+                                                <p className={`text-xs ${textSecondary}`}>
+                                                    {isComplete ? (
+                                                        <span className="text-emerald-400">Complete</span>
+                                                    ) : (
+                                                        `Day ${dayNum}/18`
+                                                    )}
+                                                    {difficulty !== 3 && (
+                                                        <span className="text-cyan-400 ml-2">{diffLevel.name}</span>
+                                                    )}
+                                                    {pr && <span className="text-amber-400 ml-2">PR: {pr.volume}</span>}
+                                                </p>
                                             </div>
-                                            <p className="text-xs text-slate-500">
-                                                {isComplete ? (
-                                                    <span className="text-emerald-400">Complete</span>
-                                                ) : (
-                                                    `Day ${dayNum}/18`
-                                                )}
-                                                {difficulty !== 3 && (
-                                                    <span className="text-cyan-400 ml-2">{diffLevel.name}</span>
-                                                )}
-                                                {pr && <span className="text-amber-400 ml-2">PR: {pr.volume}</span>}
-                                            </p>
+                                            <ChevronRight size={16} className="text-slate-600 flex-shrink-0" />
                                         </div>
-                                        <ChevronRight size={16} className="text-slate-600 flex-shrink-0" />
+
+                                        {/* Goal progress mini-bar */}
+                                        {hasGoal && goalProgress !== null && (
+                                            <div className="px-3 pb-2">
+                                                <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full ${goalProgress >= 100 ? 'bg-emerald-500' : 'bg-cyan-500'}`}
+                                                        style={{ width: `${Math.min(goalProgress, 100)}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
                                     </button>
                                 )
                             })}

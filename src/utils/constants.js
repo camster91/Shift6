@@ -54,7 +54,9 @@ export const STORAGE_KEYS = {
     // Daily goals
     dailyGoal: 'shift6_daily_goal',
     restDays: 'shift6_rest_days',
-    warmupEnabled: 'shift6_warmup_enabled'
+    warmupEnabled: 'shift6_warmup_enabled',
+    // Home mode 6-week goals
+    homeGoals: 'shift6_home_goals'
 };
 
 // Daily goal options (workouts per day)

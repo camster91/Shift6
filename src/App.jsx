@@ -65,7 +65,9 @@ import GymOnboarding from './components/Views/GymOnboarding';
 import GymWorkoutSession from './components/Views/GymWorkoutSession';
 import GymProgramManager from './components/Views/GymProgramManager';
 import GymAssessment from './components/Views/GymAssessment';
+import HomeGoalSetter from './components/Views/HomeGoalSetter';
 import { recordWorkoutResult as recordGymWorkoutResult } from './utils/gymProgression';
+import { recordHomeGoalResult } from './utils/homeGoals';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -122,6 +124,12 @@ const App = () => {
         return saved ? JSON.parse(saved) : {};
     });
 
+    // Home mode 6-week goals (per exercise)
+    const [homeGoals, setHomeGoals] = useState(() => {
+        const saved = localStorage.getItem(`${STORAGE_PREFIX}home_goals`);
+        return saved ? JSON.parse(saved) : {};
+    });
+
     // Sprint-based progression system
     const [sprints, setSprints] = useState(() => loadSprints());
 
@@ -136,6 +144,7 @@ const App = () => {
     const [showAccessibility, setShowAccessibility] = useState(false);
     const [showWarmup, setShowWarmup] = useState(false);
     const [pendingWorkout, setPendingWorkout] = useState(null); // Stores workout to start after warmup
+    const [showHomeGoalSetter, setShowHomeGoalSetter] = useState(null); // exerciseKey or null
 
     // Navigation State
     const [activeTab, setActiveTab] = useState('home');
@@ -435,6 +444,11 @@ const App = () => {
     useEffect(() => {
         saveSprints(sprints);
     }, [sprints]);
+
+    // Save home goals when they change
+    useEffect(() => {
+        localStorage.setItem(`${STORAGE_PREFIX}home_goals`, JSON.stringify(homeGoals));
+    }, [homeGoals]);
 
     // Detect new badges when stats change
     useEffect(() => {
@@ -1213,6 +1227,15 @@ const App = () => {
             }));
         }
 
+        // Update home goal progress if active
+        if (homeGoals[exerciseKey]?.status === 'active') {
+            const updatedGoal = recordHomeGoalResult(homeGoals[exerciseKey], totalVolume);
+            setHomeGoals(prev => ({
+                ...prev,
+                [exerciseKey]: updatedGoal
+            }));
+        }
+
         // Queue Handling
         if (workoutQueue.length > 0) {
             const next = workoutQueue[0];
@@ -1224,7 +1247,7 @@ const App = () => {
         }
 
         setTimeout(() => setIsProcessing(false), 1000);
-    }, [currentSession, isProcessing, amrapValue, workoutNotes, completedDays, sprints, workoutQueue, startWorkout]);
+    }, [currentSession, isProcessing, amrapValue, workoutNotes, completedDays, sprints, workoutQueue, startWorkout, homeGoals]);
 
     const applyCalibration = useCallback((factor, skipConfirmation = false) => {
         if (!currentSession) return;
@@ -1618,6 +1641,20 @@ const App = () => {
         return updatedGoal;
     }, [gymGoals]);
 
+    // ============ HOME GOAL HANDLERS ============
+    // Set or update a home goal for an exercise
+    const handleSetHomeGoal = useCallback((exerciseKey, goal) => {
+        setHomeGoals(prev => ({
+            ...prev,
+            [exerciseKey]: goal
+        }));
+    }, []);
+
+    // Open goal setter modal for an exercise
+    const handleOpenHomeGoalSetter = useCallback((exerciseKey) => {
+        setShowHomeGoalSetter(exerciseKey);
+    }, []);
+
     // Switch between home and gym mode
     const handleSwitchMode = useCallback(() => {
         setCurrentMode(prev => prev === 'home' ? 'gym' : 'home');
@@ -1824,6 +1861,9 @@ const App = () => {
                         pendingSession={pendingSession}
                         onResumeSession={handleResumeSession}
                         onDiscardSession={handleDiscardSession}
+                        homeGoals={homeGoals}
+                        onSetHomeGoal={handleOpenHomeGoalSetter}
+                        onViewHomeGoal={handleOpenHomeGoalSetter}
                         theme={theme}
                     />
                 )}
@@ -1937,6 +1977,20 @@ const App = () => {
                         theme={theme}
                     />
                 </div>
+            )}
+
+            {/* Home Goal Setter Modal */}
+            {showHomeGoalSetter && (
+                <HomeGoalSetter
+                    exerciseKey={showHomeGoalSetter}
+                    exercise={allExercises[showHomeGoalSetter]}
+                    goal={homeGoals[showHomeGoalSetter] || null}
+                    sessionHistory={sessionHistory}
+                    personalRecords={personalRecords}
+                    onSetGoal={handleSetHomeGoal}
+                    onClose={() => setShowHomeGoalSetter(null)}
+                    theme={theme}
+                />
             )}
 
             {/* Exercise Library Modal */}

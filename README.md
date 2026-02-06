@@ -1,34 +1,62 @@
 # Shift6
 
-**Shift6** is a Progressive Web App (PWA) designed to help you master 9 foundational bodyweight exercises over a 6-week progression system.
+**Shift6** is a Progressive Web App (PWA) for bodyweight and gym fitness training with structured 6-week progression systems. Master foundational exercises through science-based programming with automatic difficulty scaling.
 
-Built with **React**, **Vite**, **TailwindCSS**, and **Capacitor** for native mobile deployment.
+Built with **React 18**, **Vite 5**, **TailwindCSS**, and **Capacitor** for native mobile deployment.
+
+## Training Modes
+
+### Home Mode (Bodyweight)
+- 9+ foundational calisthenics exercises with 18-day progression plans
+- 6-week goal system with per-exercise targets and weekly milestones
+- Sprint-based progression with automatic difficulty scaling
+- Exercise variations (6 difficulty levels per exercise)
+- Smart daily workout scheduling based on training preferences
+
+### Gym Mode (Weight Training)
+- Pre-built programs (Push/Pull/Legs, Upper/Lower, Full Body, Bro Split)
+- 6-week goal system with weight/rep progression and deload weeks
+- Exercise assessment flow to calibrate starting weights
+- Custom program builder
+- Weight unit toggle (kg/lbs)
 
 ## Features
 
-- **Dynamic Progression**: Automatically adjusts difficulty based on your "Max Effort" set
+- **Dual Training Modes**: Switch between home bodyweight and gym weight training
+- **6-Week Goal System**: Set and track per-exercise goals with weekly targets (both modes)
+- **Dynamic Progression**: Automatically adjusts difficulty based on performance
 - **Offline Ready (PWA)**: Installable on iOS/Android, works 100% offline
-- **Deep Analytics**:
-  - Activity Streaks: Track your consistency
-  - Badges: Unlock achievements like "Early Bird" and "Week Warrior"
+- **Exercise Library**: Browse and add exercises by category, difficulty, and equipment
+- **Custom Programs**: Build your own programs or choose from starter templates
+- **Warm-up Routines**: Guided warm-up sequences before workouts
+- **Express Mode**: Quick workouts for time-constrained sessions
+- **Configurable Rest Timer**: Auto, 30s-120s with adaptive rest suggestions
+- **Calendar View**: Monthly grid showing workout history with exercise colors
+- **Progress Tracking**: Charts, pace analysis, completion estimates, and personal records
+- **Dark/Light Themes**: Full theme toggle across all views
+- **Workout Notes**: Add notes to any workout session
+- **Data Export**: JSON backup/restore and CSV export for spreadsheets
+- **Achievement System**: 30+ badges for streaks, milestones, and challenges
+- **Notifications**: Workout reminders, streak alerts, and badge celebrations
+- **Body Metrics**: Optional weight and measurement tracking
+- **Accessibility Settings**: Configurable accessibility options
+- **Onboarding**: Guided setup for both home and gym modes
 - **Native Feel**:
   - Haptics: Tactile feedback on interactions
-  - Wake Lock: Keeps your screen awake during workouts
+  - Wake Lock: Screen stays on during workouts
   - Audio Cues: Beeps and fanfares using Web Audio API
-- **Privacy First**:
-  - Local Storage: Data lives on your device by default
-  - Backup/Restore: Export your progress to JSON
+- **Privacy First**: All data stored locally on device
 
 ## Tech Stack
 
 | Category | Technology |
 |----------|------------|
-| Frontend | React 18, Vite 5 |
+| Frontend | React 18.2, Vite 5.0 |
 | Styling | TailwindCSS 3.4, Lucide Icons |
 | Mobile | Capacitor 8 (iOS/Android) |
-| Testing | Vitest, @testing-library/react |
-| Linting | ESLint with React plugins |
-| PWA | vite-plugin-pwa |
+| Testing | Vitest 4.0, @testing-library/react |
+| Linting | ESLint 8.57 with React plugins |
+| PWA | vite-plugin-pwa 0.17 |
 
 ## Getting Started
 
@@ -65,7 +93,7 @@ npm run preview  # Preview production build
 | `npm run dev` | Start development server |
 | `npm run build` | Production build to `/dist` |
 | `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint (strict mode) |
+| `npm run lint` | Run ESLint (strict: max-warnings 0) |
 | `npm test` | Run tests in watch mode |
 | `npm run test:run` | Run tests once (CI) |
 | `npm run cap:ios` | Build and open in Xcode |
@@ -75,14 +103,58 @@ npm run preview  # Preview production build
 
 ```
 src/
-├── main.jsx              # Entry point
-├── App.jsx               # Main component & state
+├── main.jsx              # Entry point with ErrorBoundary
+├── App.jsx               # Main component & all state management
 ├── components/
-│   ├── Layout/           # Header, BottomNav
-│   ├── Views/            # Dashboard, Plan, WorkoutSession, Guide
-│   └── Visuals/          # NeonBadge, NeoIcon, DataBackground
-├── utils/                # Audio, device, gamification, schedule
-└── data/                 # Exercise plans
+│   ├── Layout/           # Header, BottomNav, SideDrawer
+│   ├── Views/
+│   │   ├── Dashboard.jsx         # Home mode main view
+│   │   ├── GymDashboard.jsx      # Gym mode main view
+│   │   ├── WorkoutSession.jsx    # Home workout UI
+│   │   ├── GymWorkoutSession.jsx # Gym workout UI
+│   │   ├── HomeGoalSetter.jsx    # Home 6-week goal modal
+│   │   ├── GymGoalSetter.jsx     # Gym 6-week goal modal
+│   │   ├── GymAssessment.jsx     # Gym exercise assessment
+│   │   ├── WorkoutQuickStart.jsx # Quick start / express mode
+│   │   ├── Progress.jsx          # Progress & analytics view
+│   │   ├── CalendarView.jsx      # Monthly calendar
+│   │   ├── ExerciseLibrary.jsx   # Browse exercise library
+│   │   ├── ProgramManager.jsx    # Program management
+│   │   ├── WarmupRoutine.jsx     # Pre-workout warm-ups
+│   │   ├── BodyMetrics.jsx       # Weight/measurement tracking
+│   │   ├── Guide.jsx             # Exercise instructions
+│   │   ├── Onboarding.jsx        # Home mode onboarding
+│   │   ├── GymOnboarding.jsx     # Gym mode onboarding
+│   │   └── ...                   # More views
+│   └── Visuals/          # NeonBadge, NeoIcon, Confetti, Charts
+├── utils/
+│   ├── homeGoals.js      # Home mode 6-week goal progression
+│   ├── gymProgression.js # Gym mode 6-week goal progression
+│   ├── progression.js    # Sprint-based progression engine
+│   ├── gamification.js   # Badges, stats, achievements
+│   ├── schedule.js       # Daily workout scheduling
+│   ├── goalPrediction.js # Pace analysis & completion estimates
+│   ├── notifications.js  # Reminders & streak notifications
+│   ├── audio.js          # Web Audio API synth
+│   ├── device.js         # Wake Lock, Vibration, Clipboard
+│   └── ...               # More utilities
+├── data/
+│   ├── exercises.jsx     # Calisthenics exercise plans
+│   ├── gymExercises.js   # Gym exercise definitions & programs
+│   ├── exerciseLibrary.js # Extended exercise library
+│   ├── exerciseDatabase.js # Full exercise database
+│   └── warmupRoutines.js # Warm-up routine data
+└── test/
+    └── setup.js          # Vitest + jsdom setup
+```
+
+## Testing
+
+**480 tests** across 17 test files covering all utility modules:
+
+```bash
+npm run test:run    # Single run
+npm test            # Watch mode
 ```
 
 ## Deployment
@@ -107,102 +179,22 @@ npm run cap:android
 
 ## Roadmap
 
-### Immediate Priorities
+### Planned
 
-**UX Improvements**
-- **Redesigned Home Page**: Focus on next workouts and daily progress, not achievements
-- **Smart Workout Awareness**: Shows what you did today and suggests more if you want
-- **Daily Goal System**: Flexible daily targets (do any exercises, hit your goal)
-- **Streamlined Navigation**: Bottom nav (Home, Workout, Progress, Menu) + side drawer for extras
-- **Assessment Flow Fix**: Initial max effort test returns to home, not full workout
-
-**Achievement System Overhaul**
-- **18 Levels Per Exercise**: Progress from Beginner to Master over 6 weeks
-- **Exercise Mastery Badges**: Unique badge for completing each exercise program
-- **30+ Bonus Achievements**: Streaks, milestones, time-based, and fun challenges
-- **Achievements in Menu**: Moved out of home page into dedicated section
-
-**Content & Media**
-- **Exercise Images**: Custom illustrations or optimized photos for each movement
+- **Exercise Images**: Custom illustrations or photos for each movement
 - **YouTube Form Videos**: Embedded tutorials in the Guide section
-- **Quick Form GIFs**: Short animations during workouts for reference
-
-### Phase 1: Core Enhancements
-
-- **Progress Graphs**: Visual charts showing volume and strength gains over time
-- **Rest Timer**: Configurable rest periods between sets with audio alerts
-- **Workout Reminders**: Push notifications for scheduled workout days
-- **Personal Records**: Track and celebrate all-time bests for each exercise
-- **Workout Notes**: Add notes/journal entries to workout sessions
-- **Calendar View**: Visual monthly calendar showing workout history
-
-### Phase 2: Customization & Content
-
-- **Dark/Light Themes**: User-selectable color themes beyond the current neon aesthetic
-- **Exercise Variations**: Alternative movements for each exercise (e.g., knee push-ups, assisted pull-ups)
-- **Custom Programs**: User-defined exercise combinations and progression schemes
-- **Warm-up Routines**: Guided warm-up sequences before workouts
-- **Cool-down Stretches**: Post-workout stretching recommendations
-
-### Phase 3: Advanced Features
-
-- **Cloud Sync** (Optional): Sync progress across devices while maintaining privacy-first defaults
+- **Cloud Sync** (Optional): Cross-device sync while maintaining privacy-first defaults
 - **Apple Health / Google Fit**: Integration with native health platforms
-- **Apple Watch / WearOS**: Companion app for wrist-based workout tracking
 - **Social Sharing**: Share achievements and milestones (opt-in)
-- **Workout Challenges**: Time-limited community challenges
-- **Body Metrics**: Optional weight/measurements tracking
-
-### Phase 4: Platform Expansion
-
 - **Multi-language Support**: i18n for global accessibility
-- **Accessibility**: Screen reader support, high-contrast mode, reduced motion
-- **Home Screen Widgets**: Quick stats on iOS/Android home screens
-- **Siri / Google Assistant**: Voice shortcuts for starting workouts
-- **Offline Backup**: Export to device storage (not just JSON download)
-- **QR Code Sync**: Quick data transfer between devices
 
-### Achievement Ideas
+### Technical Improvements
 
-| Achievement | How to Earn |
-|-------------|-------------|
-| First Steps | Complete your first workout |
-| Push-up Pro | Master all 18 days of push-ups |
-| Complete Athlete | Master all 9 exercises |
-| Double Trouble | Do 2 exercises in one day |
-| Nine Lives | Do all 9 exercises in one day |
-| Week Warrior | 7-day streak |
-| Month Monster | 30-day streak |
-| Century Club | 100 total workouts |
-| Rep Machine | 1,000 total reps |
-| Early Bird | Workout before 7am |
-| Night Owl | Workout after 9pm |
-| Comeback Kid | Return after 7+ day break |
-
-### Feature Ideas Backlog
-
-| Feature | Description | Complexity |
-|---------|-------------|------------|
-| Interval Training | HIIT mode with work/rest cycles | Medium |
-| Voice Commands | Hands-free workout control | High |
-| Weekly Reports | Email/notification summaries | Medium |
-| Exercise Swaps | Substitute exercises mid-program | Low |
-| Superset Mode | Pair exercises with minimal rest | Medium |
-| Deload Weeks | Automatic recovery week scheduling | Low |
-| Plateau Detection | Alert when progress stalls | Medium |
-| Heart Rate Zones | Integration with HR monitors | High |
-| Nutrition Tips | Basic nutrition guidance per goal | Low |
-
-### Technical Debt
-
-- [ ] Migrate state management to React Context or Zustand
+- [ ] Migrate state management to Zustand
 - [ ] Add E2E tests with Playwright
-- [ ] Improve test coverage for components
 - [ ] Add TypeScript for type safety
+- [ ] Implement code splitting for lazy-loaded views
 - [ ] Migrate localStorage to IndexedDB for larger storage
-- [ ] Add error tracking (Sentry)
-- [ ] Implement proper PWA update flow
-- [ ] Add privacy-respecting analytics
 
 ## Contributing
 

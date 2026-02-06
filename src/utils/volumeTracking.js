@@ -154,7 +154,6 @@ export const detectDeloadNeed = (history = [], progress = {}) => {
   }
 
   // Signal 3: Multiple exercises at high completion (fatigue accumulation)
-  const exerciseCount = Object.keys(progress).length
   const highProgressExercises = Object.values(progress).filter(
     days => days && days.length >= 12 // Week 4+
   ).length

@@ -537,7 +537,7 @@ describe('progression', () => {
 
   describe('storage helpers', () => {
     beforeEach(() => {
-      localStorageMock.clear()
+      localStorage.clear()
     })
 
     it('loadSprints returns empty object when nothing saved', () => {

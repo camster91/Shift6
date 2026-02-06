@@ -984,7 +984,8 @@ const WorkoutSession = ({
                                                 onChange={(e) => {
                                                     // Store feedback in a temporary state or ref if needed, or pass directly
                                                     // Ideally we add state for this: const [feedbackRpe, setFeedbackRpe] = useState(7);
-                                                    document.getElementById('rpe-display').innerText = e.target.value;
+                                                    const display = document.getElementById('rpe-display');
+                                                    if (display) display.innerText = e.target.value;
                                                 }}
                                                 className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
                                                 id="rpe-slider"
@@ -1005,7 +1006,7 @@ const WorkoutSession = ({
                                     <div className="flex gap-3 pt-2">
                                         <button
                                             onClick={() => {
-                                                const rpe = parseInt(document.getElementById('rpe-slider').value);
+                                                const rpe = parseInt(document.getElementById('rpe-slider')?.value || '7');
                                                 handleComplete({ rpe, difficulty: rpe >= 9 ? 'hard' : rpe <= 4 ? 'easy' : 'moderate' });
                                             }}
                                             className="flex-1 bg-cyan-500 rounded-lg text-slate-900 py-4 text-sm font-bold hover:bg-cyan-600 transition-colors uppercase tracking-wider"

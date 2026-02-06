@@ -88,7 +88,7 @@ export const checkForGymPR = (exerciseKey, weight, reps, gymPRs = {}) => {
   // Calculate estimated 1RM using Epley formula: weight × (1 + reps/30)
   const estimated1RM = weight * (1 + reps / 30)
 
-  if (!currentPR) {
+  if (!currentPR || !currentPR.weight || currentPR.reps == null) {
     return {
       isNewPR: true,
       type: 'first',
@@ -194,7 +194,7 @@ export const getWeightSuggestion = ({
 
   // Calculate rep performance
   const repDiff = actualReps - targetReps
-  const repDiffPercent = (repDiff / targetReps) * 100
+  const repDiffPercent = targetReps > 0 ? (repDiff / targetReps) * 100 : 0
 
   // Analyze recent trend
   const recentRPEs = recentSessions.slice(-3).map(s => s.rpe || 7)
@@ -297,6 +297,19 @@ export const getWeightSuggestion = ({
  */
 export const getRealisticRepTarget = (startReps, targetReps, week, totalWeeks = 6) => {
   const config = PROGRESSION_CONFIG
+
+  // Guard against division by zero
+  if (startReps <= 0) {
+    return {
+      cappedTarget: targetReps,
+      originalTarget: targetReps,
+      weeklyIncrease: 0,
+      weeklyIncreasePercent: 0,
+      originalIncreasePercent: 0,
+      isRealistic: false,
+      realisticFinalGoal: targetReps
+    }
+  }
 
   // Calculate what the original progression would be
   const originalWeeklyIncrease = (targetReps - startReps) / totalWeeks

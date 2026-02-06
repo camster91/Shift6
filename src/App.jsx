@@ -71,34 +71,40 @@ import { recordHomeGoalResult } from './utils/homeGoals';
 
 const STORAGE_PREFIX = 'shift6_';
 
+/** Safely parse JSON from localStorage, returning fallback on any error */
+const safeLoadJSON = (key, fallback) => {
+    try {
+        const saved = localStorage.getItem(key);
+        if (saved === null) return fallback;
+        return JSON.parse(saved);
+    } catch {
+        return fallback;
+    }
+};
+
 const App = () => {
     // ---------------- STATE ----------------
     // Persistent Progress
     const [completedDays, setCompletedDays] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}progress`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}progress`, {});
     });
 
     const [sessionHistory, setSessionHistory] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}history`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}history`, []);
     });
 
     // Settings
     const [audioEnabled, setAudioEnabled] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}audio_enabled`);
-        return saved !== null ? JSON.parse(saved) : true;
+        return safeLoadJSON(`${STORAGE_PREFIX}audio_enabled`, true);
     });
 
     const [restTimerOverride, setRestTimerOverride] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}rest_timer`);
-        return saved !== null ? JSON.parse(saved) : null;
+        return safeLoadJSON(`${STORAGE_PREFIX}rest_timer`, null);
     });
 
     // Daily workout goal
     const [dailyGoal, setDailyGoal] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}daily_goal`);
-        return saved !== null ? JSON.parse(saved) : 1;
+        return safeLoadJSON(`${STORAGE_PREFIX}daily_goal`, 1);
     });
 
     const [theme, setTheme] = useState(() => {
@@ -108,26 +114,22 @@ const App = () => {
 
     // Custom exercises added by user
     const [customExercises, setCustomExercises] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}custom_exercises`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}custom_exercises`, {});
     });
 
     // Difficulty level per exercise (1-6, default 3 = Standard)
     const [exerciseDifficulty, setExerciseDifficulty] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}difficulty`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}difficulty`, {});
     });
 
     // Personal records per exercise (max reps achieved)
     const [personalRecords, setPersonalRecords] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}personal_records`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}personal_records`, {});
     });
 
     // Home mode 6-week goals (per exercise)
     const [homeGoals, setHomeGoals] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}home_goals`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}home_goals`, {});
     });
 
     // Sprint-based progression system
@@ -153,8 +155,7 @@ const App = () => {
 
     // Warm-up preference (enabled by default)
     const [warmupEnabled, setWarmupEnabled] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}warmup_enabled`);
-        return saved !== null ? JSON.parse(saved) : true;
+        return safeLoadJSON(`${STORAGE_PREFIX}warmup_enabled`, true);
     });
 
     // Help modal state
@@ -162,8 +163,7 @@ const App = () => {
 
     // Body metrics (weight, measurements)
     const [bodyMetrics, setBodyMetrics] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}body_metrics`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}body_metrics`, []);
     });
 
     // Training Preferences (with migration for existing users)
@@ -184,8 +184,7 @@ const App = () => {
 
     // Active Program: array of exercise keys in current program
     const [activeProgram, setActiveProgram] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}active_program`);
-        return saved ? JSON.parse(saved) : null; // null = use default 9
+        return safeLoadJSON(`${STORAGE_PREFIX}active_program`, null); // null = use default 9
     });
 
     // Current Program ID: which program template is selected
@@ -196,8 +195,7 @@ const App = () => {
 
     // User Equipment: array of equipment IDs user has access to
     const [userEquipment, setUserEquipment] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}user_equipment`);
-        return saved ? JSON.parse(saved) : ['none'];
+        return safeLoadJSON(`${STORAGE_PREFIX}user_equipment`, ['none']);
     });
 
     // Onboarding Complete flag
@@ -206,7 +204,7 @@ const App = () => {
         const hasProgress = localStorage.getItem(`${STORAGE_PREFIX}progress`);
         const onboarded = localStorage.getItem(`${STORAGE_PREFIX}onboarding_complete`);
         if (onboarded === 'true') return true;
-        if (hasProgress && Object.keys(JSON.parse(hasProgress)).length > 0) {
+        if (hasProgress && Object.keys(safeLoadJSON(`${STORAGE_PREFIX}progress`, {})).length > 0) {
             // Existing user - mark as onboarded and set bodyweight mode
             localStorage.setItem(`${STORAGE_PREFIX}onboarding_complete`, 'true');
             localStorage.setItem(`${STORAGE_PREFIX}program_mode`, 'bodyweight');
@@ -217,8 +215,7 @@ const App = () => {
 
     // Track unlocked badges to detect new ones
     const [seenBadgeIds, setSeenBadgeIds] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}seen_badges`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}seen_badges`, []);
     });
     const [newBadges, setNewBadges] = useState([]);
     const prevStatsRef = useRef(null);
@@ -241,20 +238,17 @@ const App = () => {
 
     // Gym program state
     const [gymProgram, setGymProgram] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_program`);
-        return saved ? JSON.parse(saved) : null;
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_program`, null);
     });
 
     // Gym weights (last used weight per exercise)
     const [gymWeights, setGymWeights] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_weights`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_weights`, {});
     });
 
     // Gym reps (last used reps per exercise)
     const [gymReps, setGymReps] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_reps`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_reps`, {});
     });
 
     // Weight unit preference (kg or lbs)
@@ -265,20 +259,17 @@ const App = () => {
 
     // Gym workout history
     const [gymHistory, setGymHistory] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_history`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_history`, []);
     });
 
     // Gym streak
     const [gymStreak, setGymStreak] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_streak`);
-        return saved ? JSON.parse(saved) : 0;
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_streak`, 0);
     });
 
     // Custom gym programs (user-created)
     const [customGymPrograms, setCustomGymPrograms] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}custom_gym_programs`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}custom_gym_programs`, []);
     });
 
     // Show gym program manager modal
@@ -286,8 +277,7 @@ const App = () => {
 
     // Gym goals (6-week progression targets per exercise)
     const [gymGoals, setGymGoals] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_goals`);
-        return saved ? JSON.parse(saved) : {};
+        return safeLoadJSON(`${STORAGE_PREFIX}gym_goals`, {});
     });
 
     // Show gym assessment flow
@@ -343,7 +333,7 @@ const App = () => {
                 // Determine starting max from history or default
                 const historyMax = historyPRs[exKey] || 0;
                 // If no history, checking if we have calibration
-                const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+                const calibrations = safeLoadJSON(`${STORAGE_PREFIX}calibrations`, {});
                 const calibrationFactor = calibrations[exKey] || 1.0;
 
                 // Base start reps scaled by calibration, or history max
@@ -615,8 +605,7 @@ const App = () => {
 
     // UI State
     const [workoutQueue, setWorkoutQueue] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}queue`);
-        return saved ? JSON.parse(saved) : [];
+        return safeLoadJSON(`${STORAGE_PREFIX}queue`, []);
     });
 
     // Current active session - null until user starts or resumes
@@ -624,8 +613,7 @@ const App = () => {
 
     // Pending session from previous app session (loaded from localStorage)
     const [pendingSession, setPendingSession] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}current_session`);
-        return saved ? JSON.parse(saved) : null;
+        return safeLoadJSON(`${STORAGE_PREFIX}current_session`, null);
     });
 
     // Resume a pending session
@@ -755,7 +743,7 @@ const App = () => {
 
         // Check if Day 1 assessment is needed (before any workout flow)
         // Assessment is required when: no calibration exists AND no completed days
-        const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+        const calibrations = safeLoadJSON(`${STORAGE_PREFIX}calibrations`, {});
         const hasCalibration = calibrations[exKey] !== undefined;
         const hasCompletedDays = (completedDays[exKey]?.length || 0) > 0;
         const needsAssessment = !hasCalibration && !hasCompletedDays;
@@ -1065,7 +1053,7 @@ const App = () => {
 
         // Check if we need to regenerate plans
         if (requiresPlanRegeneration(oldPrefs, updatedPrefs)) {
-            const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+            const calibrations = safeLoadJSON(`${STORAGE_PREFIX}calibrations`, {});
             const newPlans = regenerateAllPlans(allExercises, activeProgramKeys, calibrations, updatedPrefs);
             setCustomPlans(newPlans);
         }
@@ -1254,7 +1242,7 @@ const App = () => {
         const newReps = currentSession.baseReps.map(r => Math.ceil(r * factor));
 
         // Save calibration factor for this exercise
-        const calibrations = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}calibrations`) || '{}');
+        const calibrations = safeLoadJSON(`${STORAGE_PREFIX}calibrations`, {});
         calibrations[currentSession.exerciseKey] = factor;
         localStorage.setItem(`${STORAGE_PREFIX}calibrations`, JSON.stringify(calibrations));
 

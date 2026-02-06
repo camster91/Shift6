@@ -82,6 +82,15 @@ const safeLoadJSON = (key, fallback) => {
     }
 };
 
+/** Safely write to localStorage, silently handling quota errors */
+const safeSetItem = (key, value) => {
+    try {
+        localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+    } catch (e) {
+        console.warn('localStorage write failed:', key, e?.name);
+    }
+};
+
 const App = () => {
     // ---------------- STATE ----------------
     // Persistent Progress
@@ -206,8 +215,8 @@ const App = () => {
         if (onboarded === 'true') return true;
         if (hasProgress && Object.keys(safeLoadJSON(`${STORAGE_PREFIX}progress`, {})).length > 0) {
             // Existing user - mark as onboarded and set bodyweight mode
-            localStorage.setItem(`${STORAGE_PREFIX}onboarding_complete`, 'true');
-            localStorage.setItem(`${STORAGE_PREFIX}program_mode`, 'bodyweight');
+            safeSetItem(`${STORAGE_PREFIX}onboarding_complete`, 'true');
+            safeSetItem(`${STORAGE_PREFIX}program_mode`, 'bodyweight');
             return true;
         }
         return false;
@@ -403,31 +412,31 @@ const App = () => {
     }, [activeProgram]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}progress`, JSON.stringify(completedDays));
+        safeSetItem(`${STORAGE_PREFIX}progress`, completedDays);
     }, [completedDays]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}custom_exercises`, JSON.stringify(customExercises));
+        safeSetItem(`${STORAGE_PREFIX}custom_exercises`, customExercises);
     }, [customExercises]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}difficulty`, JSON.stringify(exerciseDifficulty));
+        safeSetItem(`${STORAGE_PREFIX}difficulty`, exerciseDifficulty);
     }, [exerciseDifficulty]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}personal_records`, JSON.stringify(personalRecords));
+        safeSetItem(`${STORAGE_PREFIX}personal_records`, personalRecords);
     }, [personalRecords]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}body_metrics`, JSON.stringify(bodyMetrics));
+        safeSetItem(`${STORAGE_PREFIX}body_metrics`, bodyMetrics);
     }, [bodyMetrics]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}warmup_enabled`, JSON.stringify(warmupEnabled));
+        safeSetItem(`${STORAGE_PREFIX}warmup_enabled`, warmupEnabled);
     }, [warmupEnabled]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}history`, JSON.stringify(sessionHistory));
+        safeSetItem(`${STORAGE_PREFIX}history`, sessionHistory);
     }, [sessionHistory]);
 
     // Save sprints when they change
@@ -437,7 +446,7 @@ const App = () => {
 
     // Save home goals when they change
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}home_goals`, JSON.stringify(homeGoals));
+        safeSetItem(`${STORAGE_PREFIX}home_goals`, homeGoals);
     }, [homeGoals]);
 
     // Detect new badges when stats change
@@ -453,7 +462,7 @@ const App = () => {
             setNewBadges(newlyUnlocked);
             // Update seen badges
             setSeenBadgeIds(unlockedIds);
-            localStorage.setItem(`${STORAGE_PREFIX}seen_badges`, JSON.stringify(unlockedIds));
+            safeSetItem(`${STORAGE_PREFIX}seen_badges`, unlockedIds);
 
             // Send badge notifications (async, non-blocking)
             newlyUnlocked.forEach(badge => {
@@ -462,7 +471,7 @@ const App = () => {
         } else if (prevStatsRef.current === null) {
             // First load - just update seen badges without showing toast
             setSeenBadgeIds(unlockedIds);
-            localStorage.setItem(`${STORAGE_PREFIX}seen_badges`, JSON.stringify(unlockedIds));
+            safeSetItem(`${STORAGE_PREFIX}seen_badges`, unlockedIds);
         }
 
         // Check streak status for notifications
@@ -498,39 +507,39 @@ const App = () => {
     }, [sessionHistory, dailyGoal]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}audio_enabled`, JSON.stringify(audioEnabled));
+        safeSetItem(`${STORAGE_PREFIX}audio_enabled`, audioEnabled);
     }, [audioEnabled]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}rest_timer`, JSON.stringify(restTimerOverride));
+        safeSetItem(`${STORAGE_PREFIX}rest_timer`, restTimerOverride);
     }, [restTimerOverride]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}daily_goal`, JSON.stringify(dailyGoal));
+        safeSetItem(`${STORAGE_PREFIX}daily_goal`, dailyGoal);
     }, [dailyGoal]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}theme`, theme);
+        safeSetItem(`${STORAGE_PREFIX}theme`, theme);
         document.documentElement.classList.remove('dark', 'light');
         document.documentElement.classList.add(theme);
     }, [theme]);
 
     useEffect(() => {
-        if (programMode) localStorage.setItem(`${STORAGE_PREFIX}program_mode`, programMode);
+        if (programMode) safeSetItem(`${STORAGE_PREFIX}program_mode`, programMode);
     }, [programMode]);
 
     useEffect(() => {
         if (activeProgram) {
-            localStorage.setItem(`${STORAGE_PREFIX}active_program`, JSON.stringify(activeProgram));
+            safeSetItem(`${STORAGE_PREFIX}active_program`, activeProgram);
         }
     }, [activeProgram]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}user_equipment`, JSON.stringify(userEquipment));
+        safeSetItem(`${STORAGE_PREFIX}user_equipment`, userEquipment);
     }, [userEquipment]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}onboarding_complete`, String(onboardingComplete));
+        safeSetItem(`${STORAGE_PREFIX}onboarding_complete`, String(onboardingComplete));
     }, [onboardingComplete]);
 
     useEffect(() => {
@@ -543,49 +552,49 @@ const App = () => {
 
     // ============ GYM MODE EFFECTS ============
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_onboarding_complete`, String(gymOnboardingComplete));
+        safeSetItem(`${STORAGE_PREFIX}gym_onboarding_complete`, String(gymOnboardingComplete));
     }, [gymOnboardingComplete]);
 
     useEffect(() => {
         if (gymProgram) {
-            localStorage.setItem(`${STORAGE_PREFIX}gym_program`, JSON.stringify(gymProgram));
+            safeSetItem(`${STORAGE_PREFIX}gym_program`, gymProgram);
         }
     }, [gymProgram]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_weights`, JSON.stringify(gymWeights));
+        safeSetItem(`${STORAGE_PREFIX}gym_weights`, gymWeights);
     }, [gymWeights]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_reps`, JSON.stringify(gymReps));
+        safeSetItem(`${STORAGE_PREFIX}gym_reps`, gymReps);
     }, [gymReps]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_weight_unit`, gymWeightUnit);
+        safeSetItem(`${STORAGE_PREFIX}gym_weight_unit`, gymWeightUnit);
     }, [gymWeightUnit]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_history`, JSON.stringify(gymHistory));
+        safeSetItem(`${STORAGE_PREFIX}gym_history`, gymHistory);
     }, [gymHistory]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_streak`, JSON.stringify(gymStreak));
+        safeSetItem(`${STORAGE_PREFIX}gym_streak`, gymStreak);
     }, [gymStreak]);
 
     // Persist custom gym programs
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}custom_gym_programs`, JSON.stringify(customGymPrograms));
+        safeSetItem(`${STORAGE_PREFIX}custom_gym_programs`, customGymPrograms);
     }, [customGymPrograms]);
 
     // Persist gym goals
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}gym_goals`, JSON.stringify(gymGoals));
+        safeSetItem(`${STORAGE_PREFIX}gym_goals`, gymGoals);
     }, [gymGoals]);
 
     // Persist gym workout session (prevents data loss on refresh)
     useEffect(() => {
         if (currentGymSession) {
-            localStorage.setItem(`${STORAGE_PREFIX}current_gym_session`, JSON.stringify(currentGymSession));
+            safeSetItem(`${STORAGE_PREFIX}current_gym_session`, currentGymSession);
         }
     }, [currentGymSession]);
 
@@ -599,7 +608,7 @@ const App = () => {
     // Persist current mode selection
     useEffect(() => {
         if (currentMode) {
-            localStorage.setItem(`${STORAGE_PREFIX}current_mode`, currentMode);
+            safeSetItem(`${STORAGE_PREFIX}current_mode`, currentMode);
         }
     }, [currentMode]);
 
@@ -663,13 +672,13 @@ const App = () => {
     }, [currentGymSession]);
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_PREFIX}queue`, JSON.stringify(workoutQueue));
+        safeSetItem(`${STORAGE_PREFIX}queue`, workoutQueue);
     }, [workoutQueue]);
 
     // Persist current session to localStorage
     useEffect(() => {
         if (currentSession) {
-            localStorage.setItem(`${STORAGE_PREFIX}current_session`, JSON.stringify(currentSession));
+            safeSetItem(`${STORAGE_PREFIX}current_session`, currentSession);
         }
     }, [currentSession]);
 
@@ -808,7 +817,7 @@ const App = () => {
             // Invalid calibration detected - clear it and trigger re-assessment
             const updatedCalibrations = { ...calibrations };
             delete updatedCalibrations[exKey];
-            localStorage.setItem(`${STORAGE_PREFIX}calibrations`, JSON.stringify(updatedCalibrations));
+            safeSetItem(`${STORAGE_PREFIX}calibrations`, updatedCalibrations);
 
             // Show assessment to recalibrate
             setCurrentSession({
@@ -942,7 +951,7 @@ const App = () => {
     // Handle warmup completion
     const handleWarmupComplete = useCallback(() => {
         // Record warmup time
-        localStorage.setItem(`${STORAGE_PREFIX}last_warmup`, Date.now().toString());
+        safeSetItem(`${STORAGE_PREFIX}last_warmup`, Date.now().toString());
         setShowWarmup(false);
 
         // Start the pending workout
@@ -1244,7 +1253,7 @@ const App = () => {
         // Save calibration factor for this exercise
         const calibrations = safeLoadJSON(`${STORAGE_PREFIX}calibrations`, {});
         calibrations[currentSession.exerciseKey] = factor;
-        localStorage.setItem(`${STORAGE_PREFIX}calibrations`, JSON.stringify(calibrations));
+        safeSetItem(`${STORAGE_PREFIX}calibrations`, calibrations);
 
         // If using default, skip confirmation and go straight to workout/readiness
         if (skipConfirmation) {
@@ -1334,7 +1343,7 @@ const App = () => {
                     setCompletedDays(data.progress);
                 }
                 if (data.introDismissed) {
-                    localStorage.setItem('shift6_intro_dismissed', data.introDismissed);
+                    safeSetItem('shift6_intro_dismissed', data.introDismissed);
                 }
                 alert('Data restored successfully!');
             } catch (err) {
@@ -1372,12 +1381,12 @@ const App = () => {
     const handleSwitchProgram = useCallback((programId, programData) => {
         // Save current program ID
         setCurrentProgramId(programId);
-        localStorage.setItem(`${STORAGE_PREFIX}current_program_id`, programId);
+        safeSetItem(`${STORAGE_PREFIX}current_program_id`, programId);
 
         // Update active program with new program's exercises if available
         if (programData?.exercises) {
             setActiveProgram(programData.exercises);
-            localStorage.setItem(`${STORAGE_PREFIX}active_program`, JSON.stringify(programData.exercises));
+            safeSetItem(`${STORAGE_PREFIX}active_program`, programData.exercises);
         }
 
         setShowProgramSwitcher(false);

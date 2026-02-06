@@ -25,11 +25,11 @@ const VideoModal = ({ exercise, onClose }) => {
     if (!exercise) return null
 
     return (
-        <div className="fixed inset-0 bg-black/90 z-[70] flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/90 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={`${exercise.name} form guide`} onClick={onClose}>
             <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-4 border-b border-slate-700">
                     <h3 className="text-lg font-bold text-white">{exercise.name} - Form Guide</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+                    <button onClick={onClose} aria-label="Close video" className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
                         <X size={20} className="text-slate-400" />
                     </button>
                 </div>
@@ -65,8 +65,8 @@ const ProgressRing = ({ progress, size = 200, stroke = 8, color = "currentColor"
     const offset = circumference - (progress * circumference);
 
     return (
-        <div className="relative flex items-center justify-center">
-            <svg width={size} height={size} className="transform -rotate-90">
+        <div className="relative flex items-center justify-center" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
+            <svg width={size} height={size} className="transform -rotate-90" aria-hidden="true">
                 <circle
                     stroke="rgba(30,41,59,0.3)"
                     strokeWidth={stroke}
@@ -94,7 +94,7 @@ const ProgressRing = ({ progress, size = 200, stroke = 8, color = "currentColor"
 
 // Exit Confirmation Modal with Save & Exit option
 const ExitConfirmModal = ({ onConfirm, onCancel, onSave, hasProgress = false }) => (
-    <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4" onClick={onCancel}>
+    <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Exit workout confirmation" onClick={onCancel}>
         <div
             className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200"
             onClick={e => e.stopPropagation()}
@@ -177,6 +177,7 @@ const WorkoutSession = ({
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [workoutStartTime] = useState(Date.now()); // Track session start for stats
     const [totalRestTime, setTotalRestTime] = useState(0); // Track original rest time for progress ring
+    const [feedbackRpe, setFeedbackRpe] = useState(7); // RPE feedback slider value
 
     // Gym workout state - kept for compatibility but unused in calisthenics mode
     const [gymSetReps, setGymSetReps] = useState([]);
@@ -731,15 +732,12 @@ const WorkoutSession = ({
                                                 min="1"
                                                 max="10"
                                                 step="1"
-                                                defaultValue="7"
-                                                onChange={(e) => {
-                                                    const display = document.getElementById('gym-rpe-display');
-                                                    if (display) display.innerText = e.target.value;
-                                                }}
+                                                value={feedbackRpe}
+                                                onChange={(e) => setFeedbackRpe(parseInt(e.target.value))}
+                                                aria-label="Rate perceived exertion from 1 to 10"
                                                 className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-                                                id="gym-rpe-slider"
                                             />
-                                            <div className="text-center mt-2 text-2xl font-bold text-cyan-400" id="gym-rpe-display">7</div>
+                                            <div className="text-center mt-2 text-2xl font-bold text-cyan-400">{feedbackRpe}</div>
                                         </div>
 
                                         <textarea
@@ -760,8 +758,7 @@ const WorkoutSession = ({
                                             const totalReps = gymSetReps.reduce((sum, r) => sum + r, 0);
                                             setAmrapValue(String(totalReps));
 
-                                            const rpe = parseInt(document.getElementById('gym-rpe-slider')?.value || '7');
-                                            const feedback = { rpe, difficulty: rpe >= 9 ? 'hard' : rpe <= 4 ? 'easy' : 'moderate' };
+                                            const feedback = { rpe: feedbackRpe, difficulty: feedbackRpe >= 9 ? 'hard' : feedbackRpe <= 4 ? 'easy' : 'moderate' };
 
                                             completeWorkout(null, feedback);
                                             setGymSetReps([]);
@@ -980,17 +977,12 @@ const WorkoutSession = ({
                                                 min="1"
                                                 max="10"
                                                 step="1"
-                                                defaultValue="7"
-                                                onChange={(e) => {
-                                                    // Store feedback in a temporary state or ref if needed, or pass directly
-                                                    // Ideally we add state for this: const [feedbackRpe, setFeedbackRpe] = useState(7);
-                                                    const display = document.getElementById('rpe-display');
-                                                    if (display) display.innerText = e.target.value;
-                                                }}
+                                                value={feedbackRpe}
+                                                onChange={(e) => setFeedbackRpe(parseInt(e.target.value))}
+                                                aria-label="Rate perceived exertion from 1 to 10"
                                                 className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-                                                id="rpe-slider"
                                             />
-                                            <div className="text-center mt-2 text-2xl font-bold text-cyan-400" id="rpe-display">7</div>
+                                            <div className="text-center mt-2 text-2xl font-bold text-cyan-400">{feedbackRpe}</div>
                                         </div>
 
                                         <textarea
@@ -1006,8 +998,7 @@ const WorkoutSession = ({
                                     <div className="flex gap-3 pt-2">
                                         <button
                                             onClick={() => {
-                                                const rpe = parseInt(document.getElementById('rpe-slider')?.value || '7');
-                                                handleComplete({ rpe, difficulty: rpe >= 9 ? 'hard' : rpe <= 4 ? 'easy' : 'moderate' });
+                                                handleComplete({ rpe: feedbackRpe, difficulty: feedbackRpe >= 9 ? 'hard' : feedbackRpe <= 4 ? 'easy' : 'moderate' });
                                             }}
                                             className="flex-1 bg-cyan-500 rounded-lg text-slate-900 py-4 text-sm font-bold hover:bg-cyan-600 transition-colors uppercase tracking-wider"
                                         >

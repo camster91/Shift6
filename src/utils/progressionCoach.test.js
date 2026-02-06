@@ -13,7 +13,7 @@ import {
 
 describe('progressionCoach utilities', () => {
   beforeEach(() => {
-    localStorageMock.clear()
+    localStorage.clear()
   })
 
   describe('checkForNewPR', () => {

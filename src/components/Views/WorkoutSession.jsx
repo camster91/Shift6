@@ -220,9 +220,9 @@ const WorkoutSession = ({
         return {
             setsCompleted: currentSession?.setIndex || 0,
             totalReps: currentSession?.reps?.slice(0, currentSession.setIndex).reduce((a, b) => a + b, 0) || 0,
-            elapsedTime: Math.floor((Date.now() - workoutStartTime) / 1000)
+            elapsedTime: elapsedMinutes * 60
         };
-    }, [currentSession, elapsedMinutes, workoutStartTime]);
+    }, [currentSession, elapsedMinutes]);
 
     const upcomingExercises = useMemo(() => {
         if (!currentSession?.reps) return [];

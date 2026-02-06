@@ -270,10 +270,11 @@ const ExerciseImagePlaceholder = ({ exercise, size = 'md', className = '' }) => 
 // Exercise Info Modal
 const ExerciseInfoModal = ({ exercise, onClose, onStart, completedDays, difficulty, onSetDifficulty, onDelete, isCustom, allExercises }) => {
     // ⚡ Bolt: Memoize nextSession calculation. This function can be expensive, and memoizing it prevents re-calculation on every modal render, improving UI responsiveness when parent components update.
+    // Moved before early return to comply with React Hook rules.
     const nextSession = useMemo(() => {
-        if (!exercise) return null;
-        return getNextSessionForExercise(exercise.key, completedDays, allExercises);
-    }, [exercise, completedDays, allExercises]);
+        if (!exercise) return null
+        return getNextSessionForExercise(exercise.key, completedDays, allExercises)
+    }, [exercise, completedDays, allExercises])
 
     if (!exercise) return null
 

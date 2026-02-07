@@ -75,7 +75,7 @@ const InstallPrompt = memo(({ theme = 'dark' }) => {
     const subText = theme === 'light' ? 'text-slate-500' : 'text-slate-400'
 
     return (
-        <div className={`fixed bottom-20 left-4 right-4 z-40 mx-auto max-w-lg animate-in slide-in-from-bottom duration-300`}>
+        <div role="complementary" aria-label="Install app prompt" className={`fixed bottom-20 left-4 right-4 z-40 mx-auto max-w-lg animate-in slide-in-from-bottom duration-300`}>
             <div className={`${bgColor} border rounded-2xl shadow-2xl p-4`}>
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">

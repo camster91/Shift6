@@ -35,6 +35,9 @@ const AchievementToast = ({ badge, onDismiss }) => {
 
     return (
         <div
+            role="status"
+            aria-live="polite"
+            aria-label={`Achievement unlocked: ${badge.name}`}
             className={`fixed bottom-20 left-4 right-4 z-50 flex justify-center pointer-events-none transition-all duration-300 ${
                 isVisible && !isExiting
                     ? 'opacity-100 translate-y-0'

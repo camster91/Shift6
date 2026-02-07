@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS, getCustomRest, generateProgression } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
 import { EXERCISES as DATABASE_EXERCISES } from './data/exerciseDatabase.js';
@@ -35,22 +35,24 @@ import SideDrawer from './components/Layout/SideDrawer';
 import Dashboard from './components/Views/Dashboard';
 import WorkoutQuickStart from './components/Views/WorkoutQuickStart';
 import Progress from './components/Views/Progress';
-import Guide from './components/Views/Guide';
 import WorkoutSession from './components/Views/WorkoutSession';
-import AddExercise from './components/Views/AddExercise';
+import WorkoutSummary from './components/Views/WorkoutSummary';
 import Onboarding from './components/Views/Onboarding';
-import ExerciseLibrary from './components/Views/ExerciseLibrary';
-import ProgramManager from './components/Views/ProgramManager';
-import TrainingSettings from './components/Views/TrainingSettings';
-import ProgramSwitcher from './components/Views/ProgramSwitcher';
-import BodyMetrics from './components/Views/BodyMetrics';
-import WarmupRoutine from './components/Views/WarmupRoutine';
-import AccessibilitySettings from './components/Views/AccessibilitySettings';
+
+// Lazy-loaded modal & on-demand components (code splitting)
+const Guide = lazy(() => import('./components/Views/Guide'));
+const AddExercise = lazy(() => import('./components/Views/AddExercise'));
+const ExerciseLibrary = lazy(() => import('./components/Views/ExerciseLibrary'));
+const ProgramManager = lazy(() => import('./components/Views/ProgramManager'));
+const TrainingSettings = lazy(() => import('./components/Views/TrainingSettings'));
+const ProgramSwitcher = lazy(() => import('./components/Views/ProgramSwitcher'));
+const BodyMetrics = lazy(() => import('./components/Views/BodyMetrics'));
+const WarmupRoutine = lazy(() => import('./components/Views/WarmupRoutine'));
+const AccessibilitySettings = lazy(() => import('./components/Views/AccessibilitySettings'));
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
 import UpdateNotification from './components/Visuals/UpdateNotification';
 import InstallPrompt from './components/Visuals/InstallPrompt';
 import StorageWarning from './components/Visuals/StorageWarning';
-import NotificationSettings from './components/Visuals/NotificationSettings';
 import { getRecommendedWarmup } from './data/warmupRoutines';
 import {
     checkStreakNotification,
@@ -60,19 +62,27 @@ import {
     calculateStreakForNotification
 } from './utils/notifications';
 
-// Gym Mode Components
+// Gym Mode Components (lazy-loaded - only needed when user enters gym mode)
 import ModeSelector from './components/Views/ModeSelector';
-import GymDashboard from './components/Views/GymDashboard';
-import GymOnboarding from './components/Views/GymOnboarding';
-import GymWorkoutSession from './components/Views/GymWorkoutSession';
-import GymProgramManager from './components/Views/GymProgramManager';
-import GymAssessment from './components/Views/GymAssessment';
-import HomeGoalSetter from './components/Views/HomeGoalSetter';
+const GymDashboard = lazy(() => import('./components/Views/GymDashboard'));
+const GymOnboarding = lazy(() => import('./components/Views/GymOnboarding'));
+const GymWorkoutSession = lazy(() => import('./components/Views/GymWorkoutSession'));
+const GymProgramManager = lazy(() => import('./components/Views/GymProgramManager'));
+const GymAssessment = lazy(() => import('./components/Views/GymAssessment'));
+const HomeGoalSetter = lazy(() => import('./components/Views/HomeGoalSetter'));
+const NotificationSettings = lazy(() => import('./components/Visuals/NotificationSettings'));
 import { recordWorkoutResult as recordGymWorkoutResult } from './utils/gymProgression';
 import { recordHomeGoalResult } from './utils/homeGoals';
 import { useKeyboardShortcuts } from './utils/useKeyboardShortcuts';
 
 const STORAGE_PREFIX = 'shift6_';
+
+/** Loading fallback for lazy-loaded components */
+const LazyFallback = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+);
 
 /** Safely parse JSON from localStorage, returning fallback on any error */
 const safeLoadJSON = (key, fallback) => {
@@ -146,6 +156,9 @@ const App = () => {
 
     // Sprint-based progression system
     const [sprints, setSprints] = useState(() => loadSprints());
+
+    // Workout completion summary (shown after finishing a workout)
+    const [completionSummary, setCompletionSummary] = useState(null);
 
     // UI State for Add Exercise modal
     // Generic confirmation modal: { title, message, onConfirm, confirmText, danger }
@@ -1264,6 +1277,24 @@ const App = () => {
             }));
         }
 
+        // Build completion summary
+        const prevBest = sessionHistory
+            .filter(h => h.exerciseKey === exerciseKey)
+            .reduce((max, h) => Math.max(max, h.volume || 0), 0);
+        const dayNumber = newCompletedDays[exerciseKey]?.length || 1;
+        const exerciseData = allExercises[exerciseKey];
+
+        setCompletionSummary({
+            exerciseName: exerciseData?.name || exerciseKey,
+            totalVolume,
+            unit,
+            setsCompleted: reps.length,
+            dayNumber,
+            totalDays: exerciseData?.plan?.length || 18,
+            amrapReps: amrapReps,
+            isPersonalRecord: totalVolume > prevBest && prevBest > 0
+        });
+
         // Queue Handling
         if (workoutQueue.length > 0) {
             const next = workoutQueue[0];
@@ -1275,7 +1306,7 @@ const App = () => {
         }
 
         setTimeout(() => setIsProcessing(false), 1000);
-    }, [currentSession, isProcessing, amrapValue, workoutNotes, completedDays, sprints, workoutQueue, startWorkout, homeGoals]);
+    }, [currentSession, isProcessing, amrapValue, workoutNotes, completedDays, sprints, workoutQueue, startWorkout, homeGoals, sessionHistory, allExercises]);
 
     const applyCalibration = useCallback((factor, skipConfirmation = false) => {
         if (!currentSession) return;
@@ -1322,9 +1353,30 @@ const App = () => {
     const handleExport = useCallback(() => {
         const data = {
             progress: completedDays,
+            history: sessionHistory,
+            homeGoals,
+            sprints: safeLoadJSON(`${STORAGE_PREFIX}sprints`, {}),
+            personalRecords,
+            exerciseDifficulty,
+            customExercises,
+            bodyMetrics,
+            trainingPreferences,
+            theme,
+            audioEnabled,
+            dailyGoal,
+            warmupEnabled,
+            currentMode,
+            gymProgram,
+            gymWeights,
+            gymReps,
+            gymWeightUnit,
+            gymHistory,
+            gymGoals,
+            customGymPrograms,
             introDismissed: localStorage.getItem('shift6_intro_dismissed'),
+            seenBadges: seenBadgeIds,
             timestamp: new Date().toISOString(),
-            version: '1.0'
+            version: '2.1.0'
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -1335,7 +1387,7 @@ const App = () => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    }, [completedDays]);
+    }, [completedDays, sessionHistory, homeGoals, personalRecords, exerciseDifficulty, customExercises, bodyMetrics, trainingPreferences, theme, audioEnabled, dailyGoal, warmupEnabled, currentMode, gymProgram, gymWeights, gymReps, gymWeightUnit, gymHistory, gymGoals, customGymPrograms, seenBadgeIds]);
 
     const handleExportCSV = useCallback(() => {
         if (sessionHistory.length === 0) {
@@ -1366,20 +1418,85 @@ const App = () => {
     }, [sessionHistory]);
 
     const handleImport = useCallback((file) => {
+        // File size guard (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            setPendingConfirm({
+                title: 'File Too Large',
+                message: 'The selected file exceeds the 10MB limit. Please select a valid Shift6 backup file.',
+                confirmText: 'OK',
+                onConfirm: () => setPendingConfirm(null)
+            });
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                if (data.progress) {
-                    setCompletedDays(data.progress);
+
+                // Validate it's a Shift6 backup (must have progress or version)
+                if (!data.progress && !data.version) {
+                    setPendingConfirm({
+                        title: 'Invalid Backup',
+                        message: 'This file does not appear to be a valid Shift6 backup. Please select the correct file.',
+                        confirmText: 'OK',
+                        onConfirm: () => setPendingConfirm(null)
+                    });
+                    return;
                 }
-                if (data.introDismissed) {
-                    safeSetItem('shift6_intro_dismissed', data.introDismissed);
-                }
-                alert('Data restored successfully!');
+
+                // Show confirmation with backup details
+                const backupDate = data.timestamp ? new Date(data.timestamp).toLocaleDateString() : 'Unknown';
+                const workoutCount = data.progress ? Object.values(data.progress).reduce((sum, days) => sum + (Array.isArray(days) ? days.length : 0), 0) : 0;
+                const historyCount = Array.isArray(data.history) ? data.history.length : 0;
+
+                setPendingConfirm({
+                    title: 'Restore Backup',
+                    message: `Restore backup from ${backupDate}?\n\n${workoutCount} completed workouts\n${historyCount} history entries\nVersion: ${data.version || '1.0'}\n\nThis will replace your current data.`,
+                    danger: true,
+                    confirmText: 'Restore',
+                    onConfirm: () => {
+                        // Restore core data
+                        if (data.progress) setCompletedDays(data.progress);
+                        if (data.history) setSessionHistory(data.history);
+                        if (data.homeGoals) setHomeGoals(data.homeGoals);
+                        if (data.personalRecords) setPersonalRecords(data.personalRecords);
+                        if (data.exerciseDifficulty) setExerciseDifficulty(data.exerciseDifficulty);
+                        if (data.customExercises) setCustomExercises(data.customExercises);
+                        if (data.bodyMetrics) setBodyMetrics(data.bodyMetrics);
+                        if (data.seenBadges) setSeenBadgeIds(data.seenBadges);
+
+                        // Restore settings
+                        if (data.theme) setTheme(data.theme);
+                        if (data.audioEnabled !== undefined) setAudioEnabled(data.audioEnabled);
+                        if (data.dailyGoal) setDailyGoal(data.dailyGoal);
+                        if (data.warmupEnabled !== undefined) setWarmupEnabled(data.warmupEnabled);
+
+                        // Restore gym data
+                        if (data.gymProgram) setGymProgram(data.gymProgram);
+                        if (data.gymWeights) setGymWeights(data.gymWeights);
+                        if (data.gymReps) setGymReps(data.gymReps);
+                        if (data.gymWeightUnit) setGymWeightUnit(data.gymWeightUnit);
+                        if (data.gymHistory) setGymHistory(data.gymHistory);
+                        if (data.gymGoals) setGymGoals(data.gymGoals);
+                        if (data.customGymPrograms) setCustomGymPrograms(data.customGymPrograms);
+
+                        // Legacy support
+                        if (data.introDismissed) {
+                            safeSetItem('shift6_intro_dismissed', data.introDismissed);
+                        }
+
+                        setPendingConfirm(null);
+                    }
+                });
             } catch (err) {
                 console.error("Import failed", err);
-                alert('Failed to import data. Invalid file format.');
+                setPendingConfirm({
+                    title: 'Import Failed',
+                    message: 'The file could not be read. Please ensure it is a valid JSON backup file.',
+                    confirmText: 'OK',
+                    onConfirm: () => setPendingConfirm(null)
+                });
             }
         };
         reader.readAsText(file);
@@ -1762,6 +1879,9 @@ const App = () => {
 
             {/* PWA Update Notification */}
             <UpdateNotification theme={theme} />
+
+            {/* Suspense boundary for lazy-loaded components */}
+            <Suspense fallback={<LazyFallback />}>
 
             {/* PWA Install Prompt */}
             <InstallPrompt theme={theme} />
@@ -2356,11 +2476,19 @@ const App = () => {
                 </div>
             )}
 
+            {/* Workout Completion Summary */}
+            <WorkoutSummary
+                summary={completionSummary}
+                onClose={() => setCompletionSummary(null)}
+                theme={theme}
+            />
+
             {/* Achievement Modal */}
             <MultiAchievementModal
                 badges={newBadges}
                 onClose={handleCloseBadges}
             />
+            </Suspense>
         </div>
     );
 };

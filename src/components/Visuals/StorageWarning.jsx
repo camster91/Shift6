@@ -30,7 +30,7 @@ const StorageWarning = memo(({ theme = 'dark' }) => {
     const textColor = theme === 'light' ? 'text-amber-800' : 'text-amber-300'
 
     return (
-        <div className={`fixed top-16 left-4 right-4 z-40 mx-auto max-w-lg animate-in slide-in-from-top duration-300`}>
+        <div role="alert" aria-live="polite" className={`fixed top-16 left-4 right-4 z-40 mx-auto max-w-lg animate-in slide-in-from-top duration-300`}>
             <div className={`${bgColor} border rounded-xl shadow-lg p-3`}>
                 <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 mt-0.5">

@@ -54,7 +54,7 @@ const UpdateNotification = ({ theme = 'dark' }) => {
     <>
       {/* Update Available Banner */}
       {updateAvailable && !dismissed && (
-        <div className={`fixed top-0 left-0 right-0 z-50 ${bgColor} border-b ${borderColor} shadow-lg animate-in slide-in-from-top duration-300`}>
+        <div role="status" aria-live="polite" className={`fixed top-0 left-0 right-0 z-50 ${bgColor} border-b ${borderColor} shadow-lg animate-in slide-in-from-top duration-300`}>
           <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
@@ -86,7 +86,7 @@ const UpdateNotification = ({ theme = 'dark' }) => {
 
       {/* Offline Toast */}
       {showOfflineToast && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom duration-200">
+        <div role="status" aria-live="assertive" className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom duration-200">
           <div className={`${bgColor} border ${borderColor} rounded-xl px-4 py-3 shadow-xl flex items-center gap-3`}>
             <WifiOff className="w-5 h-5 text-amber-400" />
             <p className={`text-sm ${textColor}`}>You&apos;re offline</p>

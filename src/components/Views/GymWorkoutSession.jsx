@@ -7,6 +7,7 @@ import { KG_TO_LBS, LBS_TO_KG } from '../../utils/constants'
 import { getWeightSuggestion, checkForGymPR, savePR, getRandomPRMessage, getRandomWeightMessage } from '../../utils/progressionCoach'
 import { getCurrentTarget, getCurrentWeek } from '../../utils/gymProgression'
 import EnhancedRestScreen from './EnhancedRestScreen'
+import ShareButton from '../Visuals/ShareButton'
 
 /**
  * Convert weight between kg and lbs
@@ -128,6 +129,7 @@ const GymWorkoutSession = ({
   const [weightSuggestion, setWeightSuggestion] = useState(null) // Smart weight suggestion
   const [showPRCelebration, setShowPRCelebration] = useState(null) // PR celebration modal
   const [sessionPRs, setSessionPRs] = useState([]) // PRs achieved this session
+  const [validationMsg, setValidationMsg] = useState(null) // Inline validation message
   const [goalProgress, setGoalProgress] = useState({}) // Track goal progress per exercise
 
   const currentExerciseId = workout?.exercises?.[currentExerciseIndex]
@@ -225,7 +227,8 @@ const GymWorkoutSession = ({
     const validation = validateSet()
     if (!validation.valid) {
       vibrate('light')
-      alert(validation.message)
+      setValidationMsg(validation.message)
+      setTimeout(() => setValidationMsg(null), 3000)
       return
     }
 
@@ -541,10 +544,19 @@ const GymWorkoutSession = ({
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 flex gap-3">
+          <ShareButton
+            shareData={{
+              title: 'Shift6 Gym Workout',
+              text: `Just crushed ${workout.dayName} - ${Object.keys(completedSets).length} exercises, ${totalReps} reps! #Shift6 #GymLife`
+            }}
+            theme={theme}
+            size="md"
+            className="justify-center"
+          />
           <button
             onClick={handleComplete}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-lg"
+            className="flex-1 py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-lg"
           >
             Save Workout
           </button>
@@ -834,6 +846,11 @@ const GymWorkoutSession = ({
 
       {/* Log Set Button */}
       <div className="p-6">
+        {validationMsg && (
+          <div role="alert" className="mb-3 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm text-center animate-in fade-in duration-200">
+            {validationMsg}
+          </div>
+        )}
         <button
           onClick={logSet}
           disabled={isLogging}

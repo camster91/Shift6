@@ -34,7 +34,7 @@ const DayDetailModal = ({ date, workouts, plannedExercises, isPast, isToday, isF
     const isRestDay = dayOfWeek === 0; // Sunday
 
     return (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={`Workout details for ${dateStr}`} onClick={onClose}>
             <div
                 className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col"
                 onClick={e => e.stopPropagation()}
@@ -46,7 +46,7 @@ const DayDetailModal = ({ date, workouts, plannedExercises, isPast, isToday, isF
                             <p className="text-xs text-cyan-400">Workout Day</p>
                         )}
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+                    <button onClick={onClose} aria-label="Close day details" className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
                         <X size={20} className="text-slate-400" />
                     </button>
                 </div>

@@ -1391,7 +1391,12 @@ const App = () => {
 
     const handleExportCSV = useCallback(() => {
         if (sessionHistory.length === 0) {
-            alert('No workout history to export.');
+            setPendingConfirm({
+                title: 'No Data',
+                message: 'No workout history to export. Complete some workouts first!',
+                confirmText: 'OK',
+                onConfirm: () => setPendingConfirm(null)
+            });
             return;
         }
 

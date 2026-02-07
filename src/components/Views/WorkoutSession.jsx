@@ -14,7 +14,8 @@ const colorClasses = {
     indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', solid: 'bg-indigo-500', hex: '#6366f1' },
 };
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
-import { vibrate, copyToClipboard } from '../../utils/device';
+import { vibrate } from '../../utils/device';
+import { shareContent, buildWorkoutShareText, canShare } from '../../utils/sharing';
 import { EXERCISE_PLANS, EXERCISE_ACHIEVEMENTS } from '../../data/exercises.jsx';
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js';
 import { calculateStats, getUnlockedBadges, BADGES, getLastWorkoutForExercise, getPersonalRecords } from '../../utils/gamification';
@@ -295,9 +296,14 @@ const WorkoutSession = ({
     };
 
     const handleShare = async () => {
-        const text = `Shift6: Just crushed Day ${currentSession.dayIndex + 1} of ${currentSession.exerciseName}! Volume is climbing. 🚀`;
-        const success = await copyToClipboard(text);
-        if (success) {
+        const shareData = buildWorkoutShareText({
+            exerciseName: currentSession.exerciseName,
+            volume: currentSession.reps.reduce((sum, r) => sum + r, 0),
+            unit: currentSession.unit,
+            sets: currentSession.reps.length
+        });
+        const success = await shareContent(shareData);
+        if (success && !canShare()) {
             setCopied(true);
             vibrate(50);
             setTimeout(() => setCopied(false), 2000);

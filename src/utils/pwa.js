@@ -181,7 +181,6 @@ export const registerUpdateHandler = (onUpdateFound) => {
 
   const handleControllerChange = () => {
     // New service worker took control, page will reload
-    console.log('New service worker activated')
   }
 
   const handleUpdate = async () => {

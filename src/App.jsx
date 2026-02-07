@@ -48,6 +48,8 @@ import WarmupRoutine from './components/Views/WarmupRoutine';
 import AccessibilitySettings from './components/Views/AccessibilitySettings';
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
 import UpdateNotification from './components/Visuals/UpdateNotification';
+import InstallPrompt from './components/Visuals/InstallPrompt';
+import StorageWarning from './components/Visuals/StorageWarning';
 import NotificationSettings from './components/Visuals/NotificationSettings';
 import { getRecommendedWarmup } from './data/warmupRoutines';
 import {
@@ -68,6 +70,7 @@ import GymAssessment from './components/Views/GymAssessment';
 import HomeGoalSetter from './components/Views/HomeGoalSetter';
 import { recordWorkoutResult as recordGymWorkoutResult } from './utils/gymProgression';
 import { recordHomeGoalResult } from './utils/homeGoals';
+import { useKeyboardShortcuts } from './utils/useKeyboardShortcuts';
 
 const STORAGE_PREFIX = 'shift6_';
 
@@ -1410,6 +1413,17 @@ const App = () => {
     const handleShowHelp = useCallback(() => { setShowHelp(true); setShowDrawer(false); }, []);
     const handleShowProgramSwitcher = useCallback(() => { setShowProgramSwitcher(true); setShowDrawer(false); }, []);
     const handleShowNotifications = useCallback(() => { setShowNotificationSettings(true); setShowDrawer(false); }, []);
+    const handleToggleDrawer = useCallback(() => setShowDrawer(prev => !prev), []);
+    const handleToggleTheme = useCallback(() => setTheme(prev => prev === 'dark' ? 'light' : 'dark'), []);
+
+    // Keyboard shortcuts (disabled during active workout sessions)
+    useKeyboardShortcuts({
+        setActiveTab,
+        onMenuToggle: handleToggleDrawer,
+        onToggleTheme: handleToggleTheme,
+        onShowHelp: handleShowHelp,
+        enabled: !currentSession && !currentGymSession && !showWarmup
+    });
 
     // Handle program switch with progress preservation
     const handleSwitchProgram = useCallback((programId, programData) => {
@@ -1738,8 +1752,22 @@ const App = () => {
     return (
         <div className={`min-h-screen font-sans selection:bg-cyan-500/30 ${theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
             }`}>
+            {/* Skip Navigation Link - Accessibility */}
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-4 focus:py-2 focus:bg-cyan-500 focus:text-white focus:rounded-lg focus:text-sm focus:font-bold focus:shadow-lg"
+            >
+                Skip to main content
+            </a>
+
             {/* PWA Update Notification */}
             <UpdateNotification theme={theme} />
+
+            {/* PWA Install Prompt */}
+            <InstallPrompt theme={theme} />
+
+            {/* Storage Quota Warning */}
+            <StorageWarning theme={theme} />
 
             {/* Mode Selector - Show on app launch for onboarded users */}
             {shouldShowModeSelector && (
@@ -1800,7 +1828,7 @@ const App = () => {
                         showSwitchMode={true}
                         currentMode="gym"
                     />
-                    <main className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
+                    <main id="main-content" className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
                         <GymDashboard
                             gymProgram={gymProgram}
                             gymWeights={gymWeights}
@@ -1864,7 +1892,7 @@ const App = () => {
                         currentMode="home"
                     />
 
-                    <main className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
+                    <main id="main-content" className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
                         {/* Home Tab - Dashboard */}
                         {activeTab === 'home' && (
                             <Dashboard
@@ -2269,7 +2297,7 @@ const App = () => {
                             </div>
 
                             <p className="text-center text-xs text-slate-500 pt-4">
-                                Shift6 v2.0 - Made with care for your fitness journey
+                                Shift6 v2.1.0 - Made with care for your fitness journey
                             </p>
                         </div>
                     </div>

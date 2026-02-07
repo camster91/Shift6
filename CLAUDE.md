@@ -128,7 +128,10 @@ src/
 │   │   ├── DataBackground.jsx      # Visual background effects
 │   │   ├── TemplateCard.jsx        # Program template card
 │   │   ├── NotificationSettings.jsx # Notification preferences
-│   │   └── UpdateNotification.jsx  # PWA update prompt
+│   │   ├── UpdateNotification.jsx  # PWA update prompt
+│   │   ├── InstallPrompt.jsx       # PWA "Add to Home Screen" banner
+│   │   ├── StorageWarning.jsx      # Storage quota warning banner
+│   │   └── ShareButton.jsx         # Reusable share/copy button
 │   └── UI/
 │       └── LocationSelector.jsx    # Home/Gym filter
 ├── utils/
@@ -154,6 +157,8 @@ src/
 │   ├── adaptiveRest.js           # Intelligent rest period calculations
 │   ├── colors.js                 # Color utility functions
 │   ├── accessibility.js          # Accessibility utilities
+│   ├── sharing.js                # Web Share API & clipboard sharing
+│   ├── useKeyboardShortcuts.js   # Keyboard shortcuts hook
 │   └── pwa.js                    # PWA utilities
 ├── data/
 │   ├── exercises.jsx             # 9 core exercises with progressions, variations, rep schemes
@@ -167,6 +172,7 @@ src/
 
 **Other Notable Files:**
 ```
+.github/workflows/ci.yml         # GitHub Actions CI (lint, test, build)
 docs/
 ├── USER_PERSONAS.md              # User persona descriptions
 └── IMPLEMENTATION_PLAN.md        # Feature implementation roadmap
@@ -245,7 +251,7 @@ App.jsx manages ~40 state variables organized into:
 - **Framework:** Vitest with jsdom environment
 - **Pattern:** Unit tests co-located with utilities (`utils/*.test.js`)
 - **Test Config:** `vite.config.js` (globals: true, environment: jsdom, setupFiles: `./src/test/setup.js`)
-- **Total: 487 tests across 17 test files (all passing)**
+- **Total: 516 tests across 19 test files (all passing)**
 
 | Test File | Tests | Coverage Area |
 |-----------|-------|---------------|
@@ -265,6 +271,8 @@ App.jsx manages ~40 state variables organized into:
 | `constants.test.js` | 18 | App constants, localStorage keys, limits |
 | `schedule.test.js` | 17 | Daily stack, scheduling logic |
 | `device.test.js` | 17 | Haptics, wake lock, clipboard |
+| `sharing.test.js` | 16 | Web Share API, clipboard fallback, share text builders |
+| `useKeyboardShortcuts.test.js` | 13 | Keyboard shortcuts, input guard, modifier keys |
 | `audio.test.js` | 8 | Web Audio API synth |
 
 **Commands:**
@@ -313,13 +321,18 @@ App.jsx manages ~40 state variables organized into:
 - Adaptive rest periods
 - User persona system
 - Volume tracking & analytics
+- Social sharing (Web Share API with clipboard fallback)
+- PWA install prompt (custom "Add to Home Screen" banner)
+- Keyboard shortcuts (1/2/3 for tabs, m for menu, t for theme, ? for help)
+- Skip-to-main-content link (accessibility)
+- Storage quota warning (alerts at 80% usage)
+- CI pipeline (GitHub Actions: lint, test, build)
 
 ### Not Yet Implemented
 | Feature | Notes |
 |---------|-------|
 | Form Videos / YouTube Embeds | No video content in Guide.jsx |
 | Apple Watch / WearOS | No wearable app |
-| Social Sharing | No Web Share API integration |
 | Multi-language (i18n) | All strings hardcoded in English |
 | Voice Commands | No Web Speech API |
 | Heart Rate Integration | No Web Bluetooth API |
@@ -327,4 +340,3 @@ App.jsx manages ~40 state variables organized into:
 | State Management Library | Still props drilling (Zustand migration planned) |
 | Component Tests | Only utility tests exist |
 | E2E Tests | No Playwright/Cypress |
-| CI Pipeline | No GitHub Actions |

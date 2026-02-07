@@ -1,8 +1,10 @@
 import { useEffect, useState, memo } from 'react'
-import { X, Star, Trophy, Flame, Zap } from 'lucide-react'
+import { X, Star, Trophy, Zap } from 'lucide-react'
 import { ConfettiBurst } from './Confetti'
 import { playSuccess } from '../../utils/audio'
 import { vibrate } from '../../utils/device'
+import ShareButton from './ShareButton'
+import { buildBadgeShareText } from '../../utils/sharing'
 
 // Badge rarity based on difficulty
 const BADGE_RARITY = {
@@ -238,14 +240,17 @@ const AchievementModal = ({ badge, onClose, autoClose = true }) => {
               {badge.desc}
             </p>
 
-            {/* Celebration icons */}
+            {/* Share & Celebration */}
             <div className={`
               flex items-center justify-center gap-4 mt-6
               transform transition-all duration-500 delay-600
               ${animationStage >= 3 ? 'opacity-100' : 'opacity-0'}
             `}>
               <Trophy size={24} className="text-yellow-500 animate-bounce-gentle" />
-              <Flame size={24} className="text-orange-500 animate-pulse" />
+              <ShareButton
+                shareData={buildBadgeShareText(badge)}
+                size="sm"
+              />
               <Trophy size={24} className="text-yellow-500 animate-bounce-gentle" style={{ animationDelay: '150ms' }} />
             </div>
           </div>

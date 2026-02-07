@@ -19,6 +19,8 @@ import {
     ArrowLeftRight,
     Bell
 } from 'lucide-react'
+import ShareButton from '../Visuals/ShareButton'
+import { buildProgressShareText } from '../../utils/sharing'
 
 const SideDrawer = ({
     isOpen,
@@ -230,6 +232,21 @@ const SideDrawer = ({
 
                     <Divider />
 
+                    {/* Share */}
+                    <p className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${subTextColor}`}>
+                        Share
+                    </p>
+                    <div className="px-4 py-2">
+                        <ShareButton
+                            shareData={buildProgressShareText(stats)}
+                            size="md"
+                            theme={theme}
+                            className="w-full justify-center"
+                        />
+                    </div>
+
+                    <Divider />
+
                     {/* Data Management */}
                     <p className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${subTextColor}`}>
                         Data
@@ -275,7 +292,7 @@ const SideDrawer = ({
                 {/* Footer */}
                 <div className={`p-4 border-t ${borderColor} text-center`}>
                     <p className={`text-xs ${subTextColor}`}>
-                        Shift6 Elite v2.0
+                        Shift6 Elite v2.1.0
                     </p>
                 </div>
             </div>

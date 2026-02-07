@@ -21,12 +21,16 @@ export const exerciseColorClasses = {
  */
 export const getThemeClasses = (theme = 'dark') => ({
     cardBg: theme === 'light' ? 'bg-white' : 'bg-slate-900',
+    surfaceBg: theme === 'light' ? 'bg-slate-100' : 'bg-slate-950',
+    inputBg: theme === 'light' ? 'bg-slate-100' : 'bg-slate-800',
     textPrimary: theme === 'light' ? 'text-slate-900' : 'text-white',
     textSecondary: theme === 'light' ? 'text-slate-600' : 'text-slate-400',
     textMuted: theme === 'light' ? 'text-slate-500' : 'text-slate-500',
+    border: theme === 'light' ? 'border-slate-200' : 'border-slate-700',
     borderColor: theme === 'light' ? 'border-slate-200' : 'border-slate-800',
     borderSubtle: theme === 'light' ? 'border-slate-100' : 'border-slate-700',
     hoverBg: theme === 'light' ? 'hover:bg-slate-100' : 'hover:bg-slate-800/50',
+    activeBg: theme === 'light' ? 'active:bg-slate-100' : 'active:bg-slate-800/50',
     divider: theme === 'light' ? 'bg-slate-200' : 'bg-slate-800',
 })
 

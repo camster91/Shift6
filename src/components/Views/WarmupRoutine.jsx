@@ -12,7 +12,8 @@ const WarmupRoutine = ({
   onComplete,
   onSkip,
   recommendedRoutine = 'quick',
-  audioEnabled = true
+  audioEnabled = true,
+  theme = 'dark'
 }) => {
   const [selectedRoutine, setSelectedRoutine] = useState(null)
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
@@ -148,18 +149,27 @@ const WarmupRoutine = ({
     ? ((currentExerciseIndex + (timeLeft === 0 && !isComplete ? 1 : 0)) / totalExercises) * 100
     : 0
 
+  const cardBg = theme === 'light' ? 'bg-white' : 'bg-slate-900'
+  const surfaceBg = theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'
+  const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
+  const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+  const textMuted = theme === 'light' ? 'text-slate-500' : 'text-slate-500'
+  const borderClass = theme === 'light' ? 'border-slate-200' : 'border-slate-800'
+  const hoverBg = theme === 'light' ? 'hover:bg-slate-100' : 'hover:bg-slate-800'
+  const subtleBg = theme === 'light' ? 'bg-slate-50' : 'bg-slate-800/50'
+
   // Routine selection view - simplified to 2 options
   if (!selectedRoutine) {
     return (
       <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="bg-slate-900 rounded-2xl w-full max-w-sm overflow-hidden border border-slate-800">
+        <div className={`${cardBg} rounded-2xl w-full max-w-sm overflow-hidden border ${borderClass}`}>
           {/* Header */}
-          <div className="p-5 text-center border-b border-slate-800">
+          <div className={`p-5 text-center border-b ${borderClass}`}>
             <div className="w-14 h-14 mx-auto mb-3 bg-orange-500/20 rounded-full flex items-center justify-center">
               <Flame className="w-7 h-7 text-orange-400" />
             </div>
-            <h2 className="text-xl font-bold text-white">Warm Up First?</h2>
-            <p className="text-sm text-slate-400 mt-1">Prep your muscles and joints</p>
+            <h2 className={`text-xl font-bold ${textPrimary}`}>Warm Up First?</h2>
+            <p className={`text-sm ${textSecondary} mt-1`}>Prep your muscles and joints</p>
           </div>
 
           {/* Options - 2 side by side buttons */}
@@ -171,12 +181,14 @@ const WarmupRoutine = ({
                 className={`flex-1 p-4 rounded-xl border-2 transition-all text-center ${
                   r.id === recommendedRoutine
                     ? 'border-orange-500 bg-orange-500/10'
-                    : 'border-slate-700 hover:border-slate-600'
+                    : theme === 'light'
+                      ? 'border-slate-200 active:border-slate-300'
+                      : 'border-slate-700 active:border-slate-600'
                 }`}
               >
-                <p className="text-2xl font-bold text-white">{r.duration}</p>
-                <p className="text-xs text-slate-400">min</p>
-                <p className="text-sm font-medium text-white mt-2">{r.name}</p>
+                <p className={`text-2xl font-bold ${textPrimary}`}>{r.duration}</p>
+                <p className={`text-xs ${textSecondary}`}>min</p>
+                <p className={`text-sm font-medium ${textPrimary} mt-2`}>{r.name}</p>
               </button>
             ))}
           </div>
@@ -185,7 +197,7 @@ const WarmupRoutine = ({
           <div className="p-4 pt-0">
             <button
               onClick={onSkip}
-              className="w-full py-3 text-slate-500 hover:text-white transition-colors text-sm"
+              className={`w-full py-3 ${textMuted} ${hoverBg} rounded-lg transition-colors text-sm`}
             >
               Skip and start workout
             </button>
@@ -199,31 +211,31 @@ const WarmupRoutine = ({
   if (isComplete) {
     return (
       <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
-        <div className="fixed inset-0 bg-slate-950 md:inset-4 md:rounded-2xl overflow-hidden flex flex-col items-center justify-center p-6">
+        <div className={`fixed inset-0 ${surfaceBg} md:inset-4 md:rounded-2xl overflow-hidden flex flex-col items-center justify-center p-6`}>
           <div className="text-center space-y-6 max-w-sm">
             <div className="w-20 h-20 mx-auto bg-emerald-500/20 rounded-full flex items-center justify-center">
               <CheckCircle2 className="w-10 h-10 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Warmed Up!</h2>
-              <p className="text-slate-400">
+              <h2 className={`text-2xl font-bold ${textPrimary} mb-2`}>Warmed Up!</h2>
+              <p className={textSecondary}>
                 Great job! Your body is ready for the workout.
               </p>
             </div>
-            <div className="text-sm text-slate-500">
+            <div className={`text-sm ${textMuted}`}>
               Completed {completedExercises.length} of {totalExercises} exercises
             </div>
             <div className="flex gap-3">
               <button
                 onClick={resetRoutine}
-                className="flex-1 py-3 px-4 border border-slate-700 rounded-xl text-slate-300 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                className={`flex-1 py-3 px-4 border ${borderClass} rounded-xl ${textSecondary} ${hoverBg} transition-colors flex items-center justify-center gap-2`}
               >
                 <RotateCcw size={18} />
                 Repeat
               </button>
               <button
                 onClick={onComplete}
-                className="flex-1 py-3 px-4 bg-cyan-500 text-white rounded-xl font-bold hover:bg-cyan-400 transition-colors"
+                className="flex-1 py-3 px-4 bg-cyan-500 text-white rounded-xl font-bold active:bg-cyan-400 transition-colors"
               >
                 Start Workout
               </button>
@@ -237,31 +249,31 @@ const WarmupRoutine = ({
   // Active warm-up view
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
-      <div className="fixed inset-0 bg-slate-950 md:inset-4 md:rounded-2xl overflow-hidden flex flex-col">
+      <div className={`fixed inset-0 ${surfaceBg} md:inset-4 md:rounded-2xl overflow-hidden flex flex-col`}>
         {/* Header with progress */}
-        <div className="p-4 border-b border-slate-800">
+        <div className={`p-4 border-b ${borderClass}`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-orange-500/20 rounded-lg">
                 <Flame className="w-5 h-5 text-orange-400" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white">{routine.name}</h2>
-                <p className="text-xs text-slate-500">
+                <h2 className={`text-lg font-bold ${textPrimary}`}>{routine.name}</h2>
+                <p className={`text-xs ${textMuted}`}>
                   Exercise {currentExerciseIndex + 1} of {totalExercises}
                 </p>
               </div>
             </div>
             <button
               onClick={onSkip}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className={`p-2 rounded-lg ${hoverBg} transition-colors`}
             >
-              <X className="w-5 h-5 text-slate-400" />
+              <X className={`w-5 h-5 ${textSecondary}`} />
             </button>
           </div>
 
           {/* Progress bar */}
-          <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <div className={`h-1.5 ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'} rounded-full overflow-hidden`}>
             <div
               className="h-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-300"
               style={{ width: `${progress}%` }}
@@ -280,7 +292,7 @@ const WarmupRoutine = ({
                     cx="96"
                     cy="96"
                     r="88"
-                    stroke="rgba(30,41,59,0.5)"
+                    stroke={theme === 'light' ? 'rgba(203,213,225,0.5)' : 'rgba(30,41,59,0.5)'}
                     strokeWidth="8"
                     fill="transparent"
                   />
@@ -304,8 +316,8 @@ const WarmupRoutine = ({
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-5xl font-bold text-white">{formatTime(timeLeft)}</span>
-                  <span className="text-sm text-slate-400 mt-1">
+                  <span className={`text-5xl font-bold ${textPrimary}`}>{formatTime(timeLeft)}</span>
+                  <span className={`text-sm ${textSecondary} mt-1`}>
                     {currentExercise.unit === 'reps' ? `${currentExercise.duration} reps` : 'remaining'}
                   </span>
                 </div>
@@ -313,14 +325,14 @@ const WarmupRoutine = ({
 
               {/* Exercise name and instructions */}
               <div className="text-center mb-8 max-w-md">
-                <h3 className="text-2xl font-bold text-white mb-3">{currentExercise.name}</h3>
-                <p className="text-slate-400">{currentExercise.instructions}</p>
+                <h3 className={`text-2xl font-bold ${textPrimary} mb-3`}>{currentExercise.name}</h3>
+                <p className={textSecondary}>{currentExercise.instructions}</p>
                 {currentExercise.tips && currentExercise.tips.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-2 mt-4">
                     {currentExercise.tips.map((tip, i) => (
                       <span
                         key={i}
-                        className="text-xs px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-slate-400"
+                        className={`text-xs px-3 py-1 ${subtleBg} border ${borderClass} rounded-full ${textSecondary}`}
                       >
                         {tip}
                       </span>
@@ -334,27 +346,27 @@ const WarmupRoutine = ({
                 {!isRunning && timeLeft === 0 ? (
                   <button
                     onClick={startExercise}
-                    className="w-16 h-16 bg-orange-500 hover:bg-orange-400 rounded-full flex items-center justify-center transition-colors shadow-lg shadow-orange-500/30"
+                    className="w-16 h-16 bg-orange-500 active:bg-orange-400 rounded-full flex items-center justify-center transition-colors shadow-lg shadow-orange-500/30"
                   >
                     <Play size={28} className="text-white ml-1" />
                   </button>
                 ) : (
                   <button
                     onClick={togglePause}
-                    className="w-16 h-16 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center transition-colors"
+                    className={`w-16 h-16 ${theme === 'light' ? 'bg-slate-300 active:bg-slate-400' : 'bg-slate-700 active:bg-slate-600'} rounded-full flex items-center justify-center transition-colors`}
                   >
                     {isRunning ? (
-                      <Pause size={28} className="text-white" />
+                      <Pause size={28} className={textPrimary} />
                     ) : (
-                      <Play size={28} className="text-white ml-1" />
+                      <Play size={28} className={`${textPrimary} ml-1`} />
                     )}
                   </button>
                 )}
                 <button
                   onClick={skipExercise}
-                  className="w-12 h-12 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center transition-colors"
+                  className={`w-12 h-12 ${subtleBg} ${hoverBg} rounded-full flex items-center justify-center transition-colors`}
                 >
-                  <SkipForward size={20} className="text-slate-400" />
+                  <SkipForward size={20} className={textSecondary} />
                 </button>
               </div>
             </>
@@ -362,18 +374,18 @@ const WarmupRoutine = ({
         </div>
 
         {/* Upcoming exercises */}
-        <div className="p-4 border-t border-slate-800">
-          <p className="text-xs text-slate-500 mb-2">Coming up:</p>
+        <div className={`p-4 border-t ${borderClass}`}>
+          <p className={`text-xs ${textMuted} mb-2`}>Coming up:</p>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {exerciseIds.slice(currentExerciseIndex + 1, currentExerciseIndex + 4).map((id) => {
               const ex = WARMUP_EXERCISES[id]
               return (
                 <div
                   key={id}
-                  className="flex-shrink-0 px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg"
+                  className={`flex-shrink-0 px-3 py-2 ${subtleBg} border ${borderClass} rounded-lg`}
                 >
-                  <p className="text-sm text-white font-medium">{ex?.name}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className={`text-sm ${textPrimary} font-medium`}>{ex?.name}</p>
+                  <p className={`text-xs ${textMuted}`}>
                     {ex?.duration} {ex?.unit}
                   </p>
                 </div>

@@ -88,7 +88,7 @@ const RARITY_STYLES = {
 /**
  * Achievement unlock modal with celebration animations
  */
-const AchievementModal = ({ badge, onClose, autoClose = true }) => {
+const AchievementModal = ({ badge, onClose, autoClose = true, audioEnabled = true }) => {
   const [showConfetti, setShowConfetti] = useState(false)
   const [animationStage, setAnimationStage] = useState(0)
 
@@ -99,7 +99,9 @@ const AchievementModal = ({ badge, onClose, autoClose = true }) => {
     if (!badge) return
 
     // Play celebration effects
-    playSuccess()
+    if (audioEnabled) {
+      playSuccess()
+    }
     vibrate([100, 50, 100, 50, 200])
 
     // Animation sequence
@@ -116,7 +118,7 @@ const AchievementModal = ({ badge, onClose, autoClose = true }) => {
     }
 
     return () => timers.forEach(t => clearTimeout(t))
-  }, [badge, autoClose, onClose])
+  }, [badge, autoClose, onClose, audioEnabled])
 
   if (!badge) return null
 
@@ -283,7 +285,7 @@ const AchievementModal = ({ badge, onClose, autoClose = true }) => {
 /**
  * Multiple achievements modal (for when several are unlocked at once)
  */
-export const MultiAchievementModal = memo(({ badges = [], onClose }) => {
+export const MultiAchievementModal = memo(({ badges = [], onClose, audioEnabled = true }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
 
   if (!badges || badges.length === 0) return null
@@ -301,6 +303,7 @@ export const MultiAchievementModal = memo(({ badges = [], onClose }) => {
       badge={badges[currentIndex]}
       onClose={handleNext}
       autoClose={badges.length === 1}
+      audioEnabled={audioEnabled}
     />
   )
 })

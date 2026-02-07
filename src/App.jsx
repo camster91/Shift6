@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS, getCustomRest, generateProgression } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
 import { EXERCISES as DATABASE_EXERCISES } from './data/exerciseDatabase.js';
@@ -28,27 +28,29 @@ import {
     SPRINT_STATUS
 } from './utils/progression.js';
 
-// Components
+// Core layout components (always needed)
 import Header from './components/Layout/Header';
 import BottomNav from './components/Layout/BottomNav';
 import SideDrawer from './components/Layout/SideDrawer';
 import Dashboard from './components/Views/Dashboard';
 import WorkoutQuickStart from './components/Views/WorkoutQuickStart';
-import Progress from './components/Views/Progress';
-import Guide from './components/Views/Guide';
 import WorkoutSession from './components/Views/WorkoutSession';
-import AddExercise from './components/Views/AddExercise';
 import Onboarding from './components/Views/Onboarding';
-import ExerciseLibrary from './components/Views/ExerciseLibrary';
-import ProgramManager from './components/Views/ProgramManager';
-import TrainingSettings from './components/Views/TrainingSettings';
-import ProgramSwitcher from './components/Views/ProgramSwitcher';
-import BodyMetrics from './components/Views/BodyMetrics';
-import WarmupRoutine from './components/Views/WarmupRoutine';
-import AccessibilitySettings from './components/Views/AccessibilitySettings';
+
+// Lazy-loaded components (heavy or infrequently used)
+const Progress = lazy(() => import('./components/Views/Progress'));
+const Guide = lazy(() => import('./components/Views/Guide'));
+const AddExercise = lazy(() => import('./components/Views/AddExercise'));
+const ExerciseLibrary = lazy(() => import('./components/Views/ExerciseLibrary'));
+const ProgramManager = lazy(() => import('./components/Views/ProgramManager'));
+const TrainingSettings = lazy(() => import('./components/Views/TrainingSettings'));
+const ProgramSwitcher = lazy(() => import('./components/Views/ProgramSwitcher'));
+const BodyMetrics = lazy(() => import('./components/Views/BodyMetrics'));
+const WarmupRoutine = lazy(() => import('./components/Views/WarmupRoutine'));
+const AccessibilitySettings = lazy(() => import('./components/Views/AccessibilitySettings'));
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
 import UpdateNotification from './components/Visuals/UpdateNotification';
-import NotificationSettings from './components/Visuals/NotificationSettings';
+const NotificationSettings = lazy(() => import('./components/Visuals/NotificationSettings'));
 import { getRecommendedWarmup } from './data/warmupRoutines';
 import {
     checkStreakNotification,
@@ -58,14 +60,14 @@ import {
     calculateStreakForNotification
 } from './utils/notifications';
 
-// Gym Mode Components
+// Gym Mode Components (lazy-loaded)
 import ModeSelector from './components/Views/ModeSelector';
-import GymDashboard from './components/Views/GymDashboard';
-import GymOnboarding from './components/Views/GymOnboarding';
-import GymWorkoutSession from './components/Views/GymWorkoutSession';
-import GymProgramManager from './components/Views/GymProgramManager';
-import GymAssessment from './components/Views/GymAssessment';
-import HomeGoalSetter from './components/Views/HomeGoalSetter';
+const GymDashboard = lazy(() => import('./components/Views/GymDashboard'));
+const GymOnboarding = lazy(() => import('./components/Views/GymOnboarding'));
+const GymWorkoutSession = lazy(() => import('./components/Views/GymWorkoutSession'));
+const GymProgramManager = lazy(() => import('./components/Views/GymProgramManager'));
+const GymAssessment = lazy(() => import('./components/Views/GymAssessment'));
+const HomeGoalSetter = lazy(() => import('./components/Views/HomeGoalSetter'));
 import { recordWorkoutResult as recordGymWorkoutResult } from './utils/gymProgression';
 import { recordHomeGoalResult } from './utils/homeGoals';
 
@@ -1738,6 +1740,7 @@ const App = () => {
     return (
         <div className={`min-h-screen font-sans selection:bg-cyan-500/30 ${theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
             }`}>
+            <Suspense fallback={null}>
             {/* PWA Update Notification */}
             <UpdateNotification theme={theme} />
 
@@ -2144,6 +2147,7 @@ const App = () => {
                     onAddMetric={handleAddMetric}
                     onDeleteMetric={handleDeleteMetric}
                     onClose={() => setShowBodyMetrics(false)}
+                    theme={theme}
                 />
             )}
 
@@ -2170,18 +2174,23 @@ const App = () => {
                     onSkip={handleWarmupSkip}
                     recommendedRoutine={pendingWorkout ? getRecommendedWarmupForExercise(pendingWorkout.overrideKey) : 'quick'}
                     audioEnabled={audioEnabled}
+                    theme={theme}
                 />
             )}
 
             {/* Guide Modal */}
             {showGuide && (
-                <div className="fixed inset-0 z-50 bg-slate-950 overflow-y-auto">
+                <div className={`fixed inset-0 z-50 overflow-y-auto ${theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'}`}>
                     <div className="min-h-screen">
-                        <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-white">Exercise Guide</h2>
+                        <div className={`sticky top-0 z-10 p-4 flex items-center justify-between border-b ${
+                            theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+                        }`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+                            <h2 className={`text-lg font-bold ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Exercise Guide</h2>
                             <button
                                 onClick={() => setShowGuide(false)}
-                                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-white transition-colors"
+                                className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                                    theme === 'light' ? 'bg-slate-200 active:bg-slate-300 text-slate-700' : 'bg-slate-800 active:bg-slate-700 text-white'
+                                }`}
                             >
                                 Close
                             </button>
@@ -2198,22 +2207,26 @@ const App = () => {
 
             {/* Help Modal */}
             {showHelp && (
-                <div className="fixed inset-0 z-50 bg-slate-950 overflow-y-auto">
+                <div className={`fixed inset-0 z-50 overflow-y-auto ${theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'}`}>
                     <div className="min-h-screen">
-                        <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-white">Help & Support</h2>
+                        <div className={`sticky top-0 z-10 p-4 flex items-center justify-between border-b ${
+                            theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+                        }`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+                            <h2 className={`text-lg font-bold ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Help & Support</h2>
                             <button
                                 onClick={() => setShowHelp(false)}
-                                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-white transition-colors"
+                                className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                                    theme === 'light' ? 'bg-slate-200 active:bg-slate-300 text-slate-700' : 'bg-slate-800 active:bg-slate-700 text-white'
+                                }`}
                             >
                                 Close
                             </button>
                         </div>
                         <div className="p-4 space-y-6">
                             {/* Getting Started */}
-                            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                            <div className={`rounded-xl p-4 border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
                                 <h3 className="text-lg font-semibold text-cyan-400 mb-3">Getting Started</h3>
-                                <ul className="space-y-2 text-sm text-slate-300">
+                                <ul className={`space-y-2 text-sm ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'}`}>
                                     <li>• Select your experience level during onboarding to get personalized programs</li>
                                     <li>• Tap any exercise card on the home screen to start a workout</li>
                                     <li>• Follow the sets and reps shown, rest between sets as indicated</li>
@@ -2222,9 +2235,9 @@ const App = () => {
                             </div>
 
                             {/* Daily Goals */}
-                            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                            <div className={`rounded-xl p-4 border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
                                 <h3 className="text-lg font-semibold text-emerald-400 mb-3">Daily Goals</h3>
-                                <ul className="space-y-2 text-sm text-slate-300">
+                                <ul className={`space-y-2 text-sm ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'}`}>
                                     <li>• Set your daily workout goal in Training Settings</li>
                                     <li>• Track your progress on the home screen</li>
                                     <li>• Build streaks by working out consistently</li>
@@ -2233,9 +2246,9 @@ const App = () => {
                             </div>
 
                             {/* Programs */}
-                            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                            <div className={`rounded-xl p-4 border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
                                 <h3 className="text-lg font-semibold text-purple-400 mb-3">Programs</h3>
-                                <ul className="space-y-2 text-sm text-slate-300">
+                                <ul className={`space-y-2 text-sm ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'}`}>
                                     <li>• <span className="text-emerald-400">Beginner:</span> Start with foundational movements, 2-3 days/week</li>
                                     <li>• <span className="text-cyan-400">Intermediate:</span> More volume and exercises, 3-4 days/week</li>
                                     <li>• <span className="text-purple-400">Advanced:</span> High intensity training, 4-6 days/week</li>
@@ -2244,9 +2257,9 @@ const App = () => {
                             </div>
 
                             {/* Tips */}
-                            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                            <div className={`rounded-xl p-4 border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
                                 <h3 className="text-lg font-semibold text-orange-400 mb-3">Tips for Success</h3>
-                                <ul className="space-y-2 text-sm text-slate-300">
+                                <ul className={`space-y-2 text-sm ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'}`}>
                                     <li>• Focus on form over speed - quality reps build strength</li>
                                     <li>• Use the warmup routine before intense workouts</li>
                                     <li>• Track your body metrics to see progress over time</li>
@@ -2255,21 +2268,23 @@ const App = () => {
                             </div>
 
                             {/* Support */}
-                            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                            <div className={`rounded-xl p-4 border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
                                 <h3 className="text-lg font-semibold text-pink-400 mb-3">Need More Help?</h3>
-                                <p className="text-sm text-slate-300 mb-3">
+                                <p className={`text-sm mb-3 ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'}`}>
                                     Check the Exercise Guide for detailed form instructions and tips for each movement.
                                 </p>
                                 <button
                                     onClick={() => { setShowHelp(false); setShowGuide(true); }}
-                                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-white transition-colors"
+                                    className={`w-full py-3 rounded-lg text-sm transition-colors ${
+                                        theme === 'light' ? 'bg-slate-200 active:bg-slate-300 text-slate-700' : 'bg-slate-800 active:bg-slate-700 text-white'
+                                    }`}
                                 >
                                     Open Exercise Guide
                                 </button>
                             </div>
 
                             <p className="text-center text-xs text-slate-500 pt-4">
-                                Shift6 v2.0 - Made with care for your fitness journey
+                                Shift6 v2.1.0 - Made with care for your fitness journey
                             </p>
                         </div>
                     </div>
@@ -2332,7 +2347,9 @@ const App = () => {
             <MultiAchievementModal
                 badges={newBadges}
                 onClose={handleCloseBadges}
+                audioEnabled={audioEnabled}
             />
+            </Suspense>
         </div>
     );
 };

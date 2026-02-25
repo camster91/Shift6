@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { X, Check, ChevronUp, ChevronDown, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus, Target, Save } from 'lucide-react'
 import { playBeep, playSuccess } from '../../utils/audio'
-import { vibrate } from '../../utils/device'
+import { vibrate, requestWakeLock, releaseWakeLock } from '../../utils/device'
 import { GYM_EXERCISES } from '../../data/gymExercises'
 import { KG_TO_LBS, LBS_TO_KG } from '../../utils/constants'
 import { getWeightSuggestion, checkForGymPR, savePR, getRandomPRMessage, getRandomWeightMessage } from '../../utils/progressionCoach'
@@ -138,6 +138,23 @@ const GymWorkoutSession = ({
   // Get display weight (convert from kg to user's preferred unit)
   const displayWeight = convertWeight(currentWeightKg, 'kg', gymWeightUnit)
   const weightIncrement = getWeightIncrement(gymWeightUnit, currentExercise?.weightIncrement)
+
+  // Keep screen awake during workout session
+  useEffect(() => {
+    requestWakeLock()
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      releaseWakeLock()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
 
   // Initialize weight ONLY when exercise changes (NOT on set change!)
   // This fixes the bug where weight would reset after each logged set

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { ChevronRight, ChevronUp, ChevronDown, Info, Share2, Check, X, Zap, Youtube, Play, Pause, Square, Dumbbell, Plus, Minus, Battery, BatteryLow, BatteryCharging, TrendingUp, TrendingDown } from 'lucide-react';
 
 // Color classes for exercise themes (hex values match Tailwind -500 colors)
@@ -14,7 +14,7 @@ const colorClasses = {
     indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', solid: 'bg-indigo-500', hex: '#6366f1' },
 };
 import { playBeep, playStart, playSuccess } from '../../utils/audio';
-import { vibrate, copyToClipboard } from '../../utils/device';
+import { vibrate, copyToClipboard, requestWakeLock, releaseWakeLock } from '../../utils/device';
 import { EXERCISE_PLANS, EXERCISE_ACHIEVEMENTS } from '../../data/exercises.jsx';
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary.js';
 import { calculateStats, getUnlockedBadges, BADGES, getLastWorkoutForExercise, getPersonalRecords } from '../../utils/gamification';
@@ -192,6 +192,23 @@ const WorkoutSession = ({
     // Silence unused variable warnings - these are used for future features
     void personalRecords;
     void allExercises;
+
+    // Keep screen awake during workout session
+    useEffect(() => {
+        requestWakeLock()
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                requestWakeLock()
+            }
+        }
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+
+        return () => {
+            releaseWakeLock()
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
+    }, [])
 
     // Calculate stats and unlocked badges
     // ⚡ Bolt: Memoize stats and badges since they only change when session history or completed days change.

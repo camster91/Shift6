@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Check, ChevronUp, ChevronDown, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus, Target, Save } from 'lucide-react'
+import { X, Check, ChevronUp, ChevronDown, Trophy, RefreshCw, Youtube, TrendingUp, TrendingDown, Minus, Target, Save, Pencil } from 'lucide-react'
 import { playBeep, playSuccess } from '../../utils/audio'
 import { vibrate, requestWakeLock, releaseWakeLock } from '../../utils/device'
 import { GYM_EXERCISES } from '../../data/gymExercises'
@@ -30,6 +30,14 @@ const getWeightIncrement = (unit, exerciseIncrement = 2.5) => {
     return 5 // 5 lb increments
   }
   return exerciseIncrement // kg increment from exercise config
+}
+
+/**
+ * Standard plate weights by unit
+ */
+const PLATE_WEIGHTS = {
+  lbs: [45, 25, 10, 5, 2.5],
+  kg: [20, 10, 5, 2.5, 1.25]
 }
 
 /**
@@ -129,6 +137,8 @@ const GymWorkoutSession = ({
   const [showPRCelebration, setShowPRCelebration] = useState(null) // PR celebration modal
   const [sessionPRs, setSessionPRs] = useState([]) // PRs achieved this session
   const [goalProgress, setGoalProgress] = useState({}) // Track goal progress per exercise
+  const [isEditingWeight, setIsEditingWeight] = useState(false) // Manual weight entry mode
+  const [editWeightValue, setEditWeightValue] = useState('') // Manual weight input value
 
   const currentExerciseId = workout?.exercises?.[currentExerciseIndex]
   const currentExercise = currentExerciseId ? GYM_EXERCISES[currentExerciseId] : null
@@ -401,6 +411,32 @@ const GymWorkoutSession = ({
     if (onWeightUnitChange) {
       onWeightUnitChange(gymWeightUnit === 'kg' ? 'lbs' : 'kg')
     }
+  }
+
+  // Add/remove plate weight (plateWeight is in display unit)
+  const addPlateWeight = (plateWeight) => {
+    const plateKg = gymWeightUnit === 'lbs'
+      ? plateWeight * LBS_TO_KG
+      : plateWeight
+    setCurrentWeightKg(prev => Math.max(0, prev + plateKg))
+  }
+
+  // Open manual weight editor
+  const startEditWeight = () => {
+    setEditWeightValue(String(Math.round(displayWeight * 2) / 2))
+    setIsEditingWeight(true)
+  }
+
+  // Save manual weight entry
+  const saveEditWeight = () => {
+    const parsed = parseFloat(editWeightValue)
+    if (!isNaN(parsed) && parsed >= 0) {
+      const newWeightKg = gymWeightUnit === 'lbs'
+        ? parsed * LBS_TO_KG
+        : parsed
+      setCurrentWeightKg(newWeightKg)
+    }
+    setIsEditingWeight(false)
   }
 
   const handleComplete = () => {
@@ -762,36 +798,96 @@ const GymWorkoutSession = ({
         <div className={`${cardBg} rounded-xl p-4`}>
           <div className="flex items-center justify-between mb-2">
             <p className={`${textSecondary} text-sm`}>Weight</p>
-            <button
-              onClick={toggleWeightUnit}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg ${buttonBg} text-xs font-medium ${textSecondary} hover:opacity-80 transition-opacity`}
-            >
-              <RefreshCw className="w-3 h-3" />
-              {gymWeightUnit.toUpperCase()}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={startEditWeight}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg ${buttonBg} text-xs font-medium ${textSecondary} hover:opacity-80 transition-opacity`}
+                aria-label="Edit weight manually"
+              >
+                <Pencil className="w-3 h-3" />
+                Edit
+              </button>
+              <button
+                onClick={toggleWeightUnit}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg ${buttonBg} text-xs font-medium ${textSecondary} hover:opacity-80 transition-opacity`}
+              >
+                <RefreshCw className="w-3 h-3" />
+                {gymWeightUnit === 'kg' ? 'Switch to LBS' : 'Switch to KG'}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => adjustWeight(-1)}
-              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
-              aria-label="Decrease weight"
-            >
-              <ChevronDown className={`w-8 h-8 ${textPrimary}`} />
-            </button>
-            <div className="text-center">
+
+          {/* Weight Display or Manual Edit */}
+          {isEditingWeight ? (
+            <div className="flex items-center justify-center gap-3 my-3">
+              <input
+                type="number"
+                inputMode="decimal"
+                value={editWeightValue}
+                onChange={(e) => setEditWeightValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveEditWeight() }}
+                autoFocus
+                className={`w-32 text-center text-3xl font-bold rounded-lg px-3 py-2 ${
+                  theme === 'light'
+                    ? 'bg-slate-100 text-slate-900 border border-slate-300'
+                    : 'bg-slate-800 text-white border border-slate-600'
+                } focus:outline-none focus:ring-2 focus:ring-purple-500`}
+              />
+              <span className={`text-lg ${textSecondary}`}>{gymWeightUnit}</span>
+              <button
+                onClick={saveEditWeight}
+                className="w-10 h-10 rounded-lg bg-purple-500 text-white flex items-center justify-center active:scale-95 transition-transform"
+                aria-label="Confirm weight"
+              >
+                <Check className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setIsEditingWeight(false)}
+                className={`w-10 h-10 rounded-lg ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
+                aria-label="Cancel edit"
+              >
+                <X className={`w-5 h-5 ${textSecondary}`} />
+              </button>
+            </div>
+          ) : (
+            <div className="text-center my-2">
               <span className={`text-5xl font-bold ${textPrimary}`}>
                 {Math.round(displayWeight * 2) / 2}
               </span>
               <span className={`text-2xl ${textSecondary} ml-1`}>{gymWeightUnit}</span>
             </div>
-            <button
-              onClick={() => adjustWeight(1)}
-              className={`w-14 h-14 rounded-xl ${buttonBg} flex items-center justify-center active:scale-95 transition-transform`}
-              aria-label="Increase weight"
-            >
-              <ChevronUp className={`w-8 h-8 ${textPrimary}`} />
-            </button>
+          )}
+
+          {/* Quick Plate Buttons - Add */}
+          <div className="flex gap-1.5 mt-3">
+            {PLATE_WEIGHTS[gymWeightUnit].map(plate => (
+              <button
+                key={`add-${plate}`}
+                onClick={() => addPlateWeight(plate)}
+                className="flex-1 py-2 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-400 text-xs font-semibold hover:bg-purple-500/25 active:scale-95 transition-all"
+              >
+                +{plate}
+              </button>
+            ))}
           </div>
+
+          {/* Quick Plate Buttons - Remove */}
+          <div className="flex gap-1.5 mt-1.5">
+            {PLATE_WEIGHTS[gymWeightUnit].map(plate => (
+              <button
+                key={`sub-${plate}`}
+                onClick={() => addPlateWeight(-plate)}
+                className={`flex-1 py-2 rounded-lg ${
+                  theme === 'light'
+                    ? 'bg-slate-100 border border-slate-300 text-slate-600'
+                    : 'bg-slate-800 border border-slate-700 text-slate-400'
+                } text-xs font-semibold hover:opacity-80 active:scale-95 transition-all`}
+              >
+                -{plate}
+              </button>
+            ))}
+          </div>
+
           <p className={`${textSecondary} text-xs text-center mt-2`}>
             Last: {formatWeight(lastWeightKg)}
           </p>

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  shift6:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shift6-web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -41,7 +41,7 @@ const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode 
                             <button
                                 key={tab.id}
                                 onClick={handleClick}
-                                className={`relative flex-1 min-w-0 py-2.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all duration-200 ${
+                                className={`relative flex-1 min-w-0 min-h-[44px] py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all duration-200 ${
                                     isActive
                                         ? activeTextClass
                                         : theme === 'light'

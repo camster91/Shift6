@@ -464,7 +464,12 @@ const App = () => {
         const newlyUnlocked = unlockedBadges.filter(b => !seenBadgeIds.includes(b.id));
 
         if (newlyUnlocked.length > 0 && prevStatsRef.current !== null) {
-            setNewBadges(newlyUnlocked);
+            setNewBadges(prev => {
+                // Prevent duplicate badges by checking if already in the queue
+                const existingIds = new Set(prev.map(b => b.id));
+                const trulyNew = newlyUnlocked.filter(b => !existingIds.has(b.id));
+                return [...prev, ...trulyNew];
+            });
             // Update seen badges
             setSeenBadgeIds(unlockedIds);
             safeSetItem(`${STORAGE_PREFIX}seen_badges`, unlockedIds);
@@ -484,7 +489,7 @@ const App = () => {
         checkStreakNotification(streakData);
 
         prevStatsRef.current = stats;
-    }, [completedDays, sessionHistory, seenBadgeIds]);
+    }, [completedDays, sessionHistory]);  // Intentionally NOT including seenBadgeIds to prevent loops
 
     // Daily reminder check and notification registration
     useEffect(() => {
@@ -1434,7 +1439,18 @@ const App = () => {
     const onShowProgramManager = useCallback(() => setShowProgramManager(true), []);
 
     // ⚡ Bolt: Memoize badge closing handler.
-    const handleCloseBadges = useCallback(() => setNewBadges([]), []);
+    const handleCloseBadges = useCallback(() => {
+        setNewBadges([]);
+        // Reset badge index to ensure clean state for next time
+        setTimeout(() => {
+            // Force a re-check of seen badges to prevent flashing on next update
+            const stats = calculateStats(completedDays, sessionHistory);
+            const unlockedBadges = getUnlockedBadges(stats);
+            const unlockedIds = unlockedBadges.map(b => b.id);
+            setSeenBadgeIds(unlockedIds);
+            safeSetItem(`${STORAGE_PREFIX}seen_badges`, unlockedIds);
+        }, 100);
+    }, [completedDays, sessionHistory]);
 
     // ---------------- SPRINT MANAGEMENT ----------------
 

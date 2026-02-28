@@ -468,19 +468,22 @@ const GymWorkoutSession = ({
   const textSecondary = theme === 'light' ? 'text-slate-600' : 'text-slate-400'
 
   // Confirm exit if workout in progress
-  const handleExit = () => {
-    const completedCount = Object.values(completedSets).flat().length
+  const handleExit = useCallback(() => {
+    const completedCount = Object.values(completedSets || {}).flat().length
     if (completedCount > 0) {
       setShowExitConfirm(true)
     } else {
       onExit()
     }
-  }
+  }, [completedSets, onExit])
 
-  const confirmExit = () => {
+  const confirmExit = useCallback(() => {
     setShowExitConfirm(false)
-    onExit()
-  }
+    // Small delay to allow modal animation to complete before exit
+    setTimeout(() => {
+      onExit()
+    }, 100)
+  }, [onExit])
 
   // Handle invalid workout data (no exercises)
   if ((!currentExercise && !showSummary) || !workout?.exercises?.length) {
@@ -655,25 +658,26 @@ const GymWorkoutSession = ({
         )}
         {/* Exit Confirmation Modal - render on top of rest screen */}
         {showExitConfirm && (
-          <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Exit workout confirmation">
-            <div className={`${cardBg} rounded-2xl w-full max-w-sm overflow-hidden`}>
+          <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Exit workout confirmation" onClick={() => setShowExitConfirm(false)}>
+            <div className={`${cardBg} rounded-2xl w-full max-w-sm overflow-hidden`} onClick={e => e.stopPropagation()}>
               <div className="p-6 text-center">
                 <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <X className="w-8 h-8 text-white" />
                 </div>
                 <h3 className={`text-xl font-bold ${textPrimary} mb-2`}>Exit Workout?</h3>
                 <p className={textSecondary}>
-                  You have {Object.values(completedSets).flat().length} sets logged.
+                  You have {Object.values(completedSets || {}).flat().length} sets logged.
                 </p>
               </div>
               <div className="p-4 space-y-2">
                 {/* Save & Exit option - only show if there's progress and handler exists */}
-                {onSaveForLater && Object.values(completedSets).flat().length > 0 && (
+                {onSaveForLater && Object.values(completedSets || {}).flat().length > 0 && (
                   <button
                     onClick={() => {
                       setShowExitConfirm(false)
                       vibrate(30)
-                      onSaveForLater()
+                      // Small delay to allow modal to close
+                      setTimeout(() => onSaveForLater(), 100)
                     }}
                     className="w-full py-3 px-4 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-400 font-medium hover:bg-emerald-500/30 transition-colors flex items-center justify-center gap-2"
                   >
@@ -864,7 +868,8 @@ const GymWorkoutSession = ({
               <button
                 key={`add-${plate}`}
                 onClick={() => addPlateWeight(plate)}
-                className="flex-1 py-2 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-400 text-xs font-semibold hover:bg-purple-500/25 active:scale-95 transition-all"
+                className="flex-1 min-h-[44px] py-2.5 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-400 text-xs font-semibold hover:bg-purple-500/25 active:scale-95 transition-all touch-manipulation"
+                aria-label={`Add ${plate} ${gymWeightUnit}`}
               >
                 +{plate}
               </button>
@@ -877,11 +882,12 @@ const GymWorkoutSession = ({
               <button
                 key={`sub-${plate}`}
                 onClick={() => addPlateWeight(-plate)}
-                className={`flex-1 py-2 rounded-lg ${
+                className={`flex-1 min-h-[44px] py-2.5 rounded-lg ${
                   theme === 'light'
                     ? 'bg-slate-100 border border-slate-300 text-slate-600'
                     : 'bg-slate-800 border border-slate-700 text-slate-400'
-                } text-xs font-semibold hover:opacity-80 active:scale-95 transition-all`}
+                } text-xs font-semibold hover:opacity-80 active:scale-95 transition-all touch-manipulation`}
+                aria-label={`Remove ${plate} ${gymWeightUnit}`}
               >
                 -{plate}
               </button>
@@ -932,11 +938,12 @@ const GymWorkoutSession = ({
               <button
                 key={rpe}
                 onClick={() => setCurrentRpe(rpe)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`flex-1 min-h-[44px] py-2.5 rounded-lg text-sm font-medium transition-all ${
                   currentRpe === rpe
                     ? 'bg-purple-500 text-white'
                     : `${buttonBg} ${textSecondary} hover:opacity-80`
                 }`}
+                aria-label={`Rate of perceived exertion ${rpe}`}
               >
                 {rpe}
               </button>
@@ -961,25 +968,26 @@ const GymWorkoutSession = ({
 
       {/* Exit Confirmation Modal */}
       {showExitConfirm && (
-        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Exit workout confirmation">
-          <div className={`${cardBg} rounded-2xl w-full max-w-sm overflow-hidden`}>
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Exit workout confirmation" onClick={() => setShowExitConfirm(false)}>
+          <div className={`${cardBg} rounded-2xl w-full max-w-sm overflow-hidden`} onClick={e => e.stopPropagation()}>
             <div className="p-6 text-center">
               <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <X className="w-8 h-8 text-white" />
               </div>
               <h3 className={`text-xl font-bold ${textPrimary} mb-2`}>Exit Workout?</h3>
               <p className={textSecondary}>
-                You have {Object.values(completedSets).flat().length} sets logged.
+                You have {Object.values(completedSets || {}).flat().length} sets logged.
               </p>
             </div>
             <div className="p-4 space-y-2">
               {/* Save & Exit option - only show if there's progress and handler exists */}
-              {onSaveForLater && Object.values(completedSets).flat().length > 0 && (
+              {onSaveForLater && Object.values(completedSets || {}).flat().length > 0 && (
                 <button
                   onClick={() => {
                     setShowExitConfirm(false)
                     vibrate(30)
-                    onSaveForLater()
+                    // Small delay to allow modal to close
+                    setTimeout(() => onSaveForLater(), 100)
                   }}
                   className="w-full py-3 px-4 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-400 font-medium hover:bg-emerald-500/30 transition-colors flex items-center justify-center gap-2"
                 >

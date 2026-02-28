@@ -92,20 +92,20 @@ const SideDrawer = ({
                 onClick?.()
                 onClose()
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`w-full min-h-[44px] flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${
                 danger
                     ? 'text-red-400 hover:bg-red-500/10'
                     : `${subTextColor} ${hoverBg}`
             }`}
         >
             <Icon size={18} />
-            <span className="flex-1 text-left">{label}</span>
+            <span className="flex-1 text-left truncate">{label}</span>
             {badge && (
-                <span className="px-2 py-0.5 text-xs bg-cyan-500/20 text-cyan-400 rounded-full">
+                <span className="px-2 py-0.5 text-xs bg-cyan-500/20 text-cyan-400 rounded-full flex-shrink-0">
                     {badge}
                 </span>
             )}
-            <ChevronRight size={16} className="text-slate-600" />
+            <ChevronRight size={16} className="text-slate-600 flex-shrink-0" />
         </button>
     )
 

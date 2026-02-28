@@ -1,10 +1,44 @@
 import { EXERCISE_PLANS } from '../data/exercises.jsx';
+import { SUNDAY } from './constants';
 
-export const getNextSessionForExercise = (exKey, completedDays) => {
-    const plan = EXERCISE_PLANS[exKey];
+/**
+ * @typedef {Object} NextSession
+ * @property {string} exerciseKey - Exercise identifier
+ * @property {number} week - Week number (1-6 for bodyweight, 0 for gym)
+ * @property {number} dayIndex - Day index within the week (0-2 for bodyweight, 0 for gym)
+ * @property {string} dayId - Unique day identifier
+ * @property {string} name - Exercise display name
+ * @property {boolean} [isGym] - True if this is a gym exercise
+ */
+
+/**
+ * Finds the next incomplete workout session for a given exercise.
+ * For bodyweight exercises: Returns next incomplete day in 18-day plan
+ * For gym exercises: Always returns available (gym uses progressive overload, not day completion)
+ * @param {string} exKey - Exercise key (e.g., 'pushups', 'squats', 'benchPress')
+ * @param {Object.<string, string[]>} completedDays - Map of exercise keys to completed day IDs
+ * @param {Object} [exercisePlans] - Optional exercise plans object (defaults to EXERCISE_PLANS)
+ * @returns {NextSession|null} Next session info or null if exercise is complete (bodyweight only)
+ */
+export const getNextSessionForExercise = (exKey, completedDays, exercisePlans = EXERCISE_PLANS) => {
+    const plan = exercisePlans[exKey];
     if (!plan) return null;
 
-    // Find first incomplete day
+    // Gym exercises use progressive overload - always available
+    if (plan.progressionType === 'gym') {
+        return {
+            exerciseKey: exKey,
+            week: 0,
+            dayIndex: 0,
+            dayId: `gym_${exKey}`,
+            name: plan.name,
+            isGym: true
+        };
+    }
+
+    // Bodyweight exercises - find first incomplete day in 18-day plan
+    if (!plan.weeks) return null;
+
     for (let w = 0; w < plan.weeks.length; w++) {
         const week = plan.weeks[w];
         for (let d = 0; d < week.days.length; d++) {
@@ -25,27 +59,85 @@ export const getNextSessionForExercise = (exKey, completedDays) => {
     return null; // All done
 };
 
-export const getScheduleFocus = () => {
-    const day = new Date().getDay();
-    if (day === 0) return 'Rest & Recovery';
-    if (day % 2 === 1) return 'Upper Body Focus'; // Mon, Wed, Fri
-    return 'Lower Body & Core'; // Tue, Thu, Sat
+/**
+ * Checks if today is a valid training day based on preferences
+ * @param {number[]} [preferredDays] - Array of preferred day indices (0=Sun, 1=Mon, etc.)
+ * @returns {boolean} True if today is a valid training day
+ */
+export const isTrainingDay = (preferredDays = []) => {
+    const today = new Date().getDay();
+
+    // If preferred days are set, use them (user can override Sunday rest)
+    if (preferredDays && preferredDays.length > 0) {
+        return preferredDays.includes(today);
+    }
+
+    // Default behavior: Sunday is rest day, all other days are valid
+    if (today === SUNDAY) return false;
+    return true;
 };
 
-export const getDailyStack = (completedDays) => {
+/**
+ * Returns the workout focus for today based on day of week and preferences.
+ * @param {number[]} [preferredDays] - Optional array of preferred training days
+ * @returns {string} Today's workout focus description
+ */
+export const getScheduleFocus = (preferredDays = []) => {
     const day = new Date().getDay();
-    const upper = ['pushups', 'dips', 'pullups', 'supermans'];
-    const lower = ['squats', 'lunges', 'glutebridge', 'vups', 'plank'];
 
-    let targetKeys = [];
-    if (day === 0) targetKeys = []; // Sunday rest
-    else if (day % 2 === 1) targetKeys = upper; // Mon, Wed, Fri
-    else targetKeys = lower; // Tue, Thu, Sat
+    // If preferred days are set, use them
+    if (preferredDays && preferredDays.length > 0) {
+        return preferredDays.includes(day) ? 'Full Program' : 'Rest Day';
+    }
 
-    const stack = [];
-    targetKeys.forEach(key => {
-        const next = getNextSessionForExercise(key, completedDays);
-        if (next) stack.push(next);
+    // Default behavior: Sunday is rest, others are training
+    if (day === SUNDAY) return 'Rest & Recovery';
+    return 'Full Program';
+};
+
+/**
+ * Builds a workout stack for today based on schedule, progress, and preferences.
+ * Returns exercises that still have incomplete sessions.
+ * Respects preferred training days and maxExercisesPerDay limit if specified.
+ * @param {Object.<string, string[]>} completedDays - Map of exercise keys to completed day IDs
+ * @param {Object} [exercisePlans] - Optional exercise plans object (defaults to EXERCISE_PLANS)
+ * @param {string[]} [activeProgram] - Optional array of exercise keys in user's active program
+ * @param {Object} [trainingPreferences] - Optional training preferences object
+ * @returns {NextSession[]} Array of next sessions to complete today
+ */
+export const getDailyStack = (completedDays, exercisePlans = EXERCISE_PLANS, activeProgram = null, trainingPreferences = null) => {
+    const preferredDays = trainingPreferences?.preferredDays || [];
+    const maxExercisesPerDay = trainingPreferences?.maxExercisesPerDay || 0; // 0 = no limit
+
+    // Check if today is a valid training day
+    if (!isTrainingDay(preferredDays)) {
+        return [];
+    }
+
+    // Get all active program exercises (or default 9)
+    const programKeys = activeProgram || Object.keys(EXERCISE_PLANS);
+
+    // Build stack of all exercises with incomplete sessions
+    const allAvailable = [];
+    programKeys.forEach(key => {
+        const next = getNextSessionForExercise(key, completedDays, exercisePlans);
+        if (next) allAvailable.push(next);
     });
-    return stack;
+
+    // Apply maxExercisesPerDay limit if set
+    // Rotate exercises based on day of week to ensure variety
+    if (maxExercisesPerDay > 0 && allAvailable.length > maxExercisesPerDay) {
+        const dayOfWeek = new Date().getDay();
+        const startIndex = (dayOfWeek * maxExercisesPerDay) % allAvailable.length;
+        const selected = [];
+
+        for (let i = 0; i < maxExercisesPerDay; i++) {
+            const idx = (startIndex + i) % allAvailable.length;
+            selected.push(allAvailable[idx]);
+        }
+
+        return selected;
+    }
+
+    return allAvailable;
 };

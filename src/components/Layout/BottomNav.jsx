@@ -1,44 +1,79 @@
-import React from 'react';
-import { LayoutDashboard, Calendar, Dumbbell, BookOpen } from 'lucide-react';
+import { memo } from 'react'
+import { Home, Zap, BarChart3, Menu, Dumbbell } from 'lucide-react'
 
-const BottomNav = ({ activeTab, setActiveTab, getThemeClass }) => {
+const BottomNav = ({ activeTab, setActiveTab, onMenuClick, theme = 'dark', mode = 'home' }) => {
+    // Mode-specific styling
+    const isGymMode = mode === 'gym'
+    const activeTextClass = isGymMode ? 'text-purple-400' : 'text-cyan-400'
+    const activeBgClass = isGymMode ? 'bg-purple-500/10' : 'bg-cyan-500/10'
+    const activeGlowClass = isGymMode
+        ? 'drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]'
+        : 'drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]'
+
     const tabs = [
-        { id: 'dashboard', label: 'Home', icon: <LayoutDashboard size={20} /> },
-        { id: 'plan', label: 'Plan', icon: <Calendar size={20} /> },
-        { id: 'workout', label: 'Train', icon: <Dumbbell size={20} /> },
-        { id: 'guide', label: 'Guide', icon: <BookOpen size={20} /> },
-    ];
+        { id: 'home', label: isGymMode ? 'Gym' : 'Home', icon: isGymMode ? Dumbbell : Home },
+        { id: 'workout', label: 'Workout', icon: Zap },
+        { id: 'progress', label: 'Progress', icon: BarChart3 },
+        { id: 'menu', label: 'Menu', icon: Menu, isMenu: true },
+    ]
+
+    const bgColor = theme === 'light'
+        ? 'bg-white/90 border-slate-200'
+        : 'bg-slate-900/95 border-slate-700/50'
 
     return (
-        <nav className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4">
-            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-full shadow-2xl p-1.5 flex justify-between items-center relative overflow-hidden">
-                {tabs.map((tab) => {
-                    const isActive = activeTab === tab.id;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`relative z-10 flex-1 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-                                }`}
-                        >
-                            <div className="flex flex-col items-center gap-0.5">
-                                {React.cloneElement(tab.icon, {
-                                    size: isActive ? 22 : 20,
-                                    strokeWidth: isActive ? 2.5 : 2
-                                })}
-                                {isActive && <span className="text-[9px] font-black uppercase tracking-wide">{tab.label}</span>}
-                            </div>
+        <nav className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}>
+            <div className="mx-auto max-w-lg px-3">
+                <div className={`${bgColor} backdrop-blur-xl border rounded-2xl shadow-2xl p-1.5 flex justify-around items-center`}>
+                    {tabs.map((tab) => {
+                        const Icon = tab.icon
+                        const isActive = activeTab === tab.id && !tab.isMenu
 
-                            {/* Active background pill */}
-                            {isActive && (
-                                <div className={`absolute inset-0 bg-white/10 rounded-full -z-10 animate-in fade-in zoom-in duration-300`}></div>
-                            )}
-                        </button>
-                    );
-                })}
+                        const handleClick = () => {
+                            if (tab.isMenu) {
+                                onMenuClick?.()
+                            } else {
+                                setActiveTab(tab.id)
+                            }
+                        }
+
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={handleClick}
+                                className={`relative flex-1 min-w-0 py-2.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all duration-200 ${
+                                    isActive
+                                        ? activeTextClass
+                                        : theme === 'light'
+                                            ? 'text-slate-500 hover:text-slate-700'
+                                            : 'text-slate-400 hover:text-slate-200'
+                                }`}
+                                aria-label={tab.label}
+                            >
+                                {/* Active background */}
+                                {isActive && (
+                                    <div className={`absolute inset-0.5 ${activeBgClass} rounded-xl -z-10 animate-in fade-in zoom-in-95 duration-200`} />
+                                )}
+
+                                <Icon
+                                    size={isActive ? 22 : 20}
+                                    strokeWidth={isActive ? 2.5 : 2}
+                                    className={`flex-shrink-0 ${isActive ? activeGlowClass : ''}`}
+                                />
+                                <span className={`text-[11px] font-medium leading-tight whitespace-nowrap ${
+                                    isActive ? activeTextClass : ''
+                                }`}>
+                                    {tab.label}
+                                </span>
+                            </button>
+                        )
+                    })}
+                </div>
             </div>
         </nav>
-    );
-};
+    )
+}
 
-export default BottomNav;
+// ⚡ Bolt: Memoize BottomNav to prevent re-renders from App.jsx state changes.
+// All callback props must be wrapped in useCallback in the parent component.
+export default memo(BottomNav)

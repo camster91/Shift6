@@ -5,10 +5,16 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
   <meta name="description"
     content="Master your bodyweight strength in just 6 weeks with the ultimate minimalist training system." />
+
+  <!-- Apple PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Shift6" />
+  <link rel="apple-touch-icon" href="/pwa-192x192.png" />
 
   <!-- Premium Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,9 +25,23 @@
 
   <style>
     body {
-      background-color: #f8fafc;
+      background-color: #0f172a;
+    }
+    html.light body {
+      background-color: #f1f5f9;
     }
   </style>
+  <script>
+    // Prevent white flash: apply saved theme before paint
+    (function() {
+      try {
+        var theme = localStorage.getItem('shift6_theme');
+        if (theme === 'light') {
+          document.documentElement.classList.add('light');
+        }
+      } catch(e) {}
+    })();
+  </script>
 </head>
 
 <body>

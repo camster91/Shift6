@@ -1,0 +1,23 @@
+# Coolify Deployment Configuration
+name: shift6
+version: '3.8'
+
+deploy:
+  type: docker-compose
+  file: docker-compose.yml
+  
+build:
+  context: .
+  dockerfile: Dockerfile
+  
+ports:
+  - 3000:80
+
+healthcheck:
+  test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+
+environment:
+  NODE_ENV: production

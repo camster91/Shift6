@@ -1,4 +1,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useWorkoutState } from './context/WorkoutStateContext';
+import { useUIState } from './context/UIStateContext';
+import { useSettingsState } from './context/SettingsStateContext';
+import { useGymState } from './context/GymStateContext';
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS, getCustomRest, generateProgression } from './data/exercises.jsx';
 import { EXERCISE_LIBRARY, STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
 import { EXERCISES as DATABASE_EXERCISES } from './data/exerciseDatabase.js';
@@ -13,7 +17,6 @@ import {
     loadCustomPlans
 } from './utils/preferences.js';
 import {
-    loadSprints,
     saveSprints,
     getActiveSprint,
     getOrCreateSprint,
@@ -96,246 +99,53 @@ const safeSetItem = (key, value) => {
 const App = () => {
     // ---------------- STATE ----------------
     // Persistent Progress
-    const [completedDays, setCompletedDays] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}progress`, {});
-    });
+const { 
+        completedDays, setCompletedDays, 
+        sessionHistory, setSessionHistory, 
+        sprints, setSprints 
+    } = useWorkoutState();
 
-    const [sessionHistory, setSessionHistory] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}history`, []);
-    });
+    const {
+        activeTab, setActiveTab,
+        showDrawer, setShowDrawer,
+        showGuide, setShowGuide,
+        showHelp, setShowHelp,
+        showAddExercise, setShowAddExercise,
+        showExerciseLibrary, setShowExerciseLibrary,
+        showProgramManager, setShowProgramManager,
+        showTrainingSettings, setShowTrainingSettings,
+        showProgramSwitcher, setShowProgramSwitcher,
+        showNotificationSettings, setShowNotificationSettings,
+        showBodyMetrics, setShowBodyMetrics,
+        showAccessibility, setShowAccessibility,
+        showWarmup, setShowWarmup,
+        showHomeGoalSetter, setShowHomeGoalSetter,
+        showGymProgramManager, setShowGymProgramManager,
+        showGymAssessment, setShowGymAssessment
+    } = useUIState();
 
-    // Settings
-    const [audioEnabled, setAudioEnabled] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}audio_enabled`, true);
-    });
+    const {
+        audioEnabled, setAudioEnabled,
+        restTimerOverride, setRestTimerOverride,
+        dailyGoal, setDailyGoal,
+        warmupEnabled, setWarmupEnabled,
+        gymWeightUnit, setGymWeightUnit
+    } = useSettingsState();
 
-    const [restTimerOverride, setRestTimerOverride] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}rest_timer`, null);
-    });
+    const {
+        gymProgram, setGymProgram,
+        gymHistory, setGymHistory,
+        gymStreak, setGymStreak,
+        gymGoals, setGymGoals
+    } = useGymState();
 
     // Daily workout goal
-    const [dailyGoal, setDailyGoal] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}daily_goal`, 1);
-    });
 
-    const [theme, setTheme] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}theme`);
-        return saved || 'dark';
-    });
 
-    // Custom exercises added by user
-    const [customExercises, setCustomExercises] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}custom_exercises`, {});
-    });
-
-    // Difficulty level per exercise (1-6, default 3 = Standard)
-    const [exerciseDifficulty, setExerciseDifficulty] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}difficulty`, {});
-    });
-
-    // Personal records per exercise (max reps achieved)
-    const [personalRecords, setPersonalRecords] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}personal_records`, {});
-    });
-
-    // Home mode 6-week goals (per exercise)
-    const [homeGoals, setHomeGoals] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}home_goals`, {});
-    });
-
-    // Sprint-based progression system
-    const [sprints, setSprints] = useState(() => loadSprints());
-
-    // UI State for Add Exercise modal
-    // Generic confirmation modal: { title, message, onConfirm, confirmText, danger }
-    const [pendingConfirm, setPendingConfirm] = useState(null);
-
-    const [showAddExercise, setShowAddExercise] = useState(false);
-    const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
-    const [showProgramManager, setShowProgramManager] = useState(false);
-    const [showTrainingSettings, setShowTrainingSettings] = useState(false);
-    const [showProgramSwitcher, setShowProgramSwitcher] = useState(false);
-    const [showNotificationSettings, setShowNotificationSettings] = useState(false);
-    const [showBodyMetrics, setShowBodyMetrics] = useState(false);
-    const [showAccessibility, setShowAccessibility] = useState(false);
-    const [showWarmup, setShowWarmup] = useState(false);
-    const [pendingWorkout, setPendingWorkout] = useState(null); // Stores workout to start after warmup
-    const [showHomeGoalSetter, setShowHomeGoalSetter] = useState(null); // exerciseKey or null
-
-    // Navigation State
-    const [activeTab, setActiveTab] = useState('home');
-    const [showDrawer, setShowDrawer] = useState(false);
-    const [showGuide, setShowGuide] = useState(false);
-
-    // Warm-up preference (enabled by default)
-    const [warmupEnabled, setWarmupEnabled] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}warmup_enabled`, true);
-    });
-
-    // Help modal state
-    const [showHelp, setShowHelp] = useState(false);
-
-    // Body metrics (weight, measurements)
-    const [bodyMetrics, setBodyMetrics] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}body_metrics`, []);
-    });
-
-    // Training Preferences (with migration for existing users)
-    const [trainingPreferences, setTrainingPreferences] = useState(() => {
-        return migrateExistingUser();
-    });
-
-    // Custom generated plans (based on preferences)
-    const [customPlans, setCustomPlans] = useState(() => {
-        return loadCustomPlans();
-    });
-
-    // Program Mode: 'bodyweight' | 'mixed' | 'gym'
-    const [programMode, setProgramMode] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}program_mode`);
-        return saved || null; // null = show onboarding
-    });
-
-    // Active Program: array of exercise keys in current program
-    const [activeProgram, setActiveProgram] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}active_program`, null); // null = use default 9
-    });
-
-    // Current Program ID: which program template is selected
-    const [currentProgramId, setCurrentProgramId] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}current_program_id`);
-        return saved || null; // null = default/custom program
-    });
-
-    // User Equipment: array of equipment IDs user has access to
-    const [userEquipment, setUserEquipment] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}user_equipment`, ['none']);
-    });
-
-    // Onboarding Complete flag
-    const [onboardingComplete, setOnboardingComplete] = useState(() => {
-        // Check if user has progress (existing users skip onboarding)
-        const hasProgress = localStorage.getItem(`${STORAGE_PREFIX}progress`);
-        const onboarded = localStorage.getItem(`${STORAGE_PREFIX}onboarding_complete`);
-        if (onboarded === 'true') return true;
-        if (hasProgress && Object.keys(safeLoadJSON(`${STORAGE_PREFIX}progress`, {})).length > 0) {
-            // Existing user - mark as onboarded and set bodyweight mode
-            safeSetItem(`${STORAGE_PREFIX}onboarding_complete`, 'true');
-            safeSetItem(`${STORAGE_PREFIX}program_mode`, 'bodyweight');
-            return true;
-        }
-        return false;
-    });
-
-    // Track unlocked badges to detect new ones
-    const [seenBadgeIds, setSeenBadgeIds] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}seen_badges`, []);
-    });
-    const [newBadges, setNewBadges] = useState([]);
-    const prevStatsRef = useRef(null);
-
-    // ============ GYM MODE STATE ============
-    // Current mode selection - permanently remembered, defaults to 'home' for onboarded users
-    const [currentMode, setCurrentMode] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}current_mode`);
-        if (saved) return saved;
-        // Default to 'home' for users who have completed onboarding
-        const onboarded = localStorage.getItem(`${STORAGE_PREFIX}onboarding_complete`);
-        return onboarded === 'true' ? 'home' : null;
-    });
-
-    // Gym onboarding complete flag
-    const [gymOnboardingComplete, setGymOnboardingComplete] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_onboarding_complete`);
-        return saved === 'true';
-    });
-
-    // Gym program state
-    const [gymProgram, setGymProgram] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}gym_program`, null);
-    });
-
-    // Gym weights (last used weight per exercise)
-    const [gymWeights, setGymWeights] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}gym_weights`, {});
-    });
-
-    // Gym reps (last used reps per exercise)
-    const [gymReps, setGymReps] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}gym_reps`, {});
-    });
-
-    // Weight unit preference (kg or lbs)
-    const [gymWeightUnit, setGymWeightUnit] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}gym_weight_unit`);
-        return saved || 'kg';
-    });
-
-    // Gym workout history
-    const [gymHistory, setGymHistory] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}gym_history`, []);
-    });
-
-    // Gym streak
-    const [gymStreak, setGymStreak] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}gym_streak`, 0);
-    });
-
-    // Custom gym programs (user-created)
-    const [customGymPrograms, setCustomGymPrograms] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}custom_gym_programs`, []);
-    });
-
-    // Show gym program manager modal
-    const [showGymProgramManager, setShowGymProgramManager] = useState(false);
-
-    // Gym goals (6-week progression targets per exercise)
-    const [gymGoals, setGymGoals] = useState(() => {
-        return safeLoadJSON(`${STORAGE_PREFIX}gym_goals`, {});
-    });
-
-    // Show gym assessment flow
-    const [showGymAssessment, setShowGymAssessment] = useState(false);
-    const [assessmentExercises, setAssessmentExercises] = useState([]);
-
-    // Current gym workout session - null until user starts or resumes
-    const [currentGymSession, setCurrentGymSession] = useState(null);
-
-    // Pending gym session from previous app session (loaded from localStorage)
-    const [pendingGymSession, setPendingGymSession] = useState(() => {
-        const saved = localStorage.getItem(`${STORAGE_PREFIX}current_gym_session`);
-        if (!saved) return null;
-        try {
-            const parsed = JSON.parse(saved);
-            // Validate that the session has a valid exercises array
-            if (!parsed || !Array.isArray(parsed.exercises) || parsed.exercises.length === 0) {
-                // Invalid session data - clear it
-                localStorage.removeItem(`${STORAGE_PREFIX}current_gym_session`);
-                return null;
-            }
-            return parsed;
-        } catch (e) {
-            // Corrupt JSON - clear it
-            localStorage.removeItem(`${STORAGE_PREFIX}current_gym_session`);
-            return null;
-        }
-    });
-
-    // Bootstrap Sprints for Active Program (Dynamic Engine Migration)
     useEffect(() => {
-        if (!activeProgram || !trainingPreferences || !allExercises) return;
-
-        // Defer to avoid blocking render
         const timer = setTimeout(() => {
             let hasChanges = false;
             const updatedSprints = { ...sprints };
-            // Simple PR scan from history
-            const historyPRs = {};
-            sessionHistory.forEach(s => {
-                if (!historyPRs[s.exerciseKey] || s.volume > historyPRs[s.exerciseKey]) {
-                    historyPRs[s.exerciseKey] = s.volume;
-                }
-            });
 
             activeProgram.forEach(exKey => {
                 // skip if already has active sprint

@@ -6,29 +6,35 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies for build
+RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Build the app
+# Build the frontend
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine
+FROM node:20-alpine
 
-# Copy built app from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Copy nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy built frontend
+COPY --from=builder /app/dist ./dist
+
+# Copy server
+COPY server ./server
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm ci --only=production
 
 # Expose port
-EXPOSE 80
+EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget -q --spider http://localhost/ || exit 1
+  CMD wget -q --spider http://localhost:3000/api/health || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server/index.js"]

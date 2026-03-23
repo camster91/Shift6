@@ -9,19 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-
       - name: Install dependencies
-        run: npm ci
-
+        run: npm install
       - name: Build
         run: npm run build --if-present
-
       - name: Trigger Coolify Deploy
         run: |
           curl -X GET "http://187.77.26.99:8000/api/v1/deploy?uuid=toc8kck8g08k8g0co0gg8ggs&force=true" \

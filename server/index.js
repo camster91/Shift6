@@ -46,12 +46,14 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       const session = event.data.object;
       console.log('Payment successful:', session.id);
       // TODO: Update user subscription in database
+      // NOTE: No database — subscription status is not persisted. Payments succeed but the app cannot verify who paid.
       break;
     case 'customer.subscription.updated':
     case 'customer.subscription.deleted':
       const subscription = event.data.object;
       console.log('Subscription updated:', subscription.id, subscription.status);
       // TODO: Update user subscription status
+      // NOTE: No database — subscription status is not persisted. Payments succeed but the app cannot verify who paid.
       break;
     default:
       console.log(`Unhandled event type: ${event.type}`);

@@ -90,6 +90,7 @@ const App = () => {
         customPlans, trainingPreferences, warmupEnabled,
         homeGoals, setHomeGoals,
         setPendingConfirm,
+        setShowWarmup: ui.setShowWarmup,
     });
 
     const gymWorkout = useGymWorkout({
@@ -101,6 +102,7 @@ const App = () => {
         gymReps: gym.gymReps, setGymReps: gym.setGymReps,
         gymOnboardingComplete: gym.gymOnboardingComplete, setGymOnboardingComplete: gym.setGymOnboardingComplete,
         customGymPrograms: gym.customGymPrograms, setCustomGymPrograms: gym.setCustomGymPrograms,
+        setShowGymAssessment: ui.setShowGymAssessment,
     });
 
     const { newBadges, handleCloseBadges } = useAchievements({
@@ -147,12 +149,6 @@ const App = () => {
         }, 2000);
         return () => clearTimeout(timer);
     }, [activeProgram, trainingPreferences, sessionHistory.length]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // Theme DOM sync
-    useEffect(() => {
-        document.documentElement.classList.remove('dark', 'light');
-        document.documentElement.classList.add(theme);
-    }, [theme]);
 
     // ──────────── Body Metrics ────────────
     const handleAddMetric = useCallback((metric) => {

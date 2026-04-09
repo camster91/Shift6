@@ -14,6 +14,7 @@ export function useGymWorkout({
     gymReps, setGymReps,
     gymOnboardingComplete, setGymOnboardingComplete,
     customGymPrograms, setCustomGymPrograms,
+    setShowGymAssessment,
 }) {
     const [currentGymSession, setCurrentGymSession] = useState(null);
     const [pendingGymSession, setPendingGymSession] = useState(() => {
@@ -130,7 +131,8 @@ export function useGymWorkout({
 
     const handleStartGymAssessment = useCallback((exerciseIds) => {
         setAssessmentExercises(exerciseIds);
-    }, []);
+        setShowGymAssessment(true);
+    }, [setShowGymAssessment]);
 
     const handleCompleteGymAssessment = useCallback((assessmentResults, goals) => {
         setGymGoals(prev => ({ ...prev, ...goals }));
@@ -139,6 +141,7 @@ export function useGymWorkout({
             if (!result.skipped) newWeights[exerciseId] = result.weight;
         });
         setGymWeights(newWeights);
+        setShowGymAssessment(false);
         setAssessmentExercises([]);
     }, [gymWeights, setGymGoals, setGymWeights]);
 

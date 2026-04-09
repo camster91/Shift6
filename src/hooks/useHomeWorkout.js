@@ -34,6 +34,7 @@ export function useHomeWorkout({
     warmupEnabled,
     homeGoals, setHomeGoals,
     setPendingConfirm,
+    setShowWarmup,
 }) {
     // --- Session State ---
     const [workoutQueue, setWorkoutQueue] = usePersistedState('queue', []);
@@ -201,25 +202,28 @@ export function useHomeWorkout({
 
         if (warmupEnabled && !recentlyWarmedUp && exercise) {
             setPendingWorkout({ week, dayIndex, overrideKey: exKey });
+            setShowWarmup(true);
         } else {
             startWorkout(week, dayIndex, overrideKey);
         }
-    }, [activeExercise, allExercises, warmupEnabled, startWorkout]);
+    }, [activeExercise, allExercises, warmupEnabled, startWorkout, setShowWarmup]);
 
     const handleWarmupComplete = useCallback(() => {
         safeSetItem(`${STORAGE_PREFIX}last_warmup`, Date.now().toString());
+        setShowWarmup(false);
         if (pendingWorkout) {
             startWorkout(pendingWorkout.week, pendingWorkout.dayIndex, pendingWorkout.overrideKey);
             setPendingWorkout(null);
         }
-    }, [pendingWorkout, startWorkout]);
+    }, [pendingWorkout, startWorkout, setShowWarmup]);
 
     const handleWarmupSkip = useCallback(() => {
+        setShowWarmup(false);
         if (pendingWorkout) {
             startWorkout(pendingWorkout.week, pendingWorkout.dayIndex, pendingWorkout.overrideKey);
             setPendingWorkout(null);
         }
-    }, [pendingWorkout, startWorkout]);
+    }, [pendingWorkout, startWorkout, setShowWarmup]);
 
     const getRecommendedWarmupForExercise = useCallback((exerciseKey) => {
         const exercise = allExercises[exerciseKey];

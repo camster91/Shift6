@@ -1,30 +1,15 @@
-import { createContext, useContext, useState } from 'react';
-import { storage } from '../services/storage';
+import { createContext, useContext } from 'react';
+import { usePersistedState } from '../hooks/usePersistedState';
 
 const WorkoutStateContext = createContext();
 
 export const WorkoutStateProvider = ({ children }) => {
-  const [sessionHistory, setSessionHistoryState] = useState(() => storage.load('history', []));
-  const [completedDays, setCompletedDaysState] = useState(() => storage.load('progress', {}));
-  const [sprints, setSprintsState] = useState(() => storage.load('sprints', {}));
+  const [sessionHistory, setSessionHistory] = usePersistedState('history', []);
+  const [completedDays, setCompletedDays] = usePersistedState('progress', {});
+  const [sprints, setSprints] = usePersistedState('sprints', {});
 
-  const setSessionHistory = (newValue) => {
-    setSessionHistoryState(newValue);
-    storage.save('history', newValue);
-  };
-
-  const setCompletedDays = (newValue) => {
-    setCompletedDaysState(newValue);
-    storage.save('progress', newValue);
-  };
-
-  const setSprints = (newValue) => {
-    setSprintsState(newValue);
-    storage.save('sprints', newValue);
-  };
-  
   return (
-    <WorkoutStateContext.Provider value={{ 
+    <WorkoutStateContext.Provider value={{
       sessionHistory, setSessionHistory,
       completedDays, setCompletedDays,
       sprints, setSprints

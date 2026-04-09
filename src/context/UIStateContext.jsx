@@ -1,5 +1,4 @@
 import { createContext, useContext, useState } from 'react';
-import { storage } from '../services/storage';
 
 const UIStateContext = createContext();
 

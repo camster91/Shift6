@@ -1,15 +1,12 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { storage } from '../services/storage';
+import { createContext, useContext, useEffect } from 'react';
+import { usePersistedState } from '../hooks/usePersistedState';
 
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-    // Assuming 'theme' is a simple string. storage.load/save handles serialization.
-    const [theme, setTheme] = useState(() => storage.load('theme', 'dark'));
+    const [theme, setTheme] = usePersistedState('theme', 'dark');
 
     useEffect(() => {
-        storage.save('theme', theme);
-        // Apply theme to DOM
         document.documentElement.className = theme;
     }, [theme]);
 

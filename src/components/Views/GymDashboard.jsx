@@ -537,7 +537,9 @@ const GymDashboard = ({
             <button
               onClick={() => {
                 vibrate(30)
-                onStartWorkout(todaysWorkout)
+                if (todaysWorkout?.exercises?.length) {
+                  onStartWorkout(todaysWorkout)
+                }
               }}
               className="w-full bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl p-5 text-left hover:from-purple-500 hover:to-pink-500 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-purple-500/20 group"
             >

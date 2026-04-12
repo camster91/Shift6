@@ -636,7 +636,7 @@ const Dashboard = ({
                                 : 'Great job! Browse exercises below'}
                         </p>
                         <button
-                            onClick={() => setShowAllExercises(true)}
+                            onClick={() => { vibrate(20); startStack(); }}
                             className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm text-slate-300 transition-colors"
                         >
                             {isRestDay ? 'Workout anyway' : 'Browse exercises'}

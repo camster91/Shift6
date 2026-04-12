@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePersistedState } from './usePersistedState';
 import { calculateStats, getUnlockedBadges } from '../utils/gamification';
 import {
@@ -56,14 +56,24 @@ export function useAchievements({ completedDays, sessionHistory, dailyGoal }) {
         return () => { cleanup(); clearTimeout(timer); };
     }, [sessionHistory, dailyGoal]);
 
-    const handleCloseBadges = () => {
+    const badgeTimerRef = useRef(null);
+
+    const handleCloseBadges = useCallback(() => {
         setNewBadges([]);
-        setTimeout(() => {
+        if (badgeTimerRef.current) clearTimeout(badgeTimerRef.current);
+        badgeTimerRef.current = setTimeout(() => {
             const stats = calculateStats(completedDays, sessionHistory);
             const unlockedIds = getUnlockedBadges(stats).map(b => b.id);
             setSeenBadgeIds(unlockedIds);
         }, 100);
-    };
+    }, [completedDays, sessionHistory, setSeenBadgeIds]);
+
+    // Cleanup badge timer on unmount
+    useEffect(() => {
+        return () => {
+            if (badgeTimerRef.current) clearTimeout(badgeTimerRef.current);
+        };
+    }, []);
 
     return { newBadges, handleCloseBadges };
 }

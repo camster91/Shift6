@@ -316,7 +316,7 @@ export const analyzePerformance = (result, category) => {
   // Calculate estimated 1RM performance
   const targetVolume = result.targetWeight * result.targetReps
   const actualVolume = result.actualWeight * result.actualReps
-  const volumeDiff = ((actualVolume - targetVolume) / targetVolume) * 100
+  const volumeDiff = targetVolume > 0 ? ((actualVolume - targetVolume) / targetVolume) * 100 : 0
 
   if (volumeDiff >= 10) {
     // Significantly exceeded target
@@ -458,7 +458,7 @@ export const calculateProgress = (goal) => {
     : 100
 
   // Weight is typically more important for gym goals
-  return Math.min(100, Math.round(weightProgress * 0.7 + repsProgress * 0.3))
+  return Math.max(0, Math.min(100, Math.round(weightProgress * 0.7 + repsProgress * 0.3)))
 }
 
 /**

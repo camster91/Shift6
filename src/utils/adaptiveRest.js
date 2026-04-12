@@ -16,7 +16,7 @@ import { UPPER_BODY_EXERCISES, LOWER_BODY_EXERCISES } from './constants'
  */
 export const EXERCISE_INTENSITY = {
   // High intensity - compound movements (longer rest)
-  high: ['pullups', 'dips', 'squats', 'lunges'],
+  high: ['pullups', 'chinups', 'dips', 'squats', 'lunges'],
   // Medium intensity - moderate compound (medium rest)
   medium: ['pushups', 'glutebridge', 'vups'],
   // Lower intensity - isolation/static (shorter rest)

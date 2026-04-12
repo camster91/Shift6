@@ -150,9 +150,7 @@ export const calculateStats = (completedDays, sessionHistory = []) => {
 
             // Personal records tracking
             if (!exercisePRs[s.exerciseKey] || s.volume > exercisePRs[s.exerciseKey]) {
-                if (exercisePRs[s.exerciseKey] !== undefined) {
-                    personalRecords++;
-                }
+                personalRecords++;
                 exercisePRs[s.exerciseKey] = s.volume;
             }
         });

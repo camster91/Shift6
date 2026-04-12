@@ -53,9 +53,9 @@ export const calculateWorkoutFrequency = (history = [], lookbackDays = 14) => {
   const activeDays = uniqueDays.size
 
   // Calculate workouts per week
-  const actualDays = Math.min(lookbackDays,
+  const actualDays = Math.max(1, Math.min(lookbackDays,
     Math.ceil((now - new Date(recentWorkouts[recentWorkouts.length - 1].date).getTime()) / MS_PER_DAY) + 1
-  )
+  ))
   const workoutsPerWeek = (recentWorkouts.length / actualDays) * 7
 
   // Calculate average gap between workouts

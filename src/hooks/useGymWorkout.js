@@ -54,37 +54,42 @@ export function useGymWorkout({
     }, [setAndPersistGymSession]);
 
     const handleCompleteGymWorkout = useCallback((workoutData, completedSets) => {
-        setGymHistory(prev => [workoutData, ...prev].slice(0, 100));
-
-        // Update weights and reps from completed sets
-        const newWeights = { ...gymWeights };
-        const newReps = { ...gymReps };
+        // Update weights and reps using callback form to avoid stale closures
+        const weightUpdates = {};
+        const repUpdates = {};
         Object.entries(completedSets).forEach(([exerciseId, sets]) => {
             if (sets.length > 0) {
-                newWeights[exerciseId] = sets[sets.length - 1].weight;
-                newReps[exerciseId] = sets.map(s => s.reps);
+                weightUpdates[exerciseId] = sets[sets.length - 1].weight;
+                repUpdates[exerciseId] = sets.map(s => s.reps);
             }
         });
-        setGymWeights(newWeights);
-        setGymReps(newReps);
+        setGymWeights(prev => ({ ...prev, ...weightUpdates }));
+        setGymReps(prev => ({ ...prev, ...repUpdates }));
 
-        // Update streak
-        const today = new Date().toDateString();
-        const lastWorkout = gymHistory[0];
-        if (lastWorkout) {
-            const lastDate = new Date(lastWorkout.date).toDateString();
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            if (lastDate === today) {
-                // Already worked out today
-            } else if (lastDate === yesterday.toDateString()) {
-                setGymStreak(prev => prev + 1);
+        // Update history and streak using callback form
+        setGymHistory(prev => {
+            const updated = [workoutData, ...prev].slice(0, 100);
+
+            // Streak logic uses the previous history (before this workout)
+            const today = new Date().toDateString();
+            const lastWorkout = prev[0];
+            if (lastWorkout) {
+                const lastDate = new Date(lastWorkout.date).toDateString();
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                if (lastDate === today) {
+                    // Already worked out today, no streak change
+                } else if (lastDate === yesterday.toDateString()) {
+                    setGymStreak(s => s + 1);
+                } else {
+                    setGymStreak(1);
+                }
             } else {
                 setGymStreak(1);
             }
-        } else {
-            setGymStreak(1);
-        }
+
+            return updated;
+        });
 
         // Advance program day
         if (gymProgram) {
@@ -98,7 +103,7 @@ export function useGymWorkout({
         }
 
         setAndPersistGymSession(null);
-    }, [gymWeights, gymReps, gymHistory, gymProgram, setGymHistory, setGymWeights, setGymReps, setGymStreak, setGymProgram, setAndPersistGymSession]);
+    }, [gymProgram, setGymHistory, setGymWeights, setGymReps, setGymStreak, setGymProgram, setAndPersistGymSession]);
 
     const handleChangeGymProgram = useCallback((programId, programData = null) => {
         setGymProgram({
@@ -136,14 +141,14 @@ export function useGymWorkout({
 
     const handleCompleteGymAssessment = useCallback((assessmentResults, goals) => {
         setGymGoals(prev => ({ ...prev, ...goals }));
-        const newWeights = { ...gymWeights };
+        const weightUpdates = {};
         Object.entries(assessmentResults).forEach(([exerciseId, result]) => {
-            if (!result.skipped) newWeights[exerciseId] = result.weight;
+            if (!result.skipped) weightUpdates[exerciseId] = result.weight;
         });
-        setGymWeights(newWeights);
+        setGymWeights(prev => ({ ...prev, ...weightUpdates }));
         setShowGymAssessment(false);
         setAssessmentExercises([]);
-    }, [gymWeights, setGymGoals, setGymWeights]);
+    }, [setGymGoals, setGymWeights]);
 
     const handleRecordGymResult = useCallback((exerciseId, weight, reps, rpe) => {
         const goal = gymGoals[exerciseId];

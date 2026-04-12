@@ -126,6 +126,14 @@ const GymWorkoutSession = ({
   const [totalRestTime, setTotalRestTime] = useState(0) // Track original rest time for progress
   const [isResting, setIsResting] = useState(false)
   const restTimerRef = useRef(null)
+  const prTimerRef = useRef(null)
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (prTimerRef.current) clearTimeout(prTimerRef.current)
+    }
+  }, [])
 
   // Workout state
   const [workoutStartTime] = useState(Date.now())
@@ -222,9 +230,11 @@ const GymWorkoutSession = ({
           return prev - 1
         })
       }, 1000)
+    } else {
+      clearInterval(restTimerRef.current)
     }
     return () => clearInterval(restTimerRef.current)
-  }, [isResting, restTimeLeft, audioEnabled])
+  }, [isResting, audioEnabled])
 
   // Validate input before logging
   const validateSet = useCallback(() => {
@@ -311,7 +321,7 @@ const GymWorkoutSession = ({
         }
 
         // Auto-hide after 3 seconds
-        setTimeout(() => setShowPRCelebration(null), 3000)
+        prTimerRef.current = setTimeout(() => setShowPRCelebration(null), 3000)
       }
 
       // Calculate weight suggestion for next time

@@ -74,6 +74,22 @@ export const generateHomeWeeklyTargets = (startingValue, targetValue, unit = 're
   const weeks = []
   const diff = targetValue - startingValue
 
+  // When target is lower than starting (negative diff), use a declining schedule
+  if (diff < 0) {
+    for (let week = 1; week <= 6; week++) {
+      const progress = week / 6
+      const weekTarget = Math.round(startingValue + (diff * progress))
+      weeks.push({
+        week,
+        targetValue: weekTarget,
+        unit,
+        isDeloadWeek: week === 4,
+        notes: week === 4 ? 'Consolidation week - focus on form' : null
+      })
+    }
+    return weeks
+  }
+
   for (let week = 1; week <= 6; week++) {
     // Slightly front-loaded for motivation, with deload consideration at week 4
     let progress

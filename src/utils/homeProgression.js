@@ -331,7 +331,7 @@ export const recordWorkoutResult = (goal, actualReps, sets = 1) => {
  */
 export const analyzePerformance = (result, goal) => {
   const { repsDiff, targetReps, actualReps } = result
-  const percentDiff = (repsDiff / targetReps) * 100
+  const percentDiff = targetReps > 0 ? (repsDiff / targetReps) * 100 : 0
 
   let status = 'on_track'
   let message = ''

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePersistedState, safeLoadJSON, safeSetItem, STORAGE_PREFIX } from './usePersistedState';
 import { EXERCISE_PLANS, DIFFICULTY_LEVELS, getCustomRest } from '../data/exercises.jsx';
 import { getDailyStack } from '../utils/schedule';
@@ -53,18 +53,29 @@ export function useHomeWorkout({
     const [isExerciseTimerRunning, setIsExerciseTimerRunning] = useState(false);
     const [exerciseTimerStarted, setExerciseTimerStarted] = useState(false);
 
+    // Refs for values needed in callbacks to avoid stale closures
+    const sprintsRef = useRef(sprints);
+    sprintsRef.current = sprints;
+    const processingRef = useRef(isProcessing);
+    processingRef.current = isProcessing;
+
     // --- Timers ---
-    useEffect(() => {
-        if (!isTimerRunning || timeLeft <= 0) return;
-        const interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-        return () => clearInterval(interval);
-    }, [isTimerRunning, timeLeft]);
+    const timerRef = useRef(null);
+    const exerciseTimerRef = useRef(null);
 
     useEffect(() => {
+        if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+        if (!isTimerRunning || timeLeft <= 0) return;
+        timerRef.current = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+        return () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
+    }, [isTimerRunning]);
+
+    useEffect(() => {
+        if (exerciseTimerRef.current) { clearInterval(exerciseTimerRef.current); exerciseTimerRef.current = null; }
         if (!isExerciseTimerRunning || exerciseTimeLeft <= 0) return;
-        const interval = setInterval(() => setExerciseTimeLeft(prev => prev - 1), 1000);
-        return () => clearInterval(interval);
-    }, [isExerciseTimerRunning, exerciseTimeLeft]);
+        exerciseTimerRef.current = setInterval(() => setExerciseTimeLeft(prev => prev - 1), 1000);
+        return () => { if (exerciseTimerRef.current) { clearInterval(exerciseTimerRef.current); exerciseTimerRef.current = null; } };
+    }, [isExerciseTimerRunning]);
 
     // Auto-stop timers when they reach 0
     useEffect(() => {
@@ -232,19 +243,15 @@ export function useHomeWorkout({
     }, [allExercises]);
 
     // --- Complete Workout ---
+    const processingTimerRef = useRef(null);
     const completeWorkout = useCallback((actualRepsPerSet = null, feedback = null) => {
-        if (!currentSession || isProcessing) return;
+        if (!currentSession || processingRef.current) return;
         setIsProcessing(true);
 
         const { exerciseKey, dayId, reps, unit } = currentSession;
         const amrapReps = parseInt(amrapValue) || 0;
         const totalVolume = reps.reduce((sum, r) => sum + r, 0) + amrapReps;
         const actualReps = actualRepsPerSet || reps;
-
-        const newCompletedDays = {
-            ...completedDays,
-            [exerciseKey]: [...new Set([...(completedDays[exerciseKey] || []), dayId])]
-        };
 
         const newHistoryItem = {
             exerciseKey, dayId, date: new Date().toISOString(),
@@ -255,10 +262,14 @@ export function useHomeWorkout({
         };
         setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
         setWorkoutNotes('');
-        setCompletedDays(newCompletedDays);
+        setCompletedDays(prev => ({
+            ...prev,
+            [exerciseKey]: [...new Set([...(prev[exerciseKey] || []), dayId])]
+        }));
 
-        // Sprint progression
-        const activeSprint = getActiveSprint(sprints, exerciseKey);
+        // Sprint progression — use ref to avoid stale closure
+        const currentSprints = sprintsRef.current;
+        const activeSprint = getActiveSprint(currentSprints, exerciseKey);
         if (activeSprint) {
             const performance = analyzeWorkoutPerformance(actualReps, reps, amrapReps, feedback);
             let updatedSprint = activeSprint;
@@ -314,8 +325,16 @@ export function useHomeWorkout({
             setCurrentSession(null);
         }
 
-        setTimeout(() => setIsProcessing(false), 1000);
-    }, [currentSession, isProcessing, amrapValue, workoutNotes, completedDays, sprints, workoutQueue, startWorkout, homeGoals, setSessionHistory, setCompletedDays, setSprints, setPendingConfirm, setHomeGoals, setWorkoutQueue]);
+        if (processingTimerRef.current) clearTimeout(processingTimerRef.current);
+        processingTimerRef.current = setTimeout(() => setIsProcessing(false), 1000);
+    }, [currentSession, amrapValue, workoutNotes, workoutQueue, startWorkout, homeGoals, setSessionHistory, setCompletedDays, setSprints, setPendingConfirm, setHomeGoals, setWorkoutQueue]);
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (processingTimerRef.current) clearTimeout(processingTimerRef.current);
+        };
+    }, []);
 
     // --- Calibration ---
     const applyCalibration = useCallback((factor, skipConfirmation = false) => {

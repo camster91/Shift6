@@ -52,6 +52,9 @@ export function usePersistedState(key, fallback, opts = {}) {
     const setPersistedValue = useCallback((newValue) => {
         setValue(prev => {
             const resolved = typeof newValue === 'function' ? newValue(prev) : newValue;
+            // Persist inside the updater to ensure atomicity with state changes.
+            // In React 18's StrictMode, this may double-write to localStorage,
+            // which is safe since the same value is written both times.
             if (opts.raw) {
                 safeSetItem(fullKey, String(resolved));
             } else {

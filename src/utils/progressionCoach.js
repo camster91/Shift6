@@ -365,7 +365,7 @@ export const applyRealisticProgression = (weeks, startReps, finalGoal) => {
   )
 
   // Scale factor to apply to all reps
-  const scaleFactor = (realisticFinalGoal - startReps) / (finalGoal - startReps)
+  const scaleFactor = finalGoal !== startReps ? (realisticFinalGoal - startReps) / (finalGoal - startReps) : 1
 
   // If the original was already realistic, return unchanged
   if (scaleFactor >= 0.95) return weeks

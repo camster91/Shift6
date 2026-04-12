@@ -1,16 +1,27 @@
 # Code Review — Shift6 Fitness App
 
-**Date:** 2026-04-09
+**Date:** 2026-04-12
 **Reviewer:** Claude (automated)
 **Scope:** Full codebase review — architecture, security, bugs, code quality
+**Baseline:** Previous review dated 2026-04-09
 
 ---
 
 ## Executive Summary
 
-Shift6 is a well-structured React + Capacitor fitness app with ~18K lines of source code. The app uses a context-based state management pattern, lazy loading for code splitting, and a clean component hierarchy. However, there are **critical security issues** in the backend and Android build config, **architectural concerns** in the monolithic App.jsx, and several **bug-level issues** in workout components.
+Since the last review, the major refactoring of App.jsx has been completed successfully — it went from a ~2000-line God Component to a well-structured 642-line orchestrator with logic extracted into focused custom hooks and contexts. The dual-storage bug is also fixed: contexts now use `usePersistedState` and are the single source of truth for persistence.
 
-**Findings:** 5 Critical | 8 Major | 10 Minor
+However, **critical security issues remain** in the backend, several **new bugs** were found in the hooks and utility modules (including data loss risks in export/import and factory reset), and the **progression algorithm has multiple division-by-zero edge cases**.
+
+**Findings:** 7 Critical | 16 Major | 18 Minor
+
+### Resolved from Previous Review
+
+| # | Issue | Status |
+|---|-------|--------|
+| 6 | Dual storage system (App.jsx + contexts both writing) | **Fixed** — contexts now use `usePersistedState` |
+| 7 | App.jsx God Component (~2000 lines) | **Fixed** — now 642 lines with extracted hooks |
+| 8 | SettingsStateContext/GymStateContext don't persist | **Fixed** — both use `usePersistedState` |
 
 ---
 
@@ -18,271 +29,248 @@ Shift6 is a well-structured React + Capacitor fitness app with ~18K lines of sou
 
 ### 1. Unauthenticated Stripe Endpoints (server/index.js:105-136)
 
-The `/api/subscription/:customerId` and `/api/create-portal-session` endpoints accept any customer ID with **zero authentication**. Any client can:
-- Query any Stripe customer's subscription status
-- Access any customer's billing portal (modify payment methods, cancel subscriptions)
+The `/api/subscription/:customerId` and `/api/create-portal-session` endpoints accept any customer ID with **zero authentication**. Any client can query any Stripe customer's subscription status or open their billing portal.
 
+**Fix:** Add session/JWT authentication. Verify the authenticated user owns the customer ID.
+
+### 2. Factory Reset Wipes All Origin Data (useDataManagement.js:83)
+
+`localStorage.clear()` removes **every** key in localStorage, not just `shift6_`-prefixed keys. If any other app or feature shares the same origin, its data is destroyed.
+
+**Fix:** Replace with targeted deletion:
 ```javascript
-// Anyone can hit this with any customerId
-app.get('/api/subscription/:customerId', async (req, res) => {
-  const subscriptions = await stripe.subscriptions.list({
-    customer: req.params.customerId, // No ownership verification
-  });
-});
+Object.keys(localStorage)
+  .filter(k => k.startsWith(STORAGE_PREFIX))
+  .forEach(k => localStorage.removeItem(k));
 ```
 
-**Fix:** Implement session/JWT authentication. Verify the authenticated user owns the customer ID before querying Stripe.
+### 3. Incomplete Export/Import Silently Loses Most User Data (useDataManagement.js:12-28, 56-72)
 
-### 2. Hardcoded Credentials in Version Control
+The export function only serializes `completedDays` and `introDismissed`. It omits `sessionHistory`, `sprints`, `homeGoals`, `gymProgram`, `gymHistory`, `gymWeights`, `gymReps`, `gymStreak`, `customExercises`, `exerciseDifficulty`, `trainingPreferences`, `customPlans`, and all gym state. A user who exports, factory resets, and imports loses the majority of their data.
 
-**android/keystore.properties** (tracked in git):
-```
-storePassword=[REDACTED]
-keyPassword=[REDACTED]
-```
+**Fix:** Export all `shift6_`-prefixed keys from localStorage, or use the context state values directly.
 
-**android/app/build.gradle:23-25:**
-```
-storePassword '[REDACTED]'
-keyPassword '[REDACTED]'
-```
+### 4. No Customer Association in Checkout (server/index.js:76-95)
 
-Two different passwords exist in two different files, both committed. The keystore.properties file is not in `.gitignore`.
+Checkout session creation never passes a `customer` or `customer_email` parameter. Stripe creates a new Customer object for every checkout. The subscription/portal endpoints require a `customerId`, but there is no mechanism to link a user to their Stripe customer ID. The entire purchase-to-verification flow is broken.
 
-**Fix:** Add `keystore.properties` to `.gitignore`, remove from git history, rotate credentials, and load from environment variables.
+**Fix:** Pass `customer_email` in checkout creation and persist the mapping.
 
-### 3. No Payment Persistence (server/index.js:48-56)
-
-Webhook handlers for `checkout.session.completed` and `customer.subscription.*` events log to console but **never persist** to any database. The app cannot verify who has paid.
-
-```javascript
-case 'checkout.session.completed':
-  console.log('Payment successful:', session.id);
-  // TODO: Update user subscription in database
-  // NOTE: No database — subscription status is not persisted.
-  break;
-```
-
-**Fix:** Implement a database (even SQLite) to store subscription events, or use Stripe's customer portal as the source of truth with proper auth.
-
-### 4. Open CORS Policy (server/index.js:29)
+### 5. Open CORS Policy (server/index.js:29)
 
 ```javascript
 app.use(cors()); // Allows ALL origins
 ```
 
-Any website can make authenticated requests to the Stripe endpoints.
+Any website can make cross-origin requests to the Stripe endpoints.
 
-**Fix:** Restrict to specific origins:
+**Fix:** Restrict to known origins:
 ```javascript
 app.use(cors({ origin: ['https://getshift6.com'], credentials: true }));
 ```
 
-### 5. Hardcoded Infrastructure in CI/CD (.github/workflows/deploy.yml:22)
+### 6. Division by Zero in Progression Algorithms (progression.js, gymProgression.js, homeGoals.js)
 
-```yaml
-curl -X GET "http://187.77.26.99:8000/api/v1/deploy?uuid=toc8kck8g08k8g0co0gg8ggs&force=true"
+Multiple division-by-zero paths exist:
+
+- `progression.js:104` — `currentMax / maxPotential` when `exerciseData.finalGoal` is 0
+- `gymProgression.js:319` — `(actualVolume - targetVolume) / targetVolume` when target is 0
+- `progression.js:595` — `improvement / sprint.startingMax` when `startingMax` is 0
+- `homeGoals.js:333` — `repsDiff / targetReps` when `targetReps` is 0
+- `progressionCoach.js:368` — `(realisticFinalGoal - startReps) / (finalGoal - startReps)` when equal
+
+**Fix:** Add zero-guards before every division. Example:
+```javascript
+const progressPercent = maxPotential > 0 ? currentMax / maxPotential : 0;
 ```
 
-Server IP and deployment UUID are hardcoded in a public workflow file over HTTP (not HTTPS).
+### 7. Stale Closure Bugs in Sprint Progression (useHomeWorkout.js:261-299)
 
-**Fix:** Use GitHub Secrets: `${{ secrets.COOLIFY_ENDPOINT }}`.
+`completeWorkout` reads `sprints` from its closure, then passes that stale snapshot to `analyzeWorkoutPerformance`, `recalculateSprint`, and `detectPlateau`. The subsequent `setSprints(prev => ...)` calls use the callback form correctly, but the upstream analysis operates on stale data.
+
+**Fix:** Move sprint reads inside a `setSprints` callback, or use a ref to track current sprints.
 
 ---
 
 ## Major Issues
 
-### 6. Dual Storage System Creates Data Inconsistency (App.jsx + contexts)
+### 8. Webhook Handlers Do Nothing (server/index.js:48-56)
 
-The app has **two competing storage mechanisms**:
+`checkout.session.completed` and `customer.subscription.*` handlers only `console.log`. No database persistence exists. The subscription system is non-functional from the app's perspective.
 
-1. **Context providers** (WorkoutStateContext.jsx) save to localStorage on every state change via `storage.save()`
-2. **App.jsx** also saves the same data via `useEffect` + `safeSetItem()` on every state change
+### 9. GymWorkoutSession Rest Timer Race Condition (GymWorkoutSession.jsx:205-227)
 
-For example, `sessionHistory` is saved in both:
-- `WorkoutStateContext.jsx:12`: `storage.save('history', newValue)` → key: `shift6_history`
-- `App.jsx:254`: `safeSetItem('shift6_history', sessionHistory)` → key: `shift6_history`
+The `useEffect` for the rest timer has `restTimeLeft` in its dependency array, causing the interval to be torn down and recreated every second. Should use `useRef` for the interval and only depend on `isResting`.
 
-This means every state change triggers **two identical writes** to localStorage. Worse, if the timing differs, one could overwrite the other with stale data.
+### 10. `logSet` Stale State on Rapid Taps (GymWorkoutSession.jsx:247-379)
 
-**Fix:** Remove the duplicate `useEffect` persistence from App.jsx and let the context providers be the single source of truth for storage.
+`logSet` reads `completedSets` from its closure while also writing to it via `setCompletedSets(prev => ...)`. Two rapid taps can cause the second invocation to see stale data, duplicating or skipping sets.
 
-### 7. App.jsx is a God Component (~2000 lines)
+### 11. `handleCompleteGymAssessment` Uses Direct-Value Setter (useGymWorkout.js:139-145)
 
-App.jsx contains:
-- 30+ `useState` hooks
-- 25+ `useEffect` hooks (mostly localStorage sync)
-- 15+ `useCallback` handlers
-- All workout logic, gym logic, sprint management, data export, and rendering
+`setGymWeights(newWeights)` spreads the closure's `gymWeights` and writes the whole object back, clobbering concurrent updates from WorkoutSession's callback-style setters. Same issue in `handleCompleteGymWorkout` (line 60-69).
 
-This makes it extremely difficult to maintain, test, or reason about re-renders.
+### 12. No Input Validation on Checkout (server/index.js:69)
 
-**Fix:** Extract into focused custom hooks:
-- `useWorkoutSession()` — session lifecycle, queue, completion
-- `useGymSession()` — gym workout lifecycle
-- `useSprintManagement()` — sprint CRUD
-- `useDataExport()` — export/import/reset
-- `usePersistence()` — all the localStorage sync effects
+`seats` parameter is unvalidated — could be 0, negative, a float, or a string.
 
-### 8. SettingsStateContext and GymStateContext Don't Persist (contexts)
+### 13. Stripe Error Messages Leaked to Clients (server/index.js:41, 100, 118, 134)
 
-Both `SettingsStateContext.jsx:13` and `GymStateContext.jsx:12` have a comment `// ... add setters with storage saving logic` but **never implemented it**. The raw `useState` setters are exposed directly, meaning state changes are only persisted because App.jsx has duplicate `useEffect` hooks doing it.
+All catch blocks return raw `error.message` to the client, potentially exposing internal Stripe configuration details.
 
-If the App.jsx effects are ever removed (per issue #6), settings and gym state would **stop persisting**.
+### 14. Uncleaned setTimeout Calls
 
-**Fix:** Implement proper setter wrappers in these contexts (like WorkoutStateContext already does).
-
-### 9. Uncleaned setTimeout Calls in Components
-
-Multiple components use `setTimeout` inside `useCallback` without cleanup:
-
+Multiple components use `setTimeout` without cleanup:
+- `useHomeWorkout.js:317` — `setIsProcessing(false)` after 1s
 - `GymWorkoutSession.jsx:314` — PR celebration auto-hide (3s)
-- `GymWorkoutSession.jsx:378` — isLogging debounce (500ms)
-- `GymWorkoutSession.jsx:483` — exit delay (100ms)
-- `WorkoutSession.jsx:287` — confetti delay (500ms)
-- `WorkoutSession.jsx:320` — copy reset (2s)
+- `useAchievements.js:61` — badge dismiss delay (100ms)
 
-These can cause state updates on unmounted components.
+**Fix:** Use `useRef` to track timeout IDs and clear them in cleanup.
 
-**Fix:** Use `useRef` to track timeout IDs and clear them in cleanup, or move time-based state transitions into `useEffect` blocks with proper cleanup.
+### 15. Timer Effects Recreate Intervals Every Tick (useHomeWorkout.js:57-67)
 
-### 10. Session History Silently Truncated (App.jsx:1010)
+Both timer `useEffect`s include `timeLeft`/`exerciseTimeLeft` in their dependency arrays, causing interval teardown and recreation every second. Use `useRef` for interval IDs and depend only on `isTimerRunning`.
 
-```javascript
-setSessionHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
-```
+### 16. Price IDs Defined But Never Used (server/index.js:14-27)
 
-History is silently capped at 50 entries with no user notification. Users who work out frequently will lose older history. The CSV export function also only exports whatever is in memory.
+The `PRICES` object defines `priceId` from env vars, but checkout uses `price_data` instead (line 79). This means Stripe price changes in the dashboard have no effect, and each checkout creates a new ad-hoc price object.
 
-**Fix:** Either increase the limit significantly (localStorage can hold ~5MB), inform users about the cap, or implement pagination.
+### 17. `generateWeeklyTargets` Can Produce Decreasing Targets (progression.js:134-155)
 
-### 11. Docker Port Mismatch (docker-compose.yml:11)
+When `target < start` (user regresses), `totalGain` becomes negative. The `Math.min(negative, start * 0.60)` picks the negative value, producing weekly targets that decrease.
 
-```yaml
-ports:
-  - "3000:80"  # Maps host:3000 → container:80
-```
+### 18. No Rate Limiting on Stripe Endpoints (server/index.js)
 
-But the server listens on port 3000, not 80. The container will be unreachable.
+Unlimited checkout sessions, customer ID enumeration, and portal sessions can be created.
 
-**Fix:** Change to `"3000:3000"`.
+### 19. Dashboard `colorClasses` Definition Conflicts with WorkoutSession (Dashboard.jsx:85-95 vs WorkoutSession.jsx:5-15)
 
-### 12. Sensitive Stripe Errors Exposed (server/index.js:98-101)
+Dashboard's `colorClasses` lacks the `hex` property that WorkoutSession's version has. Components receiving the Dashboard's version that rely on `colorClasses.hex` will break.
 
-```javascript
-catch (error) {
-  res.status(500).json({ error: error.message }); // Raw Stripe error
-}
-```
+### 20. `ResumeWorkoutBanner` References `colorClasses` Before Definition (Dashboard.jsx:42-82)
 
-Stripe error messages can leak internal configuration details to clients.
+The `ResumeWorkoutBanner` component uses `colorClasses` on line 46, but `colorClasses` is defined later (line 85). With `const` hoisting rules, this will throw a `ReferenceError` at runtime when the banner renders.
 
-**Fix:** Log detailed errors server-side; return generic messages to clients.
+### 21. Volume Display Always Shows "kg" Regardless of User Preference (GymDashboard.jsx:674)
 
-### 13. Missing Input Validation on Checkout (server/index.js:69)
+`Math.round(totalVolume).toLocaleString()} kg` is hardcoded. Users tracking in lbs see "kg".
 
-```javascript
-const { tier, seats = 1 } = req.body;
-// No validation: seats could be -1, 0, 999999, 1.5, "abc"
-```
+### 22. Progress Bar Can Exceed 100% (GymDashboard.jsx:477-478)
 
-**Fix:** Validate `seats` is a positive integer within reasonable bounds.
+`(gymProgram.currentDay / (currentProgram.split.length * 4)) * 100` has no upper bound clamp.
+
+### 23. No Environment Variable Validation at Startup (server/index.js:11)
+
+If `STRIPE_SECRET_KEY` is undefined, the server starts but crashes on the first Stripe call.
+
+### 24. `localStorage.clear()` in Factory Reset Also Wipes Non-Shift6 Data
+
+Same as Critical #2 but noting: this is the only place `localStorage.clear()` is called, and it's destructive beyond the app's scope.
 
 ---
 
 ## Minor Issues
 
-### 14. Gym Streak Logic Bug (App.jsx:1369-1389)
+### 25. `calculateStats` Undercounts Personal Records (gamification.js:151-156)
 
-The streak calculation uses `gymHistory[0]` (the most recent entry), but `gymHistory` is prepended with the new workout **on the same line** above. This means `gymHistory[0]` is the **just-completed** workout, not the previous one. The streak logic always sees "already worked out today" and never increments.
+The first PR for each exercise is never counted because the check `exercisePRs[exerciseKey] !== undefined` is false on first encounter. Users need at least 2 workouts for the same exercise to earn the "Record Breaker" badge.
 
-```javascript
-setGymHistory(prev => [workoutData, ...prev].slice(0, 100)); // line 1352
-// ... later uses gymHistory[0] which is stale (from the previous render)
-```
+### 26. `generateSprint` IDs Can Collide (progression.js:303)
 
-Actually, since `gymHistory` is from the closure, it references the old value — so this works by accident. But it's fragile and confusing.
+Uses `Date.now()` which can produce identical IDs if called twice in rapid succession for the same exercise.
 
-### 15. `shouldShowModeSelector` is Always False (App.jsx:1558)
+### 27. CSV Export Misses Custom Exercise Names (useDataManagement.js:38)
 
-```javascript
-const shouldShowModeSelector = false;
-```
+Uses `EXERCISE_PLANS[s.exerciseKey]?.name` which only covers built-in exercises. Custom exercises fall through to the raw key.
 
-The `ModeSelector` component and related code (todayGymWorkout, todayHomeWorkout) is dead code that can never execute.
+### 28. CSV Injection Vulnerability (useDataManagement.js:36-43)
 
-### 16. Missing Required Environment Variable Validation (server/index.js:11)
+Notes are quoted but not sanitized. If a note starts with `=`, `+`, `-`, or `@`, spreadsheet apps may interpret it as a formula.
 
-```javascript
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY); // undefined if not set
-```
+### 29. `URL.revokeObjectURL` Called Synchronously After Download (useDataManagement.js:27, 53)
 
-Server starts without error but crashes on first Stripe call.
+May fail on slow connections. Should delay with `setTimeout`.
 
-**Fix:** Validate required env vars at startup.
+### 30. No Import Data Validation (useDataManagement.js:58-69)
 
-### 17. Unsafe localStorage Parse (GymWorkoutSession.jsx:292)
+Parsed JSON is applied directly to state without type/shape validation. Corrupted data can set `completedDays` to a string or number.
 
-```javascript
-const gymPRs = JSON.parse(localStorage.getItem('shift6_gym_prs') || '{}')
-```
+### 31. `useAchievements` Missing `seenBadgeIds` in Effect Deps (useAchievements.js:44)
 
-No try/catch — corrupted data will crash the component.
+The `eslint-disable-line` suppresses the lint warning but introduces a correctness gap — already-seen badges could be re-notified.
 
-### 18. Nullish Coalescing vs OR for Defaults (GymWorkoutSession.jsx:171)
+### 32. `smoothPerformanceRatio` Weight Array Mismatch (progression.js:423-443)
 
-```javascript
-const lastWeightKg = gymWeights[currentExerciseId] || currentExercise.defaultWeight || 20
-```
+Weights array `[0.20, 0.30, 0.50]` has 3 elements but performances can have length 2. The 0.50 weight is never applied, giving the most recent performance only 30% weight instead of 50%.
 
-If `defaultWeight` is `0` (bodyweight exercises), this skips it and defaults to 20kg.
+### 33. Hardcoded Duration Estimate (GymDashboard.jsx:579)
 
-**Fix:** Use `??` instead of `||`.
+`~45 min` is hardcoded instead of computed from the program's `estimatedDuration`.
 
-### 19. Missing Security Headers (nginx.conf)
+### 34. Recent Workouts Use Array Index as Key (GymDashboard.jsx:656)
 
-No `Content-Security-Policy`, `Strict-Transport-Security`, or `Permissions-Policy` headers configured.
+Using `idx` as key for a mutable list can cause incorrect reconciliation.
 
-### 20. Inconsistent Comment (App.jsx:1481)
+### 35. `EXERCISE_INTENSITY` Classification is Incomplete (adaptiveRest.js:17-23)
 
-```javascript
-// eslint-disable-next-line no-unused-vars
-const handleUpdateGymGoal = useCallback(...)
-```
+Only 7 exercises categorized. Pullups, chinups, and all gym exercises default to 'low' intensity, giving only 45s of base rest for compound movements.
 
-Function is defined but never used — should be removed or connected.
+### 36. `distributeReps` Can Produce Uneven Distribution (progression.js:181)
 
-### 21. Express Middleware Ordering (server/index.js:33,65)
+When `minRep` exceeds available reps, the algorithm produces uneven distributions with some sets at 1 rep.
 
-`express.json()` is applied **after** the webhook route. This is actually correct (webhooks need raw body), but the ordering is non-obvious and lacks a comment explaining why.
+### 37. No Security Headers (server/index.js, nginx.conf)
 
-### 22. No HTTPS in nginx.conf
+Missing `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options`, and `Permissions-Policy` headers.
+
+### 38. No HTTPS in nginx.conf
 
 Only listens on port 80. Production should enforce HTTPS.
 
-### 23. Two Different Keystore Passwords
+### 39. No Graceful Shutdown (server/index.js)
 
-`keystore.properties` has `[REDACTED]` while `build.gradle` has `[REDACTED]` — unclear which is actually used. This suggests the build.gradle values may be stale/unused.
+No `SIGTERM`/`SIGINT` handlers. In-flight requests are terminated abruptly during deployment.
+
+### 40. `gymProgression.js:calculateProgress` Can Return Values > 100 or < 0
+
+When regression occurs, `weightProgress` becomes negative. The `Math.min(100, ...)` clamp only limits the upper bound.
+
+### 41. Missing `stripe-signature` Early Return (server/index.js:34)
+
+If the header is missing, `constructEvent` throws, which is caught, but the error message is leaked to the response.
+
+### 42. `switch` Cases Without Block Scoping (server/index.js:46-56)
+
+`const` declarations inside `case` blocks without braces are a linter warning and can cause confusion.
 
 ---
 
 ## Architecture Recommendations
 
-1. **Extract App.jsx logic into custom hooks** — The 2000-line God Component is the biggest maintainability risk.
-2. **Unify storage layer** — Pick one: either context providers handle persistence, or App.jsx does. Not both.
-3. **Complete the context implementations** — SettingsStateContext and GymStateContext have placeholder comments for storage that were never implemented.
-4. **Add authentication** — The Stripe endpoints are the most urgent. Even a simple JWT flow would prevent the customer ID enumeration attack.
-5. **Add error monitoring** — ErrorBoundary only logs to console. Consider Sentry or similar for production error tracking.
-6. **Consider useReducer** — Components like GymWorkoutSession have 15+ useState calls managing related state. A reducer would make state transitions more predictable.
+1. **Fix the export/import system** — This is the most impactful data-loss risk. Export all `shift6_`-prefixed keys, and validate imports before applying.
+
+2. **Add authentication to Stripe endpoints** — Even a simple JWT flow prevents customer ID enumeration.
+
+3. **Guard all divisions in progression algorithms** — Add zero-checks before every division. These are latent crash bugs.
+
+4. **Fix timer patterns** — Move interval IDs to `useRef` and remove tick values from effect dependencies. This eliminates the interval-recreation-per-second pattern.
+
+5. **Use callback-form state setters everywhere** — Replace `setGymWeights(newWeights)` with `setGymWeights(prev => ({ ...prev, ...updates }))` to prevent stale-closure data loss.
+
+6. **Add input validation on the server** — Validate `seats`, `customerId`, and `tier` parameters. Add rate limiting.
+
+7. **Lock down CORS** — Restrict to `getshift6.com` origin.
+
+8. **Use pre-created Stripe Price IDs** — Stop creating ad-hoc prices on every checkout.
 
 ---
 
 ## What's Done Well
 
+- **App.jsx refactoring** — Successfully extracted from ~2000 to 642 lines with focused hooks
+- **Context-based persistence** — `usePersistedState` eliminates the dual-write problem
 - **Lazy loading** — Good use of `React.lazy()` for heavy/infrequent components
-- **Memoization** — Extensive `useCallback`/`useMemo` usage for render optimization
 - **Safe localStorage helpers** — `safeLoadJSON`/`safeSetItem` with try/catch
-- **Progressive enhancement** — PWA with offline support, Capacitor for native
-- **Session recovery** — Pending session system preserves workout state across refreshes
 - **No XSS vectors** — No `dangerouslySetInnerHTML` or `eval()` usage found
-- **Test coverage** — 15+ test files covering utilities and business logic
+- **Test coverage** — 15+ test files covering utility modules
+- **PWA support** — Offline-first with service worker caching

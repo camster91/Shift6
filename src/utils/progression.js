@@ -101,7 +101,7 @@ export const PERFORMANCE_MESSAGES = {
 export function getImprovementFactor(currentMax, exerciseKey, exerciseData = null) {
   const metadata = exerciseData || EXERCISE_METADATA[exerciseKey] || {}
   const maxPotential = metadata.finalGoal || 100
-  const progressPercent = currentMax / maxPotential
+  const progressPercent = maxPotential > 0 ? currentMax / maxPotential : 0
 
   // REALISTIC diminishing returns (capped at 10% max, down from 45%)
   // These are per-week factors that lead to sustainable 6-week progress
@@ -131,8 +131,10 @@ export function generateWeeklyTargets(start, target, weeks = 6) {
   const targets = []
 
   // CAP the total gain to realistic levels (max 60% over 6 weeks = ~8% per week average)
-  const maxRealisticGain = start * 0.60 // 60% max improvement over 6 weeks
-  const totalGain = Math.min(target - start, maxRealisticGain)
+  const maxRealisticGain = start > 0 ? start * 0.60 : 10 // 60% max improvement, min 10 for zero start
+  const rawGain = target - start
+  // If target < start (regression), use 0 gain instead of negative
+  const totalGain = rawGain > 0 ? Math.min(rawGain, maxRealisticGain) : 0
 
   // Non-linear distribution: steady gains with week 6 being a deload
   // More conservative than original (was 18-22% early weeks)
@@ -300,7 +302,7 @@ export function generateSprint(exerciseKey, startingMax, preferences, exerciseDa
   )
 
   return {
-    id: `sprint_${exerciseKey}_${Date.now()}`,
+    id: `sprint_${exerciseKey}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     exerciseKey,
     status: SPRINT_STATUS.ACTIVE,
     createdAt: new Date().toISOString(),
@@ -419,8 +421,6 @@ export function getAdjustment(category) {
  * @returns {number} Smoothed performance ratio
  */
 export function smoothPerformanceRatio(recentPerformances, newPerformance) {
-  // Weights: most recent = highest weight (applied from end)
-  const weights = [0.20, 0.30, 0.50]
   const performances = [...recentPerformances.slice(-2), newPerformance]
 
   if (performances.length < 2) {
@@ -428,11 +428,14 @@ export function smoothPerformanceRatio(recentPerformances, newPerformance) {
     return newPerformance.performanceRatio * 0.9 + 0.1
   }
 
+  // Weights match the number of performances: 2 items -> [0.35, 0.65], 3 items -> [0.20, 0.30, 0.50]
+  const weights2 = [0.35, 0.65]
+  const weights3 = [0.20, 0.30, 0.50]
+  const weights = performances.length >= 3 ? weights3 : weights2
+
   let weightedSum = 0
   let weightSum = 0
 
-  // Apply weights from start, with array ordered oldest to newest
-  // weights[0]=0.20 -> oldest, weights[2]=0.50 -> newest
   performances.forEach((p, i) => {
     const weight = weights[i] || 0.1
     weightedSum += (p.performanceRatio || 1) * weight
@@ -592,7 +595,7 @@ export function getCurrentWorkout(sprint) {
  */
 export function completeSprint(sprint, finalTestResult) {
   const improvement = finalTestResult - sprint.startingMax
-  const improvementPercent = Math.round((improvement / sprint.startingMax) * 100)
+  const improvementPercent = sprint.startingMax > 0 ? Math.round((improvement / sprint.startingMax) * 100) : 0
   const goalAchieved = finalTestResult >= sprint.targetMax
 
   return {

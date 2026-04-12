@@ -474,7 +474,7 @@ const GymDashboard = ({
               <div
                 className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500 relative overflow-hidden"
                 style={{
-                  width: `${(gymProgram.currentDay / (currentProgram.split.length * 4)) * 100}%`
+                  width: `${Math.min(100, (gymProgram.currentDay / (currentProgram.split.length * 4)) * 100)}%`
                 }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
@@ -483,7 +483,7 @@ const GymDashboard = ({
             <div className="flex justify-between mt-2">
               <span className={`text-xs ${textSecondary}`}>Progress</span>
               <span className={`text-xs text-purple-400 font-medium`}>
-                {Math.round((gymProgram.currentDay / (currentProgram.split.length * 4)) * 100)}%
+                {Math.min(100, Math.round((gymProgram.currentDay / (currentProgram.split.length * 4)) * 100))}%
               </span>
             </div>
 
@@ -671,9 +671,9 @@ const GymDashboard = ({
                   <div className="text-right">
                     <div className="flex items-center gap-1 justify-end">
                       <TrendingUp className="w-3 h-3 text-purple-400" />
-                      <p className="text-purple-400 font-medium">{Math.round(totalVolume).toLocaleString()} kg</p>
+                      <p className="text-purple-400 font-medium">{Math.round(totalVolume).toLocaleString()} {gymWeightUnit || 'kg'}</p>
                     </div>
-                    <p className={`text-xs ${textSecondary}`}>{workout.duration || 45} min</p>
+                    <p className={`text-xs ${textSecondary}`}>{workout.duration || '~45'} min</p>
                   </div>
                 </div>
               )

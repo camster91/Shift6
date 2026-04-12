@@ -495,19 +495,16 @@ const GymWorkoutSession = ({
     }, 100)
   }, [onExit])
 
-  // Handle invalid workout data (no exercises)
+  // Auto-exit if workout data is invalid (no exercises)
+  useEffect(() => {
+    if ((!currentExercise && !showSummary) || !workout?.exercises?.length) {
+      onExit()
+    }
+  }, [currentExercise, showSummary, workout?.exercises?.length, onExit])
+
+  // Handle invalid workout data — render nothing while auto-exiting
   if ((!currentExercise && !showSummary) || !workout?.exercises?.length) {
-    return (
-      <div className={`fixed inset-0 ${bgClass} z-50 flex flex-col items-center justify-center gap-4`}>
-        <p className={textSecondary}>No exercises in workout</p>
-        <button
-          onClick={onExit}
-          className="px-6 py-2 rounded-lg bg-purple-500 text-white font-medium hover:bg-purple-600 transition-colors"
-        >
-          Go Back
-        </button>
-      </div>
-    )
+    return null
   }
 
   // Workout Summary Screen

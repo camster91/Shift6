@@ -92,14 +92,24 @@ const Progress = ({
     startWorkout,
     theme = 'dark',
     sprints = {},
-    getExerciseSprintProgress = null
+    getExerciseSprintProgress = null,
+    mode = 'home',
+    gymHistory = [],
+    gymStreak = 0,
+    gymWeightUnit = 'kg',
 }) => {
+    const isGymMode = mode === 'gym'
+    const accentColor = isGymMode ? 'purple' : 'cyan'
+    const accentBg = isGymMode ? 'bg-purple-500/20' : 'bg-cyan-500/20'
+    const accentText = isGymMode ? 'text-purple-400' : 'text-cyan-400'
+    const accentSolid = isGymMode ? 'bg-purple-500' : 'bg-cyan-500'
+
     const [showAllBadges, setShowAllBadges] = useState(false)
     const [activeSection, setActiveSection] = useState('overview') // overview, achievements, calendar
 
     // ⚡ Bolt: Memoize all gamification stats to prevent expensive recalculations on every render.
     const { stats, unlockedBadges, personalRecords, streakData, streakStatus, prCount } = useMemo(() => {
-        const stats = calculateStats(completedDays, sessionHistory)
+        const stats = calculateStats(completedDays, sessionHistory, gymHistory, gymStreak)
         const unlockedBadges = getUnlockedBadges(stats)
         const personalRecords = getPersonalRecords(sessionHistory)
         const streakData = calculateStreakWithGrace(sessionHistory)
@@ -107,25 +117,30 @@ const Progress = ({
         const prCount = Object.keys(personalRecords).length
 
         return { stats, unlockedBadges, personalRecords, streakData, streakStatus, prCount }
-    }, [completedDays, sessionHistory])
+    }, [completedDays, sessionHistory, gymHistory, gymStreak])
 
     // ⚡ Bolt: Memoize monthly stats and background for the calendar section.
     const { monthlyStats, statBg } = useMemo(() => {
         const now = new Date()
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
         const monthWorkouts = sessionHistory.filter(s => new Date(s.date) >= monthStart)
+        const monthGymWorkouts = gymHistory.filter(w => new Date(w.date) >= monthStart)
         const monthVolume = monthWorkouts.reduce((sum, s) => sum + (s.volume || 0), 0)
-        const uniqueDays = new Set(monthWorkouts.map(s => s.date.split('T')[0])).size
+            + monthGymWorkouts.reduce((sum, w) => sum + (w.totalVolume || 0), 0)
+        const uniqueDays = new Set([
+            ...monthWorkouts.map(s => s.date.split('T')[0]),
+            ...monthGymWorkouts.map(w => w.date?.split('T')[0]).filter(Boolean)
+        ]).size
 
         return {
             monthlyStats: {
-                workouts: monthWorkouts.length,
+                workouts: monthWorkouts.length + monthGymWorkouts.length,
                 volume: monthVolume,
                 uniqueDays
             },
             statBg: theme === 'light' ? 'bg-slate-100' : 'bg-slate-800/50'
         }
-    }, [sessionHistory, theme])
+    }, [sessionHistory, gymHistory, theme])
 
     // Streak colors
     const streakColors = {
@@ -151,7 +166,7 @@ const Progress = ({
                         onClick={() => setActiveSection(section)}
                         className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all capitalize ${
                             activeSection === section
-                                ? 'bg-cyan-500/20 text-cyan-400'
+                                ? `${accentBg} ${accentText}`
                                 : `${themeClasses.textSecondary} ${themeClasses.hoverBg}`
                         }`}
                     >
@@ -191,13 +206,13 @@ const Progress = ({
                             icon={Target}
                             label="Total Workouts"
                             value={stats.totalSessions}
-                            color="cyan"
+                            color={accentColor}
                             theme={theme}
                         />
                         <StatCard
                             icon={Trophy}
-                            label="Plans Mastered"
-                            value={stats.completedPlans}
+                            label={isGymMode ? 'Total Volume' : 'Plans Mastered'}
+                            value={isGymMode ? `${(stats.totalVolume || 0).toLocaleString()} ${gymWeightUnit}` : stats.completedPlans}
                             color="emerald"
                             theme={theme}
                         />
@@ -221,7 +236,7 @@ const Progress = ({
                     <div className={`${cardBg} rounded-xl border overflow-hidden`}>
                         <div className={`p-4 border-b ${themeClasses.borderColor}`}>
                             <h3 className={`font-semibold ${themeClasses.textPrimary} flex items-center gap-2`}>
-                                <TrendingUp size={18} className="text-cyan-400" />
+                                <TrendingUp size={18} className={accentText} />
                                 Volume Over Time
                             </h3>
                         </div>
@@ -403,12 +418,12 @@ const Progress = ({
                     {/* Monthly Stats */}
                     <div className={`${cardBg} rounded-xl border p-4`}>
                         <h3 className={`font-semibold ${themeClasses.textPrimary} mb-3 flex items-center gap-2`}>
-                            <CalendarIcon size={18} className="text-cyan-400" />
+                            <CalendarIcon size={18} className={accentText} />
                             This Month
                         </h3>
                         <div className="grid grid-cols-3 gap-3">
                             <div className={`text-center p-3 ${statBg} rounded-lg`}>
-                                <p className="text-xl font-bold text-cyan-400">{monthlyStats.workouts}</p>
+                                <p className={`text-xl font-bold ${accentText}`}>{monthlyStats.workouts}</p>
                                 <p className={`text-[10px] ${themeClasses.textMuted}`}>Workouts</p>
                             </div>
                             <div className={`text-center p-3 ${statBg} rounded-lg`}>

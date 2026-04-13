@@ -1,19 +1,16 @@
 import { ThemeProvider } from './ThemeContext';
-import { WorkoutStateProvider } from './WorkoutStateContext';
+import { UnifiedStateProvider } from './UnifiedStateContext';
 import { UIStateProvider } from './UIStateContext';
 import { SettingsStateProvider } from './SettingsStateContext';
-import { GymStateProvider } from './GymStateContext';
 
 export const CombinedProvider = ({ children }) => (
     <ThemeProvider>
-        <WorkoutStateProvider>
+        <UnifiedStateProvider>
             <UIStateProvider>
                 <SettingsStateProvider>
-                    <GymStateProvider>
-                        {children}
-                    </GymStateProvider>
+                    {children}
                 </SettingsStateProvider>
             </UIStateProvider>
-        </WorkoutStateProvider>
+        </UnifiedStateProvider>
     </ThemeProvider>
 );

@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
-import { useWorkoutState } from './context/WorkoutStateContext';
+import { useUnifiedState } from './context/UnifiedStateContext';
 import { useUIState } from './context/UIStateContext';
 import { useSettingsState } from './context/SettingsStateContext';
-import { useGymState } from './context/GymStateContext';
 import { useTheme } from './context/ThemeContext';
 import { usePersistedState, safeLoadJSON, STORAGE_PREFIX } from './hooks/usePersistedState';
 import { useProgram } from './hooks/useProgram';
@@ -12,7 +11,6 @@ import { useAchievements } from './hooks/useAchievements';
 import { useDataManagement } from './hooks/useDataManagement';
 
 import { EXERCISE_PLANS } from './data/exercises.jsx';
-import { STARTER_TEMPLATES, EQUIPMENT, PROGRAM_MODES } from './data/exerciseLibrary.js';
 import { getDailyStack } from './utils/schedule';
 import { calculateStats, getUnlockedBadges } from './utils/gamification';
 import {
@@ -26,37 +24,24 @@ import Header from './components/Layout/Header';
 import BottomNav from './components/Layout/BottomNav';
 import SideDrawer from './components/Layout/SideDrawer';
 import Dashboard from './components/Views/Dashboard';
+import DashboardShell from './components/Views/DashboardShell';
 import WorkoutQuickStart from './components/Views/WorkoutQuickStart';
 import WorkoutSession from './components/Views/WorkoutSession';
-import Onboarding from './components/Views/Onboarding';
+import OnboardingFlow from './components/Views/OnboardingFlow';
 
-// Lazy-loaded components
+// Lazy-loaded components (still needed by App directly)
 const Progress = lazy(() => import('./components/Views/Progress'));
-const Guide = lazy(() => import('./components/Views/Guide'));
-const AddExercise = lazy(() => import('./components/Views/AddExercise'));
-const ExerciseLibrary = lazy(() => import('./components/Views/ExerciseLibrary'));
-const ProgramManager = lazy(() => import('./components/Views/ProgramManager'));
-const TrainingSettings = lazy(() => import('./components/Views/TrainingSettings'));
-const ProgramSwitcher = lazy(() => import('./components/Views/ProgramSwitcher'));
-const BodyMetrics = lazy(() => import('./components/Views/BodyMetrics'));
-const WarmupRoutine = lazy(() => import('./components/Views/WarmupRoutine'));
-const AccessibilitySettings = lazy(() => import('./components/Views/AccessibilitySettings'));
+const GymDashboard = lazy(() => import('./components/Views/GymDashboard'));
+const GymWorkoutSession = lazy(() => import('./components/Views/GymWorkoutSession'));
 import { MultiAchievementModal } from './components/Visuals/AchievementModal';
 import UpdateNotification from './components/Visuals/UpdateNotification';
-const NotificationSettings = lazy(() => import('./components/Visuals/NotificationSettings'));
-const GymDashboard = lazy(() => import('./components/Views/GymDashboard'));
-const GymOnboarding = lazy(() => import('./components/Views/GymOnboarding'));
-const GymWorkoutSession = lazy(() => import('./components/Views/GymWorkoutSession'));
-const GymProgramManager = lazy(() => import('./components/Views/GymProgramManager'));
-const GymAssessment = lazy(() => import('./components/Views/GymAssessment'));
-const HomeGoalSetter = lazy(() => import('./components/Views/HomeGoalSetter'));
+import Modals from './components/Modals';
 
 const App = () => {
     // ──────────── Context State ────────────
-    const { completedDays, setCompletedDays, sessionHistory, setSessionHistory, sprints, setSprints } = useWorkoutState();
+    const state = useUnifiedState();
     const ui = useUIState();
     const { audioEnabled, setAudioEnabled, restTimerOverride, setRestTimerOverride, dailyGoal, setDailyGoal, warmupEnabled, setWarmupEnabled, gymWeightUnit, setGymWeightUnit } = useSettingsState();
-    const gym = useGymState();
     const { theme, setTheme } = useTheme();
 
     // ──────────── Persisted State (local to App) ────────────
@@ -83,35 +68,36 @@ const App = () => {
 
     const homeWorkout = useHomeWorkout({
         allExercises, activeProgramKeys,
-        completedDays, setCompletedDays,
-        sessionHistory, setSessionHistory,
-        sprints, setSprints,
+        completedDays: state.completedDays, setCompletedDays: state.setCompletedDays,
+        sessionHistory: state.sessionHistory, setSessionHistory: state.setSessionHistory,
+        sprints: state.sprints, setSprints: state.setSprints,
         exerciseDifficulty, restTimerOverride,
         customPlans, trainingPreferences, warmupEnabled,
         homeGoals, setHomeGoals,
         setPendingConfirm,
-        setShowWarmup: ui.setShowWarmup,
+        setShowWarmup: (show) => show ? ui.openModal('warmup') : ui.closeModal(),
     });
 
     const gymWorkout = useGymWorkout({
-        gymProgram: gym.gymProgram, setGymProgram: gym.setGymProgram,
-        gymHistory: gym.gymHistory, setGymHistory: gym.setGymHistory,
-        gymStreak: gym.gymStreak, setGymStreak: gym.setGymStreak,
-        gymGoals: gym.gymGoals, setGymGoals: gym.setGymGoals,
-        gymWeights: gym.gymWeights, setGymWeights: gym.setGymWeights,
-        gymReps: gym.gymReps, setGymReps: gym.setGymReps,
-        gymOnboardingComplete: gym.gymOnboardingComplete, setGymOnboardingComplete: gym.setGymOnboardingComplete,
-        customGymPrograms: gym.customGymPrograms, setCustomGymPrograms: gym.setCustomGymPrograms,
-        setShowGymAssessment: ui.setShowGymAssessment,
+        gymProgram: state.gymProgram, setGymProgram: state.setGymProgram,
+        gymHistory: state.gymHistory, setGymHistory: state.setGymHistory,
+        gymStreak: state.gymStreak, setGymStreak: state.setGymStreak,
+        gymGoals: state.gymGoals, setGymGoals: state.setGymGoals,
+        gymWeights: state.gymWeights, setGymWeights: state.setGymWeights,
+        gymReps: state.gymReps, setGymReps: state.setGymReps,
+        gymOnboardingComplete: state.gymOnboardingComplete, setGymOnboardingComplete: state.setGymOnboardingComplete,
+        customGymPrograms: state.customGymPrograms, setCustomGymPrograms: state.setCustomGymPrograms,
+        setShowGymAssessment: (show) => show ? ui.openModal('gymAssessment') : ui.closeModal(),
     });
 
     const { newBadges, handleCloseBadges } = useAchievements({
-        completedDays, sessionHistory, dailyGoal,
+        completedDays: state.completedDays, sessionHistory: state.sessionHistory, dailyGoal,
+        gymHistory: state.gymHistory, gymStreak: state.gymStreak,
     });
 
     const { handleExport, handleExportCSV, handleImport, handleFactoryReset } = useDataManagement({
-        completedDays, setCompletedDays,
-        sessionHistory, setSessionHistory,
+        completedDays: state.completedDays, setCompletedDays: state.setCompletedDays,
+        sessionHistory: state.sessionHistory, setSessionHistory: state.setSessionHistory,
         setPendingConfirm,
     });
 
@@ -119,9 +105,9 @@ const App = () => {
     useEffect(() => {
         const timer = setTimeout(() => {
             let hasChanges = false;
-            const updatedSprints = { ...sprints };
+            const updatedSprints = { ...state.sprints };
             const historyPRs = {};
-            sessionHistory.forEach(s => {
+            state.sessionHistory.forEach(s => {
                 if (!historyPRs[s.exerciseKey] || s.volume > historyPRs[s.exerciseKey]) {
                     historyPRs[s.exerciseKey] = s.volume;
                 }
@@ -145,10 +131,10 @@ const App = () => {
                 }
             });
 
-            if (hasChanges) setSprints(updatedSprints);
+            if (hasChanges) state.setSprints(updatedSprints);
         }, 2000);
         return () => clearTimeout(timer);
-    }, [activeProgram, trainingPreferences, sessionHistory.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [activeProgram, trainingPreferences, state.sessionHistory.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ──────────── Body Metrics ────────────
     const handleAddMetric = useCallback((metric) => {
@@ -172,7 +158,7 @@ const App = () => {
                     delete updated[key];
                     return updated;
                 });
-                setCompletedDays(prev => {
+                state.setCompletedDays(prev => {
                     const updated = { ...prev };
                     delete updated[key];
                     return updated;
@@ -180,7 +166,7 @@ const App = () => {
                 setPendingConfirm(null);
             }
         });
-    }, [program.setCustomExercises, setCompletedDays]);
+    }, [program.setCustomExercises, state.setCompletedDays]);
 
     // ──────────── Home Goal Handlers ────────────
     const handleSetHomeGoal = useCallback((exerciseKey, goal) => {
@@ -188,28 +174,28 @@ const App = () => {
     }, [setHomeGoals]);
 
     const handleOpenHomeGoalSetter = useCallback((exerciseKey) => {
-        ui.setShowHomeGoalSetter(exerciseKey);
-    }, [ui.setShowHomeGoalSetter]);
+        ui.openModal('homeGoalSetter', exerciseKey);
+    }, [ui.openModal]);
 
     // ──────────── Memoized Drawer Handlers ────────────
     const handleOpenDrawer = useCallback(() => ui.setShowDrawer(true), [ui.setShowDrawer]);
     const handleCloseDrawer = useCallback(() => ui.setShowDrawer(false), [ui.setShowDrawer]);
     const handleShowCalendar = useCallback(() => { ui.setActiveTab('progress'); ui.setShowDrawer(false); }, [ui.setActiveTab, ui.setShowDrawer]);
-    const handleShowGuide = useCallback(() => { ui.setShowGuide(true); ui.setShowDrawer(false); }, [ui.setShowGuide, ui.setShowDrawer]);
+    const handleShowGuide = useCallback(() => { ui.openModal('guide'); ui.setShowDrawer(false); }, [ui.openModal, ui.setShowDrawer]);
     const handleShowAchievements = useCallback(() => { ui.setActiveTab('progress'); ui.setShowDrawer(false); }, [ui.setActiveTab, ui.setShowDrawer]);
-    const handleShowTrainingSettings = useCallback(() => { ui.setShowTrainingSettings(true); ui.setShowDrawer(false); }, [ui.setShowTrainingSettings, ui.setShowDrawer]);
-    const handleShowBodyMetrics = useCallback(() => { ui.setShowBodyMetrics(true); ui.setShowDrawer(false); }, [ui.setShowBodyMetrics, ui.setShowDrawer]);
-    const handleShowAccessibility = useCallback(() => { ui.setShowAccessibility(true); ui.setShowDrawer(false); }, [ui.setShowAccessibility, ui.setShowDrawer]);
-    const handleShowHelp = useCallback(() => { ui.setShowHelp(true); ui.setShowDrawer(false); }, [ui.setShowHelp, ui.setShowDrawer]);
-    const handleShowProgramSwitcher = useCallback(() => { ui.setShowProgramSwitcher(true); ui.setShowDrawer(false); }, [ui.setShowProgramSwitcher, ui.setShowDrawer]);
-    const handleShowNotifications = useCallback(() => { ui.setShowNotificationSettings(true); ui.setShowDrawer(false); }, [ui.setShowNotificationSettings, ui.setShowDrawer]);
-    const onShowAddExercise = useCallback(() => ui.setShowAddExercise(true), [ui.setShowAddExercise]);
-    const onShowExerciseLibrary = useCallback(() => ui.setShowExerciseLibrary(true), [ui.setShowExerciseLibrary]);
-    const onShowProgramManager = useCallback(() => ui.setShowProgramManager(true), [ui.setShowProgramManager]);
+    const handleShowTrainingSettings = useCallback(() => { ui.openModal('trainingSettings'); ui.setShowDrawer(false); }, [ui.openModal, ui.setShowDrawer]);
+    const handleShowBodyMetrics = useCallback(() => { ui.openModal('bodyMetrics'); ui.setShowDrawer(false); }, [ui.openModal, ui.setShowDrawer]);
+    const handleShowAccessibility = useCallback(() => { ui.openModal('accessibility'); ui.setShowDrawer(false); }, [ui.openModal, ui.setShowDrawer]);
+    const handleShowHelp = useCallback(() => { ui.openModal('help'); ui.setShowDrawer(false); }, [ui.openModal, ui.setShowDrawer]);
+    const handleShowProgramSwitcher = useCallback(() => { ui.openModal('programSwitcher'); ui.setShowDrawer(false); }, [ui.openModal, ui.setShowDrawer]);
+    const handleShowNotifications = useCallback(() => { ui.openModal('notificationSettings'); ui.setShowDrawer(false); }, [ui.openModal, ui.setShowDrawer]);
+    const onShowAddExercise = useCallback(() => ui.openModal('addExercise'), [ui.openModal]);
+    const onShowExerciseLibrary = useCallback(() => ui.openModal('exerciseLibrary'), [ui.openModal]);
+    const onShowProgramManager = useCallback(() => ui.openModal('programManager'), [ui.openModal]);
 
     // ──────────── Computed Values ────────────
     const drawerStats = useMemo(() => {
-        const stats = calculateStats(completedDays, sessionHistory);
+        const stats = calculateStats(state.completedDays, state.sessionHistory);
         const unlockedBadges = getUnlockedBadges(stats);
         return {
             totalSessions: stats.totalSessions,
@@ -217,20 +203,20 @@ const App = () => {
             completedPlans: stats.completedPlans,
             unlockedBadges: unlockedBadges.length
         };
-    }, [completedDays, sessionHistory]);
+    }, [state.completedDays, state.sessionHistory]);
 
     const homeStreak = useMemo(() => {
-        return calculateStats(completedDays, sessionHistory).currentStreak;
-    }, [completedDays, sessionHistory]);
+        return calculateStats(state.completedDays, state.sessionHistory).currentStreak;
+    }, [state.completedDays, state.sessionHistory]);
 
     const todayHomeWorkout = useMemo(() => {
-        const stack = getDailyStack(completedDays, allExercises, activeProgramKeys, trainingPreferences);
+        const stack = getDailyStack(state.completedDays, allExercises, activeProgramKeys, trainingPreferences);
         if (stack.length === 0) return 'Rest Day';
         return stack.slice(0, 2).map(s => allExercises[s.exerciseKey]?.name).filter(Boolean).join(', ');
-    }, [completedDays, allExercises, activeProgramKeys, trainingPreferences]);
+    }, [state.completedDays, allExercises, activeProgramKeys, trainingPreferences]);
 
-    const shouldShowGymOnboarding = currentMode === 'gym' && !gym.gymOnboardingComplete;
-    const isGymMode = currentMode === 'gym' && gym.gymOnboardingComplete;
+    const shouldShowGymOnboarding = currentMode === 'gym' && !state.gymOnboardingComplete;
+    const isGymMode = currentMode === 'gym' && state.gymOnboardingComplete;
 
     // ──────────── Shared SideDrawer Props ────────────
     const drawerProps = {
@@ -261,12 +247,11 @@ const App = () => {
             <Suspense fallback={null}>
             <UpdateNotification theme={theme} />
 
-            {/* Gym Onboarding */}
-            {shouldShowGymOnboarding && (
-                <GymOnboarding
-                    onComplete={gymWorkout.handleGymOnboardingComplete}
-                    onSwitchToHome={() => setCurrentMode('home')}
-                    theme={theme}
+            {/* Unified Onboarding — handles both Home and Gym modes */}
+            {(!onboardingComplete || shouldShowGymOnboarding) && (
+                <OnboardingFlow
+                    onCompleteHome={handleCompleteOnboarding}
+                    onCompleteGym={gymWorkout.handleGymOnboardingComplete}
                 />
             )}
 
@@ -274,12 +259,12 @@ const App = () => {
             {gymWorkout.currentGymSession && (
                 <GymWorkoutSession
                     workout={gymWorkout.currentGymSession}
-                    gymWeights={gym.gymWeights}
-                    gymReps={gym.gymReps}
+                    gymWeights={state.gymWeights}
+                    gymReps={state.gymReps}
                     gymWeightUnit={gymWeightUnit}
                     onWeightUnitChange={setGymWeightUnit}
-                    gymHistory={gym.gymHistory}
-                    gymGoals={gym.gymGoals}
+                    gymHistory={state.gymHistory}
+                    gymGoals={state.gymGoals}
                     onRecordGymResult={gymWorkout.handleRecordGymResult}
                     onComplete={gymWorkout.handleCompleteGymWorkout}
                     onExit={() => gymWorkout.setCurrentGymSession(null)}
@@ -292,106 +277,138 @@ const App = () => {
                 />
             )}
 
-            {/* Gym Dashboard */}
-            {isGymMode && !gymWorkout.currentGymSession && (
-                <>
-                    <Header audioEnabled={audioEnabled} setAudioEnabled={setAudioEnabled} theme={theme} setTheme={setTheme} onSwitchMode={handleSwitchMode} showSwitchMode currentMode="gym" />
-                    <main className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
-                        <GymDashboard
-                            gymProgram={gym.gymProgram}
-                            gymWeights={gym.gymWeights}
-                            gymWeightUnit={gymWeightUnit}
-                            gymHistory={gym.gymHistory}
-                            gymStreak={gym.gymStreak}
-                            gymGoals={gym.gymGoals}
-                            customGymPrograms={gym.customGymPrograms}
-                            onStartWorkout={gymWorkout.handleStartGymWorkout}
-                            onStartAssessment={gymWorkout.handleStartGymAssessment}
-                            onChangeProgram={gymWorkout.handleChangeGymProgram}
-                            onShowProgramManager={() => ui.setShowGymProgramManager(true)}
-                            onSwitchMode={handleSwitchMode}
-                            pendingSession={gymWorkout.pendingGymSession}
-                            onResumeSession={gymWorkout.handleResumeGymSession}
-                            onDiscardSession={gymWorkout.handleDiscardGymSession}
+            {/* Dashboard — mode-aware shell wrapping Dashboard / GymDashboard */}
+            {currentMode === 'home' && (
+            <>
+                <DashboardShell
+                    mode="home"
+                    currentMode={currentMode}
+                    homeWorkout={homeWorkout}
+                    gymWorkout={gymWorkout}
+                    state={state}
+                    program={program}
+                    theme={theme}
+                    ui={ui}
+                    allExercises={allExercises}
+                    handleStartWorkout={homeWorkout.startStack}
+                    activeProgramKeys={activeProgramKeys}
+                    trainingPreferences={trainingPreferences}
+                    handleSwitchMode={handleSwitchMode}
+                    handleOpenDrawer={handleOpenDrawer}
+                    audioEnabled={audioEnabled}
+                    setAudioEnabled={setAudioEnabled}
+                    setTheme={setTheme}
+                >
+                    {ui.activeTab === 'home' && (
+                        <Dashboard
+                            completedDays={state.completedDays}
+                            sessionHistory={state.sessionHistory}
+                            startStack={homeWorkout.startStack}
+                            startWorkout={homeWorkout.startWorkoutWithWarmup}
+                            startExpressWorkout={homeWorkout.startExpressWorkout}
+                            allExercises={allExercises}
+                            customExercises={customExercises}
+                            exerciseDifficulty={exerciseDifficulty}
+                            onSetDifficulty={handleSetDifficulty}
+                            onDeleteExercise={handleDeleteExercise}
+                            onShowAddExercise={onShowAddExercise}
+                            programMode={programMode}
+                            activeProgram={activeProgramKeys}
+                            onShowExerciseLibrary={onShowExerciseLibrary}
+                            onShowProgramManager={onShowProgramManager}
+                            trainingPreferences={trainingPreferences}
+                            customPlans={customPlans}
+                            sprints={state.sprints}
+                            getExerciseSprintProgress={homeWorkout.getExerciseSprintProgress}
+                            ensureSprintExists={homeWorkout.ensureSprintExists}
+                            onCompleteSprint={homeWorkout.handleCompleteSprint}
+                            pendingSession={homeWorkout.pendingSession}
+                            onResumeSession={homeWorkout.handleResumeSession}
+                            onDiscardSession={homeWorkout.handleDiscardSession}
+                            homeGoals={homeGoals}
+                            onSetHomeGoal={handleOpenHomeGoalSetter}
+                            onViewHomeGoal={handleOpenHomeGoalSetter}
                             theme={theme}
                         />
-                    </main>
-                    <BottomNav activeTab={ui.activeTab} setActiveTab={ui.setActiveTab} onMenuClick={handleOpenDrawer} theme={theme} mode="gym" />
-                    <SideDrawer {...drawerProps} />
-                </>
+                    )}
+
+                    {ui.activeTab === 'workout' && (
+                        <WorkoutQuickStart
+                            completedDays={state.completedDays}
+                            sessionHistory={state.sessionHistory}
+                            allExercises={allExercises}
+                            activeProgram={activeProgramKeys}
+                            trainingPreferences={trainingPreferences}
+                            startStack={homeWorkout.startStack}
+                            startExpressWorkout={homeWorkout.startExpressWorkout}
+                            startWorkout={homeWorkout.startWorkoutWithWarmup}
+                            theme={theme}
+                        />
+                    )}
+
+                    {ui.activeTab === 'progress' && (
+                        <Progress
+                            completedDays={state.completedDays}
+                            sessionHistory={state.sessionHistory}
+                            allExercises={allExercises}
+                            activeProgram={activeProgramKeys}
+                            startWorkout={homeWorkout.startWorkoutWithWarmup}
+                            theme={theme}
+                            sprints={state.sprints}
+                            getExerciseSprintProgress={homeWorkout.getExerciseSprintProgress}
+                            mode={currentMode}
+                            gymHistory={state.gymHistory}
+                            gymStreak={state.gymStreak}
+                            gymWeightUnit={gymWeightUnit}
+                        />
+                    )}
+                </DashboardShell>
+                <SideDrawer {...drawerProps} />
+            </>
             )}
 
-            {/* Home Mode */}
-            {currentMode === 'home' && (
-                <>
-                    <Header audioEnabled={audioEnabled} setAudioEnabled={setAudioEnabled} theme={theme} setTheme={setTheme} onSwitchMode={handleSwitchMode} showSwitchMode currentMode="home" />
-                    <main className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
-                        {ui.activeTab === 'home' && (
-                            <Dashboard
-                                completedDays={completedDays}
-                                sessionHistory={sessionHistory}
-                                startStack={homeWorkout.startStack}
-                                startWorkout={homeWorkout.startWorkoutWithWarmup}
-                                startExpressWorkout={homeWorkout.startExpressWorkout}
-                                allExercises={allExercises}
-                                customExercises={customExercises}
-                                exerciseDifficulty={exerciseDifficulty}
-                                onSetDifficulty={handleSetDifficulty}
-                                onDeleteExercise={handleDeleteExercise}
-                                onShowAddExercise={onShowAddExercise}
-                                programMode={programMode}
-                                activeProgram={activeProgramKeys}
-                                onShowExerciseLibrary={onShowExerciseLibrary}
-                                onShowProgramManager={onShowProgramManager}
-                                trainingPreferences={trainingPreferences}
-                                customPlans={customPlans}
-                                sprints={sprints}
-                                getExerciseSprintProgress={homeWorkout.getExerciseSprintProgress}
-                                ensureSprintExists={homeWorkout.ensureSprintExists}
-                                onCompleteSprint={homeWorkout.handleCompleteSprint}
-                                pendingSession={homeWorkout.pendingSession}
-                                onResumeSession={homeWorkout.handleResumeSession}
-                                onDiscardSession={homeWorkout.handleDiscardSession}
-                                homeGoals={homeGoals}
-                                onSetHomeGoal={handleOpenHomeGoalSetter}
-                                onViewHomeGoal={handleOpenHomeGoalSetter}
-                                theme={theme}
-                            />
-                        )}
-
-                        {ui.activeTab === 'workout' && (
-                            <WorkoutQuickStart
-                                completedDays={completedDays}
-                                sessionHistory={sessionHistory}
-                                allExercises={allExercises}
-                                activeProgram={activeProgramKeys}
-                                trainingPreferences={trainingPreferences}
-                                startStack={homeWorkout.startStack}
-                                startExpressWorkout={homeWorkout.startExpressWorkout}
-                                startWorkout={homeWorkout.startWorkoutWithWarmup}
-                                theme={theme}
-                            />
-                        )}
-
-                        {ui.activeTab === 'progress' && (
-                            <Progress
-                                completedDays={completedDays}
-                                sessionHistory={sessionHistory}
-                                allExercises={allExercises}
-                                activeProgram={activeProgramKeys}
-                                startWorkout={homeWorkout.startWorkoutWithWarmup}
-                                theme={theme}
-                                sprints={sprints}
-                                getExerciseSprintProgress={homeWorkout.getExerciseSprintProgress}
-                            />
-                        )}
-                    </main>
-
-                    {!homeWorkout.currentSession && onboardingComplete && (
-                        <BottomNav activeTab={ui.activeTab} setActiveTab={ui.setActiveTab} onMenuClick={handleOpenDrawer} theme={theme} mode="home" />
-                    )}
-                    <SideDrawer {...drawerProps} />
-                </>
+            {isGymMode && !gymWorkout.currentGymSession && (
+            <>
+                <DashboardShell
+                    mode="gym"
+                    currentMode={currentMode}
+                    homeWorkout={homeWorkout}
+                    gymWorkout={gymWorkout}
+                    state={state}
+                    program={program}
+                    theme={theme}
+                    ui={ui}
+                    allExercises={allExercises}
+                    handleStartWorkout={gymWorkout.handleStartGymWorkout}
+                    activeProgramKeys={activeProgramKeys}
+                    trainingPreferences={trainingPreferences}
+                    handleSwitchMode={handleSwitchMode}
+                    handleOpenDrawer={handleOpenDrawer}
+                    audioEnabled={audioEnabled}
+                    setAudioEnabled={setAudioEnabled}
+                    setTheme={setTheme}
+                >
+                    <GymDashboard
+                        gymProgram={state.gymProgram}
+                        gymWeights={state.gymWeights}
+                        gymWeightUnit={gymWeightUnit}
+                        gymHistory={state.gymHistory}
+                        gymStreak={state.gymStreak}
+                        gymGoals={state.gymGoals}
+                        customGymPrograms={state.customGymPrograms}
+                        onStartWorkout={gymWorkout.handleStartGymWorkout}
+                        onStartAssessment={gymWorkout.handleStartGymAssessment}
+                        onChangeProgram={gymWorkout.handleChangeGymProgram}
+                        onShowProgramManager={() => ui.openModal('gymProgramManager')}
+                        onSwitchMode={handleSwitchMode}
+                        pendingSession={gymWorkout.pendingGymSession}
+                        onResumeSession={gymWorkout.handleResumeGymSession}
+                        onDiscardSession={gymWorkout.handleDiscardGymSession}
+                        theme={theme}
+                    />
+                </DashboardShell>
+                <SideDrawer {...drawerProps} />
+            </>
             )}
 
             {/* Workout Session - Fullscreen Overlay */}
@@ -420,8 +437,8 @@ const App = () => {
                         setIsExerciseTimerRunning={homeWorkout.setIsExerciseTimerRunning}
                         exerciseTimerStarted={homeWorkout.exerciseTimerStarted}
                         setExerciseTimerStarted={homeWorkout.setExerciseTimerStarted}
-                        completedDays={completedDays}
-                        sessionHistory={sessionHistory}
+                        completedDays={state.completedDays}
+                        sessionHistory={state.sessionHistory}
                         personalRecords={personalRecords}
                         setPersonalRecords={setPersonalRecords}
                         allExercises={allExercises}
@@ -432,192 +449,48 @@ const App = () => {
             )}
 
             {/* ──────────── Modals ──────────── */}
-
-            {ui.showAddExercise && (
-                <AddExercise onAdd={handleAddExercise} onClose={() => ui.setShowAddExercise(false)} />
-            )}
-
-            {ui.showHomeGoalSetter && (
-                <HomeGoalSetter
-                    exerciseKey={ui.showHomeGoalSetter}
-                    exercise={allExercises[ui.showHomeGoalSetter]}
-                    goal={homeGoals[ui.showHomeGoalSetter] || null}
-                    sessionHistory={sessionHistory}
-                    personalRecords={personalRecords}
-                    onSetGoal={handleSetHomeGoal}
-                    onClose={() => ui.setShowHomeGoalSetter(null)}
-                    theme={theme}
-                />
-            )}
-
-            {ui.showExerciseLibrary && (
-                <ExerciseLibrary
-                    allExercises={allExercises}
-                    activeProgram={activeProgramKeys}
-                    programMode={programMode}
-                    userEquipment={userEquipment}
-                    onAddToProgram={handleAddToProgram}
-                    onRemoveFromProgram={handleRemoveFromProgram}
-                    onClose={() => ui.setShowExerciseLibrary(false)}
-                />
-            )}
-
-            {ui.showProgramManager && (
-                <ProgramManager
-                    allExercises={allExercises}
-                    activeProgram={activeProgramKeys}
-                    programMode={programMode}
-                    userEquipment={userEquipment}
-                    templates={STARTER_TEMPLATES}
-                    equipment={EQUIPMENT}
-                    programModes={PROGRAM_MODES}
-                    onApplyTemplate={handleApplyTemplate}
-                    onApplyCustomProgram={handleApplyCustomProgram}
-                    onRemoveFromProgram={handleRemoveFromProgram}
-                    onChangeProgramMode={handleChangeProgramMode}
-                    onSetEquipment={setUserEquipment}
-                    completedDays={completedDays}
-                    onShowLibrary={() => { ui.setShowProgramManager(false); ui.setShowExerciseLibrary(true); }}
-                    onClose={() => ui.setShowProgramManager(false)}
-                />
-            )}
-
-            {ui.showGymProgramManager && (
-                <GymProgramManager
-                    currentProgram={gym.gymProgram}
-                    customGymPrograms={gym.customGymPrograms}
-                    onSelectProgram={gymWorkout.handleChangeGymProgram}
-                    onSaveCustomProgram={gymWorkout.handleSaveCustomGymProgram}
-                    onDeleteCustomProgram={gymWorkout.handleDeleteCustomGymProgram}
-                    onClose={() => ui.setShowGymProgramManager(false)}
-                    theme={theme}
-                />
-            )}
-
-            {ui.showGymAssessment && gymWorkout.assessmentExercises.length > 0 && (
-                <GymAssessment
-                    exercises={gymWorkout.assessmentExercises}
-                    gymWeights={gym.gymWeights}
-                    gymWeightUnit={gymWeightUnit}
-                    onWeightUnitChange={setGymWeightUnit}
-                    fitnessLevel="beginner"
-                    onComplete={gymWorkout.handleCompleteGymAssessment}
-                    onSkip={() => { ui.setShowGymAssessment(false); }}
-                    onExit={() => { ui.setShowGymAssessment(false); }}
-                    audioEnabled={audioEnabled}
-                    theme={theme}
-                />
-            )}
-
-            {!onboardingComplete && (
-                <Onboarding
-                    equipment={EQUIPMENT}
-                    templates={STARTER_TEMPLATES}
-                    onComplete={handleCompleteOnboarding}
-                    onSelectGym={() => { setCurrentMode('gym'); setOnboardingComplete(true); }}
-                />
-            )}
-
-            {ui.showTrainingSettings && (
-                <TrainingSettings
-                    preferences={trainingPreferences}
-                    onSave={handleTrainingPreferencesChange}
-                    onClose={() => ui.setShowTrainingSettings(false)}
-                    hasProgress={Object.keys(completedDays).length > 0}
-                    theme={theme}
-                    mode={currentMode}
-                    dailyGoal={dailyGoal}
-                    onDailyGoalChange={setDailyGoal}
-                    restTimerOverride={restTimerOverride}
-                    onRestTimerChange={setRestTimerOverride}
-                    warmupEnabled={warmupEnabled}
-                    onWarmupChange={setWarmupEnabled}
-                />
-            )}
-
-            {ui.showProgramSwitcher && (
-                <ProgramSwitcher
-                    currentProgramId={currentProgramId}
-                    onSelectProgram={handleSwitchProgram}
-                    onClose={() => ui.setShowProgramSwitcher(false)}
-                    theme={theme}
-                />
-            )}
-
-            {ui.showBodyMetrics && (
-                <BodyMetrics
-                    metrics={bodyMetrics}
-                    onAddMetric={handleAddMetric}
-                    onDeleteMetric={handleDeleteMetric}
-                    onClose={() => ui.setShowBodyMetrics(false)}
-                    theme={theme}
-                />
-            )}
-
-            {ui.showAccessibility && (
-                <AccessibilitySettings onClose={() => ui.setShowAccessibility(false)} />
-            )}
-
-            {ui.showNotificationSettings && (
-                <NotificationSettings
-                    onClose={() => ui.setShowNotificationSettings(false)}
-                    theme={theme}
-                    mode={currentMode}
-                />
-            )}
-
-            {ui.showWarmup && (
-                <WarmupRoutine
-                    onComplete={homeWorkout.handleWarmupComplete}
-                    onSkip={homeWorkout.handleWarmupSkip}
-                    recommendedRoutine={homeWorkout.pendingWorkout ? homeWorkout.getRecommendedWarmupForExercise(homeWorkout.pendingWorkout.overrideKey) : 'quick'}
-                    audioEnabled={audioEnabled}
-                    theme={theme}
-                />
-            )}
-
-            {ui.showGuide && (
-                <div className={`fixed inset-0 z-50 overflow-y-auto ${theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'}`}>
-                    <div className="min-h-screen">
-                        <div className={`sticky top-0 z-10 p-4 flex items-center justify-between border-b ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
-                            <h2 className={`text-lg font-bold ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Exercise Guide</h2>
-                            <button onClick={() => ui.setShowGuide(false)} className={`px-4 py-2 rounded-lg text-sm transition-colors ${theme === 'light' ? 'bg-slate-200 active:bg-slate-300 text-slate-700' : 'bg-slate-800 active:bg-slate-700 text-white'}`}>Close</button>
-                        </div>
-                        <div className="p-4"><Guide allExercises={allExercises} activeProgram={activeProgramKeys} /></div>
-                    </div>
-                </div>
-            )}
-
-            {ui.showHelp && (
-                <div className={`fixed inset-0 z-50 overflow-y-auto ${theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'}`}>
-                    <div className="min-h-screen">
-                        <div className={`sticky top-0 z-10 p-4 flex items-center justify-between border-b ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
-                            <h2 className={`text-lg font-bold ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Help & Support</h2>
-                            <button onClick={() => ui.setShowHelp(false)} className={`px-4 py-2 rounded-lg text-sm transition-colors ${theme === 'light' ? 'bg-slate-200 active:bg-slate-300 text-slate-700' : 'bg-slate-800 active:bg-slate-700 text-white'}`}>Close</button>
-                        </div>
-                        <div className="p-4 space-y-6">
-                            {[
-                                { title: 'Getting Started', color: 'cyan', items: ['Select your experience level during onboarding to get personalized programs', 'Tap any exercise card on the home screen to start a workout', 'Follow the sets and reps shown, rest between sets as indicated', 'Complete all sets to mark the day as done'] },
-                                { title: 'Daily Goals', color: 'emerald', items: ['Set your daily workout goal in Training Settings', 'Track your progress on the home screen', 'Build streaks by working out consistently', 'Earn badges for reaching milestones'] },
-                                { title: 'Tips for Success', color: 'orange', items: ['Focus on form over speed - quality reps build strength', 'Use the warmup routine before intense workouts', 'Track your body metrics to see progress over time', "Rest days are important - don't skip them!"] },
-                            ].map(section => (
-                                <div key={section.title} className={`rounded-xl p-4 border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
-                                    <h3 className={`text-lg font-semibold text-${section.color}-400 mb-3`}>{section.title}</h3>
-                                    <ul className={`space-y-2 text-sm ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'}`}>
-                                        {section.items.map(item => <li key={item}>• {item}</li>)}
-                                    </ul>
-                                </div>
-                            ))}
-                            <div className={`rounded-xl p-4 border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
-                                <h3 className="text-lg font-semibold text-pink-400 mb-3">Need More Help?</h3>
-                                <p className={`text-sm mb-3 ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'}`}>Check the Exercise Guide for detailed form instructions and tips for each movement.</p>
-                                <button onClick={() => { ui.setShowHelp(false); ui.setShowGuide(true); }} className={`w-full py-3 rounded-lg text-sm transition-colors ${theme === 'light' ? 'bg-slate-200 active:bg-slate-300 text-slate-700' : 'bg-slate-800 active:bg-slate-700 text-white'}`}>Open Exercise Guide</button>
-                            </div>
-                            <p className="text-center text-xs text-slate-500 pt-4">Shift6 v2.1.0 - Made with care for your fitness journey</p>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <Modals
+                ui={ui}
+                state={state}
+                program={program}
+                homeWorkout={homeWorkout}
+                gymWorkout={gymWorkout}
+                allExercises={allExercises}
+                homeGoals={homeGoals}
+                personalRecords={personalRecords}
+                bodyMetrics={bodyMetrics}
+                audioEnabled={audioEnabled}
+                theme={theme}
+                currentMode={currentMode}
+                gymWeightUnit={gymWeightUnit}
+                setGymWeightUnit={setGymWeightUnit}
+                handleAddExercise={handleAddExercise}
+                handleSetDifficulty={handleSetDifficulty}
+                handleAddToProgram={handleAddToProgram}
+                handleRemoveFromProgram={handleRemoveFromProgram}
+                handleApplyTemplate={handleApplyTemplate}
+                handleApplyCustomProgram={handleApplyCustomProgram}
+                handleChangeProgramMode={handleChangeProgramMode}
+                handleTrainingPreferencesChange={handleTrainingPreferencesChange}
+                handleSwitchProgram={handleSwitchProgram}
+                setUserEquipment={setUserEquipment}
+                handleSetHomeGoal={handleSetHomeGoal}
+                handleAddMetric={handleAddMetric}
+                handleDeleteMetric={handleDeleteMetric}
+                handleWarmupComplete={homeWorkout.handleWarmupComplete}
+                handleWarmupSkip={homeWorkout.handleWarmupSkip}
+                pendingWorkout={homeWorkout.pendingWorkout}
+                getRecommendedWarmupForExercise={homeWorkout.getRecommendedWarmupForExercise}
+                dailyGoal={dailyGoal}
+                setDailyGoal={setDailyGoal}
+                restTimerOverride={restTimerOverride}
+                setRestTimerOverride={setRestTimerOverride}
+                warmupEnabled={warmupEnabled}
+                setWarmupEnabled={setWarmupEnabled}
+                trainingPreferences={trainingPreferences}
+                customExercises={customExercises}
+                activeProgramKeys={activeProgramKeys}
+            />
 
             {/* Confirm Modal */}
             {pendingConfirm && (

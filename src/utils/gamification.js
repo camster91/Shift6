@@ -8,6 +8,7 @@ import {
     STREAK_CONFIG,
     STORAGE_KEYS
 } from './constants'
+import { GYM_BADGES, calculateGymStats } from './gymGamification'
 
 /** Total number of exercises in the program */
 const TOTAL_EXERCISES = UPPER_BODY_EXERCISES.length + LOWER_BODY_EXERCISES.length
@@ -90,12 +91,14 @@ export const BADGES = [
 ]
 
 /**
- * Calculates user statistics from completed workouts and session history.
+ * Calculates user statistics from completed workouts, session history, and optional gym data.
  * @param {Object.<string, string[]>} completedDays - Map of exercise keys to arrays of completed day IDs
  * @param {SessionHistoryItem[]} sessionHistory - Array of session history items
- * @returns {Stats} Calculated statistics object
+ * @param {Array} [gymHistory=[]] - Array of gym workout history entries
+ * @param {number} [gymStreak=0] - Current gym streak count
+ * @returns {Stats & GymStats & MergedStats} Calculated statistics object with merged totals
  */
-export const calculateStats = (completedDays, sessionHistory = []) => {
+export const calculateStats = (completedDays, sessionHistory = [], gymHistory = [], gymStreak = 0) => {
     let totalSessions = 0;
     let completedPlans = 0;
 
@@ -195,6 +198,9 @@ export const calculateStats = (completedDays, sessionHistory = []) => {
         }
     }
 
+    // Gym stats
+    const gymStats = calculateGymStats(gymHistory, gymStreak);
+
     return {
         totalSessions,
         completedPlans,
@@ -204,17 +210,29 @@ export const calculateStats = (completedDays, sessionHistory = []) => {
         totalVolume,
         exercisesInOneDay,
         hasWeekendWorkout,
-        personalRecords
+        personalRecords,
+        // Gym-specific stats
+        totalGymSessions: gymStats.totalGymSessions,
+        totalGymVolume: gymStats.totalGymVolume,
+        gymPRs: gymStats.gymPRs,
+        gymStreak: gymStats.gymStreak,
+        // Merged totals (home + gym)
+        totalAllSessions: totalSessions + gymStats.totalGymSessions,
+        totalAllVolume: totalVolume + gymStats.totalGymVolume,
+        bestStreak: Math.max(currentStreak, gymStreak),
     };
 };
 
 /**
- * Returns all badges that the user has unlocked based on their stats.
- * @param {Stats} stats - User statistics object
+ * Returns all badges that the user has unlocked based on their stats,
+ * including both home and gym badges.
+ * @param {Stats} stats - User statistics object (may include gym stats)
  * @returns {Badge[]} Array of unlocked badges
  */
 export const getUnlockedBadges = (stats) => {
-    return BADGES.filter(badge => badge.condition(stats));
+    const homeBadges = BADGES.filter(badge => badge.condition(stats));
+    const gymBadges = GYM_BADGES.filter(badge => badge.condition(stats));
+    return [...homeBadges, ...gymBadges];
 };
 
 /**

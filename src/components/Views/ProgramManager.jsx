@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { X, Plus, Trash2, Settings, LayoutGrid, Wrench, List } from 'lucide-react'
+import { Plus, Trash2, Settings, List, LayoutGrid, Wrench } from 'lucide-react'
 import NeoIcon from '../Visuals/NeoIcon'
 import TemplateCard from '../Visuals/TemplateCard'
 import CustomProgramBuilder from './CustomProgramBuilder'
@@ -22,16 +22,25 @@ const ProgramManager = ({
     onSetEquipment,
     onShowLibrary,
     onClose,
-    completedDays = {}
+    completedDays = {},
+    // Injected by ProgramManagerShell
+    activeTab: activeTabProp,
+    setActiveTab: setActiveTabProp,
+    mode: modeProp,
+    theme: themeProp,
 }) => {
-    const [activeTab, setActiveTab] = useState('current') // 'current' | 'templates' | 'custom'
+    const [internalTab, setInternalTab] = useState('current')
     const [showSettings, setShowSettings] = useState(false)
     const [tempMode, setTempMode] = useState(programMode)
     const [tempEquipment, setTempEquipment] = useState(userEquipment)
     const [goalFilter, setGoalFilter] = useState('all')
     const [customExercises, setCustomExercises] = useState([])
-    const [confirmApply, setConfirmApply] = useState(null) // Template ID to confirm
-    const [confirmCustom, setConfirmCustom] = useState(false) // Confirm custom program apply
+    const [confirmApply, setConfirmApply] = useState(null)
+    const [confirmCustom, setConfirmCustom] = useState(false)
+
+    // Use Shell-managed tab if provided, otherwise use internal state
+    const activeTab = activeTabProp ?? internalTab
+    const setActiveTab = setActiveTabProp ?? setInternalTab
 
     // Combine all exercises
     const combinedExercises = useMemo(() => {
@@ -57,7 +66,6 @@ const ProgramManager = ({
     }
 
     const handleApplyTemplate = (templateId) => {
-        // Check if user has progress
         const hasProgress = Object.values(completedDays).some(days => days?.length > 0)
         if (hasProgress) {
             setConfirmApply(templateId)
@@ -77,7 +85,6 @@ const ProgramManager = ({
 
     const handleApplyCustom = () => {
         if (customExercises.length >= 3) {
-            // Check if user has progress
             const hasProgress = Object.values(completedDays).some(days => days?.length > 0)
             if (hasProgress) {
                 setConfirmCustom(true)
@@ -101,196 +108,64 @@ const ProgramManager = ({
         .filter(([, t]) => t.mode === programMode)
         .filter(([, t]) => goalFilter === 'all' || t.goal === goalFilter)
 
-    // Tab configuration
-    const tabs = [
-        { id: 'current', label: 'Current', icon: List },
-        { id: 'templates', label: 'Templates', icon: LayoutGrid },
-        { id: 'custom', label: 'Build', icon: Wrench },
-    ]
-
     return (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
-            <div className="fixed inset-0 bg-slate-950 md:inset-4 md:rounded-2xl overflow-hidden flex flex-col">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-800">
-                    <h2 className="text-xl font-bold text-white">My Program</h2>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setShowSettings(true)}
-                            className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
-                        >
-                            <Settings className="w-5 h-5 text-slate-400" />
-                        </button>
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
-                        >
-                            <X className="w-5 h-5 text-slate-400" />
-                        </button>
-                    </div>
-                </div>
+        <>
+            {/* Current Tab */}
+            {activeTab === 'current' && (
+                <div className="p-4 space-y-2">
+                    {activeProgram.map((key, index) => {
+                        const exercise = allExercises[key]
+                        if (!exercise) return null
+                        const dayNum = (completedDays[key]?.length || 0) + 1
+                        const isComplete = dayNum > 18
 
-                {/* Tabs */}
-                <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/50">
-                    <div className="flex bg-slate-800 rounded-lg p-1">
-                        {tabs.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                                    activeTab === tab.id
-                                        ? 'bg-cyan-500 text-white'
-                                        : 'text-slate-400 hover:text-white'
+                        return (
+                            <div
+                                key={key}
+                                className={`flex items-center gap-3 p-3 rounded-lg ${
+                                    isComplete
+                                        ? 'bg-emerald-500/10 border border-emerald-500/20'
+                                        : 'bg-slate-800/50'
                                 }`}
                             >
-                                <tab.icon className="w-4 h-4" />
-                                <span className="hidden sm:inline">{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Mode indicator */}
-                <div className="px-4 py-3 bg-slate-900/50 border-b border-slate-800">
-                    <div className="flex items-center gap-3">
-                        <span className="text-2xl">{programModes[programMode]?.icon}</span>
-                        <div>
-                            <p className="text-white font-medium">{programModes[programMode]?.name}</p>
-                            <p className="text-xs text-slate-500">{activeProgram.length} exercises</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Content Area */}
-                <div className="flex-1 overflow-y-auto">
-                    {/* Current Tab */}
-                    {activeTab === 'current' && (
-                        <div className="p-4 space-y-2">
-                            {activeProgram.map((key, index) => {
-                                const exercise = allExercises[key]
-                                if (!exercise) return null
-                                const dayNum = (completedDays[key]?.length || 0) + 1
-                                const isComplete = dayNum > 18
-
-                                return (
-                                    <div
-                                        key={key}
-                                        className={`flex items-center gap-3 p-3 rounded-lg ${
-                                            isComplete
-                                                ? 'bg-emerald-500/10 border border-emerald-500/20'
-                                                : 'bg-slate-800/50'
-                                        }`}
-                                    >
-                                        <span className="text-slate-500 text-sm w-6">{index + 1}.</span>
-                                        <div className="w-10 h-10 flex-shrink-0">
-                                            <NeoIcon
-                                                exerciseKey={key}
-                                                color={exercise.color}
-                                                size={40}
-                                            />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-white font-medium truncate">{exercise.name}</p>
-                                            <p className="text-xs text-slate-500">
-                                                {isComplete ? (
-                                                    <span className="text-emerald-400">Complete</span>
-                                                ) : (
-                                                    `Day ${dayNum}/18`
-                                                )}
-                                                <span className="capitalize ml-2">{exercise.category}</span>
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => onRemoveFromProgram(key)}
-                                            className="p-2 rounded-lg hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                )
-                            })}
-
-                            {activeProgram.length === 0 && (
-                                <div className="text-center py-8">
-                                    <p className="text-slate-500">No exercises in your program</p>
-                                    <p className="text-sm text-slate-600 mt-1">Add some from the library or pick a template!</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Templates Tab */}
-                    {activeTab === 'templates' && (
-                        <div className="p-4 space-y-4">
-                            {/* Goal Filter */}
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={() => setGoalFilter('all')}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                        goalFilter === 'all'
-                                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                    }`}
-                                >
-                                    All
-                                </button>
-                                {Object.entries(GOAL_ICONS).map(([goal, icon]) => (
-                                    <button
-                                        key={goal}
-                                        onClick={() => setGoalFilter(goal)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
-                                            goalFilter === goal
-                                                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                        }`}
-                                    >
-                                        <span>{icon}</span>
-                                        <span className="capitalize">{goal}</span>
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Template List */}
-                            <div className="space-y-3">
-                                {availableTemplates.map(([id, template]) => (
-                                    <TemplateCard
-                                        key={id}
-                                        template={template}
-                                        selected={false}
-                                        onApply={handleApplyTemplate}
-                                        showPreview={true}
-                                        allExercises={combinedExercises}
+                                <span className="text-slate-500 text-sm w-6">{index + 1}.</span>
+                                <div className="w-10 h-10 flex-shrink-0">
+                                    <NeoIcon
+                                        exerciseKey={key}
+                                        color={exercise.color}
+                                        size={40}
                                     />
-                                ))}
-                                {availableTemplates.length === 0 && (
-                                    <p className="text-center text-slate-500 py-4">
-                                        No templates match this filter
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-white font-medium truncate">{exercise.name}</p>
+                                    <p className="text-xs text-slate-500">
+                                        {isComplete ? (
+                                            <span className="text-emerald-400">Complete</span>
+                                        ) : (
+                                            `Day ${dayNum}/18`
+                                        )}
+                                        <span className="capitalize ml-2">{exercise.category}</span>
                                     </p>
-                                )}
+                                </div>
+                                <button
+                                    onClick={() => onRemoveFromProgram(key)}
+                                    className="p-2 rounded-lg hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-colors"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
                             </div>
+                        )
+                    })}
+
+                    {activeProgram.length === 0 && (
+                        <div className="text-center py-8">
+                            <p className="text-slate-500">No exercises in your program</p>
+                            <p className="text-sm text-slate-600 mt-1">Add some from the library or pick a template!</p>
                         </div>
                     )}
 
-                    {/* Custom Builder Tab */}
-                    {activeTab === 'custom' && (
-                        <div className="p-4">
-                            <CustomProgramBuilder
-                                selectedExercises={customExercises}
-                                onExercisesChange={setCustomExercises}
-                                programMode={programMode}
-                                userEquipment={userEquipment}
-                                allExercises={combinedExercises}
-                                maxExercises={15}
-                                minExercises={3}
-                                onDone={handleApplyCustom}
-                            />
-                        </div>
-                    )}
-                </div>
-
-                {/* Footer - only show for Current tab */}
-                {activeTab === 'current' && (
-                    <div className="p-4 border-t border-slate-800 bg-slate-900/50">
+                    {/* Footer for current tab */}
+                    <div className="pt-4 border-t border-slate-800">
                         <div className="flex gap-3">
                             <button
                                 onClick={onShowLibrary}
@@ -307,8 +182,76 @@ const ProgramManager = ({
                             </button>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {/* Templates Tab */}
+            {activeTab === 'templates' && (
+                <div className="p-4 space-y-4">
+                    {/* Goal Filter */}
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setGoalFilter('all')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                goalFilter === 'all'
+                                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                            }`}
+                        >
+                            All
+                        </button>
+                        {Object.entries(GOAL_ICONS).map(([goal, icon]) => (
+                            <button
+                                key={goal}
+                                onClick={() => setGoalFilter(goal)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
+                                    goalFilter === goal
+                                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                }`}
+                            >
+                                <span>{icon}</span>
+                                <span className="capitalize">{goal}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Template List */}
+                    <div className="space-y-3">
+                        {availableTemplates.map(([id, template]) => (
+                            <TemplateCard
+                                key={id}
+                                template={template}
+                                selected={false}
+                                onApply={handleApplyTemplate}
+                                showPreview={true}
+                                allExercises={combinedExercises}
+                            />
+                        ))}
+                        {availableTemplates.length === 0 && (
+                            <p className="text-center text-slate-500 py-4">
+                                No templates match this filter
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Builder Tab */}
+            {activeTab === 'custom' && (
+                <div className="p-4">
+                    <CustomProgramBuilder
+                        selectedExercises={customExercises}
+                        onExercisesChange={setCustomExercises}
+                        programMode={programMode}
+                        userEquipment={userEquipment}
+                        allExercises={combinedExercises}
+                        maxExercises={15}
+                        minExercises={3}
+                        onDone={handleApplyCustom}
+                    />
+                </div>
+            )}
 
             {/* Template Confirmation Modal */}
             {confirmApply && (
@@ -388,7 +331,7 @@ const ProgramManager = ({
                                 onClick={() => setShowSettings(false)}
                                 className="p-2 rounded-lg hover:bg-slate-800"
                             >
-                                <X className="w-5 h-5 text-slate-400" />
+                                <Settings className="w-5 h-5 text-slate-400" />
                             </button>
                         </div>
 
@@ -458,7 +401,7 @@ const ProgramManager = ({
                     </div>
                 </div>
             )}
-        </div>
+        </>
     )
 }
 

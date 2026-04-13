@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import {
-  X,
   Plus,
   Trash2,
   LayoutGrid,
@@ -19,22 +18,37 @@ import GymProgramBuilder from './GymProgramBuilder'
 
 /**
  * GymProgramManager - Manage gym programs (view, browse templates, build custom)
+ *
+ * When rendered inside ProgramManagerShell, activeTab/setActiveTab/mode/theme/onClose
+ * are injected via cloneElement. When used standalone, they fall back to internal state
+ * and props.
  */
 const GymProgramManager = ({
-  currentProgram,       // { programId, currentWeek, currentDay }
-  customGymPrograms,    // Array of custom programs
-  onSelectProgram,      // (programId, programData) => void
-  onSaveCustomProgram,  // (program) => void
-  onDeleteCustomProgram,// (programId) => void
+  currentProgram,
+  customGymPrograms,
+  onSelectProgram,
+  onSaveCustomProgram,
+  onDeleteCustomProgram,
   onClose,
-  theme = 'dark'
+  theme: themeProp,
+  // Injected by ProgramManagerShell
+  activeTab: activeTabProp,
+  setActiveTab: setActiveTabProp,
+  mode: modeProp,
 }) => {
-  const [activeTab, setActiveTab] = useState('current') // 'current' | 'templates' | 'custom'
+  const [internalTab, setInternalTab] = useState('current')
   const [difficultyFilter, setDifficultyFilter] = useState('all')
   const [showBuilder, setShowBuilder] = useState(false)
   const [editingProgram, setEditingProgram] = useState(null)
   const [confirmSelect, setConfirmSelect] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
+
+  // Use Shell-managed tab if provided, otherwise use internal state
+  const activeTab = activeTabProp ?? internalTab
+  const setActiveTab = setActiveTabProp ?? setInternalTab
+
+  // Use Shell-injected theme if provided, otherwise use prop
+  const theme = themeProp ?? 'dark'
 
   const bgClass = theme === 'light' ? 'bg-white' : 'bg-slate-900'
   const textPrimary = theme === 'light' ? 'text-slate-900' : 'text-white'
@@ -72,12 +86,11 @@ const GymProgramManager = ({
   // Handle program selection
   const handleSelectProgram = (program) => {
     vibrate(30)
-    // Show confirmation if switching from current program
     if (currentProgram?.programId && currentProgram.programId !== program.id) {
       setConfirmSelect(program)
     } else {
       onSelectProgram(program.id, program)
-      onClose()
+      onClose?.()
     }
   }
 
@@ -85,7 +98,7 @@ const GymProgramManager = ({
     if (confirmSelect) {
       onSelectProgram(confirmSelect.id, confirmSelect)
       setConfirmSelect(null)
-      onClose()
+      onClose?.()
     }
   }
 
@@ -114,7 +127,7 @@ const GymProgramManager = ({
     vibrate(30)
     const cloned = {
       ...program,
-      id: null, // Will get new ID on save
+      id: null,
       name: `${program.name} (Custom)`,
       isCustom: true,
       isBuiltIn: false
@@ -122,13 +135,6 @@ const GymProgramManager = ({
     setEditingProgram(cloned)
     setShowBuilder(true)
   }
-
-  // Tab configuration
-  const tabs = [
-    { id: 'current', label: 'Current', icon: List },
-    { id: 'templates', label: 'Templates', icon: LayoutGrid },
-    { id: 'custom', label: 'My Programs', icon: Wrench },
-  ]
 
   // Program card component
   const ProgramCard = ({ program, isCurrentProgram = false, showActions = true }) => {
@@ -243,201 +249,165 @@ const GymProgramManager = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
-      <div className={`fixed inset-0 ${bgClass} md:inset-4 md:rounded-2xl overflow-hidden flex flex-col`}>
-        {/* Header */}
-        <div className={`flex items-center justify-between p-4 border-b ${borderColor}`}>
-          <h2 className={`text-xl font-bold ${textPrimary}`}>Gym Programs</h2>
-          <button
-            onClick={onClose}
-            className={`p-2 rounded-lg ${theme === 'light' ? 'hover:bg-slate-200' : 'hover:bg-slate-800'} transition-colors`}
-          >
-            <X className={textSecondary} size={20} />
-          </button>
-        </div>
+    <>
+      {/* Current Tab */}
+      {activeTab === 'current' && (
+        <div className="p-4 space-y-4">
+          {currentProgramDetails ? (
+            <>
+              <ProgramCard
+                program={currentProgramDetails}
+                isCurrentProgram={true}
+                showActions={false}
+              />
 
-        {/* Tabs */}
-        <div className={`px-4 py-2 border-b ${borderColor} ${theme === 'light' ? 'bg-slate-50' : 'bg-slate-900/50'}`}>
-          <div className={`flex ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'} rounded-lg p-1`}>
-            {tabs.map(tab => (
+              {/* Workout days detail */}
+              <div>
+                <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>Workout Schedule</h3>
+                <div className="space-y-2">
+                  {currentProgramDetails.split?.map((day, index) => {
+                    const isToday = index === ((currentProgram.currentDay - 1) % currentProgramDetails.split.length)
+                    return (
+                      <div
+                        key={index}
+                        className={`p-4 rounded-xl border ${
+                          isToday
+                            ? 'bg-purple-500/10 border-purple-500/50'
+                            : `${cardBg} ${borderColor}`
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className={`font-medium ${isToday ? 'text-purple-400' : textPrimary}`}>
+                            {day.name}
+                            {isToday && <span className="ml-2 text-xs">(Today)</span>}
+                          </h4>
+                          <span className={`text-xs ${textSecondary}`}>
+                            {day.exercises?.length || 0} exercises
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {day.exercises?.map(exId => {
+                            const ex = GYM_EXERCISES[exId]
+                            return ex ? (
+                              <span
+                                key={exId}
+                                className={`text-xs px-2 py-1 ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-700'} rounded ${textSecondary}`}
+                              >
+                                {ex.shortName || ex.name}
+                              </span>
+                            ) : null
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Change program button */}
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                  activeTab === tab.id
-                    ? 'bg-purple-500 text-white'
-                    : `${textSecondary} hover:text-white`
+                onClick={() => setActiveTab('templates')}
+                className={`w-full py-3 border ${borderColor} ${textSecondary} rounded-xl hover:border-purple-500 hover:text-purple-400 transition-colors flex items-center justify-center gap-2`}
+              >
+                <LayoutGrid size={18} />
+                Browse Other Programs
+              </button>
+            </>
+          ) : (
+            <div className={`text-center py-12 ${cardBg} rounded-xl border ${borderColor}`}>
+              <Dumbbell className={`w-16 h-16 mx-auto mb-4 ${textSecondary}`} />
+              <h3 className={`font-bold ${textPrimary} mb-2`}>No Program Selected</h3>
+              <p className={`text-sm ${textSecondary} mb-4`}>
+                Choose a program template or create your own
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setActiveTab('templates')}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600"
+                >
+                  Browse Templates
+                </button>
+                <button
+                  onClick={() => setShowBuilder(true)}
+                  className={`px-4 py-2 ${cardBg} border ${borderColor} ${textPrimary} rounded-lg hover:border-purple-500`}
+                >
+                  Create Custom
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Templates Tab */}
+      {activeTab === 'templates' && (
+        <div className="p-4 space-y-4">
+          {/* Difficulty filter */}
+          <div className="flex gap-2 flex-wrap">
+            {['all', 'beginner', 'intermediate', 'advanced'].map(level => (
+              <button
+                key={level}
+                onClick={() => setDifficultyFilter(level)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  difficultyFilter === level
+                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                    : `${cardBg} ${textSecondary} ${theme === 'light' ? 'hover:bg-slate-200' : 'hover:bg-slate-700'}`
                 }`}
               >
-                <tab.icon size={16} />
-                <span className="hidden sm:inline">{tab.label}</span>
+                {level === 'all' ? 'All' : GYM_DIFFICULTY_LABELS[level]?.icon + ' ' + GYM_DIFFICULTY_LABELS[level]?.name}
               </button>
             ))}
           </div>
+
+          {/* Program list */}
+          <div className="space-y-3">
+            {filteredTemplates.map(program => (
+              <ProgramCard
+                key={program.id}
+                program={program}
+                isCurrentProgram={currentProgram?.programId === program.id}
+              />
+            ))}
+          </div>
         </div>
+      )}
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {/* Current Tab */}
-          {activeTab === 'current' && (
-            <div className="space-y-4">
-              {currentProgramDetails ? (
-                <>
-                  <ProgramCard
-                    program={currentProgramDetails}
-                    isCurrentProgram={true}
-                    showActions={false}
-                  />
+      {/* Custom Programs Tab */}
+      {activeTab === 'custom' && (
+        <div className="p-4 space-y-4">
+          {/* Create new button */}
+          <button
+            onClick={() => { setEditingProgram(null); setShowBuilder(true) }}
+            className={`w-full p-4 rounded-xl border-2 border-dashed ${borderColor} hover:border-purple-500 transition-colors flex items-center justify-center gap-3 group`}
+          >
+            <Plus className={`${textSecondary} group-hover:text-purple-400`} size={24} />
+            <span className={`font-medium ${textSecondary} group-hover:text-purple-400`}>
+              Create New Program
+            </span>
+          </button>
 
-                  {/* Workout days detail */}
-                  <div>
-                    <h3 className={`text-sm font-medium ${textSecondary} mb-3`}>Workout Schedule</h3>
-                    <div className="space-y-2">
-                      {currentProgramDetails.split?.map((day, index) => {
-                        const isToday = index === ((currentProgram.currentDay - 1) % currentProgramDetails.split.length)
-                        return (
-                          <div
-                            key={index}
-                            className={`p-4 rounded-xl border ${
-                              isToday
-                                ? 'bg-purple-500/10 border-purple-500/50'
-                                : `${cardBg} ${borderColor}`
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className={`font-medium ${isToday ? 'text-purple-400' : textPrimary}`}>
-                                {day.name}
-                                {isToday && <span className="ml-2 text-xs">(Today)</span>}
-                              </h4>
-                              <span className={`text-xs ${textSecondary}`}>
-                                {day.exercises?.length || 0} exercises
-                              </span>
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {day.exercises?.map(exId => {
-                                const ex = GYM_EXERCISES[exId]
-                                return ex ? (
-                                  <span
-                                    key={exId}
-                                    className={`text-xs px-2 py-1 ${theme === 'light' ? 'bg-slate-200' : 'bg-slate-700'} rounded ${textSecondary}`}
-                                  >
-                                    {ex.shortName || ex.name}
-                                  </span>
-                                ) : null
-                              })}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Change program button */}
-                  <button
-                    onClick={() => setActiveTab('templates')}
-                    className={`w-full py-3 border ${borderColor} ${textSecondary} rounded-xl hover:border-purple-500 hover:text-purple-400 transition-colors flex items-center justify-center gap-2`}
-                  >
-                    <LayoutGrid size={18} />
-                    Browse Other Programs
-                  </button>
-                </>
-              ) : (
-                <div className={`text-center py-12 ${cardBg} rounded-xl border ${borderColor}`}>
-                  <Dumbbell className={`w-16 h-16 mx-auto mb-4 ${textSecondary}`} />
-                  <h3 className={`font-bold ${textPrimary} mb-2`}>No Program Selected</h3>
-                  <p className={`text-sm ${textSecondary} mb-4`}>
-                    Choose a program template or create your own
-                  </p>
-                  <div className="flex gap-3 justify-center">
-                    <button
-                      onClick={() => setActiveTab('templates')}
-                      className="px-4 py-2 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600"
-                    >
-                      Browse Templates
-                    </button>
-                    <button
-                      onClick={() => setShowBuilder(true)}
-                      className={`px-4 py-2 ${cardBg} border ${borderColor} ${textPrimary} rounded-lg hover:border-purple-500`}
-                    >
-                      Create Custom
-                    </button>
-                  </div>
-                </div>
-              )}
+          {/* Custom programs list */}
+          {customGymPrograms && customGymPrograms.length > 0 ? (
+            <div className="space-y-3">
+              {customGymPrograms.map(program => (
+                <ProgramCard
+                  key={program.id}
+                  program={program}
+                  isCurrentProgram={currentProgram?.programId === program.id}
+                />
+              ))}
             </div>
-          )}
-
-          {/* Templates Tab */}
-          {activeTab === 'templates' && (
-            <div className="space-y-4">
-              {/* Difficulty filter */}
-              <div className="flex gap-2 flex-wrap">
-                {['all', 'beginner', 'intermediate', 'advanced'].map(level => (
-                  <button
-                    key={level}
-                    onClick={() => setDifficultyFilter(level)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      difficultyFilter === level
-                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                        : `${cardBg} ${textSecondary} ${theme === 'light' ? 'hover:bg-slate-200' : 'hover:bg-slate-700'}`
-                    }`}
-                  >
-                    {level === 'all' ? 'All' : GYM_DIFFICULTY_LABELS[level]?.icon + ' ' + GYM_DIFFICULTY_LABELS[level]?.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Program list */}
-              <div className="space-y-3">
-                {filteredTemplates.map(program => (
-                  <ProgramCard
-                    key={program.id}
-                    program={program}
-                    isCurrentProgram={currentProgram?.programId === program.id}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Custom Programs Tab */}
-          {activeTab === 'custom' && (
-            <div className="space-y-4">
-              {/* Create new button */}
-              <button
-                onClick={() => { setEditingProgram(null); setShowBuilder(true) }}
-                className={`w-full p-4 rounded-xl border-2 border-dashed ${borderColor} hover:border-purple-500 transition-colors flex items-center justify-center gap-3 group`}
-              >
-                <Plus className={`${textSecondary} group-hover:text-purple-400`} size={24} />
-                <span className={`font-medium ${textSecondary} group-hover:text-purple-400`}>
-                  Create New Program
-                </span>
-              </button>
-
-              {/* Custom programs list */}
-              {customGymPrograms && customGymPrograms.length > 0 ? (
-                <div className="space-y-3">
-                  {customGymPrograms.map(program => (
-                    <ProgramCard
-                      key={program.id}
-                      program={program}
-                      isCurrentProgram={currentProgram?.programId === program.id}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className={`text-center py-8 ${cardBg} rounded-xl border ${borderColor}`}>
-                  <Wrench className={`w-12 h-12 mx-auto mb-3 ${textSecondary}`} />
-                  <p className={textSecondary}>No custom programs yet</p>
-                  <p className={`text-sm ${textSecondary} mt-1`}>
-                    Create your own or clone a template
-                  </p>
-                </div>
-              )}
+          ) : (
+            <div className={`text-center py-8 ${cardBg} rounded-xl border ${borderColor}`}>
+              <Wrench className={`w-12 h-12 mx-auto mb-3 ${textSecondary}`} />
+              <p className={textSecondary}>No custom programs yet</p>
+              <p className={`text-sm ${textSecondary} mt-1`}>
+                Create your own or clone a template
+              </p>
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {/* Program Builder Modal */}
       {showBuilder && (
@@ -516,7 +486,7 @@ const GymProgramManager = ({
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 

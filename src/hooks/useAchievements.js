@@ -11,15 +11,16 @@ import {
 
 /**
  * Manages achievement badges, streak notifications, and daily reminders.
+ * Supports both home and gym workout data.
  */
-export function useAchievements({ completedDays, sessionHistory, dailyGoal }) {
+export function useAchievements({ completedDays, sessionHistory, dailyGoal, gymHistory = [], gymStreak = 0 }) {
     const [seenBadgeIds, setSeenBadgeIds] = usePersistedState('seen_badges', []);
     const [newBadges, setNewBadges] = useState([]);
     const prevStatsRef = useRef(null);
 
     // Detect new badges
     useEffect(() => {
-        const stats = calculateStats(completedDays, sessionHistory);
+        const stats = calculateStats(completedDays, sessionHistory, gymHistory, gymStreak);
         const unlockedBadges = getUnlockedBadges(stats);
         const unlockedIds = unlockedBadges.map(b => b.id);
 
@@ -41,7 +42,7 @@ export function useAchievements({ completedDays, sessionHistory, dailyGoal }) {
         checkStreakNotification(streakData);
 
         prevStatsRef.current = stats;
-    }, [completedDays, sessionHistory]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [completedDays, sessionHistory, gymHistory, gymStreak]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Daily reminder + notification registration
     useEffect(() => {
@@ -62,11 +63,11 @@ export function useAchievements({ completedDays, sessionHistory, dailyGoal }) {
         setNewBadges([]);
         if (badgeTimerRef.current) clearTimeout(badgeTimerRef.current);
         badgeTimerRef.current = setTimeout(() => {
-            const stats = calculateStats(completedDays, sessionHistory);
+            const stats = calculateStats(completedDays, sessionHistory, gymHistory, gymStreak);
             const unlockedIds = getUnlockedBadges(stats).map(b => b.id);
             setSeenBadgeIds(unlockedIds);
         }, 100);
-    }, [completedDays, sessionHistory, setSeenBadgeIds]);
+    }, [completedDays, sessionHistory, gymHistory, gymStreak, setSeenBadgeIds]);
 
     // Cleanup badge timer on unmount
     useEffect(() => {

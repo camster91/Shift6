@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 
 const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { strict: false })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : null;
 
 const app = express();

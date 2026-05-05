@@ -54,15 +54,17 @@ setInterval(() => {
   }
 }, RATE_WINDOW);
 
-// ── Static SPA ───────────────────────────────────────────────
+// ── Static SPA (must be after API routes) ──────────────
 app.use(express.static(join(__dirname, '../dist')));
-app.get('*', (req, res) => {
-  res.sendFile(join(__dirname, '../dist/index.html'));
-});
 
-// ── Health check ─────────────────────────────────────────────
+// ── Health check (before SPA catch-all) ─────────────────────
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ── SPA fallback (must be last) ──────────────────────────────
+app.get('*', (req, res) => {
+  res.sendFile(join(__dirname, '../dist/index.html'));
 });
 
 // ── Stripe webhook (raw body, must be before json()) ──────────

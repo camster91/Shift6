@@ -1,7 +1,37 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, Square, Check, ChevronRight, X, Dumbbell, Youtube, Plus, Minus } from 'lucide-react';
+import { Play, Pause, Square, Check, ChevronRight, X, Dumbbell, Youtube, Plus, Minus, PartyPopper } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP, getExercise } from '../data/exercises';
+
+// ──────────── Achievement Celebration ────────────
+const ACHIEVEMENTS = {
+  first_workout: { title: 'First Steps', emoji: '🎉', message: 'You logged your first workout!' },
+  three_day_streak: { title: 'On Fire', emoji: '🔥', message: '3 day workout streak!' },
+  seven_day_streak: { title: 'Unstoppable', emoji: '💪', message: '1 week streak — keep it going!' },
+  ten_sets: { title: 'Getting Serious', emoji: '💯', message: '10 total sets logged!' },
+  first_pr: { title: 'Record Breaker', emoji: '🏆', message: 'You set your first personal record!' },
+};
+
+function AchievementPopup({ achievement, onDismiss }) {
+  const a = ACHIEVEMENTS[achievement];
+  if (!a) return null;
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-6 animate-fade-in" onClick={onDismiss}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="relative bg-slate-900 border border-slate-700 rounded-3xl p-8 text-center max-w-xs w-full shadow-2xl">
+        <div className="text-6xl mb-4">{a.emoji}</div>
+        <h3 className="text-xl font-black text-white mb-2">{a.title}</h3>
+        <p className="text-slate-400 text-sm mb-6">{a.message}</p>
+        <button
+          onClick={onDismiss}
+          className="w-full py-3 bg-cyan-500 text-white rounded-xl font-bold active:scale-95 transition-transform"
+        >
+          Keep Going!
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ──────────── Timer Hook ────────────
 function useTimer(initialSeconds) {
@@ -105,7 +135,7 @@ function RestScreen({ seconds, running, onFinish, onStart, onPause, nextExercise
 
 // ──────────── Workout Session ────────────
 export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
-  const { logSet, getBestSet } = useData();
+  const { logSet, getBestSet, getLogsForExercise, getCurrentStreak, logs } = useData();
   const exercise = getExercise(exerciseId);
   const colors = COLOR_MAP[exercise?.color] || COLOR_MAP.cyan;
 
@@ -116,12 +146,23 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
   const [currentWeight, setCurrentWeight] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [bestReps, setBestReps] = useState(0);
+  const [achievement, setAchievement] = useState(null);
 
   const targetSets = 3;
   const restSeconds = 90;
   const timer = useTimer(restSeconds);
 
-  useEffect(() => { setBestReps(getBestSet(exerciseId)); }, [exerciseId, logs]);
+  // Snapshot log count before this workout (for achievement detection)
+  const prevLogCount = useRef(logs.length);
+
+  useEffect(() => {
+    const best = getBestSet(exerciseId);
+    setBestReps(best);
+    // Check first_workout achievement on mount
+    if (logs.length === 0 && prevLogCount.current === 0) {
+      // Will be detected on first set
+    }
+  }, [exerciseId, logs]);
 
   // Wake lock
   useEffect(() => {
@@ -145,9 +186,35 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
   const handleCompleteSet = useCallback(() => {
     const entry = { reps: currentReps, weight: currentWeight };
     setSetsCompleted(prev => [...prev, entry]);
+
+    const newLogCount = logs.length + setsCompleted.length + 1; // +1 for this set
+    const prevBest = getBestSet(exerciseId);
+    const streak = getCurrentStreak();
+
     logSet(exerciseId, currentReps, currentWeight);
 
     navigator.vibrate?.(100);
+
+    // Check achievements on first set completion
+    if (setsCompleted.length === 0) {
+      // First ever workout
+      if (prevLogCount.current === 0) {
+        setAchievement('first_workout');
+      }
+      // First PR
+      else if (currentReps > prevBest && prevBest > 0) {
+        setAchievement('first_pr');
+      }
+      // Streak achievements
+      else if (streak >= 7) {
+        setAchievement('seven_day_streak');
+      } else if (streak >= 3) {
+        setAchievement('three_day_streak');
+      }
+    } else if (newLogCount >= 10 && prevLogCount.current < 10) {
+      // 10 total sets
+      setAchievement('ten_sets');
+    }
 
     if (currentSet >= targetSets) {
       setPhase('done');
@@ -157,7 +224,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
       timer.reset(restSeconds);
       timer.start();
     }
-  }, [currentSet, currentReps, currentWeight, exerciseId]);
+  }, [currentSet, currentReps, currentWeight, exerciseId, logs, setsCompleted]);
 
   // Finish rest → back to active
   const handleFinishRest = useCallback(() => {
@@ -293,6 +360,13 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
       )}
 
       {showVideo && <VideoModal exercise={exercise} onClose={() => setShowVideo(false)} />}
+
+      {achievement && (
+        <AchievementPopup
+          achievement={achievement}
+          onDismiss={() => setAchievement(null)}
+        />
+      )}
     </div>
   );
 }

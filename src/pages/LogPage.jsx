@@ -1,153 +1,108 @@
 import { useState } from 'react';
+import { Plus, Dumbbell, Minus, Check } from 'lucide-react';
 import { useData } from '../hooks/useData';
-import { getBodyPart, BODY_PARTS, EXERCISE_DEFAULTS } from '../data/exercises';
+import { COLOR_MAP, getExercise } from '../data/exercises';
 
 export default function LogPage() {
-  const { exercises, addLog, addExercise } = useData();
-  const [search, setSearch] = useState('');
+  const { exercises, logSet, getTodayLogs, getBestSet } = useData();
   const [selectedEx, setSelectedEx] = useState(null);
-  const [sets, setSets] = useState([{ reps: '', weight: '' }]);
-  const [note, setNote] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newExName, setNewExName] = useState('');
+  const [reps, setReps] = useState(10);
+  const [weight, setWeight] = useState(0);
+  const todayLogs = getTodayLogs();
 
-  const filtered = exercises.filter(e =>
-    e.name.toLowerCase().includes(search.toLowerCase()) ||
-    e.bodyPart.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleSubmit = () => {
-    if (!selectedEx) return;
-    addLog({
-      exerciseId: selectedEx.id,
-      sets: sets.filter(s => s.reps !== '').map(s => ({
-        reps: parseInt(s.reps) || 0,
-        weight: parseFloat(s.weight) || 0,
-      })),
-      note,
-      date: new Date().toISOString().split('T')[0],
-      timestamp: Date.now(),
-    });
-    setSelectedEx(null);
-    setSets([{ reps: '', weight: '' }]);
-    setNote('');
+  // Quick log a set
+  const handleQuickLog = (exerciseId) => {
+    if (selectedEx === exerciseId) {
+      logSet(exerciseId, reps, weight);
+      navigator.vibrate?.(50);
+    } else {
+      const ex = exercises.find(e => e.id === exerciseId);
+      setSelectedEx(exerciseId);
+      setReps(ex?.startReps || 10);
+      setWeight(0);
+    }
   };
-
-  const addSet = () => setSets([...sets, { reps: '', weight: '' }]);
-  const updateSet = (i, field, val) => {
-    const newSets = [...sets];
-    newSets[i][field] = val;
-    setSets(newSets);
-  };
-
-  const handleAddExercise = () => {
-    if (!newExName.trim()) return;
-    addExercise({ name: newExName.trim(), bodyPart: 'Other' });
-    setNewExName('');
-    setShowAddForm(false);
-  };
-
-  if (selectedEx) {
-    return (
-      <div className="p-4 space-y-4">
-        <button onClick={() => setSelectedEx(null)} className="text-blue-400">&larr; Back</button>
-        <h2 className="text-xl font-bold">{selectedEx.name}</h2>
-        <p className="text-sm text-gray-400">{getBodyPart(selectedEx.name)}</p>
-
-        <div className="space-y-2">
-          {sets.map((s, i) => (
-            <div key={i} className="flex gap-2 items-center">
-              <span className="text-gray-400 w-6">{i + 1}.</span>
-              <input
-                type="number"
-                placeholder="Reps"
-                className="bg-gray-800 rounded px-3 py-2 w-24"
-                value={s.reps}
-                onChange={e => updateSet(i, 'reps', e.target.value)}
-              />
-              <input
-                type="number"
-                step="0.5"
-                placeholder="Weight"
-                className="bg-gray-800 rounded px-3 py-2 w-24"
-                value={s.weight}
-                onChange={e => updateSet(i, 'weight', e.target.value)}
-              />
-              <span className="text-gray-400">lbs</span>
-            </div>
-          ))}
-          <button onClick={addSet} className="text-blue-400 text-sm">+ Add set</button>
-        </div>
-
-        <input
-          type="text"
-          placeholder="Note (optional)"
-          className="w-full bg-gray-800 rounded px-3 py-2"
-          value={note}
-          onChange={e => setNote(e.target.value)}
-        />
-
-        <button
-          onClick={handleSubmit}
-          className="w-full bg-green-600 text-white rounded-lg py-3 font-semibold"
-        >
-          Save Workout
-        </button>
-      </div>
-    );
-  }
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Log Exercise</h1>
+    <div className="p-4 pb-32 max-w-lg mx-auto">
+      <h1 className="text-xl font-bold text-white mb-1">Quick Log</h1>
+      <p className="text-sm text-slate-400 mb-4">Logged {todayLogs.length} sets today</p>
 
-      <input
-        type="text"
-        placeholder="Search exercises..."
-        className="w-full bg-gray-800 rounded px-3 py-2"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        autoFocus
-      />
+      <div className="space-y-3">
+        {/* Exercise selector */}
+        {exercises.map(ex => {
+          const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
+          const isSelected = selectedEx === ex.id;
+          const todayCount = todayLogs.filter(l => l.exerciseId === ex.id).length;
+          const best = getBestSet(ex.id);
 
-      <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setSearch('')} className="text-sm text-blue-400">All</button>
-        {BODY_PARTS.map(bp => (
-          <button key={bp} onClick={() => setSearch(bp)} className="text-sm bg-gray-800 px-2 py-1 rounded">
-            {bp}
-          </button>
-        ))}
+          return (
+            <div key={ex.id} className={`glass-card rounded-xl overflow-hidden transition-all`}>
+              <button onClick={() => handleQuickLog(ex.id)}
+                className="w-full text-left p-3 flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+                  <Dumbbell className={colors.text} size={18} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-white text-sm">{ex.name}</p>
+                  <p className="text-xs text-slate-500">{todayCount} today · Best: {best}</p>
+                </div>
+                <div className={`text-xs px-2 py-1 rounded-full ${colors.bg} ${colors.text}`}>
+                  {todayCount}
+                </div>
+              </button>
+
+              {/* Quick log input */}
+              {isSelected && (
+                <div className="px-3 pb-3 border-t border-slate-800 pt-3 animate-fade-in">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-500 mb-1">Reps</p>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setReps(Math.max(0, reps - 5))}
+                          className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+                          <Minus size={14} />
+                        </button>
+                        <span className="text-xl font-bold text-white w-12 text-center">{reps}</span>
+                        <button onClick={() => setReps(reps + 5)}
+                          className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    {!ex.home && (
+                      <div className="flex-1">
+                        <p className="text-xs text-slate-500 mb-1">Weight (lbs)</p>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setWeight(Math.max(0, weight - 5))}
+                            className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+                            <Minus size={14} />
+                          </button>
+                          <span className="text-xl font-bold text-white w-12 text-center">{weight}</span>
+                          <button onClick={() => setWeight(weight + 5)}
+                            className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    <button onClick={() => { logSet(ex.id, reps, weight); setSelectedEx(null); }}
+                      className={`self-end px-4 py-2 rounded-lg ${colors.solid} text-white text-sm font-bold`}>
+                      <Check size={18} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {exercises.length === 0 && (
+          <div className="glass-card rounded-xl p-8 text-center">
+            <p className="text-slate-400">Add some exercises first</p>
+          </div>
+        )}
       </div>
-
-      <div className="space-y-1">
-        {filtered.map(ex => (
-          <button
-            key={ex.id}
-            onClick={() => setSelectedEx(ex)}
-            className="w-full text-left bg-gray-800 rounded-lg p-3 hover:bg-gray-700"
-          >
-            <span className="font-medium">{ex.name}</span>
-            <span className="text-gray-400 text-sm ml-2">{ex.bodyPart}</span>
-          </button>
-        ))}
-      </div>
-
-      <button onClick={() => setShowAddForm(!showAddForm)} className="text-blue-400 text-sm">
-        + Add custom exercise
-      </button>
-
-      {showAddForm && (
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Exercise name"
-            className="flex-1 bg-gray-800 rounded px-3 py-2"
-            value={newExName}
-            onChange={e => setNewExName(e.target.value)}
-          />
-          <button onClick={handleAddExercise} className="bg-blue-600 px-4 rounded-lg">Add</button>
-        </div>
-      )}
     </div>
   );
 }

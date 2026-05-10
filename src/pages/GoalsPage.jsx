@@ -1,157 +1,98 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Target, Dumbbell, Plus, Trash2, TrendingUp } from 'lucide-react';
 import { useData } from '../hooks/useData';
+import { COLOR_MAP } from '../data/exercises';
 
 export default function GoalsPage() {
-  const { exercises, goals, addGoal, removeGoal } = useData();
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ exerciseId: '', targetReps: '', targetWeight: '', weeklyFreq: '2' });
+  const { exercises, logs, goals, getBestSet, setGoal, removeGoal } = useData();
+  const [editing, setEditing] = useState(null);
+  const [targetReps, setTargetReps] = useState(20);
 
-  const handleSubmit = () => {
-    if (!form.exerciseId) return;
-    const start = new Date();
-    const end = new Date();
-    end.setDate(end.getDate() + 42); // 6 weeks
-    addGoal({
-      exerciseId: form.exerciseId,
-      targetReps: parseInt(form.targetReps) || 0,
-      targetWeight: parseFloat(form.targetWeight) || 0,
-      weeklyFreq: parseInt(form.weeklyFreq) || 2,
-      startDate: start.toISOString().split('T')[0],
-      endDate: end.toISOString().split('T')[0],
+  const goalList = useMemo(() => {
+    return exercises.map(ex => {
+      const goal = goals.find(g => g.exerciseId === ex.id);
+      const best = getBestSet(ex.id);
+      const target = goal?.targetReps || ex.startReps * 2;
+      const progress = target > 0 ? Math.min(100, Math.round((best / target) * 100)) : 0;
+      return { ...ex, goal, best, target, progress };
     });
-    setShowForm(false);
-    setForm({ exerciseId: '', targetReps: '', targetWeight: '', weeklyFreq: '2' });
-  };
+  }, [exercises, goals, logs]);
 
-  const getGoalProgress = (goal) => {
-    const logs = goal.logs || [];
-    const best = logs.length > 0
-      ? Math.max(...logs.flatMap(l => l.sets?.map(s => s.reps || 0) || [0]))
-      : 0;
-    const target = goal.targetReps || 1;
-    return Math.min(100, Math.round((best / target) * 100));
-  };
-
-  const daysRemaining = (goal) => {
-    const end = new Date(goal.endDate);
-    const now = new Date();
-    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-    return Math.max(0, diff);
+  const handleSetGoal = (exerciseId) => {
+    const ex = exercises.find(e => e.id === exerciseId);
+    setGoal(exerciseId, targetReps, 6);
+    setEditing(null);
   };
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold">6-Week Goals</h1>
-
-      {goals.length === 0 && !showForm && (
-        <p className="text-gray-400">No goals yet. Set your first 6-week goal!</p>
-      )}
+    <div className="p-4 pb-32 max-w-lg mx-auto">
+      <div className="flex items-center gap-2 mb-1">
+        <Target size={18} className="text-cyan-400" />
+        <h1 className="text-xl font-bold text-white">6-Week Goals</h1>
+      </div>
+      <p className="text-sm text-slate-400 mb-4">Set progress targets for each exercise</p>
 
       <div className="space-y-3">
-        {goals.map(g => {
-          const ex = exercises.find(e => e.id === g.exerciseId);
-          const remaining = daysRemaining(g);
-          const progress = getGoalProgress(g);
-          const week = Math.floor((42 - remaining) / 7) + 1;
-          const totalWeeks = 6;
+        {goalList.map(ex => {
+          const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
+          const hasGoal = !!ex.goal;
 
           return (
-            <div key={g.id} className="bg-gray-800 rounded-lg p-4 space-y-2">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-semibold">{ex?.name || 'Unknown'}</h3>
-                  <p className="text-sm text-gray-400">
-                    Week {week} of {totalWeeks} &middot; {remaining} days left
-                  </p>
+            <div key={ex.id} className="glass-card rounded-xl p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+                  <Dumbbell className={colors.text} size={18} />
                 </div>
-                <button onClick={() => removeGoal(g.id)} className="text-red-400 text-sm">Remove</button>
+                <div className="flex-1">
+                  <p className="font-bold text-white text-sm">{ex.name}</p>
+                  <p className="text-xs text-slate-500">Best: {ex.best} reps</p>
+                </div>
+                {hasGoal ? (
+                  <button onClick={() => removeGoal(ex.id)}
+                    className="text-red-400 hover:text-red-300 p-2">
+                    <Trash2 size={16} />
+                  </button>
+                ) : (
+                  <button onClick={() => { setEditing(ex.id); setTargetReps(ex.startReps * 2); }}
+                    className="text-cyan-400 hover:text-cyan-300 p-2">
+                    <Plus size={16} />
+                  </button>
+                )}
               </div>
 
-              {g.targetReps > 0 && (
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Reps: {g.targetReps}</span>
-                    <span>{progress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${progress}%` }} />
-                  </div>
-                </div>
-              )}
+              {/* Progress bar */}
+              <div className="w-full bg-slate-800 rounded-full h-2.5 mb-1">
+                <div className={`h-full rounded-full ${colors.solid}`}
+                  style={{ width: `${ex.progress}%`, transition: 'width 0.8s ease' }} />
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500">{ex.best} reps</span>
+                <span className="text-white font-medium">{ex.target} reps target</span>
+              </div>
 
-              {g.targetWeight > 0 && (
-                <div className="text-sm text-gray-400">
-                  Weight goal: {g.targetWeight} lbs
-                </div>
-              )}
-
-              {g.weeklyFreq > 0 && (
-                <div className="text-sm text-gray-400">
-                  Target: {g.weeklyFreq}x per week
+              {/* Inline goal editor */}
+              {editing === ex.id && (
+                <div className="mt-3 pt-3 border-t border-slate-800 animate-fade-in">
+                  <p className="text-xs text-slate-500 mb-2">Target reps in 6 weeks:</p>
+                  <div className="flex gap-2">
+                    <input type="number" value={targetReps}
+                      onChange={e => setTargetReps(parseInt(e.target.value) || 0)}
+                      className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm" />
+                    <button onClick={() => handleSetGoal(ex.id)}
+                      className="px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-bold active:scale-95">
+                      Set
+                    </button>
+                    <button onClick={() => setEditing(null)}
+                      className="px-3 py-2 text-slate-400 text-sm">
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           );
         })}
       </div>
-
-      {!showForm ? (
-        <button
-          onClick={() => setShowForm(true)}
-          className="w-full bg-blue-600 text-white rounded-lg py-3 font-semibold"
-        >
-          + New Goal
-        </button>
-      ) : (
-        <div className="bg-gray-800 rounded-lg p-4 space-y-3">
-          <h3 className="font-semibold">New 6-Week Goal</h3>
-
-          <select
-            className="w-full bg-gray-700 rounded px-3 py-2"
-            value={form.exerciseId}
-            onChange={e => setForm({ ...form, exerciseId: e.target.value })}
-          >
-            <option value="">Select exercise...</option>
-            {exercises.map(ex => (
-              <option key={ex.id} value={ex.id}>{ex.name}</option>
-            ))}
-          </select>
-
-          <input
-            type="number"
-            placeholder="Target reps (e.g., 50 push-ups)"
-            className="w-full bg-gray-700 rounded px-3 py-2"
-            value={form.targetReps}
-            onChange={e => setForm({ ...form, targetReps: e.target.value })}
-          />
-
-          <input
-            type="number"
-            step="5"
-            placeholder="Target weight (e.g., 225 lbs)"
-            className="w-full bg-gray-700 rounded px-3 py-2"
-            value={form.targetWeight}
-            onChange={e => setForm({ ...form, targetWeight: e.target.value })}
-          />
-
-          <input
-            type="number"
-            placeholder="Times per week (default: 2)"
-            className="w-full bg-gray-700 rounded px-3 py-2"
-            value={form.weeklyFreq}
-            onChange={e => setForm({ ...form, weeklyFreq: e.target.value })}
-          />
-
-          <div className="flex gap-2">
-            <button onClick={() => setShowForm(false)} className="flex-1 bg-gray-700 rounded py-2">
-              Cancel
-            </button>
-            <button onClick={handleSubmit} className="flex-1 bg-green-600 rounded py-2 font-semibold">
-              Save Goal
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

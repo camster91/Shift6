@@ -134,5 +134,6 @@ export function useData() {
     getBestSet, getBestWeight, getRecentLogs: getLogsForExercise,
     getWeeklyFrequency, getCurrentStreak, getLastRepsFor,
     allExercises: EXERCISES,
+    setLogs, setMyExercises, setGoals,
   };
 }

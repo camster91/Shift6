@@ -90,7 +90,7 @@ export default function App() {
 
   // Settings page component
   function SettingsPage() {
-    const { settings, updateSettings, logs, exercises } = useData();
+    const { settings, updateSettings, logs, exercises, myExercises, setLogs, setMyExercises, setGoals } = useData();
     const [restMins, setRestMins] = useState(Math.floor((settings?.restSeconds || 90) / 60));
     const [restSecs, setRestSecs] = useState((settings?.restSeconds || 90) % 60);
     const [targetSets, setTargetSets] = useState(settings?.targetSets || 3);
@@ -114,6 +114,55 @@ export default function App() {
         localStorage.removeItem('shift6_settings');
         window.location.reload();
       }
+    };
+
+    const handleExport = () => {
+      const data = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        exercises: myExercises,
+        logs,
+        goals,
+        settings,
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shift6-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      if (settings?.vibrationEnabled) navigator.vibrate?.(30);
+    };
+
+    const handleImport = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          if (!data.version || !data.logs) throw new Error('Invalid backup file');
+          if (window.confirm(`Import ${data.logs.length} logged sets? This will merge with existing data.`)) {
+            // Merge logs (avoid duplicates by id)
+            const existingIds = new Set(logs.map(l => l.id));
+            const newLogs = data.logs.filter(l => !existingIds.has(l.id));
+            const mergedLogs = [...logs, ...newLogs];
+            setLogs(mergedLogs);
+            if (data.exercises) setMyExercises(data.exercises);
+            if (data.goals) setGoals(data.goals);
+            if (data.settings) updateSettings(data.settings);
+            if (settings?.vibrationEnabled) navigator.vibrate?.([50, 50, 50]);
+            alert(`Imported ${newLogs.length} new sets!`);
+          }
+        } catch (err) {
+          alert('Failed to import: ' + err.message);
+        }
+      };
+      input.click();
     };
 
     const soundEnabled = settings?.soundEnabled ?? true;
@@ -278,6 +327,22 @@ export default function App() {
             Reset All Workout Data
           </button>
           <p className="text-xs text-slate-600 mt-2 text-center">Logs, goals, and streak will be cleared</p>
+        </div>
+
+        {/* Backup / Restore */}
+        <div className="glass-card rounded-2xl p-4">
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Backup & Restore</h2>
+          <div className="flex gap-3">
+            <button onClick={handleExport}
+              className="flex-1 py-3 bg-cyan-500/10 border border-cyan-500/20 rounded-xl text-cyan-400 font-semibold text-sm hover:bg-cyan-500/20 active:scale-[0.98] transition-colors">
+              Export Data
+            </button>
+            <button onClick={handleImport}
+              className="flex-1 py-3 bg-slate-800/60 border border-slate-700/50 rounded-xl text-slate-300 font-semibold text-sm hover:bg-slate-700/60 active:scale-[0.98] transition-colors">
+              Import Backup
+            </button>
+          </div>
+          <p className="text-xs text-slate-600 mt-2 text-center">JSON file with all your exercises, logs, and settings</p>
         </div>
 
         {/* App info */}

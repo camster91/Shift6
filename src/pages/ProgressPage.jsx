@@ -1,104 +1,138 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { TrendingUp, Dumbbell, Calendar, Flame } from 'lucide-react';
 import { useData } from '../hooks/useData';
+import { COLOR_MAP } from '../data/exercises';
 
 export default function ProgressPage() {
-  const { exercises, logs, goals } = useData();
+  const { exercises, logs, goals, getLogsForExercise, getBestSet } = useData();
   const [selectedEx, setSelectedEx] = useState(null);
 
-  // Group logs by exercise
-  const exerciseHistory = {};
-  logs.forEach(l => {
-    if (!exerciseHistory[l.exerciseId]) exerciseHistory[l.exerciseId] = [];
-    exerciseHistory[l.exerciseId].push(l);
-  });
+  const exerciseHistory = useMemo(() => {
+    if (!selectedEx) return [];
+    return getLogsForExercise(selectedEx);
+  }, [selectedEx, logs]);
 
-  // Sort each exercise's logs by date
-  Object.values(exerciseHistory).forEach(h => h.sort((a, b) => a.date.localeCompare(b.date)));
+  const stats = useMemo(() => {
+    if (!selectedEx) return { total: 0, best: 0, avg: 0, days: 0 };
+    const exLogs = logs.filter(l => l.exerciseId === selectedEx);
+    const best = Math.max(...exLogs.map(l => l.reps || 0), 0);
+    const total = exLogs.length;
+    const days = new Set(exLogs.map(l => l.date.split('T')[0])).size;
+    const sum = exLogs.reduce((acc, l) => acc + (l.reps || 0), 0);
+    return { total, best, avg: total > 0 ? Math.round(sum / total) : 0, days };
+  }, [selectedEx, logs]);
 
   if (selectedEx) {
-    const history = exerciseHistory[selectedEx.id] || [];
-    const exGoals = goals.filter(g => g.exerciseId === selectedEx.id);
-    const bestReps = history.length > 0
-      ? Math.max(...history.flatMap(l => l.sets?.map(s => s.reps || 0) || [0]))
-      : 0;
+    const ex = exercises.find(e => e.id === selectedEx);
+    const colors = COLOR_MAP[ex?.color] || COLOR_MAP.cyan;
 
     return (
-      <div className="p-4 space-y-4">
-        <button onClick={() => setSelectedEx(null)} className="text-blue-400">&larr; Back</button>
-        <h2 className="text-xl font-bold">{selectedEx.name}</h2>
-        <p className="text-sm text-gray-400">{selectedEx.bodyPart}</p>
+      <div className="p-4 pb-32 max-w-lg mx-auto">
+        <button onClick={() => setSelectedEx(null)}
+          className="text-sm text-cyan-400 mb-4 hover:text-cyan-300 transition-colors">
+          ← Back to all exercises
+        </button>
 
-        {exGoals.length > 0 && (
-          <div className="bg-gray-800 rounded-lg p-3">
-            <h3 className="font-semibold mb-1">Goals</h3>
-            {exGoals.map(g => (
-              <div key={g.id} className="text-sm text-gray-300">
-                Target: {g.targetReps || '-'} reps / {g.targetWeight || '-'} lbs
-                &middot; {g.weeklyFreq}x/week
-              </div>
-            ))}
+        <div className="flex items-center gap-3 mb-4">
+          <div className={`w-12 h-12 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+            <Dumbbell className={colors.text} size={22} />
           </div>
-        )}
-
-        <div className="bg-gray-800 rounded-lg p-3">
-          <div className="text-sm text-gray-400">Best reps: <span className="text-green-400 font-bold">{bestReps}</span></div>
+          <div>
+            <h2 className="text-xl font-bold text-white">{ex?.name}</h2>
+            <p className="text-sm text-slate-400">{ex?.bodyPart}</p>
+          </div>
         </div>
 
-        <h3 className="font-semibold">History</h3>
-        {history.length === 0 ? (
-          <p className="text-gray-400">No logs yet</p>
-        ) : (
-          <div className="space-y-2">
-            {history.slice().reverse().map((l, i) => (
-              <div key={i} className="bg-gray-800 rounded-lg p-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">{l.date}</span>
-                  {l.note && <span className="text-gray-500 italic">{l.note}</span>}
-                </div>
-                <div className="mt-1 space-y-0.5">
-                  {l.sets?.map((s, j) => (
-                    <div key={j} className="text-sm">
-                      Set {j + 1}: {s.reps || 0} reps{s.weight ? ` @ ${s.weight} lbs` : ''}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+        {/* Stats cards */}
+        <div className="grid grid-cols-4 gap-2 mb-6">
+          <div className="glass-card rounded-xl p-3 text-center">
+            <p className="text-2xl font-black text-white">{stats.total}</p>
+            <p className="text-xs text-slate-500">Sets</p>
           </div>
-        )}
+          <div className="glass-card rounded-xl p-3 text-center">
+            <p className={`text-2xl font-black ${colors.text}`}>{stats.best}</p>
+            <p className="text-xs text-slate-500">Best</p>
+          </div>
+          <div className="glass-card rounded-xl p-3 text-center">
+            <p className="text-2xl font-black text-white">{stats.avg}</p>
+            <p className="text-xs text-slate-500">Avg</p>
+          </div>
+          <div className="glass-card rounded-xl p-3 text-center">
+            <p className="text-2xl font-black text-white">{stats.days}</p>
+            <p className="text-xs text-slate-500">Days</p>
+          </div>
+        </div>
+
+        {/* History */}
+        <h3 className="text-sm font-semibold text-slate-400 mb-3">Recent Sets</h3>
+        <div className="space-y-2">
+          {[...exerciseHistory].reverse().slice(0, 30).map(entry => (
+            <div key={entry.id} className="glass-card rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-white">{entry.reps} reps</p>
+                {entry.weight > 0 && <p className="text-xs text-slate-500">{entry.weight} lbs</p>}
+              </div>
+              <p className="text-xs text-slate-500">
+                {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              </p>
+            </div>
+          ))}
+          {exerciseHistory.length === 0 && (
+            <p className="text-slate-500 text-center py-8">No logs for this exercise yet</p>
+          )}
+        </div>
       </div>
     );
   }
 
-  // Show all exercises with their stats
+  // Summary view
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Progress</h1>
+    <div className="p-4 pb-32 max-w-lg mx-auto">
+      <div className="flex items-center gap-2 mb-1">
+        <TrendingUp size={18} className="text-cyan-400" />
+        <h1 className="text-xl font-bold text-white">Progress</h1>
+      </div>
+      <p className="text-sm text-slate-400 mb-4">Your training at a glance</p>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {exercises.map(ex => {
-          const h = exerciseHistory[ex.id] || [];
-          const totalSets = h.reduce((sum, l) => sum + (l.sets?.length || 0), 0);
-          const lastDate = h.length > 0 ? h[h.length - 1].date : null;
+          const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
+          const best = getBestSet(ex.id);
+          const progress = best > 0 ? Math.min(100, Math.round((best / (ex.startReps * 2)) * 100)) : 0;
 
           return (
-            <button
-              key={ex.id}
-              onClick={() => setSelectedEx(ex)}
-              className="w-full text-left bg-gray-800 rounded-lg p-3 hover:bg-gray-700"
-            >
-              <div className="flex justify-between">
-                <div>
-                  <span className="font-medium">{ex.name}</span>
-                  <span className="text-gray-400 text-sm ml-2">{ex.bodyPart}</span>
+            <button key={ex.id} onClick={() => setSelectedEx(ex.id)}
+              className="w-full glass-card rounded-xl p-4 text-left active:scale-[0.98] transition-transform">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+                  <Dumbbell className={colors.text} size={18} />
                 </div>
-                <span className="text-sm text-gray-400">{totalSets} sets</span>
+                <div className="flex-1">
+                  <p className="font-bold text-white text-sm">{ex.name}</p>
+                  <p className="text-xs text-slate-500">Best: {best} reps</p>
+                </div>
+                <div className="w-10 h-10 relative">
+                  <svg width={40} height={40} className="transform -rotate-90">
+                    <circle cx={20} cy={20} r={16} fill="none" stroke="rgba(30,41,59,0.3)" strokeWidth={4} />
+                    <circle cx={20} cy={20} r={16} fill="none" stroke={colors.hex} strokeWidth={4}
+                      strokeDasharray={100} strokeDashoffset={100 - (progress / 100) * 100}
+                      strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease' }} />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+                    {progress}%
+                  </span>
+                </div>
               </div>
-              {lastDate && <div className="text-xs text-gray-500 mt-1">Last: {lastDate}</div>}
             </button>
           );
         })}
       </div>
+
+      {exercises.length === 0 && (
+        <div className="glass-card rounded-xl p-8 text-center mt-8">
+          <p className="text-slate-400">Add exercises to see progress</p>
+        </div>
+      )}
     </div>
   );
 }

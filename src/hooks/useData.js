@@ -13,7 +13,7 @@ function save(key, data) {
 }
 
 const DEFAULT_EXERCISES = ['pushups', 'squats', 'pullups', 'plank', 'lunges', 'glute_bridge', 'supermans', 'diamond_pushups', 'tricep_dips'];
-const DEFAULT_SETTINGS = { restSeconds: 90, targetSets: 3 };
+const DEFAULT_SETTINGS = { restSeconds: 90, targetSets: 3, soundEnabled: true, vibrationEnabled: true, unit: 'lbs' };
 
 export function useData() {
   const [myExercises, setMyExercises] = useState(() => load('shift6_my_exercises', DEFAULT_EXERCISES));

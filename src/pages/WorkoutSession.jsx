@@ -148,7 +148,7 @@ function RestScreen({ seconds, running, onFinish, onStart, onPause, onAddTime, n
 }
 
 // ──────────── Workout Session ────────────
-export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
+export default function WorkoutSession({ exerciseId, onComplete, onCancel, workoutQueue = [], workoutIndex = 0 }) {
   const { logSet, getBestSet, getLogsForExercise, getCurrentStreak, logs, settings, getLastRepsFor } = useData();
   const exercise = getExercise(exerciseId);
   const colors = COLOR_MAP[exercise?.color] || COLOR_MAP.cyan;
@@ -278,7 +278,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
-      {/* Header */}
+// Header — include skip/next exercise when in workout queue
       <div className="flex items-center justify-between p-4 border-b border-slate-800">
         <button onClick={handleCancel} className="text-slate-400 hover:text-white transition-colors">
           <X size={20} />
@@ -286,10 +286,25 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
         <div className="text-center">
           <p className="text-xs text-slate-500">{exercise.bodyPart}</p>
           <h2 className="font-bold text-white">{exercise.name}</h2>
+          {workoutQueue.length > 1 && (
+            <p className="text-[10px] text-slate-600">{workoutIndex + 1} of {workoutQueue.length}</p>
+          )}
         </div>
-        <button onClick={() => setShowVideo(true)} className="text-slate-400 hover:text-red-400 transition-colors">
-          <Youtube size={20} />
-        </button>
+        {workoutQueue.length > 1 ? (
+          <button
+            onClick={() => {
+              // Skip to next in queue
+              onComplete?.({ exerciseId, sets: setsCompleted });
+            }}
+            className="text-cyan-400 hover:text-cyan-300 text-xs font-semibold px-2 py-1 rounded-lg bg-cyan-500/10"
+          >
+            Skip
+          </button>
+        ) : (
+          <button onClick={() => setShowVideo(true)} className="text-slate-400 hover:text-red-400 transition-colors">
+            <Youtube size={20} />
+          </button>
+        )}
       </div>
 
       {phase === 'active' && (

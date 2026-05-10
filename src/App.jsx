@@ -42,6 +42,14 @@ export default function App() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, [onboardingDone]);
 
+  // Apply saved theme on mount
+  useEffect(() => {
+    const savedTheme = settings?.theme || 'dark';
+    if (savedTheme === 'light') {
+      document.documentElement.classList.add('light');
+    }
+  }, []);
+
   const handleInstall = async () => {
     if (!installPromptRef.current) return;
     installPromptRef.current.prompt();
@@ -111,6 +119,18 @@ export default function App() {
     const soundEnabled = settings?.soundEnabled ?? true;
     const vibrationEnabled = settings?.vibrationEnabled ?? true;
     const unit = settings?.unit || 'lbs';
+    const theme = settings?.theme || 'dark';
+
+    const handleThemeToggle = () => {
+      const next = theme === 'dark' ? 'light' : 'dark';
+      updateSettings({ theme: next });
+      if (next === 'light') {
+        document.documentElement.classList.add('light');
+      } else {
+        document.documentElement.classList.remove('light');
+      }
+      if (settings?.vibrationEnabled) navigator.vibrate?.(20);
+    };
 
     return (
       <div className="p-4 pb-32 max-w-lg mx-auto space-y-5">
@@ -212,6 +232,26 @@ export default function App() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {theme === 'dark' ? (
+                <svg size={18} className="text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+              ) : (
+                <svg size={18} className="text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              )}
+              <div>
+                <p className="text-sm text-white font-medium">Dark mode</p>
+                <p className="text-xs text-slate-500">{theme === 'dark' ? 'On' : 'Off'}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleThemeToggle}
+              className={`w-12 h-7 rounded-full transition-colors relative ${theme === 'dark' ? 'bg-cyan-500' : 'bg-slate-700'}`}
+            >
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${theme === 'dark' ? 'left-6' : 'left-1'}`} />
+            </button>
           </div>
         </div>
 

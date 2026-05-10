@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, BarChart3, Target, Dumbbell, Plus, TrendingUp, Check, X, RotateCcw, Trophy, Flame, Zap } from 'lucide-react';
 import { useData } from './hooks/useData';
+import { t } from './i18n';
 import Dashboard from './pages/Dashboard';
 import LogPage from './pages/LogPage';
 import GoalsPage from './pages/GoalsPage';
@@ -10,10 +11,11 @@ import WorkoutSession from './pages/WorkoutSession';
 import { COLOR_MAP } from './data/exercises';
 
 const TAB_BAR = [
-  { id: 'home', label: 'Home', icon: Play },
-  { id: 'log', label: 'Log', icon: Plus },
-  { id: 'goals', label: 'Goals', icon: Target },
-  { id: 'progress', label: 'Progress', icon: BarChart3 },
+  { id: 'home', label: t('common.home'), icon: Play },
+  { id: 'log', label: t('common.log'), icon: Plus },
+  { id: 'goals', label: t('common.goals'), icon: Target },
+  { id: 'progress', label: t('common.progress'), icon: BarChart3 },
+  { id: 'settings', label: t('common.settings'), icon: Dumbbell },
 ];
 
 export default function App() {
@@ -53,9 +55,119 @@ export default function App() {
     setWorkoutIndex(0);
   };
 
+  // Settings page component
+  function SettingsPage() {
+    const { settings, updateSettings, logs, exercises } = useData();
+    const [restMins, setRestMins] = useState(Math.floor((settings?.restSeconds || 90) / 60));
+    const [restSecs, setRestSecs] = useState((settings?.restSeconds || 90) % 60);
+    const [targetSets, setTargetSets] = useState(settings?.targetSets || 3);
+
+    const handleSaveRest = () => {
+      updateSettings({ restSeconds: restMins * 60 + restSecs });
+      navigator.vibrate?.(50);
+    };
+
+    const handleSaveSets = () => {
+      updateSettings({ targetSets });
+      navigator.vibrate?.(50);
+    };
+
+    const handleResetData = () => {
+      if (window.confirm(t('settings.resetData'))) {
+        localStorage.removeItem('shift6_logs');
+        localStorage.removeItem('shift6_goals');
+        window.location.reload();
+      }
+    };
+
+    return (
+      <div className="p-4 pb-32 max-w-lg mx-auto space-y-5">
+        <div className="flex items-center gap-2 mb-1">
+          <Dumbbell size={18} className="text-cyan-400" />
+          <h1 className="text-xl font-bold text-white">{t('settings.title')}</h1>
+        </div>
+
+        {/* Workout defaults */}
+        <div className="glass-card rounded-2xl p-4 space-y-4">
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{t('settings.workoutDefaults')}</h2>
+
+          {/* Rest timer */}
+          <div>
+            <p className="text-sm text-slate-300 mb-2 font-medium">{t('settings.restBetweenSets')}</p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-slate-800 rounded-xl p-2">
+                <input type="number" min="0" max="10" value={restMins}
+                  onChange={e => setRestMins(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-12 bg-transparent text-center text-white font-bold text-lg" />
+                <span className="text-slate-500 text-sm">{t('settings.minutes')}</span>
+                <input type="number" min="0" max="59" step="15" value={restSecs}
+                  onChange={e => setRestSecs(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-14 bg-transparent text-center text-white font-bold text-lg" />
+                <span className="text-slate-500 text-sm">sec</span>
+              </div>
+              <button onClick={handleSaveRest}
+                className="px-4 py-2 bg-cyan-500 text-white rounded-xl text-sm font-bold active:scale-95">
+                {t('common.save')}
+              </button>
+            </div>
+            <p className="text-xs text-slate-600 mt-1">Current: {settings?.restSeconds || 90}s</p>
+          </div>
+
+          {/* Target sets */}
+          <div>
+            <p className="text-sm text-slate-300 mb-2 font-medium">{t('settings.targetSets')}</p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 bg-slate-800 rounded-xl p-1.5">
+                <button onClick={() => setTargetSets(Math.max(1, targetSets - 1))}
+                  className="w-10 h-10 rounded-lg bg-slate-700 text-white font-bold active:scale-90">−</button>
+                <span className="w-12 text-center text-2xl font-black text-white">{targetSets}</span>
+                <button onClick={() => setTargetSets(Math.min(10, targetSets + 1))}
+                  className="w-10 h-10 rounded-lg bg-slate-700 text-white font-bold active:scale-90">+</button>
+              </div>
+              <button onClick={handleSaveSets}
+                className="px-4 py-2 bg-cyan-500 text-white rounded-xl text-sm font-bold active:scale-95">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats summary */}
+        <div className="glass-card rounded-2xl p-4">
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Your Data</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-slate-800/60 rounded-xl p-3 text-center">
+              <p className="text-2xl font-black text-white">{logs.length}</p>
+              <p className="text-xs text-slate-500">Total sets logged</p>
+            </div>
+            <div className="bg-slate-800/60 rounded-xl p-3 text-center">
+              <p className="text-2xl font-black text-cyan-400">{exercises.length}</p>
+              <p className="text-xs text-slate-500">Exercises tracked</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Reset */}
+        <div className="glass-card rounded-2xl p-4">
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Data Management</h2>
+          <button onClick={handleResetData}
+            className="w-full py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 font-semibold text-sm hover:bg-red-500/20 active:scale-[0.98] transition-colors">
+            Reset All Workout Data
+          </button>
+          <p className="text-xs text-slate-600 mt-2 text-center">Logs, goals, and streak will be cleared</p>
+        </div>
+
+        {/* App info */}
+        <div className="text-center pt-2">
+          <p className="text-slate-600 text-xs">Shift6 v1.0</p>
+        </div>
+      </div>
+    );
+  }
+
   // Show onboarding if not done
   if (!onboardingDone) {
-    return <Onboarding onComplete={() => {}} />;
+    return <Onboarding onComplete={() => {}} onDone={() => window.location.reload()} />;
   }
 
   return (
@@ -76,6 +188,7 @@ export default function App() {
             {activeTab === 'log' && <LogPage />}
             {activeTab === 'goals' && <GoalsPage />}
             {activeTab === 'progress' && <ProgressPage />}
+            {activeTab === 'settings' && <SettingsPage />}
           </>
         )}
       </main>
@@ -120,7 +233,7 @@ const BODY_PART_ICONS = {
   Arms: '💪', Core: '🔥', Glutes: '🍑',
 };
 
-function Onboarding({ onComplete }) {
+function Onboarding({ onComplete, onDone }) {
   const { exercises, setExerciseList, allExercises, setOnboardingDone } = useData();
   const [step, setStep] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -141,6 +254,8 @@ function Onboarding({ onComplete }) {
       : allExercises.filter(e => e.home).map(e => e.id);
     setExerciseList(chosen);
     setOnboardingDone(true);
+    // Force reload so App re-reads onboardingDone from localStorage
+    if (onDone) onDone();
   };
 
   const toggleExercise = (id) => {

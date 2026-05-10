@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Dumbbell, Minus, Check, Flame, ChevronRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Dumbbell, Minus, Check, Flame, ChevronRight, Trash2, Clock, ChevronDown } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP, getExercise } from '../data/exercises';
 
@@ -9,30 +9,52 @@ const BODY_PART_ICONS = {
 };
 
 export default function LogPage({ onStartWorkout }) {
-  const { exercises, logSet, getTodayLogs, getBestSet, getCurrentStreak } = useData();
+  const { exercises, logSet, getTodayLogs, getBestSet, getCurrentStreak, logs, removeLog } = useData();
   const [selectedEx, setSelectedEx] = useState(null);
   const [reps, setReps] = useState(10);
   const [weight, setWeight] = useState(0);
+  const [expandedId, setExpandedId] = useState(null); // 'today' | 'history' | logId
   const todayLogs = getTodayLogs();
   const streak = getCurrentStreak();
 
-  // Group today's logs by exercise
-  const todayByExercise = {};
-  todayLogs.forEach(log => {
-    if (!todayByExercise[log.exerciseId]) todayByExercise[log.exerciseId] = [];
-    todayByExercise[log.exerciseId].push(log);
-  });
+  // Group logs by date
+  const logsByDate = useMemo(() => {
+    const groups = {};
+    logs.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(log => {
+      const dateKey = log.date.split('T')[0];
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(log);
+    });
+    return groups;
+  }, [logs]);
+
+  const formatDate = (isoStr) => {
+    const d = new Date(isoStr);
+    const today = new Date();
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    const dateStr = d.toISOString().split('T')[0];
+    if (dateStr === today.toISOString().split('T')[0]) return 'Today';
+    if (dateStr === yesterday.toISOString().split('T')[0]) return 'Yesterday';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
   const handleQuickLog = (exerciseId) => {
     if (selectedEx === exerciseId) {
       logSet(exerciseId, reps, weight);
       navigator.vibrate?.(50);
+      setSelectedEx(null);
     } else {
       const ex = exercises.find(e => e.id === exerciseId);
       setSelectedEx(exerciseId);
       setReps(ex?.startReps || 10);
       setWeight(0);
     }
+  };
+
+  const handleDeleteLog = (logId, e) => {
+    e.stopPropagation();
+    removeLog(logId);
+    navigator.vibrate?.(30);
   };
 
   const streakMsg = streak > 0
@@ -58,36 +80,110 @@ export default function LogPage({ onStartWorkout }) {
         </div>
       </div>
 
-      {/* Today's workout summary */}
+{/* Today's workout summary - collapsible */}
       {todayLogs.length > 0 && (
-        <div className="glass-card rounded-2xl p-4">
-          <p className="text-xs text-slate-500 uppercase tracking-wider mb-3 font-semibold">
-            Today&apos;s Workout
-          </p>
-          <div className="space-y-2">
-            {Object.entries(todayByExercise).map(([exId, logs]) => {
-              const ex = exercises.find(e => e.id === exId);
-              if (!ex) return null;
-              const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
-              const icon = BODY_PART_ICONS[ex.bodyPart] || '💪';
-              return (
-                <div key={exId} className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center text-sm`}>
-                    {icon}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-white">{ex.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {logs.map(l => `${l.reps}${l.weight ? ` × ${l.weight}lbs` : ''}`).join(', ')}
-                    </p>
-                  </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} font-medium`}>
-                    {logs.length} set{logs.length !== 1 ? 's' : ''}
-                  </span>
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <button
+            onClick={() => setExpandedId(expandedId === 'today' ? null : 'today')}
+            className="w-full text-left p-4 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <Clock size={14} className="text-slate-500" />
+              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                Today&apos;s Workout
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">{todayLogs.length} set{todayLogs.length !== 1 ? 's' : ''}</span>
+              <ChevronDown size={14} className={`text-slate-500 transition-transform ${expandedId === 'today' ? 'rotate-180' : ''}`} />
+            </div>
+          </button>
+          {expandedId === 'today' && (
+            <div className="px-4 pb-4 space-y-2 animate-slide-up">
+              {(() => {
+                const todayByExercise = {};
+                todayLogs.forEach(log => {
+                  if (!todayByExercise[log.exerciseId]) todayByExercise[log.exerciseId] = [];
+                  todayByExercise[log.exerciseId].push(log);
+                });
+                return Object.entries(todayByExercise).map(([exId, exLogs]) => {
+                  const ex = exercises.find(e => e.id === exId);
+                  if (!ex) return null;
+                  const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
+                  const icon = BODY_PART_ICONS[ex.bodyPart] || '💪';
+                  return (
+                    <div key={exId} className="flex items-center gap-3 p-2 rounded-xl bg-slate-800/40">
+                      <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center text-sm flex-shrink-0`}>
+                        {icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white">{ex.name}</p>
+                        <p className="text-xs text-slate-500">
+                          {exLogs.map(l => `${l.reps}${l.weight ? ` × ${l.weight}lbs` : ''}`).join(', ')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} font-medium`}>
+                          {exLogs.length}s
+                        </span>
+                        <button onClick={(e) => exLogs.forEach(l => handleDeleteLog(l.id, e))} className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* History section */}
+      {Object.keys(logsByDate).filter(d => d !== new Date().toISOString().split('T')[0]).length > 0 && (
+        <div className="space-y-2">
+          <button
+            onClick={() => setExpandedId(expandedId === 'history' ? null : 'history')}
+            className="w-full flex items-center justify-between px-1"
+          >
+            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">History</p>
+            <ChevronDown size={14} className={`text-slate-500 transition-transform ${expandedId === 'history' ? 'rotate-180' : ''}`} />
+          </button>
+          {expandedId === 'history' && Object.entries(logsByDate).map(([dateStr, dateLogs]) => {
+            const ex = exercises.find(e => dateLogs[0]?.exerciseId === e.id) || {};
+            const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
+            return (
+              <div key={dateStr} className="glass-card rounded-2xl overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/50">
+                  <p className="text-sm font-semibold text-slate-300">{formatDate(dateStr)}</p>
+                  <span className="text-xs text-slate-600">{dateLogs.length} sets</span>
                 </div>
-              );
-            })}
-          </div>
+                <div className="divide-y divide-slate-800/30">
+                  {dateLogs.map(log => {
+                    const logEx = exercises.find(e => e.id === log.exerciseId) || {};
+                    const logColors = COLOR_MAP[logEx.color] || COLOR_MAP.cyan;
+                    return (
+                      <div key={log.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800/20 group">
+                        <div className={`w-7 h-7 rounded-lg ${logColors.bg} border ${logColors.border} flex items-center justify-center text-xs flex-shrink-0`}>
+                          {BODY_PART_ICONS[logEx.bodyPart] || '💪'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white">{logEx.name || 'Unknown'}</p>
+                          <p className="text-xs text-slate-500">{log.reps} reps{log.weight ? ` · ${log.weight} lbs` : ''}</p>
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteLog(log.id, e)}
+                          className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -99,7 +195,7 @@ export default function LogPage({ onStartWorkout }) {
         {exercises.map(ex => {
           const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
           const isSelected = selectedEx === ex.id;
-          const todayCount = (todayByExercise[ex.id] || []).length;
+          const todayCount = todayLogs.filter(l => l.exerciseId === ex.id).length;
           const best = getBestSet(ex.id);
           const icon = BODY_PART_ICONS[ex.bodyPart] || '💪';
 
@@ -138,18 +234,18 @@ export default function LogPage({ onStartWorkout }) {
                       <p className="text-xs text-slate-500 mb-1.5 text-center">Reps</p>
                       <div className="flex items-center gap-1.5 bg-slate-800/60 rounded-xl p-1.5">
                         <button
-                          onClick={() => setReps(Math.max(0, reps - 5))}
-                          className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors"
-                        >
-                          <Minus size={14} />
-                        </button>
+                          onClick={() => setReps(Math.max(1, reps - 1))}
+                          className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors text-sm font-bold"
+                        >−</button>
                         <span className="text-xl font-black text-white w-10 text-center">{reps}</span>
                         <button
+                          onClick={() => setReps(reps + 1)}
+                          className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors text-sm font-bold"
+                        >+</button>
+                        <button
                           onClick={() => setReps(reps + 5)}
-                          className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors"
-                        >
-                          <Plus size={14} />
-                        </button>
+                          className="text-xs text-slate-500 hover:text-cyan-400 px-1"
+                        >+5</button>
                       </div>
                     </div>
 

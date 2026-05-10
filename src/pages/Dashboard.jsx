@@ -59,15 +59,15 @@ function StreakBadge({ streak }) {
 }
 
 // ──────────── Exercise Card ────────────
-function ExerciseCard({ exercise, bestReps, bestWeight, logsCount, progress, onQuickStart }) {
+function ExerciseCard({ exercise, bestReps, bestWeight, logsCount, progress, onQuickStart, onRemove }) {
   const colors = COLOR_MAP[exercise.color] || COLOR_MAP.cyan;
   const icon = BODY_PART_ICONS[exercise.bodyPart] || '💪';
 
   return (
-    <div className={`glass-card rounded-2xl overflow-hidden animate-fade-in group`}>
+    <div className={`glass-card rounded-2xl overflow-hidden animate-fade-in group relative`}>
       <button
         onClick={() => onQuickStart?.(exercise.id)}
-        className="w-full text-left p-4 hover:opacity-90 transition-all"
+        className="w-full text-left p-4 hover:opacity-90 transition-all pr-14"
       >
         <div className="flex items-center gap-3">
           {/* Color-coded icon */}
@@ -94,6 +94,15 @@ function ExerciseCard({ exercise, bestReps, bestWeight, logsCount, progress, onQ
             <Play size={16} className="text-cyan-400/60 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all" />
           </div>
         </div>
+      </button>
+
+      {/* Remove button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onRemove?.(exercise.id); }}
+        className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-slate-800/80 text-slate-500 hover:bg-red-500/30 hover:text-red-400 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+        aria-label="Remove exercise"
+      >
+        <X size={14} />
       </button>
     </div>
   );
@@ -142,6 +151,13 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
   const todayLogs = getTodayLogs();
   const weekLogs = getThisWeekLogs();
   const streak = getCurrentStreak();
+
+  const handleRemoveExercise = (exId) => {
+    if (window.confirm(`Remove ${exercises.find(e => e.id === exId)?.name} from your collection?`)) {
+      removeExercise(exId);
+      navigator.vibrate?.(30);
+    }
+  };
 
   // Yesterday for last workout message
 
@@ -250,6 +266,7 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
               logsCount={ex.logsCount}
               progress={ex.bestReps > 0 ? Math.min(1, ex.bestReps / (ex.startReps * 2)) : 0}
               onQuickStart={(id) => { navigator.vibrate?.(20); onViewExercise?.(id); }}
+              onRemove={handleRemoveExercise}
             />
           ))}
         </div>

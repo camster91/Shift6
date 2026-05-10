@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Settings, Vibrate, Volume2, VolumeX, Smartphone, ChevronRight } from 'lucide-react';
 import { Play, BarChart3, Target, Dumbbell, Plus, TrendingUp, Check, X, RotateCcw, Trophy, Flame, Zap } from 'lucide-react';
 import { useData } from './hooks/useData';
 import { t } from './i18n';
@@ -19,12 +20,36 @@ const TAB_BAR = [
 ];
 
 export default function App() {
-  const { exercises, onboardingDone } = useData();
+  const { exercises, onboardingDone, settings } = useData();
   const [activeTab, setActiveTab] = useState('home');
   const [showLibrary, setShowLibrary] = useState(false);
   const [workoutExId, setWorkoutExId] = useState(null);
   const [workoutQueue, setWorkoutQueue] = useState([]);
   const [workoutIndex, setWorkoutIndex] = useState(0);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const installPromptRef = useRef(null);
+
+  // PWA install prompt
+  useEffect(() => {
+    if (!onboardingDone) return;
+    const handler = (e) => {
+      e.preventDefault();
+      installPromptRef.current = e;
+      const dismissed = localStorage.getItem('shift6_install_dismissed');
+      if (!dismissed) setShowInstallPrompt(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, [onboardingDone]);
+
+  const handleInstall = async () => {
+    if (!installPromptRef.current) return;
+    installPromptRef.current.prompt();
+    const { outcome } = await installPromptRef.current.userChoice;
+    localStorage.setItem('shift6_install_dismissed', '1');
+    setShowInstallPrompt(false);
+    installPromptRef.current = null;
+  };
 
   const handleStartWorkout = (exerciseId) => {
     setWorkoutExId(exerciseId);
@@ -64,21 +89,28 @@ export default function App() {
 
     const handleSaveRest = () => {
       updateSettings({ restSeconds: restMins * 60 + restSecs });
-      navigator.vibrate?.(50);
+      if (settings?.vibrationEnabled) navigator.vibrate?.(50);
     };
 
-    const handleSaveSets = () => {
-      updateSettings({ targetSets });
-      navigator.vibrate?.(50);
+    const handleToggle = (key) => {
+      updateSettings({ [key]: !settings?.[key] });
+      if (key === 'vibrationEnabled') navigator.vibrate?.(30);
     };
 
     const handleResetData = () => {
       if (window.confirm(t('settings.resetData'))) {
         localStorage.removeItem('shift6_logs');
         localStorage.removeItem('shift6_goals');
+        localStorage.removeItem('shift6_my_exercises');
+        localStorage.removeItem('shift6_onboarding_done');
+        localStorage.removeItem('shift6_settings');
         window.location.reload();
       }
     };
+
+    const soundEnabled = settings?.soundEnabled ?? true;
+    const vibrationEnabled = settings?.vibrationEnabled ?? true;
+    const unit = settings?.unit || 'lbs';
 
     return (
       <div className="p-4 pb-32 max-w-lg mx-auto space-y-5">
@@ -118,16 +150,67 @@ export default function App() {
             <p className="text-sm text-slate-300 mb-2 font-medium">{t('settings.targetSets')}</p>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 bg-slate-800 rounded-xl p-1.5">
-                <button onClick={() => setTargetSets(Math.max(1, targetSets - 1))}
+                <button onClick={() => { const v = Math.max(1, targetSets - 1); setTargetSets(v); updateSettings({ targetSets: v }); if (settings?.vibrationEnabled) navigator.vibrate?.(20); }}
                   className="w-10 h-10 rounded-lg bg-slate-700 text-white font-bold active:scale-90">−</button>
                 <span className="w-12 text-center text-2xl font-black text-white">{targetSets}</span>
-                <button onClick={() => setTargetSets(Math.min(10, targetSets + 1))}
+                <button onClick={() => { const v = Math.min(10, targetSets + 1); setTargetSets(v); updateSettings({ targetSets: v }); if (settings?.vibrationEnabled) navigator.vibrate?.(20); }}
                   className="w-10 h-10 rounded-lg bg-slate-700 text-white font-bold active:scale-90">+</button>
               </div>
-              <button onClick={handleSaveSets}
-                className="px-4 py-2 bg-cyan-500 text-white rounded-xl text-sm font-bold active:scale-95">
-                Save
-              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Sound & Haptics */}
+        <div className="glass-card rounded-2xl p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Sound & Haptics</h2>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Volume2 size={18} className="text-slate-400" />
+              <div>
+                <p className="text-sm text-white font-medium">Timer sound</p>
+                <p className="text-xs text-slate-500">Beep when rest ends</p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleToggle('soundEnabled')}
+              className={`w-12 h-7 rounded-full transition-colors relative ${soundEnabled ? 'bg-cyan-500' : 'bg-slate-700'}`}
+            >
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${soundEnabled ? 'left-6' : 'left-1'}`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Vibrate size={18} className="text-slate-400" />
+              <div>
+                <p className="text-sm text-white font-medium">Vibration</p>
+                <p className="text-xs text-slate-500">Haptic feedback on actions</p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleToggle('vibrationEnabled')}
+              className={`w-12 h-7 rounded-full transition-colors relative ${vibrationEnabled ? 'bg-cyan-500' : 'bg-slate-700'}`}
+            >
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${vibrationEnabled ? 'left-6' : 'left-1'}`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Smartphone size={18} className="text-slate-400" />
+              <div>
+                <p className="text-sm text-white font-medium">Weight unit</p>
+                <p className="text-xs text-slate-500">Display preference</p>
+              </div>
+            </div>
+            <div className="flex gap-1 bg-slate-800 rounded-lg p-1">
+              {['lbs', 'kg'].map(u => (
+                <button key={u} onClick={() => { updateSettings({ unit: u }); if (settings?.vibrationEnabled) navigator.vibrate?.(20); }}
+                  className={`px-3 py-1.5 rounded-md text-sm font-bold transition-colors ${unit === u ? 'bg-cyan-500 text-white' : 'text-slate-500'}`}>
+                  {u}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -221,7 +304,34 @@ export default function App() {
           exerciseId={workoutExId}
           onComplete={handleWorkoutComplete}
           onCancel={handleWorkoutCancel}
+          workoutQueue={workoutQueue}
+          workoutIndex={workoutIndex}
         />
+      )}
+
+      {/* PWA Install Banner */}
+      {showInstallPrompt && (
+        <div className="fixed bottom-20 left-4 right-4 max-w-lg mx-auto bg-slate-900 border border-cyan-500/30 rounded-2xl p-4 shadow-xl z-50 animate-slide-up">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+              <Smartphone size={20} className="text-cyan-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-white mb-0.5">Add Shift6 to Home Screen</p>
+              <p className="text-xs text-slate-500">Install for the best experience — quick access, no browser bar.</p>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button onClick={handleInstall}
+              className="flex-1 py-2.5 bg-cyan-500 text-white rounded-xl text-sm font-bold active:scale-95">
+              Install
+            </button>
+            <button onClick={() => { localStorage.setItem('shift6_install_dismissed', '1'); setShowInstallPrompt(false); }}
+              className="px-4 py-2.5 text-slate-400 text-sm">
+              Not now
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

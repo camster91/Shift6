@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Play, BarChart3, Target, Dumbbell, Plus, TrendingUp, Check, X, RotateCcw, Trophy, Flame, Zap } from 'lucide-react';
 import { useData } from './hooks/useData';
-import { Play, Plus, BarChart3, Target, Dumbbell } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import LogPage from './pages/LogPage';
 import GoalsPage from './pages/GoalsPage';
 import ProgressPage from './pages/ProgressPage';
 import ExerciseLibrary from './pages/ExerciseLibrary';
 import WorkoutSession from './pages/WorkoutSession';
+import { COLOR_MAP } from './data/exercises';
 
 const TAB_BAR = [
   { id: 'home', label: 'Home', icon: Play },
@@ -20,16 +21,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [showLibrary, setShowLibrary] = useState(false);
   const [workoutExId, setWorkoutExId] = useState(null);
-  // For sequential workout (multiple exercises)
   const [workoutQueue, setWorkoutQueue] = useState([]);
   const [workoutIndex, setWorkoutIndex] = useState(0);
 
-  // Start a workout for a specific exercise
   const handleStartWorkout = (exerciseId) => {
     setWorkoutExId(exerciseId);
   };
 
-  // Start a full stack: pick a random or sequential selection
   const handleStartStack = () => {
     if (exercises.length === 0) return;
     const ids = exercises.map(e => e.id);
@@ -38,7 +36,6 @@ export default function App() {
     setWorkoutExId(ids[0]);
   };
 
-  // Complete current exercise → next in queue or done
   const handleWorkoutComplete = (result) => {
     if (workoutQueue.length > 0 && workoutIndex < workoutQueue.length - 1) {
       setWorkoutIndex(prev => prev + 1);
@@ -63,7 +60,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         {showLibrary ? (
           <ExerciseLibrary onBack={() => setShowLibrary(false)} />
@@ -84,7 +80,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Tab bar (hide during workout) */}
       {!workoutExId && !showLibrary && (
         <nav className="tab-bar">
           <div className="flex justify-around max-w-lg mx-auto">
@@ -93,10 +88,13 @@ export default function App() {
               const isActive = activeTab === tab.id;
               return (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-col items-center py-3 px-5 transition-colors ${
+                  className={`flex flex-col items-center py-3 px-5 transition-colors relative ${
                     isActive ? 'text-cyan-400' : 'text-slate-500'
                   }`}>
-                  <Icon size={20} className={isActive ? '' : ''} />
+                  {isActive && (
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-cyan-400 rounded-full" />
+                  )}
+                  <Icon size={20} />
                   <span className="text-xs mt-1">{tab.label}</span>
                 </button>
               );
@@ -105,7 +103,6 @@ export default function App() {
         </nav>
       )}
 
-      {/* Full-screen workout session */}
       {workoutExId && (
         <WorkoutSession
           exerciseId={workoutExId}
@@ -117,12 +114,17 @@ export default function App() {
   );
 }
 
-// ──────────── Minimal Onboarding ────────────
+// ──────────── Onboarding ────────────
+const BODY_PART_ICONS = {
+  Chest: '💪', Back: '🔙', Shoulders: '🎯', Legs: '🦵',
+  Arms: '💪', Core: '🔥', Glutes: '🍑',
+};
+
 function Onboarding({ onComplete }) {
   const { exercises, setExerciseList, allExercises, setOnboardingDone } = useData();
   const [step, setStep] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
-  const [filter, setFilter] = useState('all'); // all | home | gym
+  const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
 
   const filtered = allExercises.filter(ex => {
@@ -133,7 +135,11 @@ function Onboarding({ onComplete }) {
   });
 
   const handleFinish = () => {
-    setExerciseList(selectedIds.length > 0 ? selectedIds : allExercises.filter(e => e.home).map(e => e.id));
+    // Default to bodyweight if nothing selected
+    const chosen = selectedIds.length > 0
+      ? selectedIds
+      : allExercises.filter(e => e.home).map(e => e.id);
+    setExerciseList(chosen);
     setOnboardingDone(true);
   };
 
@@ -142,48 +148,66 @@ function Onboarding({ onComplete }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col p-6">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col p-6 animate-fade-in">
       <div className="flex-1 max-w-lg mx-auto w-full">
         {/* Step indicator */}
-        <div className="flex gap-2 mb-8">
+        <div className="flex gap-2 mb-8 mt-4">
           {[0, 1].map(i => (
-            <div key={i} className={`flex-1 h-1 rounded-full ${i <= step ? 'bg-cyan-500' : 'bg-slate-800'}`} />
+            <div key={i} className={`flex-1 h-1.5 rounded-full transition-all duration-500 ${
+              i <= step ? 'bg-cyan-500' : 'bg-slate-800'
+            }`} />
           ))}
         </div>
 
         {step === 0 && (
-          <div className="animate-fade-in">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-4">
-                <Dumbbell size={36} className="text-cyan-400" />
+          <div className="animate-slide-up">
+            <div className="text-center mb-10">
+              <div className="w-24 h-24 rounded-full bg-cyan-500/20 border-2 border-cyan-500/30 flex items-center justify-center mx-auto mb-6">
+                <Dumbbell size={40} className="text-cyan-400" />
               </div>
-              <h1 className="text-3xl font-black mb-2">Shift6</h1>
-              <p className="text-slate-400">Your personal exercise collection.<br />Pick what you do, swap anytime.</p>
+              <h1 className="text-4xl font-black mb-3 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                Shift6
+              </h1>
+              <p className="text-slate-400 leading-relaxed">
+                Your personal exercise collection.<br />
+                <span className="text-cyan-400">Pick what you do, swap anytime.</span>
+              </p>
             </div>
-            <button onClick={() => setStep(1)}
-              className="w-full py-4 bg-cyan-500 rounded-xl font-bold text-lg active:scale-95 transition-transform">
+            <button
+              onClick={() => setStep(1)}
+              className="w-full py-4 bg-cyan-500 rounded-2xl font-bold text-lg active:scale-95 transition-all shadow-lg shadow-cyan-500/20"
+            >
               Get Started
             </button>
-            <button onClick={handleFinish}
-              className="w-full py-3 text-slate-400 text-sm mt-2 active:scale-95 transition-transform">
-              Skip — start with bodyweight
+            <button
+              onClick={handleFinish}
+              className="w-full py-3 text-slate-500 text-sm mt-3 hover:text-slate-300 transition-colors"
+            >
+              Skip — start with bodyweight defaults
             </button>
           </div>
         )}
 
         {step === 1 && (
-          <div className="animate-fade-in">
-            <h2 className="text-xl font-bold mb-2">Pick Your Exercises</h2>
-            <p className="text-sm text-slate-400 mb-4">
-              Choose {selectedIds.length} exercises — you can swap anytime
+          <div className="animate-slide-up">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xl font-bold">Pick Your Exercises</h2>
+              <span className="text-xs text-cyan-400 font-medium">
+                {selectedIds.length} selected
+              </span>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">
+              Tap exercises to build your collection
             </p>
 
-            {/* Filter */}
-            <div className="flex gap-2 mb-4">
+            {/* Filter pills */}
+            <div className="flex gap-2 mb-3">
               {[['all', 'All'], ['home', 'Home'], ['gym', 'Gym']].map(([id, label]) => (
                 <button key={id} onClick={() => setFilter(id)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-medium ${
-                    filter === id ? 'bg-cyan-500 text-white' : 'bg-slate-800 text-slate-400'
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    filter === id
+                      ? 'bg-cyan-500 text-white shadow shadow-cyan-500/30'
+                      : 'bg-slate-800 text-slate-400'
                   }`}>
                   {label}
                 </button>
@@ -191,31 +215,58 @@ function Onboarding({ onComplete }) {
             </div>
 
             {/* Search */}
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search exercises..."
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 px-4 text-white text-sm mb-4 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500" />
+            <div className="relative mb-3">
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Search exercises..."
+                className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-2.5 pl-10 pr-4 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50 transition-colors" />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">🔍</span>
+            </div>
 
-            {/* Exercise grid */}
-            <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto no-scrollbar">
+            {/* Exercise grid — 2 cols, scrollable */}
+            <div className="grid grid-cols-2 gap-2 max-h-[55vh] overflow-y-auto pr-1 no-scrollbar">
               {filtered.map(ex => {
                 const selected = selectedIds.includes(ex.id);
+                const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
+                const icon = BODY_PART_ICONS[ex.bodyPart] || '💪';
                 return (
-                  <button key={ex.id} onClick={() => toggleExercise(ex.id)}
-                    className={`p-3 rounded-xl text-left border transition-all ${
+                  <button
+                    key={ex.id}
+                    onClick={() => toggleExercise(ex.id)}
+                    className={`p-3 rounded-xl text-left border transition-all relative overflow-hidden ${
                       selected
-                        ? 'bg-cyan-500/20 border-cyan-500'
-                        : 'bg-slate-900 border-slate-800'
-                    }`}>
-                    <p className="text-sm font-bold text-white truncate">{ex.name}</p>
-                    <p className="text-xs text-slate-500">{ex.bodyPart}</p>
+                        ? `${colors.bg} border-${colors.text}/50 shadow-lg`
+                        : 'bg-slate-900/60 border-slate-800/50 hover:border-slate-700'
+                    }`}
+                  >
+                    {selected && (
+                      <span className={`absolute top-1.5 right-1.5 w-5 h-5 rounded-full ${colors.solid} flex items-center justify-center`}>
+                        <Check size={10} className="text-white" />
+                      </span>
+                    )}
+                    <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center mb-2`}>
+                      <span className="text-sm">{icon}</span>
+                    </div>
+                    <p className="text-sm font-bold text-white leading-tight">{ex.name}</p>
+                    <p className={`text-xs mt-0.5 ${colors.text}`}>{ex.bodyPart}</p>
+                    {!ex.home && (
+                      <span className="absolute bottom-1 right-1.5 text-[8px] text-slate-600">🏋️</span>
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            <button onClick={handleFinish}
-              className="w-full py-4 bg-cyan-500 rounded-xl font-bold text-lg mt-6 active:scale-95 transition-transform">
-              {selectedIds.length > 0 ? `Start with ${selectedIds.length} exercises` : 'Start with bodyweight'}
+            <button
+              onClick={handleFinish}
+              className={`w-full py-4 rounded-2xl font-bold text-lg mt-5 transition-all active:scale-95 ${
+                selectedIds.length > 0
+                  ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
+                  : 'bg-slate-800 text-slate-400'
+              }`}
+            >
+              {selectedIds.length > 0
+                ? `Start with ${selectedIds.length} exercises`
+                : 'Start with bodyweight defaults'}
             </button>
           </div>
         )}

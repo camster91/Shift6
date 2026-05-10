@@ -14,6 +14,8 @@ export default function LogPage({ onStartWorkout }) {
   const [reps, setReps] = useState(10);
   const [weight, setWeight] = useState(0);
   const [expandedId, setExpandedId] = useState(null); // 'today' | 'history' | logId
+  const [editingNote, setEditingNote] = useState(null); // logId | null
+  const [noteText, setNoteText] = useState('');
   const todayLogs = getTodayLogs();
   const streak = getCurrentStreak();
 
@@ -55,6 +57,10 @@ export default function LogPage({ onStartWorkout }) {
     e.stopPropagation();
     removeLog(logId);
     navigator.vibrate?.(30);
+  };
+
+  const handleNoteChange = (logId, notes) => {
+    updateLogNotes(logId, notes);
   };
 
   const streakMsg = streak > 0
@@ -163,7 +169,7 @@ export default function LogPage({ onStartWorkout }) {
                     const logEx = exercises.find(e => e.id === log.exerciseId) || {};
                     const logColors = COLOR_MAP[logEx.color] || COLOR_MAP.cyan;
                     return (
-                      <div key={log.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800/20 group">
+                      <div key={log.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800/20 group relative">
                         <div className={`w-7 h-7 rounded-lg ${logColors.bg} border ${logColors.border} flex items-center justify-center text-xs flex-shrink-0`}>
                           {BODY_PART_ICONS[logEx.bodyPart] || '💪'}
                         </div>
@@ -177,6 +183,31 @@ export default function LogPage({ onStartWorkout }) {
                         >
                           <Trash2 size={14} />
                         </button>
+                        <button
+                          onClick={() => { setEditingNote(log.id); setNoteText(log.notes || ''); }}
+                          className="p-1.5 rounded-lg hover:bg-cyan-500/20 text-slate-600 hover:text-cyan-400 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <svg size={14} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        {editingNote === log.id && (
+                          <div className="absolute right-0 top-10 z-10 bg-slate-800 border border-slate-700 rounded-xl p-3 shadow-xl w-64 animate-scale-in">
+                            <p className="text-xs text-slate-500 mb-2">Set note</p>
+                            <textarea
+                              value={noteText}
+                              onChange={e => setNoteText(e.target.value)}
+                              placeholder="Add a note..."
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs resize-none"
+                              rows={2}
+                              autoFocus
+                            />
+                            <div className="flex gap-2 mt-2">
+                              <button onClick={() => { handleNoteChange(log.id, noteText); setEditingNote(null); }}
+                                className="flex-1 py-1.5 bg-cyan-500 text-white rounded-lg text-xs font-bold">Save</button>
+                              <button onClick={() => setEditingNote(null)}
+                                className="px-3 py-1.5 text-slate-400 text-xs">Cancel</button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

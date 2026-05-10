@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Play, Pause, Square, Check, ChevronRight, X, Dumbbell, Youtube, Plus, Minus, PartyPopper } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP, getExercise } from '../data/exercises';
+import { t } from '../i18n';
 
 // ──────────── Achievement Celebration ────────────
 const ACHIEVEMENTS = {
@@ -13,20 +14,23 @@ const ACHIEVEMENTS = {
 };
 
 function AchievementPopup({ achievement, onDismiss }) {
-  const a = ACHIEVEMENTS[achievement];
-  if (!a) return null;
+  const key = `achievements.${achievement}`;
+  const title = t(`${key}.title`);
+  const message = t(`${key}.message`);
+  const emoji = { first_workout: '🎉', three_day_streak: '🔥', seven_day_streak: '💪', ten_sets: '💯', first_pr: '🏆' }[achievement] || '🏆';
+  if (!title || title === key) return null;
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-6 animate-fade-in" onClick={onDismiss}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div className="relative bg-slate-900 border border-slate-700 rounded-3xl p-8 text-center max-w-xs w-full shadow-2xl">
-        <div className="text-6xl mb-4">{a.emoji}</div>
-        <h3 className="text-xl font-black text-white mb-2">{a.title}</h3>
-        <p className="text-slate-400 text-sm mb-6">{a.message}</p>
+        <div className="text-6xl mb-4">{emoji}</div>
+        <h3 className="text-xl font-black text-white mb-2">{title}</h3>
+        <p className="text-slate-400 text-sm mb-6">{message}</p>
         <button
           onClick={onDismiss}
           className="w-full py-3 bg-cyan-500 text-white rounded-xl font-bold active:scale-95 transition-transform"
         >
-          Keep Going!
+          {t('workout.keepGoing')}
         </button>
       </div>
     </div>
@@ -66,7 +70,11 @@ function useTimer(initialSeconds) {
 
   useEffect(() => () => clearInterval(intervalRef.current), []);
 
-  return { timeLeft, running, start, pause, reset, setTimeLeft };
+  const addTime = useCallback((secs) => {
+    setTimeLeft(prev => prev + secs);
+  }, []);
+
+  return { timeLeft, running, start, pause, reset, setTimeLeft, addTime };
 }
 
 // ──────────── Video Modal ────────────
@@ -95,19 +103,22 @@ function VideoModal({ exercise, onClose }) {
 }
 
 // ──────────── Rest Screen ────────────
-function RestScreen({ seconds, running, onFinish, onStart, onPause, nextExercise, colors, currentSet, totalSets }) {
+function RestScreen({ seconds, running, onFinish, onStart, onPause, onAddTime, nextExercise, colors, currentSet, totalSets }) {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 p-8">
-      <p className="text-sm text-slate-400 mb-6">REST — Set {currentSet} of {totalSets}</p>
+      <p className="text-sm text-slate-400 mb-2">{t('workout.rest')} — {t('workout.set')} {currentSet} {t('workout.setOf')} {totalSets}</p>
       <div className="relative mb-8">
-        <div className="w-40 h-40 rounded-full border-4 border-slate-800 flex items-center justify-center">
-          <span className="text-5xl font-black text-white">{mins}:{secs.toString().padStart(2, '0')}</span>
+        <div className={`w-44 h-44 rounded-full border-4 flex items-center justify-center transition-colors ${seconds <= 10 ? 'border-orange-500/50' : 'border-slate-800'}`}>
+          <span className={`text-5xl font-black ${seconds <= 10 ? 'text-orange-400' : 'text-white'}`}>{mins}:{secs.toString().padStart(2, '0')}</span>
         </div>
+        {seconds <= 10 && (
+          <p className="text-center text-orange-400 text-xs mt-2 animate-pulse">Almost done!</p>
+        )}
       </div>
-      <div className="flex gap-3 mb-8">
+      <div className="flex gap-3 mb-6">
         {running ? (
           <button onClick={onPause} className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform">
             <Pause size={24} className="text-white" />
@@ -117,13 +128,16 @@ function RestScreen({ seconds, running, onFinish, onStart, onPause, nextExercise
             <Play size={24} className="text-white fill-current ml-1" />
           </button>
         )}
-        <button onClick={onFinish} className={`px-8 py-3 rounded-xl font-bold ${colors.solid} text-white active:scale-95 transition-transform`}>
-          Skip
+        <button onClick={onAddTime} className="px-4 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm active:scale-90">
+          +30s
+        </button>
+        <button onClick={onFinish} className={`px-6 py-3 rounded-xl font-bold ${colors.solid} text-white active:scale-95 transition-transform`}>
+          {t('workout.skip')}
         </button>
       </div>
       {nextExercise && (
         <div className="text-center">
-          <p className="text-xs text-slate-500 mb-1">Next: {nextExercise.name}</p>
+          <p className="text-xs text-slate-500 mb-1">{t('common.next')}: {nextExercise.name}</p>
           <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center mx-auto`}>
             <Dumbbell size={18} className={colors.text} />
           </div>
@@ -135,22 +149,31 @@ function RestScreen({ seconds, running, onFinish, onStart, onPause, nextExercise
 
 // ──────────── Workout Session ────────────
 export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
-  const { logSet, getBestSet, getLogsForExercise, getCurrentStreak, logs } = useData();
+  const { logSet, getBestSet, getLogsForExercise, getCurrentStreak, logs, settings, getLastRepsFor } = useData();
   const exercise = getExercise(exerciseId);
   const colors = COLOR_MAP[exercise?.color] || COLOR_MAP.cyan;
 
-  const [phase, setPhase] = useState('active'); // active | rest | done
+  const [phase, setPhase] = useState('active'); // active | rest | done | choosing
   const [currentSet, setCurrentSet] = useState(1);
   const [setsCompleted, setSetsCompleted] = useState([]);
-  const [currentReps, setCurrentReps] = useState(exercise?.startReps || 10);
+  const [currentReps, setCurrentReps] = useState(() => {
+    // Pre-populate with last session's reps, or exercise default
+    const last = getLastRepsFor(exerciseId);
+    return last > 0 ? last : (exercise?.startReps || 10);
+  });
   const [currentWeight, setCurrentWeight] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [bestReps, setBestReps] = useState(0);
   const [achievement, setAchievement] = useState(null);
 
-  const targetSets = 3;
-  const restSeconds = 90;
+  const targetSets = settings?.targetSets ?? 3;
+  const restSeconds = settings?.restSeconds ?? 90;
   const timer = useTimer(restSeconds);
+
+  // Target reps for this exercise (2x startReps as milestone)
+  const targetReps = (exercise?.startReps || 10) * 2;
+  // Progress within this workout session
+  const sessionProgress = targetSets > 0 ? Math.min(1, (currentSet - 1) / targetSets) : 0;
 
   // Snapshot log count before this workout (for achievement detection)
   const prevLogCount = useRef(logs.length);
@@ -173,7 +196,6 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
     return () => wakeLock?.release();
   }, []);
 
-  // Quick add reps
   const adjustReps = useCallback((delta) => {
     setCurrentReps(prev => Math.max(0, prev + delta));
   }, []);
@@ -216,7 +238,10 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
       setAchievement('ten_sets');
     }
 
+    // If past target sets, stay in active phase (user can keep going or finish)
     if (currentSet >= targetSets) {
+      // Don't go to done automatically — let user decide to finish or add sets
+      // Show "Add Set" and "Finish" options
       setPhase('done');
     } else {
       setCurrentSet(prev => prev + 1);
@@ -224,13 +249,20 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
       timer.reset(restSeconds);
       timer.start();
     }
-  }, [currentSet, currentReps, currentWeight, exerciseId, logs, setsCompleted]);
+  }, [currentSet, currentReps, currentWeight, exerciseId, logs, setsCompleted, targetSets, restSeconds]);
 
   // Finish rest → back to active
   const handleFinishRest = useCallback(() => {
     timer.pause();
     setPhase('active');
-  }, []);
+  }, [timer]);
+
+  // Add 30s to rest timer
+  const handleAddTime = useCallback(() => {
+    timer.addTime(30);
+    if (!timer.running) timer.start();
+    navigator.vibrate?.(20);
+  }, [timer]);
 
   // Cancel
   const handleCancel = useCallback(() => {
@@ -242,7 +274,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
     onCancel?.();
   }, [setsCompleted, exerciseId]);
 
-  if (!exercise) return <div className="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center text-slate-400">Exercise not found</div>;
+  if (!exercise) return <div className="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center text-slate-400">{t('workout.exerciseNotFound')}</div>;
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
@@ -274,38 +306,51 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <p className="text-4xl font-black text-white">{currentReps}</p>
-                <p className="text-sm text-slate-400">reps</p>
+                <p className="text-sm text-slate-400">{t('common.reps')}</p>
               </div>
             </div>
           </div>
 
-          <p className="text-sm text-slate-500 mb-6">Set {currentSet} of {targetSets}</p>
+          <p className="text-sm text-slate-500 mb-6">{t('common.set')} {currentSet} {t('workout.setOf')} {targetSets}</p>
 
           {/* Rep counter */}
-          <div className="flex items-center gap-6 mb-8">
-            <button onClick={() => adjustReps(-5)}
-              className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform">
-              <Minus size={24} className="text-slate-400" />
-            </button>
-            <button onClick={() => adjustReps(5)}
-              className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform">
-              <Plus size={24} className="text-slate-400" />
-            </button>
+          <div className="flex items-center gap-3 mb-8">
+            <div className="flex flex-col items-center">
+              <button onClick={() => adjustReps(-1)}
+                className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform">
+                <Minus size={20} className="text-slate-400" />
+              </button>
+              <span className="text-[10px] text-slate-600 mt-1">−1</span>
+            </div>
+            <div className="text-center px-4">
+              <p className="text-5xl font-black text-white">{currentReps}</p>
+              <p className="text-sm text-slate-400 mt-1">{t('common.reps')}</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <button onClick={() => adjustReps(1)}
+                className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform">
+                <Plus size={20} className="text-slate-400" />
+              </button>
+              <span className="text-[10px] text-slate-600 mt-1">+1</span>
+            </div>
           </div>
+
+          {/* Quick +5 button */}
+          <button onClick={() => adjustReps(5)}
+            className="text-xs text-slate-500 hover:text-cyan-400 transition-colors mb-6">
+            +5 reps fast
+          </button>
 
           {/* Weight input (gym exercises) */}
           {!exercise.home && (
-            <div className="flex items-center gap-4 mb-8">
-              <button onClick={() => adjustWeight(-5)} className="p-2 rounded-lg bg-slate-800 text-slate-400 active:scale-90">
-                <Minus size={16} />
-              </button>
+            <div className="flex items-center gap-4 mb-6">
+              <button onClick={() => adjustWeight(-2.5)} className="p-2 rounded-lg bg-slate-800 text-slate-400 active:scale-90 text-sm font-bold">−2.5</button>
               <div className="text-center">
                 <p className="text-2xl font-bold text-white">{currentWeight}</p>
                 <p className="text-xs text-slate-500">lbs</p>
               </div>
-              <button onClick={() => adjustWeight(5)} className="p-2 rounded-lg bg-slate-800 text-slate-400 active:scale-90">
-                <Plus size={16} />
-              </button>
+              <button onClick={() => adjustWeight(2.5)} className="p-2 rounded-lg bg-slate-800 text-slate-400 active:scale-90 text-sm font-bold">+2.5</button>
+              <button onClick={() => adjustWeight(5)} className="p-2 rounded-lg bg-slate-700 text-slate-500 active:scale-90 text-xs">+5</button>
             </div>
           )}
 
@@ -313,12 +358,28 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
           <button onClick={handleCompleteSet}
             className={`w-full max-w-xs py-4 rounded-xl font-bold text-lg text-white ${colors.solid}
               active:scale-95 transition-transform flex items-center justify-center gap-2`}>
-            <Check size={20} /> Complete Set
+            <Check size={20} /> {t('workout.completeSet')}
           </button>
+
+          {/* Add Extra Set (after completing target sets) */}
+          {currentSet > targetSets && (
+            <button onClick={() => {
+              setCurrentSet(prev => prev + 1);
+              setPhase('active');
+            }}
+              className="text-xs text-cyan-400 hover:text-cyan-300 mt-3 flex items-center gap-1">
+              <Plus size={12} /> Add extra set
+            </button>
+          )}
 
           {/* Best */}
           {bestReps > 0 && (
-            <p className="text-xs text-slate-500 mt-4">Best: {bestReps} reps</p>
+            <p className="text-xs text-slate-500 mt-4">{t('common.best')}: {bestReps} {t('common.reps')}</p>
+          )}
+
+          {/* Exercise instructions */}
+          {exercise?.instructions && (
+            <p className="text-xs text-slate-600 mt-2 max-w-xs text-center">{exercise.instructions}</p>
           )}
         </div>
       )}
@@ -330,6 +391,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
           onStart={timer.start}
           onPause={timer.pause}
           onFinish={handleFinishRest}
+          onAddTime={handleAddTime}
           nextExercise={null}
           colors={colors}
           currentSet={currentSet}
@@ -343,18 +405,26 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel }) {
             <Check size={36} className="text-emerald-400" />
           </div>
           <h2 className="text-2xl font-black text-white mb-2">{exercise.name}</h2>
-          <p className="text-slate-400 mb-6">Workout complete!</p>
-          <div className="glass-card rounded-xl p-4 w-full max-w-xs mb-8">
+          <p className="text-slate-400 mb-2">{t('workout.workoutComplete')}</p>
+          {(() => {
+            const hitPR = bestReps > 0 && setsCompleted.length > 0 && Math.max(...setsCompleted.map(s => s.reps)) > bestReps;
+            if (hitPR) return <p className="text-amber-400 text-sm font-bold mb-2">New PR! 🎉</p>;
+            return null;
+          })()}
+          <div className="glass-card rounded-xl p-4 w-full max-w-xs mb-6">
             {setsCompleted.map((s, i) => (
               <div key={i} className="flex justify-between py-2 border-b border-slate-800 last:border-0">
-                <span className="text-slate-400">Set {i + 1}</span>
-                <span className="text-white font-bold">{s.reps} reps</span>
+                <span className="text-slate-400">{t('workout.set')} {i + 1}</span>
+                <span className="text-white font-bold">{s.reps} {t('common.reps')}{s.weight ? ` · ${s.weight} ${t('common.lbs')}` : ''}</span>
               </div>
             ))}
           </div>
+          {setsCompleted.length < targetSets && (
+            <p className="text-xs text-slate-500 mb-4 text-center">Shortened session — great job finishing!</p>
+          )}
           <button onClick={handleCancel}
             className="w-full max-w-xs py-4 rounded-xl font-bold bg-cyan-500 text-white active:scale-95 transition-transform">
-            Done
+            {t('common.done')}
           </button>
         </div>
       )}

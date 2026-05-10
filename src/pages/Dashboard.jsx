@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Play, Zap, Flame, Plus, Dumbbell, TrendingUp, Check, X, RotateCcw, Trophy, ChevronRight, ZapIcon } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
+import { t } from '../i18n';
 
 // ──────────── Body part icons ────────────
 const BODY_PART_ICONS = {
@@ -40,18 +41,18 @@ function ProgressRing({ progress, size = 48, stroke = 4, color = '#06b6d4', dela
 function StreakBadge({ streak }) {
   if (streak === 0) return null;
   const messages = {
-    1: 'Just getting started!',
-    2: 'Building momentum!',
-    3: 'On fire!',
-    7: 'One week strong!',
-    14: 'Two weeks! Unstoppable.',
-    30: 'One month! Legendary.',
+    1: t('streak.justGettingStarted'),
+    2: t('streak.buildingMomentum'),
+    3: t('streak.onFire'),
+    7: t('streak.oneWeekStrong'),
+    14: t('streak.twoWeeksUnstoppable'),
+    30: t('streak.oneMonthLegendary'),
   };
   const msg = Object.entries(messages).reverse().find(([k]) => streak >= Number(k))?.[1];
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20">
       <Flame size={16} className="text-orange-400 fill-orange-400" />
-      <span className="font-bold text-orange-400">{streak} day streak</span>
+      <span className="font-bold text-orange-400">{streak} {t('common.dayStreak')}</span>
       {msg && <span className="text-xs text-orange-300/70 hidden sm:inline">· {msg}</span>}
     </div>
   );
@@ -82,9 +83,9 @@ function ExerciseCard({ exercise, bestReps, bestWeight, logsCount, progress, onQ
               </span>
             </div>
             <div className="flex gap-3 text-xs text-slate-500">
-              <span>Best: <span className={`font-semibold ${colors.text}`}>{bestReps} rep{bestReps !== 1 ? 's' : ''}</span></span>
-              {bestWeight > 0 && <span>· <span className={colors.text}>{bestWeight} lbs</span></span>}
-              {logsCount > 0 && <span>· {logsCount} set{logsCount !== 1 ? 's' : ''} this week</span>}
+              <span>{t('common.best')}: <span className={`font-semibold ${colors.text}`}>{bestReps} rep{bestReps !== 1 ? 's' : ''}</span></span>
+              {bestWeight > 0 && <span>· <span className={colors.text}>{bestWeight} {t('common.lbs')}</span></span>}
+              {logsCount > 0 && <span>· {logsCount} {t('exerciseCard.setsThisWeek')}</span>}
             </div>
           </div>
 
@@ -126,9 +127,9 @@ function QuickStartFAB({ onClick, visible }) {
 // ──────────── Greeting ────────────
 function getGreeting() {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return t('dashboard.greeting.morning');
+  if (h < 17) return t('dashboard.greeting.afternoon');
+  return t('dashboard.greeting.evening');
 }
 
 export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, onViewExercise }) {
@@ -175,11 +176,11 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
   }, [exercises, logs]);
 
   const lastWorkoutText = (() => {
-    if (todayLogs.length > 0) return 'You\'ve already trained today';
+    if (todayLogs.length > 0) return t('dashboard.workoutStatus.alreadyTrained');
     const yStr = new Date(Date.now() - 864e5).toISOString().split('T')[0];
     const yLogs = logs.filter(l => l.date.startsWith(yStr));
-    if (yLogs.length > 0) return 'Ready to train again?';
-    return 'No workout yet — let\'s go!';
+    if (yLogs.length > 0) return t('dashboard.workoutStatus.readyToTrain');
+    return t('dashboard.workoutStatus.noWorkoutYet');
   })();
 
   return (
@@ -209,7 +210,7 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
         <div className="space-y-2">
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
             <TrendingUp size={12} className="text-emerald-400" />
-            New Records This Week
+            {t('dashboard.newRecords')}
           </h2>
           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
             {recentPRs.map(({ ex, best }) => <PRBanner key={ex.id} ex={ex} best={best} />)}
@@ -224,18 +225,18 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
           className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl py-4 font-bold text-white shadow-lg shadow-cyan-500/20 active:scale-98 transition-all flex items-center justify-center gap-2"
         >
           <ZapIcon size={20} className="fill-current" />
-          Start Workout
-          <span className="text-cyan-200 text-sm font-normal">· {exercises.length} exercises</span>
+          {t('dashboard.startWorkout')}
+          <span className="text-cyan-200 text-sm font-normal">· {exercises.length} {t('dashboard.exercisesCount')}</span>
         </button>
       )}
 
       {/* ── Your Exercises ── */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Your Exercises</h2>
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('dashboard.yourExercises')}</h2>
           <button onClick={onOpenLibrary}
             className="text-xs text-cyan-400 flex items-center gap-1 hover:text-cyan-300 transition-colors font-medium">
-            <Plus size={13} /> Browse
+            <Plus size={13} /> {t('common.browse')}
           </button>
         </div>
 
@@ -258,11 +259,11 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
             <div className="w-16 h-16 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
               <Dumbbell size={32} className="text-cyan-400" />
             </div>
-            <p className="text-slate-300 mb-2 font-medium">Build your exercise collection</p>
-            <p className="text-slate-500 text-sm mb-6">Choose exercises that match your training style</p>
+            <p className="text-slate-300 mb-2 font-medium">{t('dashboard.buildCollection')}</p>
+            <p className="text-slate-500 text-sm mb-6">{t('dashboard.chooseExercises')}</p>
             <button onClick={onOpenLibrary}
               className="bg-cyan-500 text-white px-8 py-3 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-cyan-500/20">
-              Browse Exercises
+              {t('dashboard.browseExercises')}
             </button>
           </div>
         )}

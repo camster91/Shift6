@@ -196,12 +196,24 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
   const [phase, setPhase] = useState('active'); // active | rest | done | choosing
   const [currentSet, setCurrentSet] = useState(1);
   const [setsCompleted, setSetsCompleted] = useState([]);
-  const [currentReps, setCurrentReps] = useState(() => {
-    // Pre-populate with last session's reps, or exercise default
-    const last = getLastRepsFor(exerciseId);
-    return last > 0 ? last : (exercise?.startReps || 10);
-  });
+  const [currentReps, setCurrentReps] = useState(exercise?.startReps || 10);
   const [currentWeight, setCurrentWeight] = useState(0);
+
+  // Reset state when exercise changes (queue advance)
+  useEffect(() => {
+    setPhase('active');
+    setCurrentSet(1);
+    setSetsCompleted([]);
+    setCurrentWeight(0);
+    const calibrated = settings?.calibratedStartReps?.[exerciseId];
+    const last = getLastRepsFor(exerciseId);
+    setCurrentReps(calibrated ?? (last > 0 ? last : (exercise?.startReps || 10)));
+    setShowRestModal(false);
+    setAchievement(null);
+    // Keep bestReps fresh
+    const best = getBestSet(exerciseId);
+    setBestReps(best);
+  }, [exerciseId]);
   const [showVideo, setShowVideo] = useState(false);
   const [showRestModal, setShowRestModal] = useState(false);
   const [customRestMins, setCustomRestMins] = useState(() => Math.floor((settings?.restTimes?.[exerciseId] ?? settings?.restSeconds ?? 90) / 60));
@@ -317,15 +329,25 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     navigator.vibrate?.(30);
   }, [settings, exerciseId, timer]);
 
-  // Cancel
+  // Cancel / Done
   const handleCancel = useCallback(() => {
     if (setsCompleted.length > 0) {
-      // Save progress
-      const result = { exerciseId, sets: setsCompleted };
-      onComplete?.(result);
+      // Auto-calibrate baseline from this session
+      const avgReps = Math.round(setsCompleted.reduce((sum, s) => sum + s.reps, 0) / setsCompleted.length);
+      const lastBest = getBestSet(exerciseId);
+      const demonstrated = Math.max(avgReps, lastBest, exercise?.startReps || 10);
+      const newBaseline = Math.round(demonstrated * 0.65);
+      const currentCalib = settings?.calibratedStartReps?.[exerciseId] ?? exercise?.startReps ?? 10;
+      if (newBaseline !== currentCalib) {
+        updateSettings({
+          calibratedStartReps: { ...(settings?.calibratedStartReps || {}), [exerciseId]: newBaseline }
+        });
+      }
+      onComplete?.({ exerciseId, sets: setsCompleted });
+    } else {
+      onCancel?.();
     }
-    onCancel?.();
-  }, [setsCompleted, exerciseId]);
+  }, [setsCompleted, exerciseId, exercise, settings, getBestSet, updateSettings]);
 
   if (!exercise) return <div className="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center text-slate-400">{t('workout.exerciseNotFound')}</div>;
 

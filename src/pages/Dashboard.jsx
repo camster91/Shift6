@@ -161,13 +161,26 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
 
   // Yesterday for last workout message
 
-  // Per-exercise stats
-  const exerciseStats = useMemo(() => exercises.map(ex => ({
-    ...ex,
-    bestReps: getBestSet(ex.id),
-    bestWeight: getBestWeight(ex.id),
-    logsCount: weekLogs.filter(l => l.exerciseId === ex.id).length,
-  })), [exercises, logs, weekLogs]);
+  // Per-exercise stats — sorted by least-recently-trained first
+  const exerciseStats = useMemo(() => {
+    const withStats = exercises.map(ex => {
+      const exLogs = logs.filter(l => l.exerciseId === ex.id).sort((a, b) => new Date(b.date) - new Date(a.date));
+      const lastLog = exLogs[0];
+      return {
+        ...ex,
+        bestReps: getBestSet(ex.id),
+        bestWeight: getBestWeight(ex.id),
+        logsCount: weekLogs.filter(l => l.exerciseId === ex.id).length,
+        lastLogDate: lastLog ? new Date(lastLog.date).getTime() : 0,
+      };
+    });
+    // Never-done first, then oldest lastLogDate ascending
+    return withStats.sort((a, b) => {
+      if (a.lastLogDate === 0 && b.lastLogDate > 0) return -1;
+      if (b.lastLogDate === 0 && a.lastLogDate > 0) return 1;
+      return a.lastLogDate - b.lastLogDate;
+    });
+  }, [exercises, logs, weekLogs]);
 
   // Overall progress
   const overallProgress = useMemo(() => {
@@ -179,6 +192,14 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
     }, { current: 0, target: 0 });
     return totals.target > 0 ? Math.min(1, totals.current / totals.target) : 0;
   }, [exercises, logs]);
+
+  const nextUpExercise = exerciseStats[0];
+  const getDaysSince = (ms) => {
+    if (!ms) return null;
+    const days = Math.floor((Date.now() - ms) / 864e5);
+    if (days === 0) return 'today';
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  };
 
   // Recent PRs (new this week)
   const recentPRs = useMemo(() => {
@@ -241,8 +262,13 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
           className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl py-4 font-bold text-white shadow-lg shadow-cyan-500/20 active:scale-98 transition-all flex items-center justify-center gap-2"
         >
           <ZapIcon size={20} className="fill-current" />
-          {t('dashboard.startWorkout')}
-          <span className="text-cyan-200 text-sm font-normal">· {exercises.length} {t('dashboard.exercisesCount')}</span>
+          {nextUpExercise ? nextUpExercise.name : t('dashboard.startWorkout')}
+          {nextUpExercise && nextUpExercise.lastLogDate === 0 && (
+            <span className="text-cyan-200 text-sm font-normal"> · first time</span>
+          )}
+          {nextUpExercise && nextUpExercise.lastLogDate > 0 && (
+            <span className="text-cyan-200 text-sm font-normal"> · {getDaysSince(nextUpExercise.lastLogDate)}</span>
+          )}
         </button>
       )}
 

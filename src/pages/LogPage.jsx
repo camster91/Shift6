@@ -9,7 +9,7 @@ const BODY_PART_ICONS = {
 };
 
 export default function LogPage({ onStartWorkout }) {
-  const { exercises, logSet, getTodayLogs, getBestSet, getCurrentStreak, logs, removeLog } = useData();
+  const { exercises, logSet, getTodayLogs, getBestSet, getCurrentStreak, logs, removeLog, updateLogNotes } = useData();
   const [selectedEx, setSelectedEx] = useState(null);
   const [reps, setReps] = useState(10);
   const [weight, setWeight] = useState(0);
@@ -106,40 +106,27 @@ export default function LogPage({ onStartWorkout }) {
           </button>
           {expandedId === 'today' && (
             <div className="px-4 pb-4 space-y-2 animate-slide-up">
-              {(() => {
-                const todayByExercise = {};
-                todayLogs.forEach(log => {
-                  if (!todayByExercise[log.exerciseId]) todayByExercise[log.exerciseId] = [];
-                  todayByExercise[log.exerciseId].push(log);
-                });
-                return Object.entries(todayByExercise).map(([exId, exLogs]) => {
-                  const ex = exercises.find(e => e.id === exId);
-                  if (!ex) return null;
-                  const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
-                  const icon = BODY_PART_ICONS[ex.bodyPart] || '💪';
-                  return (
-                    <div key={exId} className="flex items-center gap-3 p-2 rounded-xl bg-slate-800/40">
-                      <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center text-sm flex-shrink-0`}>
-                        {icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white">{ex.name}</p>
-                        <p className="text-xs text-slate-500">
-                          {exLogs.map(l => `${l.reps}${l.weight ? ` × ${l.weight}lbs` : ''}`).join(', ')}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} font-medium`}>
-                          {exLogs.length}s
-                        </span>
-                        <button onClick={(e) => exLogs.forEach(l => handleDeleteLog(l.id, e))} className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-colors">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+              {todayLogs.map(log => {
+                const ex = exercises.find(e => e.id === log.exerciseId) || {};
+                const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
+                return (
+                  <div key={log.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800/20">
+                    <div className={`w-7 h-7 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center text-xs flex-shrink-0`}>
+                      {BODY_PART_ICONS[ex.bodyPart] || '💪'}
                     </div>
-                  );
-                });
-              })()}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white">{ex.name || 'Unknown'}</p>
+                      <p className="text-xs text-slate-500">{log.reps} reps{log.weight ? ` · ${log.weight} lbs` : ''}</p>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteLog(log.id, e)}
+                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -179,13 +166,13 @@ export default function LogPage({ onStartWorkout }) {
                         </div>
                         <button
                           onClick={(e) => handleDeleteLog(log.id, e)}
-                          className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                          className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors"
                         >
                           <Trash2 size={14} />
                         </button>
                         <button
                           onClick={() => { setEditingNote(log.id); setNoteText(log.notes || ''); }}
-                          className="p-1.5 rounded-lg hover:bg-cyan-500/20 text-slate-600 hover:text-cyan-400 transition-colors opacity-0 group-hover:opacity-100"
+                          className="p-1.5 rounded-lg hover:bg-cyan-500/20 text-slate-600 hover:text-cyan-400 transition-colors"
                         >
                           <svg size={14} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </button>

@@ -65,7 +65,21 @@ export default function App() {
 
   const handleStartStack = () => {
     if (exercises.length === 0) return;
-    const ids = exercises.map(e => e.id);
+    const ids = [...exercises]
+      .sort((a, b) => {
+        const aLast = logs
+          .filter(l => l.exerciseId === a.id)
+          .sort((x, y) => new Date(y.date) - new Date(x.date))[0];
+        const bLast = logs
+          .filter(l => l.exerciseId === b.id)
+          .sort((x, y) => new Date(y.date) - new Date(x.date))[0];
+        const aTime = aLast ? new Date(aLast.date).getTime() : 0;
+        const bTime = bLast ? new Date(bLast.date).getTime() : 0;
+        if (aTime === 0 && bTime > 0) return -1;
+        if (bTime === 0 && aTime > 0) return 1;
+        return aTime - bTime;
+      })
+      .map(e => e.id);
     setWorkoutQueue(ids);
     setWorkoutIndex(0);
     setWorkoutExId(ids[0]);

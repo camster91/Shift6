@@ -20,7 +20,7 @@ const TAB_BAR = [
 ];
 
 export default function App() {
-  const { exercises, onboardingDone, settings } = useData();
+  const { exercises, onboardingDone, settings, logs } = useData();
   const [activeTab, setActiveTab] = useState('home');
   const [showLibrary, setShowLibrary] = useState(false);
   const [workoutExId, setWorkoutExId] = useState(null);

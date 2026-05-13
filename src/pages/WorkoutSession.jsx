@@ -1,8 +1,48 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, Square, Check, ChevronRight, X, Dumbbell, Youtube, Plus, Minus, PartyPopper } from 'lucide-react';
+import { Play, Pause, Square, Check, ChevronRight, X, Dumbbell, Youtube, Plus, Minus, PartyPopper, Settings } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP, getExercise } from '../data/exercises';
 import { t } from '../i18n';
+
+// ──────────── Rest Settings Modal ────────────
+function RestSettingsModal({ currentSeconds, onSave, onClose }) {
+  const { updateSettings, settings } = useData();
+  const [mins, setMins] = useState(Math.floor(currentSeconds / 60));
+  const [secs, setSecs] = useState(currentSeconds % 60);
+
+  const handleSave = () => {
+    onSave(mins * 60 + secs);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 z-[75] flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-xs shadow-2xl" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold text-white mb-1">Rest Time</h3>
+        <p className="text-xs text-slate-500 mb-4">Set default rest duration for this exercise</p>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-2 bg-slate-800 rounded-xl p-2 flex-1">
+            <input type="number" min="0" max="10" value={mins}
+              onChange={e => setMins(Math.max(0, parseInt(e.target.value) || 0))}
+              className="w-12 bg-transparent text-center text-white font-bold text-xl" />
+            <span className="text-slate-500 text-sm">min</span>
+            <input type="number" min="0" max="59" step="15" value={secs}
+              onChange={e => setSecs(Math.max(0, parseInt(e.target.value) || 0))}
+              className="w-14 bg-transparent text-center text-white font-bold text-xl" />
+            <span className="text-slate-500 text-sm">sec</span>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 bg-slate-800 text-slate-400 rounded-xl text-sm font-semibold">Cancel</button>
+          <button onClick={handleSave} className="flex-1 py-2.5 bg-cyan-500 text-white rounded-xl text-sm font-bold active:scale-95">Save</button>
+        </div>
+        <button onClick={() => { updateSettings({ restTimes: { ...(settings?.restTimes || {}), ['']: undefined } }); onClose(); }}
+          className="w-full mt-3 py-2 text-slate-600 text-xs hover:text-slate-400 transition-colors">
+          Reset to default rest time
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ──────────── Achievement Celebration ────────────
 const ACHIEVEMENTS = {
@@ -149,7 +189,7 @@ function RestScreen({ seconds, running, onFinish, onStart, onPause, onAddTime, n
 
 // ──────────── Workout Session ────────────
 export default function WorkoutSession({ exerciseId, onComplete, onCancel, workoutQueue = [], workoutIndex = 0 }) {
-  const { logSet, getBestSet, getLogsForExercise, getCurrentStreak, logs, settings, getLastRepsFor } = useData();
+  const { logSet, getBestSet, getLogsForExercise, getCurrentStreak, logs, settings, getLastRepsFor, updateSettings } = useData();
   const exercise = getExercise(exerciseId);
   const colors = COLOR_MAP[exercise?.color] || COLOR_MAP.cyan;
 
@@ -163,11 +203,14 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
   });
   const [currentWeight, setCurrentWeight] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
+  const [showRestModal, setShowRestModal] = useState(false);
+  const [customRestMins, setCustomRestMins] = useState(() => Math.floor((settings?.restTimes?.[exerciseId] ?? settings?.restSeconds ?? 90) / 60));
+  const [customRestSecs, setCustomRestSecs] = useState(() => (settings?.restTimes?.[exerciseId] ?? settings?.restSeconds ?? 90) % 60);
   const [bestReps, setBestReps] = useState(0);
   const [achievement, setAchievement] = useState(null);
 
   const targetSets = settings?.targetSets ?? 3;
-  const restSeconds = settings?.restSeconds ?? 90;
+  const restSeconds = settings?.restTimes?.[exerciseId] ?? settings?.restSeconds ?? 90;
   const timer = useTimer(restSeconds);
 
   // Target reps for this exercise (2x startReps as milestone)
@@ -264,6 +307,16 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     navigator.vibrate?.(20);
   }, [timer]);
 
+  // Save custom rest time for this exercise
+  const handleSaveRestTime = useCallback((seconds) => {
+    updateSettings({
+      restTimes: { ...(settings?.restTimes || {}), [exerciseId]: seconds }
+    });
+    timer.reset(seconds);
+    setShowRestModal(false);
+    navigator.vibrate?.(30);
+  }, [settings, exerciseId, timer]);
+
   // Cancel
   const handleCancel = useCallback(() => {
     if (setsCompleted.length > 0) {
@@ -278,7 +331,6 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
-// Header — include skip/next exercise when in workout queue
       <div className="flex items-center justify-between p-4 border-b border-slate-800">
         <button onClick={handleCancel} className="text-slate-400 hover:text-white transition-colors">
           <X size={20} />
@@ -290,21 +342,21 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
             <p className="text-[10px] text-slate-600">{workoutIndex + 1} of {workoutQueue.length}</p>
           )}
         </div>
-        {workoutQueue.length > 1 ? (
-          <button
-            onClick={() => {
-              // Skip to next in queue
-              onComplete?.({ exerciseId, sets: setsCompleted });
-            }}
-            className="text-cyan-400 hover:text-cyan-300 text-xs font-semibold px-2 py-1 rounded-lg bg-cyan-500/10"
-          >
-            Skip
+        <div className="flex items-center gap-2">
+          {workoutQueue.length > 1 && (
+            <button
+              onClick={() => {
+                onComplete?.({ exerciseId, sets: setsCompleted });
+              }}
+              className="text-cyan-400 hover:text-cyan-300 text-xs font-semibold px-2 py-1 rounded-lg bg-cyan-500/10"
+            >
+              Skip
+            </button>
+          )}
+          <button onClick={() => setShowRestModal(true)} className="text-slate-400 hover:text-cyan-400 transition-colors p-1">
+            <Settings size={18} />
           </button>
-        ) : (
-          <button onClick={() => setShowVideo(true)} className="text-slate-400 hover:text-red-400 transition-colors">
-            <Youtube size={20} />
-          </button>
-        )}
+        </div>
       </div>
 
       {phase === 'active' && (
@@ -396,6 +448,13 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
           {exercise?.instructions && (
             <p className="text-xs text-slate-600 mt-2 max-w-xs text-center">{exercise.instructions}</p>
           )}
+
+          {exercise?.youtubeId && (
+            <button onClick={() => setShowVideo(true)}
+              className="flex items-center gap-1.5 text-xs text-red-400/60 hover:text-red-400 mt-2 transition-colors">
+              <Youtube size={12} /> Watch demo
+            </button>
+          )}
         </div>
       )}
 
@@ -450,6 +509,14 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
         <AchievementPopup
           achievement={achievement}
           onDismiss={() => setAchievement(null)}
+        />
+      )}
+
+      {showRestModal && (
+        <RestSettingsModal
+          currentSeconds={restSeconds}
+          onSave={handleSaveRestTime}
+          onClose={() => setShowRestModal(false)}
         />
       )}
     </div>

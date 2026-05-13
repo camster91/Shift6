@@ -225,6 +225,11 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
   const restSeconds = settings?.restTimes?.[exerciseId] ?? settings?.restSeconds ?? 90;
   const timer = useTimer(restSeconds);
 
+  // Determine next exercise in queue for rest screen preview
+  const nextExerciseInQueue = workoutQueue.length > 1 && workoutIndex < workoutQueue.length - 1
+    ? getExercise(workoutQueue[workoutIndex + 1])
+    : null;
+
   // Target reps for this exercise (2x startReps as milestone)
   const targetReps = (exercise?.startReps || 10) * 2;
   // Progress within this workout session
@@ -488,7 +493,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
           onPause={timer.pause}
           onFinish={handleFinishRest}
           onAddTime={handleAddTime}
-          nextExercise={null}
+          nextExercise={nextExerciseInQueue}
           colors={colors}
           currentSet={currentSet}
           totalSets={targetSets}

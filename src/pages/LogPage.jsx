@@ -86,6 +86,29 @@ export default function LogPage({ onStartWorkout }) {
         </div>
       </div>
 
+      {/\* Quick warm-up presets \*/}
+      {exercises.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Quick Warm-up</p>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {exercises.slice(0, 4).map(ex => {
+              const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
+              const warmUpReps = Math.max(2, Math.round((ex.startReps || 10) * 0.4));
+              return (
+                <button
+                  key={ex.id}
+                  onClick={() => { logSet(ex.id, warmUpReps, 0); navigator.vibrate?.(20); }}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl ${colors.bg} border ${colors.border} active:scale-95 transition-transform`}
+                >
+                  <span className="text-xs">{BODY_PART_ICONS[ex.bodyPart] || '💪'}</span>
+                  <span className={`text-xs font-bold ${colors.text}`}>{ex.name} × {warmUpReps}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
 {/* Today's workout summary - collapsible */}
       {todayLogs.length > 0 && (
         <div className="glass-card rounded-2xl overflow-hidden">

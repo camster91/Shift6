@@ -96,10 +96,10 @@ function ExerciseCard({ exercise, bestReps, bestWeight, logsCount, progress, onQ
         </div>
       </button>
 
-      {/* Remove button */}
+      {/* Remove button - always visible on touch devices */}
       <button
         onClick={(e) => { e.stopPropagation(); onRemove?.(exercise.id); }}
-        className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-slate-800/80 text-slate-500 hover:bg-red-500/30 hover:text-red-400 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+        className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-slate-800/80 text-slate-500 hover:bg-red-500/30 hover:text-red-400 flex items-center justify-center transition-all opacity-100"
         aria-label="Remove exercise"
       >
         <X size={14} />
@@ -116,6 +116,46 @@ function PRBanner({ ex, best }) {
       <p className="text-xs text-slate-400 mb-0.5">{ex.name}</p>
       <p className={`text-base font-black ${colors.text}`}>{best} reps</p>
     </div>
+  );
+}
+
+// ──────────── Weekly Volume Sparkline ────────────
+function VolumeSparkline({ logs }) {
+  const data = useMemo(() => {
+    const today = new Date();
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const count = logs.filter(l => l.date.startsWith(dateStr)).length;
+      days.push(count);
+    }
+    const max = Math.max(...days, 1);
+    return { days, max };
+  }, [logs]);
+
+  const barWidth = 3;
+  const gap = 2;
+  const height = 20;
+
+  return (
+    <svg width={28} height={height} className="opacity-70 flex-shrink-0">
+      {data.days.map((count, i) => {
+        const h = data.max > 0 ? (count / data.max) * (height - 2) + 2 : 2;
+        return (
+          <rect
+            key={i}
+            x={i * (barWidth + gap)}
+            y={height - h}
+            width={barWidth}
+            height={h}
+            rx={1}
+            fill={count > 0 ? '#06b6d4' : '#334155'}
+          />
+        );
+      })}
+    </svg>
   );
 }
 
@@ -237,6 +277,7 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
               <p className="text-[10px] text-slate-500 uppercase tracking-wider">Weekly</p>
               <p className="text-sm font-bold text-cyan-400">{weekLogs.length} sets</p>
             </div>
+            <VolumeSparkline logs={logs} />
             <ProgressRing progress={overallProgress} size={44} stroke={4} color="#06b6d4" delay={200} />
           </div>
         </div>

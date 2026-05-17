@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Target, Dumbbell, Plus, Trash2, TrendingUp } from 'lucide-react';
+import { Target, Dumbbell, Plus, Trash2 } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
 
 export default function GoalsPage() {
-  const { exercises, logs, goals, getBestSet, setGoal, removeGoal } = useData();
+  const { exercises, goals, getBestSet, setGoal, removeGoal } = useData();
   const [editing, setEditing] = useState(null);
   const [targetReps, setTargetReps] = useState(20);
 
@@ -16,10 +16,9 @@ export default function GoalsPage() {
       const progress = target > 0 ? Math.min(100, Math.round((best / target) * 100)) : 0;
       return { ...ex, goal, best, target, progress };
     });
-  }, [exercises, goals, logs]);
+  }, [exercises, goals, getBestSet]);
 
   const handleSetGoal = (exerciseId) => {
-    const ex = exercises.find(e => e.id === exerciseId);
     setGoal(exerciseId, targetReps, 6);
     setEditing(null);
   };

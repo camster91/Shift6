@@ -1,16 +1,16 @@
 import { useState, useMemo } from 'react';
-import { TrendingUp, Dumbbell, Calendar, Flame } from 'lucide-react';
+import { TrendingUp, Dumbbell } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
 
 export default function ProgressPage() {
-  const { exercises, logs, goals, getLogsForExercise, getBestSet } = useData();
+  const { exercises, logs, getLogsForExercise, getBestSet } = useData();
   const [selectedEx, setSelectedEx] = useState(null);
 
   const exerciseHistory = useMemo(() => {
     if (!selectedEx) return [];
     return getLogsForExercise(selectedEx);
-  }, [selectedEx, logs]);
+  }, [selectedEx, getLogsForExercise]);
 
   const stats = useMemo(() => {
     if (!selectedEx) return { total: 0, best: 0, avg: 0, days: 0 };

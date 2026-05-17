@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Play, Zap, Flame, Plus, Dumbbell, TrendingUp, Check, X, RotateCcw, Trophy, ChevronRight, ZapIcon } from 'lucide-react';
+import { Play, Flame, Plus, Dumbbell, TrendingUp, X, Zap } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
 import { t } from '../i18n';
@@ -181,10 +181,10 @@ function getGreeting() {
   return t('dashboard.greeting.evening');
 }
 
-export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, onViewExercise }) {
+export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercise }) {
   const {
     exercises, logs,
-    getBestSet, getBestWeight, getWeeklyFrequency, getCurrentStreak,
+    getBestSet, getBestWeight, getCurrentStreak,
     getTodayLogs, getThisWeekLogs, removeExercise,
   } = useData();
 
@@ -220,7 +220,7 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
       if (b.lastLogDate === 0 && a.lastLogDate > 0) return 1;
       return a.lastLogDate - b.lastLogDate;
     });
-  }, [exercises, logs, weekLogs]);
+  }, [exercises, logs, weekLogs, getBestSet, getBestWeight]);
 
   // Overall progress
   const overallProgress = useMemo(() => {
@@ -231,7 +231,7 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
       return { current: acc.current + Math.min(best, target), target: acc.target + target };
     }, { current: 0, target: 0 });
     return totals.target > 0 ? Math.min(1, totals.current / totals.target) : 0;
-  }, [exercises, logs]);
+  }, [exercises, getBestSet]);
 
   const nextUpExercise = exerciseStats[0];
   const getDaysSince = (ms) => {
@@ -250,7 +250,7 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
       const secondBest = exLogs[1]?.reps || 0;
       return { ex, best, isNew: best > secondBest && best > ex.startReps };
     }).filter(r => r.isNew).slice(0, 3);
-  }, [exercises, logs]);
+  }, [exercises, logs, getBestSet]);
 
   const lastWorkoutText = (() => {
     if (todayLogs.length > 0) return t('dashboard.workoutStatus.alreadyTrained');
@@ -302,7 +302,7 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
           onClick={() => { navigator.vibrate?.(30); onStartWorkout?.(); }}
           className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl py-4 font-bold text-white shadow-lg shadow-cyan-500/20 active:scale-98 transition-all flex items-center justify-center gap-2"
         >
-          <ZapIcon size={20} className="fill-current" />
+                  <Zap size={20} className="fill-current" />
           {nextUpExercise ? nextUpExercise.name : t('dashboard.startWorkout')}
           {nextUpExercise && nextUpExercise.lastLogDate === 0 && (
             <span className="text-cyan-200 text-sm font-normal"> · first time</span>
@@ -324,7 +324,7 @@ export default function Dashboard({ onStartWorkout, onOpenLog, onOpenLibrary, on
         </div>
 
         <div className="space-y-2">
-          {exerciseStats.map((ex, i) => (
+          {exerciseStats.map((ex) => (
             <ExerciseCard
               key={ex.id}
               exercise={ex}

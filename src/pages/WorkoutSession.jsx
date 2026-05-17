@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, Square, Check, ChevronRight, X, Dumbbell, Youtube, Plus, Minus, PartyPopper, Settings } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Play, Pause, Check, X, Dumbbell, Youtube, Plus, Minus, Settings } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP, getExercise } from '../data/exercises';
 import { t } from '../i18n';
@@ -45,13 +45,6 @@ function RestSettingsModal({ currentSeconds, onSave, onClose }) {
 }
 
 // ──────────── Achievement Celebration ────────────
-const ACHIEVEMENTS = {
-  first_workout: { title: 'First Steps', emoji: '🎉', message: 'You logged your first workout!' },
-  three_day_streak: { title: 'On Fire', emoji: '🔥', message: '3 day workout streak!' },
-  seven_day_streak: { title: 'Unstoppable', emoji: '💪', message: '1 week streak — keep it going!' },
-  ten_sets: { title: 'Getting Serious', emoji: '💯', message: '10 total sets logged!' },
-  first_pr: { title: 'Record Breaker', emoji: '🏆', message: 'You set your first personal record!' },
-};
 
 function AchievementPopup({ achievement, onDismiss }) {
   const key = `achievements.${achievement}`;
@@ -189,7 +182,7 @@ function RestScreen({ seconds, running, onFinish, onStart, onPause, onAddTime, n
 
 // ──────────── Workout Session ────────────
 export default function WorkoutSession({ exerciseId, onComplete, onCancel, workoutQueue = [], workoutIndex = 0 }) {
-  const { logSet, getBestSet, getLogsForExercise, getCurrentStreak, logs, settings, getLastRepsFor, updateSettings } = useData();
+  const { logSet, getBestSet, getCurrentStreak, logs, settings, getLastRepsFor, updateSettings } = useData();
   const exercise = getExercise(exerciseId);
   const colors = COLOR_MAP[exercise?.color] || COLOR_MAP.cyan;
 
@@ -213,11 +206,9 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     // Keep bestReps fresh
     const best = getBestSet(exerciseId);
     setBestReps(best);
-  }, [exerciseId]);
+  }, [exerciseId, exercise, settings, getBestSet, getLastRepsFor]);
   const [showVideo, setShowVideo] = useState(false);
   const [showRestModal, setShowRestModal] = useState(false);
-  const [customRestMins, setCustomRestMins] = useState(() => Math.floor((settings?.restTimes?.[exerciseId] ?? settings?.restSeconds ?? 90) / 60));
-  const [customRestSecs, setCustomRestSecs] = useState(() => (settings?.restTimes?.[exerciseId] ?? settings?.restSeconds ?? 90) % 60);
   const [bestReps, setBestReps] = useState(0);
   const [achievement, setAchievement] = useState(null);
 
@@ -230,10 +221,6 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     ? getExercise(workoutQueue[workoutIndex + 1])
     : null;
 
-  // Target reps for this exercise (2x startReps as milestone)
-  const targetReps = (exercise?.startReps || 10) * 2;
-  // Progress within this workout session
-  const sessionProgress = targetSets > 0 ? Math.min(1, (currentSet - 1) / targetSets) : 0;
 
   // Snapshot log count before this workout (for achievement detection)
   const prevLogCount = useRef(logs.length);
@@ -245,7 +232,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     if (logs.length === 0 && prevLogCount.current === 0) {
       // Will be detected on first set
     }
-  }, [exerciseId, logs]);
+  }, [exerciseId, logs, getBestSet]);
 
   // Wake lock
   useEffect(() => {
@@ -309,7 +296,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
       timer.reset(restSeconds);
       timer.start();
     }
-  }, [currentSet, currentReps, currentWeight, exerciseId, logs, setsCompleted, targetSets, restSeconds]);
+  }, [currentSet, currentReps, currentWeight, exerciseId, logs, setsCompleted, targetSets, restSeconds, getBestSet, getCurrentStreak, logSet, timer]);
 
   // Finish rest → back to active
   const handleFinishRest = useCallback(() => {
@@ -332,7 +319,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     timer.reset(seconds);
     setShowRestModal(false);
     navigator.vibrate?.(30);
-  }, [settings, exerciseId, timer]);
+  }, [settings, exerciseId, timer, updateSettings]);
 
   // Cancel / Done
   const handleCancel = useCallback(() => {
@@ -352,7 +339,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     } else {
       onCancel?.();
     }
-  }, [setsCompleted, exerciseId, exercise, settings, getBestSet, updateSettings]);
+  }, [setsCompleted, exerciseId, exercise, settings, getBestSet, updateSettings, onCancel, onComplete]);
 
   if (!exercise) return <div className="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center text-slate-400">{t('workout.exerciseNotFound')}</div>;
 

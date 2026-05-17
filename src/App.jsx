@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Vibrate, Volume2, VolumeX, Smartphone, ChevronRight } from 'lucide-react';
-import { Play, BarChart3, Target, Dumbbell, Plus, TrendingUp, Check, X, RotateCcw, Trophy, Flame, Zap } from 'lucide-react';
+import { Vibrate, Volume2, Smartphone } from 'lucide-react';
+import { Play, BarChart3, Target, Dumbbell, Plus, Check } from 'lucide-react';
 import { useData } from './hooks/useData';
 import { t } from './i18n';
 import Dashboard from './pages/Dashboard';
@@ -48,12 +48,12 @@ export default function App() {
     if (savedTheme === 'light') {
       document.documentElement.classList.add('light');
     }
-  }, []);
+  }, [settings?.theme]);
 
   const handleInstall = async () => {
     if (!installPromptRef.current) return;
     installPromptRef.current.prompt();
-    const { outcome } = await installPromptRef.current.userChoice;
+    await installPromptRef.current.userChoice;
     localStorage.setItem('shift6_install_dismissed', '1');
     setShowInstallPrompt(false);
     installPromptRef.current = null;
@@ -85,7 +85,7 @@ export default function App() {
     setWorkoutExId(ids[0]);
   };
 
-  const handleWorkoutComplete = (result) => {
+  const handleWorkoutComplete = () => {
     if (workoutQueue.length > 0 && workoutIndex < workoutQueue.length - 1) {
       setWorkoutIndex(prev => prev + 1);
       setWorkoutExId(workoutQueue[workoutIndex + 1]);
@@ -104,7 +104,7 @@ export default function App() {
 
   // Settings page component
   function SettingsPage() {
-    const { settings, updateSettings, logs, exercises, myExercises, setLogs, setMyExercises, setGoals } = useData();
+    const { settings, updateSettings, logs, exercises, myExercises, goals, setLogs, setMyExercises, setGoals } = useData();
     const [restMins, setRestMins] = useState(Math.floor((settings?.restSeconds || 90) / 60));
     const [restSecs, setRestSecs] = useState((settings?.restSeconds || 90) % 60);
     const [targetSets, setTargetSets] = useState(settings?.targetSets || 3);
@@ -462,8 +462,8 @@ const BODY_PART_ICONS = {
   Arms: '💪', Core: '🔥', Glutes: '🍑',
 };
 
-function Onboarding({ onComplete, onDone }) {
-  const { exercises, setExerciseList, allExercises, setOnboardingDone } = useData();
+function Onboarding({ onDone }) {
+  const { setExerciseList, allExercises, setOnboardingDone } = useData();
   const [step, setStep] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
   const [filter, setFilter] = useState('all');

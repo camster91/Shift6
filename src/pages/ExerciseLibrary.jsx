@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Plus, Check, Search, Dumbbell, X } from 'lucide-react';
 import { useData } from '../hooks/useData';
-import { EXERCISES, COLOR_MAP, BODY_PARTS, EQUIPMENT_TYPES } from '../data/exercises';
+import { EXERCISES, COLOR_MAP, BODY_PARTS } from '../data/exercises';
 
 export default function ExerciseLibrary({ onBack }) {
   const { myExercises, addExercise, removeExercise } = useData();

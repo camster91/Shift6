@@ -1,14 +1,14 @@
 import { useState, useMemo } from 'react';
-import { Plus, Dumbbell, Minus, Check, Flame, ChevronRight, Trash2, Clock, ChevronDown } from 'lucide-react';
+import { Plus, Dumbbell, Minus, Check, Flame, Trash2, Clock, ChevronDown } from 'lucide-react';
 import { useData } from '../hooks/useData';
-import { COLOR_MAP, getExercise } from '../data/exercises';
+import { COLOR_MAP } from '../data/exercises';
 
 const BODY_PART_ICONS = {
   Chest: '💪', Back: '🔙', Shoulders: '🎯', Legs: '🦵',
   Arms: '💪', Core: '🔥', Glutes: '🍑',
 };
 
-export default function LogPage({ onStartWorkout }) {
+export default function LogPage() {
   const { exercises, logSet, getTodayLogs, getBestSet, getCurrentStreak, logs, removeLog, updateLogNotes } = useData();
   const [selectedEx, setSelectedEx] = useState(null);
   const [reps, setReps] = useState(10);
@@ -92,8 +92,8 @@ export default function LogPage({ onStartWorkout }) {
           <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Quick Warm-up</p>
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
             {exercises.slice(0, 4).map(ex => {
-              const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
               const warmUpReps = Math.max(2, Math.round((ex.startReps || 10) * 0.4));
+              const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
               return (
                 <button
                   key={ex.id}
@@ -166,8 +166,6 @@ export default function LogPage({ onStartWorkout }) {
             <ChevronDown size={14} className={`text-slate-500 transition-transform ${expandedId === 'history' ? 'rotate-180' : ''}`} />
           </button>
           {expandedId === 'history' && Object.entries(logsByDate).map(([dateStr, dateLogs]) => {
-            const ex = exercises.find(e => dateLogs[0]?.exerciseId === e.id) || {};
-            const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
             return (
               <div key={dateStr} className="glass-card rounded-2xl overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/50">
@@ -234,11 +232,11 @@ export default function LogPage({ onStartWorkout }) {
           {todayLogs.length > 0 ? 'Add More Sets' : 'Start Training'}
         </p>
         {exercises.map(ex => {
-          const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
           const isSelected = selectedEx === ex.id;
           const todayCount = todayLogs.filter(l => l.exerciseId === ex.id).length;
           const best = getBestSet(ex.id);
           const icon = BODY_PART_ICONS[ex.bodyPart] || '💪';
+          const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
 
           return (
             <div key={ex.id} className={`glass-card rounded-2xl overflow-hidden transition-all ${

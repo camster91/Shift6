@@ -36,3 +36,5 @@ ios/App/App.xcodeproj/project.xcworkspace/xcuserdata
 android/app/debug.keystore
 android/shift6-release.keystore
 *.apk
+
+.jules/

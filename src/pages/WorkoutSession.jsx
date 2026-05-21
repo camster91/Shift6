@@ -82,10 +82,14 @@ function useTimer(initialSeconds) {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(intervalRef.current);
-          navigator.vibrate?.(200);
+          try { navigator.vibrate?.([200, 100, 200]); } catch (e) {}
           return 0;
         }
-        return prev - 1;
+        const next = prev - 1;
+        if (next === 10 || next === 5 || next === 3) {
+          try { navigator.vibrate?.(50); } catch (e) {}
+        }
+        return next;
       });
     }, 1000);
   }, []);
@@ -104,7 +108,7 @@ function useTimer(initialSeconds) {
   useEffect(() => () => clearInterval(intervalRef.current), []);
 
   const addTime = useCallback((secs) => {
-    setTimeLeft(prev => prev + secs);
+    setTimeLeft(prev => Math.max(1, prev + secs));
   }, []);
 
   return { timeLeft, running, start, pause, reset, setTimeLeft, addTime };
@@ -135,44 +139,112 @@ function VideoModal({ exercise, onClose }) {
   );
 }
 
+// ──────────── Swap Exercise Modal ────────────
+function SwapExerciseModal({ alternatives, onSwap, onClose }) {
+  return (
+    <div className="fixed inset-0 bg-black/80 z-[75] flex items-center justify-center p-4 animate-fade-in" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-xs shadow-2xl" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold text-white mb-1">Swap Exercise</h3>
+        <p className="text-xs text-slate-500 mb-4 font-medium">Choose a substitute exercise for this session</p>
+        <div className="space-y-2 max-h-60 overflow-y-auto mb-4 custom-scrollbar">
+          {alternatives.length === 0 ? (
+            <p className="text-sm text-slate-500 text-center py-4">No alternative exercises configured for this body part.</p>
+          ) : (
+            alternatives.map(alt => (
+              <button
+                key={alt.id}
+                onClick={() => onSwap(alt.id)}
+                className="w-full text-left p-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-bold text-sm transition-colors border border-slate-700/30 flex items-center justify-between active:scale-95"
+              >
+                <span>{alt.name}</span>
+                <span className="text-[10px] text-slate-500 uppercase px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700/30">{alt.equipment}</span>
+              </button>
+            ))
+          )}
+        </div>
+        <button onClick={onClose} className="w-full py-2.5 bg-slate-800 text-slate-400 hover:text-slate-300 rounded-xl text-sm font-bold">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 // ──────────── Rest Screen ────────────
-function RestScreen({ seconds, running, onFinish, onStart, onPause, onAddTime, nextExercise, colors, currentSet, totalSets }) {
+function RestScreen({
+  seconds,
+  running,
+  onFinish,
+  onStart,
+  onPause,
+  onAdjustRest,
+  nextExercise,
+  colors,
+  currentSet,
+  totalSets,
+  sessionTargetReps,
+  restAdjustmentText
+}) {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1 p-8">
-      <p className="text-sm text-slate-400 mb-2">{t('workout.rest')} — {t('workout.set')} {currentSet} {t('workout.setOf')} {totalSets}</p>
-      <div className="relative mb-8">
-        <div className={`w-44 h-44 rounded-full border-4 flex items-center justify-center transition-colors ${seconds <= 10 ? 'border-orange-500/50' : 'border-slate-800'}`}>
-          <span className={`text-5xl font-black ${seconds <= 10 ? 'text-orange-400' : 'text-white'}`}>{mins}:{secs.toString().padStart(2, '0')}</span>
+    <div className="flex flex-col items-center justify-center flex-1 p-6 text-center max-w-sm mx-auto w-full animate-fade-in">
+      <div className="mb-4">
+        <span className="text-xs uppercase font-bold text-slate-500 tracking-widest">{t('workout.rest')}</span>
+        <h3 className="text-lg font-black text-white mt-1">
+          Next Up: Set {currentSet} of {totalSets} · <span className={colors.text}>{sessionTargetReps} reps</span>
+        </h3>
+      </div>
+
+      {restAdjustmentText && (
+        <div className="mb-6 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-805 text-xs font-semibold text-cyan-400 flex items-center justify-center gap-1.5 animate-pulse">
+          {restAdjustmentText}
+        </div>
+      )}
+
+      <div className="relative mb-6">
+        <div className={`w-40 h-40 rounded-full border-4 flex items-center justify-center transition-all ${seconds <= 10 ? 'border-orange-500/50 shadow-lg shadow-orange-500/5' : 'border-slate-800'}`}>
+          <span className={`text-4xl font-black ${seconds <= 10 ? 'text-orange-400' : 'text-white'}`}>{mins}:{secs.toString().padStart(2, '0')}</span>
         </div>
         {seconds <= 10 && (
-          <p className="text-center text-orange-400 text-xs mt-2 animate-pulse">Almost done!</p>
+          <p className="text-center text-orange-400 text-xs mt-2 font-bold animate-bounce">Ready up!</p>
         )}
       </div>
-      <div className="flex gap-3 mb-6">
+
+      {/* Rest adjusters */}
+      <div className="flex items-center gap-3 mb-8 bg-slate-900 border border-slate-800/80 px-4 py-2 rounded-2xl">
+        <button onClick={() => onAdjustRest(-15)} className="px-3 py-1.5 rounded-xl bg-slate-850 hover:bg-slate-800 active:scale-90 text-slate-400 font-bold text-xs border border-slate-700/30 transition-all flex items-center">
+          <Minus size={12} className="mr-0.5" /> 15s
+        </button>
+        <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Adjust Rest</span>
+        <button onClick={() => onAdjustRest(15)} className="px-3 py-1.5 rounded-xl bg-slate-850 hover:bg-slate-800 active:scale-90 text-slate-400 font-bold text-xs border border-slate-700/30 transition-all flex items-center">
+          <Plus size={12} className="mr-0.5" /> 15s
+        </button>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center gap-4 w-full justify-center mb-8">
         {running ? (
-          <button onClick={onPause} className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform">
-            <Pause size={24} className="text-white" />
+          <button onClick={onPause} className="w-14 h-14 rounded-full bg-slate-800 hover:bg-slate-750 flex items-center justify-center active:scale-90 transition-all border border-slate-700/40">
+            <Pause size={22} className="text-white" />
           </button>
         ) : (
-          <button onClick={onStart} className="w-14 h-14 rounded-full bg-cyan-500 flex items-center justify-center active:scale-90 transition-transform">
-            <Play size={24} className="text-white fill-current ml-1" />
+          <button onClick={onStart} className="w-14 h-14 rounded-full bg-cyan-500 hover:bg-cyan-400 flex items-center justify-center active:scale-90 transition-all shadow-lg shadow-cyan-500/20">
+            <Play size={22} className="text-white fill-current ml-1" />
           </button>
         )}
-        <button onClick={onAddTime} className="px-4 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm active:scale-90">
-          +30s
-        </button>
-        <button onClick={onFinish} className={`px-6 py-3 rounded-xl font-bold ${colors.solid} text-white active:scale-95 transition-transform`}>
+        <button onClick={onFinish} className={`px-8 py-3.5 rounded-xl font-bold ${colors.solid} text-white active:scale-95 transition-all shadow-md`}>
           {t('workout.skip')}
         </button>
       </div>
+
       {nextExercise && (
-        <div className="text-center">
-          <p className="text-xs text-slate-500 mb-1">{t('common.next')}: {nextExercise.name}</p>
-          <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center mx-auto`}>
-            <Dumbbell size={18} className={colors.text} />
+        <div className="text-center bg-slate-900/40 border border-slate-900/60 rounded-2xl p-3 w-full">
+          <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1.5">{t('common.next')}</p>
+          <div className="flex items-center gap-3 justify-center">
+            <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+              <Dumbbell size={14} className={colors.text} />
+            </div>
+            <span className="text-sm font-bold text-white">{nextExercise.name}</span>
           </div>
         </div>
       )}
@@ -182,38 +254,63 @@ function RestScreen({ seconds, running, onFinish, onStart, onPause, onAddTime, n
 
 // ──────────── Workout Session ────────────
 export default function WorkoutSession({ exerciseId, onComplete, onCancel, workoutQueue = [], workoutIndex = 0 }) {
-  const { logSet, getBestSet, getCurrentStreak, logs, settings, getLastRepsFor, updateSettings } = useData();
-  const exercise = getExercise(exerciseId);
+  const { logSet, getBestSet, getCurrentStreak, logs, settings, getLastRepsFor, updateSettings, goals, detectPlateauAndOverload, exercises, allExercises } = useData();
+  const [currentExId, setCurrentExId] = useState(exerciseId);
+  const [showSwapModal, setShowSwapModal] = useState(false);
+
+  useEffect(() => {
+    setCurrentExId(exerciseId);
+  }, [exerciseId]);
+
+  const exercise = getExercise(currentExId);
   const colors = COLOR_MAP[exercise?.color] || COLOR_MAP.cyan;
+  
+  const alternatives = (allExercises || []).filter(e => 
+    e.bodyPart === exercise?.bodyPart && 
+    e.id !== currentExId && 
+    (settings?.equippedIds || ['none']).includes(e.equipment)
+  );
 
   const [phase, setPhase] = useState('active'); // active | rest | done | choosing
   const [currentSet, setCurrentSet] = useState(1);
   const [setsCompleted, setSetsCompleted] = useState([]);
   const [currentReps, setCurrentReps] = useState(exercise?.startReps || 10);
   const [currentWeight, setCurrentWeight] = useState(0);
-
-  // Reset state when exercise changes (queue advance)
-  useEffect(() => {
-    setPhase('active');
-    setCurrentSet(1);
-    setSetsCompleted([]);
-    setCurrentWeight(0);
-    const calibrated = settings?.calibratedStartReps?.[exerciseId];
-    const last = getLastRepsFor(exerciseId);
-    setCurrentReps(calibrated ?? (last > 0 ? last : (exercise?.startReps || 10)));
-    setShowRestModal(false);
-    setAchievement(null);
-    // Keep bestReps fresh
-    const best = getBestSet(exerciseId);
-    setBestReps(best);
-  }, [exerciseId, exercise, settings, getBestSet, getLastRepsFor]);
   const [showVideo, setShowVideo] = useState(false);
   const [showRestModal, setShowRestModal] = useState(false);
   const [bestReps, setBestReps] = useState(0);
   const [achievement, setAchievement] = useState(null);
 
+  // Virtual Coach State
+  const [sessionTargetReps, setSessionTargetReps] = useState(exercise?.startReps || 10);
+  const [autoRegulated, setAutoRegulated] = useState(false);
+  const [restAdjustmentText, setRestAdjustmentText] = useState('');
+  const [coachReport, setCoachReport] = useState(null);
+
+  // Reset state when exercise changes (queue advance or swap)
+  useEffect(() => {
+    setPhase('active');
+    setCurrentSet(1);
+    setSetsCompleted([]);
+    setCurrentWeight(0);
+    const calibrated = settings?.calibratedStartReps?.[currentExId];
+    const last = getLastRepsFor(currentExId);
+    const startReps = calibrated ?? (last > 0 ? last : (exercise?.startReps || 10));
+    setCurrentReps(startReps);
+    setSessionTargetReps(startReps);
+    setAutoRegulated(false);
+    setRestAdjustmentText('');
+    setCoachReport(null);
+    setShowRestModal(false);
+    setAchievement(null);
+    // Keep bestReps fresh
+    const best = getBestSet(currentExId);
+    setBestReps(best);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentExId]);
+
   const targetSets = settings?.targetSets ?? 3;
-  const restSeconds = settings?.restTimes?.[exerciseId] ?? settings?.restSeconds ?? 90;
+  const restSeconds = settings?.restTimes?.[currentExId] ?? settings?.restSeconds ?? 90;
   const timer = useTimer(restSeconds);
 
   // Determine next exercise in queue for rest screen preview
@@ -221,18 +318,13 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     ? getExercise(workoutQueue[workoutIndex + 1])
     : null;
 
-
   // Snapshot log count before this workout (for achievement detection)
   const prevLogCount = useRef(logs.length);
 
   useEffect(() => {
-    const best = getBestSet(exerciseId);
+    const best = getBestSet(currentExId);
     setBestReps(best);
-    // Check first_workout achievement on mount
-    if (logs.length === 0 && prevLogCount.current === 0) {
-      // Will be detected on first set
-    }
-  }, [exerciseId, logs, getBestSet]);
+  }, [currentExId, logs, getBestSet]);
 
   // Wake lock
   useEffect(() => {
@@ -257,46 +349,63 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     setSetsCompleted(prev => [...prev, entry]);
 
     const newLogCount = logs.length + setsCompleted.length + 1; // +1 for this set
-    const prevBest = getBestSet(exerciseId);
+    const prevBest = getBestSet(currentExId);
     const streak = getCurrentStreak();
 
-    logSet(exerciseId, currentReps, currentWeight);
+    logSet(currentExId, currentReps, currentWeight);
 
     navigator.vibrate?.(100);
 
     // Check achievements on first set completion
     if (setsCompleted.length === 0) {
-      // First ever workout
       if (prevLogCount.current === 0) {
         setAchievement('first_workout');
-      }
-      // First PR
-      else if (currentReps > prevBest && prevBest > 0) {
+      } else if (currentReps > prevBest && prevBest > 0) {
         setAchievement('first_pr');
-      }
-      // Streak achievements
-      else if (streak >= 7) {
+      } else if (streak >= 7) {
         setAchievement('seven_day_streak');
       } else if (streak >= 3) {
         setAchievement('three_day_streak');
       }
     } else if (newLogCount >= 10 && prevLogCount.current < 10) {
-      // 10 total sets
       setAchievement('ten_sets');
     }
 
+    // Adaptive rest duration calculations
+    const pr = bestReps || prevBest || 0;
+    let nextRestTime = restSeconds;
+    let restTxt = '';
+    
+    if (pr > 0) {
+      if (currentReps >= pr) {
+        nextRestTime = restSeconds + 30;
+        restTxt = '🔥 PR matched/beaten! +30s rest for recovery.';
+      } else if (currentReps < pr * 0.6) {
+        nextRestTime = Math.max(15, restSeconds - 20);
+        restTxt = '⚡ Warm-up level. -20s rest to keep momentum.';
+      }
+    }
+    setRestAdjustmentText(restTxt);
+
+    // Auto-Regulation checks
+    let nextTarget = sessionTargetReps;
+    if (currentReps < sessionTargetReps * 0.75) {
+      nextTarget = currentReps;
+      setSessionTargetReps(currentReps);
+      setAutoRegulated(true);
+    }
+    setCurrentReps(nextTarget);
+
     // If past target sets, stay in active phase (user can keep going or finish)
     if (currentSet >= targetSets) {
-      // Don't go to done automatically — let user decide to finish or add sets
-      // Show "Add Set" and "Finish" options
       setPhase('done');
     } else {
       setCurrentSet(prev => prev + 1);
       setPhase('rest');
-      timer.reset(restSeconds);
+      timer.reset(nextRestTime);
       timer.start();
     }
-  }, [currentSet, currentReps, currentWeight, exerciseId, logs, setsCompleted, targetSets, restSeconds, getBestSet, getCurrentStreak, logSet, timer]);
+  }, [currentSet, currentReps, currentWeight, currentExId, logs, setsCompleted, targetSets, restSeconds, getBestSet, getCurrentStreak, logSet, timer, bestReps, sessionTargetReps]);
 
   // Finish rest → back to active
   const handleFinishRest = useCallback(() => {
@@ -304,9 +413,9 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     setPhase('active');
   }, [timer]);
 
-  // Add 30s to rest timer
-  const handleAddTime = useCallback(() => {
-    timer.addTime(30);
+  // Adjust rest time from buttons
+  const handleAdjustRest = useCallback((delta) => {
+    timer.addTime(delta);
     if (!timer.running) timer.start();
     navigator.vibrate?.(20);
   }, [timer]);
@@ -314,34 +423,144 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
   // Save custom rest time for this exercise
   const handleSaveRestTime = useCallback((seconds) => {
     updateSettings({
-      restTimes: { ...(settings?.restTimes || {}), [exerciseId]: seconds }
+      restTimes: { ...(settings?.restTimes || {}), [currentExId]: seconds }
     });
     timer.reset(seconds);
     setShowRestModal(false);
     navigator.vibrate?.(30);
-  }, [settings, exerciseId, timer, updateSettings]);
+  }, [settings, currentExId, timer, updateSettings]);
+
+  // Swap exercise handler
+  const handleSwapExercise = useCallback((newExerciseId) => {
+    setCurrentExId(newExerciseId);
+    setShowSwapModal(false);
+    navigator.vibrate?.(30);
+  }, []);
 
   // Cancel / Done
   const handleCancel = useCallback(() => {
     if (setsCompleted.length > 0) {
-      // Auto-calibrate baseline from this session
       const avgReps = Math.round(setsCompleted.reduce((sum, s) => sum + s.reps, 0) / setsCompleted.length);
-      const lastBest = getBestSet(exerciseId);
+      const lastBest = getBestSet(currentExId);
       const demonstrated = Math.max(avgReps, lastBest, exercise?.startReps || 10);
       const newBaseline = Math.round(demonstrated * 0.65);
-      const currentCalib = settings?.calibratedStartReps?.[exerciseId] ?? exercise?.startReps ?? 10;
+      const currentCalib = settings?.calibratedStartReps?.[currentExId] ?? exercise?.startReps ?? 10;
       if (newBaseline !== currentCalib) {
         updateSettings({
-          calibratedStartReps: { ...(settings?.calibratedStartReps || {}), [exerciseId]: newBaseline }
+          calibratedStartReps: { ...(settings?.calibratedStartReps || {}), [currentExId]: newBaseline }
         });
       }
-      onComplete?.({ exerciseId, sets: setsCompleted });
+      onComplete?.({ exerciseId: currentExId, sets: setsCompleted });
     } else {
       onCancel?.();
     }
-  }, [setsCompleted, exerciseId, exercise, settings, getBestSet, updateSettings, onCancel, onComplete]);
+  }, [setsCompleted, currentExId, exercise, settings, getBestSet, updateSettings, onCancel, onComplete]);
+
+  // Run Virtual Coach report generation when done
+  useEffect(() => {
+    if (phase === 'done' && setsCompleted.length > 0 && !coachReport) {
+      const result = detectPlateauAndOverload(currentExId, setsCompleted);
+      setCoachReport(result);
+    }
+  }, [phase, setsCompleted, currentExId, detectPlateauAndOverload, coachReport]);
 
   if (!exercise) return <div className="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center text-slate-400">{t('workout.exerciseNotFound')}</div>;
+
+  const renderTargetHUD = () => {
+    const goal = goals?.find(g => g.exerciseId === currentExId);
+    const best = bestReps || 0;
+    
+    let message = `Target: ${sessionTargetReps} reps`;
+    let badgeText = "Growth Target";
+    
+    if (goal && sessionTargetReps >= goal.targetReps) {
+      message = `Goal Target: ${goal.targetReps} reps! You're matching your goal.`;
+      badgeText = "Goal Reached";
+    } else if (best > 0 && sessionTargetReps >= best) {
+      message = `PR Target: ${best + 1} reps to set a new record!`;
+      badgeText = "Record Chase";
+    } else if (goal) {
+      message = `Coach Target: ${sessionTargetReps} reps (+1 for growth)`;
+      badgeText = "Growth";
+    } else if (best > 0) {
+      message = `Coach Target: ${sessionTargetReps} reps. PR is ${best}.`;
+      badgeText = "PR Chase";
+    } else {
+      message = `Coach Target: ${sessionTargetReps} reps. Establish your baseline!`;
+      badgeText = "Baseline";
+    }
+
+    return (
+      <div className="w-full max-w-xs bg-slate-900/80 border border-slate-800 rounded-xl p-3 mb-6 text-center animate-fade-in">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Set {currentSet} target</span>
+          <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{badgeText}</span>
+        </div>
+        <p className="text-sm font-semibold text-slate-200">{message}</p>
+        {autoRegulated && (
+          <p className="text-[10px] text-orange-400 mt-1 font-medium">⚠️ Auto-regulated: targets lowered to match capability</p>
+        )}
+      </div>
+    );
+  };
+
+  const renderCoachReportSection = () => {
+    if (!coachReport) return null;
+    
+    let title = "Session Completed";
+    let desc = "Consistency is the key to progress. Outstanding job showing up today!";
+    let bg = "bg-slate-900 border-slate-800";
+    let textCol = "text-slate-300";
+    let badge = null;
+    
+    switch (coachReport.status) {
+      case 'overload':
+        title = "Progressive Overload Achieved! 🏆";
+        desc = `You set a new Personal Record of ${coachReport.value} reps (+${coachReport.diff} improvement)! Growth stimulus unlocked.`;
+        bg = "bg-amber-500/10 border-amber-500/30";
+        textCol = "text-amber-200";
+        badge = "New PR";
+        break;
+      case 'deload':
+        title = "Plateau Break: Deload Phase 🔄";
+        desc = `We detected a plateau. Baseline auto-calibrated to ${coachReport.currentReps} reps (-15%) for active recovery. Build back stronger!`;
+        bg = "bg-orange-500/10 border-orange-500/30";
+        textCol = "text-orange-200";
+        badge = "Deload Active";
+        break;
+      case 'plateau_warning':
+        title = `Plateau Warning (${coachReport.count}/3) ⚠️`;
+        desc = "Performance is holding flat. Push hard next session to break through, or we will trigger an active recovery deload.";
+        bg = "bg-yellow-500/10 border-yellow-500/30";
+        textCol = "text-yellow-200";
+        badge = "Plateau Watch";
+        break;
+      case 'stable':
+        title = "Consistency Solidified! ⚡";
+        desc = "You hit your target volumes cleanly. Keep stacking these sessions to lay the foundation for progressive growth.";
+        bg = "bg-cyan-500/10 border-cyan-500/20";
+        textCol = "text-cyan-200";
+        badge = "On Track";
+        break;
+      default:
+        break;
+    }
+
+    return (
+      <div className={`w-full max-w-xs border rounded-2xl p-4 mb-6 text-left ${bg} animate-fade-in`}>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Virtual Coach Report</span>
+          {badge && (
+            <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-750">
+              {badge}
+            </span>
+          )}
+        </div>
+        <h4 className="text-sm font-bold text-white mb-1.5">{title}</h4>
+        <p className={`text-xs leading-relaxed ${textCol}`}>{desc}</p>
+      </div>
+    );
+  };
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
@@ -375,6 +594,8 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
 
       {phase === 'active' && (
         <div className="flex-1 flex flex-col items-center justify-center p-6">
+          {renderTargetHUD()}
+
           {/* Progress ring */}
           <div className="relative mb-6">
             <svg width={200} height={200} className="transform -rotate-90">
@@ -416,11 +637,15 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
             </div>
           </div>
 
-          {/* Quick +5 button */}
-          <button onClick={() => adjustReps(5)}
-            className="text-xs text-slate-500 hover:text-cyan-400 transition-colors mb-6">
-            +5 reps fast
-          </button>
+          {/* Quick adjustment buttons */}
+          <div className="flex items-center justify-center gap-1.5 mb-6 flex-wrap max-w-xs">
+            {[-5, -2, -1, 1, 2, 5].map(val => (
+              <button key={val} onClick={() => adjustReps(val)}
+                className="w-10 h-8 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 font-black text-xs active:scale-90 transition-transform">
+                {val > 0 ? `+${val}` : val}
+              </button>
+            ))}
+          </div>
 
           {/* Weight input (gym exercises) */}
           {!exercise.home && (
@@ -469,6 +694,12 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
               <Youtube size={12} /> Watch demo
             </button>
           )}
+
+          {/* Swap exercise */}
+          <button onClick={() => setShowSwapModal(true)}
+            className="flex items-center gap-1.5 text-xs text-cyan-500 hover:text-cyan-400 mt-4 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 font-semibold active:scale-95 transition-all">
+            Swap exercise
+          </button>
         </div>
       )}
 
@@ -479,27 +710,27 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
           onStart={timer.start}
           onPause={timer.pause}
           onFinish={handleFinishRest}
-          onAddTime={handleAddTime}
+          onAdjustRest={handleAdjustRest}
           nextExercise={nextExerciseInQueue}
           colors={colors}
           currentSet={currentSet}
           totalSets={targetSets}
+          sessionTargetReps={sessionTargetReps}
+          restAdjustmentText={restAdjustmentText}
         />
       )}
 
       {phase === 'done' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
             <Check size={36} className="text-emerald-400" />
           </div>
           <h2 className="text-2xl font-black text-white mb-2">{exercise.name}</h2>
-          <p className="text-slate-400 mb-2">{t('workout.workoutComplete')}</p>
-          {(() => {
-            const hitPR = bestReps > 0 && setsCompleted.length > 0 && Math.max(...setsCompleted.map(s => s.reps)) > bestReps;
-            if (hitPR) return <p className="text-amber-400 text-sm font-bold mb-2">New PR! 🎉</p>;
-            return null;
-          })()}
-          <div className="glass-card rounded-xl p-4 w-full max-w-xs mb-6">
+          <p className="text-slate-400 mb-4">{t('workout.workoutComplete')}</p>
+          
+          {renderCoachReportSection()}
+
+          <div className="glass-card rounded-xl p-4 w-full max-w-xs mb-6 text-left">
             {setsCompleted.map((s, i) => (
               <div key={i} className="flex justify-between py-2 border-b border-slate-800 last:border-0">
                 <span className="text-slate-400">{t('workout.set')} {i + 1}</span>
@@ -508,10 +739,10 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
             ))}
           </div>
           {setsCompleted.length < targetSets && (
-            <p className="text-xs text-slate-500 mb-4 text-center">Shortened session — great job finishing!</p>
+            <p className="text-xs text-slate-500 mb-4">Shortened session — great job finishing!</p>
           )}
           <button onClick={handleCancel}
-            className="w-full max-w-xs py-4 rounded-xl font-bold bg-cyan-500 text-white active:scale-95 transition-transform">
+            className="w-full max-w-xs py-4 rounded-xl font-bold bg-cyan-500 text-white active:scale-95 transition-transform shadow-lg shadow-cyan-500/10">
             {t('common.done')}
           </button>
         </div>
@@ -531,6 +762,14 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
           currentSeconds={restSeconds}
           onSave={handleSaveRestTime}
           onClose={() => setShowRestModal(false)}
+        />
+      )}
+
+      {showSwapModal && (
+        <SwapExerciseModal
+          alternatives={alternatives}
+          onSwap={handleSwapExercise}
+          onClose={() => setShowSwapModal(false)}
         />
       )}
     </div>

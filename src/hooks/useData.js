@@ -13,7 +13,20 @@ function save(key, data) {
 }
 
 const DEFAULT_EXERCISES = ['pushups', 'squats', 'pullups', 'plank', 'lunges', 'glute_bridge', 'supermans', 'diamond_pushups', 'tricep_dips'];
-const DEFAULT_SETTINGS = { restSeconds: 90, targetSets: 3, soundEnabled: true, vibrationEnabled: true, unit: 'lbs', theme: 'dark', restTimes: {}, calibratedStartReps: {} };
+const DEFAULT_SETTINGS = {
+  restSeconds: 90,
+  targetSets: 3,
+  soundEnabled: true,
+  vibrationEnabled: true,
+  unit: 'lbs',
+  theme: 'dark',
+  restTimes: {},
+  calibratedStartReps: {},
+  equippedIds: ['none'],
+  skillLevel: 'beginner',
+  plateaus: {},
+  streakFreezes: 1
+};
 
 export function useData() {
   const [myExercises, setMyExercises] = useState(() => load('shift6_my_exercises', DEFAULT_EXERCISES));
@@ -114,17 +127,80 @@ export function useData() {
     const days = new Set(logs.map(l => l.date.split('T')[0]));
     let streak = 0;
     const today = new Date();
+    let usedFreezes = 0;
+    const maxFreezes = settings?.streakFreezes || 0;
+
     for (let i = 0; i < 365; i++) {
-      const d = new Date(today); d.setDate(d.getDate() - i);
-      if (days.has(d.toISOString().split('T')[0])) streak++;
-      else if (i > 0) break;
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      if (days.has(dateStr)) {
+        streak++;
+      } else {
+        if (i === 0) continue; // Allow today to not be logged yet without breaking streak
+        if (usedFreezes < maxFreezes) {
+          usedFreezes++;
+        } else {
+          break;
+        }
+      }
     }
     return streak;
-  }, [logs]);
+  }, [logs, settings?.streakFreezes]);
 
   const updateSettings = useCallback((updates) => {
     setSettings(prev => ({ ...prev, ...updates }));
   }, []);
+
+  const detectPlateauAndOverload = useCallback((exerciseId, setsCompleted) => {
+    if (!setsCompleted || setsCompleted.length === 0) return { status: 'none' };
+    const best = getBestSet(exerciseId);
+    const sessionMax = Math.max(...setsCompleted.map(s => s.reps));
+
+    // Overload / PR check
+    if (best > 0 && sessionMax > best) {
+      const plateaus = { ...(settings?.plateaus || {}) };
+      delete plateaus[exerciseId];
+      updateSettings({ plateaus });
+      return { status: 'overload', value: sessionMax, diff: sessionMax - best };
+    }
+
+    // Plateau check
+    const exLogs = logs.filter(l => l.exerciseId === exerciseId)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const sessionMaxes = [];
+    const seenDates = new Set();
+    for (const log of exLogs) {
+      const dStr = log.date.split('T')[0];
+      if (!seenDates.has(dStr)) {
+        seenDates.add(dStr);
+        const dayLogs = exLogs.filter(l => l.date.startsWith(dStr));
+        sessionMaxes.push(Math.max(...dayLogs.map(l => l.reps)));
+      }
+      if (sessionMaxes.length >= 3) break;
+    }
+
+    if (sessionMaxes.length >= 3 && sessionMaxes[0] <= sessionMaxes[1] && sessionMaxes[1] <= sessionMaxes[2]) {
+      const plateaus = { ...(settings?.plateaus || {}) };
+      const currentPlat = (plateaus[exerciseId] || 0) + 1;
+      plateaus[exerciseId] = currentPlat;
+      
+      if (currentPlat >= 3) {
+        const currentCalib = settings?.calibratedStartReps?.[exerciseId] ?? getExercise(exerciseId)?.startReps ?? 10;
+        const deloaded = Math.max(2, Math.round(currentCalib * 0.85));
+        const calibratedStartReps = { ...(settings?.calibratedStartReps || {}), [exerciseId]: deloaded };
+        delete plateaus[exerciseId];
+        updateSettings({ plateaus, calibratedStartReps });
+        return { status: 'deload', currentReps: deloaded };
+      } else {
+        updateSettings({ plateaus });
+        return { status: 'plateau_warning', count: currentPlat };
+      }
+    }
+
+    return { status: 'stable' };
+  }, [logs, settings, getBestSet, updateSettings]);
 
   return {
     myExercises, exercises, logs, goals, onboardingDone, settings,
@@ -135,5 +211,6 @@ export function useData() {
     getWeeklyFrequency, getCurrentStreak, getLastRepsFor,
     allExercises: EXERCISES,
     setLogs, setMyExercises, setGoals,
+    detectPlateauAndOverload
   };
 }

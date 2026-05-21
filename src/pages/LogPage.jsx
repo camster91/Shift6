@@ -86,7 +86,7 @@ export default function LogPage() {
         </div>
       </div>
 
-      {/\* Quick warm-up presets \*/}
+      {/* Quick warm-up presets */}
       {exercises.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Quick Warm-up</p>

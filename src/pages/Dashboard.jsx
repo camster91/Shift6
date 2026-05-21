@@ -59,9 +59,10 @@ function StreakBadge({ streak }) {
 }
 
 // ──────────── Exercise Card ────────────
-function ExerciseCard({ exercise, bestReps, bestWeight, logsCount, progress, onQuickStart, onRemove }) {
+function ExerciseCard({ exercise, bestReps, bestWeight, logsCount, progress, reason, onQuickStart, onRemove }) {
   const colors = COLOR_MAP[exercise.color] || COLOR_MAP.cyan;
   const icon = BODY_PART_ICONS[exercise.bodyPart] || '💪';
+
 
   return (
     <div className={`glass-card rounded-2xl overflow-hidden animate-fade-in group relative`}>
@@ -82,6 +83,11 @@ function ExerciseCard({ exercise, bestReps, bestWeight, logsCount, progress, onQ
                 {exercise.bodyPart}
               </span>
             </div>
+            {reason && (
+              <p className="text-[10px] text-cyan-400 font-medium mb-1 flex items-center gap-1">
+                <span>⏱️</span> {reason}
+              </p>
+            )}
             <div className="flex gap-3 text-xs text-slate-500">
               <span>{t('common.best')}: <span className={`font-semibold ${colors.text}`}>{bestReps} rep{bestReps !== 1 ? 's' : ''}</span></span>
               {bestWeight > 0 && <span>· <span className={colors.text}>{bestWeight} {t('common.lbs')}</span></span>}
@@ -296,24 +302,37 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
         </div>
       )}
 
-      {/* ── Start Workout ── */}
+      {/* ── Start Workout CTAs ── */}
       {exercises.length > 0 && (
-        <button
-          onClick={() => { navigator.vibrate?.(30); onStartWorkout?.(); }}
-          className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl py-4 font-bold text-white shadow-lg shadow-cyan-500/20 active:scale-98 transition-all flex items-center justify-center gap-2"
-        >
-                  <Zap size={20} className="fill-current" />
-          {nextUpExercise ? nextUpExercise.name : t('dashboard.startWorkout')}
-          {nextUpExercise && nextUpExercise.lastLogDate === 0 && (
-            <span className="text-cyan-200 text-sm font-normal"> · first time</span>
+        <div className="space-y-2">
+          {/* Primary CTA: Train single oldest exercise */}
+          {nextUpExercise && (
+            <button
+              onClick={() => { navigator.vibrate?.(30); onViewExercise?.(nextUpExercise.id); }}
+              className="w-full bg-cyan-500 rounded-2xl py-4 font-bold text-white shadow-lg shadow-cyan-500/10 active:scale-98 transition-all flex items-center justify-center gap-2"
+            >
+              <Play size={18} className="fill-current" />
+              Train {nextUpExercise.name}
+              {nextUpExercise.lastLogDate === 0 ? (
+                <span className="text-cyan-200 text-xs font-normal bg-cyan-600/40 px-2 py-0.5 rounded-full border border-cyan-400/20">Baseline calibration</span>
+              ) : (
+                <span className="text-cyan-200 text-xs font-normal bg-cyan-600/40 px-2 py-0.5 rounded-full border border-cyan-400/20">{getDaysSince(nextUpExercise.lastLogDate)}</span>
+              )}
+            </button>
           )}
-          {nextUpExercise && nextUpExercise.lastLogDate > 0 && (
-            <span className="text-cyan-200 text-sm font-normal"> · {getDaysSince(nextUpExercise.lastLogDate)}</span>
-          )}
-        </button>
+
+          {/* Secondary CTA: Balanced Routine Stack */}
+          <button
+            onClick={() => { navigator.vibrate?.(30); onStartWorkout?.(); }}
+            className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3.5 font-bold text-slate-300 active:scale-98 transition-all flex items-center justify-center gap-2 hover:bg-slate-800/50"
+          >
+            <Zap size={16} className="text-yellow-400 fill-yellow-400" />
+            Start Balanced Routine
+            <span className="text-slate-500 text-xs font-normal">({exercises.length} exercises)</span>
+          </button>
+        </div>
       )}
 
-      {/* ── Your Exercises ── */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('dashboard.yourExercises')}</h2>
@@ -323,19 +342,37 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
           </button>
         </div>
 
+        <p className="text-[10px] text-slate-500 leading-normal mb-1">
+          💡 Exercises are automatically sorted oldest-trained first to ensure balanced muscular development.
+        </p>
+
         <div className="space-y-2">
-          {exerciseStats.map((ex) => (
-            <ExerciseCard
-              key={ex.id}
-              exercise={ex}
-              bestReps={ex.bestReps}
-              bestWeight={ex.bestWeight}
-              logsCount={ex.logsCount}
-              progress={ex.bestReps > 0 ? Math.min(1, ex.bestReps / (ex.startReps * 2)) : 0}
-              onQuickStart={(id) => { navigator.vibrate?.(20); onViewExercise?.(id); }}
-              onRemove={handleRemoveExercise}
-            />
-          ))}
+          {exerciseStats.map((ex, idx) => {
+            let reason = '';
+            if (ex.lastLogDate === 0) {
+              reason = 'Never trained yet — priority focus';
+            } else {
+              const days = Math.floor((Date.now() - ex.lastLogDate) / 864e5);
+              if (days === 0) {
+                reason = 'Trained today';
+              } else {
+                reason = `Unused for ${days} day${days > 1 ? 's' : ''}`;
+              }
+            }
+            return (
+              <ExerciseCard
+                key={ex.id}
+                exercise={ex}
+                bestReps={ex.bestReps}
+                bestWeight={ex.bestWeight}
+                logsCount={ex.logsCount}
+                progress={ex.bestReps > 0 ? Math.min(1, ex.bestReps / (ex.startReps * 2)) : 0}
+                reason={reason}
+                onQuickStart={(id) => { navigator.vibrate?.(20); onViewExercise?.(id); }}
+                onRemove={handleRemoveExercise}
+              />
+            );
+          })}
         </div>
 
         {exercises.length === 0 && (
@@ -351,6 +388,27 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
             </button>
           </div>
         )}
+      </div>
+
+      {/* ── Coach Quick Tip Card ── */}
+      <div className="glass-card rounded-2xl p-4 border border-cyan-500/10 flex items-start gap-3 mt-4">
+        <span className="text-xl p-1 bg-cyan-500/10 rounded-lg">🤖</span>
+        <div className="space-y-1">
+          <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Coach Insights</p>
+          <p className="text-xs text-slate-400 leading-relaxed font-medium animate-pulse-slow">
+            {useMemo(() => {
+              const tips = [
+                "Progressive overload means doing +1 rep or adding a bit of weight. Slow, steady progress is key.",
+                "Focus on form! A slow, controlled negative phase builds more muscle than throwing weights.",
+                "Rest times are dynamic. If you crushed a PR, take an extra 30s to let your ATP stores fully recover.",
+                "Consistency beats intensity. Logging 3 small workouts a week is better than one massive exhausting session.",
+                "Keep your core locked during pushups and planks to protect your lower back and maximize tension.",
+                "Squat deep—aim for your thighs to be parallel to the ground to recruit all glute and quad fibers."
+              ];
+              return tips[Math.floor(Math.random() * tips.length)];
+            }, [])}
+          </p>
+        </div>
       </div>
 
       <QuickStartFAB visible={exercises.length > 0} onClick={() => onStartWorkout?.()} />

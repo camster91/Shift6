@@ -29,6 +29,16 @@ async function run() {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 2 });
 
+    page.on('console', msg => {
+        const type = msg.type();
+        if (type === 'error' || type === 'warning' || type === 'log') {
+            console.log(`PAGE [${type.toUpperCase()}]:`, msg.text());
+        }
+    });
+    page.on('pageerror', err => {
+        console.error('PAGE EXCEPTION:', err.stack || err.message || err);
+    });
+
     try {
         console.log('Waiting for dev server...');
         await waitForServer(page);
@@ -36,24 +46,31 @@ async function run() {
 
         // === ONBOARDING ===
         console.log('\n[1] Onboarding');
-        await capture(page, '01-welcome');
+        await capture(page, '01-step1-equipment');
 
-        await page.click('button:has-text("Get Started")');
-        await page.waitForTimeout(1500);
-        await capture(page, '02-exercise-picker');
-
-        await page.click('button:has-text("Push-Ups")');
-        await page.waitForTimeout(300);
-        await page.click('button:has-text("Bodyweight Squats")');
-        await page.waitForTimeout(300);
-        await capture(page, '03-exercises-selected');
-
-        const startBtn = page.locator('button').filter({ hasText: /Start with/ });
-        await startBtn.click();
+        // Step 1: Equipment Selection. Click Continue.
+        await page.click('button:has-text("Continue")');
         await page.waitForTimeout(1000);
-        await page.evaluate(() => window.location.reload());
-        await page.waitForTimeout(3000);
-        await capture(page, '04-dashboard');
+        await capture(page, '02-step2-experience');
+
+        // Step 2: Experience level. Click "Intermediate" option, then click Continue.
+        await page.click('button:has-text("Intermediate")');
+        await page.waitForTimeout(300);
+        await page.click('button:has-text("Continue")');
+        await page.waitForTimeout(1000);
+        await capture(page, '03-step3-calibration');
+
+        // Step 3: Calibration. Click Continue.
+        await page.click('button:has-text("Continue")');
+        await page.waitForTimeout(1000);
+        await capture(page, '04-step4-routine');
+
+        // Step 4: Routine selection. Click Build Routine.
+        await page.click('button:has-text("Build Routine")');
+        await page.waitForTimeout(2000);
+        
+        // Reloader if needed, or just let it transition
+        await capture(page, '05-dashboard');
 
         // === HOME DASHBOARD ===
         console.log('\n[2] Dashboard');
@@ -61,59 +78,72 @@ async function run() {
         console.log('  Preview:', dashText.slice(0, 150).replace(/\s+/g, ' '));
 
         // Start a workout
-        const workoutBtn = page.locator('button').filter({ hasText: /Start Workout/ }).first();
+        const workoutBtn = page.locator('button').filter({ hasText: /^Train / }).first();
         if (await workoutBtn.isVisible()) {
             await workoutBtn.click();
             await page.waitForTimeout(2000);
-            await capture(page, '05-workout-active');
+            await capture(page, '06-workout-active');
 
             // Complete set 1
             const completeBtn = page.locator('button').filter({ hasText: 'Complete Set' });
-            if (await completeBtn.isVisible()) {
-                await completeBtn.click();
-                await page.waitForTimeout(1500);
-                await capture(page, '06-rest-screen');
+            await completeBtn.waitFor({ state: 'visible', timeout: 5000 });
+            await completeBtn.click();
+            await page.waitForTimeout(1500);
+            await capture(page, '07-rest-screen');
 
-                // Dismiss any modal overlay first
-                const keepGoingBtn = page.locator('button').filter({ hasText: 'Keep Going' });
-                if (await keepGoingBtn.isVisible()) {
-                    await keepGoingBtn.click();
-                    await page.waitForTimeout(500);
-                }
-
-                // Skip rest
-                const skipBtn = page.locator('button').filter({ hasText: 'Skip' });
-                if (await skipBtn.isVisible()) {
-                    await skipBtn.click();
-                    await page.waitForTimeout(500);
-                }
-
-                // Complete sets 2 and 3
-                for (let i = 0; i < 2; i++) {
-                    const cb = page.locator('button').filter({ hasText: 'Complete Set' });
-                    if (await cb.isVisible()) {
-                        await cb.click();
-                        await page.waitForTimeout(800);
-                        // Dismiss modal if it appears
-                        const kg = page.locator('button').filter({ hasText: 'Keep Going' });
-                        if (await kg.isVisible()) { await kg.click(); await page.waitForTimeout(500); }
-                        const sk = page.locator('button').filter({ hasText: 'Skip' });
-                        if (await sk.isVisible()) { await sk.click(); await page.waitForTimeout(500); }
-                    }
-                }
-                await capture(page, '07-workout-complete');
+            // Dismiss achievement popup if it appears
+            const keepGoingBtn = page.locator('button').filter({ hasText: 'Keep Going' });
+            try {
+                await keepGoingBtn.waitFor({ state: 'visible', timeout: 2000 });
+                await keepGoingBtn.click();
+                await page.waitForTimeout(500);
+            } catch (e) {
+                // No achievement popup, that's fine
             }
+
+            // Skip rest
+            const skipBtn = page.locator('button').filter({ hasText: 'Skip' });
+            try {
+                await skipBtn.waitFor({ state: 'visible', timeout: 2000 });
+                await skipBtn.click();
+                await page.waitForTimeout(500);
+            } catch (e) {
+                // Rest screen skip not found or already skipped
+            }
+
+            // Complete sets 2 and 3
+            // Set 2
+            await completeBtn.waitFor({ state: 'visible', timeout: 5000 });
+            await completeBtn.click();
+            await page.waitForTimeout(1000);
+            try {
+                await skipBtn.waitFor({ state: 'visible', timeout: 2000 });
+                await skipBtn.click();
+                await page.waitForTimeout(500);
+            } catch (e) {}
+
+            // Set 3 (Final set)
+            await completeBtn.waitFor({ state: 'visible', timeout: 5000 });
+            await completeBtn.click();
+            await page.waitForTimeout(1500);
+
+            await capture(page, '08-workout-complete');
+
+            // Click Done button to return to dashboard
+            const doneBtn = page.locator('button').filter({ hasText: 'Done' });
+            await doneBtn.waitFor({ state: 'visible', timeout: 5000 });
+            await doneBtn.click();
+            await page.waitForTimeout(1000);
         }
 
         // === TAB NAVIGATION ===
         console.log('\n[3] Tab navigation');
         for (const tab of ['Log', 'Goals', 'Progress']) {
             const tabBtn = page.locator('button').filter({ hasText: new RegExp(`^${tab}$`) });
-            if (await tabBtn.isVisible()) {
-                await tabBtn.click();
-                await page.waitForTimeout(800);
-                await capture(page, `08-${tab.toLowerCase()}-tab`);
-            }
+            await tabBtn.waitFor({ state: 'visible', timeout: 5000 });
+            await tabBtn.click();
+            await page.waitForTimeout(800);
+            await capture(page, `08-${tab.toLowerCase()}-tab`);
         }
 
         // === EXERCISE LIBRARY ===

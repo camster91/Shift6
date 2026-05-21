@@ -15,6 +15,7 @@ export const en = {
     reps: 'reps',
     lbs: 'lbs',
     sets: 'sets',
+    set: 'Set',
     best: 'Best',
     next: 'Next',
     dayStreak: 'day streak',

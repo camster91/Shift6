@@ -82,12 +82,12 @@ function useTimer(initialSeconds) {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(intervalRef.current);
-          try { navigator.vibrate?.([200, 100, 200]); } catch (e) {}
+          try { navigator.vibrate?.([200, 100, 200]); } catch (e) { /* ignore */ }
           return 0;
         }
         const next = prev - 1;
         if (next === 10 || next === 5 || next === 3) {
-          try { navigator.vibrate?.(50); } catch (e) {}
+          try { navigator.vibrate?.(50); } catch (e) { /* ignore */ }
         }
         return next;
       });
@@ -254,7 +254,7 @@ function RestScreen({
 
 // ──────────── Workout Session ────────────
 export default function WorkoutSession({ exerciseId, onComplete, onCancel, workoutQueue = [], workoutIndex = 0 }) {
-  const { logSet, getBestSet, getCurrentStreak, logs, settings, getLastRepsFor, updateSettings, goals, detectPlateauAndOverload, exercises, allExercises } = useData();
+  const { logSet, getBestSet, getCurrentStreak, logs, settings, getLastRepsFor, updateSettings, goals, detectPlateauAndOverload, allExercises } = useData();
   const [currentExId, setCurrentExId] = useState(exerciseId);
   const [showSwapModal, setShowSwapModal] = useState(false);
 

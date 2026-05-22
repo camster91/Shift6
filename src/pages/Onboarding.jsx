@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dumbbell, Check, ChevronRight, ChevronLeft, ShieldAlert, Award } from 'lucide-react';
+import { Check, ChevronRight, ChevronLeft, Award } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP, EQUIPMENT_TYPES } from '../data/exercises';
 
@@ -192,7 +192,7 @@ export default function Onboarding({ onDone }) {
               <div>
                 <h1 className="text-3xl font-black mb-2 text-white">Your experience level?</h1>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  We'll auto-regulate your set targets and baseline recovery timer.
+                  We&apos;ll auto-regulate your set targets and baseline recovery timer.
                 </p>
               </div>
 
@@ -251,7 +251,7 @@ export default function Onboarding({ onDone }) {
           {step === 2 && (
             <div className="animate-slide-up space-y-6">
               <div>
-                <h1 className="text-3xl font-black mb-2 text-white">Let's calibrate your targets</h1>
+                <h1 className="text-3xl font-black mb-2 text-white">Let&apos;s calibrate your targets</h1>
                 <p className="text-sm text-slate-400 leading-relaxed">
                   Perform a quick mental calibration or enter your max consecutive clean reps of a baseline exercise.
                 </p>
@@ -315,7 +315,7 @@ export default function Onboarding({ onDone }) {
                   <div className="space-y-1">
                     <p className="text-xs font-bold text-white">Coaching Calibration Active</p>
                     <p className="text-xs text-slate-400 leading-relaxed">
-                      We'll set your initial {testExerciseId === 'pushups' ? 'Push-Ups' : testExerciseId === 'squats' ? 'Squats' : 'Plank'} target to{' '}
+                      We&apos;ll set your initial {testExerciseId === 'pushups' ? 'Push-Ups' : testExerciseId === 'squats' ? 'Squats' : 'Plank'} target to{' '}
                       <span className="text-cyan-400 font-bold">{Math.max(2, Math.round(maxReps * 0.65))} {testExerciseId === 'plank' ? 'seconds' : 'reps'}</span>{' '}
                       (65% of max). This guarantees consistent, safe volume accumulation.
                     </p>

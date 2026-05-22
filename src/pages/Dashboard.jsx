@@ -347,7 +347,7 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
         </p>
 
         <div className="space-y-2">
-          {exerciseStats.map((ex, idx) => {
+          {exerciseStats.map((ex) => {
             let reason = '';
             if (ex.lastLogDate === 0) {
               reason = 'Never trained yet — priority focus';

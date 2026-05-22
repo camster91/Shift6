@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Vibrate, Volume2, Smartphone } from 'lucide-react';
-import { Play, BarChart3, Target, Dumbbell, Plus, Check } from 'lucide-react';
+import { Play, BarChart3, Target, Dumbbell, Plus } from 'lucide-react';
 import { useData } from './hooks/useData';
 import { t } from './i18n';
 import Dashboard from './pages/Dashboard';
@@ -9,7 +9,6 @@ import GoalsPage from './pages/GoalsPage';
 import ProgressPage from './pages/ProgressPage';
 import ExerciseLibrary from './pages/ExerciseLibrary';
 import WorkoutSession from './pages/WorkoutSession';
-import { COLOR_MAP } from './data/exercises';
 import Onboarding from './pages/Onboarding';
 
 

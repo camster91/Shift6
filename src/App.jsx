@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Vibrate, Volume2, Smartphone } from 'lucide-react';
+import { Vibrate, Volume2, Smartphone, Bell } from 'lucide-react';
 import { Play, BarChart3, Target, Dumbbell, Plus } from 'lucide-react';
 import { useData } from './hooks/useData';
 import { t } from './i18n';
+import { trackEvent, Events } from './utils/analytics.js';
+import { requestNotificationPermission, scheduleWorkoutReminder, cancelWorkoutReminder } from './utils/notifications.js';
 import Dashboard from './pages/Dashboard';
 import LogPage from './pages/LogPage';
 import GoalsPage from './pages/GoalsPage';
@@ -62,6 +64,7 @@ export default function App() {
 
   const handleStartWorkout = (exerciseId) => {
     setWorkoutExId(exerciseId);
+    trackEvent(Events.WORKOUT_START, { exercise_id: exerciseId, mode: 'single' });
   };
 
   const handleStartStack = () => {
@@ -84,6 +87,7 @@ export default function App() {
     setWorkoutQueue(ids);
     setWorkoutIndex(0);
     setWorkoutExId(ids[0]);
+    trackEvent(Events.WORKOUT_START, { exercise_count: ids.length, mode: 'stack' });
   };
 
   const handleWorkoutComplete = () => {
@@ -94,6 +98,7 @@ export default function App() {
       setWorkoutExId(null);
       setWorkoutQueue([]);
       setWorkoutIndex(0);
+      trackEvent(Events.WORKOUT_COMPLETE, { exercises_completed: workoutQueue.length });
     }
   };
 
@@ -317,6 +322,60 @@ export default function App() {
               <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${theme === 'dark' ? 'left-6' : 'left-1'}`} />
             </button>
           </div>
+        </div>
+
+        {/* Notifications */}
+        <div className="glass-card rounded-2xl p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Reminders</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Bell size={18} className="text-slate-400" />
+              <div>
+                <p className="text-sm text-white font-medium">Daily workout reminder</p>
+                <p className="text-xs text-slate-500">{settings?.notificationsEnabled ? `Scheduled at ${String(settings?.notificationHour||7).padStart(2,'0')}:${String(settings?.notificationMinute||0).padStart(2,'0')}` : 'Off'}</p>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                const next = !settings?.notificationsEnabled;
+                if (next) {
+                  const granted = await requestNotificationPermission();
+                  if (!granted) { alert('Notification permission denied. Enable it in device settings.'); return; }
+                  await scheduleWorkoutReminder(settings?.notificationHour || 7, settings?.notificationMinute || 0);
+                  trackEvent(Events.NOTIFICATION_ENABLED);
+                } else {
+                  await cancelWorkoutReminder();
+                }
+                updateSettings({ notificationsEnabled: next });
+                if (settings?.vibrationEnabled) navigator.vibrate?.(30);
+              }}
+              className={`w-12 h-7 rounded-full transition-colors relative ${settings?.notificationsEnabled ? 'bg-cyan-500' : 'bg-slate-700'}`}
+            >
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${settings?.notificationsEnabled ? 'left-6' : 'left-1'}`} />
+            </button>
+          </div>
+          {settings?.notificationsEnabled && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-500">Time</span>
+              <div className="flex items-center gap-2 bg-slate-800 rounded-xl p-2 flex-1">
+                <input type="number" min="0" max="23" value={settings?.notificationHour || 7}
+                  onChange={async e => {
+                    const h = Math.max(0, Math.min(23, parseInt(e.target.value) || 0));
+                    updateSettings({ notificationHour: h });
+                    await scheduleWorkoutReminder(h, settings?.notificationMinute || 0);
+                  }}
+                  className="w-12 bg-transparent text-center text-white font-bold text-lg" />
+                <span className="text-slate-500 text-sm">:</span>
+                <input type="number" min="0" max="59" step="5" value={settings?.notificationMinute || 0}
+                  onChange={async e => {
+                    const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                    updateSettings({ notificationMinute: m });
+                    await scheduleWorkoutReminder(settings?.notificationHour || 7, m);
+                  }}
+                  className="w-14 bg-transparent text-center text-white font-bold text-lg" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Stats summary */}

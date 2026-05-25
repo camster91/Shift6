@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { EXERCISES, getExercise } from '../data/exercises';
+import { trackEvent, Events } from '../utils/analytics.js';
+import { scheduleWorkoutReminder, cancelWorkoutReminder } from '../utils/notifications.js';
 
 function load(key, fallback) {
   try {
@@ -25,7 +27,10 @@ const DEFAULT_SETTINGS = {
   equippedIds: ['none'],
   skillLevel: 'beginner',
   plateaus: {},
-  streakFreezes: 1
+  streakFreezes: 1,
+  notificationsEnabled: false,
+  notificationHour: 7,
+  notificationMinute: 0,
 };
 
 export function useData() {
@@ -62,6 +67,7 @@ export function useData() {
       date: new Date().toISOString(), notes: notes || '',
     };
     setLogs(prev => [...prev, entry]);
+    trackEvent(Events.SET_COMPLETE, { exercise_id: exerciseId, reps, weight: weight || 0 });
     return entry;
   }, []);
 

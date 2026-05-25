@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, Check, X, Dumbbell, Youtube, Plus, Minus, Settings } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Play, Pause, Check, X, Dumbbell, Youtube, Plus, Minus, Settings, ChevronRight, RotateCcw } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP, getExercise } from '../data/exercises';
 import { t } from '../i18n';
@@ -50,7 +50,6 @@ function RestSettingsModal({ currentExId, currentSeconds, onSave, onClose }) {
 }
 
 // ──────────── Achievement Celebration ────────────
-
 function AchievementPopup({ achievement, onDismiss }) {
   const key = `achievements.${achievement}`;
   const title = t(`${key}.title`);
@@ -64,10 +63,7 @@ function AchievementPopup({ achievement, onDismiss }) {
         <div className="text-6xl mb-4">{emoji}</div>
         <h3 className="text-xl font-black text-white mb-2">{title}</h3>
         <p className="text-slate-400 text-sm mb-6">{message}</p>
-        <button
-          onClick={onDismiss}
-          className="w-full py-3 bg-cyan-500 text-white rounded-xl font-bold active:scale-95 transition-transform"
-        >
+        <button onClick={onDismiss} className="w-full py-3 bg-cyan-500 text-white rounded-xl font-bold active:scale-95 transition-transform">
           {t('workout.keepGoing')}
         </button>
       </div>
@@ -156,11 +152,8 @@ function SwapExerciseModal({ alternatives, onSwap, onClose }) {
             <p className="text-sm text-slate-500 text-center py-4">No alternative exercises configured for this body part.</p>
           ) : (
             alternatives.map(alt => (
-              <button
-                key={alt.id}
-                onClick={() => onSwap(alt.id)}
-                className="w-full text-left p-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-bold text-sm transition-colors border border-slate-700/30 flex items-center justify-between active:scale-95"
-              >
+              <button key={alt.id} onClick={() => onSwap(alt.id)}
+                className="w-full text-left p-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-bold text-sm transition-colors border border-slate-700/30 flex items-center justify-between active:scale-95">
                 <span>{alt.name}</span>
                 <span className="text-[10px] text-slate-500 uppercase px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700/30">{alt.equipment}</span>
               </button>
@@ -173,86 +166,114 @@ function SwapExerciseModal({ alternatives, onSwap, onClose }) {
   );
 }
 
+// ──────────── Timer Ring ────────────
+function TimerRing({ seconds, colorHex, running }) {
+  const initialRef = useRef(Math.max(seconds, 1));
+  if (seconds > initialRef.current) initialRef.current = seconds;
+  const total = initialRef.current;
+  const pct = total > 0 ? Math.max(0, seconds / total) : 0;
+  const circ = 2 * Math.PI * 85;
+  const offset = circ * (1 - pct);
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+
+  return (
+    <div className="relative w-48 h-48 mx-auto">
+      <svg width={192} height={192} className="transform -rotate-90">
+        <circle cx={96} cy={96} r={85} fill="none" stroke="rgba(30,41,59,0.3)" strokeWidth={10} />
+        <circle cx={96} cy={96} r={85} fill="none" stroke={colorHex} strokeWidth={10}
+          strokeDasharray={circ} strokeDashoffset={offset}
+          strokeLinecap="round" style={{ transition: running ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.3s ease' }}
+          filter={`drop-shadow(0 0 8px ${colorHex}50)`} />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="text-center">
+          <p className={`text-6xl font-black tabular-nums ${seconds <= 10 ? 'text-orange-400' : 'text-white'}`}>
+            {mins}:{secs.toString().padStart(2, '0')}
+          </p>
+          {running && (
+            <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-wider">Resting</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ──────────── Rest Screen ────────────
 function RestScreen({
-  seconds,
-  running,
-  onFinish,
-  onStart,
-  onPause,
-  onAdjustRest,
-  nextExercise,
-  colors,
-  currentSet,
-  totalSets,
-  sessionTargetReps,
-  restAdjustmentText
+  seconds, running, onFinish, onStart, onPause, onAdjustRest,
+  nextExercise, colors, currentSet, totalSets, sessionTargetReps, restAdjustmentText
 }) {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1 p-6 text-center max-w-sm mx-auto w-full animate-fade-in">
+    <div className="flex flex-col flex-1 p-6 text-center max-w-sm mx-auto w-full animate-fade-in">
+      {/* Next set info */}
       <div className="mb-4">
-        <span className="text-xs uppercase font-bold text-slate-500 tracking-widest">{t('workout.rest')}</span>
+        <p className="text-xs uppercase font-bold text-slate-500 tracking-widest">{t('workout.rest')}</p>
         <h3 className="text-lg font-black text-white mt-1">
-          Next Up: Set {currentSet} of {totalSets} · <span className={colors.text}>{sessionTargetReps} reps</span>
+          Next: Set {currentSet} of {totalSets} · <span className={colors.text}>{sessionTargetReps} reps</span>
         </h3>
       </div>
 
       {restAdjustmentText && (
-        <div className="mb-6 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-805 text-xs font-semibold text-cyan-400 flex items-center justify-center gap-1.5 animate-pulse">
+        <div className="mb-4 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-cyan-400 flex items-center justify-center gap-1.5 animate-pulse">
           {restAdjustmentText}
         </div>
       )}
 
-      <div className="relative mb-6">
-        <div className={`w-40 h-40 rounded-full border-4 flex items-center justify-center transition-all ${seconds <= 10 ? 'border-orange-500/50 shadow-lg shadow-orange-500/5' : 'border-slate-800'}`}>
-          <span className={`text-4xl font-black ${seconds <= 10 ? 'text-orange-400' : 'text-white'}`}>{mins}:{secs.toString().padStart(2, '0')}</span>
-        </div>
-        {seconds <= 10 && (
-          <p className="text-center text-orange-400 text-xs mt-2 font-bold animate-bounce">Ready up!</p>
-        )}
-      </div>
+      {/* Timer */}
+      <TimerRing seconds={seconds} colorHex={colors.hex} running={running} />
 
-      {/* Rest adjusters */}
-      <div className="flex items-center gap-3 mb-8 bg-slate-900 border border-slate-800/80 px-4 py-2 rounded-2xl">
-        <button onClick={() => onAdjustRest(-15)} className="px-3 py-1.5 rounded-xl bg-slate-850 hover:bg-slate-800 active:scale-90 text-slate-400 font-bold text-xs border border-slate-700/30 transition-all flex items-center">
-          <Minus size={12} className="mr-0.5" /> 15s
-        </button>
-        <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Adjust Rest</span>
-        <button onClick={() => onAdjustRest(15)} className="px-3 py-1.5 rounded-xl bg-slate-850 hover:bg-slate-800 active:scale-90 text-slate-400 font-bold text-xs border border-slate-700/30 transition-all flex items-center">
-          <Plus size={12} className="mr-0.5" /> 15s
-        </button>
-      </div>
-
-      {/* Controls */}
-      <div className="flex items-center gap-4 w-full justify-center mb-8">
-        {running ? (
-          <button onClick={onPause} className="w-14 h-14 rounded-full bg-slate-800 hover:bg-slate-750 flex items-center justify-center active:scale-90 transition-all border border-slate-700/40">
-            <Pause size={22} className="text-white" />
-          </button>
-        ) : (
-          <button onClick={onStart} className="w-14 h-14 rounded-full bg-cyan-500 hover:bg-cyan-400 flex items-center justify-center active:scale-90 transition-all shadow-lg shadow-cyan-500/20">
-            <Play size={22} className="text-white fill-current ml-1" />
-          </button>
-        )}
-        <button onClick={onFinish} className={`px-8 py-3.5 rounded-xl font-bold ${colors.solid} text-white active:scale-95 transition-all shadow-md`}>
-          {t('workout.skip')}
-        </button>
-      </div>
-
-      {nextExercise && (
-        <div className="text-center bg-slate-900/40 border border-slate-900/60 rounded-2xl p-3 w-full">
-          <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1.5">{t('common.next')}</p>
-          <div className="flex items-center gap-3 justify-center">
-            <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
-              <Dumbbell size={14} className={colors.text} />
-            </div>
-            <span className="text-sm font-bold text-white">{nextExercise.name}</span>
-          </div>
-        </div>
+      {seconds <= 10 && running && (
+        <p className="text-orange-400 text-sm font-bold animate-bounce mt-3">Ready up!</p>
       )}
+
+      {/* Adjusters */}
+      <div className="flex items-center justify-center gap-2 mt-6">
+        <button onClick={() => onAdjustRest(-15)} className="w-14 h-14 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center active:scale-90 transition-all">
+          <Minus size={18} className="text-slate-400" />
+          <span className="sr-only">-15s</span>
+        </button>
+        <span className="text-[10px] text-slate-600 font-bold uppercase tracking-wider px-2">Adjust</span>
+        <button onClick={() => onAdjustRest(15)} className="w-14 h-14 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center active:scale-90 transition-all">
+          <Plus size={18} className="text-slate-400" />
+          <span className="sr-only">+15s</span>
+        </button>
+      </div>
+
+      {/* Big done / play controls */}
+      <div className="mt-auto">
+        <div className="flex items-center justify-center gap-4 mb-6">
+          {running ? (
+            <button onClick={onPause} className="w-16 h-16 rounded-full bg-slate-800 hover:bg-slate-750 flex items-center justify-center active:scale-90 transition-all border border-slate-700/40">
+              <Pause size={24} className="text-white" />
+            </button>
+          ) : (
+            <button onClick={onStart} className="w-16 h-16 rounded-full bg-cyan-500 hover:bg-cyan-400 flex items-center justify-center active:scale-90 transition-all shadow-lg shadow-cyan-500/20">
+              <Play size={24} className="text-white fill-current ml-1" />
+            </button>
+          )}
+        </div>
+
+        <button onClick={onFinish} className={`w-full py-4 rounded-2xl font-bold text-lg text-white ${colors.solid} active:scale-95 transition-transform`}>
+          START SET {currentSet} <ChevronRight size={20} className="inline" />
+        </button>
+
+        {nextExercise && (
+          <div className="text-center bg-slate-900/40 border border-slate-900/60 rounded-2xl p-3 w-full mt-4">
+            <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1.5">{t('common.next')}</p>
+            <div className="flex items-center gap-3 justify-center">
+              <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+                <Dumbbell size={14} className={colors.text} />
+              </div>
+              <span className="text-sm font-bold text-white">{nextExercise.name}</span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -263,20 +284,18 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
   const [currentExId, setCurrentExId] = useState(exerciseId);
   const [showSwapModal, setShowSwapModal] = useState(false);
 
-  useEffect(() => {
-    setCurrentExId(exerciseId);
-  }, [exerciseId]);
+  useEffect(() => { setCurrentExId(exerciseId); }, [exerciseId]);
 
   const exercise = getExercise(currentExId);
   const colors = COLOR_MAP[exercise?.color] || COLOR_MAP.cyan;
-  
-  const alternatives = (allExercises || []).filter(e => 
-    e.bodyPart === exercise?.bodyPart && 
-    e.id !== currentExId && 
-    (settings?.equippedIds || ['none']).includes(e.equipment)
-  );
 
-  const [phase, setPhase] = useState('active'); // active | rest | done | choosing
+  const alternatives = useMemo(() => (allExercises || []).filter(e =>
+    e.bodyPart === exercise?.bodyPart &&
+    e.id !== currentExId &&
+    (settings?.equippedIds || ['none']).includes(e.equipment)
+  ), [allExercises, exercise?.bodyPart, currentExId, settings?.equippedIds]);
+
+  const [phase, setPhase] = useState('active');
   const [currentSet, setCurrentSet] = useState(1);
   const [setsCompleted, setSetsCompleted] = useState([]);
   const [currentReps, setCurrentReps] = useState(exercise?.startReps || 10);
@@ -285,14 +304,15 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
   const [showRestModal, setShowRestModal] = useState(false);
   const [bestReps, setBestReps] = useState(0);
   const [achievement, setAchievement] = useState(null);
+  const [failed, setFailed] = useState(false);
+  const [notes, setNotes] = useState('');
 
-  // Virtual Coach State
   const [sessionTargetReps, setSessionTargetReps] = useState(exercise?.startReps || 10);
   const [autoRegulated, setAutoRegulated] = useState(false);
   const [restAdjustmentText, setRestAdjustmentText] = useState('');
   const [coachReport, setCoachReport] = useState(null);
 
-  // Reset state when exercise changes (queue advance or swap)
+  // Reset state when exercise changes
   useEffect(() => {
     setPhase('active');
     setCurrentSet(1);
@@ -308,7 +328,8 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     setCoachReport(null);
     setShowRestModal(false);
     setAchievement(null);
-    // Keep bestReps fresh
+    setFailed(false);
+    setNotes('');
     const best = getBestSet(currentExId);
     setBestReps(best);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -318,20 +339,14 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
   const restSeconds = settings?.restTimes?.[currentExId] ?? settings?.restSeconds ?? 90;
   const timer = useTimer(restSeconds);
 
-  // Determine next exercise in queue for rest screen preview
   const nextExerciseInQueue = workoutQueue.length > 1 && workoutIndex < workoutQueue.length - 1
     ? getExercise(workoutQueue[workoutIndex + 1])
     : null;
 
-  // Snapshot log count before this workout (for achievement detection)
   const prevLogCount = useRef(logs.length);
 
-  useEffect(() => {
-    const best = getBestSet(currentExId);
-    setBestReps(best);
-  }, [currentExId, logs, getBestSet]);
+  useEffect(() => { const best = getBestSet(currentExId); setBestReps(best); }, [currentExId, logs, getBestSet]);
 
-  // Wake lock
   useEffect(() => {
     let wakeLock = null;
     if ('wakeLock' in navigator) {
@@ -340,59 +355,44 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     return () => wakeLock?.release();
   }, []);
 
-  const adjustReps = useCallback((delta) => {
-    setCurrentReps(prev => Math.max(0, prev + delta));
-  }, []);
+  const adjustReps = useCallback((delta) => { setCurrentReps(prev => Math.max(0, prev + delta)); }, []);
+  const adjustWeight = useCallback((delta) => { setCurrentWeight(prev => Math.max(0, prev + delta)); }, []);
 
-  const adjustWeight = useCallback((delta) => {
-    setCurrentWeight(prev => Math.max(0, prev + delta));
-  }, []);
-
-  // Complete a set → start rest
   const handleCompleteSet = useCallback(() => {
-    const entry = { reps: currentReps, weight: currentWeight };
+    const entry = { reps: currentReps, weight: currentWeight, failed, notes };
     setSetsCompleted(prev => [...prev, entry]);
 
-    const newLogCount = logs.length + setsCompleted.length + 1; // +1 for this set
+    const newLogCount = logs.length + setsCompleted.length + 1;
     const prevBest = getBestSet(currentExId);
     const streak = getCurrentStreak();
 
-    logSet(currentExId, currentReps, currentWeight);
-
+    logSet(currentExId, currentReps, currentWeight, notes);
     navigator.vibrate?.(100);
 
-    // Check achievements on first set completion
     if (setsCompleted.length === 0) {
-      if (prevLogCount.current === 0) {
-        setAchievement('first_workout');
-      } else if (currentReps > prevBest && prevBest > 0) {
-        setAchievement('first_pr');
-      } else if (streak >= 7) {
-        setAchievement('seven_day_streak');
-      } else if (streak >= 3) {
-        setAchievement('three_day_streak');
-      }
+      if (prevLogCount.current === 0) { setAchievement('first_workout'); }
+      else if (currentReps > prevBest && prevBest > 0) { setAchievement('first_pr'); }
+      else if (streak >= 7) { setAchievement('seven_day_streak'); }
+      else if (streak >= 3) { setAchievement('three_day_streak'); }
     } else if (newLogCount >= 10 && prevLogCount.current < 10) {
       setAchievement('ten_sets');
     }
 
-    // Adaptive rest duration calculations
     const pr = bestReps || prevBest || 0;
     let nextRestTime = restSeconds;
     let restTxt = '';
-    
+
     if (pr > 0) {
       if (currentReps >= pr) {
         nextRestTime = restSeconds + 30;
-        restTxt = '🔥 PR matched/beaten! +30s rest for recovery.';
+        restTxt = 'PR matched/beaten! +30s rest for recovery.';
       } else if (currentReps < pr * 0.6) {
         nextRestTime = Math.max(15, restSeconds - 20);
-        restTxt = '⚡ Warm-up level. -20s rest to keep momentum.';
+        restTxt = 'Warm-up level. -20s rest to keep momentum.';
       }
     }
     setRestAdjustmentText(restTxt);
 
-    // Auto-Regulation checks
     let nextTarget = sessionTargetReps;
     if (currentReps < sessionTargetReps * 0.75) {
       nextTarget = currentReps;
@@ -400,8 +400,9 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
       setAutoRegulated(true);
     }
     setCurrentReps(nextTarget);
+    setFailed(false);
+    setNotes('');
 
-    // If past target sets, stay in active phase (user can keep going or finish)
     if (currentSet >= targetSets) {
       setPhase('done');
     } else {
@@ -410,39 +411,32 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
       timer.reset(nextRestTime);
       timer.start();
     }
-  }, [currentSet, currentReps, currentWeight, currentExId, logs, setsCompleted, targetSets, restSeconds, getBestSet, getCurrentStreak, logSet, timer, bestReps, sessionTargetReps]);
+  }, [currentSet, currentReps, currentWeight, currentExId, logs, setsCompleted, targetSets, restSeconds, getBestSet, getCurrentStreak, logSet, timer, bestReps, sessionTargetReps, failed, notes]);
 
-  // Finish rest → back to active
   const handleFinishRest = useCallback(() => {
     timer.pause();
     setPhase('active');
   }, [timer]);
 
-  // Adjust rest time from buttons
   const handleAdjustRest = useCallback((delta) => {
     timer.addTime(delta);
     if (!timer.running) timer.start();
     navigator.vibrate?.(20);
   }, [timer]);
 
-  // Save custom rest time for this exercise
   const handleSaveRestTime = useCallback((seconds) => {
-    updateSettings({
-      restTimes: { ...(settings?.restTimes || {}), [currentExId]: seconds }
-    });
+    updateSettings({ restTimes: { ...(settings?.restTimes || {}), [currentExId]: seconds } });
     timer.reset(seconds);
     setShowRestModal(false);
     navigator.vibrate?.(30);
   }, [settings, currentExId, timer, updateSettings]);
 
-  // Swap exercise handler
   const handleSwapExercise = useCallback((newExerciseId) => {
     setCurrentExId(newExerciseId);
     setShowSwapModal(false);
     navigator.vibrate?.(30);
   }, []);
 
-  // Cancel / Done
   const handleCancel = useCallback(() => {
     if (setsCompleted.length > 0) {
       const avgReps = Math.round(setsCompleted.reduce((sum, s) => sum + s.reps, 0) / setsCompleted.length);
@@ -451,9 +445,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
       const newBaseline = Math.round(demonstrated * 0.65);
       const currentCalib = settings?.calibratedStartReps?.[currentExId] ?? exercise?.startReps ?? 10;
       if (newBaseline !== currentCalib) {
-        updateSettings({
-          calibratedStartReps: { ...(settings?.calibratedStartReps || {}), [currentExId]: newBaseline }
-        });
+        updateSettings({ calibratedStartReps: { ...(settings?.calibratedStartReps || {}), [currentExId]: newBaseline } });
       }
       onComplete?.({ exerciseId: currentExId, sets: setsCompleted });
     } else {
@@ -461,7 +453,6 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     }
   }, [setsCompleted, currentExId, exercise, settings, getBestSet, updateSettings, onCancel, onComplete]);
 
-  // Run Virtual Coach report generation when done
   useEffect(() => {
     if (phase === 'done' && setsCompleted.length > 0 && !coachReport) {
       const result = detectPlateauAndOverload(currentExId, setsCompleted);
@@ -471,243 +462,183 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
 
   if (!exercise) return <div className="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center text-slate-400">{t('workout.exerciseNotFound')}</div>;
 
-  const renderTargetHUD = () => {
-    const goal = goals?.find(g => g.exerciseId === currentExId);
-    const best = bestReps || 0;
-    
-    let message = `Target: ${sessionTargetReps} reps`;
-    let badgeText = "Growth Target";
-    
-    if (goal && sessionTargetReps >= goal.targetReps) {
-      message = `Goal Target: ${goal.targetReps} reps! You're matching your goal.`;
-      badgeText = "Goal Reached";
-    } else if (best > 0 && sessionTargetReps >= best) {
-      message = `PR Target: ${best + 1} reps to set a new record!`;
-      badgeText = "Record Chase";
-    } else if (goal) {
-      message = `Coach Target: ${sessionTargetReps} reps (+1 for growth)`;
-      badgeText = "Growth";
-    } else if (best > 0) {
-      message = `Coach Target: ${sessionTargetReps} reps. PR is ${best}.`;
-      badgeText = "PR Chase";
-    } else {
-      message = `Coach Target: ${sessionTargetReps} reps. Establish your baseline!`;
-      badgeText = "Baseline";
-    }
-
-    return (
-      <div className="w-full max-w-xs bg-slate-900/80 border border-slate-800 rounded-xl p-3 mb-6 text-center animate-fade-in">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Set {currentSet} target</span>
-          <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{badgeText}</span>
-        </div>
-        <p className="text-sm font-semibold text-slate-200">{message}</p>
-        {autoRegulated && (
-          <p className="text-[10px] text-orange-400 mt-1 font-medium">⚠️ Auto-regulated: targets lowered to match capability</p>
-        )}
-      </div>
-    );
-  };
-
-  const renderCoachReportSection = () => {
-    if (!coachReport) return null;
-    
-    let title = "Session Completed";
-    let desc = "Consistency is the key to progress. Outstanding job showing up today!";
-    let bg = "bg-slate-900 border-slate-800";
-    let textCol = "text-slate-300";
-    let badge = null;
-    
-    switch (coachReport.status) {
-      case 'overload':
-        title = "Progressive Overload Achieved! 🏆";
-        desc = `You set a new Personal Record of ${coachReport.value} reps (+${coachReport.diff} improvement)! Growth stimulus unlocked.`;
-        bg = "bg-amber-500/10 border-amber-500/30";
-        textCol = "text-amber-200";
-        badge = "New PR";
-        break;
-      case 'deload':
-        title = "Plateau Break: Deload Phase 🔄";
-        desc = `We detected a plateau. Baseline auto-calibrated to ${coachReport.currentReps} reps (-15%) for active recovery. Build back stronger!`;
-        bg = "bg-orange-500/10 border-orange-500/30";
-        textCol = "text-orange-200";
-        badge = "Deload Active";
-        break;
-      case 'plateau_warning':
-        title = `Plateau Warning (${coachReport.count}/3) ⚠️`;
-        desc = "Performance is holding flat. Push hard next session to break through, or we will trigger an active recovery deload.";
-        bg = "bg-yellow-500/10 border-yellow-500/30";
-        textCol = "text-yellow-200";
-        badge = "Plateau Watch";
-        break;
-      case 'stable':
-        title = "Consistency Solidified! ⚡";
-        desc = "You hit your target volumes cleanly. Keep stacking these sessions to lay the foundation for progressive growth.";
-        bg = "bg-cyan-500/10 border-cyan-500/20";
-        textCol = "text-cyan-200";
-        badge = "On Track";
-        break;
-      default:
-        break;
-    }
-
-    return (
-      <div className={`w-full max-w-xs border rounded-2xl p-4 mb-6 text-left ${bg} animate-fade-in`}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Virtual Coach Report</span>
-          {badge && (
-            <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-750">
-              {badge}
-            </span>
-          )}
-        </div>
-        <h4 className="text-sm font-bold text-white mb-1.5">{title}</h4>
-        <p className={`text-xs leading-relaxed ${textCol}`}>{desc}</p>
-      </div>
-    );
-  };
+  // Common quick-rep presets based on current value
+  const quickPresets = useMemo(() => {
+    const base = currentReps;
+    return [-5, -2, -1, 1, 2, 5].map(v => base + v).filter(v => v > 0);
+  }, [currentReps]);
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b border-slate-800">
-        <button onClick={handleCancel} className="text-slate-400 hover:text-white transition-colors">
-          <X size={20} />
+      {/* ─── Header ─── */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
+        <button onClick={handleCancel} className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center active:scale-90 transition-transform">
+          <X size={18} className="text-slate-400" />
         </button>
-        <div className="text-center">
-          <p className="text-xs text-slate-500">{exercise.bodyPart}</p>
-          <h2 className="font-bold text-white">{exercise.name}</h2>
+        <div className="text-center flex-1 px-2">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{exercise.bodyPart}</p>
+          <h2 className="text-lg font-black text-white leading-tight">{exercise.name}</h2>
           {workoutQueue.length > 1 && (
-            <p className="text-[10px] text-slate-600">{workoutIndex + 1} of {workoutQueue.length}</p>
+            <p className="text-[10px] text-slate-600 mt-0.5">{workoutIndex + 1} of {workoutQueue.length}</p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {workoutQueue.length > 1 && (
-            <button
-              onClick={() => {
-                onComplete?.({ exerciseId, sets: setsCompleted });
-              }}
-              className="text-cyan-400 hover:text-cyan-300 text-xs font-semibold px-2 py-1 rounded-lg bg-cyan-500/10"
-            >
-              Skip
+            <button onClick={() => onComplete?.({ exerciseId, sets: setsCompleted })}
+              className="text-[10px] font-bold text-slate-500 hover:text-slate-300 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800 active:scale-90 transition-all">
+              SKIP
             </button>
           )}
-          <button onClick={() => setShowRestModal(true)} className="text-slate-400 hover:text-cyan-400 transition-colors p-1">
-            <Settings size={18} />
+          <button onClick={() => setShowRestModal(true)} className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center active:scale-90 transition-transform">
+            <Settings size={16} className="text-slate-500" />
           </button>
         </div>
       </div>
 
+      {/* ─── Set Progress Dots ─── */}
+      <div className="flex items-center justify-center gap-2 py-2 shrink-0">
+        {Array.from({ length: targetSets }).map((_, i) => (
+          <div key={i} className={`h-1.5 rounded-full transition-all ${
+            i < setsCompleted.length
+              ? `${colors.solid} w-6`
+              : i === setsCompleted.length
+              ? `bg-slate-700 w-6 animate-pulse`
+              : `bg-slate-800 w-3`
+          }`} />
+        ))}
+        {currentSet > targetSets && (
+          <div className={`h-1.5 rounded-full ${colors.solid} w-6 animate-pulse`} />
+        )}
+      </div>
+
+      {/* ─── Active Phase ─── */}
       {phase === 'active' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
-          {renderTargetHUD()}
-
-          {/* Progress ring */}
-          <div className="relative mb-6">
-            <svg width={200} height={200} className="transform -rotate-90">
-              <circle cx={100} cy={100} r={85} fill="none" stroke="rgba(30,41,59,0.3)" strokeWidth={8} />
-              <circle cx={100} cy={100} r={85} fill="none" stroke={colors.hex} strokeWidth={8}
-                strokeDasharray={534} strokeDashoffset={534 * (1 - (currentSet - 1) / targetSets)}
-                strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-                filter={`drop-shadow(0 0 6px ${colors.hex}40)`} />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-4xl font-black text-white">{currentReps}</p>
-                <p className="text-sm text-slate-400">{t('common.reps')}</p>
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Primary content: massive rep display */}
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+            {/* Weight display (if gym exercise) */}
+            {!exercise.home && (
+              <div className="mb-4 flex items-center gap-3 bg-slate-900/60 border border-slate-800 rounded-2xl px-4 py-2">
+                <button onClick={() => adjustWeight(-2.5)}
+                  className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform">
+                  <Minus size={16} className="text-slate-400" />
+                </button>
+                <div className="text-center min-w-[80px]">
+                  <p className="text-3xl font-black text-white tabular-nums">{currentWeight}</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{settings?.unit || 'lbs'}</p>
+                </div>
+                <button onClick={() => adjustWeight(2.5)}
+                  className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform">
+                  <Plus size={16} className="text-slate-400" />
+                </button>
+                <button onClick={() => adjustWeight(5)}
+                  className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform text-slate-500 text-xs font-black">
+                  +5
+                </button>
               </div>
-            </div>
-          </div>
+            )}
 
-          <p className="text-sm text-slate-500 mb-6">{t('common.set')} {currentSet} {t('workout.setOf')} {targetSets}</p>
-
-          {/* Rep counter */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="flex flex-col items-center">
+            {/* Big rep count */}
+            <div className="flex items-center gap-2 mb-2">
               <button onClick={() => adjustReps(-1)}
-                className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform">
-                <Minus size={20} className="text-slate-400" />
+                className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center active:scale-90 transition-transform shrink-0">
+                <Minus size={24} className="text-slate-400" />
               </button>
-              <span className="text-[10px] text-slate-600 mt-1">−1</span>
-            </div>
-            <div className="text-center px-4">
-              <p className="text-5xl font-black text-white">{currentReps}</p>
-              <p className="text-sm text-slate-400 mt-1">{t('common.reps')}</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <button onClick={() => adjustReps(1)}
-                className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform">
-                <Plus size={20} className="text-slate-400" />
-              </button>
-              <span className="text-[10px] text-slate-600 mt-1">+1</span>
-            </div>
-          </div>
-
-          {/* Quick adjustment buttons */}
-          <div className="flex items-center justify-center gap-1.5 mb-6 flex-wrap max-w-xs">
-            {[-5, -2, -1, 1, 2, 5].map(val => (
-              <button key={val} onClick={() => adjustReps(val)}
-                className="w-10 h-8 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 font-black text-xs active:scale-90 transition-transform">
-                {val > 0 ? `+${val}` : val}
-              </button>
-            ))}
-          </div>
-
-          {/* Weight input (gym exercises) */}
-          {!exercise.home && (
-            <div className="flex items-center gap-4 mb-6">
-              <button onClick={() => adjustWeight(-2.5)} className="p-2 rounded-lg bg-slate-800 text-slate-400 active:scale-90 text-sm font-bold">−2.5</button>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">{currentWeight}</p>
-                <p className="text-xs text-slate-500">lbs</p>
+              <div className="text-center min-w-[140px]">
+                <p className="text-8xl font-black text-white tabular-nums leading-none">{currentReps}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
+                  {exercise.unit || t('common.reps')}
+                </p>
               </div>
-              <button onClick={() => adjustWeight(2.5)} className="p-2 rounded-lg bg-slate-800 text-slate-400 active:scale-90 text-sm font-bold">+2.5</button>
-              <button onClick={() => adjustWeight(5)} className="p-2 rounded-lg bg-slate-700 text-slate-500 active:scale-90 text-xs">+5</button>
+              <button onClick={() => adjustReps(1)}
+                className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center active:scale-90 transition-transform shrink-0">
+                <Plus size={24} className="text-slate-400" />
+              </button>
             </div>
-          )}
 
-          {/* Complete Set */}
-          <button onClick={handleCompleteSet}
-            className={`w-full max-w-xs py-4 rounded-xl font-bold text-lg text-white ${colors.solid}
-              active:scale-95 transition-transform flex items-center justify-center gap-2`}>
-            <Check size={20} /> {t('workout.completeSet')}
-          </button>
+            {/* Quick rep presets */}
+            <div className="flex items-center gap-1.5 mt-3 flex-wrap justify-center max-w-xs">
+              {[-5, -2, -1, 1, 2, 5].map(val => (
+                <button key={val} onClick={() => adjustReps(val)}
+                  className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 font-black text-xs active:scale-90 transition-transform">
+                  {val > 0 ? `+${val}` : val}
+                </button>
+              ))}
+            </div>
 
-          {/* Add Extra Set (after completing target sets) */}
-          {currentSet > targetSets && (
-            <button onClick={() => {
-              setCurrentSet(prev => prev + 1);
-              setPhase('active');
-            }}
-              className="text-xs text-cyan-400 hover:text-cyan-300 mt-3 flex items-center gap-1">
-              <Plus size={12} /> Add extra set
+            {/* Last / Target info */}
+            <div className="mt-4 text-center">
+              {bestReps > 0 && (
+                <p className="text-xs text-slate-600 font-semibold">
+                  Personal best: <span className="text-slate-400">{bestReps}</span>
+                </p>
+              )}
+              {autoRegulated && (
+                <p className="text-[10px] text-orange-400 mt-1 font-medium">Target auto-adjusted to match capability</p>
+              )}
+            </div>
+
+            {/* Failed toggle */}
+            <button
+              onClick={() => setFailed(f => !f)}
+              className={`mt-3 px-4 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 ${
+                failed
+                  ? 'bg-red-500/20 border-red-500/30 text-red-400'
+                  : 'bg-slate-900 border-slate-800 text-slate-600 hover:text-slate-400'
+              }`}
+            >
+              {failed ? 'Marking as failed / assisted' : 'Mark as failed / assisted'}
             </button>
-          )}
 
-          {/* Best */}
-          {bestReps > 0 && (
-            <p className="text-xs text-slate-500 mt-4">{t('common.best')}: {bestReps} {t('common.reps')}</p>
-          )}
+            {/* Notes */}
+            {failed && (
+              <input
+                type="text"
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Note (e.g. spotter assisted, left shoulder tight)"
+                className="mt-2 w-full max-w-xs bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-slate-700"
+              />
+            )}
+          </div>
 
-          {/* Exercise instructions */}
-          {exercise?.instructions && (
-            <p className="text-xs text-slate-600 mt-2 max-w-xs text-center">{exercise.instructions}</p>
-          )}
-
-          {exercise?.youtubeId && (
-            <button onClick={() => setShowVideo(true)}
-              className="flex items-center gap-1.5 text-xs text-red-400/60 hover:text-red-400 mt-2 transition-colors">
-              <Youtube size={12} /> Watch demo
+          {/* Bottom action bar */}
+          <div className="shrink-0 p-4 pb-6 space-y-3">
+            {/* Primary done button */}
+            <button
+              onClick={handleCompleteSet}
+              className={`w-full py-5 rounded-2xl font-black text-xl text-white ${colors.solid} active:scale-95 transition-transform flex items-center justify-center gap-3 shadow-lg`}
+              style={{ minHeight: 72 }}
+            >
+              <Check size={28} />
+              <span>{failed ? 'LOG AS FAILED' : `DONE — SET ${currentSet}`}</span>
             </button>
-          )}
 
-          {/* Swap exercise */}
-          <button onClick={() => setShowSwapModal(true)}
-            className="flex items-center gap-1.5 text-xs text-cyan-500 hover:text-cyan-400 mt-4 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 font-semibold active:scale-95 transition-all">
-            Swap exercise
-          </button>
+            {/* Secondary actions */}
+            <div className="flex items-center justify-center gap-2">
+              {exercise?.youtubeId && (
+                <button onClick={() => setShowVideo(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-500 hover:text-red-400 transition-colors active:scale-95">
+                  <Youtube size={12} /> DEMO
+                </button>
+              )}
+              <button onClick={() => setShowSwapModal(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-500 hover:text-cyan-400 transition-colors active:scale-95">
+                <RotateCcw size={12} /> SWAP
+              </button>
+            </div>
+
+            {/* Instructions */}
+            {exercise?.instructions && (
+              <p className="text-[10px] text-slate-700 text-center leading-relaxed max-w-xs mx-auto">
+                {exercise.instructions}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
+      {/* ─── Rest Phase ─── */}
       {phase === 'rest' && (
         <RestScreen
           seconds={timer.timeLeft}
@@ -725,6 +656,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
         />
       )}
 
+      {/* ─── Done Phase ─── */}
       {phase === 'done' && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
@@ -732,52 +664,63 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
           </div>
           <h2 className="text-2xl font-black text-white mb-2">{exercise.name}</h2>
           <p className="text-slate-400 mb-4">{t('workout.workoutComplete')}</p>
-          
-          {renderCoachReportSection()}
+
+          {coachReport && (
+            <div className={`w-full max-w-xs border rounded-2xl p-4 mb-6 text-left ${
+              coachReport.status === 'overload' ? 'bg-amber-500/10 border-amber-500/30' :
+              coachReport.status === 'deload' ? 'bg-orange-500/10 border-orange-500/30' :
+              coachReport.status === 'plateau_warning' ? 'bg-yellow-500/10 border-yellow-500/30' :
+              'bg-cyan-500/10 border-cyan-500/20'
+            }`}>
+              <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Coach Report</p>
+              <h4 className="text-sm font-bold text-white mb-1">
+                {coachReport.status === 'overload' ? 'New PR!' :
+                 coachReport.status === 'deload' ? 'Deload Active' :
+                 coachReport.status === 'plateau_warning' ? `Plateau (${coachReport.count}/3)` :
+                 'On Track'}
+              </h4>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {coachReport.status === 'overload' ? `+${coachReport.diff} rep PR of ${coachReport.value}!` :
+                 coachReport.status === 'deload' ? `Baseline lowered to ${coachReport.currentReps} for recovery.` :
+                 coachReport.status === 'plateau_warning' ? 'Push harder next session to break through.' :
+                 'Solid consistency. Keep stacking sessions.'}
+              </p>
+            </div>
+          )}
 
           <div className="glass-card rounded-xl p-4 w-full max-w-xs mb-6 text-left">
             {setsCompleted.map((s, i) => (
-              <div key={i} className="flex justify-between py-2 border-b border-slate-800 last:border-0">
-                <span className="text-slate-400">{t('workout.set')} {i + 1}</span>
-                <span className="text-white font-bold">{s.reps} {t('common.reps')}{s.weight ? ` · ${s.weight} ${t('common.lbs')}` : ''}</span>
+              <div key={i} className="flex justify-between items-center py-2 border-b border-slate-800 last:border-0">
+                <div className="flex items-center gap-2">
+                  {s.failed && <span className="text-[9px] font-bold text-red-500 uppercase">Fail</span>}
+                  <span className="text-slate-400 text-sm">Set {i + 1}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-white font-bold text-sm">
+                    {s.reps} {t('common.reps')}{s.weight ? ` · ${s.weight} ${t('common.lbs')}` : ''}
+                  </span>
+                  {s.notes && <p className="text-[9px] text-slate-600">{s.notes}</p>}
+                </div>
               </div>
             ))}
           </div>
+
           {setsCompleted.length < targetSets && (
             <p className="text-xs text-slate-500 mb-4">Shortened session — great job finishing!</p>
           )}
+
           <button onClick={handleCancel}
-            className="w-full max-w-xs py-4 rounded-xl font-bold bg-cyan-500 text-white active:scale-95 transition-transform shadow-lg shadow-cyan-500/10">
+            className="w-full max-w-xs py-4 rounded-2xl font-bold bg-cyan-500 text-white active:scale-95 transition-transform shadow-lg">
             {t('common.done')}
           </button>
         </div>
       )}
 
+      {/* ─── Overlays ─── */}
       {showVideo && <VideoModal exercise={exercise} onClose={() => setShowVideo(false)} />}
-
-      {achievement && (
-        <AchievementPopup
-          achievement={achievement}
-          onDismiss={() => setAchievement(null)}
-        />
-      )}
-
-      {showRestModal && (
-        <RestSettingsModal
-          currentExId={currentExId}
-          currentSeconds={restSeconds}
-          onSave={handleSaveRestTime}
-          onClose={() => setShowRestModal(false)}
-        />
-      )}
-
-      {showSwapModal && (
-        <SwapExerciseModal
-          alternatives={alternatives}
-          onSwap={handleSwapExercise}
-          onClose={() => setShowSwapModal(false)}
-        />
-      )}
+      {achievement && <AchievementPopup achievement={achievement} onDismiss={() => setAchievement(null)} />}
+      {showRestModal && <RestSettingsModal currentExId={currentExId} currentSeconds={restSeconds} onSave={handleSaveRestTime} onClose={() => setShowRestModal(false)} />}
+      {showSwapModal && <SwapExerciseModal alternatives={alternatives} onSwap={handleSwapExercise} onClose={() => setShowSwapModal(false)} />}
     </div>
   );
 }

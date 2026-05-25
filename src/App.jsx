@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Vibrate, Volume2, Smartphone, Bell } from 'lucide-react';
-import { Play, BarChart3, Target, Dumbbell, Plus } from 'lucide-react';
+import { Settings, Volume2, Smartphone, Bell } from 'lucide-react';
+import { Play, BarChart3, Target, Plus } from 'lucide-react';
 import { useData } from './hooks/useData';
 import { t } from './i18n';
 import { trackEvent, Events } from './utils/analytics.js';
@@ -19,7 +19,7 @@ const TAB_BAR = [
   { id: 'log', label: t('common.log'), icon: Plus },
   { id: 'goals', label: t('common.goals'), icon: Target },
   { id: 'progress', label: t('common.progress'), icon: BarChart3 },
-  { id: 'settings', label: t('common.settings'), icon: Dumbbell },
+  { id: 'settings', label: t('common.settings'), icon: Settings },
 ];
 
 export default function App() {
@@ -433,7 +433,7 @@ export default function App() {
 
   // Show onboarding if not done
   if (!onboardingDone) {
-    return <Onboarding onComplete={() => {}} onDone={() => window.location.reload()} />;
+    return <Onboarding onDone={() => window.location.reload()} />;
   }
 
   return (

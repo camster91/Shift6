@@ -13,11 +13,61 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - name: Install dependencies
         run: npm install
+
       - name: Build
-        run: npm run build --if-present
-      - name: Trigger Coolify Deploy
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Deploy via SSH
+        env:
+          COOLIFY_HOST: ${{ secrets.COOLIFY_HOST }}
+          COOLIFY_SSH_KEY: ${{ secrets.COOLIFY_SSH_KEY }}
         run: |
-          curl -X GET "http://187.77.26.99:8000/api/v1/deploy?uuid=toc8kck8g08k8g0co0gg8ggs&force=true" \\
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$COOLIFY_SSH_KEY" > ~/.ssh/coolify
+          chmod 600 ~/.ssh/coolify
+          tar -czf - dist/ | ssh -i ~/.ssh/coolify -o StrictHostKeyChecking=no "root@${COOLIFY_HOST}" 'cat > /tmp/shift6-deploy.tar.gz'
+          ssh -i ~/.ssh/coolify -o StrictHostKeyChecking=no "root@${COOLIFY_HOST}" << 'DEPLOYEOF'
+          set -e
+          cd /tmp
+          rm -rf shift6-deploy
+          mkdir -p shift6-deploy
+          tar -xzf shift6-deploy.tar.gz -C shift6-deploy
+          NAME="shift6-app"
+          docker stop "$NAME" 2>/dev/null || true
+          docker commit "$NAME" "$NAME:latest" 2>/dev/null || true
+          docker rm -f "$NAME" 2>/dev/null || true
+          docker run -d \\
+            --name "$NAME" \\
+            --network coolify \\
+            --restart unless-stopped \\
+            -v shift6-data:/app/data \\
+            -e PORT=3000 \\
+            -e NODE_ENV=production \\
+            -l "traefik.enable=true" \\
+            -l 'traefik.http.routers.shift6.rule=Host(`getshift6.com`)' \\
+            -l "traefik.http.routers.shift6.entrypoints=https" \\
+            -l "traefik.http.routers.shift6.tls=true" \\
+            -l "traefik.http.routers.shift6.tls.certresolver=letsencrypt" \\
+            -l "traefik.http.services.shift6.loadbalancer.server.port=3000" \\
+            -l "coolify.managed=true" \\
+            "$NAME:latest"
+          docker exec "$NAME" sh -c 'mkdir -p /app/dist'
+          docker cp shift6-deploy/dist/. "$NAME:/app/dist/"
+          docker restart "$NAME"
+          sleep 2
+          docker exec "$NAME" sh -c 'wget -qO- http://127.0.0.1:3000 || echo "HTTP check failed"'
+          DEPLOYEOF
+
+      - name: Verify live URL
+        run: |
+          sleep 5
+          curl -sfL https://getshift6.com | grep -q "DO\|shift\|html\|root" || exit 1

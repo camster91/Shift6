@@ -173,7 +173,7 @@ export default function App() {
       )}
 
       {/* PWA Install Banner */}
-      {showInstallPrompt && (
+      {!workoutExId && showInstallPrompt && (
         <div className="fixed bottom-20 left-4 right-4 max-w-lg mx-auto bg-slate-900 border border-cyan-500/30 rounded-2xl p-4 shadow-xl z-50 animate-slide-up">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">

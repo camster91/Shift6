@@ -99,7 +99,7 @@ function VolumeSparkline({ logs }) {
 }
 
 // ──────────── Exercise Mini Row ────────────
-function ExerciseMiniRow({ exercise, bestReps, weekSets, lastDate, onClick, onRemove }) {
+function ExerciseMiniRow({ exercise, bestReps, weekSets, lastDate, onClick, onRemove, isPendingRemove }) {
   const colors = COLOR_MAP[exercise.color] || COLOR_MAP.cyan;
   const icon = BODY_PART_ICONS[exercise.bodyPart] || '💪';
   const daysSince = lastDate ? Math.floor((Date.now() - lastDate) / 864e5) : null;
@@ -127,10 +127,14 @@ function ExerciseMiniRow({ exercise, bestReps, weekSets, lastDate, onClick, onRe
       </div>
       <button
         onClick={(e) => { e.stopPropagation(); onRemove?.(exercise.id); }}
-        className="w-7 h-7 rounded-lg bg-slate-800/80 text-slate-500 hover:bg-red-500/30 hover:text-red-400 flex items-center justify-center transition-all shrink-0"
-        aria-label="Remove exercise"
+        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0 font-bold text-[10px] ${
+          isPendingRemove
+            ? 'bg-red-500 text-white'
+            : 'bg-slate-800/80 text-slate-500 hover:bg-red-500/30 hover:text-red-400'
+        }`}
+        aria-label={isPendingRemove ? 'Confirm remove' : 'Remove exercise'}
       >
-        <X size={12} />
+        {isPendingRemove ? '?' : <X size={12} />}
       </button>
     </button>
   );
@@ -166,10 +170,15 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
   const weekLogs = getThisWeekLogs();
   const streak = getCurrentStreak();
 
+  const [pendingRemove, setPendingRemove] = useState(null);
+
   const handleRemoveExercise = (exId) => {
-    if (window.confirm(`Remove ${exercises.find(e => e.id === exId)?.name} from your collection?`)) {
+    if (pendingRemove === exId) {
       removeExercise(exId);
       navigator.vibrate?.(30);
+      setPendingRemove(null);
+    } else {
+      setPendingRemove(exId);
     }
   };
 
@@ -312,6 +321,7 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
               lastDate={ex.lastDate}
               onClick={() => { navigator.vibrate?.(20); onViewExercise?.(ex.id); }}
               onRemove={handleRemoveExercise}
+              isPendingRemove={pendingRemove === ex.id}
             />
           ))}
         </div>

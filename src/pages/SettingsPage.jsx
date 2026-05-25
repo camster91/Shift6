@@ -10,6 +10,7 @@ export default function SettingsPage() {
   const [restMins, setRestMins] = useState(Math.floor((settings?.restSeconds || 90) / 60));
   const [restSecs, setRestSecs] = useState((settings?.restSeconds || 90) % 60);
   const [targetSets, setTargetSets] = useState(settings?.targetSets || 3);
+  const [pendingReset, setPendingReset] = useState(false);
 
   const handleSaveRest = () => {
     updateSettings({ restSeconds: restMins * 60 + restSecs });
@@ -22,13 +23,15 @@ export default function SettingsPage() {
   };
 
   const handleResetData = () => {
-    if (window.confirm(t('settings.resetData'))) {
+    if (pendingReset) {
       localStorage.removeItem('shift6_logs');
       localStorage.removeItem('shift6_goals');
       localStorage.removeItem('shift6_my_exercises');
       localStorage.removeItem('shift6_onboarding_done');
       localStorage.removeItem('shift6_settings');
       window.location.reload();
+    } else {
+      setPendingReset(true);
     }
   };
 
@@ -51,6 +54,8 @@ export default function SettingsPage() {
     if (settings?.vibrationEnabled) navigator.vibrate?.(30);
   };
 
+  const [pendingImport, setPendingImport] = useState(null);
+
   const handleImport = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -62,7 +67,7 @@ export default function SettingsPage() {
         const text = await file.text();
         const data = JSON.parse(text);
         if (!data.version || !data.logs) throw new Error('Invalid backup file');
-        if (window.confirm(`Import ${data.logs.length} logged sets? This will merge with existing data.`)) {
+        if (pendingImport?.fileName === file.name && pendingImport?.logCount === data.logs.length) {
           const existingIds = new Set(logs.map(l => l.id));
           const newLogs = data.logs.filter(l => !existingIds.has(l.id));
           const mergedLogs = [...logs, ...newLogs];
@@ -72,6 +77,9 @@ export default function SettingsPage() {
           if (data.settings) updateSettings(data.settings);
           if (settings?.vibrationEnabled) navigator.vibrate?.([50, 50, 50]);
           alert(`Imported ${newLogs.length} new sets!`);
+          setPendingImport(null);
+        } else {
+          setPendingImport({ fileName: file.name, logCount: data.logs.length });
         }
       } catch (err) {
         alert('Failed to import: ' + err.message);
@@ -290,8 +298,12 @@ export default function SettingsPage() {
       <div className="glass-card rounded-2xl p-4">
         <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Data Management</h2>
         <button onClick={handleResetData}
-          className="w-full py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 font-semibold text-sm hover:bg-red-500/20 active:scale-[0.98] transition-colors">
-          Reset All Workout Data
+          className={`w-full py-3 rounded-xl font-semibold text-sm active:scale-[0.98] transition-colors ${
+            pendingReset
+              ? 'bg-red-500 text-white font-bold'
+              : 'bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20'
+          }`}>
+          {pendingReset ? 'TAP AGAIN TO CONFIRM RESET' : 'Reset All Workout Data'}
         </button>
         <p className="text-xs text-slate-600 mt-2 text-center">Logs, goals, and streak will be cleared</p>
       </div>
@@ -305,11 +317,15 @@ export default function SettingsPage() {
             Export Data
           </button>
           <button onClick={handleImport}
-            className="flex-1 py-3 bg-slate-800/60 border border-slate-700/50 rounded-xl text-slate-300 font-semibold text-sm hover:bg-slate-700/60 active:scale-[0.98] transition-colors">
-            Import Backup
+            className={`flex-1 py-3 rounded-xl font-semibold text-sm active:scale-[0.98] transition-colors ${
+              pendingImport
+                ? 'bg-yellow-500/20 border border-yellow-500/30 text-yellow-400'
+                : 'bg-slate-800/60 border border-slate-700/50 text-slate-300 hover:bg-slate-700/60'
+            }`}>
+            {pendingImport ? 'Confirm Import' : 'Import Backup'}
           </button>
         </div>
-        <p className="text-xs text-slate-600 mt-2 text-center">JSON file with all your exercises, logs, and settings</p>
+        <p className="text-xs text-slate-600 mt-2 text-center">{pendingImport ? `${pendingImport.logCount} sets ready to import` : 'JSON file with all your exercises, logs, and settings'}</p>
       </div>
 
       {/* App info */}

@@ -40,10 +40,8 @@ export default function LogPage() {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const handleQuickLog = (exerciseId) => {
+  const handleExpand = (exerciseId) => {
     if (selectedEx === exerciseId) {
-      logSet(exerciseId, reps, weight);
-      navigator.vibrate?.(50);
       setSelectedEx(null);
     } else {
       const ex = exercises.find(e => e.id === exerciseId);
@@ -51,6 +49,12 @@ export default function LogPage() {
       setReps(ex?.startReps || 10);
       setWeight(0);
     }
+  };
+
+  const handleLog = (exerciseId) => {
+    logSet(exerciseId, reps, weight);
+    navigator.vibrate?.(50);
+    setSelectedEx(null);
   };
 
   const handleDeleteLog = (logId, e) => {
@@ -243,7 +247,7 @@ export default function LogPage() {
               isSelected ? `border ${colors.border}` : ''
             }`}>
               <button
-                onClick={() => handleQuickLog(ex.id)}
+                onClick={() => handleExpand(ex.id)}
                 className="w-full text-left p-3.5 flex items-center gap-3"
               >
                 <div className={`w-10 h-10 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center text-base flex-shrink-0`}>
@@ -312,7 +316,7 @@ export default function LogPage() {
 
                     {/* Log button */}
                     <button
-                      onClick={() => { logSet(ex.id, reps, weight); setSelectedEx(null); }}
+                      onClick={() => handleLog(ex.id)}
                       className={`self-end px-4 py-2.5 rounded-xl ${colors.solid} text-white text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-all shadow-lg`}
                     >
                       <Check size={16} /> Log

@@ -62,9 +62,6 @@ export default defineConfig({
         })
     ],
     server: {
-        proxy: {
-            '/api': 'http://localhost:3000',
-            '/auth': 'http://localhost:3000'
-        }
+        // Dev proxy removed — Shift6 is client-only PWA/mobile app
     }
 })

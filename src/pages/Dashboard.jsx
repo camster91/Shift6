@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Play, Flame, Plus, Dumbbell, TrendingUp, X, Zap } from 'lucide-react';
+import { Flame, Plus, Dumbbell, TrendingUp, X, Zap, ChevronRight, Play } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
 import { t } from '../i18n';
@@ -58,73 +58,6 @@ function StreakBadge({ streak }) {
   );
 }
 
-// ──────────── Exercise Card ────────────
-function ExerciseCard({ exercise, bestReps, bestWeight, logsCount, progress, reason, onQuickStart, onRemove }) {
-  const colors = COLOR_MAP[exercise.color] || COLOR_MAP.cyan;
-  const icon = BODY_PART_ICONS[exercise.bodyPart] || '💪';
-
-
-  return (
-    <div className={`glass-card rounded-2xl overflow-hidden animate-fade-in group relative`}>
-      <button
-        onClick={() => onQuickStart?.(exercise.id)}
-        className="w-full text-left p-4 hover:opacity-90 transition-all pr-14"
-      >
-        <div className="flex items-center gap-3">
-          {/* Color-coded icon */}
-          <div className={`w-11 h-11 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0 text-lg group-hover:scale-105 transition-transform`}>
-            {icon}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h3 className="font-bold text-white text-sm">{exercise.name}</h3>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${colors.bg} ${colors.text} font-medium`}>
-                {exercise.bodyPart}
-              </span>
-            </div>
-            {reason && (
-              <p className="text-[10px] text-cyan-400 font-medium mb-1 flex items-center gap-1">
-                <span>⏱️</span> {reason}
-              </p>
-            )}
-            <div className="flex gap-3 text-xs text-slate-500">
-              <span>{t('common.best')}: <span className={`font-semibold ${colors.text}`}>{bestReps} rep{bestReps !== 1 ? 's' : ''}</span></span>
-              {bestWeight > 0 && <span>· <span className={colors.text}>{bestWeight} {t('common.lbs')}</span></span>}
-              {logsCount > 0 && <span>· {logsCount} {t('exerciseCard.setsThisWeek')}</span>}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <ProgressRing progress={progress} size={40} stroke={3.5} color={colors.hex} delay={100} />
-            <Play size={16} className="text-cyan-400/60 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all" />
-          </div>
-        </div>
-      </button>
-
-      {/* Remove button - always visible on touch devices */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onRemove?.(exercise.id); }}
-        className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-slate-800/80 text-slate-500 hover:bg-red-500/30 hover:text-red-400 flex items-center justify-center transition-all opacity-100"
-        aria-label="Remove exercise"
-      >
-        <X size={14} />
-      </button>
-    </div>
-  );
-}
-
-// ──────────── PR Banner ────────────
-function PRBanner({ ex, best }) {
-  const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
-  return (
-    <div className={`flex-shrink-0 rounded-xl p-3 border ${colors.border} ${colors.bg}`}>
-      <p className="text-xs text-slate-400 mb-0.5">{ex.name}</p>
-      <p className={`text-base font-black ${colors.text}`}>{best} reps</p>
-    </div>
-  );
-}
-
 // ──────────── Weekly Volume Sparkline ────────────
 function VolumeSparkline({ logs }) {
   const data = useMemo(() => {
@@ -165,17 +98,52 @@ function VolumeSparkline({ logs }) {
   );
 }
 
-// ──────────── Quick Start FAB ────────────
-function QuickStartFAB({ onClick, visible }) {
-  if (!visible) return null;
+// ──────────── Exercise Mini Row ────────────
+function ExerciseMiniRow({ exercise, bestReps, weekSets, lastDate, onClick, onRemove }) {
+  const colors = COLOR_MAP[exercise.color] || COLOR_MAP.cyan;
+  const icon = BODY_PART_ICONS[exercise.bodyPart] || '💪';
+  const daysSince = lastDate ? Math.floor((Date.now() - lastDate) / 864e5) : null;
+
+  let statusText = '';
+  let statusColor = 'text-slate-500';
+  if (!lastDate) { statusText = 'Never trained'; statusColor = 'text-orange-400'; }
+  else if (daysSince === 0) { statusText = 'Today'; statusColor = 'text-emerald-400'; }
+  else if (daysSince === 1) { statusText = 'Yesterday'; statusColor = 'text-cyan-400'; }
+  else { statusText = `${daysSince}d ago`; statusColor = 'text-slate-500'; }
+
   return (
     <button
-      onClick={() => { navigator.vibrate?.(50); onClick(); }}
-      className="fab group"
-      aria-label="Start workout"
+      onClick={onClick}
+      className="w-full text-left flex items-center gap-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700/50 active:scale-[0.98] transition-all"
     >
-      <Play size={26} className="fill-current ml-0.5 group-hover:scale-110 transition-transform" />
+      <div className={`w-10 h-10 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center shrink-0 text-sm`}>{icon}</div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-white truncate">{exercise.name}</p>
+        <p className="text-[10px] font-medium leading-relaxed">
+          <span className={statusColor}>{statusText}</span>
+          {bestReps > 0 && <span className="text-slate-600"> · Best: {bestReps}</span>}
+          {weekSets > 0 && <span className="text-slate-600"> · {weekSets} this week</span>}
+        </p>
+      </div>
+      <button
+        onClick={(e) => { e.stopPropagation(); onRemove?.(exercise.id); }}
+        className="w-7 h-7 rounded-lg bg-slate-800/80 text-slate-500 hover:bg-red-500/30 hover:text-red-400 flex items-center justify-center transition-all shrink-0"
+        aria-label="Remove exercise"
+      >
+        <X size={12} />
+      </button>
     </button>
+  );
+}
+
+// ──────────── PR Banner ────────────
+function PRBanner({ ex, best }) {
+  const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
+  return (
+    <div className={`flex-shrink-0 rounded-xl p-3 border ${colors.border} ${colors.bg}`}>
+      <p className="text-xs text-slate-400 mb-0.5">{ex.name}</p>
+      <p className={`text-base font-black ${colors.text}`}>{best} reps</p>
+    </div>
   );
 }
 
@@ -205,32 +173,26 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
     }
   };
 
-  // Yesterday for last workout message
-
-  // Per-exercise stats — sorted by least-recently-trained first
   const exerciseStats = useMemo(() => {
-    const withStats = exercises.map(ex => {
+    return (exercises || []).map(ex => {
       const exLogs = logs.filter(l => l.exerciseId === ex.id).sort((a, b) => new Date(b.date) - new Date(a.date));
       const lastLog = exLogs[0];
       return {
         ...ex,
         bestReps: getBestSet(ex.id),
-        bestWeight: getBestWeight(ex.id),
-        logsCount: weekLogs.filter(l => l.exerciseId === ex.id).length,
-        lastLogDate: lastLog ? new Date(lastLog.date).getTime() : 0,
+        weekSets: weekLogs.filter(l => l.exerciseId === ex.id).length,
+        lastDate: lastLog ? new Date(lastLog.date).getTime() : null,
       };
+    }).sort((a, b) => {
+      if (!a.lastDate && !b.lastDate) return 0;
+      if (!a.lastDate) return -1;
+      if (!b.lastDate) return 1;
+      return a.lastDate - b.lastDate;
     });
-    // Never-done first, then oldest lastLogDate ascending
-    return withStats.sort((a, b) => {
-      if (a.lastLogDate === 0 && b.lastLogDate > 0) return -1;
-      if (b.lastLogDate === 0 && a.lastLogDate > 0) return 1;
-      return a.lastLogDate - b.lastLogDate;
-    });
-  }, [exercises, logs, weekLogs, getBestSet, getBestWeight]);
+  }, [exercises, logs, weekLogs, getBestSet]);
 
-  // Overall progress
   const overallProgress = useMemo(() => {
-    if (exercises.length === 0) return 0;
+    if (!exercises?.length) return 0;
     const totals = exercises.reduce((acc, ex) => {
       const best = getBestSet(ex.id);
       const target = ex.startReps * 2;
@@ -239,15 +201,8 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
     return totals.target > 0 ? Math.min(1, totals.current / totals.target) : 0;
   }, [exercises, getBestSet]);
 
-  const nextUpExercise = exerciseStats[0];
-  const getDaysSince = (ms) => {
-    if (!ms) return null;
-    const days = Math.floor((Date.now() - ms) / 864e5);
-    if (days === 0) return 'today';
-    return `${days} day${days > 1 ? 's' : ''} ago`;
-  };
+  const nextUp = exerciseStats[0];
 
-  // Recent PRs (new this week)
   const recentPRs = useMemo(() => {
     return exercises.map(ex => {
       const exLogs = logs.filter(l => l.exerciseId === ex.id).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -267,7 +222,7 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
   })();
 
   return (
-    <div className="p-4 pb-32 space-y-5 max-w-lg mx-auto">
+    <div className="p-4 pb-24 space-y-5 max-w-lg mx-auto">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
@@ -302,77 +257,63 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
         </div>
       )}
 
-      {/* ── Start Workout CTAs ── */}
-      {exercises.length > 0 && (
-        <div className="space-y-2">
-          {/* Primary CTA: Train single oldest exercise */}
-          {nextUpExercise && (
-            <button
-              onClick={() => { navigator.vibrate?.(30); onViewExercise?.(nextUpExercise.id); }}
-              className="w-full bg-cyan-500 rounded-2xl py-4 font-bold text-white shadow-lg shadow-cyan-500/10 active:scale-95 active:opacity-90 transition-all flex items-center justify-center gap-2"
-            >
-              <Play size={18} className="fill-current" />
-              Train {nextUpExercise.name}
-              {nextUpExercise.lastLogDate === 0 ? (
-                <span className="text-cyan-200 text-xs font-normal bg-cyan-600/40 px-2 py-0.5 rounded-full border border-cyan-400/20">Baseline calibration</span>
-              ) : (
-                <span className="text-cyan-200 text-xs font-normal bg-cyan-600/40 px-2 py-0.5 rounded-full border border-cyan-400/20">{getDaysSince(nextUpExercise.lastLogDate)}</span>
-              )}
-            </button>
-          )}
-
-          {/* Secondary CTA: Balanced Routine Stack */}
-          <button
-            onClick={() => { navigator.vibrate?.(30); onStartWorkout?.(); }}
-            className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3.5 font-bold text-slate-300 active:scale-95 active:opacity-90 transition-all flex items-center justify-center gap-2 hover:bg-slate-800/50"
-          >
-            <Zap size={16} className="text-yellow-400 fill-yellow-400" />
-            Start Balanced Routine
-            <span className="text-slate-500 text-xs font-normal">({exercises.length} exercises)</span>
-          </button>
-        </div>
+      {/* ── Primary CTA ── */}
+      {nextUp && (
+        <button
+          onClick={() => { navigator.vibrate?.(30); onViewExercise?.(nextUp.id); }}
+          className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-left hover:border-cyan-500/30 active:scale-[0.98] transition-all"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-cyan-500 flex items-center justify-center shrink-0">
+              <Play size={28} className="text-white fill-current ml-1" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-0.5">Next Up</p>
+              <h2 className="text-lg font-black text-white truncate">{nextUp.name}</h2>
+              <p className="text-xs text-slate-500">
+                {!nextUp.lastDate
+                  ? 'First time — establish your baseline'
+                  : `${Math.floor((Date.now() - nextUp.lastDate) / 864e5)} days since last session`}
+              </p>
+            </div>
+            <ChevronRight size={20} className="text-slate-600 shrink-0" />
+          </div>
+        </button>
       )}
 
+      {/* ── Start Routine ── */}
+      {exercises.length > 0 && (
+        <button
+          onClick={() => { navigator.vibrate?.(30); onStartWorkout?.(); }}
+          className="w-full bg-cyan-500 rounded-2xl py-4 font-bold text-white shadow-lg shadow-cyan-500/10 active:scale-95 active:opacity-90 transition-all flex items-center justify-center gap-2"
+        >
+          <Zap size={18} className="fill-current" />
+          Start Routine ({exercises.length} exercises)
+        </button>
+      )}
+
+      {/* ── Exercise List ── */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('dashboard.yourExercises')}</h2>
           <button onClick={onOpenLibrary}
-            className="text-xs text-cyan-400 flex items-center gap-1 hover:text-cyan-300 transition-colors font-medium">
-            <Plus size={13} /> {t('common.browse')}
+            className="text-[10px] font-bold text-cyan-400 flex items-center gap-1 hover:text-cyan-300 transition-colors px-2 py-1 rounded-lg bg-slate-900 border border-slate-800">
+            <Plus size={12} /> {t('common.browse')}
           </button>
         </div>
 
-        <p className="text-[10px] text-slate-500 leading-normal mb-1">
-          💡 Exercises are automatically sorted oldest-trained first to ensure balanced muscular development.
-        </p>
-
-        <div className="space-y-2">
-          {exerciseStats.map((ex) => {
-            let reason = '';
-            if (ex.lastLogDate === 0) {
-              reason = 'Never trained yet — priority focus';
-            } else {
-              const days = Math.floor((Date.now() - ex.lastLogDate) / 864e5);
-              if (days === 0) {
-                reason = 'Trained today';
-              } else {
-                reason = `Unused for ${days} day${days > 1 ? 's' : ''}`;
-              }
-            }
-            return (
-              <ExerciseCard
-                key={ex.id}
-                exercise={ex}
-                bestReps={ex.bestReps}
-                bestWeight={ex.bestWeight}
-                logsCount={ex.logsCount}
-                progress={ex.bestReps > 0 ? Math.min(1, ex.bestReps / (ex.startReps * 2)) : 0}
-                reason={reason}
-                onQuickStart={(id) => { navigator.vibrate?.(20); onViewExercise?.(id); }}
-                onRemove={handleRemoveExercise}
-              />
-            );
-          })}
+        <div className="space-y-1.5">
+          {exerciseStats.map((ex) => (
+            <ExerciseMiniRow
+              key={ex.id}
+              exercise={ex}
+              bestReps={ex.bestReps}
+              weekSets={ex.weekSets}
+              lastDate={ex.lastDate}
+              onClick={() => { navigator.vibrate?.(20); onViewExercise?.(ex.id); }}
+              onRemove={handleRemoveExercise}
+            />
+          ))}
         </div>
 
         {exercises.length === 0 && (
@@ -389,29 +330,6 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
           </div>
         )}
       </div>
-
-      {/* ── Coach Quick Tip Card ── */}
-      <div className="glass-card rounded-2xl p-4 border border-cyan-500/10 flex items-start gap-3 mt-4">
-        <span className="text-xl p-1 bg-cyan-500/10 rounded-lg">🤖</span>
-        <div className="space-y-1">
-          <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Coach Insights</p>
-          <p className="text-xs text-slate-400 leading-relaxed font-medium animate-pulse-slow">
-            {useMemo(() => {
-              const tips = [
-                "Progressive overload means doing +1 rep or adding a bit of weight. Slow, steady progress is key.",
-                "Focus on form! A slow, controlled negative phase builds more muscle than throwing weights.",
-                "Rest times are dynamic. If you crushed a PR, take an extra 30s to let your ATP stores fully recover.",
-                "Consistency beats intensity. Logging 3 small workouts a week is better than one massive exhausting session.",
-                "Keep your core locked during pushups and planks to protect your lower back and maximize tension.",
-                "Squat deep—aim for your thighs to be parallel to the ground to recruit all glute and quad fibers."
-              ];
-              return tips[Math.floor(Math.random() * tips.length)];
-            }, [])}
-          </p>
-        </div>
-      </div>
-
-      <QuickStartFAB visible={exercises.length > 0} onClick={() => onStartWorkout?.()} />
     </div>
   );
 }

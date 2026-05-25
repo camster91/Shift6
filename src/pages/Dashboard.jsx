@@ -309,7 +309,7 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
           {nextUpExercise && (
             <button
               onClick={() => { navigator.vibrate?.(30); onViewExercise?.(nextUpExercise.id); }}
-              className="w-full bg-cyan-500 rounded-2xl py-4 font-bold text-white shadow-lg shadow-cyan-500/10 active:scale-98 transition-all flex items-center justify-center gap-2"
+              className="w-full bg-cyan-500 rounded-2xl py-4 font-bold text-white shadow-lg shadow-cyan-500/10 active:scale-95 active:opacity-90 transition-all flex items-center justify-center gap-2"
             >
               <Play size={18} className="fill-current" />
               Train {nextUpExercise.name}
@@ -324,7 +324,7 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
           {/* Secondary CTA: Balanced Routine Stack */}
           <button
             onClick={() => { navigator.vibrate?.(30); onStartWorkout?.(); }}
-            className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3.5 font-bold text-slate-300 active:scale-98 transition-all flex items-center justify-center gap-2 hover:bg-slate-800/50"
+            className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3.5 font-bold text-slate-300 active:scale-95 active:opacity-90 transition-all flex items-center justify-center gap-2 hover:bg-slate-800/50"
           >
             <Zap size={16} className="text-yellow-400 fill-yellow-400" />
             Start Balanced Routine

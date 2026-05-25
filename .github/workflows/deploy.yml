@@ -19,5 +19,5 @@ jobs:
         run: npm run build --if-present
       - name: Trigger Coolify Deploy
         run: |
-          curl -X GET "http://187.77.26.99:8000/api/v1/deploy?uuid=toc8kck8g08k8g0co0gg8ggs&force=true" \
+          curl -X GET "http://187.77.26.99:8000/api/v1/deploy?uuid=toc8kck8g08k8g0co0gg8ggs&force=true" \\
             -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}"

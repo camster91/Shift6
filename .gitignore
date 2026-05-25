@@ -34,6 +34,7 @@ ios/App/App.xcworkspace
 ios/App/App.xcodeproj/xcuserdata
 ios/App/App.xcodeproj/project.xcworkspace/xcuserdata
 android/app/debug.keystore
+android/app/shift6-release.keystore
 android/shift6-release.keystore
 *.apk
 

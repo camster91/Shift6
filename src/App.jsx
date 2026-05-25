@@ -51,6 +51,10 @@ export default function App() {
     if (savedTheme === 'light') {
       document.documentElement.classList.add('light');
     }
+    // Sync to legacy key for index.html pre-paint script
+    try {
+      localStorage.setItem('shift6_theme', savedTheme);
+    } catch {}
   }, [settings?.theme]);
 
   const handleInstall = async () => {

@@ -5,7 +5,7 @@ import { COLOR_MAP, getExercise } from '../data/exercises';
 import { t } from '../i18n';
 
 // ──────────── Rest Settings Modal ────────────
-function RestSettingsModal({ currentSeconds, onSave, onClose }) {
+function RestSettingsModal({ currentExId, currentSeconds, onSave, onClose }) {
   const { updateSettings, settings } = useData();
   const [mins, setMins] = useState(Math.floor(currentSeconds / 60));
   const [secs, setSecs] = useState(currentSeconds % 60);
@@ -35,7 +35,12 @@ function RestSettingsModal({ currentSeconds, onSave, onClose }) {
           <button onClick={onClose} className="flex-1 py-2.5 bg-slate-800 text-slate-400 rounded-xl text-sm font-semibold">Cancel</button>
           <button onClick={handleSave} className="flex-1 py-2.5 bg-cyan-500 text-white rounded-xl text-sm font-bold active:scale-95">Save</button>
         </div>
-        <button onClick={() => { updateSettings({ restTimes: { ...(settings?.restTimes || {}), ['']: undefined } }); onClose(); }}
+        <button onClick={() => {
+            const rt = { ...(settings?.restTimes || {}) };
+            delete rt[currentExId];
+            updateSettings({ restTimes: rt });
+            onClose();
+          }}
           className="w-full mt-3 py-2 text-slate-600 text-xs hover:text-slate-400 transition-colors">
           Reset to default rest time
         </button>
@@ -759,6 +764,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
 
       {showRestModal && (
         <RestSettingsModal
+          currentExId={currentExId}
           currentSeconds={restSeconds}
           onSave={handleSaveRestTime}
           onClose={() => setShowRestModal(false)}

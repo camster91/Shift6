@@ -29,10 +29,10 @@ jobs:
       - name: Deploy via SSH
         env:
           COOLIFY_HOST: ${{ secrets.COOLIFY_HOST }}
-          COOLIFY_SSH_KEY: ${{ secrets.COOLIFY_SSH_KEY }}
+          COOLIFY_SSH_KEY_B64: ${{ secrets.COOLIFY_SSH_KEY_B64 }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "$COOLIFY_SSH_KEY" > ~/.ssh/coolify
+          printf '%s' "$COOLIFY_SSH_KEY_B64" | base64 -d > ~/.ssh/coolify
           chmod 600 ~/.ssh/coolify
           tar -czf - dist/ | ssh -i ~/.ssh/coolify -o StrictHostKeyChecking=no "root@${COOLIFY_HOST}" 'cat > /tmp/shift6-deploy.tar.gz'
           ssh -i ~/.ssh/coolify -o StrictHostKeyChecking=no "root@${COOLIFY_HOST}" << 'DEPLOYEOF'

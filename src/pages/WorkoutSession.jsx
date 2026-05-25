@@ -335,7 +335,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
   useEffect(() => {
     let wakeLock = null;
     if ('wakeLock' in navigator) {
-      navigator.wakeLock.request('screen').then(wl => wakeLock = wl).catch(() => {});
+      navigator.wakeLock.request('screen').then(wl => wakeLock = wl).catch(e => { console.debug('[wakeLock] not available:', e.message); });
     }
     return () => wakeLock?.release();
   }, []);

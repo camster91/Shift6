@@ -355,6 +355,16 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     return () => wakeLock?.release();
   }, []);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); handleCancel(); }
+      if (e.key === 'Enter' && phase === 'active') { e.preventDefault(); handleCompleteSet(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase, handleCancel, handleCompleteSet]);
+
   const adjustReps = useCallback((delta) => { setCurrentReps(prev => Math.max(0, prev + delta)); }, []);
   const adjustWeight = useCallback((delta) => { setCurrentWeight(prev => Math.max(0, prev + delta)); }, []);
 

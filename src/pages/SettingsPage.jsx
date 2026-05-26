@@ -165,6 +165,8 @@ export default function SettingsPage() {
           <button
             onClick={() => handleToggle('soundEnabled')}
             className={`w-12 h-7 rounded-full transition-colors relative ${soundEnabled ? 'bg-cyan-500' : 'bg-slate-700'}`}
+            role="switch"
+            aria-checked={soundEnabled}
           >
             <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${soundEnabled ? 'left-6' : 'left-1'}`} />
           </button>
@@ -181,6 +183,8 @@ export default function SettingsPage() {
           <button
             onClick={() => handleToggle('vibrationEnabled')}
             className={`w-12 h-7 rounded-full transition-colors relative ${vibrationEnabled ? 'bg-cyan-500' : 'bg-slate-700'}`}
+            role="switch"
+            aria-checked={vibrationEnabled}
           >
             <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${vibrationEnabled ? 'left-6' : 'left-1'}`} />
           </button>
@@ -219,6 +223,8 @@ export default function SettingsPage() {
           <button
             onClick={handleThemeToggle}
             className={`w-12 h-7 rounded-full transition-colors relative ${theme === 'dark' ? 'bg-cyan-500' : 'bg-slate-700'}`}
+            role="switch"
+            aria-checked={theme === 'dark'}
           >
             <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${theme === 'dark' ? 'left-6' : 'left-1'}`} />
           </button>
@@ -251,6 +257,8 @@ export default function SettingsPage() {
               if (settings?.vibrationEnabled) navigator.vibrate?.(30);
             }}
             className={`w-12 h-7 rounded-full transition-colors relative ${settings?.notificationsEnabled ? 'bg-cyan-500' : 'bg-slate-700'}`}
+            role="switch"
+            aria-checked={!!settings?.notificationsEnabled}
           >
             <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${settings?.notificationsEnabled ? 'left-6' : 'left-1'}`} />
           </button>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Dumbbell, Minus, Check, Flame, Trash2, Clock, ChevronDown } from 'lucide-react';
+import { Plus, Dumbbell, Minus, Check, Flame, Trash2, Clock, ChevronDown, Edit } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
 
@@ -147,7 +147,7 @@ export default function LogPage() {
                     </div>
                     <button
                       onClick={(e) => handleDeleteLog(log.id, e)}
-                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors"
+                      className="w-9 h-9 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors flex items-center justify-center"
                     >
                       <Trash2 size={14} />
                     </button>

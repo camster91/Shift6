@@ -199,6 +199,16 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
       return a.lastDate - b.lastDate;
     });
   }, [exercises, logs, weekLogs, getBestSet]);
+  useEffect(() => {
+    let wakeLock = null;
+    const requestWakeLock = async () => {
+      try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { /* ignore */ }
+    };
+    requestWakeLock();
+    const onVis = () => { if (document.visibilityState === 'visible') requestWakeLock(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { document.removeEventListener('visibilitychange', onVis); wakeLock?.release(); };
+  }, []);
 
   const overallProgress = useMemo(() => {
     if (!exercises?.length) return 0;

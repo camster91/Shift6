@@ -80,7 +80,7 @@ export default function ExerciseLibrary({ onBack }) {
                       <p className="text-xs text-slate-500">{ex.equipment === 'none' ? 'No equipment' : ex.equipment}</p>
                     </div>
                     <button onClick={() => isInCollection ? removeExercise(ex.id) : addExercise(ex.id)}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
                         isInCollection ? 'bg-slate-800 text-slate-500' : `${colors.solid} text-white`
                       }`}>
                       {isInCollection ? <Check size={16} /> : <Plus size={16} />}

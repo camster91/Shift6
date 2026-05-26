@@ -113,7 +113,7 @@ export default function App() {
 
   // Show onboarding if not done
   if (!onboardingDone) {
-    return <Onboarding onDone={() => window.location.reload()} />;
+    return <Onboarding />;
   }
 
   return (

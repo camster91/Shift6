@@ -22,7 +22,7 @@ function getCoverage(selectedIds, allExercises) {
   return counts;
 }
 
-export default function Onboarding({ onDone }) {
+export default function Onboarding() {
   const { allExercises, setExerciseList, setOnboardingDone, updateSettings } = useData();
   const [step, setStep] = useState(0);
 
@@ -89,7 +89,6 @@ export default function Onboarding({ onDone }) {
 
     setExerciseList(chosen);
     setOnboardingDone(true);
-    if (onDone) onDone();
   };
 
   const handleQuickStart = () => {
@@ -107,7 +106,6 @@ export default function Onboarding({ onDone }) {
     });
     setExerciseList(chosen.length > 0 ? chosen : fallback);
     setOnboardingDone(true);
-    if (onDone) onDone();
   };
 
   const toggleExercise = (id) => {

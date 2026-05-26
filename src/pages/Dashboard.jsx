@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Flame, Plus, Dumbbell, TrendingUp, X, Zap, ChevronRight, Play } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
 import { t } from '../i18n';
+import { getLocalDateString } from '../utils/date.js';
 
 // ──────────── Body part icons ────────────
 const BODY_PART_ICONS = {
@@ -224,8 +225,9 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
 
   const lastWorkoutText = (() => {
     if (todayLogs.length > 0) return t('dashboard.workoutStatus.alreadyTrained');
-    const yStr = new Date(Date.now() - 864e5).toISOString().split('T')[0];
-    const yLogs = logs.filter(l => l.date.startsWith(yStr));
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = getLocalDateString(yesterday);
+    const yLogs = logs.filter(l => getLocalDateString(new Date(l.date)) === yStr);
     if (yLogs.length > 0) return t('dashboard.workoutStatus.readyToTrain');
     return t('dashboard.workoutStatus.noWorkoutYet');
   })();

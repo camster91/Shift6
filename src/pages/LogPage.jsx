@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Plus, Dumbbell, Minus, Check, Flame, Trash2, Clock, ChevronDown, Edit } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
+import { getLocalDateString } from '../utils/date.js';
 
 const BODY_PART_ICONS = {
   Chest: '💪', Back: '🔙', Shoulders: '🎯', Legs: '🦵',
@@ -19,11 +20,12 @@ export default function LogPage() {
   const todayLogs = getTodayLogs();
   const streak = getCurrentStreak();
 
-  // Group logs by date
+  const todayKey = getLocalDateString();
+
   const logsByDate = useMemo(() => {
     const groups = {};
     logs.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(log => {
-      const dateKey = log.date.split('T')[0];
+      const dateKey = getLocalDateString(new Date(log.date));
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(log);
     });
@@ -34,9 +36,9 @@ export default function LogPage() {
     const d = new Date(isoStr);
     const today = new Date();
     const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-    const dateStr = d.toISOString().split('T')[0];
-    if (dateStr === today.toISOString().split('T')[0]) return 'Today';
-    if (dateStr === yesterday.toISOString().split('T')[0]) return 'Yesterday';
+    const dateStr = getLocalDateString(d);
+    if (dateStr === getLocalDateString(today)) return 'Today';
+    if (dateStr === getLocalDateString(yesterday)) return 'Yesterday';
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -160,7 +162,7 @@ export default function LogPage() {
       )}
 
       {/* History section */}
-      {Object.keys(logsByDate).filter(d => d !== new Date().toISOString().split('T')[0]).length > 0 && (
+      {Object.keys(logsByDate).filter(d => d !== todayKey).length > 0 && (
         <div className="space-y-2">
           <button
             onClick={() => setExpandedId(expandedId === 'history' ? null : 'history')}

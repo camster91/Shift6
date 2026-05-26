@@ -83,6 +83,7 @@ function useTimer(initialSeconds) {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(intervalRef.current);
+          setRunning(false);
           try { navigator.vibrate?.([200, 100, 200]); } catch (e) { /* ignore */ }
           return 0;
         }

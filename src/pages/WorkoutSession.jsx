@@ -345,6 +345,7 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     : null;
 
   const prevLogCount = useRef(logs.length);
+  useEffect(() => { prevLogCount.current = logs.length; }, [logs]);
 
   useEffect(() => { const best = getBestSet(currentExId); setBestReps(best); }, [currentExId, logs, getBestSet]);
 

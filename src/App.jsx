@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Play, BarChart3, Target, Plus } from 'lucide-react';
+import { Settings, Play, BarChart3, Target, Plus, Smartphone } from 'lucide-react';
 import { useData } from './hooks/useData';
 import { t } from './i18n';
 import { trackEvent, Events } from './utils/analytics.js';

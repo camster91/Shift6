@@ -365,6 +365,13 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     return () => window.removeEventListener('keydown', onKey);
   }, [phase, handleCancel, handleCompleteSet]);
 
+  useEffect(() => {
+    if (phase === 'rest' && timer.timeLeft === 0 && timer.running) {
+      timer.pause();
+      setPhase('active');
+    }
+  }, [phase, timer.timeLeft, timer.running, timer]);
+
   const adjustReps = useCallback((delta) => { setCurrentReps(prev => Math.max(0, prev + delta)); }, []);
   const adjustWeight = useCallback((delta) => { setCurrentWeight(prev => Math.max(0, prev + delta)); }, []);
 
@@ -494,9 +501,9 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
         </div>
         <div className="flex items-center gap-1">
           {workoutQueue.length > 1 && (
-            <button onClick={() => onComplete?.({ exerciseId, sets: setsCompleted })}
+            <button onClick={() => onComplete?.({ exerciseId: currentExId, sets: setsCompleted })}
               className="text-[10px] font-bold text-slate-500 hover:text-slate-300 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800 active:scale-90 transition-all">
-              SKIP
+              SAVE & SKIP
             </button>
           )}
           <button onClick={() => setShowRestModal(true)} className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center active:scale-90 transition-transform">

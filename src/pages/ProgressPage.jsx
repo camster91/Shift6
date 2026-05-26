@@ -4,7 +4,7 @@ import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
 
 export default function ProgressPage() {
-  const { exercises, logs, getLogsForExercise, getBestSet } = useData();
+  const { exercises, logs, getLogsForExercise, getBestSet, goals } = useData();
   const [selectedEx, setSelectedEx] = useState(null);
 
   const exerciseHistory = useMemo(() => {
@@ -98,7 +98,9 @@ export default function ProgressPage() {
         {exercises.map(ex => {
           const colors = COLOR_MAP[ex.color] || COLOR_MAP.cyan;
           const best = getBestSet(ex.id);
-          const progress = best > 0 ? Math.min(100, Math.round((best / (ex.startReps * 2)) * 100)) : 0;
+          const goal = goals.find(g => g.exerciseId === ex.id);
+          const target = goal?.targetReps || ex.startReps * 2;
+          const progress = target > 0 ? Math.min(100, Math.round((best / target) * 100)) : 0;
 
           return (
             <button key={ex.id} onClick={() => setSelectedEx(ex.id)}
@@ -109,7 +111,7 @@ export default function ProgressPage() {
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-white text-sm">{ex.name}</p>
-                  <p className="text-xs text-slate-500">Best: {best} reps</p>
+                  <p className="text-xs text-slate-500">Best: {best} reps · Target: {target}</p>
                 </div>
                 <div className="w-10 h-10 relative">
                   <svg width={40} height={40} className="transform -rotate-90">

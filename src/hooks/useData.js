@@ -62,7 +62,7 @@ export function useData() {
 
   const logSet = useCallback((exerciseId, reps, weight, notes) => {
     const entry = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 4),
       exerciseId, reps, weight: weight || 0,
       date: new Date().toISOString(), notes: notes || '',
     };

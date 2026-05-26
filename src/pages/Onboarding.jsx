@@ -192,17 +192,21 @@ export default function Onboarding() {
                 </p>
               </div>
 
+              <div className="shrink-0 mb-3">
+                <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/40 relative flex items-center gap-3">
+                  <span className="text-2xl">🏠</span>
+                  <div className="flex-1">
+                    <span className="text-sm font-bold text-white">Bodyweight Only</span>
+                    <span className="text-[10px] text-cyan-400 font-semibold uppercase tracking-wider block mt-0.5">Always Included</span>
+                  </div>
+                  <span className="w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
+                    <Check size={10} className="text-white" />
+                  </span>
+                </div>
+              </div>
+
               <div className="flex-1 overflow-y-auto -mx-1 px-1 no-scrollbar">
                 <div className="grid grid-cols-2 gap-2.5 pb-2">
-                  <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/40 relative flex flex-col items-start text-left">
-                    <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
-                      <Check size={10} className="text-white" />
-                    </span>
-                    <span className="text-2xl mb-2">🏠</span>
-                    <span className="text-sm font-bold text-white">Bodyweight Only</span>
-                    <span className="text-[10px] text-cyan-400 font-semibold uppercase tracking-wider mt-0.5">Always Included</span>
-                  </div>
-
                   {EQUIP_OPTIONS.map(eq => {
                     const selected = selectedEquip.includes(eq.id);
                     return (

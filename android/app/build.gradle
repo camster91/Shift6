@@ -19,9 +19,9 @@ android {
     signingConfigs {
         release {
             storeFile file('shift6-release.keystore')
-            storePassword 'Shift6Ashbi2026!'
-            keyAlias 'shift6'
-            keyPassword 'Shift6Ashbi2026!'
+            storePassword System.getenv("RELEASE_STORE_PASSWORD")
+            keyAlias System.getenv("RELEASE_KEY_ALIAS") ?: 'shift6'
+            keyPassword System.getenv("RELEASE_KEY_PASSWORD")
         }
     }
     buildTypes {

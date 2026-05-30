@@ -53,7 +53,9 @@ export default function App() {
     // Sync to legacy key for index.html pre-paint script
     try {
       localStorage.setItem('shift6_theme', savedTheme);
-    } catch {}
+    } catch (e) {
+      // Ignore storage errors
+    }
   }, [settings?.theme]);
 
   const handleInstall = async () => {

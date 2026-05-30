@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { EXERCISES, getExercise } from '../data/exercises';
 import { trackEvent, Events } from '../utils/analytics.js';
-import { scheduleWorkoutReminder, cancelWorkoutReminder } from '../utils/notifications.js';
 import { getLocalDateString } from '../utils/date.js';
 
 function load(key, fallback) {

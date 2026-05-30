@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Flame, Plus, Dumbbell, TrendingUp, X, Zap, ChevronRight, Play } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
@@ -63,14 +63,27 @@ function StreakBadge({ streak }) {
 function VolumeSparkline({ logs }) {
   const data = useMemo(() => {
     const today = new Date();
-    const days = [];
+    const dayStrings = [];
+    const counts = {};
+
+    // Initialize the last 7 days with 0 counts
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const count = logs.filter(l => l.date.startsWith(dateStr)).length;
-      days.push(count);
+      const s = d.toISOString().split('T')[0];
+      dayStrings.push(s);
+      counts[s] = 0;
     }
+
+    // Single pass over logs to count entries for relevant days (O(L))
+    logs.forEach(l => {
+      const d = l.date.split('T')[0];
+      if (counts[d] !== undefined) {
+        counts[d]++;
+      }
+    });
+
+    const days = dayStrings.map(s => counts[s]);
     const max = Math.max(...days, 1);
     return { days, max };
   }, [logs]);
@@ -163,7 +176,7 @@ function getGreeting() {
 export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercise }) {
   const {
     exercises, logs,
-    getBestSet, getBestWeight, getCurrentStreak,
+    getCurrentStreak,
     getTodayLogs, getThisWeekLogs, removeExercise,
   } = useData();
 
@@ -183,15 +196,42 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
     }
   };
 
+  // Optimization: Single-pass log processing to avoid O(E*L) complexity
+  const dashboardStats = useMemo(() => {
+    const statsMap = {};
+    const weekMap = {};
+
+    // Map logs to exercises and find bests O(L)
+    logs.forEach(l => {
+      if (!statsMap[l.exerciseId]) statsMap[l.exerciseId] = { logs: [], best: 0 };
+      statsMap[l.exerciseId].logs.push(l);
+      if ((l.reps || 0) > statsMap[l.exerciseId].best) statsMap[l.exerciseId].best = l.reps;
+    });
+
+    // Count weekly sets O(W)
+    weekLogs.forEach(l => {
+      weekMap[l.exerciseId] = (weekMap[l.exerciseId] || 0) + 1;
+    });
+
+    // Post-process O(E * log L_avg)
+    Object.keys(statsMap).forEach(id => {
+      const data = statsMap[id];
+      data.logs.sort((a, b) => new Date(b.date) - new Date(a.date));
+      data.lastDate = new Date(data.logs[0].date).getTime();
+      data.prevReps = data.logs.length > 1 ? (data.logs[1].reps || 0) : 0;
+    });
+
+    return { statsMap, weekMap };
+  }, [logs, weekLogs]);
+
   const exerciseStats = useMemo(() => {
     return (exercises || []).map(ex => {
-      const exLogs = logs.filter(l => l.exerciseId === ex.id).sort((a, b) => new Date(b.date) - new Date(a.date));
-      const lastLog = exLogs[0];
+      const s = dashboardStats.statsMap[ex.id] || {};
       return {
         ...ex,
-        bestReps: getBestSet(ex.id),
-        weekSets: weekLogs.filter(l => l.exerciseId === ex.id).length,
-        lastDate: lastLog ? new Date(lastLog.date).getTime() : null,
+        bestReps: s.best || 0,
+        weekSets: dashboardStats.weekMap[ex.id] || 0,
+        lastDate: s.lastDate || null,
       };
     }).sort((a, b) => {
       if (!a.lastDate && !b.lastDate) return 0;
@@ -199,29 +239,28 @@ export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercis
       if (!b.lastDate) return 1;
       return a.lastDate - b.lastDate;
     });
-  }, [exercises, logs, weekLogs, getBestSet]);
+  }, [exercises, dashboardStats]);
 
   const overallProgress = useMemo(() => {
     if (!exercises?.length) return 0;
     const totals = exercises.reduce((acc, ex) => {
-      const best = getBestSet(ex.id);
+      const best = dashboardStats.statsMap[ex.id]?.best || 0;
       const target = ex.startReps * 2;
       return { current: acc.current + Math.min(best, target), target: acc.target + target };
     }, { current: 0, target: 0 });
     return totals.target > 0 ? Math.min(1, totals.current / totals.target) : 0;
-  }, [exercises, getBestSet]);
+  }, [exercises, dashboardStats]);
 
   const nextUp = exerciseStats[0];
 
   const recentPRs = useMemo(() => {
-    return exercises.map(ex => {
-      const exLogs = logs.filter(l => l.exerciseId === ex.id).sort((a, b) => new Date(b.date) - new Date(a.date));
-      const best = getBestSet(ex.id);
-      if (exLogs.length < 2) return { ex, best, isNew: false };
-      const secondBest = exLogs[1]?.reps || 0;
-      return { ex, best, isNew: best > secondBest && best > ex.startReps };
+    return (exercises || []).map(ex => {
+      const s = dashboardStats.statsMap[ex.id];
+      if (!s || s.logs.length < 2) return { ex, best: s?.best || 0, isNew: false };
+      const isNew = s.best > s.prevReps && s.best > ex.startReps;
+      return { ex, best: s.best, isNew };
     }).filter(r => r.isNew).slice(0, 3);
-  }, [exercises, logs, getBestSet]);
+  }, [exercises, dashboardStats]);
 
   const lastWorkoutText = (() => {
     if (todayLogs.length > 0) return t('dashboard.workoutStatus.alreadyTrained');

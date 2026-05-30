@@ -27,7 +27,9 @@ export default class ErrorBoundary extends Component {
       localStorage.removeItem('shift6_settings');
       localStorage.removeItem('shift6_install_dismissed');
       localStorage.removeItem('shift6_theme');
-    } catch (e) {}
+    } catch (e) {
+      // Ignore storage errors
+    }
     window.location.reload();
   };
 

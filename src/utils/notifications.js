@@ -51,7 +51,9 @@ export async function scheduleWorkoutReminder(hour = 7, minute = 0) {
 export async function cancelWorkoutReminder() {
   try {
     await LocalNotifications.cancel({ notifications: [{ id: 1 }] });
-  } catch (e) {}
+  } catch (e) {
+    // Ignore cancel errors
+  }
 }
 
 export async function sendImmediateNotification(title, body) {

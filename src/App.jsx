@@ -141,19 +141,25 @@ export default function App() {
 
       {!workoutExId && !showLibrary && (
         <nav className="tab-bar">
-          <div className="flex justify-around max-w-lg mx-auto">
+          <div className="flex justify-around max-w-lg mx-auto" role="tablist">
             {TAB_BAR.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-col items-center py-3 px-5 transition-colors relative ${
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-label={tab.label}
+                  className={`flex flex-col items-center py-3 px-5 transition-colors relative focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none rounded-lg ${
                     isActive ? 'text-cyan-400' : 'text-slate-500'
-                  }`}>
+                  }`}
+                >
                   {isActive && (
                     <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-cyan-400 rounded-full" />
                   )}
-                  <Icon size={20} />
+                  <Icon size={20} aria-hidden="true" />
                   <span className="text-xs mt-1">{tab.label}</span>
                 </button>
               );

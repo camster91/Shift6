@@ -31,7 +31,11 @@ export default function ExerciseLibrary({ onBack }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-white">Exercise Library</h1>
-        <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors p-2">
+        <button
+          onClick={onBack}
+          aria-label="Back to dashboard"
+          className="text-slate-400 hover:text-white transition-colors p-2 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none rounded-lg"
+        >
           <X size={20} />
         </button>
       </div>

@@ -491,7 +491,11 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
       {/* ─── Header ─── */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
-        <button onClick={handleCancel} className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center active:scale-90 transition-transform">
+        <button
+          onClick={handleCancel}
+          aria-label="Cancel workout"
+          className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center active:scale-90 transition-transform focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
+        >
           <X size={18} className="text-slate-400" />
         </button>
         <div className="text-center flex-1 px-2">
@@ -504,11 +508,15 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
         <div className="flex items-center gap-1">
           {workoutQueue.length > 1 && (
             <button onClick={() => onComplete?.({ exerciseId: currentExId, sets: setsCompleted })}
-              className="text-[10px] font-bold text-slate-500 hover:text-slate-300 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800 active:scale-90 transition-all">
+              className="text-[10px] font-bold text-slate-500 hover:text-slate-300 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800 active:scale-90 transition-all focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none">
               SAVE & SKIP
             </button>
           )}
-          <button onClick={() => setShowRestModal(true)} className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center active:scale-90 transition-transform">
+          <button
+            onClick={() => setShowRestModal(true)}
+            aria-label="Rest settings"
+            className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center active:scale-90 transition-transform focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
+          >
             <Settings size={16} className="text-slate-500" />
           </button>
         </div>
@@ -559,8 +567,11 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
 
             {/* Big rep count */}
             <div className="flex items-center gap-2 mb-2">
-              <button onClick={() => adjustReps(-1)}
-                className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center active:scale-90 transition-transform shrink-0">
+              <button
+                onClick={() => adjustReps(-1)}
+                aria-label="Decrease reps"
+                className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center active:scale-90 transition-transform shrink-0 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
+              >
                 <Minus size={24} className="text-slate-400" />
               </button>
               <div className="text-center min-w-[140px]">
@@ -569,8 +580,11 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
                   {exercise.unit || t('common.reps')}
                 </p>
               </div>
-              <button onClick={() => adjustReps(1)}
-                className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center active:scale-90 transition-transform shrink-0">
+              <button
+                onClick={() => adjustReps(1)}
+                aria-label="Increase reps"
+                className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center active:scale-90 transition-transform shrink-0 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
+              >
                 <Plus size={24} className="text-slate-400" />
               </button>
             </div>

@@ -27,7 +27,7 @@ npx cap open android # Open Android Studio → Generate Signed Bundle
 ```
 
 ## DO NOT
-- Keystore password: [REDACTED] — never commit this to git
+- Keystore password: set via RELEASE_STORE_PASSWORD env var — never commit this to git
 - Do not change the build pack in Coolify (currently nixpacks)
 
 ## App Store Assets

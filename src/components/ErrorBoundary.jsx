@@ -18,6 +18,21 @@ export default class ErrorBoundary extends Component {
     window.location.reload();
   };
 
+  handleReset = () => {
+    try {
+      localStorage.removeItem('shift6_logs');
+      localStorage.removeItem('shift6_goals');
+      localStorage.removeItem('shift6_my_exercises');
+      localStorage.removeItem('shift6_onboarding_done');
+      localStorage.removeItem('shift6_settings');
+      localStorage.removeItem('shift6_install_dismissed');
+      localStorage.removeItem('shift6_theme');
+    } catch (e) {
+      // Ignore storage errors
+    }
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -26,12 +41,21 @@ export default class ErrorBoundary extends Component {
             <div className="text-4xl mb-4">⚠️</div>
             <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
             <p className="text-sm text-slate-400 mb-6">The app hit an unexpected error. Your data is safe — everything is stored locally.</p>
-            <button
-              onClick={this.handleReload}
-              className="px-6 py-3 bg-cyan-500 text-white rounded-xl font-bold active:scale-95 transition-transform"
-            >
-              Reload App
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={this.handleReload}
+                className="w-full px-6 py-3 bg-cyan-500 text-white rounded-xl font-bold active:scale-95 transition-transform"
+              >
+                Reload App
+              </button>
+              <button
+                onClick={this.handleReset}
+                className="w-full px-6 py-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-bold active:scale-95 transition-transform text-sm"
+              >
+                Reset Data & Start Fresh
+              </button>
+              <p className="text-xs text-slate-600 mt-2">Reset clears logs, goals, and settings. This cannot be undone.</p>
+            </div>
           </div>
         </div>
       );

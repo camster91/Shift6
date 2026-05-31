@@ -59,15 +59,20 @@ export default function GoalsPage() {
                 )}
               </div>
 
-              {/* Progress bar */}
-              <div className="w-full bg-slate-800 rounded-full h-2.5 mb-1">
-                <div className={`h-full rounded-full ${colors.solid}`}
-                  style={{ width: `${ex.progress}%`, transition: 'width 0.8s ease' }} />
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-500">{ex.best} reps</span>
-                <span className="text-white font-medium">{ex.target} reps target</span>
-              </div>
+              {hasGoal ? (
+                <>
+                  <div className="w-full bg-slate-800 rounded-full h-2.5 mb-1">
+                    <div className={`h-full rounded-full ${colors.solid}`}
+                      style={{ width: `${ex.progress}%`, transition: 'width 0.8s ease' }} />
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">{ex.best} reps</span>
+                    <span className="text-white font-medium">{ex.target} reps target</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-slate-600">No goal set. Tap + to set one.</p>
+              )}
 
               {/* Inline goal editor */}
               {editing === ex.id && (

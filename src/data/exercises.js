@@ -96,14 +96,14 @@ export const EQUIPMENT_TYPES = [
   { id: 'none', label: 'No Equipment', icon: '🏠' },
   { id: 'dumbbells', label: 'Dumbbells', icon: '🏋️' },
   { id: 'barbell', label: 'Barbell', icon: '🏋️' },
-  { id: 'pullup_bar', label: 'Pull-Up Bar', icon: '⬛' },
-  { id: 'dip_bars', label: 'Dip Bars', icon: '⬛' },
+  { id: 'pullup_bar', label: 'Pull-Up Bar', icon: '🧗' },
+  { id: 'dip_bars', label: 'Dip Bars', icon: '🦽' },
   { id: 'bench', label: 'Bench', icon: '🪑' },
-  { id: 'cable', label: 'Cable Machine', icon: '⬛' },
-  { id: 'machine', label: 'Gym Machine', icon: '⬛' },
+  { id: 'cable', label: 'Cable Machine', icon: '🔗' },
+  { id: 'machine', label: 'Gym Machine', icon: '⚙️' },
   { id: 'wall', label: 'Wall', icon: '🧱' },
-  { id: 'bar', label: 'Bar', icon: '⬛' },
-  { id: 'ab_wheel', label: 'Ab Wheel', icon: '⚙️' },
+  { id: 'bar', label: 'Bar', icon: '🪜' },
+  { id: 'ab_wheel', label: 'Ab Wheel', icon: '🎯' },
 ];
 
 export const COLOR_MAP = {

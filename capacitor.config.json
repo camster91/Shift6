@@ -28,7 +28,7 @@
       "splashImmersive": true
     },
     "StatusBar": {
-      "style": "DARK",
+      "style": "LIGHT",
       "backgroundColor": "#0f172a"
     },
     "Haptics": {

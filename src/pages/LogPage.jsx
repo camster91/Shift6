@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Plus, Dumbbell, Minus, Check, Flame, Trash2, Clock, ChevronDown } from 'lucide-react';
+import { Plus, Dumbbell, Minus, Check, Flame, Trash2, Clock, ChevronDown, Edit } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
+import { getLocalDateString } from '../utils/date.js';
 
 const BODY_PART_ICONS = {
   Chest: '💪', Back: '🔙', Shoulders: '🎯', Legs: '🦵',
@@ -19,11 +20,12 @@ export default function LogPage() {
   const todayLogs = getTodayLogs();
   const streak = getCurrentStreak();
 
-  // Group logs by date
+  const todayKey = getLocalDateString();
+
   const logsByDate = useMemo(() => {
     const groups = {};
     logs.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(log => {
-      const dateKey = log.date.split('T')[0];
+      const dateKey = getLocalDateString(new Date(log.date));
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(log);
     });
@@ -34,16 +36,14 @@ export default function LogPage() {
     const d = new Date(isoStr);
     const today = new Date();
     const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-    const dateStr = d.toISOString().split('T')[0];
-    if (dateStr === today.toISOString().split('T')[0]) return 'Today';
-    if (dateStr === yesterday.toISOString().split('T')[0]) return 'Yesterday';
+    const dateStr = getLocalDateString(d);
+    if (dateStr === getLocalDateString(today)) return 'Today';
+    if (dateStr === getLocalDateString(yesterday)) return 'Yesterday';
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const handleQuickLog = (exerciseId) => {
+  const handleExpand = (exerciseId) => {
     if (selectedEx === exerciseId) {
-      logSet(exerciseId, reps, weight);
-      navigator.vibrate?.(50);
       setSelectedEx(null);
     } else {
       const ex = exercises.find(e => e.id === exerciseId);
@@ -51,6 +51,12 @@ export default function LogPage() {
       setReps(ex?.startReps || 10);
       setWeight(0);
     }
+  };
+
+  const handleLog = (exerciseId) => {
+    logSet(exerciseId, reps, weight);
+    navigator.vibrate?.(50);
+    setSelectedEx(null);
   };
 
   const handleDeleteLog = (logId, e) => {
@@ -143,7 +149,7 @@ export default function LogPage() {
                     </div>
                     <button
                       onClick={(e) => handleDeleteLog(log.id, e)}
-                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors"
+                      className="w-9 h-9 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors flex items-center justify-center"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -156,7 +162,7 @@ export default function LogPage() {
       )}
 
       {/* History section */}
-      {Object.keys(logsByDate).filter(d => d !== new Date().toISOString().split('T')[0]).length > 0 && (
+      {Object.keys(logsByDate).filter(d => d !== todayKey).length > 0 && (
         <div className="space-y-2">
           <button
             onClick={() => setExpandedId(expandedId === 'history' ? null : 'history')}
@@ -195,7 +201,7 @@ export default function LogPage() {
                           onClick={() => { setEditingNote(log.id); setNoteText(log.notes || ''); }}
                           className="p-1.5 rounded-lg hover:bg-cyan-500/20 text-slate-600 hover:text-cyan-400 transition-colors"
                         >
-                          <svg size={14} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          <Edit size={14} />
                         </button>
                         {editingNote === log.id && (
                           <div className="absolute right-0 top-10 z-10 bg-slate-800 border border-slate-700 rounded-xl p-3 shadow-xl w-64 animate-scale-in">
@@ -243,7 +249,7 @@ export default function LogPage() {
               isSelected ? `border ${colors.border}` : ''
             }`}>
               <button
-                onClick={() => handleQuickLog(ex.id)}
+                onClick={() => handleExpand(ex.id)}
                 className="w-full text-left p-3.5 flex items-center gap-3"
               >
                 <div className={`w-10 h-10 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center text-base flex-shrink-0`}>
@@ -312,7 +318,7 @@ export default function LogPage() {
 
                     {/* Log button */}
                     <button
-                      onClick={() => { logSet(ex.id, reps, weight); setSelectedEx(null); }}
+                      onClick={() => handleLog(ex.id)}
                       className={`self-end px-4 py-2.5 rounded-xl ${colors.solid} text-white text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-all shadow-lg`}
                     >
                       <Check size={16} /> Log

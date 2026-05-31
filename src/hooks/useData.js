@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { EXERCISES, getExercise } from '../data/exercises';
 import { trackEvent, Events } from '../utils/analytics.js';
-import { scheduleWorkoutReminder, cancelWorkoutReminder } from '../utils/notifications.js';
+import { getLocalDateString } from '../utils/date.js';
 
 function load(key, fallback) {
   try {
@@ -62,7 +62,7 @@ export function useData() {
 
   const logSet = useCallback((exerciseId, reps, weight, notes) => {
     const entry = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 4),
       exerciseId, reps, weight: weight || 0,
       date: new Date().toISOString(), notes: notes || '',
     };
@@ -103,13 +103,14 @@ export function useData() {
   }, [logs]);
 
   const getTodayLogs = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return logs.filter(l => l.date.startsWith(today));
+    const today = getLocalDateString();
+    return logs.filter(l => l.date.startsWith(today) || new Date(l.date).toISOString().split('T')[0] === today);
   }, [logs]);
 
   const getThisWeekLogs = useCallback(() => {
     const now = new Date();
     const ws = new Date(now); ws.setDate(now.getDate() - now.getDay());
+    ws.setHours(0, 0, 0, 0);
     return logs.filter(l => new Date(l.date) >= ws);
   }, [logs]);
 
@@ -130,7 +131,7 @@ export function useData() {
   }, [logs]);
 
   const getCurrentStreak = useCallback(() => {
-    const days = new Set(logs.map(l => l.date.split('T')[0]));
+    const days = new Set(logs.map(l => l.date ? getLocalDateString(new Date(l.date)) : ''));
     let streak = 0;
     const today = new Date();
     let usedFreezes = 0;
@@ -139,7 +140,7 @@ export function useData() {
     for (let i = 0; i < 365; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(d);
       if (days.has(dateStr)) {
         streak++;
       } else {

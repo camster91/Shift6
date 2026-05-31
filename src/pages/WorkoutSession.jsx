@@ -479,13 +479,13 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
     }
   }, [phase, setsCompleted, currentExId, detectPlateauAndOverload, coachReport]);
 
-  if (!exercise) return <div className="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center text-slate-400">{t('workout.exerciseNotFound')}</div>;
-
   // Common quick-rep presets based on current value
   const quickPresets = useMemo(() => {
     const base = currentReps;
     return [-5, -2, -1, 1, 2, 5].map(v => base + v).filter(v => v > 0);
   }, [currentReps]);
+
+  if (!exercise) return <div className="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center text-slate-400">{t('workout.exerciseNotFound')}</div>;
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">

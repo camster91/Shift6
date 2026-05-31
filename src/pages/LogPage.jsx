@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, Dumbbell, Minus, Check, Flame, Trash2, Clock, ChevronDown, Edit } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
@@ -17,7 +17,15 @@ export default function LogPage() {
   const [expandedId, setExpandedId] = useState(null); // 'today' | 'history' | logId
   const [editingNote, setEditingNote] = useState(null); // logId | null
   const [noteText, setNoteText] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const todayLogs = getTodayLogs();
+
+  useEffect(() => {
+    if (pendingDeleteId) {
+      const timer = setTimeout(() => setPendingDeleteId(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingDeleteId]);
   const streak = getCurrentStreak();
 
   const todayKey = getLocalDateString();
@@ -61,8 +69,13 @@ export default function LogPage() {
 
   const handleDeleteLog = (logId, e) => {
     e.stopPropagation();
-    removeLog(logId);
-    navigator.vibrate?.(30);
+    if (pendingDeleteId === logId) {
+      removeLog(logId);
+      navigator.vibrate?.(30);
+      setPendingDeleteId(null);
+    } else {
+      setPendingDeleteId(logId);
+    }
   };
 
   const handleNoteChange = (logId, notes) => {
@@ -104,9 +117,10 @@ export default function LogPage() {
                 <button
                   key={ex.id}
                   onClick={() => { logSet(ex.id, warmUpReps, 0); navigator.vibrate?.(20); }}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl ${colors.bg} border ${colors.border} active:scale-95 transition-transform`}
+                  aria-label={`Log warm-up: ${ex.name} ${warmUpReps} reps`}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl ${colors.bg} border ${colors.border} active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none`}
                 >
-                  <span className="text-xs">{BODY_PART_ICONS[ex.bodyPart] || '💪'}</span>
+                  <span className="text-xs" aria-hidden="true">{BODY_PART_ICONS[ex.bodyPart] || '💪'}</span>
                   <span className={`text-xs font-bold ${colors.text}`}>{ex.name} × {warmUpReps}</span>
                 </button>
               );
@@ -120,7 +134,8 @@ export default function LogPage() {
         <div className="glass-card rounded-2xl overflow-hidden">
           <button
             onClick={() => setExpandedId(expandedId === 'today' ? null : 'today')}
-            className="w-full text-left p-4 flex items-center justify-between"
+            aria-expanded={expandedId === 'today'}
+            className="w-full text-left p-4 flex items-center justify-between focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-500 focus-visible:outline-none"
           >
             <div className="flex items-center gap-2">
               <Clock size={14} className="text-slate-500" />
@@ -149,9 +164,14 @@ export default function LogPage() {
                     </div>
                     <button
                       onClick={(e) => handleDeleteLog(log.id, e)}
-                      className="w-9 h-9 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors flex items-center justify-center"
+                      aria-label={pendingDeleteId === log.id ? "Confirm delete" : "Delete log"}
+                      className={`w-9 h-9 rounded-lg transition-colors flex items-center justify-center focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none ${
+                        pendingDeleteId === log.id
+                          ? 'bg-red-500 text-white'
+                          : 'hover:bg-red-500/20 text-slate-600 hover:text-red-400'
+                      }`}
                     >
-                      <Trash2 size={14} />
+                      {pendingDeleteId === log.id ? <span className="text-[10px] font-bold">?</span> : <Trash2 size={14} />}
                     </button>
                   </div>
                 );
@@ -166,7 +186,8 @@ export default function LogPage() {
         <div className="space-y-2">
           <button
             onClick={() => setExpandedId(expandedId === 'history' ? null : 'history')}
-            className="w-full flex items-center justify-between px-1"
+            aria-expanded={expandedId === 'history'}
+            className="w-full flex items-center justify-between px-1 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none rounded"
           >
             <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">History</p>
             <ChevronDown size={14} className={`text-slate-500 transition-transform ${expandedId === 'history' ? 'rotate-180' : ''}`} />
@@ -193,13 +214,19 @@ export default function LogPage() {
                         </div>
                         <button
                           onClick={(e) => handleDeleteLog(log.id, e)}
-                          className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors"
+                          aria-label={pendingDeleteId === log.id ? "Confirm delete" : "Delete log"}
+                          className={`p-1.5 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none ${
+                            pendingDeleteId === log.id
+                              ? 'bg-red-500 text-white'
+                              : 'hover:bg-red-500/20 text-slate-600 hover:text-red-400'
+                          }`}
                         >
-                          <Trash2 size={14} />
+                          {pendingDeleteId === log.id ? <span className="text-[10px] font-bold">?</span> : <Trash2 size={14} />}
                         </button>
                         <button
                           onClick={() => { setEditingNote(log.id); setNoteText(log.notes || ''); }}
-                          className="p-1.5 rounded-lg hover:bg-cyan-500/20 text-slate-600 hover:text-cyan-400 transition-colors"
+                          aria-label="Edit note"
+                          className="p-1.5 rounded-lg hover:bg-cyan-500/20 text-slate-600 hover:text-cyan-400 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
                         >
                           <Edit size={14} />
                         </button>
@@ -250,7 +277,8 @@ export default function LogPage() {
             }`}>
               <button
                 onClick={() => handleExpand(ex.id)}
-                className="w-full text-left p-3.5 flex items-center gap-3"
+                aria-expanded={isSelected}
+                className="w-full text-left p-3.5 flex items-center gap-3 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-500 focus-visible:outline-none"
               >
                 <div className={`w-10 h-10 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center text-base flex-shrink-0`}>
                   {icon}
@@ -280,16 +308,19 @@ export default function LogPage() {
                       <div className="flex items-center gap-1.5 bg-slate-800/60 rounded-xl p-1.5">
                         <button
                           onClick={() => setReps(Math.max(1, reps - 1))}
-                          className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors text-sm font-bold"
+                          aria-label="Decrease reps"
+                          className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors text-sm font-bold focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
                         >−</button>
                         <span className="text-xl font-black text-white w-10 text-center">{reps}</span>
                         <button
                           onClick={() => setReps(reps + 1)}
-                          className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors text-sm font-bold"
+                          aria-label="Increase reps"
+                          className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors text-sm font-bold focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
                         >+</button>
                         <button
                           onClick={() => setReps(reps + 5)}
-                          className="text-xs text-slate-500 hover:text-cyan-400 px-1"
+                          aria-label="Add 5 reps"
+                          className="text-xs text-slate-500 hover:text-cyan-400 px-1 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none rounded"
                         >+5</button>
                       </div>
                     </div>
@@ -301,14 +332,16 @@ export default function LogPage() {
                         <div className="flex items-center gap-1.5 bg-slate-800/60 rounded-xl p-1.5">
                           <button
                             onClick={() => setWeight(Math.max(0, weight - 5))}
-                            className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors"
+                            aria-label="Decrease weight"
+                            className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
                           >
                             <Minus size={14} />
                           </button>
                           <span className="text-xl font-black text-white w-10 text-center">{weight}</span>
                           <button
                             onClick={() => setWeight(weight + 5)}
-                            className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors"
+                            aria-label="Increase weight"
+                            className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
                           >
                             <Plus size={14} />
                           </button>
@@ -319,7 +352,7 @@ export default function LogPage() {
                     {/* Log button */}
                     <button
                       onClick={() => handleLog(ex.id)}
-                      className={`self-end px-4 py-2.5 rounded-xl ${colors.solid} text-white text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-all shadow-lg`}
+                      className={`self-end px-4 py-2.5 rounded-xl ${colors.solid} text-white text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-500 focus-visible:outline-none focus-visible:ring-offset-slate-950`}
                     >
                       <Check size={16} /> Log
                     </button>

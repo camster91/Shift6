@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Check, ChevronLeft, Award, Search, Sparkles, X, Plus, Minus } from 'lucide-react';
+import { Check, ChevronRight, ChevronLeft, Award, Search, Sparkles, X, Plus, Minus } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP, EQUIPMENT_TYPES, BODY_PARTS } from '../data/exercises';
 

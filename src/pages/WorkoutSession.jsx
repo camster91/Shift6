@@ -206,6 +206,9 @@ function RestScreen({
   seconds, running, onFinish, onStart, onPause, onAdjustRest,
   nextExercise, colors, currentSet, totalSets, sessionTargetReps, restAdjustmentText
 }) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+
   return (
     <div className="flex flex-col flex-1 p-6 text-center max-w-sm mx-auto w-full animate-fade-in">
       {/* Next set info */}
@@ -278,7 +281,7 @@ function RestScreen({
 
 // ──────────── Workout Session ────────────
 export default function WorkoutSession({ exerciseId, onComplete, onCancel, workoutQueue = [], workoutIndex = 0 }) {
-  const { logSet, getBestSet, getCurrentStreak, logs, settings, getLastRepsFor, updateSettings, detectPlateauAndOverload, allExercises } = useData();
+  const { logSet, getBestSet, getCurrentStreak, logs, settings, getLastRepsFor, updateSettings, goals, detectPlateauAndOverload, allExercises } = useData();
   const [currentExId, setCurrentExId] = useState(exerciseId);
   const [showSwapModal, setShowSwapModal] = useState(false);
 
@@ -477,6 +480,12 @@ export default function WorkoutSession({ exerciseId, onComplete, onCancel, worko
   }, [phase, setsCompleted, currentExId, detectPlateauAndOverload, coachReport]);
 
   if (!exercise) return <div className="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center text-slate-400">{t('workout.exerciseNotFound')}</div>;
+
+  // Common quick-rep presets based on current value
+  const quickPresets = useMemo(() => {
+    const base = currentReps;
+    return [-5, -2, -1, 1, 2, 5].map(v => base + v).filter(v => v > 0);
+  }, [currentReps]);
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">

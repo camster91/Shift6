@@ -163,7 +163,7 @@ function getGreeting() {
 export default function Dashboard({ onStartWorkout, onOpenLibrary, onViewExercise }) {
   const {
     exercises, logs,
-    getBestSet, getBestWeight, getCurrentStreak,
+    getBestSet, getCurrentStreak,
     getTodayLogs, getThisWeekLogs, removeExercise,
   } = useData();
 

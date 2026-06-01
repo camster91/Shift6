@@ -1,7 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { EXERCISES, getExercise } from '../data/exercises';
 import { trackEvent, Events } from '../utils/analytics.js';
-import { scheduleWorkoutReminder, cancelWorkoutReminder } from '../utils/notifications.js';
 import { getLocalDateString } from '../utils/date.js';
 
 function load(key, fallback) {
@@ -49,6 +48,15 @@ export function useData() {
 
   const exercises = myExercises.map(id => getExercise(id)).filter(Boolean);
 
+  // Group logs by exercise ID for O(1) lookup performance
+  const logsByExercise = useMemo(() => {
+    return logs.reduce((acc, log) => {
+      if (!acc[log.exerciseId]) acc[log.exerciseId] = [];
+      acc[log.exerciseId].push(log);
+      return acc;
+    }, {});
+  }, [logs]);
+
   const addExercise = useCallback((exerciseId) => {
     setMyExercises(prev => prev.includes(exerciseId) ? prev : [...prev, exerciseId]);
   }, []);
@@ -81,10 +89,11 @@ export function useData() {
   }, []);
 
   const getLastRepsFor = useCallback((exerciseId) => {
-    const exLogs = logs.filter(l => l.exerciseId === exerciseId)
+    const exLogs = (logsByExercise[exerciseId] || [])
+      .slice()
       .sort((a, b) => new Date(b.date) - new Date(a.date));
     return exLogs[0]?.reps || 0;
-  }, [logs]);
+  }, [logsByExercise]);
 
   const setGoal = useCallback((exerciseId, targetReps, weeks) => {
     setGoals(prev => {
@@ -100,8 +109,8 @@ export function useData() {
   }, []);
 
   const getLogsForExercise = useCallback((exerciseId) => {
-    return logs.filter(l => l.exerciseId === exerciseId).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [logs]);
+    return (logsByExercise[exerciseId] || []).slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, [logsByExercise]);
 
   const getTodayLogs = useCallback(() => {
     const today = getLocalDateString();
@@ -116,33 +125,36 @@ export function useData() {
   }, [logs]);
 
   const getBestSet = useCallback((exerciseId) => {
-    const exLogs = logs.filter(l => l.exerciseId === exerciseId);
+    const exLogs = logsByExercise[exerciseId] || [];
     return exLogs.length ? Math.max(...exLogs.map(l => l.reps || 0)) : 0;
-  }, [logs]);
+  }, [logsByExercise]);
 
   const getBestWeight = useCallback((exerciseId) => {
-    const exLogs = logs.filter(l => l.exerciseId === exerciseId);
+    const exLogs = logsByExercise[exerciseId] || [];
     return exLogs.length ? Math.max(...exLogs.map(l => l.weight || 0)) : 0;
-  }, [logs]);
+  }, [logsByExercise]);
 
   const getWeeklyFrequency = useCallback((exerciseId) => {
     const now = new Date();
     const ws = new Date(now); ws.setDate(now.getDate() - now.getDay());
-    return logs.filter(l => l.exerciseId === exerciseId && new Date(l.date) >= ws).length;
-  }, [logs]);
+    ws.setHours(0, 0, 0, 0);
+    return (logsByExercise[exerciseId] || []).filter(l => new Date(l.date) >= ws).length;
+  }, [logsByExercise]);
 
   const getCurrentStreak = useCallback(() => {
-    const days = new Set(logs.map(l => l.date ? getLocalDateString(new Date(l.date)) : ''));
+    // Optimization: Use ISO string split to avoid repeated date object formatting
+    const logDays = new Set(logs.map(l => l.date ? l.date.split('T')[0] : ''));
     let streak = 0;
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     let usedFreezes = 0;
     const maxFreezes = settings?.streakFreezes || 0;
 
     for (let i = 0; i < 365; i++) {
       const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const dateStr = getLocalDateString(d);
-      if (days.has(dateStr)) {
+      d.setDate(today.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      if (logDays.has(dateStr)) {
         streak++;
       } else {
         if (i === 0) continue; // Allow today to not be logged yet without breaking streak
@@ -174,7 +186,8 @@ export function useData() {
     }
 
     // Plateau check
-    const exLogs = logs.filter(l => l.exerciseId === exerciseId)
+    const exLogs = (logsByExercise[exerciseId] || [])
+      .slice()
       .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     const sessionMaxes = [];
@@ -208,7 +221,7 @@ export function useData() {
     }
 
     return { status: 'stable' };
-  }, [logs, settings, getBestSet, updateSettings]);
+  }, [logsByExercise, settings, getBestSet, updateSettings]);
 
   return {
     myExercises, exercises, logs, goals, onboardingDone, settings,

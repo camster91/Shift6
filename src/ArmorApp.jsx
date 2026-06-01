@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  Play, BarChart3, Settings as SettingsIcon, Smartphone
+  Play, BarChart3, Settings as SettingsIcon, Smartphone, User
 } from 'lucide-react';
 import { useArmorData, migrateFromShift6 } from './context/ArmorDataContext';
 import ArmorDashboard from './pages/ArmorDashboard';
@@ -8,6 +8,7 @@ import ArmorWorkoutSession from './pages/ArmorWorkoutSession';
 import ArmorOnboarding from './pages/ArmorOnboarding';
 import ArmorSettings from './pages/ArmorSettings';
 import ArmorProgress from './pages/ArmorProgress';
+import ArmorAccount from './pages/ArmorAccount';
 
 /**
  * ARMOR App — Main application shell.
@@ -21,6 +22,7 @@ import ArmorProgress from './pages/ArmorProgress';
 const TAB_BAR = [
   { id: 'home', label: 'Today', icon: Play },
   { id: 'progress', label: 'Progress', icon: BarChart3 },
+  { id: 'account', label: 'Account', icon: User },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -113,6 +115,7 @@ export default function ArmorApp() {
               <ArmorDashboard onStartWorkout={handleStartWorkout} />
             )}
             {activeTab === 'progress' && <ArmorProgress />}
+            {activeTab === 'account' && <ArmorAccount />}
             {activeTab === 'settings' && <ArmorSettings />}
           </>
         )}

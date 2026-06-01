@@ -1,8 +1,19 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import {
+  fetchCloud, pushCloud, isLoggedIn, getAuth,
+} from '../lib/syncClient';
 
 /**
- * ArmorDataContext — Shared state provider.
- * v1.1 — Added streak engine, week auto-advance, cycle rollover with progression.
+ * ArmorDataContext — Shared state provider with cloud sync.
+ * v1.2 — Added optional cloud sync via syncClient (Supabase/Postgres).
+ *
+ * Sync behavior:
+ *  - When logged in, debounced 2s push of local changes to cloud
+ *  - On login, fetch cloud and merge (cloud wins for future writes)
+ *  - On conflict (409), keep local and surface to UI
+ *
+ * Cloud data is stored as-is (same shape as localStorage) — the context
+ * does NOT do any transformation, only persistence transport.
  */
 
 function load(key, fallback) {
@@ -12,6 +23,7 @@ function load(key, fallback) {
 function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
 const STORAGE_KEY = 'armor_data';
+const REVISION_KEY = 'armor_revision';
 
 const DEFAULT_DATA = {
   userId: null,
@@ -46,48 +58,28 @@ const DEFAULT_DATA = {
   },
 };
 
-// ── Streak Engine ────────────────────────────────────────────
 function computeStreak(workoutHistory, mvdDates, freezesAvailable) {
   const allActiveDates = new Set();
   workoutHistory.forEach(w => { if (w.completed) allActiveDates.add(w.date); });
   mvdDates.forEach(d => allActiveDates.add(d));
-
   const sorted = [...allActiveDates].sort().reverse();
   if (sorted.length === 0) return { currentStreak: 0, longestStreak: 0 };
-
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-
-  // Streak must include today or yesterday to be active
-  const mostRecent = sorted[0];
-  if (mostRecent !== today && mostRecent !== yesterday) {
-    return { currentStreak: 0, longestStreak: 0 };
-  }
-
+  if (sorted[0] !== today && sorted[0] !== yesterday) return { currentStreak: 0, longestStreak: 0 };
   let streak = 1;
   let freezesRemaining = freezesAvailable;
-  let prevDate = new Date(mostRecent);
-
+  let prevDate = new Date(sorted[0]);
   for (let i = 1; i < sorted.length; i++) {
     const currDate = new Date(sorted[i]);
     const dayDiff = Math.round((prevDate - currDate) / 86400000);
-
-    if (dayDiff === 1) {
-      streak++;
-      prevDate = currDate;
-    } else if (dayDiff === 2 && freezesRemaining > 0) {
-      freezesRemaining--;
-      streak++;
-      prevDate = currDate;
-    } else {
-      break;
-    }
+    if (dayDiff === 1) { streak++; prevDate = currDate; }
+    else if (dayDiff === 2 && freezesRemaining > 0) { freezesRemaining--; streak++; prevDate = currDate; }
+    else break;
   }
-
   return { currentStreak: streak, longestStreak: Math.max(streak, streak) };
 }
 
-// ── Cycle Rollover — progression applied to 1RMs ─────────────
 function rollover1RMs(estimated1RMs) {
   const UPPER = ['bench_press', 'incline_bench', 'dumbbell_press', 'shoulder_press', 'arnold_press'];
   const LOWER = ['barbell_squat', 'goblet_squat', 'deadlift', 'romanian_deadlift', 'hip_thrusts', 'leg_press'];
@@ -100,20 +92,62 @@ function rollover1RMs(estimated1RMs) {
   return updated;
 }
 
-// ── Context ─────────────────────────────────────────────────
 const ArmorDataContext = createContext(null);
 
 export function ArmorDataProvider({ children }) {
   const [data, setData] = useState(() => load(STORAGE_KEY, DEFAULT_DATA));
-  const saveTimeout = useRef(null);
+  const [revision, setRevision] = useState(() => load(REVISION_KEY, 1));
+  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle' | 'syncing' | 'synced' | 'error' | 'offline'
+  const [lastSyncAt, setLastSyncAt] = useState(null);
+  const [conflict, setConflict] = useState(null);
 
+  const saveTimeout = useRef(null);
+  const syncTimeout = useRef(null);
+  const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+
+  // Listen for online/offline
+  useEffect(() => {
+    const on = () => setSyncStatus('idle');
+    const off = () => setSyncStatus('offline');
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
+
+  // Persist locally with debounce
   useEffect(() => {
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => save(STORAGE_KEY, data), 100);
+    saveTimeout.current = setTimeout(() => {
+      save(STORAGE_KEY, data);
+      save(REVISION_KEY, revision);
+    }, 100);
     return () => clearTimeout(saveTimeout.current);
-  }, [data]);
+  }, [data, revision]);
 
-  // ── Derived values ─────────────────────────────────────────
+  // Cloud sync (debounced 2s after change) — only if logged in
+  useEffect(() => {
+    if (!isLoggedIn()) return;
+    if (syncTimeout.current) clearTimeout(syncTimeout.current);
+    syncTimeout.current = setTimeout(async () => {
+      try {
+        setSyncStatus('syncing');
+        const res = await pushCloud(data, revision);
+        setRevision(res.revision);
+        setSyncStatus('synced');
+        setLastSyncAt(new Date().toISOString());
+        setConflict(null);
+      } catch (err) {
+        if (err.status === 409) {
+          setConflict({ serverData: err.payload?.serverData, serverRevision: err.payload?.serverRevision });
+          setSyncStatus('error');
+        } else {
+          setSyncStatus('error');
+        }
+      }
+    }, 2000);
+    return () => clearTimeout(syncTimeout.current);
+  }, [data, revision]);
+
   const todayStr = new Date().toISOString().split('T')[0];
 
   const onboardingDone = useMemo(() =>
@@ -130,14 +164,44 @@ export function ArmorDataProvider({ children }) {
 
   const isMVDToday = data.streakData.mvdDates?.includes(todayStr);
 
-  // ── Updaters ────────────────────────────────────────────────
+  // ── Cloud pull (on login) ───────────────────────────────────
+  const pullFromCloud = useCallback(async () => {
+    try {
+      setSyncStatus('syncing');
+      const { data: cloudData, revision: cloudRev } = await fetchCloud();
+      if (cloudData && Object.keys(cloudData).length > 0) {
+        setData(cloudData);
+        setRevision(cloudRev);
+      }
+      setSyncStatus('synced');
+      setLastSyncAt(new Date().toISOString());
+      setConflict(null);
+      return true;
+    } catch (err) {
+      setSyncStatus('error');
+      return false;
+    }
+  }, []);
 
+  // ── Conflict resolution ──────────────────────────────────────
+  const resolveConflictKeepLocal = useCallback(() => {
+    // Force push with current local revision (server will accept because rev > serverRev)
+    setConflict(null);
+    setRevision(prev => prev + 1); // bumps local rev so next push wins
+  }, []);
+
+  const resolveConflictUseServer = useCallback(() => {
+    if (!conflict) return;
+    setData(conflict.serverData);
+    setRevision(conflict.serverRevision);
+    setConflict(null);
+  }, [conflict]);
+
+  // ── Updaters (unchanged) ─────────────────────────────────────
   const updatePreferences = useCallback((updates) =>
     setData(prev => ({ ...prev, preferences: { ...prev.preferences, ...updates } })), []);
-
   const updateUserProfile = useCallback((updates) =>
     setData(prev => ({ ...prev, userProfile: { ...prev.userProfile, ...updates } })), []);
-
   const set1RM = useCallback((exerciseId, value) =>
     setData(prev => ({
       ...prev, userProfile: {
@@ -145,22 +209,18 @@ export function ArmorDataProvider({ children }) {
         estimated1RMs: { ...prev.userProfile.estimated1RMs, [exerciseId]: value },
       },
     })), []);
-
   const toggleModifier = useCallback((modifierId) =>
     setData(prev => ({
       ...prev, activeModifiers: { ...prev.activeModifiers, [modifierId]: !prev.activeModifiers[modifierId] },
     })), []);
-
   const setModifier = useCallback((modifierId, value) =>
     setData(prev => ({
       ...prev, activeModifiers: { ...prev.activeModifiers, [modifierId]: value },
     })), []);
-
   const toggleHabit = useCallback((habitId) =>
     setData(prev => ({
       ...prev, dailyHabitState: { ...prev.dailyHabitState, [habitId]: !prev.dailyHabitState[habitId] },
     })), []);
-
   const resetDailyHabits = useCallback(() => {
     setData(prev => ({
       ...prev, dailyHabitState: {
@@ -184,13 +244,9 @@ export function ArmorDataProvider({ children }) {
     }));
   }, []);
 
-  // ── Workout logging + auto-advance ─────────────────────────
-
   const logWorkout = useCallback((workoutData) => {
     setData(prev => {
       const newHistory = [...prev.workoutHistory, { ...workoutData, date: workoutData.date || todayStr }];
-
-      // Advance day
       let nextDay = prev.currentCycle.day;
       let nextWeek = prev.currentCycle.week;
       let completedCycles = prev.currentCycle.totalCyclesCompleted;
@@ -198,124 +254,63 @@ export function ArmorDataProvider({ children }) {
       const completedDays = [...(prev.currentCycle.completedDaysThisWeek || [])];
 
       if (workoutData.completed !== false && !prev.activeModifiers.travelMode) {
-        // Mark today's day as completed
-        if (!completedDays.includes(nextDay)) {
-          completedDays.push(nextDay);
-        }
-
-        // Advance to next day
+        if (!completedDays.includes(nextDay)) completedDays.push(nextDay);
         nextDay = nextDay >= 5 ? 1 : nextDay + 1;
-
-        // Check if week is complete (all 5 days done)
         if (completedDays.length >= 5 || nextDay === 1) {
           if (nextWeek >= 6) {
-            // Cycle complete — rollover with progression
             nextWeek = 1;
             completedCycles += 1;
             next1RMs = rollover1RMs(prev.userProfile.estimated1RMs);
           } else {
             nextWeek += 1;
           }
-          // Reset completed days for new week
           completedDays.length = 0;
         }
       }
-
-      // Recalculate streak
-      const { currentStreak } = computeStreak(
-        newHistory, prev.streakData.mvdDates, prev.streakData.freezesAvailable
-      );
+      const { currentStreak } = computeStreak(newHistory, prev.streakData.mvdDates, prev.streakData.freezesAvailable);
       const longestStreak = Math.max(prev.streakData.longestStreak, currentStreak);
-
       return {
         ...prev,
         workoutHistory: newHistory,
         userProfile: { ...prev.userProfile, estimated1RMs: next1RMs },
-        currentCycle: {
-          ...prev.currentCycle,
-          day: nextDay,
-          week: nextWeek,
-          totalCyclesCompleted: completedCycles,
-          lastWorkoutDate: todayStr,
-          completedDaysThisWeek: completedDays,
-        },
-        streakData: {
-          ...prev.streakData,
-          currentStreak,
-          longestStreak,
-          lastActiveDate: todayStr,
-        },
+        currentCycle: { ...prev.currentCycle, day: nextDay, week: nextWeek, totalCyclesCompleted: completedCycles, lastWorkoutDate: todayStr, completedDaysThisWeek: completedDays },
+        streakData: { ...prev.streakData, currentStreak, longestStreak, lastActiveDate: todayStr },
       };
     });
   }, [todayStr]);
-
-  // ── MVD (Minimum Viable Day) ───────────────────────────────
 
   const logMVD = useCallback(() => {
     setData(prev => {
       const mvdDates = [...(prev.streakData.mvdDates || [])];
-      if (!mvdDates.includes(todayStr)) {
-        mvdDates.push(todayStr);
-      }
-      const { currentStreak } = computeStreak(
-        prev.workoutHistory, mvdDates, prev.streakData.freezesAvailable
-      );
-      return {
-        ...prev,
-        streakData: {
-          ...prev.streakData,
-          mvdDates,
-          currentStreak,
-          longestStreak: Math.max(prev.streakData.longestStreak, currentStreak),
-          lastActiveDate: todayStr,
-        },
-      };
+      if (!mvdDates.includes(todayStr)) mvdDates.push(todayStr);
+      const { currentStreak } = computeStreak(prev.workoutHistory, mvdDates, prev.streakData.freezesAvailable);
+      return { ...prev, streakData: { ...prev.streakData, mvdDates, currentStreak, longestStreak: Math.max(prev.streakData.longestStreak, currentStreak), lastActiveDate: todayStr } };
     });
   }, [todayStr]);
 
-  // ── Manual overrides ────────────────────────────────────────
-
   const advanceDay = useCallback(() =>
-    setData(prev => ({
-      ...prev, currentCycle: { ...prev.currentCycle, day: prev.currentCycle.day >= 5 ? 1 : prev.currentCycle.day + 1 },
-    })), []);
-
+    setData(prev => ({ ...prev, currentCycle: { ...prev.currentCycle, day: prev.currentCycle.day >= 5 ? 1 : prev.currentCycle.day + 1 } })), []);
   const advanceWeek = useCallback(() =>
-    setData(prev => ({
-      ...prev, currentCycle: {
-        ...prev.currentCycle,
-        week: prev.currentCycle.week >= 6 ? 1 : prev.currentCycle.week + 1,
-        day: 1,
-        completedDaysThisWeek: [],
-      },
-    })), []);
-
+    setData(prev => ({ ...prev, currentCycle: { ...prev.currentCycle, week: prev.currentCycle.week >= 6 ? 1 : prev.currentCycle.week + 1, day: 1, completedDaysThisWeek: [] } })), []);
   const resetAll = useCallback(() => {
     setData(DEFAULT_DATA);
+    setRevision(1);
     save(STORAGE_KEY, DEFAULT_DATA);
+    save(REVISION_KEY, 1);
   }, []);
 
-  // ── Value ───────────────────────────────────────────────────
   const value = {
-    data,
-    preferences: data.preferences,
-    userProfile: data.userProfile,
-    currentCycle: data.currentCycle,
-    activeModifiers: data.activeModifiers,
-    dailyHabitState: data.dailyHabitState,
-    workoutHistory: data.workoutHistory,
-    streakData: data.streakData,
-    onboardingDone,
-    todayStr,
-    habitsNeedReset,
-    todaysWorkoutCompleted,
-    isMVDToday,
-    estimated1RMs: data.userProfile.estimated1RMs,
-    equipmentTrack: data.preferences.equipmentTrack,
+    data, revision, syncStatus, lastSyncAt, conflict,
+    preferences: data.preferences, userProfile: data.userProfile, currentCycle: data.currentCycle,
+    activeModifiers: data.activeModifiers, dailyHabitState: data.dailyHabitState,
+    workoutHistory: data.workoutHistory, streakData: data.streakData,
+    onboardingDone, todayStr, habitsNeedReset, todaysWorkoutCompleted, isMVDToday,
+    estimated1RMs: data.userProfile.estimated1RMs, equipmentTrack: data.preferences.equipmentTrack,
     updatePreferences, updateUserProfile, set1RM,
     toggleModifier, setModifier, toggleHabit, resetDailyHabits,
     logWorkout, logMVD, advanceDay, advanceWeek,
     completeOnboarding, resetAll,
+    pullFromCloud, resolveConflictKeepLocal, resolveConflictUseServer,
   };
 
   return (

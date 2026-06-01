@@ -10,6 +10,9 @@
 const AUTH_KEY = 'armor_auth';
 const API_BASE_KEY = 'armor_api_base';
 
+// Default API base — production endpoint on Cam's VPS via Coolify
+// Local dev: run `npm run dev` in armor-sync-api and override via localStorage
+//   localStorage.setItem('armor_api_base', 'http://localhost:4001')
 const DEFAULT_API_BASE = 'https://sync.getshift6.com';
 
 function loadJSON(key, fallback) {

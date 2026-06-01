@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, Dumbbell, Minus, Check, Flame, Trash2, Clock, ChevronDown, Edit } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { COLOR_MAP } from '../data/exercises';
@@ -17,6 +17,7 @@ export default function LogPage() {
   const [expandedId, setExpandedId] = useState(null); // 'today' | 'history' | logId
   const [editingNote, setEditingNote] = useState(null); // logId | null
   const [noteText, setNoteText] = useState('');
+  const [pendingDelete, setPendingDelete] = useState(null); // logId | null
   const todayLogs = getTodayLogs();
   const streak = getCurrentStreak();
 
@@ -61,9 +62,22 @@ export default function LogPage() {
 
   const handleDeleteLog = (logId, e) => {
     e.stopPropagation();
-    removeLog(logId);
-    navigator.vibrate?.(30);
+    if (pendingDelete === logId) {
+      removeLog(logId);
+      navigator.vibrate?.(30);
+      setPendingDelete(null);
+    } else {
+      setPendingDelete(logId);
+      navigator.vibrate?.(10);
+    }
   };
+
+  useEffect(() => {
+    if (pendingDelete) {
+      const timer = setTimeout(() => setPendingDelete(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingDelete]);
 
   const handleNoteChange = (logId, notes) => {
     updateLogNotes(logId, notes);
@@ -149,9 +163,14 @@ export default function LogPage() {
                     </div>
                     <button
                       onClick={(e) => handleDeleteLog(log.id, e)}
-                      className="w-9 h-9 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors flex items-center justify-center"
+                      className={`w-9 h-9 rounded-lg transition-colors flex items-center justify-center ${
+                        pendingDelete === log.id
+                          ? 'bg-red-500 text-white'
+                          : 'hover:bg-red-500/20 text-slate-600 hover:text-red-400'
+                      }`}
+                      aria-label={pendingDelete === log.id ? "Confirm deletion" : "Delete log entry"}
                     >
-                      <Trash2 size={14} />
+                      {pendingDelete === log.id ? <span className="text-[10px] font-bold">?</span> : <Trash2 size={14} />}
                     </button>
                   </div>
                 );
@@ -193,13 +212,19 @@ export default function LogPage() {
                         </div>
                         <button
                           onClick={(e) => handleDeleteLog(log.id, e)}
-                          className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors"
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            pendingDelete === log.id
+                              ? 'bg-red-500 text-white'
+                              : 'hover:bg-red-500/20 text-slate-600 hover:text-red-400'
+                          }`}
+                          aria-label={pendingDelete === log.id ? "Confirm deletion" : "Delete log entry"}
                         >
-                          <Trash2 size={14} />
+                          {pendingDelete === log.id ? <span className="text-[10px] font-bold px-1">?</span> : <Trash2 size={14} />}
                         </button>
                         <button
                           onClick={() => { setEditingNote(log.id); setNoteText(log.notes || ''); }}
                           className="p-1.5 rounded-lg hover:bg-cyan-500/20 text-slate-600 hover:text-cyan-400 transition-colors"
+                          aria-label="Edit note"
                         >
                           <Edit size={14} />
                         </button>
@@ -281,15 +306,18 @@ export default function LogPage() {
                         <button
                           onClick={() => setReps(Math.max(1, reps - 1))}
                           className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors text-sm font-bold"
+                          aria-label="Decrease reps"
                         >−</button>
                         <span className="text-xl font-black text-white w-10 text-center">{reps}</span>
                         <button
                           onClick={() => setReps(reps + 1)}
                           className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors text-sm font-bold"
+                          aria-label="Increase reps"
                         >+</button>
                         <button
                           onClick={() => setReps(reps + 5)}
                           className="text-xs text-slate-500 hover:text-cyan-400 px-1"
+                          aria-label="Increase reps by 5"
                         >+5</button>
                       </div>
                     </div>
@@ -302,6 +330,7 @@ export default function LogPage() {
                           <button
                             onClick={() => setWeight(Math.max(0, weight - 5))}
                             className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors"
+                            aria-label="Decrease weight"
                           >
                             <Minus size={14} />
                           </button>
@@ -309,6 +338,7 @@ export default function LogPage() {
                           <button
                             onClick={() => setWeight(weight + 5)}
                             className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 transition-colors"
+                            aria-label="Increase weight"
                           >
                             <Plus size={14} />
                           </button>

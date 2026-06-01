@@ -1,0 +1,259 @@
+/* ══════════════════════════════════════════════════════════════
+   ARMOR DESIGN SYSTEM v2.0 — Apple HIG-caliber tokens
+   Typography · Elevation · Color · Motion · Haptics
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── TYPOGRAPHY SCALE ────────────────────────────────────────
+   Mirrors Apple's SF Pro hierarchy. One size = one purpose. */
+:root {
+  --text-caption:    0.625rem;   /* 10px — labels, overlines */
+  --text-footnote:   0.75rem;    /* 12px — secondary info */
+  --text-body:       0.875rem;   /* 14px — paragraph, list items */
+  --text-headline:   1rem;       /* 16px — card titles, button text */
+  --text-title:      1.25rem;    /* 20px — section headers */
+  --text-large-title: 1.75rem;   /* 28px — page titles */
+  --text-hero:       2.5rem;     /* 40px — onboarding, celebrations */
+
+  /* Weights */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+  --weight-black:    900;
+
+  /* Line heights */
+  --leading-tight:   1.1;
+  --leading-normal:  1.4;
+  --leading-relaxed: 1.6;
+}
+
+/* ── ELEVATION SYSTEM ────────────────────────────────────────
+   No borders. Depth through blur, shadow, and opacity layers. */
+:root {
+  /* Level 0 — background (deepest) */
+  --elevation-0-bg:        #020617;
+
+  /* Level 1 — surface (cards, sections) */
+  --elevation-1-bg:        rgba(255, 255, 255, 0.03);
+  --elevation-1-shadow:    0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  /* Level 2 — raised (active cards, primary content) */
+  --elevation-2-bg:        rgba(255, 255, 255, 0.05);
+  --elevation-2-shadow:    0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.3);
+
+  /* Level 3 — floating (modals, sheets, tab bar) */
+  --elevation-3-bg:        rgba(15, 23, 42, 0.85);
+  --elevation-3-shadow:    0 8px 32px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --elevation-3-blur:      24px;
+
+  /* Level 4 — overlay (dialogs, alerts) */
+  --elevation-4-bg:        rgba(15, 23, 42, 0.95);
+  --elevation-4-shadow:    0 16px 48px rgba(0, 0, 0, 0.7);
+  --elevation-4-blur:      40px;
+}
+
+/* ── COLOR TOKENS ────────────────────────────────────────────
+   Semantic. Never use Tailwind colors directly after migration. */
+:root {
+  /* Accent — cyan (primary brand) */
+  --color-accent:           #06b6d4;
+  --color-accent-hover:     #0891b2;
+  --color-accent-muted:     rgba(6, 182, 212, 0.12);
+  --color-accent-glow:      0 0 20px rgba(6, 182, 212, 0.3);
+
+  /* Success — emerald (PRs, habits done, completion) */
+  --color-success:          #10b981;
+  --color-success-muted:    rgba(16, 185, 129, 0.12);
+
+  /* Warning — amber (plateau, MVD, streak at risk) */
+  --color-warning:          #f59e0b;
+  --color-warning-muted:    rgba(245, 158, 11, 0.12);
+
+  /* Danger — red (failed set, reset data, injury risk) */
+  --color-danger:           #ef4444;
+  --color-danger-muted:     rgba(239, 68, 68, 0.12);
+
+  /* VO2 Max / Cardio — rose */
+  --color-cardio:           #f43f5e;
+  --color-cardio-muted:     rgba(244, 63, 94, 0.12);
+
+  /* Text */
+  --text-primary:           #f8fafc;
+  --text-secondary:         #94a3b8;
+  --text-tertiary:          #64748b;
+  --text-disabled:          #475569;
+}
+
+/* ── MOTION TOKENS ───────────────────────────────────────────
+   Spring physics. Named by feel, not by value. */
+:root {
+  /* Entrance animations */
+  --motion-entrance-duration:  0.4s;
+  --motion-entrance-ease:      cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Press feedback */
+  --motion-press-duration:     0.15s;
+  --motion-press-ease:         cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-press-scale:        0.96;
+
+  /* Spring (modal, celebration, expansion) */
+  --motion-spring-mass:        1;
+  --motion-spring-stiffness:   300;
+  --motion-spring-damping:     25;
+
+  /* Transition defaults */
+  --motion-fast:               0.15s ease-out;
+  --motion-normal:             0.25s ease-out;
+  --motion-slow:               0.4s ease-out;
+}
+
+/* ── SPACING SCALE ───────────────────────────────────────────
+   Multiples of 4pt. Apple's magic number. */
+:root {
+  --space-xs:  0.25rem;   /* 4px  */
+  --space-sm:  0.5rem;    /* 8px  */
+  --space-md:  0.75rem;   /* 12px */
+  --space-lg:  1rem;      /* 16px */
+  --space-xl:  1.5rem;    /* 24px */
+  --space-2xl: 2rem;      /* 32px */
+  --space-3xl: 2.5rem;    /* 40px */
+  --space-4xl: 3rem;      /* 48px */
+}
+
+/* ── RADIUS SCALE ────────────────────────────────────────────
+   Progressive. Surface level determines radius. */
+:root {
+  --radius-sm:   0.5rem;   /* 8px  — chips, badges */
+  --radius-md:   0.75rem;  /* 12px — buttons, inputs, small cards */
+  --radius-lg:   1rem;     /* 16px — cards, sheets */
+  --radius-xl:   1.25rem;  /* 20px — primary cards, modals */
+  --radius-2xl:  1.5rem;   /* 24px — floating elements, tab bar */
+  --radius-full: 9999px;   /* pills, avatars */
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UTILITY CLASSES — composer overrides for the token system
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Surface Cards ─────────────────────────────────────────── */
+.armor-surface-1 {
+  background: var(--elevation-1-bg);
+  box-shadow: var(--elevation-1-shadow);
+  border-radius: var(--radius-lg);
+}
+.armor-surface-2 {
+  background: var(--elevation-2-bg);
+  box-shadow: var(--elevation-2-shadow);
+  border-radius: var(--radius-xl);
+}
+.armor-surface-3 {
+  background: var(--elevation-3-bg);
+  box-shadow: var(--elevation-3-shadow);
+  backdrop-filter: blur(var(--elevation-3-blur));
+  -webkit-backdrop-filter: blur(var(--elevation-3-blur));
+  border-radius: var(--radius-2xl);
+}
+
+/* ── Typography Utilities ──────────────────────────────────── */
+.armor-text-caption    { font-size: var(--text-caption); letter-spacing: 0.06em; text-transform: uppercase; font-weight: var(--weight-semibold); color: var(--text-tertiary); }
+.armor-text-footnote   { font-size: var(--text-footnote); line-height: var(--leading-normal); color: var(--text-secondary); }
+.armor-text-body       { font-size: var(--text-body); line-height: var(--leading-relaxed); color: var(--text-primary); }
+.armor-text-headline   { font-size: var(--text-headline); font-weight: var(--weight-semibold); color: var(--text-primary); }
+.armor-text-title      { font-size: var(--text-title); font-weight: var(--weight-bold); color: var(--text-primary); letter-spacing: -0.01em; }
+.armor-text-large-title{ font-size: var(--text-large-title); font-weight: var(--weight-black); color: var(--text-primary); letter-spacing: -0.02em; }
+.armor-text-hero       { font-size: var(--text-hero); font-weight: var(--weight-black); color: var(--text-primary); letter-spacing: -0.03em; line-height: 1; }
+
+/* ── Interactive Press ─────────────────────────────────────── */
+.armor-press {
+  transition: transform var(--motion-press-duration) var(--motion-press-ease),
+              opacity var(--motion-press-duration) var(--motion-press-ease);
+}
+.armor-press:active {
+  transform: scale(var(--motion-press-scale));
+  opacity: 0.9;
+}
+
+/* ── Entrance Animation ────────────────────────────────────── */
+@keyframes armor-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.armor-entrance {
+  animation: armor-entrance var(--motion-entrance-duration) var(--motion-entrance-ease) both;
+}
+.armor-entrance-delay-1 { animation-delay: 0.05s; }
+.armor-entrance-delay-2 { animation-delay: 0.1s; }
+.armor-entrance-delay-3 { animation-delay: 0.15s; }
+.armor-entrance-delay-4 { animation-delay: 0.2s; }
+
+/* ── Glow Effects ──────────────────────────────────────────── */
+.armor-glow-accent {
+  box-shadow: var(--color-accent-glow);
+}
+.armor-glow-success {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+/* ── Progress Track ────────────────────────────────────────── */
+.armor-progress-track {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.armor-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent), #3b82f6);
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Accessibility ─────────────────────────────────────────── */
+/* Visible focus indicators (WCAG 2.4.7) */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Honor reduced-motion preference (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast: strengthen focus ring */
+@media (prefers-contrast: more) {
+  *:focus-visible {
+    outline-width: 3px;
+  }
+  .armor-text-caption { color: var(--text-secondary); }
+}
+
+/* ── Haptic Ring (timer visualization) ─────────────────────── */
+.armor-ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.06);
+}
+.armor-ring-fill {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+  filter: drop-shadow(0 0 6px var(--color-accent));
+}
+.armor-ring-fill-urgent {
+  filter: drop-shadow(0 0 10px var(--color-warning));
+  stroke: var(--color-warning);
+}

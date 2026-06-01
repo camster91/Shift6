@@ -114,23 +114,42 @@ In Xcode:
 
 ---
 
-## Part 4: Rebrand Checklist (Shift6 → Armor)
+## Part 4: iOS App Store Submission
 
-Already done in this build:
-- [x] `capacitor.config.json` — `appName: "Armor"`, splash 1.5s, dark status bar
-- [x] `android/app/src/main/res/values/strings.xml` — app_name: Armor
-- [x] `android/app/src/main/res/values/colors.xml` — armorBackground #020617
-- [x] `android/app/src/main/res/values/styles.xml` — splash → postSplashScreen transition
-- [x] `android/app/src/main/res/drawable/splash.xml` — vector crossed-swords + shield
-- [x] `android/app/src/main/res/drawable/ic_launcher_background.xml` — #020617
-- [x] `android/app/build.gradle` — versionCode 3, versionName 3.0.0
-- [x] `index.html` — title, meta description, apple-mobile-web-app-title, theme pre-paint
+### What's pre-configured
+- [x] `CFBundleDisplayName: Armor` in Info.plist
+- [x] `UIUserInterfaceStyle: Dark` (forces dark mode on launch)
+- [x] `UIStatusBarStyle: LightContent` (white status bar on dark)
+- [x] Portrait-only orientation (workout apps are portrait)
+- [x] `LaunchScreen.storyboard` rebuilt with crossed-swords + ARMOR wordmark
+- [x] `AppDelegate.swift` sets light status bar on launch
+- [x] `MARKETING_VERSION 3.0.0`, `CURRENT_PROJECT_VERSION 3`
+- [x] Web assets synced via `npx cap sync ios`
 
-Still to do (when app name in stores actually changes):
-- [ ] App Store Connect: change app name (requires new version)
-- [ ] Google Play Console: update store listing title and graphics
-- [ ] Update screenshots to show new Armor UI
-- [ ] Update `feature-graphic.png` to show Armor branding
+### Build via Xcode (Mac required)
+```bash
+npm run cap:ios
+# Or manually: npx cap open ios
+```
+
+In Xcode:
+1. Select "App" target
+2. Signing & Capabilities: select your Apple Developer Team
+3. Project > Bundle Identifier: `com.shift6.app` (preserve for listing continuity)
+4. Product > Archive
+5. Distribute App > App Store Connect > Upload
+6. Wait for App Store Connect processing (~5-15 min)
+
+### App Store Connect Steps
+1. https://appstoreconnect.apple.com
+2. My Apps > **Shift6** (existing app — bundle ID preserved) > + Version 3.0.0
+3. Update version metadata:
+   - **What's New in This Version:** "Complete Armor redesign — Apple HIG design system, 6-week periodization, VO2 Max intervals, plate math, and 5 contingency protocols."
+   - Screenshots: 6.5" (iPhone 11 Pro Max) and 5.5" (iPhone 8 Plus) required
+4. Submit for review (24-48 hours typical)
+
+### Known iOS Build Issue (on this machine)
+Only Xcode CommandLineTools installed (`/Library/Developer/CommandLineTools`). Full Xcode required for `xcodebuild` archive. Storyboard XML validated with `xml.etree.ElementTree`. Info.plist validated with `plistlib`. Both parse correctly.
 
 ---
 

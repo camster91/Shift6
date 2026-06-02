@@ -62,8 +62,9 @@ export default function ArmorOnboarding() {
         <div className="flex-1 space-y-6">
           {/* Name */}
           <div>
-            <label className="armor-text-caption block mb-2">Your name (optional)</label>
+            <label htmlFor="display-name" className="armor-text-caption block mb-2">Your name (optional)</label>
             <input
+              id="display-name"
               type="text"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}

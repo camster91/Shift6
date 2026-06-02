@@ -141,7 +141,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
   const isMVD = activeModifiers.mvdMode;
 
   const h = new Date().getHours();
-  const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const greeting = h < 12 ? 'Good morning ☀️' : h < 17 ? 'Good afternoon 🌤️' : 'Good evening 🌙';
 
   const streak = streakData.currentStreak || 0;
   const top1RM = Math.max(...Object.values(estimated1RMs), 0);

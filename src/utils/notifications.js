@@ -33,7 +33,7 @@ export async function scheduleWorkoutReminder(hour = 7, minute = 0) {
     await LocalNotifications.schedule({
       notifications: [{
         id: 1,
-        title: 'Shift6 — Time to train',
+        title: 'Armor — Time to train',
         body: 'Your muscles are waiting. Knock out a quick set.',
         schedule: { on: { hour, minute }, allowWhileIdle: true },
         sound: 'default',

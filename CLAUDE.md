@@ -14,9 +14,10 @@ A Capacitor (React + Vite) bodyweight fitness app. 6-week progressive program wi
 - Mobile app: same codebase via Capacitor
 
 ## Key Files
-- `src/context/` — CombinedProvider, WorkoutStateContext, SettingsStateContext, ThemeContext, UIStateContext
+- `src/context/ArmorDataContext.jsx` — Single combined provider (workout + settings + theme + UI state)
+- `src/ArmorApp.jsx` — App shell, tab navigation (Today / Progress / Account / Settings)
 - `store-assets/` — App store listing, screenshots, feature graphic, privacy policy
-- `android/shift6-release.keystore` — release signing key
+- `android/shift6-release.keystore` — release signing key (NEVER commit)
 - `BUILD_SUBMISSION_GUIDE.md` — store submission guide (in store-assets/)
 
 ## Build

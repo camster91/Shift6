@@ -35,11 +35,11 @@ export default defineConfig({
                 clientsClaim: true
             },
             manifest: {
-                name: 'Shift6 Fitness',
-                short_name: 'Shift6',
-                description: 'Progressive bodyweight fitness with adaptive difficulty',
-                theme_color: '#0f172a',
-                background_color: '#0f172a',
+                name: 'Armor — Metabolic Fitness',
+                short_name: 'Armor',
+                description: '6-week metabolic periodization, longevity pillars, and contingency protocols for busy professionals',
+                theme_color: '#020617',
+                background_color: '#020617',
                 display: 'standalone',
                 orientation: 'portrait',
                 start_url: '/',

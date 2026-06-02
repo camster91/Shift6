@@ -14,7 +14,7 @@ export function initAnalytics(measurementId) {
 
 export function trackEvent(name, params = {}) {
   if (!initialized) return;
-  ReactGA.event({ action: name, category: 'shift6', ...params });
+  ReactGA.event({ action: name, category: 'armor', ...params });
 }
 
 export function trackPageView(path) {

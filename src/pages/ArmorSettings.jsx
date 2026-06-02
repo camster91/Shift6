@@ -176,7 +176,7 @@ export default function ArmorSettings() {
         </Section>
 
         <p className="text-center text-[11px] text-slate-700 py-4">
-          Armor v1.1 · Build {new Date().toISOString().split('T')[0]}
+          Armor v3.0.0 · Build {new Date().toISOString().split('T')[0]}
         </p>
       </div>
 

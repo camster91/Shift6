@@ -58,15 +58,15 @@ const DEFAULT_DATA = {
   },
 };
 
-function computeStreak(workoutHistory, mvdDates, freezesAvailable) {
+function computeStreak(workoutHistory, mvdDates, freezesAvailable, previousLongest = 0) {
   const allActiveDates = new Set();
   workoutHistory.forEach(w => { if (w.completed) allActiveDates.add(w.date); });
   mvdDates.forEach(d => allActiveDates.add(d));
   const sorted = [...allActiveDates].sort().reverse();
-  if (sorted.length === 0) return { currentStreak: 0, longestStreak: 0 };
+  if (sorted.length === 0) return { currentStreak: 0, longestStreak: previousLongest };
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-  if (sorted[0] !== today && sorted[0] !== yesterday) return { currentStreak: 0, longestStreak: 0 };
+  if (sorted[0] !== today && sorted[0] !== yesterday) return { currentStreak: 0, longestStreak: previousLongest };
   let streak = 1;
   let freezesRemaining = freezesAvailable;
   let prevDate = new Date(sorted[0]);
@@ -77,7 +77,7 @@ function computeStreak(workoutHistory, mvdDates, freezesAvailable) {
     else if (dayDiff === 2 && freezesRemaining > 0) { freezesRemaining--; streak++; prevDate = currDate; }
     else break;
   }
-  return { currentStreak: streak, longestStreak: Math.max(streak, streak) };
+  return { currentStreak: streak, longestStreak: Math.max(streak, previousLongest) };
 }
 
 function rollover1RMs(estimated1RMs) {
@@ -131,17 +131,18 @@ export function ArmorDataProvider({ children }) {
       try {
         setSyncStatus('syncing');
         const res = await pushCloud(data, revision);
+        if (res && res.conflict) {
+          // Server has newer data — surface the conflict to the UI
+          setConflict({ serverData: res.serverData, serverRevision: res.serverRevision });
+          setSyncStatus('error');
+          return;
+        }
         setRevision(res.revision);
         setSyncStatus('synced');
         setLastSyncAt(new Date().toISOString());
         setConflict(null);
       } catch (err) {
-        if (err.status === 409) {
-          setConflict({ serverData: err.payload?.serverData, serverRevision: err.payload?.serverRevision });
-          setSyncStatus('error');
-        } else {
-          setSyncStatus('error');
-        }
+        setSyncStatus('error');
       }
     }, 2000);
     return () => clearTimeout(syncTimeout.current);
@@ -149,11 +150,19 @@ export function ArmorDataProvider({ children }) {
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const onboardingDone = useMemo(() =>
-    !!data.userProfile.displayName ||
-    data.currentCycle.totalCyclesCompleted > 0 ||
-    Object.values(data.userProfile.estimated1RMs).some(v => v > 0),
-    [data.userProfile.displayName, data.currentCycle.totalCyclesCompleted, data.userProfile.estimated1RMs]);
+  const onboardingDone = useMemo(() => {
+    const { displayName } = data.userProfile;
+    const { totalCyclesCompleted } = data.currentCycle;
+    const has1RMs = Object.values(data.userProfile.estimated1RMs).some(v => v > 0);
+    return !!displayName || totalCyclesCompleted > 0 || has1RMs;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.userProfile.displayName, data.currentCycle.totalCyclesCompleted,
+      data.userProfile.estimated1RMs.barbell_squat,
+      data.userProfile.estimated1RMs.bench_press,
+      data.userProfile.estimated1RMs.deadlift,
+      data.userProfile.estimated1RMs.goblet_squat,
+      data.userProfile.estimated1RMs.dumbbell_press,
+      data.userProfile.estimated1RMs.romanian_deadlift]);
 
   const habitsNeedReset = data.dailyHabitState.dateString !== todayStr;
 
@@ -266,8 +275,7 @@ export function ArmorDataProvider({ children }) {
           completedDays.length = 0;
         }
       }
-      const { currentStreak } = computeStreak(newHistory, prev.streakData.mvdDates, prev.streakData.freezesAvailable);
-      const longestStreak = Math.max(prev.streakData.longestStreak, currentStreak);
+      const { currentStreak, longestStreak } = computeStreak(newHistory, prev.streakData.mvdDates, prev.streakData.freezesAvailable, prev.streakData.longestStreak);
       return {
         ...prev,
         workoutHistory: newHistory,
@@ -282,8 +290,8 @@ export function ArmorDataProvider({ children }) {
     setData(prev => {
       const mvdDates = [...(prev.streakData.mvdDates || [])];
       if (!mvdDates.includes(todayStr)) mvdDates.push(todayStr);
-      const { currentStreak } = computeStreak(prev.workoutHistory, mvdDates, prev.streakData.freezesAvailable);
-      return { ...prev, streakData: { ...prev.streakData, mvdDates, currentStreak, longestStreak: Math.max(prev.streakData.longestStreak, currentStreak), lastActiveDate: todayStr } };
+      const { currentStreak, longestStreak } = computeStreak(prev.workoutHistory, mvdDates, prev.streakData.freezesAvailable, prev.streakData.longestStreak);
+      return { ...prev, streakData: { ...prev.streakData, mvdDates, currentStreak, longestStreak, lastActiveDate: todayStr } };
     });
   }, [todayStr]);
 

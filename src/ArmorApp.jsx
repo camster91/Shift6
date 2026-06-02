@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Play, BarChart3, Settings as SettingsIcon, Smartphone, User
 } from 'lucide-react';
-import { useArmorData, migrateFromShift6 } from './context/ArmorDataContext';
+import { useArmorData } from './context/ArmorDataContext';
 import ArmorDashboard from './pages/ArmorDashboard';
 import ArmorWorkoutSession from './pages/ArmorWorkoutSession';
 import ArmorOnboarding from './pages/ArmorOnboarding';
@@ -29,7 +29,7 @@ const TAB_BAR = [
 export default function ArmorApp() {
   const armor = useArmorData();
   const {
-    onboardingDone, preferences,
+    onboardingDone, preferences, completeOnboarding,
     logWorkout,
   } = armor;
 
@@ -37,12 +37,21 @@ export default function ArmorApp() {
   const [workoutActive, setWorkoutActive] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const installPromptRef = useRef(null);
+  const migrated = useRef(false);
 
   // Check for Shift6 migration on first load
-  // Run once on mount; migrateFromShift6 reads localStorage and is idempotent
   useEffect(() => {
-    if (!onboardingDone) {
-      migrateFromShift6();
+    if (!onboardingDone && !migrated.current) {
+      const oldOnboarding = (() => { try { const v = localStorage.getItem('shift6_onboarding_done'); return v ? JSON.parse(v) : false; } catch { return false; } })();
+      if (oldOnboarding) {
+        const oldSettings = (() => { try { const v = localStorage.getItem('shift6_settings'); return v ? JSON.parse(v) : null; } catch { return null; } })();
+        completeOnboarding({
+          equipmentTrack: oldSettings?.equippedIds?.includes('barbell') ? 'full_gym' : 'home_gym',
+          estimated1RMs: { barbell_squat: 185, bench_press: 135, deadlift: 225 },
+          displayName: oldSettings?.displayName || 'Athlete',
+        });
+        migrated.current = true;
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

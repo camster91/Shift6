@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
@@ -125,7 +125,9 @@ export default function ArmorDashboard({ onStartWorkout }) {
     habitsNeedReset, streakData, isMVDToday,
   } = useArmorData();
 
-  if (habitsNeedReset) resetDailyHabits();
+  useEffect(() => {
+    if (habitsNeedReset) resetDailyHabits();
+  }, [habitsNeedReset, resetDailyHabits]);
 
   const weekConfig = getWeekConfig(currentCycle.week);
   const todayWorkout = useMemo(() =>

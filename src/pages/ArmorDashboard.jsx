@@ -5,6 +5,7 @@ import {
   getTodaysWorkout, getDailyHabits, MODIFIERS, MVD_PROTOCOL,
   VO2MAX_PROTOCOL, PERIODIZATION, getWeekConfig, EQUIPMENT_TRACKS,
 } from '../data/armorEngine';
+import PlateVisualizer from '../components/PlateVisualizer';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR DASHBOARD v2.0 — Apple HIG design system
@@ -294,6 +295,11 @@ export default function ArmorDashboard({ onStartWorkout }) {
                         {todayWorkout.primaryLift.sets}×{todayWorkout.primaryLift.reps} @ {Math.round(todayWorkout.primaryLift.pct * 100)}%
                       </p>
                     </div>
+                  </div>
+                  {/* Inline plate visualizer so the user knows exactly what to load
+                      before tapping Start. */}
+                  <div className="mt-3 -mx-2">
+                    <PlateVisualizer weight={todayWorkout.primaryLift.weight} track={effectiveTrack} compact />
                   </div>
                   {activeModifiers.highFatigue && (
                     <p className="text-[11px] text-amber-400/80 mt-2 font-medium">

@@ -5,6 +5,7 @@ import {
   getTodaysWorkout, VO2MAX_PROTOCOL, getWeekConfig
 } from '../data/armorEngine';
 import { ConfettiBurst, AwardModal } from '../components/Celebration';
+import PlateVisualizer from '../components/PlateVisualizer';
 import { usePRDetection } from '../hooks/usePRDetection';
 
 /* ═══════════════════════════════════════════════════════════
@@ -54,35 +55,8 @@ function useTimer(initialSeconds) {
   return { timeLeft, running, start, pause, reset, addTime };
 }
 
-function PlateMath({ weight }) {
-  if (weight <= 45) return null;
-  const perSide = (weight - 45) / 2;
-  const plates = [45, 35, 25, 10, 5, 2.5];
-  let remaining = perSide;
-  const result = [];
-  for (const p of plates) {
-    while (remaining >= p) { result.push(p); remaining -= p; }
-  }
-  const colorMap = {
-    45: 'bg-red-500/20 text-red-400',
-    35: 'bg-amber-500/20 text-amber-400',
-    25: 'bg-emerald-500/20 text-emerald-400',
-    10: 'bg-blue-500/20 text-blue-400',
-    5: 'bg-purple-500/20 text-purple-400',
-    2.5: 'bg-slate-500/20 text-slate-400'
-  };
-
-  return (
-    <div className="flex flex-wrap gap-1 justify-center">
-      {result.map((p, i) => (
-        <span key={i} className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${colorMap[p] || 'bg-slate-600/20 text-slate-400'}`}>
-          {p}
-        </span>
-      ))}
-      <span className="text-[10px] text-slate-600 self-center ml-1">lbs/side</span>
-    </div>
-  );
-}
+// ── PlateVisualizer moved to components/PlateVisualizer.jsx so the dashboard
+//    and workout session can share the same barbell/dumbbell renderer.
 
 function TimerRing({ seconds, running, accentColor = '#06b6d4', label = 'Rest' }) {
   const initialRef = useRef(Math.max(seconds, 1));
@@ -192,7 +166,7 @@ function VO2MaxScreen({ protocol, onComplete }) {
 }
 
 /* ── Strength Workout Screen ───────────────────────────────── */
-function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onComplete }) {
+function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onComplete, track = 'full_gym' }) {
   const queue = useMemo(() => {
     const q = [];
     if (primaryLift) q.push({ ...primaryLift, type: 'primary' });
@@ -354,7 +328,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
           </div>
         </div>
         <div className="mt-4 pt-4 border-t border-white/[0.06]">
-          <PlateMath weight={currentEx.weight} />
+          <PlateVisualizer weight={currentEx.weight} track={track} />
         </div>
       </div>
 
@@ -425,6 +399,7 @@ export default function ArmorWorkoutSession({ onComplete, onCancel }) {
             currentWeek={currentCycle.week}
             currentDay={currentCycle.day}
             onComplete={onComplete}
+            track={effectiveTrack}
           />
         )}
       </div>

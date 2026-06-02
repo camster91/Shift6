@@ -81,19 +81,20 @@ export default function ArmorOnboarding() {
   if (step === 0) {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: bg, color: 'var(--text-primary)' }}>
-        <div className="flex-1 max-w-lg mx-auto w-full px-6 pt-12 pb-6 flex flex-col">
-          <div className="mb-10">
+        <div className="flex-1 max-w-lg mx-auto w-full px-6 pt-10 pb-32 flex flex-col">
+          <div className="mb-8">
             <div className="flex items-center gap-2 mb-8">
               <span style={{ fontSize: '28px' }}>⚔️</span>
               <span className="text-xl font-black tracking-tight"><span className="text-cyan-400">ARMOR</span></span>
             </div>
-            <h1 className="armor-text-large-title mb-2">Choose Your Track</h1>
+            <h1 className="armor-text-large-title mb-2">Where will you train?</h1>
             <p className="armor-text-body" style={{ color: 'var(--text-secondary)' }}>
-              This determines your 5-day split, progression math, and equipment. Switch anytime.
+              Pick the equipment you have most access to. You can switch per-workout from the
+              dashboard once you&apos;re set up — no need to commit.
             </p>
           </div>
 
-          <div className="flex-1 space-y-3">
+          <div className="space-y-3">
             {Object.values(EQUIPMENT_TRACKS).map(t => {
               const selected = track === t.id;
               const previewDays = SPLIT_DAYS[t.id]?.slice(0, 3) || [];
@@ -125,12 +126,18 @@ export default function ArmorOnboarding() {
               );
             })}
           </div>
+        </div>
 
-          <button onClick={() => setStep(1)}
-            className="armor-press w-full py-4 rounded-2xl text-white font-bold text-base mt-6 flex items-center justify-center gap-2"
-            style={{ background: 'var(--color-accent)' }}>
-            Continue <ChevronRight size={18} />
-          </button>
+        {/* Pinned CTA — always visible regardless of viewport height. */}
+        <div className="px-6 pt-4 pb-6"
+          style={{ background: 'linear-gradient(to top, var(--elevation-0-bg) 70%, transparent)' }}>
+          <div className="max-w-lg mx-auto">
+            <button onClick={() => setStep(1)}
+              className="armor-press w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2"
+              style={{ background: 'var(--color-accent)' }}>
+              Continue <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -390,13 +390,13 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
 
 /* ── MAIN ──────────────────────────────────────────────────── */
 export default function ArmorWorkoutSession({ onComplete, onCancel }) {
-  const { activeModifiers, currentCycle, estimated1RMs, equipmentTrack } = useArmorData();
+  const { activeModifiers, currentCycle, estimated1RMs, effectiveTrack } = useArmorData();
   const { celebration, setCelebration } = usePRDetection();
   const [showConfetti, setShowConfetti] = useState(false);
 
   const todayWorkout = useMemo(() =>
-    getTodaysWorkout(equipmentTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs),
-    [equipmentTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs]);
+    getTodaysWorkout(effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs),
+    [effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--elevation-0-bg)' }}>

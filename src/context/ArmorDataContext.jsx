@@ -42,6 +42,7 @@ const DEFAULT_DATA = {
   currentCycle: {
     week: 1, day: 1, totalCyclesCompleted: 0,
     lastWorkoutDate: null, completedDaysThisWeek: [],
+    todaysTrack: null, // null = use preferences.equipmentTrack; 'full_gym' | 'home_gym' = per-workout override
   },
   activeModifiers: {
     mvdMode: false, highFatigue: false, travelMode: false,
@@ -280,7 +281,14 @@ export function ArmorDataProvider({ children }) {
         ...prev,
         workoutHistory: newHistory,
         userProfile: { ...prev.userProfile, estimated1RMs: next1RMs },
-        currentCycle: { ...prev.currentCycle, day: nextDay, week: nextWeek, totalCyclesCompleted: completedCycles, lastWorkoutDate: todayStr, completedDaysThisWeek: completedDays },
+        currentCycle: {
+          ...prev.currentCycle,
+          day: nextDay, week: nextWeek, totalCyclesCompleted: completedCycles,
+          lastWorkoutDate: todayStr, completedDaysThisWeek: completedDays,
+          // Clear the per-workout track override once the workout is logged,
+          // so tomorrow's session returns to the user's primary track by default.
+          todaysTrack: null,
+        },
         streakData: { ...prev.streakData, currentStreak, longestStreak, lastActiveDate: todayStr },
       };
     });
@@ -299,6 +307,18 @@ export function ArmorDataProvider({ children }) {
     setData(prev => ({ ...prev, currentCycle: { ...prev.currentCycle, day: prev.currentCycle.day >= 5 ? 1 : prev.currentCycle.day + 1 } })), []);
   const advanceWeek = useCallback(() =>
     setData(prev => ({ ...prev, currentCycle: { ...prev.currentCycle, week: prev.currentCycle.week >= 6 ? 1 : prev.currentCycle.week + 1, day: 1, completedDaysThisWeek: [] } })), []);
+
+  // Per-workout track override. Sets which track today's session uses.
+  // Pass null to clear (use the user's primary track).
+  const setTodaysTrack = useCallback((track) => {
+    setData(prev => ({
+      ...prev,
+      currentCycle: { ...prev.currentCycle, todaysTrack: track || null },
+    }));
+  }, []);
+
+  // The track this workout will actually use (override or default)
+  const effectiveTrack = data.currentCycle.todaysTrack || data.preferences.equipmentTrack;
   const resetAll = useCallback(() => {
     setData(DEFAULT_DATA);
     setRevision(1);
@@ -313,6 +333,7 @@ export function ArmorDataProvider({ children }) {
     workoutHistory: data.workoutHistory, streakData: data.streakData,
     onboardingDone, todayStr, habitsNeedReset, todaysWorkoutCompleted, isMVDToday,
     estimated1RMs: data.userProfile.estimated1RMs, equipmentTrack: data.preferences.equipmentTrack,
+    effectiveTrack, todaysTrack: data.currentCycle.todaysTrack, setTodaysTrack,
     updatePreferences, updateUserProfile, set1RM,
     toggleModifier, setModifier, toggleHabit, resetDailyHabits,
     logWorkout, logMVD, advanceDay, advanceWeek,

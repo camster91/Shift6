@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Save, Sun, Moon, ChevronRight, Trash2 } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
-import { EQUIPMENT_TRACKS, getWeekConfig } from '../data/armorEngine';
+import { EQUIPMENT_TRACKS, EXERCISE_TRACK, EXERCISE_DISPLAY_NAMES, getWeekConfig } from '../data/armorEngine';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR SETTINGS v2.0 — Apple HIG
@@ -32,13 +32,16 @@ function Row({ label, value, onClick, danger, rightSlot }) {
   );
 }
 
-function EditRow({ exId, value, onSave }) {
+function EditRow({ exId, displayName, value, onSave }) {
   const [editing, setEditing] = useState(false);
   const [v, setV] = useState(String(value));
+  const empty = !value;
 
   return (
     <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }}>
-      <span className="text-sm font-medium text-white flex-1 capitalize">{exId.replace(/_/g, ' ')}</span>
+      <span className={`text-sm font-medium flex-1 ${empty ? 'text-slate-500' : 'text-white'}`}>
+        {displayName || exId.replace(/_/g, ' ')}
+      </span>
       {editing ? (
         <div className="flex items-center gap-2">
           <input
@@ -53,9 +56,9 @@ function EditRow({ exId, value, onSave }) {
           </button>
         </div>
       ) : (
-        <button onClick={() => setEditing(true)}
+        <button onClick={() => { setV(String(value || '')); setEditing(true); }}
           className="armor-press text-sm font-bold text-cyan-400 tabular-nums">
-          {value} <span className="text-slate-600 text-xs">lbs</span>
+          {value ? <>{value} <span className="text-slate-600 text-xs">lbs</span></> : <span className="text-slate-600 text-xs font-medium">Set</span>}
         </button>
       )}
     </div>
@@ -66,8 +69,6 @@ export default function ArmorSettings() {
   const { preferences, userProfile, estimated1RMs, currentCycle, updatePreferences, set1RM, resetAll } = useArmorData();
   const [showReset, setShowReset] = useState(false);
 
-  const has1RMs = Object.values(estimated1RMs).some(v => v > 0);
-  const exerciseNames = Object.keys(estimated1RMs);
   const weekConfig = getWeekConfig(currentCycle.week);
 
   return (
@@ -102,17 +103,38 @@ export default function ArmorSettings() {
           })}
         </Section>
 
-        {/* 1RMs */}
-        {has1RMs && (
-          <Section title="Estimated 1RMs">
-            {exerciseNames.filter(id => estimated1RMs[id] > 0).map(exId => (
-              <EditRow key={exId} exId={exId} value={estimated1RMs[exId]} onSave={(v) => set1RM(exId, v)} />
-            ))}
-            <p className="text-[11px] text-slate-700 px-4 py-3">
-              Auto-progresses +5 lbs upper / +10 lbs lower per 6-week cycle.
-            </p>
-          </Section>
-        )}
+        {/* 1RMs — grouped by track so the user can set 1RMs for both
+            Full Gym and Home Gym independently, then switch between them
+            per-workout from the dashboard. */}
+        <Section title="Estimated 1RMs">
+          {Object.entries(EQUIPMENT_TRACKS).map(([trackId, t], trackIdx) => {
+            const trackExercises = Object.entries(EXERCISE_TRACK)
+              .filter(([, exTrack]) => exTrack === trackId)
+              .map(([exId]) => exId);
+            return (
+              <div key={trackId} className={trackIdx > 0 ? '' : ''}
+                style={trackIdx > 0 ? { borderTop: '0.5px solid rgba(255,255,255,0.04)' } : undefined}>
+                <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                  <span style={{ fontSize: '14px' }}>{t.icon}</span>
+                  <span className="armor-text-caption" style={{ letterSpacing: '0.08em' }}>{t.label}</span>
+                </div>
+                {trackExercises.map(exId => (
+                  <EditRow
+                    key={exId}
+                    exId={exId}
+                    displayName={EXERCISE_DISPLAY_NAMES[exId]}
+                    value={estimated1RMs[exId] || 0}
+                    onSave={(v) => set1RM(exId, v)}
+                  />
+                ))}
+              </div>
+            );
+          })}
+          <p className="text-[11px] text-slate-700 px-4 py-3">
+            Auto-progresses +5 lbs upper / +10 lbs lower per 6-week cycle. Set 1RMs for both tracks
+            so you can switch seamlessly between gym and home sessions.
+          </p>
+        </Section>
 
         {/* Theme */}
         <Section title="Theme">

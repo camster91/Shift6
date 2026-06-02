@@ -22,6 +22,32 @@ export const EQUIPMENT_TRACKS = {
   },
 };
 
+// Each strength exercise belongs to exactly one track. Used by the dashboard's
+// per-workout track switcher, the Settings 1RM editor (to group rows by track),
+// and any future per-track analytics.
+export const EXERCISE_TRACK = {
+  barbell_squat: 'full_gym',
+  bench_press: 'full_gym',
+  deadlift: 'full_gym',
+  barbell_row: 'full_gym',
+  shoulder_press: 'full_gym',
+  goblet_squat: 'home_gym',
+  dumbbell_press: 'home_gym',
+  romanian_deadlift: 'home_gym',
+};
+
+// Pretty display names for 1RM editor rows. Order matters — shown within track.
+export const EXERCISE_DISPLAY_NAMES = {
+  barbell_squat: 'Barbell Squat',
+  bench_press: 'Bench Press',
+  deadlift: 'Deadlift',
+  barbell_row: 'Barbell Row',
+  shoulder_press: 'Shoulder Press',
+  goblet_squat: 'Goblet Squat',
+  dumbbell_press: 'DB Bench Press',
+  romanian_deadlift: 'DB Romanian DL',
+};
+
 // ── THE 5-DAY SPLIT (per track) ─────────────────────────────
 
 export const SPLIT_DAYS = {

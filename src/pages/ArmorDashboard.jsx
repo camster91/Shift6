@@ -3,7 +3,7 @@ import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
   getTodaysWorkout, getDailyHabits, MODIFIERS, MVD_PROTOCOL,
-  VO2MAX_PROTOCOL, PERIODIZATION, getWeekConfig
+  VO2MAX_PROTOCOL, PERIODIZATION, getWeekConfig, EQUIPMENT_TRACKS,
 } from '../data/armorEngine';
 
 /* ═══════════════════════════════════════════════════════════
@@ -121,8 +121,8 @@ export default function ArmorDashboard({ onStartWorkout }) {
   const {
     activeModifiers, dailyHabitState, currentCycle, userProfile,
     toggleModifier, toggleHabit, resetDailyHabits,
-    estimated1RMs, equipmentTrack, todaysWorkoutCompleted,
-    habitsNeedReset, streakData, isMVDToday,
+    estimated1RMs, equipmentTrack, effectiveTrack, todaysTrack, setTodaysTrack,
+    todaysWorkoutCompleted, habitsNeedReset, streakData, isMVDToday,
   } = useArmorData();
 
   useEffect(() => {
@@ -131,8 +131,8 @@ export default function ArmorDashboard({ onStartWorkout }) {
 
   const weekConfig = getWeekConfig(currentCycle.week);
   const todayWorkout = useMemo(() =>
-    getTodaysWorkout(equipmentTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs),
-    [equipmentTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs]);
+    getTodaysWorkout(effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs),
+    [effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs]);
   const dailyHabits = useMemo(() => getDailyHabits(activeModifiers), [activeModifiers]);
   const habitsCompleted = dailyHabits.filter(h => dailyHabitState[h.id]).length;
   const allHabitsDone = habitsCompleted === dailyHabits.length;
@@ -205,9 +205,33 @@ export default function ArmorDashboard({ onStartWorkout }) {
             </div>
           </div>
         ) : (
-          <div className={`armor-surface-2 p-5 space-y-4 relative overflow-hidden ${
-            todayWorkout.type === 'vo2max' ? '' : ''
-          }`}>
+          <div className="space-y-3">
+            {/* Per-workout track switcher. Default is the user's primary track;
+                tapping a track flips today's session only. */}
+            <div className="armor-press flex items-center gap-1 p-1 rounded-xl" style={{ background: 'var(--elevation-1-bg)' }}>
+              {Object.values(EQUIPMENT_TRACKS).map(t => {
+                const active = effectiveTrack === t.id;
+                const isOverride = todaysTrack === t.id && todaysTrack !== equipmentTrack;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setTodaysTrack(t.id === equipmentTrack ? null : t.id)}
+                    className="armor-press flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
+                    style={{
+                      background: active ? 'var(--color-accent-muted, rgba(6,182,212,0.12))' : 'transparent',
+                      color: active ? 'var(--color-accent)' : 'var(--text-tertiary, #64748b)',
+                    }}
+                  >
+                    <span style={{ fontSize: '14px' }}>{t.icon}</span>
+                    <span>{t.label}</span>
+                    {isOverride && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                  </button>
+                );
+              })}
+            </div>
+            <div className={`armor-surface-2 p-5 space-y-4 relative overflow-hidden ${
+              todayWorkout.type === 'vo2max' ? '' : ''
+            }`}>
             {/* Ambient glow based on workout type */}
             <div className={`absolute top-0 right-0 w-40 h-40 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl opacity-20 ${
               todayWorkout.type === 'vo2max' ? 'bg-rose-500' : 'bg-cyan-500'
@@ -300,6 +324,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
                 ✈️ Travel mode — progression frozen, bodyweight substitutions active
               </p>
             )}
+          </div>
           </div>
         )}
 

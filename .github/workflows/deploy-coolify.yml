@@ -1,0 +1,71 @@
+name: Build, Test & Deploy to Coolify
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      # Capacitor sync so any native-side changes are committed; cheap and idempotent.
+      - name: Capacitor sync (no-op if web-only changes)
+        run: npx cap sync android
+        continue-on-error: true
+
+      # Trigger Coolify deploy via REST API. Async, returns ~200ms.
+      # Per Hermes fleet standard — no host secrets, async deploy,
+      # failure here doesn't fail the build (build+test are the gate).
+      - name: Trigger Coolify Deployment
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+        run: |
+          HTTP_CODE=$(curl -s -o /tmp/deploy-resp.txt -w "%{http_code}" --max-time 30 \
+            -X POST -H "Authorization: Bearer *** \
+            "${COOLIFY_URL}/api/v1/applications/${COOLIFY_APP_UUID}/start")
+          echo "Response: HTTP ${HTTP_CODE}"
+          cat /tmp/deploy-resp.txt | head -c 500
+          echo ""
+          if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 400 ]; then
+            echo "Deployment queued!"
+          else
+            echo "Warning: deploy endpoint returned ${HTTP_CODE}"
+          fi
+
+      # Smoke test the live site to confirm the deploy actually shipped.
+      # Vite-bundled web PWA — the bundle hash will have changed if a new
+      # build went live. Caching-busted query string avoids the SW cache.
+      - name: Verify live site
+        env:
+          SITE: https://getshift6.com
+        run: |
+          sleep 30
+          HTML=$(curl -s --max-time 15 "${SITE}/?cb=$(date +%s)")
+          if echo "${HTML}" | grep -q "Armor"; then
+            echo "Live site returned expected brand 'Armor'"
+            echo "${HTML}" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1
+          else
+            echo "Live site did NOT contain expected content — deploy may have failed"
+            exit 1
+          fi

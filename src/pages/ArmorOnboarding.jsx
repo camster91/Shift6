@@ -81,7 +81,7 @@ export default function ArmorOnboarding() {
   if (step === 0) {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: bg, color: 'var(--text-primary)' }}>
-        <div className="flex-1 max-w-lg mx-auto w-full px-6 pt-10 pb-32 flex flex-col">
+        <div className="flex-1 max-w-lg mx-auto w-full px-6 pt-10 pb-8 flex flex-col">
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-8">
               <span style={{ fontSize: '28px' }}>⚔️</span>
@@ -130,7 +130,10 @@ export default function ArmorOnboarding() {
 
         {/* Pinned CTA — always visible regardless of viewport height. */}
         <div className="px-6 pt-4 pb-6"
-          style={{ background: 'linear-gradient(to top, var(--elevation-0-bg) 70%, transparent)' }}>
+          style={{
+            paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 0px))',
+            background: 'linear-gradient(to top, var(--elevation-0-bg) 70%, transparent)',
+          }}>
           <div className="max-w-lg mx-auto">
             <button onClick={() => setStep(1)}
               className="armor-press w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2"

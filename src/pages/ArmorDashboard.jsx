@@ -58,7 +58,7 @@ function ModifierRow({ activeModifiers, onToggle }) {
             <button
               key={mod.id}
               onClick={() => onToggle(mod.id)}
-              className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${
+              className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all shrink-0 whitespace-nowrap ${
                 active
                   ? 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30'
                   : 'bg-white/[0.03] text-slate-500 hover:text-slate-400'

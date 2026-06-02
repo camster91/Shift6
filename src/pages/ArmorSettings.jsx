@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, RotateCcw, Sun, Moon, ChevronRight, Trash2 } from 'lucide-react';
+import { Save, Sun, Moon, ChevronRight, Trash2 } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { EQUIPMENT_TRACKS, getWeekConfig } from '../data/armorEngine';
 
@@ -71,7 +71,7 @@ export default function ArmorSettings() {
   const weekConfig = getWeekConfig(currentCycle.week);
 
   return (
-    <div className="pb-28 max-w-lg mx-auto">
+    <div className="pb-32 max-w-lg mx-auto">
       {/* Header */}
       <div className="px-5 pt-8 pb-6">
         <h1 className="armor-text-large-title">Settings</h1>

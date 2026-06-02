@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Calendar, TrendingUp, Flame, Award, Activity, Trophy } from 'lucide-react';
+import { Flame, Trophy } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { PERIODIZATION, getWeekConfig } from '../data/armorEngine';
 
@@ -153,7 +153,7 @@ export default function ArmorProgress() {
 
   if (workoutHistory.length === 0) {
     return (
-      <div className="pb-28 max-w-lg mx-auto">
+      <div className="pb-32 max-w-lg mx-auto">
         <div className="px-5 pt-8 pb-6">
           <h1 className="armor-text-large-title">Progress</h1>
         </div>
@@ -170,7 +170,7 @@ export default function ArmorProgress() {
   }
 
   return (
-    <div className="pb-28 max-w-lg mx-auto">
+    <div className="pb-32 max-w-lg mx-auto">
       <div className="px-5 pt-8 pb-6">
         <h1 className="armor-text-large-title">Progress</h1>
         <p className="armor-text-footnote mt-1" style={{ color: 'var(--text-tertiary)' }}>

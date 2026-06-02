@@ -337,15 +337,6 @@ export function getDailyHabits(modifiers = {}) {
 }
 
 /**
- * Get the effective cycle day (frozen if travel mode).
- */
-export function getEffectiveCycleDay(state, today) {
-  if (state.activeModifiers?.travelMode) return state.currentCycle?.day || 1;
-  // Otherwise, auto-advance if it's a new day
-  return state.currentCycle?.day || 1;
-}
-
-/**
  * Check if a new day has started and advance cycle day.
  */
 export function checkDayAdvance(state, todayStr) {

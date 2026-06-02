@@ -29,8 +29,7 @@ const TAB_BAR = [
 export default function ArmorApp() {
   const armor = useArmorData();
   const {
-    onboardingDone, preferences, activeModifiers,
-    currentCycle, estimated1RMs, equipmentTrack,
+    onboardingDone, preferences,
     logWorkout,
   } = armor;
 
@@ -40,14 +39,12 @@ export default function ArmorApp() {
   const installPromptRef = useRef(null);
 
   // Check for Shift6 migration on first load
+  // Run once on mount; migrateFromShift6 reads localStorage and is idempotent
   useEffect(() => {
     if (!onboardingDone) {
-      const migrated = migrateFromShift6();
-      if (migrated) {
-        // Migration data available — user can choose to import
-        // For now, just proceed to new onboarding
-      }
+      migrateFromShift6();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // PWA install prompt
@@ -123,7 +120,11 @@ export default function ArmorApp() {
 
       {!workoutActive && (
         <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-sm">
-          <div className="armor-surface-3 flex justify-around py-2 px-2 rounded-2xl" role="tablist">
+          <div
+            className="flex justify-around py-2 px-2 rounded-2xl border border-white/5"
+            role="tablist"
+            style={{ background: 'var(--elevation-0-bg)', boxShadow: 'var(--elevation-3-shadow)' }}
+          >
             {TAB_BAR.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Play, Pause, Check, X, ChevronRight, Plus } from 'lucide-react';
+import { Play, Pause, Check, X, ChevronRight } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
   getTodaysWorkout, VO2MAX_PROTOCOL, getWeekConfig
 } from '../data/armorEngine';
-import { ConfettiBurst, AwardModal, usePRDetection } from '../components/Celebration';
+import { ConfettiBurst, AwardModal } from '../components/Celebration';
+import { usePRDetection } from '../hooks/usePRDetection';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR WORKOUT SESSION v2.0 — Apple HIG
@@ -12,10 +13,16 @@ import { ConfettiBurst, AwardModal, usePRDetection } from '../components/Celebra
    ═══════════════════════════════════════════════════════════ */
 
 const HAPTIC = {
+  // Vibration is optional; suppress no-empty since failure is non-actionable
+  // eslint-disable-next-line no-empty
   light: () => { try { navigator.vibrate?.(10); } catch {} },
+  // eslint-disable-next-line no-empty
   medium: () => { try { navigator.vibrate?.(20); } catch {} },
+  // eslint-disable-next-line no-empty
   heavy: () => { try { navigator.vibrate?.(100); } catch {} },
+  // eslint-disable-next-line no-empty
   success: () => { try { navigator.vibrate?.([50, 30, 100]); } catch {} },
+  // eslint-disable-next-line no-empty
   warning: () => { try { navigator.vibrate?.([200, 100, 200]); } catch {} },
 };
 
@@ -125,12 +132,15 @@ function VO2MaxScreen({ protocol, onComplete }) {
       if (isLastRound) { onComplete?.(); return; }
       setPhase('rest'); timer.reset(protocol.restSeconds); timer.start();
     }
+    // timer and protocol values are stable; only re-evaluate on phase boundary
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isWork, timer.timeLeft]);
 
   useEffect(() => {
     if (isRest && timer.timeLeft === 0) {
       setRound(r => r + 1); setPhase('work'); timer.reset(protocol.workSeconds); timer.start();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRest, timer.timeLeft]);
 
   return (
@@ -195,20 +205,22 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const [phase, setPhase] = useState('active');
   const [completedSets, setCompletedSets] = useState([]);
   const [notes, setNotes] = useState('');
-  const [showConfetti, setShowConfetti] = useState(false);
 
-  const { celebration, setCelebration, checkPR } = usePRDetection();
+  const { checkPR } = usePRDetection();
   const currentEx = queue[exIdx];
   const totalSets = currentEx?.sets || 3;
   const restSecs = currentEx?.type === 'primary' ? 120 : 90;
   const timer = useTimer(restSecs);
 
+  // Reset state when exercise index changes; currentEx is derived from exIdx via queue[exIdx]
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSetNum(1); setPhase(currentEx ? 'active' : 'done'); setNotes(''); }, [exIdx]);
 
   useEffect(() => {
     if (phase === 'rest' && timer.timeLeft === 0 && timer.running) {
       timer.pause(); setPhase('active'); HAPTIC.medium();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, timer.timeLeft, timer.running]);
 
   const handleCompleteSet = useCallback(() => {
@@ -217,8 +229,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
 
     // Check for PR on primary lift final set
     if (currentEx.type === 'primary' && setNum === totalSets) {
-      const hit = checkPR(currentEx.exerciseId, currentEx.weight, currentEx.reps);
-      if (hit) setShowConfetti(true);
+      checkPR(currentEx.exerciseId, currentEx.weight, currentEx.reps);
     }
 
     if (setNum >= totalSets) {

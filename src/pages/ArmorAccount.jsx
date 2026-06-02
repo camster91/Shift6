@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { LogIn, LogOut, RefreshCw, Check, AlertCircle, Cloud, CloudOff, GitMerge } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
-import { register, login, logout, getAuth, isLoggedIn, setApiBase, getApiBase } from '../lib/syncClient';
+import { register, login, logout, getAuth, isLoggedIn, getApiBase } from '../lib/syncClient';
 
 /**
  * Armor Account — Login/register form, sync status, conflict resolution.

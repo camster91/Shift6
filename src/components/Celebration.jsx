@@ -1,6 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Trophy, X, Sparkles, Check } from 'lucide-react';
-import { useArmorData } from '../context/ArmorDataContext';
+import { useEffect, useState } from 'react';
+import { X, Sparkles, Check } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR CELEBRATIONS — PR detection + confetti + awards
@@ -97,23 +96,4 @@ function Toast({ message, sub, onDismiss, duration = 3000 }) {
   );
 }
 
-function usePRDetection() {
-  const { estimated1RMs } = useArmorData();
-  const [celebration, setCelebration] = useState(null);
-
-  const checkPR = useCallback((exerciseId, weight, reps) => {
-    const current1RM = estimated1RMs[exerciseId] || 0;
-    if (current1RM === 0) return false;
-    const new1RM = Math.round(weight * (1 + 0.0333 * reps));
-    if (new1RM > current1RM * 1.02) { // 2% threshold to avoid noise
-      setCelebration('pr');
-      return true;
-    }
-    return false;
-  }, [estimated1RMs]);
-
-  return { celebration, setCelebration, checkPR };
-}
-
-export { ConfettiBurst, AwardModal, Toast, usePRDetection };
-export default { ConfettiBurst, AwardModal, Toast, usePRDetection };
+export { ConfettiBurst, AwardModal, Toast };

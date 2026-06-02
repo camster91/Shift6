@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Check, ChevronRight, ChevronLeft, Plus, Minus, Award, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Check, ChevronRight, ChevronLeft, Plus, Minus, Award } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { EQUIPMENT_TRACKS, estimate1RM, SPLIT_DAYS } from '../data/armorEngine';
 
@@ -37,7 +37,9 @@ export default function ArmorOnboarding() {
   // Trigger haptic feedback on finishing onboarding
   useEffect(() => {
     if (submitting) {
-      try { navigator.vibrate?.([50, 30, 50, 30, 100]); } catch {}
+      try { navigator.vibrate?.([50, 30, 50, 30, 100]); } catch {
+        // Vibration API not available (e.g., iOS Safari without user gesture)
+      }
     }
   }, [submitting]);
 
@@ -302,7 +304,7 @@ export default function ArmorOnboarding() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: bg, color: 'var(--text-primary)' }}>
       <div className="flex-1 max-w-lg mx-auto w-full px-6 pt-8 pb-6 flex flex-col">
-        <h1 className="armor-text-large-title mb-1">You're Ready</h1>
+        <h1 className="armor-text-large-title mb-1">You&apos;re Ready</h1>
         <p className="armor-text-footnote mb-8" style={{ color: 'var(--text-tertiary)' }}>
           Week 1 Day 1 starts now. We handle the plate math — you just show up.
         </p>

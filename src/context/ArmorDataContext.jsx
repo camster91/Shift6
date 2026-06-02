@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
-  fetchCloud, pushCloud, isLoggedIn, getAuth,
+  fetchCloud, pushCloud, isLoggedIn,
 } from '../lib/syncClient';
 
 /**
@@ -103,7 +103,6 @@ export function ArmorDataProvider({ children }) {
 
   const saveTimeout = useRef(null);
   const syncTimeout = useRef(null);
-  const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 
   // Listen for online/offline
   useEffect(() => {

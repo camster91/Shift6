@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Play, Flame, Check, Shield, ChevronRight, Zap } from 'lucide-react';
+import { useMemo } from 'react';
+import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
   getTodaysWorkout, getDailyHabits, MODIFIERS, MVD_PROTOCOL,
@@ -105,7 +105,7 @@ function HabitCheck({ habit, done, onToggle }) {
   );
 }
 
-function QuickStat({ icon, label, value, accent }) {
+function QuickStat({ icon, label, value }) {
   return (
     <div className="bg-white/[0.02] rounded-xl px-4 py-3 text-center">
       <p className="text-slate-600 mb-1" style={{ fontSize: '18px' }}>{icon}</p>
@@ -144,7 +144,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
   const top1RM = Math.max(...Object.values(estimated1RMs), 0);
 
   return (
-    <div className="pb-28 space-y-5 max-w-lg mx-auto">
+    <div className="pb-32 space-y-5 max-w-lg mx-auto">
       {/* ── HEADER ── */}
       <div className="px-5 pt-8 pb-2">
         <p className="armor-text-caption mb-1">{greeting}{userProfile.displayName ? `, ${userProfile.displayName}` : ''}</p>

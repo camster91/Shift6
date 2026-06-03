@@ -1,0 +1,3 @@
+## 2025-05-15 - Context and Component Memoization
+**Learning:** In the `ArmorDataContext`, the `value` object provided to the context was not memoized. This caused all consumer components to re-render whenever *any* state in the provider changed, even if the specific data they used didn't change (e.g., `syncStatus` updates causing a re-render of the entire dashboard). Additionally, several derived values like `todayStr` and `effectiveTrack` were being recalculated on every render.
+**Action:** Apply `useMemo` to the context `value` and all derived state variables within the provider. Furthermore, wrap frequently used sub-components in `React.memo` to skip re-renders when their props are stable.

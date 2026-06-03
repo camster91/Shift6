@@ -149,7 +149,7 @@ export function ArmorDataProvider({ children }) {
     return () => clearTimeout(syncTimeout.current);
   }, [data, revision]);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   const onboardingDone = useMemo(() => {
     const { displayName } = data.userProfile;
@@ -165,13 +165,13 @@ export function ArmorDataProvider({ children }) {
       data.userProfile.estimated1RMs.dumbbell_press,
       data.userProfile.estimated1RMs.romanian_deadlift]);
 
-  const habitsNeedReset = data.dailyHabitState.dateString !== todayStr;
+  const habitsNeedReset = useMemo(() => data.dailyHabitState.dateString !== todayStr, [data.dailyHabitState.dateString, todayStr]);
 
   const todaysWorkoutCompleted = useMemo(() => {
     return data.workoutHistory.some(w => w.date === todayStr && w.completed);
   }, [data.workoutHistory, todayStr]);
 
-  const isMVDToday = data.streakData.mvdDates?.includes(todayStr);
+  const isMVDToday = useMemo(() => data.streakData.mvdDates?.includes(todayStr), [data.streakData.mvdDates, todayStr]);
 
   // ── Cloud pull (on login) ───────────────────────────────────
   const pullFromCloud = useCallback(async () => {
@@ -318,7 +318,8 @@ export function ArmorDataProvider({ children }) {
   }, []);
 
   // The track this workout will actually use (override or default)
-  const effectiveTrack = data.currentCycle.todaysTrack || data.preferences.equipmentTrack;
+  const effectiveTrack = useMemo(() => data.currentCycle.todaysTrack || data.preferences.equipmentTrack, [data.currentCycle.todaysTrack, data.preferences.equipmentTrack]);
+
   const resetAll = useCallback(() => {
     setData(DEFAULT_DATA);
     setRevision(1);
@@ -326,7 +327,7 @@ export function ArmorDataProvider({ children }) {
     save(REVISION_KEY, 1);
   }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     data, revision, syncStatus, lastSyncAt, conflict,
     preferences: data.preferences, userProfile: data.userProfile, currentCycle: data.currentCycle,
     activeModifiers: data.activeModifiers, dailyHabitState: data.dailyHabitState,
@@ -339,7 +340,15 @@ export function ArmorDataProvider({ children }) {
     logWorkout, logMVD, advanceDay, advanceWeek,
     completeOnboarding, resetAll,
     pullFromCloud, resolveConflictKeepLocal, resolveConflictUseServer,
-  };
+  }), [
+    data, revision, syncStatus, lastSyncAt, conflict,
+    onboardingDone, todayStr, habitsNeedReset, todaysWorkoutCompleted, isMVDToday,
+    effectiveTrack, setTodaysTrack, updatePreferences, updateUserProfile, set1RM,
+    toggleModifier, setModifier, toggleHabit, resetDailyHabits,
+    logWorkout, logMVD, advanceDay, advanceWeek,
+    completeOnboarding, resetAll,
+    pullFromCloud, resolveConflictKeepLocal, resolveConflictUseServer,
+  ]);
 
   return (
     <ArmorDataContext.Provider value={value}>

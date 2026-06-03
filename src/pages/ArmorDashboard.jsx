@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, memo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
@@ -12,7 +12,7 @@ import PlateVisualizer from '../components/PlateVisualizer';
    Zero borders. Elevation-based depth. Typographic hierarchy.
    ═══════════════════════════════════════════════════════════ */
 
-function CycleProgress({ week, day, totalCyclesCompleted }) {
+const CycleProgress = memo(function CycleProgress({ week, day, totalCyclesCompleted }) {
   const weekConfig = getWeekConfig(week);
   const totalDays = 30;
   const done = (week - 1) * 5 + Math.min(day - 1, 4);
@@ -39,9 +39,9 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
       </div>
     </div>
   );
-}
+});
 
-function ModifierRow({ activeModifiers, onToggle }) {
+const ModifierRow = memo(function ModifierRow({ activeModifiers, onToggle }) {
   const entries = Object.values(MODIFIERS);
   return (
     <div>
@@ -74,9 +74,9 @@ function ModifierRow({ activeModifiers, onToggle }) {
       </div>
     </div>
   );
-}
+});
 
-function HabitCheck({ habit, done, onToggle }) {
+const HabitCheck = memo(function HabitCheck({ habit, done, onToggle }) {
   return (
     <button
       onClick={onToggle}
@@ -104,9 +104,9 @@ function HabitCheck({ habit, done, onToggle }) {
       </span>
     </button>
   );
-}
+});
 
-function QuickStat({ icon, label, value }) {
+const QuickStat = memo(function QuickStat({ icon, label, value }) {
   return (
     <div className="bg-white/[0.02] rounded-xl px-4 py-3 text-center">
       <p className="text-slate-600 mb-1" style={{ fontSize: '18px' }}>{icon}</p>
@@ -114,7 +114,7 @@ function QuickStat({ icon, label, value }) {
       <p className="text-[10px] text-slate-500 mt-0.5">{label}</p>
     </div>
   );
-}
+});
 
 /* ── MAIN DASHBOARD ────────────────────────────────────────── */
 

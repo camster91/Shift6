@@ -1,0 +1,3 @@
+## 2024-06-04 - Context Provider Memoization & Date Handling
+**Learning:** Memoizing the context value object in a central provider (like `ArmorDataProvider`) is a high-impact optimization for React apps, as it prevents unnecessary re-renders of the entire component tree when transient state changes. However, memoizing date-based strings (like `todayStr`) with an empty dependency array creates a logic bug where the app "gets stuck" on the initial date, breaking daily resets for users who leave the app open across date boundaries.
+**Action:** Always ensure date-dependent constants are recalculated on each render or properly managed via a clock/timer if they must be memoized, and avoid micro-optimizing cheap boolean derivations that add complexity without measurable gain.

@@ -51,6 +51,7 @@ function EditRow({ exId, displayName, value, onSave }) {
             style={{ background: 'rgba(255,255,255,0.05)' }}
           />
           <button onClick={() => { onSave(parseInt(v) || 0); setEditing(false); }}
+            aria-label="Save 1RM value"
             className="armor-press p-1.5 rounded-lg" style={{ background: 'var(--color-accent)' }}>
             <Save size={14} className="text-white" />
           </button>

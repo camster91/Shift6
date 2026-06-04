@@ -88,6 +88,7 @@ function Toast({ message, sub, onDismiss, duration = 3000 }) {
           {sub && <p className="text-[11px] text-slate-500">{sub}</p>}
         </div>
         <button onClick={onDismiss}
+          aria-label="Dismiss notification"
           className="armor-press p-1">
           <X size={14} className="text-slate-500" />
         </button>

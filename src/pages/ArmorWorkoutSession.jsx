@@ -70,7 +70,7 @@ function TimerRing({ seconds, running, accentColor = '#06b6d4', label = 'Rest' }
   const urgent = seconds <= 10 && running;
 
   return (
-    <div className="relative w-44 h-44 mx-auto">
+    <div className="relative w-44 h-44 mx-auto" role="timer" aria-live="polite" aria-label={`Remaining time: ${mins}:${secs.toString().padStart(2, '0')}`}>
       <svg width={176} height={176} className="transform -rotate-90">
         <circle cx={88} cy={88} r={75} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={6} />
         <circle cx={88} cy={88} r={75} fill="none" stroke={accentColor} strokeWidth={6}
@@ -94,6 +94,7 @@ function TimerRing({ seconds, running, accentColor = '#06b6d4', label = 'Rest' }
 function VO2MaxScreen({ protocol, onComplete }) {
   const [round, setRound] = useState(1);
   const [phase, setPhase] = useState('idle');
+  const [confirmEnd, setConfirmEnd] = useState(false);
   const timer = useTimer(protocol.workSeconds);
 
   const isWork = phase === 'work';
@@ -116,6 +117,13 @@ function VO2MaxScreen({ protocol, onComplete }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRest, timer.timeLeft]);
+
+  useEffect(() => {
+    if (confirmEnd) {
+      const t = setTimeout(() => setConfirmEnd(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [confirmEnd]);
 
   return (
     <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full">
@@ -156,9 +164,19 @@ function VO2MaxScreen({ protocol, onComplete }) {
             <Play size={16} className="inline mr-2 fill-current" /> Resume
           </button>
         )}
-        <button onClick={() => { HAPTIC.light(); onComplete?.(); }}
-          className="w-full py-3 text-slate-600 text-sm font-semibold">
-          End Early
+        <button
+          onClick={() => {
+            if (confirmEnd) {
+              HAPTIC.light();
+              onComplete?.();
+            } else {
+              setConfirmEnd(true);
+              HAPTIC.light();
+            }
+          }}
+          className={`w-full py-3 text-sm font-semibold transition-colors ${confirmEnd ? 'text-amber-400' : 'text-slate-600'}`}
+        >
+          {confirmEnd ? 'Confirm End?' : 'End Early'}
         </button>
       </div>
     </div>
@@ -179,6 +197,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const [phase, setPhase] = useState('active');
   const [completedSets, setCompletedSets] = useState([]);
   const [notes, setNotes] = useState('');
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   const { checkPR } = usePRDetection();
   const currentEx = queue[exIdx];
@@ -196,6 +215,13 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, timer.timeLeft, timer.running]);
+
+  useEffect(() => {
+    if (confirmEnd) {
+      const t = setTimeout(() => setConfirmEnd(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [confirmEnd]);
 
   const handleCompleteSet = useCallback(() => {
     HAPTIC.heavy();
@@ -282,8 +308,10 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         )}
         <div className="flex items-center justify-center gap-3 mt-6">
           <button onClick={() => { timer.addTime(-15); HAPTIC.light(); }}
+            aria-label="Subtract 15 seconds"
             className="armor-press w-12 h-12 rounded-full bg-white/[0.04] text-slate-400 text-sm font-bold">-15</button>
           <button onClick={() => { timer.addTime(15); HAPTIC.light(); }}
+            aria-label="Add 15 seconds"
             className="armor-press w-12 h-12 rounded-full bg-white/[0.04] text-slate-400 text-sm font-bold">+15</button>
         </div>
         <div className="mt-auto pb-8 space-y-3">
@@ -354,9 +382,18 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         Complete Set {setNum}
       </button>
 
-      <button onClick={handleFinish}
-        className="w-full py-3 mt-3 text-slate-600 text-sm font-semibold">
-        End Workout
+      <button
+        onClick={() => {
+          if (confirmEnd) {
+            handleFinish();
+          } else {
+            setConfirmEnd(true);
+            HAPTIC.light();
+          }
+        }}
+        className={`w-full py-3 mt-3 text-sm font-semibold transition-colors ${confirmEnd ? 'text-amber-400' : 'text-slate-600'}`}
+      >
+        {confirmEnd ? 'Confirm End?' : 'End Workout'}
       </button>
     </div>
   );
@@ -379,6 +416,7 @@ export default function ArmorWorkoutSession({ onComplete, onCancel }) {
 
       <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
         <button onClick={() => { HAPTIC.light(); onCancel?.(); }}
+          aria-label="Close workout session"
           className="armor-press w-10 h-10 rounded-full bg-white/[0.04] flex items-center justify-center">
           <X size={18} className="text-slate-400" />
         </button>

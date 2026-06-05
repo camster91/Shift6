@@ -69,6 +69,7 @@ export default function ArmorOnboarding() {
               onChange={e => setDisplayName(e.target.value)}
               placeholder="Athlete"
               autoFocus
+              maxLength={50}
               className="w-full rounded-xl px-4 py-3 text-base text-white placeholder:text-slate-700 outline-none"
               style={{ background: 'var(--elevation-1-bg)' }}
               onKeyDown={e => e.key === 'Enter' && handleCommit(chosenTrack)}

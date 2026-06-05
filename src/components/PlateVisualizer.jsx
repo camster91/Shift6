@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 /**
  * PlateVisualizer — Track-aware weight visualization.
  *
@@ -35,7 +37,9 @@ const DUMBBELL_HEADS = [
   { weight: 5,  color: '#64748b', size: 30 },
 ];
 
-export default function PlateVisualizer({ weight, track = 'full_gym', compact = false }) {
+// Memoize to skip expensive plate-math calculations and SVG re-renders when parent
+// components (like the workout timer) update frequently.
+const PlateVisualizer = memo(({ weight, track = 'full_gym', compact = false }) => {
   if (!weight || weight <= 0) return null;
 
   if (track === 'home_gym') {
@@ -89,7 +93,11 @@ export default function PlateVisualizer({ weight, track = 'full_gym', compact = 
       </div>
     </div>
   );
-}
+});
+
+PlateVisualizer.displayName = 'PlateVisualizer';
+
+export default PlateVisualizer;
 
 // SVG barbell: long horizontal bar with two sleeve collars and plates on each side.
 function BarbellSvg({ plates = [], barOnly = false, compact = false }) {

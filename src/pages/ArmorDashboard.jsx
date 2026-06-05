@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, memo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
@@ -12,7 +12,11 @@ import PlateVisualizer from '../components/PlateVisualizer';
    Zero borders. Elevation-based depth. Typographic hierarchy.
    ═══════════════════════════════════════════════════════════ */
 
-function CycleProgress({ week, day, totalCyclesCompleted }) {
+// Memoizing dashboard sub-components to prevent them from re-rendering
+// unless their specific props change, even if the parent Dashboard re-renders
+// due to frequent context updates.
+
+const CycleProgress = memo(({ week, day, totalCyclesCompleted }) => {
   const weekConfig = getWeekConfig(week);
   const totalDays = 30;
   const done = (week - 1) * 5 + Math.min(day - 1, 4);
@@ -39,9 +43,10 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
       </div>
     </div>
   );
-}
+});
+CycleProgress.displayName = 'CycleProgress';
 
-function ModifierRow({ activeModifiers, onToggle }) {
+const ModifierRow = memo(({ activeModifiers, onToggle }) => {
   const entries = Object.values(MODIFIERS);
   return (
     <div>
@@ -74,9 +79,10 @@ function ModifierRow({ activeModifiers, onToggle }) {
       </div>
     </div>
   );
-}
+});
+ModifierRow.displayName = 'ModifierRow';
 
-function HabitCheck({ habit, done, onToggle }) {
+const HabitCheck = memo(({ habit, done, onToggle }) => {
   return (
     <button
       onClick={onToggle}
@@ -104,9 +110,10 @@ function HabitCheck({ habit, done, onToggle }) {
       </span>
     </button>
   );
-}
+});
+HabitCheck.displayName = 'HabitCheck';
 
-function QuickStat({ icon, label, value }) {
+const QuickStat = memo(({ icon, label, value }) => {
   return (
     <div className="bg-white/[0.02] rounded-xl px-4 py-3 text-center">
       <p className="text-slate-600 mb-1" style={{ fontSize: '18px' }}>{icon}</p>
@@ -114,7 +121,8 @@ function QuickStat({ icon, label, value }) {
       <p className="text-[10px] text-slate-500 mt-0.5">{label}</p>
     </div>
   );
-}
+});
+QuickStat.displayName = 'QuickStat';
 
 /* ── MAIN DASHBOARD ────────────────────────────────────────── */
 

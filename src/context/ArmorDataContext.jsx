@@ -326,7 +326,9 @@ export function ArmorDataProvider({ children }) {
     save(REVISION_KEY, 1);
   }, []);
 
-  const value = {
+  // Memoize the context value to prevent unnecessary re-renders of all consuming components
+  // when the parent Provider re-renders but the underlying data hasn't changed.
+  const value = useMemo(() => ({
     data, revision, syncStatus, lastSyncAt, conflict,
     preferences: data.preferences, userProfile: data.userProfile, currentCycle: data.currentCycle,
     activeModifiers: data.activeModifiers, dailyHabitState: data.dailyHabitState,
@@ -339,7 +341,16 @@ export function ArmorDataProvider({ children }) {
     logWorkout, logMVD, advanceDay, advanceWeek,
     completeOnboarding, resetAll,
     pullFromCloud, resolveConflictKeepLocal, resolveConflictUseServer,
-  };
+  }), [
+    data, revision, syncStatus, lastSyncAt, conflict,
+    onboardingDone, todayStr, habitsNeedReset, todaysWorkoutCompleted, isMVDToday,
+    effectiveTrack, setTodaysTrack,
+    updatePreferences, updateUserProfile, set1RM,
+    toggleModifier, setModifier, toggleHabit, resetDailyHabits,
+    logWorkout, logMVD, advanceDay, advanceWeek,
+    completeOnboarding, resetAll,
+    pullFromCloud, resolveConflictKeepLocal, resolveConflictUseServer,
+  ]);
 
   return (
     <ArmorDataContext.Provider value={value}>

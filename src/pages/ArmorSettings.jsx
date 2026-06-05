@@ -50,8 +50,12 @@ function EditRow({ exId, displayName, value, onSave }) {
             className="w-20 text-right rounded-lg px-2 py-1 text-sm font-bold text-white outline-none tabular-nums"
             style={{ background: 'rgba(255,255,255,0.05)' }}
           />
-          <button onClick={() => { onSave(parseInt(v) || 0); setEditing(false); }}
-            className="armor-press p-1.5 rounded-lg" style={{ background: 'var(--color-accent)' }}>
+          <button
+            onClick={() => { onSave(parseInt(v) || 0); setEditing(false); }}
+            aria-label="Save weight"
+            className="armor-press p-1.5 rounded-lg"
+            style={{ background: 'var(--color-accent)' }}
+          >
             <Save size={14} className="text-white" />
           </button>
         </div>

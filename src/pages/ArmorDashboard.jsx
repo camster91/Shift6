@@ -59,6 +59,7 @@ function ModifierRow({ activeModifiers, onToggle }) {
             <button
               key={mod.id}
               onClick={() => onToggle(mod.id)}
+              aria-pressed={active}
               className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all shrink-0 whitespace-nowrap ${
                 active
                   ? 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30'
@@ -80,6 +81,8 @@ function HabitCheck({ habit, done, onToggle }) {
   return (
     <button
       onClick={onToggle}
+      role="checkbox"
+      aria-checked={done}
       className={`armor-press w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
         done
           ? 'bg-emerald-500/8'

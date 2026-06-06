@@ -40,7 +40,7 @@ function Nav() {
         </a>
         <div className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-400">
           <a href="#protocol" className="hover:text-white transition-colors">Protocol</a>
-          <a href="#pillars" className="hover:text-white transition-colors">5 Pillars</a>
+          <a href="#pillars" className="hover:text-white transition-colors">2 Pillars</a>
           <a href="#contingency" className="hover:text-white transition-colors">Contingency</a>
           <a href="#showcase" className="hover:text-white transition-colors">Inside</a>
         </div>

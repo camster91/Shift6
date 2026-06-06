@@ -11,7 +11,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
-              Metabolic armor, maximum VO₂ max, and 5 longevity pillars for busy professionals.
+              Metabolic armor built around 2 strength pillars and 4 daily longevity habits for busy professionals.
               Built by someone who knows the meeting runs long.
             </p>
           </div>
@@ -20,7 +20,7 @@ export default function Footer() {
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Product</p>
             <ul className="space-y-2 text-xs text-slate-400">
               <li><a href="#protocol" className="hover:text-white transition-colors">Protocol</a></li>
-              <li><a href="#pillars" className="hover:text-white transition-colors">5 Pillars</a></li>
+              <li><a href="#pillars" className="hover:text-white transition-colors">2 Pillars</a></li>
               <li><a href="#contingency" className="hover:text-white transition-colors">Contingency</a></li>
               <li><a href="https://getshift6.com" className="hover:text-white transition-colors">Open Web App</a></li>
             </ul>

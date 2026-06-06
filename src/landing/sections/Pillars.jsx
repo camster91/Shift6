@@ -3,14 +3,6 @@ import { useInView } from '../hooks/useInView';
 const PILLARS = [
   {
     n: 1,
-    icon: '🫀',
-    title: 'VO₂ Max',
-    sub: 'Norwegian 4×4 intervals',
-    desc: '4 rounds of 4-min work at 85-95% max HR, with 3-min active rest. The single best predictor of all-cause mortality — and the lowest time-cost of any longevity intervention.',
-    color: 'rose',
-  },
-  {
-    n: 2,
     icon: '🦵',
     title: 'Strength',
     sub: 'Periodized 6-week cycles',
@@ -18,28 +10,12 @@ const PILLARS = [
     color: 'cyan',
   },
   {
-    n: 3,
-    icon: '🧬',
-    title: 'Metabolic Health',
-    sub: 'Post-meal walks',
-    desc: 'Two 10-minute walks (after lunch, after dinner) blunt glucose spikes by 30%. Non-negotiable. Armor tracks them as part of the daily stack.',
-    color: 'emerald',
-  },
-  {
-    n: 4,
-    icon: '🧘',
-    title: 'Mobility',
-    sub: '5-min evening floor work',
-    desc: 'Hips, hamstrings, thoracic spine. Counter the desk-worker posture that compresses your organs and shortens your stride.',
-    color: 'amber',
-  },
-  {
-    n: 5,
-    icon: '⚖️',
-    title: 'Neurological',
-    sub: 'Single-leg balance, eyes closed',
-    desc: '2-3 minutes per leg. Stack with a daily anchor (coffee, brushing teeth). Falls kill more adults over 65 than any other injury. Build the reflex now.',
-    color: 'purple',
+    n: 2,
+    icon: '🫀',
+    title: 'VO₂ Max',
+    sub: 'Norwegian 4×4 intervals',
+    desc: '4 rounds of 4-min work at 85-95% max HR, with 3-min active rest. The single best predictor of all-cause mortality — and the lowest time-cost of any longevity intervention.',
+    color: 'rose',
   },
 ];
 
@@ -51,22 +27,29 @@ const COLOR_MAP = {
   purple: 'from-purple-500/20 border-purple-500/30 text-purple-400',
 };
 
+const HABITS = [
+  { icon: '⚖️', label: 'Balance drill', sub: 'Single-leg, eyes closed, 2–3 min/leg' },
+  { icon: '🚶', label: 'Lunch walk', sub: '10 min post-lunch, non-negotiable' },
+  { icon: '🚶', label: 'Dinner walk', sub: '10 min post-dinner, blunts glucose spike' },
+  { icon: '🧘', label: 'Evening floor work', sub: '5 min hips, hams, thoracic spine' },
+];
+
 export default function Pillars() {
   const [ref, inView] = useInView();
 
   return (
     <section id="pillars" className="py-20 px-6">
       <div ref={ref} className={`max-w-5xl mx-auto ${inView ? 'reveal visible' : 'reveal'}`}>
-        <p className="eyebrow text-center mb-3">The 5 Pillars</p>
+        <p className="eyebrow text-center mb-3">2 Strength Pillars</p>
         <h2 className="text-3xl md:text-5xl font-black text-center mb-4 leading-tight">
-          Longevity isn&apos;t one thing.
+          Two interventions, maximum ROI.
         </h2>
         <p className="text-center text-slate-400 max-w-2xl mx-auto mb-12">
-          Armor tracks the five interventions proven to extend healthspan.
-          Each takes 5-20 minutes. All fit inside a real day.
+          Everything in Armor serves these two pillars. Strength and VO₂ Max are the only
+          interventions with strong evidence for mortality risk reduction independent of each other.
         </p>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid md:grid-cols-2 gap-3 mb-16">
           {PILLARS.map((p) => (
             <div
               key={p.n}
@@ -74,21 +57,27 @@ export default function Pillars() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">{p.icon}</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pillar {p.n} / 5</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pillar {p.n} / 2</span>
               </div>
               <h3 className={`text-lg font-black mb-0.5 ${COLOR_MAP[p.color].split(' ').pop()}`}>{p.title}</h3>
               <p className="text-xs font-semibold text-slate-400 mb-3">{p.sub}</p>
               <p className="text-xs text-slate-400 leading-relaxed">{p.desc}</p>
             </div>
           ))}
+        </div>
 
-          {/* The 5th placeholder: future pillar */}
-          <div className="card border-dashed border-white/10 flex items-center justify-center text-center min-h-[180px]">
-            <div>
-              <p className="text-2xl mb-2 opacity-40">+</p>
-              <p className="text-xs text-slate-400">More pillars as research evolves.</p>
+        <p className="eyebrow text-center mb-3">4 Daily Longevity Habits</p>
+        <p className="text-center text-slate-400 max-w-2xl mx-auto mb-8">
+          Daily stackable habits that complement the pillars. Each takes 5–20 minutes.
+        </p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {HABITS.map((h, i) => (
+            <div key={i} className="card border border-white/[0.06]">
+              <span className="text-xl mb-2 block">{h.icon}</span>
+              <p className="text-sm font-bold text-slate-200 mb-1">{h.label}</p>
+              <p className="text-xs text-slate-400">{h.sub}</p>
             </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>

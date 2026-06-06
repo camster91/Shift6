@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Flame, Trophy } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { PERIODIZATION, getWeekConfig } from '../data/armorEngine';
+import { Card, PageHeader, EmptyState } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR PROGRESS v2.0 — Apple HIG
@@ -131,9 +132,117 @@ function VolumeBar({ history }) {
   );
 }
 
+/* ── PR Timeline SVG line chart ─────────────────────────── */
+function PRTimelineChart({ data, liftName }) {
+  if (!data || data.length === 0) return null;
+
+  const w = 320, h = 120, pad = 24;
+  const xs = data.map((_, i) => pad + (i * (w - 2 * pad)) / Math.max(1, data.length - 1));
+  const maxV = Math.max(...data.map(d => d.value), 1);
+  const ys = data.map(d => h - pad - (d.value / maxV) * (h - 2 * pad));
+  const path = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x},${ys[i]}`).join(' ');
+
+  // Round Y-axis to nearest 25
+  const yMax = Math.ceil(maxV / 25) * 25;
+
+  return (
+    <Card className="p-4 space-y-3">
+      <p className="armor-text-caption">Your {liftName} — heaviest set per session</p>
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-[320px] h-[120px]" style={{ display: 'block' }}>
+        {/* Y-axis grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+          const y = h - pad - pct * (h - 2 * pad);
+          return (
+            <g key={i}>
+              <line x1={pad} y1={y} x2={w - pad} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
+              {i === 0 ? null : (
+                <text x={pad - 4} y={y + 4} textAnchor="end" fontSize={9} fill="rgba(255,255,255,0.3)">
+                  {Math.round(pct * yMax)}
+                </text>
+              )}
+            </g>
+          );
+        })}
+        {/* Line */}
+        <path d={path} fill="none" stroke="rgb(6,182,212)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        {/* Dots */}
+        {data.map((d, i) => (
+          <circle key={i} cx={xs[i]} cy={ys[i]} r={3} fill="rgb(6,182,212)" />
+        ))}
+ {/* X-axis labels */}
+        {data.map((d, i) => {
+          const label = new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          return (
+            <text key={i} x={xs[i]} y={h - 4} textAnchor="middle" fontSize={8} fill="rgba(255,255,255,0.3)">
+              {label}
+            </text>
+          );
+        })}
+      </svg>
+    </Card>
+  );
+}
+
+/* ── Volume-per-week SVG bar chart ───────────────────────── */
+function VolumeWeeklyChart({ data }) {
+  if (!data || data.length === 0) return null;
+
+  const barW = 36, gap = 8, chartH = 100, labelH = 16;
+  const totalW = data.length * (barW + gap) + gap;
+  const maxV = Math.max(...data.map(d => d.volume), 1);
+
+  return (
+    <Card className="p-4 space-y-3">
+      <p className="armor-text-caption">Weekly Volume</p>
+      <svg viewBox={`0 0 ${totalW} ${chartH + labelH}`} className="w-full" style={{ display: 'block', maxHeight: 116 }}>
+        {/* Y-axis max label */}
+        <text x={4} y={10} fontSize={9} fill="rgba(255,255,255,0.3)">
+          {Math.round(maxV).toLocaleString()}
+        </text>
+        {/* Bars */}
+        {data.map((d, i) => {
+          const barH = Math.max(4, (d.volume / maxV) * chartH);
+          const x = gap + i * (barW + gap);
+          const y = chartH - barH + labelH;
+          return (
+            <g key={i}>
+              <rect x={x} y={y} width={barW} height={barH} rx={4} fill="rgb(6,182,212)" />
+              <text x={x + barW / 2} y={chartH + labelH - 2} textAnchor="middle" fontSize={8} fill="rgba(255,255,255,0.3)">
+                {d.label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </Card>
+  );
+}
+
+/* ── Time range segmented control ───────────────────────── */
+function TimeRangeToggle({ value, onChange }) {
+  return (
+    <div className="flex gap-0.5 p-0.5 armor-surface-1 rounded-xl">
+      {['30d', 'All'].map(opt => (
+        <button
+          key={opt}
+          onClick={() => onChange(opt)}
+          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+            value === opt
+              ? 'bg-cyan-400 text-black'
+              : 'text-slate-500 hover:text-white'
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function ArmorProgress() {
   const { currentCycle, workoutHistory, streakData, estimated1RMs } = useArmorData();
   const weekConfig = getWeekConfig(currentCycle.week);
+  const [timeRange, setTimeRange] = useState('30d');
 
   const thisWeekWorkouts = useMemo(() => {
     const now = new Date();
@@ -150,6 +259,114 @@ export default function ArmorProgress() {
   }, [thisWeekWorkouts]);
 
   const sorted1RMs = Object.entries(estimated1RMs).filter(([, v]) => v > 0).sort(([, a], [, b]) => b - a);
+
+  /* ── Filtered history based on time range ── */
+  const filteredHistory = useMemo(() => {
+    if (timeRange === 'All') return workoutHistory;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+    return workoutHistory.filter(w => new Date(w.date) >= cutoff);
+  }, [workoutHistory, timeRange]);
+
+  /* ── PR Timeline data ── */
+  const prTimelineData = useMemo(() => {
+    if (filteredHistory.length === 0) return null;
+
+    // Primary lift IDs
+    const primaryLiftIds = new Set([
+      'squat', 'bench', 'deadlift',
+      'home_squat', 'home_bench', 'home_deadlift',
+    ]);
+
+    // Find all unique primary lifts in history
+    const liftIdsInHistory = new Set();
+    filteredHistory.forEach(w => {
+      (w.exercises || []).forEach(ex => {
+        if (primaryLiftIds.has(ex.id)) liftIdsInHistory.add(ex.id);
+      });
+    });
+
+    if (liftIdsInHistory.size === 0) return null;
+
+    // Pick the most recently logged primary lift
+    let mostRecentLift = null;
+    let mostRecentDate = null;
+    filteredHistory.forEach(w => {
+      (w.exercises || []).forEach(ex => {
+        if (liftIdsInHistory.has(ex.id)) {
+          const d = new Date(w.date);
+          if (!mostRecentDate || d > mostRecentDate) {
+            mostRecentDate = d;
+            mostRecentLift = ex.id;
+          }
+        }
+      });
+    });
+
+    if (!mostRecentLift) return null;
+
+    // Build {date, value} for each session containing this lift
+    const dateMap = {};
+    filteredHistory.forEach(w => {
+      (w.exercises || []).forEach(ex => {
+        if (ex.id !== mostRecentLift) return;
+        const heaviest = (ex.sets || []).reduce((best, s) => {
+          if (s.completed !== false && s.weight > 0) {
+            return Math.max(best, s.weight);
+          }
+          return best;
+        }, 0);
+        if (heaviest > 0) {
+          dateMap[w.date] = Math.max(dateMap[w.date] || 0, heaviest);
+        }
+      });
+    });
+
+    const entries = Object.entries(dateMap)
+      .sort(([a], [b]) => new Date(a) - new Date(b))
+      .slice(-42); // cap at ~6 weeks of1-per-day
+
+    if (entries.length === 0) return null;
+
+    const liftLabel = mostRecentLift.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return {
+      liftName: liftLabel,
+      data: entries.map(([date, value]) => ({ date, value })),
+    };
+  }, [filteredHistory]);
+
+  /* ── Volume per week data ── */
+  const volumeWeeklyData = useMemo(() => {
+    if (filteredHistory.length < 2) return null;
+
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 42); // last 6 weeks
+    const recent = filteredHistory.filter(w => new Date(w.date) >= cutoff);
+
+    // Group by ISO week
+    const weekMap = {};
+    recent.forEach(w => {
+      const d = new Date(w.date);
+      const year = d.getFullYear();
+      const week = getISOWeek(d);
+      const key = `${year}-W${week}`;
+      if (!weekMap[key]) {
+        weekMap[key] = { date: d, volume: 0 };
+      }
+      weekMap[key].volume += (w.exercises || []).reduce((es, ex) =>
+        es + (ex.sets || []).reduce((ss, s) => ss + (s.reps || 0) * (s.weight || 0), 0), 0);
+    });
+
+    const weeks = Object.entries(weekMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+      .map(([, { date, volume }]) => ({
+        label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        volume,
+      }));
+
+    return weeks.length >= 2 ? weeks : null;
+  }, [filteredHistory]);
 
   if (workoutHistory.length === 0) {
     return (
@@ -169,7 +386,7 @@ export default function ArmorProgress() {
             </div>
           </div>
           {/* Placeholder cycle blocks */}
-          <div className="armor-surface-1 p-4 opacity-40">
+<div className="armor-surface-1 p-4 opacity-40">
             <div className="flex items-center justify-between mb-3">
               <p className="armor-text-caption text-slate-700">Cycle 1</p>
               <p className="text-[11px] text-slate-700">Week 1/6</p>
@@ -184,7 +401,7 @@ export default function ArmorProgress() {
             </div>
           </div>
           {/* Placeholder volume bar */}
-          <div className="armor-surface-1 p-4 space-y-3 opacity-40">
+          <Card className="opacity-50">
             <div className="flex items-center justify-between">
               <p className="armor-text-caption text-slate-700">Last 7 Days · Volume</p>
               <p className="text-[11px] text-slate-700">lbs lifted</p>
@@ -198,7 +415,7 @@ export default function ArmorProgress() {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
           {/* CTA copy */}
           <div className="px-5 py-8 text-center">
             <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
@@ -241,6 +458,19 @@ export default function ArmorProgress() {
             {workoutHistory.filter(w => w.completed).length}
           </span>
         </div>
+
+        {/* Time Range Toggle */}
+        <TimeRangeToggle value={timeRange} onChange={setTimeRange} />
+
+        {/* PR Timeline Chart */}
+        {prTimelineData && (
+          <PRTimelineChart data={prTimelineData.data} liftName={prTimelineData.liftName} />
+        )}
+
+        {/* Volume Weekly Chart */}
+        {volumeWeeklyData && (
+          <VolumeWeeklyChart data={volumeWeeklyData} />
+        )}
 
         {/* Cycle Blocks */}
         <div className="armor-surface-1 p-4">
@@ -310,4 +540,12 @@ export default function ArmorProgress() {
       </div>
     </div>
   );
+}
+
+/* ── ISO week helper ── */
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }

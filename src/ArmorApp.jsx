@@ -104,7 +104,11 @@ export default function ArmorApp() {
 
   // Show onboarding if not done
   if (!onboardingDone) {
-    return <ArmorOnboarding />;
+    return (
+      <main role="main" aria-label="Onboarding">
+        <ArmorOnboarding />
+      </main>
+    );
   }
 
   return (

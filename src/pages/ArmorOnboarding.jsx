@@ -153,7 +153,7 @@ export default function ArmorOnboarding() {
               size="lg"
               icon={<Sparkles size={20} />}
               onClick={() => handleCommit(chosenTrack)}
-              className="w-full"
+              className="w-full text-slate-900"
             >
               Use both — set 1RMs as you go
             </Button>

@@ -166,7 +166,8 @@ function VO2MaxScreen({ protocol, onComplete }) {
 }
 
 /* ── Strength Workout Screen ───────────────────────────────── */
-function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onComplete, track = 'full_gym' }) {
+function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onComplete, track = 'full_gym', onNavigateToSettings }) {
+  const { workoutHistory } = useArmorData();
   const queue = useMemo(() => {
     const q = [];
     if (primaryLift) q.push({ ...primaryLift, type: 'primary' });
@@ -179,6 +180,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const [phase, setPhase] = useState('active');
   const [completedSets, setCompletedSets] = useState([]);
   const [notes, setNotes] = useState('');
+  const [justCompleted, setJustCompleted] = useState(false);
 
   const { checkPR } = usePRDetection();
   const currentEx = queue[exIdx];
@@ -200,6 +202,8 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const handleCompleteSet = useCallback(() => {
     HAPTIC.heavy();
     setCompletedSets(prev => [...prev, { exerciseId: currentEx.exerciseId, set: setNum, reps: currentEx.reps, weight: currentEx.weight, notes }]);
+    setJustCompleted(true);
+    setTimeout(() => setJustCompleted(false), 600);
 
     // Check for PR on primary lift final set
     if (currentEx.type === 'primary' && setNum === totalSets) {
@@ -231,6 +235,20 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   }, [completedSets, currentDay, currentWeek, queue, onComplete]);
 
   const weekConfig = getWeekConfig(currentWeek);
+
+  // Find last workout with this exercise for "Last time" reference
+  const lastEntry = useMemo(() => {
+    if (!currentEx) return null;
+    const entries = workoutHistory.filter(w => w.exercises?.some(e => e.id === currentEx.exerciseId && e.sets?.length > 0));
+    if (entries.length === 0) return null;
+    const last = entries[entries.length - 1];
+    const exData = last.exercises.find(e => e.id === currentEx.exerciseId);
+    if (!exData || !exData.sets || exData.sets.length === 0) return null;
+    const prevSet = exData.sets[exData.sets.length - 1];
+    return prevSet;
+  }, [workoutHistory, currentEx]);
+
+  const showZeroLbsNudge = currentEx?.type === 'primary' && currentEx?.weight === 0;
 
   /* ── DONE SCREEN ─────────────────────────────────────────── */
   if (phase === 'done') {
@@ -312,6 +330,12 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         </p>
       </div>
 
+      {lastEntry && (
+        <p className="armor-text-caption mb-3" style={{ color: 'var(--text-tertiary)' }}>
+          Last: {lastEntry.weight} lbs × {lastEntry.reps}
+        </p>
+      )}
+
       <div className="armor-surface-2 px-6 py-6 mb-6">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
@@ -324,12 +348,23 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
           </div>
           <div>
             <p className="armor-text-caption mb-1">Weight</p>
-            <p className="text-2xl font-black text-white">{currentEx.weight}<span className="text-sm text-slate-500 ml-1">lbs</span></p>
+            {showZeroLbsNudge ? (
+              <button
+                onClick={() => { HAPTIC.light(); onNavigateToSettings ? onNavigateToSettings() : console.warn('onNavigateToSettings not provided'); }}
+                className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 underline"
+              >
+                Set your 1RM in Settings →
+              </button>
+            ) : (
+              <p className="text-2xl font-black text-white">{currentEx.weight}<span className="text-sm text-slate-500 ml-1">lbs</span></p>
+            )}
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-white/[0.06]">
-          <PlateVisualizer weight={currentEx.weight} track={track} />
-        </div>
+        {!showZeroLbsNudge && (
+          <div className="mt-4 pt-4 border-t border-white/[0.06]">
+            <PlateVisualizer weight={currentEx.weight} track={track} />
+          </div>
+        )}
       </div>
 
       <div className="flex justify-center gap-2 mb-6">
@@ -348,7 +383,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
       />
 
       <button onClick={handleCompleteSet}
-        className="armor-press w-full py-6 rounded-2xl text-white font-black text-lg"
+        className={`armor-press w-full py-6 rounded-2xl text-white font-black text-lg transition-transform ${justCompleted ? 'scale-95' : ''}`}
         style={{ background: 'var(--color-accent)' }}>
         <Check size={20} className="inline mr-2" strokeWidth={3} />
         Complete Set {setNum}
@@ -363,7 +398,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
 }
 
 /* ── MAIN ──────────────────────────────────────────────────── */
-export default function ArmorWorkoutSession({ onComplete, onCancel }) {
+export default function ArmorWorkoutSession({ onComplete, onCancel, onNavigateToSettings }) {
   const { activeModifiers, currentCycle, estimated1RMs, effectiveTrack } = useArmorData();
   const { celebration, setCelebration } = usePRDetection();
   const [showConfetti, setShowConfetti] = useState(false);
@@ -399,6 +434,7 @@ export default function ArmorWorkoutSession({ onComplete, onCancel }) {
             currentWeek={currentCycle.week}
             currentDay={currentCycle.day}
             onComplete={onComplete}
+            onNavigateToSettings={onNavigateToSettings}
             track={effectiveTrack}
           />
         )}

@@ -2,9 +2,9 @@ import { forwardRef } from 'react';
 
 // ── Variant styles ────────────────────────────────────────────────────────────
 const variantClasses = {
-  primary:   'bg-cyan-500 text-white font-bold',
+  primary:   'bg-cyan-600 text-white font-bold',
   secondary: 'bg-white/[0.04] text-white font-bold',
-  ghost:     'text-slate-400 font-medium',
+  ghost:     'text-slate-300 font-medium',
   danger:    'bg-red-500 text-white font-bold',
   success:   'bg-emerald-500 text-white font-bold',
 };

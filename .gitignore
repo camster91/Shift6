@@ -44,3 +44,4 @@ android/shift6-release.keystore
 src/landing/node_modules
 src/landing/dist
 src/landing/package-lock.json
+src/landing/dist/

@@ -157,13 +157,57 @@ export default function ArmorProgress() {
         <div className="px-5 pt-8 pb-6">
           <h1 className="armor-text-large-title">Progress</h1>
         </div>
-        <div className="px-5 py-16 text-center">
-          <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
-            style={{ background: 'var(--elevation-1-bg)' }}>
-            <Trophy size={32} className="text-slate-700" />
+        <div className="px-5 space-y-5">
+          {/* Placeholder streak card */}
+          <div className="armor-surface-1 p-5 flex items-center gap-4 opacity-40">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/[0.04]">
+              <Flame size={22} className="text-slate-600" />
+            </div>
+            <div>
+              <p className="text-lg font-black text-slate-500">0 day streak</p>
+              <p className="text-[11px] text-slate-700">Longest: 0 days</p>
+            </div>
           </div>
-          <h2 className="text-lg font-bold text-white mb-1">No Sessions Yet</h2>
-          <p className="text-sm text-slate-500">Complete your first workout to see your progress here.</p>
+          {/* Placeholder cycle blocks */}
+          <div className="armor-surface-1 p-4 opacity-40">
+            <div className="flex items-center justify-between mb-3">
+              <p className="armor-text-caption text-slate-700">Cycle 1</p>
+              <p className="text-[11px] text-slate-700">Week 1/6</p>
+            </div>
+            <div className="flex gap-1.5">
+              {PERIODIZATION.map(w => (
+                <div key={w.week} className="flex-1 space-y-1">
+                  <div className="h-8 rounded-lg bg-white/[0.04]" />
+                  <p className="text-[9px] font-bold text-center text-slate-700">{w.phase.slice(0, 4)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Placeholder volume bar */}
+          <div className="armor-surface-1 p-4 space-y-3 opacity-40">
+            <div className="flex items-center justify-between">
+              <p className="armor-text-caption text-slate-700">Last 7 Days · Volume</p>
+              <p className="text-[11px] text-slate-700">lbs lifted</p>
+            </div>
+            <div className="flex items-end gap-1.5 h-24">
+              {[40, 60, 30, 70, 50, 80, 45].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                  <div className="w-full rounded-t-md bg-white/[0.06]" style={{ height: `${h}%` }} />
+                  <span className="text-[9px] text-slate-700 font-bold">
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'][i]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* CTA copy */}
+          <div className="px-5 py-8 text-center">
+            <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+              style={{ background: 'var(--elevation-1-bg)' }}>
+              <Trophy size={28} className="text-slate-700" />
+            </div>
+            <h2 className="text-lg font-bold text-white mb-1">No Sessions Yet</h2>
+            <p className="text-sm text-slate-500">Complete your first workout to unlock your progress dashboard.</p>
+          </div>
         </div>
       </div>
     );
@@ -179,6 +223,25 @@ export default function ArmorProgress() {
       </div>
 
       <div className="px-5 space-y-5">
+        {/* Streak Counter Card */}
+        <div className="armor-surface-1 p-5 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-amber-500/10">
+            <Flame size={22} className="text-amber-400" fill="currentColor" />
+          </div>
+          <div>
+            <p className="text-xl font-black text-white">🔥 {streakData.currentStreak} day streak</p>
+            <p className="text-[11px] text-slate-500">Longest: {streakData.longestStreak} days</p>
+          </div>
+        </div>
+
+        {/* Session Count Chip */}
+        <div className="px-4 py-3 armor-surface-1 flex items-center justify-between">
+          <span className="text-sm font-semibold text-white">Workouts Completed</span>
+          <span className="text-sm font-black text-cyan-400 tabular-nums">
+            {workoutHistory.filter(w => w.completed).length}
+          </span>
+        </div>
+
         {/* Cycle Blocks */}
         <div className="armor-surface-1 p-4">
           <CycleBlocks week={currentCycle.week} totalCycles={currentCycle.totalCyclesCompleted} />

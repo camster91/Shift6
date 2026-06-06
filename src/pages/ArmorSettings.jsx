@@ -35,7 +35,17 @@ function Row({ label, value, onClick, danger, rightSlot }) {
 function EditRow({ exId, displayName, value, onSave }) {
   const [editing, setEditing] = useState(false);
   const [v, setV] = useState(String(value));
+  const [saved, setSaved] = useState(false);
   const empty = !value;
+
+  const handleSave = (numValue) => {
+    onSave(numValue);
+    setEditing(false);
+    if (numValue) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1200);
+    }
+  };
 
   return (
     <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }}>
@@ -46,19 +56,31 @@ function EditRow({ exId, displayName, value, onSave }) {
         <div className="flex items-center gap-2">
           <input
             type="number" value={v} onChange={e => setV(e.target.value)} autoFocus
-            onKeyDown={e => e.key === 'Enter' && onSave(parseInt(v) || 0)}
+            onKeyDown={e => e.key === 'Enter' && handleSave(parseInt(v) || 0)}
             className="w-20 text-right rounded-lg px-2 py-1 text-sm font-bold text-white outline-none tabular-nums"
             style={{ background: 'rgba(255,255,255,0.05)' }}
           />
-          <button onClick={() => { onSave(parseInt(v) || 0); setEditing(false); }}
+          <button onClick={() => handleSave(parseInt(v) || 0)}
             className="armor-press p-1.5 rounded-lg" style={{ background: 'var(--color-accent)' }}>
             <Save size={14} className="text-white" />
           </button>
         </div>
       ) : (
         <button onClick={() => { setV(String(value || '')); setEditing(true); }}
-          className="armor-press text-sm font-bold text-cyan-400 tabular-nums">
-          {value ? <>{value} <span className="text-slate-600 text-xs">lbs</span></> : <span className="text-slate-600 text-xs font-medium">Set</span>}
+          className="armor-press px-3 py-1.5 rounded-lg bg-white/[0.04] transition-colors duration-300"
+          disabled={saved}
+        >
+          <span className={`text-sm font-bold tabular-nums transition-colors duration-300 ${saved ? 'text-emerald-400' : 'text-cyan-400'}`}>
+            {value ? (
+              <>
+                {value}
+                {saved && <span className="ml-1 text-emerald-400">✓</span>}
+                <span className="text-slate-600 text-xs"> lbs</span>
+              </>
+            ) : (
+              <span className="text-slate-600 text-xs font-medium">Set</span>
+            )}
+          </span>
         </button>
       )}
     </div>

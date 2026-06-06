@@ -4,6 +4,7 @@ import { useArmorData } from '../context/ArmorDataContext';
 import {
   getTodaysWorkout, getDailyHabits, MODIFIERS, MVD_PROTOCOL,
   VO2MAX_PROTOCOL, PERIODIZATION, getWeekConfig, EQUIPMENT_TRACKS,
+  EXERCISE_TRACK,
 } from '../data/armorEngine';
 import PlateVisualizer from '../components/PlateVisualizer';
 import Card from '../components/ui/Card';
@@ -138,9 +139,14 @@ export default function ArmorDashboard({ onStartWorkout }) {
   const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 
   const streak = streakData.currentStreak || 0;
-  const top1RM = Math.max(...Object.values(estimated1RMs), 0);
   const unit = preferences.unit || 'lbs';
-  const displayTop1RM = unit === 'kg' ? Math.round(top1RM / 2.20462) : top1RM;
+
+  // Filter 1RMs to the active track only
+  const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
+  const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
+  const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
+  const allTrack1RMsZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
+  const displayTop1RM = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
 
   return (
     <div className="pb-32 space-y-5 max-w-lg mx-auto">
@@ -226,6 +232,14 @@ export default function ArmorDashboard({ onStartWorkout }) {
                 );
               })}
             </div>
+            {/* 0-lbs nudge — shown when all active-track 1RMs are 0 */}
+            {allTrack1RMsZero && (
+              <Card padded={false} className="bg-amber-500/8 border border-amber-500/20 p-4">
+                <p className="text-sm font-semibold text-amber-400">
+                  👋 First time? Set your 1RMs in Settings to get personalized weights. Takes 30 seconds.
+                </p>
+              </Card>
+            )}
             <Card className="p-5 space-y-4 relative overflow-hidden">
             {/* Ambient glow based on workout type */}
             <div className={`absolute top-0 right-0 w-40 h-40 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl opacity-20 ${

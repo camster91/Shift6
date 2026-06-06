@@ -362,7 +362,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
         <div className="grid grid-cols-3 gap-2">
           <StatTile icon={<span style={{ fontSize: '18px' }}>📅</span>} label="Week" value={`${currentCycle.week}/6`} accent="cyan" />
           <StatTile icon={<span style={{ fontSize: '18px' }}>⚡</span>} label="Phase" value={weekConfig.phase} accent="emerald" />
-          <StatTile icon={<span style={{ fontSize: '18px' }}>🏆</span>} label="Top 1RM" value={`${displayTop1RM}${unit}`} accent="amber" />
+          <StatTile icon={<span style={{ fontSize: '18px' }}>🏆</span>} label="Top 1RM" value={displayTop1RM} accent="amber" />
         </div>
       </div>
     </div>

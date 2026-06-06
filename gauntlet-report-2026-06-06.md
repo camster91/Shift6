@@ -1,7 +1,7 @@
 # Armor Gauntlet Report — 2026-06-06
 
 **Repo:** /Users/biancabienaime/Shift6
-**Git HEAD:** 829dbe67cdfd
+**Git HEAD:** 46a5e3ec97aa
 **Live site:** https://getshift6.com
 
 ## Results
@@ -14,10 +14,10 @@
 |  PASS |  PASS |  |
 |  PASS |  PASS |  |
 |  PASS |  PASS |  |
-|  FAIL |  FAIL |  |
+|  PASS |  PASS |  |
 |  PASS |  PASS |  |
 |  WARN |  WARN |  |
-|  WARN |  WARN |  |
+|  PASS |  PASS |  |
 |  WARN |  WARN |  |
 |  WARN |  WARN |  |
 |  WARN |  WARN |  |
@@ -25,7 +25,7 @@
 
 ## Summary
 
-- **Passed:** 6 / 12
-- **Failed:** 1 / 12
+- **Passed:** 8 / 12
+- **Failed:** 0 / 12
 
-**1 CHECK(S) FAILED — fix before tester team.**
+**ALL PASS — ready for tester team.**

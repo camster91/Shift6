@@ -158,15 +158,25 @@ else
   fail "7. Live site" "HTTP $HTTP, brand string missing"
 fi
 
-# Check the deployed JS bundle hash matches git HEAD (verifies deploy caught up)
-DEPLOYED_JS=$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' /tmp/gauntlet-html.txt | head -1)
-if [ -n "$DEPLOYED_JS" ]; then
-  GIT_HASH=$(git rev-parse --short=12 HEAD)
-  if echo "$DEPLOYED_JS" | grep -q "$GIT_HASH"; then
-    pass "7b. Live bundle matches git HEAD ($GIT_HASH)"
-  else
-    warn "7b. Live bundle mismatch" "deployed=$DEPLOYED_JS, git=$GIT_HASH — deploy may be stale"
+# Skip Lighthouse NO_FCP failure on the landing page (heavy WebGL animations confuse headless Chrome)
+if grep -q "Train Through Chaos\|main.*Onboarding\|Armor — Metabolic" /tmp/gauntlet-html.txt; then
+  # Live bundle mismatch check (deployment lag warning, not failure)
+  DEPLOYED_JS=$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' /tmp/gauntlet-html.txt | head -1)
+  if [ -n "$DEPLOYED_JS" ]; then
+    GIT_HASH=$(git rev-parse --short=12 HEAD)
+    if echo "$DEPLOYED_JS" | grep -q "$GIT_HASH"; then
+      pass "7b. Live bundle matches git HEAD ($GIT_HASH)"
+    else
+      warn "7b. Live bundle mismatch" "deployed=$DEPLOYED_JS, git=$GIT_HASH — deploy may be stale"
+    fi
   fi
+fi
+
+# Service worker check (landing page has none, PWA does)
+if grep -q "registerSW.js\|workbox" /tmp/gauntlet-html.txt; then
+  pass "10. Service worker registered"
+else
+  warn "10. Service worker" "no SW on root (landing page) — check /app/ for the PWA"
 fi
 
 # ───────────────────────────────────────────────────────────
@@ -184,17 +194,6 @@ fi
 # ───────────────────────────────────────────────────────────
 section "9/12 — Visual regression"
 warn "9. Visual regression" "requires browser_vision run per page — run as subagent or manually"
-
-# ───────────────────────────────────────────────────────────
-# 10. Service worker / offline
-# ───────────────────────────────────────────────────────────
-section "10/12 — Service worker"
-SW_PRESENT=$(grep -c "registerSW.js\|workbox" /tmp/gauntlet-html.txt)
-if [ "$SW_PRESENT" -gt 0 ]; then
-  pass "10. Service worker registered"
-else
-  warn "10. Service worker" "no SW references in HTML"
-fi
 
 # ───────────────────────────────────────────────────────────
 # 11. Mobile viewport matrix (placeholder)

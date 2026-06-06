@@ -11,11 +11,11 @@ import { Card, PageHeader, Button } from '../components/ui';
 
 function StatusDot({ status }) {
   const map = {
-    idle: { icon: Cloud, color: 'text-slate-500', label: 'Ready' },
+    idle: { icon: Cloud, color: 'text-slate-400', label: 'Ready' },
     syncing: { icon: RefreshCw, color: 'text-cyan-400', label: 'Syncing', spin: true },
     synced: { icon: Check, color: 'text-emerald-400', label: 'Synced' },
     error: { icon: AlertCircle, color: 'text-amber-400', label: 'Sync issue' },
-    offline: { icon: CloudOff, color: 'text-slate-600', label: 'Offline' },
+    offline: { icon: CloudOff, color: 'text-slate-400', label: 'Offline' },
   };
   const s = map[status] || map.idle;
   const Icon = s.icon;
@@ -89,7 +89,7 @@ function SyncStatusCard() {
       <div className="flex items-center justify-between">
         <StatusDot status={syncStatus} />
         {lastSyncAt && (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-400">
             Last synced: {new Date(lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
         )}
@@ -231,14 +231,14 @@ function LoggedInCard() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-white truncate">{user?.displayName || user?.email}</p>
-          <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
+          <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
         </div>
       </div>
 
       <div className="flex items-center justify-between px-1">
         <StatusDot status={syncStatus} />
         {lastSyncAt && (
-          <p className="text-[10px] text-slate-600">
+          <p className="text-[10px] text-slate-400">
             {new Date(lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
         )}
@@ -272,7 +272,7 @@ export default function ArmorAccount() {
   const loggedIn = isLoggedIn();
 
   return (
-    <div className="px-5 pt-8 pb-6 space-y-4">
+    <div className="px-5 pt-8 pb-32 space-y-4">
       <PageHeader
         title="Account"
         description="Sign in to sync across devices. Local data is always safe."
@@ -290,7 +290,7 @@ export default function ArmorAccount() {
         </Card>
       )}
 
-      <div className="text-center text-[10px] text-slate-700 px-4">
+      <div className="text-center text-[10px] text-slate-400 px-4">
         <p>Your data stays on this device until you sign in.</p>
         <p>Sync uses a revision counter — no data loss from conflicts.</p>
       </div>

@@ -65,7 +65,7 @@ function ModifierRow({ activeModifiers, onToggle }) {
                 className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all shrink-0 whitespace-nowrap ${
                   active
                     ? 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30'
-                    : 'bg-white/[0.03] text-slate-500 hover:text-slate-400'
+                    : 'bg-white/[0.03] text-slate-400 hover:text-slate-300'
                 }`}
                 style={{ fontSize: '11px', fontWeight: 600 }}
               >
@@ -101,11 +101,11 @@ function HabitCheck({ habit, done, onToggle }) {
         <p className={`text-sm font-medium truncate ${done ? 'text-emerald-400' : 'text-slate-300'}`}>
           {habit.label}
         </p>
-        <p className="text-[11px] text-slate-600">
+        <p className="text-[11px] text-slate-400">
           {habit.duration}{habit.unit} · {habit.anchor}
         </p>
       </div>
-      <span className="text-[11px] font-semibold text-slate-600 tabular-nums">
+      <span className="text-[11px] font-semibold text-slate-400 tabular-nums">
         {habit.duration}m
       </span>
     </button>
@@ -195,7 +195,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
                   <span style={{ fontSize: '20px' }}>{item.icon}</span>
                   <div>
                     <p className="text-sm font-semibold text-white">{item.label}</p>
-                    <p className="text-[11px] text-slate-600">{item.sub}</p>
+                    <p className="text-[11px] text-slate-400">{item.sub}</p>
                   </div>
                 </div>
               ))}
@@ -266,7 +266,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
                 <span style={{ fontSize: '20px' }}>🏃</span>
                 <div>
                   <p className="text-sm font-bold text-white">{VO2MAX_PROTOCOL.name}</p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-slate-400">
                     {VO2MAX_PROTOCOL.rounds}×{VO2MAX_PROTOCOL.workSeconds / 60}min work · {VO2MAX_PROTOCOL.restSeconds / 60}min rest · {VO2MAX_PROTOCOL.targetHR}
                   </p>
                 </div>
@@ -284,8 +284,8 @@ export default function ArmorDashboard({ onStartWorkout }) {
                       <span className="text-2xl font-black text-cyan-400 tabular-nums">
                         {Math.round(todayWorkout.primaryLift.weight / (unit === 'kg' ? 2.20462 : 1))}
                       </span>
-                      <span className="text-sm text-slate-500 ml-1">{unit}</span>
-                      <p className="text-[11px] text-slate-500 font-medium">
+                      <span className="text-sm text-slate-400 ml-1">{unit}</span>
+                      <p className="text-[11px] text-slate-400 font-medium">
                         {todayWorkout.primaryLift.sets}×{todayWorkout.primaryLift.reps} @ {Math.round(todayWorkout.primaryLift.pct * 100)}%
                       </p>
                     </div>

@@ -14,7 +14,7 @@ function Stat({ label, value, sub, accent }) {
     <div className="armor-surface-1 p-4 space-y-1">
       <p className="armor-text-caption" style={{ color: 'var(--text-tertiary)' }}>{label}</p>
       <p className="text-2xl font-black tabular-nums" style={{ color: accent || 'white' }}>{value}</p>
-      {sub && <p className="text-[11px] text-slate-600">{sub}</p>}
+      {sub && <p className="text-[11px] text-slate-400">{sub}</p>}
     </div>
   );
 }
@@ -24,7 +24,7 @@ function CycleBlocks({ week, totalCycles }) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <p className="armor-text-caption">Cycle {totalCycles + 1}</p>
-        <p className="text-[11px] text-slate-500">Week {week}/6</p>
+        <p className="text-[11px] text-slate-400">Week {week}/6</p>
       </div>
       <div className="flex gap-1.5">
         {PERIODIZATION.map(w => {
@@ -40,7 +40,7 @@ function CycleBlocks({ week, totalCycles }) {
                   'rgba(255,255,255,0.04)',
                 boxShadow: current ? '0 0 12px rgba(6,182,212,0.4)' : 'none'
               }} />
-              <p className={`text-[9px] font-bold text-center ${current ? 'text-cyan-400' : done ? 'text-emerald-500/60' : 'text-slate-700'}`}>
+              <p className={`text-[9px] font-bold text-center ${current ? 'text-cyan-400' : done ? 'text-emerald-500/60' : 'text-slate-400'}`}>
                 {w.phase.slice(0, 4)}
               </p>
             </div>
@@ -77,7 +77,7 @@ function StreakRing({ streak, best }) {
       </div>
       <div className="flex-1">
         <p className="text-sm font-bold text-white">Day Streak</p>
-        <p className="text-[11px] text-slate-500">Best: {best} days · Freeze: 1</p>
+        <p className="text-[11px] text-slate-400">Best: {best} days · Freeze: 1</p>
         <p className="text-[11px] text-amber-400 mt-0.5">{target - streak > 0 ? `${target - streak} to 30-day badge` : '30-day badge earned'}</p>
       </div>
     </div>
@@ -105,7 +105,7 @@ function VolumeBar({ history }) {
     <div className="armor-surface-1 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <p className="armor-text-caption">Last 7 Days · Volume</p>
-        <p className="text-[11px] text-slate-600">lbs lifted</p>
+        <p className="text-[11px] text-slate-400">lbs lifted</p>
       </div>
       <div className="flex items-end gap-1.5 h-24">
         {data.days.map((v, i) => {
@@ -121,7 +121,7 @@ function VolumeBar({ history }) {
                   boxShadow: v > 0 ? '0 0 8px rgba(6,182,212,0.3)' : 'none',
                 }}
               />
-              <span className="text-[9px] text-slate-600 font-bold">
+              <span className="text-[9px] text-slate-400 font-bold">
                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'][day.getDay()]}
               </span>
             </div>
@@ -229,7 +229,7 @@ function TimeRangeToggle({ value, onChange }) {
           className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
             value === opt
               ? 'bg-cyan-400 text-black'
-              : 'text-slate-500 hover:text-white'
+              : 'text-slate-400 hover:text-white'
           }`}
         >
           {opt}
@@ -379,25 +379,25 @@ export default function ArmorProgress() {
           <Card className="opacity-50">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/[0.04]">
-                <Flame size={22} className="text-slate-600" />
+                <Flame size={22} className="text-slate-400" />
               </div>
               <div>
-                <p className="text-lg font-black text-slate-500">0 day streak</p>
-                <p className="text-[11px] text-slate-700">Longest: 0 days</p>
+                <p className="text-lg font-black text-slate-400">0 day streak</p>
+                <p className="text-[11px] text-slate-400">Longest: 0 days</p>
               </div>
             </div>
           </Card>
           {/* Placeholder cycle blocks */}
           <Card className="opacity-50">
             <div className="flex items-center justify-between mb-3">
-              <p className="armor-text-caption text-slate-700">Cycle 1</p>
-              <p className="text-[11px] text-slate-700">Week 1/6</p>
+              <p className="armor-text-caption text-slate-400">Cycle 1</p>
+              <p className="text-[11px] text-slate-400">Week 1/6</p>
             </div>
             <div className="flex gap-1.5">
               {PERIODIZATION.map(w => (
                 <div key={w.week} className="flex-1 space-y-1">
                   <div className="h-8 rounded-lg bg-white/[0.04]" />
-                  <p className="text-[9px] font-bold text-center text-slate-700">{w.phase.slice(0, 4)}</p>
+                  <p className="text-[9px] font-bold text-center text-slate-400">{w.phase.slice(0, 4)}</p>
                 </div>
               ))}
             </div>
@@ -405,14 +405,14 @@ export default function ArmorProgress() {
           {/* Placeholder volume bar */}
           <Card className="opacity-50">
             <div className="flex items-center justify-between">
-              <p className="armor-text-caption text-slate-700">Last 7 Days · Volume</p>
-              <p className="text-[11px] text-slate-700">lbs lifted</p>
+              <p className="armor-text-caption text-slate-400">Last 7 Days · Volume</p>
+              <p className="text-[11px] text-slate-400">lbs lifted</p>
             </div>
             <div className="flex items-end gap-1.5 h-24">
               {[40, 60, 30, 70, 50, 80, 45].map((h, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
                   <div className="w-full rounded-t-md bg-white/[0.06]" style={{ height: `${h}%` }} />
-                  <span className="text-[9px] text-slate-700 font-bold">
+                  <span className="text-[9px] text-slate-400 font-bold">
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'][i]}</span>
                 </div>
               ))}
@@ -420,7 +420,7 @@ export default function ArmorProgress() {
           </Card>
           {/* CTA copy */}
           <EmptyState
-            icon={<Trophy size={48} className="text-slate-700" />}
+            icon={<Trophy size={48} className="text-slate-400" />}
             title="No Sessions Yet"
             description="Complete your first workout to unlock your progress dashboard."
           />
@@ -447,7 +447,7 @@ export default function ArmorProgress() {
             </div>
             <div>
               <p className="text-xl font-black text-white">🔥 {streakData.currentStreak} day streak</p>
-              <p className="text-[11px] text-slate-500">Longest: {streakData.longestStreak} days</p>
+              <p className="text-[11px] text-slate-400">Longest: {streakData.longestStreak} days</p>
             </div>
           </div>
         </Card>
@@ -502,10 +502,10 @@ export default function ArmorProgress() {
                 return (
                   <div key={id} className="flex items-center gap-3 px-4 py-3"
                     style={{ borderTop: i > 0 ? '0.5px solid rgba(255,255,255,0.04)' : 'none' }}>
-                    <span className="text-[10px] font-bold text-slate-700 w-4 tabular-nums">{i + 1}</span>
+                    <span className="text-[10px] font-bold text-slate-400 w-4 tabular-nums">{i + 1}</span>
                     <span className="text-sm font-medium text-white flex-1 capitalize">{id.replace(/_/g, ' ')}</span>
                     <span className="text-sm font-black text-cyan-400 tabular-nums">{val}</span>
-                    <span className="text-[10px] text-slate-600">lbs</span>
+                    <span className="text-[10px] text-slate-400">lbs</span>
                     <div className="w-12 h-1 bg-white/[0.04] rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${(val / max) * 100}%`, background: 'var(--color-accent)' }} />
                     </div>
@@ -531,7 +531,7 @@ export default function ArmorProgress() {
                     {w.type === 'vo2max' ? 'Cardio' : 'Strength'}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-600 mt-0.5">
+                <p className="text-[11px] text-slate-400 mt-0.5">
                   {(w.exercises || []).length} exercises · {(w.exercises || []).reduce((s, e) => s + (e.sets || []).length, 0)} sets
                 </p>
               </div>

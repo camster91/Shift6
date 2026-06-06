@@ -38,7 +38,7 @@ function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
 
   return (
     <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }}>
-      <span className={`text-sm font-medium flex-1 ${empty ? 'text-slate-500' : 'text-white'}`}>
+      <span className={`text-sm font-medium flex-1 ${empty ? 'text-slate-400' : 'text-white'}`}>
         {displayName || exId.replace(/_/g, ' ')}
       </span>
       {editing ? (
@@ -61,10 +61,10 @@ function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
               <>
                 {displayVal}
                 {saved && <span className="ml-1 text-emerald-400">✓</span>}
-                <span className="text-slate-600 text-xs"> {unit}</span>
+                <span className="text-slate-400 text-xs"> {unit}</span>
               </>
             ) : (
-              <span className="text-slate-600 text-xs font-medium">Set</span>
+              <span className="text-slate-400 text-xs font-medium">Set</span>
             )}
           </span>
         </button>
@@ -104,7 +104,7 @@ export default function ArmorSettings() {
                   <span style={{ fontSize: '20px' }}>{t.icon}</span>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-white">{t.label}</p>
-                    <p className="text-[11px] text-slate-600">{t.sublabel}</p>
+                    <p className="text-[11px] text-slate-400">{t.sublabel}</p>
                   </div>
                   {selected && <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
                     <span className="text-white text-[10px]">✓</span>
@@ -143,7 +143,7 @@ export default function ArmorSettings() {
               </div>
             );
           })}
-          <p className="text-[11px] text-slate-700 px-4 py-3">
+          <p className="text-[11px] text-slate-400 px-4 py-3">
             Auto-progresses +5 lbs upper / +10 lbs lower per 6-week cycle. Set 1RMs for both tracks
             so you can switch seamlessly between gym and home sessions.
           </p>
@@ -198,19 +198,19 @@ export default function ArmorSettings() {
         <Section title="Current Cycle">
           <div className="px-4 py-3 space-y-2" style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }}>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Week</span>
+              <span className="text-slate-400">Week</span>
               <span className="text-white font-bold tabular-nums">{currentCycle.week} / 6</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Day</span>
+              <span className="text-slate-400">Day</span>
               <span className="text-white font-bold tabular-nums">{currentCycle.day} / 5</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Phase</span>
+              <span className="text-slate-400">Phase</span>
               <span className="text-cyan-400 font-bold">{weekConfig.phase}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Cycles Done</span>
+              <span className="text-slate-400">Cycles Done</span>
               <span className="text-cyan-400 font-bold tabular-nums">{currentCycle.totalCyclesCompleted}</span>
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function ArmorSettings() {
         <Section title="Profile">
           <div className="px-4 py-3" style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }}>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Name</span>
+              <span className="text-slate-400">Name</span>
               <span className="text-white font-bold">{userProfile.displayName || 'Athlete'}</span>
             </div>
           </div>
@@ -239,7 +239,7 @@ export default function ArmorSettings() {
           </Button>
         </Section>
 
-        <p className="text-center text-[11px] text-slate-700 py-4">
+        <p className="text-center text-[11px] text-slate-400 py-4">
           Armor v3.0.0 · Build {new Date().toISOString().split('T')[0]}
         </p>
       </div>

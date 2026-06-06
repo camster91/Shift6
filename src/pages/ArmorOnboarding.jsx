@@ -72,7 +72,7 @@ export default function ArmorOnboarding() {
               onChange={e => setDisplayName(e.target.value)}
               placeholder="Athlete"
               autoFocus
-              className="w-full rounded-xl px-4 py-3 text-base text-white placeholder:text-slate-700 outline-none"
+              className="w-full rounded-xl px-4 py-3 text-base text-white placeholder:text-slate-500 outline-none"
               style={{ background: 'var(--elevation-1-bg)' }}
               onKeyDown={e => e.key === 'Enter' && handleCommit(chosenTrack)}
             />
@@ -81,7 +81,7 @@ export default function ArmorOnboarding() {
           {/* Track choice — optional */}
           <div>
             <p className="armor-text-caption block mb-2">Where will you train most?</p>
-            <p className="text-[11px] text-slate-600 mb-3">You can switch per-workout from the dashboard later.</p>
+            <p className="text-[11px] text-slate-400 mb-3">You can switch per-workout from the dashboard later.</p>
             <div className="grid grid-cols-2 gap-2">
               {Object.values(EQUIPMENT_TRACKS).map(t => (
                 <div
@@ -96,7 +96,7 @@ export default function ArmorOnboarding() {
                       <span style={{ fontSize: '20px' }}>{t.icon}</span>
                     </div>
                     <p className="text-sm font-bold text-white mt-1.5">{t.label}</p>
-                    <p className="text-[10px] text-slate-500">{t.sublabel}</p>
+                    <p className="text-[10px] text-slate-400">{t.sublabel}</p>
                   </Card>
                 </div>
               ))}
@@ -161,7 +161,7 @@ export default function ArmorOnboarding() {
           {chosenTrack && !submitting && (
             <button
               onClick={() => handleCommit(null)}
-              className="armor-press w-full py-2.5 rounded-xl text-slate-500 text-sm font-medium"
+              className="armor-press w-full py-2.5 rounded-xl text-slate-400 text-sm font-medium"
             >
               Or skip — use both tracks
             </button>

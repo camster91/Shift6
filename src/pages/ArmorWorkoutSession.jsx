@@ -133,7 +133,7 @@ function VO2MaxScreen({ protocol, onComplete }) {
         <p className={`text-xl font-black ${isWork ? 'text-rose-400' : isRest ? 'text-emerald-400' : 'text-slate-400'}`}>
           {isWork ? '🏃 PUSH' : isRest ? '😮‍💨 BREATHE' : 'Ready?'}
         </p>
-        <p className="text-[11px] text-slate-500 mt-1">
+        <p className="text-[11px] text-slate-400 mt-1">
           {isWork ? protocol.targetHR : isRest ? 'Slow down, deep breaths' : 'Tap to begin'}
         </p>
       </div>
@@ -273,9 +273,9 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
               <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03]">
                 <div className="text-left">
                   <p className="text-sm font-semibold text-white capitalize">{ex.exerciseId?.replace(/_/g, ' ')}</p>
-                  <p className="text-[11px] text-slate-600">{exSets.length} sets × {ex.reps} reps @ {ex.weight}lbs</p>
+                  <p className="text-[11px] text-slate-400">{exSets.length} sets × {ex.reps} reps @ {ex.weight}lbs</p>
                 </div>
-                <span className="text-[11px] font-bold text-slate-500">{ex.type === 'primary' ? weekConfig.phase : 'Acc'}</span>
+                <span className="text-[11px] font-bold text-slate-400">{ex.type === 'primary' ? weekConfig.phase : 'Acc'}</span>
               </div>
             );
           })}
@@ -360,7 +360,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
                 Set your 1RM in Settings →
               </button>
             ) : (
-              <p className="text-2xl font-black text-white">{Math.round(currentEx.weight / (unit === 'kg' ? 2.20462 : 1))}<span className="text-sm text-slate-500 ml-1">{unit}</span></p>
+              <p className="text-2xl font-black text-white">{Math.round(currentEx.weight / (unit === 'kg' ? 2.20462 : 1))}<span className="text-sm text-slate-400 ml-1">{unit}</span></p>
             )}
           </div>
         </div>
@@ -383,7 +383,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
 
       <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
         placeholder="RPE, form notes..."
-        className="w-full bg-white/[0.04] rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-700 outline-none mb-6"
+        className="w-full bg-white/[0.04] rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none mb-6"
       />
 
       <Button

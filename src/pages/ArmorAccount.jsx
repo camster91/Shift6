@@ -55,6 +55,66 @@ function ConflictBanner({ conflict, onKeepLocal, onUseServer }) {
   );
 }
 
+function ProfileSection() {
+  const { userProfile } = useArmorData();
+  const auth = getAuth();
+  const displayName = auth?.user?.displayName || userProfile?.displayName || '';
+  const email = auth?.user?.email || userProfile?.email || '';
+  const initials = displayName
+    ? displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || displayName[0].toUpperCase()
+    : 'A';
+
+  return (
+    <div className="armor-surface-1 p-5 flex items-center gap-4">
+      <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
+        style={{ background: 'var(--color-accent)', color: 'var(--elevation-0-bg)' }}>
+        {initials}
+      </div>
+      <div className="min-w-0">
+        <p className="text-lg font-bold text-white truncate">{displayName || 'Athlete'}</p>
+        <p className="text-sm text-slate-400 truncate">{email || 'Not signed in'}</p>
+      </div>
+    </div>
+  );
+}
+
+function SyncStatusCard() {
+  const { syncStatus, lastSyncAt } = useArmorData();
+
+  return (
+    <div className="armor-surface-1 p-4 flex items-center justify-between">
+      <StatusDot status={syncStatus} />
+      {lastSyncAt && (
+        <p className="text-[11px] text-slate-500">
+          Last synced: {new Date(lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function DataExportButton() {
+  const { userProfile, preferences, estimated1RMs, workoutHistory, streakData, currentCycle } = useArmorData();
+
+  const handleExport = () => {
+    const data = { userProfile, preferences, estimated1RMs, workoutHistory, streakData, currentCycle, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `armor-data-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <button onClick={handleExport}
+      className="armor-press w-full py-3 rounded-xl text-sm font-bold text-slate-300"
+      style={{ background: 'rgba(255,255,255,0.04)' }}>
+      Export my data
+    </button>
+  );
+}
+
 function LoginForm() {
   const { pullFromCloud } = useArmorData();
   const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -195,8 +255,10 @@ function LoggedInCard() {
 }
 
 export default function ArmorAccount() {
+  const loggedIn = isLoggedIn();
+
   return (
-    <div className="px-5 pt-8 pb-6 space-y-6">
+    <div className="px-5 pt-8 pb-6 space-y-4">
       <div>
         <h1 className="armor-text-large-title">Account</h1>
         <p className="armor-text-footnote mt-1" style={{ color: 'var(--text-tertiary)' }}>
@@ -204,7 +266,13 @@ export default function ArmorAccount() {
         </p>
       </div>
 
-      {isLoggedIn() ? <LoggedInCard /> : (
+      <div className="space-y-3">
+        <ProfileSection />
+        {loggedIn && <SyncStatusCard />}
+        <DataExportButton />
+      </div>
+
+      {loggedIn ? <LoggedInCard /> : (
         <div className="armor-surface-2 p-5">
           <LoginForm />
         </div>

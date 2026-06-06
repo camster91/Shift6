@@ -448,6 +448,7 @@ export default function ArmorProgress() {
             <div>
               <p className="text-xl font-black text-white">🔥 {streakData.currentStreak} day streak</p>
               <p className="text-[11px] text-slate-400">Longest: {streakData.longestStreak} days</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">ⓘ 1 freeze day per week</p>
             </div>
           </div>
         </Card>

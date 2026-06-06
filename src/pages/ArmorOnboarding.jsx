@@ -17,6 +17,21 @@ const DEFAULTS = {
   home_gym: { goblet_squat: 95, dumbbell_press: 100, romanian_deadlift: 155 },
 };
 
+// Jargon tooltip helper — wraps a term with an (i) icon using the armor-press class
+function JargonTooltip({ term, definition }) {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {term}
+      <span
+        className="armor-press inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold text-slate-400 bg-white/[0.06] cursor-help select-none"
+        title={definition}
+      >
+        i
+      </span>
+    </span>
+  );
+}
+
 export default function ArmorOnboarding() {
   const { completeOnboarding } = useArmorData();
   const [displayName, setDisplayName] = useState('');
@@ -38,9 +53,14 @@ export default function ArmorOnboarding() {
   const handleCommit = (trackId) => {
     if (submitting) return;
     setSubmitting(true);
-    const estimated1RMs = trackId ? DEFAULTS[trackId] : {};
+    // "Use both" path (trackId is null): merge defaults from BOTH tracks so the
+    // user can switch per-workout from the dashboard without re-entering 1RMs.
+    const estimated1RMs = trackId
+      ? DEFAULTS[trackId]
+      : { ...DEFAULTS.full_gym, ...DEFAULTS.home_gym };
+    const eqTrack = trackId || 'full_gym';
     setTimeout(() => {
-      completeOnboarding({ equipmentTrack: trackId || 'full_gym', estimated1RMs, displayName: displayName || 'Athlete' });
+      completeOnboarding({ equipmentTrack: eqTrack, estimated1RMs, displayName: displayName || 'Athlete' });
     }, 600);
   };
 
@@ -57,7 +77,7 @@ export default function ArmorOnboarding() {
           </div>
           <PageHeader
             title="Set up in 5 seconds"
-            description="Name (or skip), pick a starting 1RM or use both tracks — you can fine-tune everything later."
+            description={<><JargonTooltip term="1RM" definition="your one-rep max — the heaviest weight you can lift once" /> · <JargonTooltip term="MVD" definition="Minimum Viable Day — bodyweight + walk" /> · <JargonTooltip term="CNS" definition="central nervous system — how recovered you feel" /> · <JargonTooltip term="Base" definition="foundation phase — moderate weight, higher reps" /> — pick a starting point or use both tracks. Fine-tune anytime.</>}
           />
         </div>
 

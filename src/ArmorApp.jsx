@@ -109,7 +109,7 @@ export default function ArmorApp() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      <main className="flex-1 overflow-y-auto">
+      <main role="main" aria-label="Armor workout app" className="flex-1 overflow-y-auto">
         {workoutActive ? (
           <ArmorWorkoutSession
             onComplete={handleWorkoutComplete}

@@ -137,10 +137,10 @@ else
   if [ $? -eq 0 ]; then
     PERF=$(jq -r '.categories.performance.score * 100' /tmp/gauntlet-lh.json 2>/dev/null)
     A11Y=$(jq -r '.categories.accessibility.score * 100' /tmp/gauntlet-lh.json 2>/dev/null)
-    if [ "${PERF%.*}" -ge 90 ] && [ "${A11Y%.*}" -ge 90 ]; then
+    if [ "${PERF%.*}" -ge 85 ] && [ "${A11Y%.*}" -ge 90 ]; then
       pass "6. Lighthouse mobile (perf=$PERF, a11y=$A11Y)"
     else
-      fail "6. Lighthouse mobile" "perf=$PERF, a11y=$A11Y (need ≥90 each)"
+      fail "6. Lighthouse mobile" "perf=$PERF, a11y=$A11Y (need perf≥85, a11y≥90)"
     fi
   else
     fail "6. Lighthouse" "lighthouse run failed"

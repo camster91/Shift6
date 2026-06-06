@@ -1,40 +1,39 @@
 import { useInView } from '../hooks/useInView';
-import { Shield, Clock, AlertCircle, Plane, Timer } from 'lucide-react';
 
 const PROTOCOLS = [
   {
-    icon: Shield, emoji: '🛡️',
+    emoji: '🛡️',
     name: 'Minimum Viable Day',
     short: 'No gym? No problem.',
     desc: '100 push-ups (accumulated). 15-min walk. 5-min mobility. Streak protected. The day counts as a win — and your CNS gets the recovery it needs.',
     accent: 'amber',
   },
   {
-    icon: Clock, emoji: '⏱️',
+    emoji: '⏱️',
     name: '20-Minute Window',
     short: 'In a meeting crunch.',
     desc: 'Armor strips your workout to the essential primary lift or one VO₂ block. Accessories and warm-up sets are skipped. Plate math stays correct.',
     accent: 'cyan',
   },
   {
-    icon: AlertCircle, emoji: '😴',
+    emoji: '😴',
     name: 'High CNS Fatigue',
     short: 'After a brutal weekend.',
     desc: 'Tired, stressed, poor sleep. Auto-downgrades your primary compound to 60% 1RM and shifts the rep range to hypertrophy. Protect the central nervous system.',
     accent: 'rose',
   },
   {
-    icon: Timer, emoji: '🍝',
+    emoji: '🍝',
     name: 'Heavy Meal',
     short: 'Pasta night happened.',
-    desc: 'Extends the post-dinner walk from 10 to 20 minutes. Blunts the glucose spike. The carb wasn\'t the problem — the sedentary 4 hours after was.',
+    desc: 'Extends the post-dinner walk from 10 to 20 minutes. Blunts the glucose spike. The carb wasn&apos;t the problem — the sedentary 4 hours after was.',
     accent: 'emerald',
   },
   {
-    icon: Plane, emoji: '✈️',
+    emoji: '✈️',
     name: 'Travel Mode',
     short: 'In a hotel, on a plane.',
-    desc: 'Progression is frozen. Bodyweight substitutions activate. Habits, streak, and tracking continue. You don\'t come back to "wherever I left off" — you come back to a system that traveled with you.',
+    desc: 'Progression is frozen. Bodyweight substitutions activate. Habits, streak, and tracking continue. You don&apos;t come back to "wherever I left off" — you come back to a system that traveled with you.',
     accent: 'purple',
   },
 ];
@@ -55,17 +54,15 @@ export default function Contingency() {
       <div ref={ref} className={`max-w-5xl mx-auto ${inView ? 'reveal visible' : 'reveal'}`}>
         <p className="eyebrow text-center mb-3">Contingency Protocols</p>
         <h2 className="text-3xl md:text-5xl font-black text-center mb-4 leading-tight">
-          Built for the days that didn't go to plan.
+          Built for the days that didn&apos;t go to plan.
         </h2>
         <p className="text-center text-slate-400 max-w-2xl mx-auto mb-12">
-          Most apps assume you're going to show up. Armor assumes you'll show up most days,
-          and on the others — it'll meet you where you are.
+          Most apps assume you&apos;re going to show up. Armor assumes you&apos;ll show up most days,
+          and on the others — it&apos;ll meet you where you are.
         </p>
 
         <div className="space-y-3">
-          {PROTOCOLS.map((p) => {
-            const Icon = p.icon;
-            return (
+          {PROTOCOLS.map((p) => (
               <div
                 key={p.name}
                 className="card flex items-start gap-4 hover:bg-white/[0.05] transition-colors"
@@ -81,8 +78,7 @@ export default function Contingency() {
                   <p className="text-sm text-slate-400 leading-relaxed">{p.desc}</p>
                 </div>
               </div>
-            );
-          })}
+          ))}
         </div>
       </div>
     </section>

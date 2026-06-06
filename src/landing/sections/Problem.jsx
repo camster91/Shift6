@@ -1,5 +1,4 @@
 import { useInView } from '../hooks/useInView';
-import { X } from 'lucide-react';
 
 export default function Problem() {
   const [ref, inView] = useInView();
@@ -11,7 +10,7 @@ export default function Problem() {
         <h2 className="text-3xl md:text-5xl font-black text-center mb-12 leading-tight">
           Fitness apps assume you have time.
           <br />
-          <span className="text-slate-400">You don't.</span>
+          <span className="text-slate-400">You don&apos;t.</span>
         </h2>
 
         <div className="grid md:grid-cols-2 gap-4">

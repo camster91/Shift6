@@ -22,7 +22,7 @@ export function useInView(options = {}) {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [options]);
 
   return [ref, inView];
 }

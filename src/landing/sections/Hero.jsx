@@ -1,5 +1,5 @@
 import { useInView } from '../hooks/useInView';
-import { ArrowRight, Smartphone, Watch } from 'lucide-react';
+import { ArrowRight, Smartphone } from 'lucide-react';
 
 export default function Hero() {
   const [ref, inView] = useInView();
@@ -19,8 +19,8 @@ export default function Hero() {
         </h1>
 
         <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          The fitness app for professionals whose schedule doesn't respect their workout.
-          6-week periodization, plate math, and contingency protocols that bend so you don't break.
+          The fitness app for professionals whose schedule doesn&apos;t respect their workout.
+          6-week periodization, plate math, and contingency protocols that bend so you don&apos;t break.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">

@@ -59,7 +59,7 @@ export default function Pillars() {
       <div ref={ref} className={`max-w-5xl mx-auto ${inView ? 'reveal visible' : 'reveal'}`}>
         <p className="eyebrow text-center mb-3">The 5 Pillars</p>
         <h2 className="text-3xl md:text-5xl font-black text-center mb-4 leading-tight">
-          Longevity isn't one thing.
+          Longevity isn&apos;t one thing.
         </h2>
         <p className="text-center text-slate-400 max-w-2xl mx-auto mb-12">
           Armor tracks the five interventions proven to extend healthspan.

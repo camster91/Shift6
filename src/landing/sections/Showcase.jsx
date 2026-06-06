@@ -19,7 +19,7 @@ export default function Showcase() {
           <span className="text-slate-400">No clutter. No upsells.</span>
         </h2>
         <p className="text-center text-slate-400 max-w-2xl mx-auto mb-12">
-          Every screen earns its place. Four primary views — that's it. Information density tuned for
+          Every screen earns its place. Four primary views — that&apos;s it. Information density tuned for
           the gym, not for a sales funnel.
         </p>
 

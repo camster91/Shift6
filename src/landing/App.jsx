@@ -1,5 +1,3 @@
-import { useEffect, useRef } from 'react';
-import { useInView } from './hooks/useInView';
 import Hero from './sections/Hero';
 import Problem from './sections/Problem';
 import Protocol from './sections/Protocol';

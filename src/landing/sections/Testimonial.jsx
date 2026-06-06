@@ -37,7 +37,7 @@ export default function Testimonial() {
           {QUOTES.map((q, i) => (
             <div key={i} className="card flex flex-col">
               <Quote size={20} className="text-cyan-400/40 mb-3" />
-              <p className="text-sm text-slate-300 leading-relaxed mb-4 flex-1">"{q.text}"</p>
+              <p className="text-sm text-slate-300 leading-relaxed mb-4 flex-1">&quot;{q.text}&quot;</p>
               <div className="pt-4 border-t border-white/[0.05]">
                 <p className="text-xs font-bold text-white">{q.name}</p>
                 <p className="text-[10px] text-slate-400 mt-0.5">{q.role} · {q.location}</p>

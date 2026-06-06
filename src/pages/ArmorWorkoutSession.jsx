@@ -167,7 +167,8 @@ function VO2MaxScreen({ protocol, onComplete }) {
 
 /* ── Strength Workout Screen ───────────────────────────────── */
 function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onComplete, track = 'full_gym', onNavigateToSettings }) {
-  const { workoutHistory } = useArmorData();
+  const { workoutHistory, preferences } = useArmorData();
+  const unit = preferences.unit || 'lbs';
   const queue = useMemo(() => {
     const q = [];
     if (primaryLift) q.push({ ...primaryLift, type: 'primary' });
@@ -292,7 +293,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
       <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full armor-entrance">
         <p className="armor-text-caption mb-1">Recover</p>
         <h3 className="text-base font-bold text-white mb-6">
-          Set {setNum} of {totalSets} · {currentEx.reps} reps @ {currentEx.weight}lbs
+          Set {setNum} of {totalSets} · {currentEx.reps} reps @ {Math.round(currentEx.weight / (unit === 'kg' ? 2.20462 : 1))}{unit}
         </h3>
         <TimerRing seconds={timer.timeLeft} running={timer.running} accentColor="#06b6d4" label="Rest" />
         {timer.timeLeft <= 10 && timer.running && (
@@ -332,7 +333,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
 
       {lastEntry && (
         <p className="armor-text-caption mb-3" style={{ color: 'var(--text-tertiary)' }}>
-          Last: {lastEntry.weight} lbs × {lastEntry.reps}
+          Last: {Math.round(lastEntry.weight / (unit === 'kg' ? 2.20462 : 1))} {unit} × {lastEntry.reps}
         </p>
       )}
 
@@ -356,11 +357,11 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
                 Set your 1RM in Settings →
               </button>
             ) : (
-              <p className="text-2xl font-black text-white">{currentEx.weight}<span className="text-sm text-slate-500 ml-1">lbs</span></p>
+              <p className="text-2xl font-black text-white">{Math.round(currentEx.weight / (unit === 'kg' ? 2.20462 : 1))}<span className="text-sm text-slate-500 ml-1">{unit}</span></p>
             )}
           </div>
         </div>
-        {!showZeroLbsNudge && (
+        {!showZeroLbsNudge && unit !== 'kg' && (
           <div className="mt-4 pt-4 border-t border-white/[0.06]">
             <PlateVisualizer weight={currentEx.weight} track={track} />
           </div>

@@ -132,7 +132,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
     activeModifiers, dailyHabitState, currentCycle, userProfile,
     toggleModifier, toggleHabit, resetDailyHabits,
     estimated1RMs, equipmentTrack, effectiveTrack, todaysTrack, setTodaysTrack,
-    todaysWorkoutCompleted, habitsNeedReset, streakData, isMVDToday,
+    todaysWorkoutCompleted, habitsNeedReset, streakData, isMVDToday, preferences,
   } = useArmorData();
 
   useEffect(() => {
@@ -154,6 +154,8 @@ export default function ArmorDashboard({ onStartWorkout }) {
 
   const streak = streakData.currentStreak || 0;
   const top1RM = Math.max(...Object.values(estimated1RMs), 0);
+  const unit = preferences.unit || 'lbs';
+  const displayTop1RM = unit === 'kg' ? Math.round(top1RM / 2.20462) : top1RM;
 
   return (
     <div className="pb-32 space-y-5 max-w-lg mx-auto">
@@ -297,9 +299,9 @@ export default function ArmorDashboard({ onStartWorkout }) {
                     </span>
                     <div className="text-right">
                       <span className="text-2xl font-black text-cyan-400 tabular-nums">
-                        {todayWorkout.primaryLift.weight}
+                        {Math.round(todayWorkout.primaryLift.weight / (unit === 'kg' ? 2.20462 : 1))}
                       </span>
-                      <span className="text-sm text-slate-500 ml-1">lbs</span>
+                      <span className="text-sm text-slate-500 ml-1">{unit}</span>
                       <p className="text-[11px] text-slate-500 font-medium">
                         {todayWorkout.primaryLift.sets}×{todayWorkout.primaryLift.reps} @ {Math.round(todayWorkout.primaryLift.pct * 100)}%
                       </p>
@@ -307,9 +309,11 @@ export default function ArmorDashboard({ onStartWorkout }) {
                   </div>
                   {/* Inline plate visualizer so the user knows exactly what to load
                       before tapping Start. */}
-                  <div className="mt-3 -mx-2">
-                    <PlateVisualizer weight={todayWorkout.primaryLift.weight} track={effectiveTrack} compact />
-                  </div>
+                  {unit !== 'kg' && (
+                    <div className="mt-3 -mx-2">
+                      <PlateVisualizer weight={todayWorkout.primaryLift.weight} track={effectiveTrack} compact />
+                    </div>
+                  )}
                   {activeModifiers.highFatigue && (
                     <p className="text-[11px] text-amber-400/80 mt-2 font-medium">
                       CNS fatigue active — reduced to 60%, hypertrophy focus
@@ -375,7 +379,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
         <div className="grid grid-cols-3 gap-2">
           <QuickStat icon="📅" label="Week" value={`${currentCycle.week}/6`} />
           <QuickStat icon="⚡" label="Phase" value={weekConfig.phase} />
-          <QuickStat icon="🏆" label="Top 1RM" value={`${top1RM}lbs`} />
+          <QuickStat icon="🏆" label="Top 1RM" value={`${displayTop1RM}${unit}`} />
         </div>
       </div>
     </div>

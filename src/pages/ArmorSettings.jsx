@@ -32,14 +32,17 @@ function Row({ label, value, onClick, danger, rightSlot }) {
   );
 }
 
-function EditRow({ exId, displayName, value, onSave }) {
+function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
   const [editing, setEditing] = useState(false);
   const [v, setV] = useState(String(value));
   const [saved, setSaved] = useState(false);
   const empty = !value;
 
+  const displayVal = unit === 'kg' ? Math.round(value / 2.20462) : value;
+
   const handleSave = (numValue) => {
-    onSave(numValue);
+    const saveVal = unit === 'kg' ? Math.round(numValue * 2.20462) : numValue;
+    onSave(saveVal);
     setEditing(false);
     if (numValue) {
       setSaved(true);
@@ -66,16 +69,16 @@ function EditRow({ exId, displayName, value, onSave }) {
           </button>
         </div>
       ) : (
-        <button onClick={() => { setV(String(value || '')); setEditing(true); }}
+        <button onClick={() => { setV(String(displayVal || '')); setEditing(true); }}
           className="armor-press px-3 py-1.5 rounded-lg bg-white/[0.04] transition-colors duration-300"
           disabled={saved}
         >
           <span className={`text-sm font-bold tabular-nums transition-colors duration-300 ${saved ? 'text-emerald-400' : 'text-cyan-400'}`}>
             {value ? (
               <>
-                {value}
+                {displayVal}
                 {saved && <span className="ml-1 text-emerald-400">✓</span>}
-                <span className="text-slate-600 text-xs"> lbs</span>
+                <span className="text-slate-600 text-xs"> {unit}</span>
               </>
             ) : (
               <span className="text-slate-600 text-xs font-medium">Set</span>
@@ -147,6 +150,7 @@ export default function ArmorSettings() {
                     displayName={EXERCISE_DISPLAY_NAMES[exId]}
                     value={estimated1RMs[exId] || 0}
                     onSave={(v) => set1RM(exId, v)}
+                    unit={preferences.unit}
                   />
                 ))}
               </div>
@@ -176,6 +180,26 @@ export default function ArmorSettings() {
                     boxShadow: selected ? '0 0 0 1px rgba(6,182,212,0.2)' : 'none'
                   }}>
                   <Icon size={16} />{t.label}
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* Unit */}
+        <Section title="Weight Unit">
+          <div className="flex gap-2 p-3">
+            {['lbs', 'kg'].map(u => {
+              const selected = preferences.unit === u;
+              return (
+                <button key={u} onClick={() => updatePreferences({ unit: u })}
+                  className="armor-press flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all"
+                  style={{
+                    background: selected ? 'rgba(6,182,212,0.08)' : 'rgba(255,255,255,0.02)',
+                    color: selected ? 'var(--color-accent)' : 'var(--text-tertiary)',
+                    boxShadow: selected ? '0 0 0 1px rgba(6,182,212,0.2)' : 'none'
+                  }}>
+                  {u}
                 </button>
               );
             })}

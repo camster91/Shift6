@@ -96,7 +96,22 @@ function rollover1RMs(estimated1RMs) {
 const ArmorDataContext = createContext(null);
 
 export function ArmorDataProvider({ children }) {
-  const [data, setData] = useState(() => load(STORAGE_KEY, DEFAULT_DATA));
+  const [data, setData] = useState(() => {
+    const loaded = load(STORAGE_KEY, null);
+    if (!loaded || !loaded.userProfile || !loaded.preferences || !loaded.currentCycle) {
+      return DEFAULT_DATA;
+    }
+    // Merge with defaults to fill in any missing fields from older versions
+    return {
+      userProfile: { ...DEFAULT_DATA.userProfile, ...loaded.userProfile, estimated1RMs: { ...DEFAULT_DATA.userProfile.estimated1RMs, ...(loaded.userProfile.estimated1RMs || {}) } },
+      preferences: { ...DEFAULT_DATA.preferences, ...loaded.preferences },
+      currentCycle: { ...DEFAULT_DATA.currentCycle, ...loaded.currentCycle },
+      activeModifiers: { ...DEFAULT_DATA.activeModifiers, ...(loaded.activeModifiers || {}) },
+      dailyHabitState: { ...DEFAULT_DATA.dailyHabitState, ...(loaded.dailyHabitState || {}) },
+      workoutHistory: Array.isArray(loaded.workoutHistory) ? loaded.workoutHistory : [],
+      streakData: { ...DEFAULT_DATA.streakData, ...(loaded.streakData || {}) },
+    };
+  });
   const [revision, setRevision] = useState(() => load(REVISION_KEY, 1));
   const [syncStatus, setSyncStatus] = useState('idle'); // 'idle' | 'syncing' | 'synced' | 'error' | 'offline'
   const [lastSyncAt, setLastSyncAt] = useState(null);
@@ -211,13 +226,17 @@ export function ArmorDataProvider({ children }) {
     setData(prev => ({ ...prev, preferences: { ...prev.preferences, ...updates } })), []);
   const updateUserProfile = useCallback((updates) =>
     setData(prev => ({ ...prev, userProfile: { ...prev.userProfile, ...updates } })), []);
-  const set1RM = useCallback((exerciseId, value) =>
-    setData(prev => ({
-      ...prev, userProfile: {
-        ...prev.userProfile,
-        estimated1RMs: { ...prev.userProfile.estimated1RMs, [exerciseId]: value },
-      },
-    })), []);
+  const set1RM = useCallback((exerciseId, value) => {
+      // Reject non-finite, negative, zero, or absurdly high values
+      const cleanValue = Number(value);
+      if (!Number.isFinite(cleanValue) || cleanValue < 0 || cleanValue > 9999) return;
+      return setData(prev => ({
+        ...prev, userProfile: {
+          ...prev.userProfile,
+          estimated1RMs: { ...prev.userProfile.estimated1RMs, [exerciseId]: cleanValue },
+        },
+      }));
+    }, []);
   const toggleModifier = useCallback((modifierId) =>
     setData(prev => ({
       ...prev, activeModifiers: { ...prev.activeModifiers, [modifierId]: !prev.activeModifiers[modifierId] },
@@ -241,13 +260,21 @@ export function ArmorDataProvider({ children }) {
 
   const completeOnboarding = useCallback((onboardingData) => {
     const { equipmentTrack, estimated1RMs, displayName } = onboardingData;
+    // Validate and sanitize 1RMs before storing
+    const sanitized1RMs = {};
+    if (estimated1RMs) {
+      for (const [k, v] of Object.entries(estimated1RMs)) {
+        const clean = Number(v);
+        sanitized1RMs[k] = (Number.isFinite(clean) && clean >= 0 && clean <= 9999) ? clean : 0;
+      }
+    }
     setData(prev => ({
       ...prev,
       preferences: { ...prev.preferences, equipmentTrack: equipmentTrack || prev.preferences.equipmentTrack },
       userProfile: {
         ...prev.userProfile,
         displayName: displayName || 'Athlete',
-        estimated1RMs: { ...prev.userProfile.estimated1RMs, ...estimated1RMs },
+        estimated1RMs: { ...prev.userProfile.estimated1RMs, ...sanitized1RMs },
       },
       currentCycle: { ...prev.currentCycle, week: 1, day: 1, lastWorkoutDate: null, completedDaysThisWeek: [] },
     }));

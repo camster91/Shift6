@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Check, Sparkles } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { EQUIPMENT_TRACKS, SPLIT_DAYS } from '../data/armorEngine';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import Card from '../components/ui/Card.jsx';
+import Button from '../components/ui/Button.jsx';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR ONBOARDING v3.0 — Apple HIG
@@ -52,10 +55,10 @@ export default function ArmorOnboarding() {
             <span style={{ fontSize: '28px' }}>⚔️</span>
             <span className="text-xl font-black tracking-tight"><span className="text-cyan-400">ARMOR</span></span>
           </div>
-          <h1 className="armor-text-large-title mb-2">Set up in 5 seconds</h1>
-          <p className="armor-text-body" style={{ color: 'var(--text-secondary)' }}>
-            Name (or skip), pick a starting 1RM or use both tracks — you can fine-tune everything later.
-          </p>
+          <PageHeader
+            title="Set up in 5 seconds"
+            description="Name (or skip), pick a starting 1RM or use both tracks — you can fine-tune everything later."
+          />
         </div>
 
         {/* Scrollable body */}
@@ -81,24 +84,21 @@ export default function ArmorOnboarding() {
             <p className="text-[11px] text-slate-600 mb-3">You can switch per-workout from the dashboard later.</p>
             <div className="grid grid-cols-2 gap-2">
               {Object.values(EQUIPMENT_TRACKS).map(t => (
-                <button
+                <div
                   key={t.id}
                   onClick={() => setChosenTrack(chosenTrack === t.id ? null : t.id)}
-                  className={`armor-press text-left p-3 rounded-xl transition-all relative ${chosenTrack === t.id ? 'ring-2 ring-cyan-400/40' : ''}`}
-                  style={{
-                    background: chosenTrack === t.id ? 'rgba(6,182,212,0.04)' : 'var(--elevation-1-bg)',
-                    boxShadow: chosenTrack === t.id ? '0 0 0 1.5px rgba(6,182,212,0.3), var(--elevation-1-shadow)' : 'var(--elevation-1-shadow)',
-                  }}
                 >
-                  {chosenTrack === t.id && (
-                    <Check size={14} className="text-cyan-400 absolute top-2 right-2" strokeWidth={3} />
-                  )}
-                  <div className="flex items-center gap-2">
-                    <span style={{ fontSize: '20px' }}>{t.icon}</span>
-                  </div>
-                  <p className="text-sm font-bold text-white mt-1.5">{t.label}</p>
-                  <p className="text-[10px] text-slate-500">{t.sublabel}</p>
-                </button>
+                  <Card interactive padded={false}>
+                    {chosenTrack === t.id && (
+                      <Check size={14} className="text-cyan-400 absolute top-2 right-2" strokeWidth={3} />
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span style={{ fontSize: '20px' }}>{t.icon}</span>
+                    </div>
+                    <p className="text-sm font-bold text-white mt-1.5">{t.label}</p>
+                    <p className="text-[10px] text-slate-500">{t.sublabel}</p>
+                  </Card>
+                </div>
               ))}
             </div>
             <p className="armor-text-caption mt-3" style={{ color: 'var(--text-tertiary)' }}>Don&apos;t worry — you can change this anytime from Settings.</p>
@@ -134,23 +134,30 @@ export default function ArmorOnboarding() {
           {!chosenTrack && !submitting && (
             <span className="text-[10px] uppercase tracking-widest text-cyan-400 font-bold">✨ Recommended for new users</span>
           )}
-          <button
-            onClick={() => handleCommit(chosenTrack)}
-            disabled={submitting}
-            className="armor-press w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-80"
-            style={{
-              background: submitting
-                ? 'var(--color-success)'
-                : (chosenTrack ? 'var(--color-accent)' : 'linear-gradient(135deg, var(--color-accent), #3b82f6)'),
-              boxShadow: submitting ? '0 0 24px rgba(16,185,129,0.5)' : 'none',
-            }}
-          >
-            {submitting
-              ? <><Check size={20} strokeWidth={3} /> Welcome to Armor</>
-              : chosenTrack
-                ? <>{EQUIPMENT_TRACKS[chosenTrack].icon} Begin with {EQUIPMENT_TRACKS[chosenTrack].label} defaults</>
-                : <><Sparkles size={18} /> Use both — set 1RMs as you go</>}
-          </button>
+          {submitting ? (
+            <Button variant="primary" size="lg" icon={<Check size={20} strokeWidth={3} />} className="w-full" disabled>
+              Welcome to Armor
+            </Button>
+          ) : chosenTrack ? (
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => handleCommit(chosenTrack)}
+              className="w-full"
+            >
+              {EQUIPMENT_TRACKS[chosenTrack].icon} Begin with {EQUIPMENT_TRACKS[chosenTrack].label} defaults
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              icon={<Sparkles size={20} />}
+              onClick={() => handleCommit(chosenTrack)}
+              className="w-full"
+            >
+              Use both — set 1RMs as you go
+            </Button>
+          )}
           {chosenTrack && !submitting && (
             <button
               onClick={() => handleCommit(null)}

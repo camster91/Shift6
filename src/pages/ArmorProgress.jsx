@@ -372,21 +372,23 @@ export default function ArmorProgress() {
     return (
       <div className="pb-32 max-w-lg mx-auto">
         <div className="px-5 pt-8 pb-6">
-          <h1 className="armor-text-large-title">Progress</h1>
+          <PageHeader title="Progress" />
         </div>
         <div className="px-5 space-y-5">
           {/* Placeholder streak card */}
-          <div className="armor-surface-1 p-5 flex items-center gap-4 opacity-40">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/[0.04]">
-              <Flame size={22} className="text-slate-600" />
+          <Card className="opacity-50">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/[0.04]">
+                <Flame size={22} className="text-slate-600" />
+              </div>
+              <div>
+                <p className="text-lg font-black text-slate-500">0 day streak</p>
+                <p className="text-[11px] text-slate-700">Longest: 0 days</p>
+              </div>
             </div>
-            <div>
-              <p className="text-lg font-black text-slate-500">0 day streak</p>
-              <p className="text-[11px] text-slate-700">Longest: 0 days</p>
-            </div>
-          </div>
+          </Card>
           {/* Placeholder cycle blocks */}
-<div className="armor-surface-1 p-4 opacity-40">
+          <Card className="opacity-50">
             <div className="flex items-center justify-between mb-3">
               <p className="armor-text-caption text-slate-700">Cycle 1</p>
               <p className="text-[11px] text-slate-700">Week 1/6</p>
@@ -399,7 +401,7 @@ export default function ArmorProgress() {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
           {/* Placeholder volume bar */}
           <Card className="opacity-50">
             <div className="flex items-center justify-between">
@@ -417,14 +419,11 @@ export default function ArmorProgress() {
             </div>
           </Card>
           {/* CTA copy */}
-          <div className="px-5 py-8 text-center">
-            <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
-              style={{ background: 'var(--elevation-1-bg)' }}>
-              <Trophy size={28} className="text-slate-700" />
-            </div>
-            <h2 className="text-lg font-bold text-white mb-1">No Sessions Yet</h2>
-            <p className="text-sm text-slate-500">Complete your first workout to unlock your progress dashboard.</p>
-          </div>
+          <EmptyState
+            icon={<Trophy size={48} className="text-slate-700" />}
+            title="No Sessions Yet"
+            description="Complete your first workout to unlock your progress dashboard."
+          />
         </div>
       </div>
     );
@@ -433,23 +432,25 @@ export default function ArmorProgress() {
   return (
     <div className="pb-32 max-w-lg mx-auto">
       <div className="px-5 pt-8 pb-6">
-        <h1 className="armor-text-large-title">Progress</h1>
-        <p className="armor-text-footnote mt-1" style={{ color: 'var(--text-tertiary)' }}>
-          {weekConfig.phase} Phase · Week {currentCycle.week}/6
-        </p>
+        <PageHeader
+          title="Progress"
+          description={`${weekConfig.phase} Phase · Week ${currentCycle.week}/6`}
+        />
       </div>
 
       <div className="px-5 space-y-5">
         {/* Streak Counter Card */}
-        <div className="armor-surface-1 p-5 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-amber-500/10">
-            <Flame size={22} className="text-amber-400" fill="currentColor" />
+        <Card>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center bg-amber-500/10">
+              <Flame size={22} className="text-amber-400" fill="currentColor" />
+            </div>
+            <div>
+              <p className="text-xl font-black text-white">🔥 {streakData.currentStreak} day streak</p>
+              <p className="text-[11px] text-slate-500">Longest: {streakData.longestStreak} days</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xl font-black text-white">🔥 {streakData.currentStreak} day streak</p>
-            <p className="text-[11px] text-slate-500">Longest: {streakData.longestStreak} days</p>
-          </div>
-        </div>
+        </Card>
 
         {/* Session Count Chip */}
         <div className="px-4 py-3 armor-surface-1 flex items-center justify-between">

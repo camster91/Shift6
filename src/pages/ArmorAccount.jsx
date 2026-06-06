@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { LogIn, LogOut, RefreshCw, Check, AlertCircle, Cloud, CloudOff, GitMerge } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { register, login, logout, getAuth, isLoggedIn, getApiBase } from '../lib/syncClient';
+import { Card, PageHeader, Button } from '../components/ui';
 
 /**
  * Armor Account — Login/register form, sync status, conflict resolution.
@@ -65,16 +66,18 @@ function ProfileSection() {
     : 'A';
 
   return (
-    <div className="armor-surface-1 p-5 flex items-center gap-4">
-      <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
-        style={{ background: 'var(--color-accent)', color: 'var(--elevation-0-bg)' }}>
-        {initials}
+    <Card>
+      <div className="flex items-center gap-4">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
+          style={{ background: 'var(--color-accent)', color: 'var(--elevation-0-bg)' }}>
+          {initials}
+        </div>
+        <div className="min-w-0">
+          <p className="text-lg font-bold text-white truncate">{displayName || 'Athlete'}</p>
+          <p className="text-sm text-slate-400 truncate">{email || 'Not signed in'}</p>
+        </div>
       </div>
-      <div className="min-w-0">
-        <p className="text-lg font-bold text-white truncate">{displayName || 'Athlete'}</p>
-        <p className="text-sm text-slate-400 truncate">{email || 'Not signed in'}</p>
-      </div>
-    </div>
+    </Card>
   );
 }
 
@@ -82,14 +85,16 @@ function SyncStatusCard() {
   const { syncStatus, lastSyncAt } = useArmorData();
 
   return (
-    <div className="armor-surface-1 p-4 flex items-center justify-between">
-      <StatusDot status={syncStatus} />
-      {lastSyncAt && (
-        <p className="text-[11px] text-slate-500">
-          Last synced: {new Date(lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </p>
-      )}
-    </div>
+    <Card>
+      <div className="flex items-center justify-between">
+        <StatusDot status={syncStatus} />
+        {lastSyncAt && (
+          <p className="text-[11px] text-slate-500">
+            Last synced: {new Date(lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        )}
+      </div>
+    </Card>
   );
 }
 
@@ -175,17 +180,26 @@ function LoginForm() {
         <p className="text-xs text-red-400 px-1">{error}</p>
       )}
 
-      <button type="submit" disabled={submitting}
-        className="armor-press w-full py-3.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
-        style={{ background: submitting ? 'var(--color-success)' : 'var(--color-accent)' }}>
-        {submitting ? <><Check size={16} /> Signing in...</> :
-         mode === 'login' ? <><LogIn size={16} /> Sign In</> : <>Create Account</>}
-      </button>
+      <Button
+        type="submit"
+        variant="primary"
+        size="md"
+        icon={submitting ? <Check size={16} /> : <LogIn size={16} />}
+        disabled={submitting}
+        className="w-full"
+      >
+        {submitting ? 'Signing in...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+      </Button>
 
-      <button type="button" onClick={() => { setError(null); setMode(mode === 'login' ? 'register' : 'login'); }}
-        className="w-full text-xs text-cyan-400 font-semibold">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => { setError(null); setMode(mode === 'login' ? 'register' : 'login'); }}
+        className="w-full"
+      >
         {mode === 'login' ? "Don't have an account? Create one" : 'Already have an account? Sign in'}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -259,23 +273,21 @@ export default function ArmorAccount() {
 
   return (
     <div className="px-5 pt-8 pb-6 space-y-4">
-      <div>
-        <h1 className="armor-text-large-title">Account</h1>
-        <p className="armor-text-footnote mt-1" style={{ color: 'var(--text-tertiary)' }}>
-          Sign in to sync across devices. Local data is always safe.
-        </p>
-      </div>
+      <PageHeader
+        title="Account"
+        description="Sign in to sync across devices. Local data is always safe."
+      />
 
       <div className="space-y-3">
         <ProfileSection />
         {loggedIn && <SyncStatusCard />}
-        <DataExportButton />
+        <Card><DataExportButton /></Card>
       </div>
 
       {loggedIn ? <LoggedInCard /> : (
-        <div className="armor-surface-2 p-5">
+        <Card>
           <LoginForm />
-        </div>
+        </Card>
       )}
 
       <div className="text-center text-[10px] text-slate-700 px-4">

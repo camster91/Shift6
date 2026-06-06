@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Save, Sun, Moon, ChevronRight, Trash2 } from 'lucide-react';
+import { Save, Sun, Moon, Trash2 } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { EQUIPMENT_TRACKS, EXERCISE_TRACK, EXERCISE_DISPLAY_NAMES, getWeekConfig } from '../data/armorEngine';
+import { Card, PageHeader, SectionHeader, Button } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR SETTINGS v2.0 — Apple HIG
@@ -11,24 +12,9 @@ import { EQUIPMENT_TRACKS, EXERCISE_TRACK, EXERCISE_DISPLAY_NAMES, getWeekConfig
 function Section({ title, children }) {
   return (
     <div className="space-y-2">
-      <p className="armor-text-caption px-4 mb-1" style={{ letterSpacing: '0.1em' }}>{title}</p>
-      <div className="armor-surface-1 overflow-hidden">{children}</div>
+      <SectionHeader label={title} />
+      <Card>{children}</Card>
     </div>
-  );
-}
-
-function Row({ label, value, onClick, danger, rightSlot }) {
-  return (
-    <button
-      onClick={onClick}
-      className="armor-press w-full flex items-center gap-3 px-4 py-3.5 text-left"
-      style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }}
-    >
-      <span className={`text-sm font-medium flex-1 ${danger ? 'text-red-400' : 'text-white'}`}>{label}</span>
-      {value && <span className="text-sm font-bold text-cyan-400 tabular-nums">{value}</span>}
-      {rightSlot}
-      {!danger && !rightSlot && <ChevronRight size={16} className="text-slate-600" />}
-    </button>
   );
 }
 
@@ -63,10 +49,7 @@ function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
             className="w-20 text-right rounded-lg px-2 py-1 text-sm font-bold text-white outline-none tabular-nums"
             style={{ background: 'rgba(255,255,255,0.05)' }}
           />
-          <button onClick={() => handleSave(parseInt(v) || 0)}
-            className="armor-press p-1.5 rounded-lg" style={{ background: 'var(--color-accent)' }}>
-            <Save size={14} className="text-white" />
-          </button>
+          <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => handleSave(parseInt(v) || 0)} />
         </div>
       ) : (
         <button onClick={() => { setV(String(displayVal || '')); setEditing(true); }}
@@ -100,10 +83,10 @@ export default function ArmorSettings() {
     <div className="pb-32 max-w-lg mx-auto">
       {/* Header */}
       <div className="px-5 pt-8 pb-6">
-        <h1 className="armor-text-large-title">Settings</h1>
-        <p className="armor-text-footnote mt-1" style={{ color: 'var(--text-tertiary)' }}>
-          Track, 1RMs, and preferences.
-        </p>
+        <PageHeader
+          title="Settings"
+          description="Track, 1RMs, and preferences."
+        />
       </div>
 
       <div className="px-5 space-y-6">
@@ -112,18 +95,22 @@ export default function ArmorSettings() {
           {Object.values(EQUIPMENT_TRACKS).map((t, i) => {
             const selected = preferences.equipmentTrack === t.id;
             return (
-              <button key={t.id} onClick={() => updatePreferences({ equipmentTrack: t.id })}
-                className="armor-press w-full flex items-center gap-3 px-4 py-3.5 text-left"
-                style={{ borderTop: i > 0 ? '0.5px solid rgba(255,255,255,0.04)' : 'none' }}>
-                <span style={{ fontSize: '20px' }}>{t.icon}</span>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-white">{t.label}</p>
-                  <p className="text-[11px] text-slate-600">{t.sublabel}</p>
-                </div>
-                {selected && <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
-                  <span className="text-white text-[10px]">✓</span>
-                </div>}
-              </button>
+              <div
+                key={t.id}
+                onClick={() => updatePreferences({ equipmentTrack: t.id })}
+                style={{ borderTop: i > 0 ? '0.5px solid rgba(255,255,255,0.04)' : 'none' }}
+              >
+                <Card interactive padded={false} className="flex items-center gap-3 px-4 py-3.5">
+                  <span style={{ fontSize: '20px' }}>{t.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-white">{t.label}</p>
+                    <p className="text-[11px] text-slate-600">{t.sublabel}</p>
+                  </div>
+                  {selected && <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
+                    <span className="text-white text-[10px]">✓</span>
+                  </div>}
+                </Card>
+              </div>
             );
           })}
         </Section>
@@ -172,15 +159,16 @@ export default function ArmorSettings() {
               const Icon = t.icon;
               const selected = preferences.theme === t.id;
               return (
-                <button key={t.id} onClick={() => updatePreferences({ theme: t.id })}
-                  className="armor-press flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all"
-                  style={{
-                    background: selected ? 'rgba(6,182,212,0.08)' : 'rgba(255,255,255,0.02)',
-                    color: selected ? 'var(--color-accent)' : 'var(--text-tertiary)',
-                    boxShadow: selected ? '0 0 0 1px rgba(6,182,212,0.2)' : 'none'
-                  }}>
-                  <Icon size={16} />{t.label}
-                </button>
+                <Button
+                  key={t.id}
+                  variant={selected ? 'primary' : 'secondary'}
+                  size="sm"
+                  icon={<Icon size={16} />}
+                  onClick={() => updatePreferences({ theme: t.id })}
+                  className="flex-1"
+                >
+                  {t.label}
+                </Button>
               );
             })}
           </div>
@@ -192,15 +180,15 @@ export default function ArmorSettings() {
             {['lbs', 'kg'].map(u => {
               const selected = preferences.unit === u;
               return (
-                <button key={u} onClick={() => updatePreferences({ unit: u })}
-                  className="armor-press flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all"
-                  style={{
-                    background: selected ? 'rgba(6,182,212,0.08)' : 'rgba(255,255,255,0.02)',
-                    color: selected ? 'var(--color-accent)' : 'var(--text-tertiary)',
-                    boxShadow: selected ? '0 0 0 1px rgba(6,182,212,0.2)' : 'none'
-                  }}>
+                <Button
+                  key={u}
+                  variant={selected ? 'primary' : 'secondary'}
+                  size="sm"
+                  onClick={() => updatePreferences({ unit: u })}
+                  className="flex-1"
+                >
                   {u}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -240,7 +228,15 @@ export default function ArmorSettings() {
 
         {/* Destructive */}
         <Section title="Danger Zone">
-          <Row label="Reset All Data" onClick={() => setShowReset(true)} danger />
+          <Button
+            variant="danger"
+            size="md"
+            icon={<Trash2 size={16} />}
+            onClick={() => setShowReset(true)}
+            className="w-full"
+          >
+            Reset All Data
+          </Button>
         </Section>
 
         <p className="text-center text-[11px] text-slate-700 py-4">
@@ -263,12 +259,12 @@ export default function ArmorSettings() {
               This deletes all workout history, 1RMs, settings, and your streak. Cannot be undone.
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setShowReset(false)}
-                className="armor-press flex-1 py-3 rounded-xl text-slate-400 font-bold"
-                style={{ background: 'rgba(255,255,255,0.04)' }}>Cancel</button>
-              <button onClick={() => { resetAll(); setShowReset(false); }}
-                className="armor-press flex-1 py-3 rounded-xl text-white font-bold"
-                style={{ background: 'var(--color-danger)' }}>Reset</button>
+              <Button variant="secondary" size="md" onClick={() => setShowReset(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button variant="danger" size="md" onClick={() => { resetAll(); setShowReset(false); }} className="flex-1">
+                Reset
+              </Button>
             </div>
           </div>
         </div>

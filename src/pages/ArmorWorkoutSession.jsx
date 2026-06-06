@@ -167,8 +167,30 @@ function VO2MaxScreen({ protocol, onComplete }) {
   );
 }
 
+/* ── End Workout Confirmation Modal ───────────────────────── */
+function EndWorkoutConfirm({ setCount, onConfirm, onCancel }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.7)' }}>
+      <div className="bg-white/[0.06] rounded-2xl p-6 max-w-sm w-full">
+        <p className="text-lg font-bold text-white mb-2">End workout?</p>
+        <p className="text-sm text-slate-400 mb-6">You&apos;ve completed {setCount} set{setCount !== 1 ? 's' : ''}.</p>
+        <div className="flex gap-3">
+          <button onClick={onCancel}
+            className="flex-1 py-3 rounded-xl bg-white/[0.06] text-white font-semibold">
+            Cancel
+          </button>
+          <button onClick={onConfirm}
+            className="flex-1 py-3 rounded-xl bg-rose-500/20 text-rose-400 font-semibold">
+            End Workout
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Strength Workout Screen ───────────────────────────────── */
-function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onComplete, track = 'full_gym', onNavigateToSettings }) {
+function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onComplete, track = 'full_gym', onNavigateToSettings, activeModifiers = {} }) {
   const { workoutHistory, preferences } = useArmorData();
   const unit = preferences.unit || 'lbs';
   const queue = useMemo(() => {
@@ -184,6 +206,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const [completedSets, setCompletedSets] = useState([]);
   const [notes, setNotes] = useState('');
   const [justCompleted, setJustCompleted] = useState(false);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
 
   const { checkPR } = usePRDetection();
   const currentEx = queue[exIdx];
@@ -326,9 +349,21 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         <p className="armor-text-caption" style={{ color: 'var(--text-tertiary)' }}>
           {currentEx.type === 'primary' ? 'PRIMARY LIFT' : 'ACCESSORY'}
         </p>
-        <h2 className="text-xl font-black text-white capitalize mt-0.5">
-          {currentEx.exerciseId?.replace(/_/g, ' ')}
-        </h2>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="text-xl font-black text-white capitalize mt-0.5">
+            {currentEx.exerciseId?.replace(/_/g, ' ')}
+          </h2>
+          {activeModifiers.highFatigue && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-semibold">
+              CNS fatigue: 60% 1RM, hypertrophy
+            </span>
+          )}
+          {activeModifiers.travelMode && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 font-semibold">
+              Travel: bodyweight subs
+            </span>
+          )}
+        </div>
         <p className="armor-text-footnote" style={{ color: 'var(--text-tertiary)' }}>
           {weekConfig.phase} · Week {currentWeek} · Set {setNum}/{totalSets}
         </p>
@@ -396,9 +431,17 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         Complete Set {setNum}
       </Button>
 
-      <Button variant="ghost" size="sm" onClick={handleFinish} className="w-full mt-3">
+      <Button variant="ghost" size="sm" onClick={() => setShowEndConfirm(true)} className="w-full mt-3">
         End Workout
       </Button>
+
+      {showEndConfirm && (
+        <EndWorkoutConfirm
+          setCount={completedSets.length}
+          onConfirm={handleFinish}
+          onCancel={() => setShowEndConfirm(false)}
+        />
+      )}
     </div>
   );
 }
@@ -442,6 +485,7 @@ export default function ArmorWorkoutSession({ onComplete, onCancel, onNavigateTo
             onComplete={onComplete}
             onNavigateToSettings={onNavigateToSettings}
             track={effectiveTrack}
+            activeModifiers={activeModifiers}
           />
         )}
       </div>

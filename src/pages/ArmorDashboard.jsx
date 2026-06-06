@@ -6,6 +6,9 @@ import {
   VO2MAX_PROTOCOL, PERIODIZATION, getWeekConfig, EQUIPMENT_TRACKS,
 } from '../data/armorEngine';
 import PlateVisualizer from '../components/PlateVisualizer';
+import Card from '../components/ui/Card';
+import SectionHeader from '../components/ui/SectionHeader';
+import StatTile from '../components/ui/StatTile';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR DASHBOARD v2.0 — Apple HIG design system
@@ -19,7 +22,7 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
   const pct = Math.max(2, (done / totalDays) * 100);
 
   return (
-    <div className="armor-surface-1 px-4 py-3 space-y-2">
+    <Card padded={false} className="px-4 py-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="armor-text-caption">Cycle {totalCyclesCompleted + 1} · Week {week}</span>
         <span className="text-[11px] font-bold text-cyan-400">{weekConfig.phase}</span>
@@ -37,7 +40,7 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
           </span>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -50,13 +53,7 @@ function ModifierRow({ activeModifiers, onToggle }) {
  };
   return (
     <div>
-      <div className="flex items-center gap-1.5 mb-2 px-1">
-        <Zap size={10} className="text-slate-600" />
-        <span className="armor-text-caption" style={{ letterSpacing: '0.08em' }}>Protocols</span>
-        {Object.values(activeModifiers).some(v => v) && (
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-        )}
-      </div>
+      <SectionHeader icon={<Zap size={10} />} label="Protocols" />
       <div className="relative">
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
           {entries.map(mod => {
@@ -115,16 +112,6 @@ function HabitCheck({ habit, done, onToggle }) {
   );
 }
 
-function QuickStat({ icon, label, value }) {
-  return (
-    <div className="bg-white/[0.02] rounded-xl px-4 py-3 text-center">
-      <p className="text-slate-600 mb-1" style={{ fontSize: '18px' }}>{icon}</p>
-      <p className="text-sm font-bold text-white tabular-nums">{value}</p>
-      <p className="text-[10px] text-slate-500 mt-0.5">{label}</p>
-    </div>
-  );
-}
-
 /* ── MAIN DASHBOARD ────────────────────────────────────────── */
 
 export default function ArmorDashboard({ onStartWorkout }) {
@@ -144,8 +131,6 @@ export default function ArmorDashboard({ onStartWorkout }) {
     getTodaysWorkout(effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs),
     [effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs]);
   const dailyHabits = useMemo(() => getDailyHabits(activeModifiers), [activeModifiers]);
-  const habitsCompleted = dailyHabits.filter(h => dailyHabitState[h.id]).length;
-  const allHabitsDone = habitsCompleted === dailyHabits.length;
   const todayDone = todaysWorkoutCompleted || isMVDToday;
   const isMVD = activeModifiers.mvdMode;
 
@@ -241,9 +226,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
                 );
               })}
             </div>
-            <div className={`armor-surface-2 p-5 space-y-4 relative overflow-hidden ${
-              todayWorkout.type === 'vo2max' ? '' : ''
-            }`}>
+            <Card className="p-5 space-y-4 relative overflow-hidden">
             {/* Ambient glow based on workout type */}
             <div className={`absolute top-0 right-0 w-40 h-40 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl opacity-20 ${
               todayWorkout.type === 'vo2max' ? 'bg-rose-500' : 'bg-cyan-500'
@@ -343,27 +326,13 @@ export default function ArmorDashboard({ onStartWorkout }) {
                 ✈️ Travel mode — progression frozen, bodyweight substitutions active
               </p>
             )}
-          </div>
+          </Card>
           </div>
         )}
 
         {/* ── DAILY HABITS ── */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between px-1 mb-1">
-            <span className="armor-text-caption" style={{ letterSpacing: '0.08em' }}>
-              Daily Habits
-            </span>
-            {allHabitsDone && habitsCompleted > 0 && (
-              <span className="text-[11px] font-bold text-emerald-400">
-                All complete · {habitsCompleted}/{dailyHabits.length}
-              </span>
-            )}
-            {!allHabitsDone && (
-              <span className="text-[11px] font-medium text-slate-600 tabular-nums">
-                {habitsCompleted}/{dailyHabits.length}
-              </span>
-            )}
-          </div>
+          <SectionHeader icon={<Check size={10} />} label="Daily Habits" />
           {dailyHabits.map((habit, i) => (
             <div key={habit.id} className="armor-entrance" style={{ animationDelay: `${0.05 * i}s` }}>
               <HabitCheck
@@ -377,9 +346,9 @@ export default function ArmorDashboard({ onStartWorkout }) {
 
         {/* ── QUICK STATS ── */}
         <div className="grid grid-cols-3 gap-2">
-          <QuickStat icon="📅" label="Week" value={`${currentCycle.week}/6`} />
-          <QuickStat icon="⚡" label="Phase" value={weekConfig.phase} />
-          <QuickStat icon="🏆" label="Top 1RM" value={`${displayTop1RM}${unit}`} />
+          <StatTile icon={<span style={{ fontSize: '18px' }}>📅</span>} label="Week" value={`${currentCycle.week}/6`} accent="cyan" />
+          <StatTile icon={<span style={{ fontSize: '18px' }}>⚡</span>} label="Phase" value={weekConfig.phase} accent="emerald" />
+          <StatTile icon={<span style={{ fontSize: '18px' }}>🏆</span>} label="Top 1RM" value={`${displayTop1RM}${unit}`} accent="amber" />
         </div>
       </div>
     </div>

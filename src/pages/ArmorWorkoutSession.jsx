@@ -7,6 +7,8 @@ import {
 import { ConfettiBurst, AwardModal } from '../components/Celebration';
 import PlateVisualizer from '../components/PlateVisualizer';
 import { usePRDetection } from '../hooks/usePRDetection';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR WORKOUT SESSION v2.0 — Apple HIG
@@ -300,17 +302,18 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
           <p className="text-amber-400 text-sm font-bold mt-3 armor-entrance">Ready up</p>
         )}
         <div className="flex items-center justify-center gap-3 mt-6">
-          <button onClick={() => { timer.addTime(-15); HAPTIC.light(); }}
-            className="armor-press w-12 h-12 rounded-full bg-white/[0.04] text-slate-400 text-sm font-bold">-15</button>
-          <button onClick={() => { timer.addTime(15); HAPTIC.light(); }}
-            className="armor-press w-12 h-12 rounded-full bg-white/[0.04] text-slate-400 text-sm font-bold">+15</button>
+          <Button variant="secondary" size="sm" onClick={() => { timer.addTime(-15); HAPTIC.light(); }}>-15</Button>
+          <Button variant="secondary" size="sm" onClick={() => { timer.addTime(15); HAPTIC.light(); }}>+15</Button>
         </div>
         <div className="mt-auto pb-8 space-y-3">
-          <button onClick={() => { timer.pause(); setPhase('active'); HAPTIC.medium(); }}
-            className="armor-press w-full py-5 rounded-2xl text-white font-black text-lg"
-            style={{ background: 'var(--color-accent)' }}>
-            Skip Rest <ChevronRight size={18} className="inline" />
-          </button>
+          <Button
+            variant="primary"
+            size="lg"
+            iconRight={<ChevronRight size={18} />}
+            onClick={() => { timer.pause(); setPhase('active'); HAPTIC.medium(); }}
+          >
+            Skip Rest
+          </Button>
         </div>
       </div>
     );
@@ -337,7 +340,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         </p>
       )}
 
-      <div className="armor-surface-2 px-6 py-6 mb-6">
+      <Card padded={false} className="px-6 py-6 mb-6">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <p className="armor-text-caption mb-1">Sets</p>
@@ -366,7 +369,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
             <PlateVisualizer weight={currentEx.weight} track={track} />
           </div>
         )}
-      </div>
+      </Card>
 
       <div className="flex justify-center gap-2 mb-6">
         {Array.from({ length: totalSets }).map((_, i) => (
@@ -383,17 +386,19 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         className="w-full bg-white/[0.04] rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-700 outline-none mb-6"
       />
 
-      <button onClick={handleCompleteSet}
-        className={`armor-press w-full py-6 rounded-2xl text-white font-black text-lg transition-transform ${justCompleted ? 'scale-95' : ''}`}
-        style={{ background: 'var(--color-accent)' }}>
-        <Check size={20} className="inline mr-2" strokeWidth={3} />
+      <Button
+        variant="primary"
+        size="lg"
+        icon={<Check size={20} strokeWidth={3} />}
+        onClick={handleCompleteSet}
+        className={`w-full transition-transform ${justCompleted ? 'scale-95' : ''}`}
+      >
         Complete Set {setNum}
-      </button>
+      </Button>
 
-      <button onClick={handleFinish}
-        className="w-full py-3 mt-3 text-slate-600 text-sm font-semibold">
+      <Button variant="ghost" size="sm" onClick={handleFinish} className="w-full mt-3">
         End Workout
-      </button>
+      </Button>
     </div>
   );
 }

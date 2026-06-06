@@ -84,21 +84,24 @@ export default function ArmorOnboarding() {
                 <button
                   key={t.id}
                   onClick={() => setChosenTrack(chosenTrack === t.id ? null : t.id)}
-                  className="armor-press text-left p-3 rounded-xl transition-all"
+                  className={`armor-press text-left p-3 rounded-xl transition-all relative ${chosenTrack === t.id ? 'ring-2 ring-cyan-400/40' : ''}`}
                   style={{
-                    background: chosenTrack === t.id ? 'rgba(6,182,212,0.08)' : 'var(--elevation-1-bg)',
-                    boxShadow: chosenTrack === t.id ? '0 0 0 1.5px rgba(6,182,212,0.3)' : 'var(--elevation-1-shadow)',
+                    background: chosenTrack === t.id ? 'rgba(6,182,212,0.04)' : 'var(--elevation-1-bg)',
+                    boxShadow: chosenTrack === t.id ? '0 0 0 1.5px rgba(6,182,212,0.3), var(--elevation-1-shadow)' : 'var(--elevation-1-shadow)',
                   }}
                 >
+                  {chosenTrack === t.id && (
+                    <Check size={14} className="text-cyan-400 absolute top-2 right-2" strokeWidth={3} />
+                  )}
                   <div className="flex items-center gap-2">
                     <span style={{ fontSize: '20px' }}>{t.icon}</span>
-                    {chosenTrack === t.id && <Check size={14} className="text-cyan-400" strokeWidth={3} />}
                   </div>
                   <p className="text-sm font-bold text-white mt-1.5">{t.label}</p>
                   <p className="text-[10px] text-slate-500">{t.sublabel}</p>
                 </button>
               ))}
             </div>
+            <p className="armor-text-caption mt-3" style={{ color: 'var(--text-tertiary)' }}>Don&apos;t worry — you can change this anytime from Settings.</p>
           </div>
 
           {/* Split preview — for whichever track is chosen, or both if skipped */}
@@ -128,6 +131,9 @@ export default function ArmorOnboarding() {
           background: 'linear-gradient(to top, var(--elevation-0-bg) 70%, transparent)',
         }}>
         <div className="max-w-lg mx-auto space-y-2">
+          {!chosenTrack && !submitting && (
+            <span className="text-[10px] uppercase tracking-widest text-cyan-400 font-bold">✨ Recommended for new users</span>
+          )}
           <button
             onClick={() => handleCommit(chosenTrack)}
             disabled={submitting}

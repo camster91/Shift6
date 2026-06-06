@@ -81,7 +81,7 @@ npm run cap:android  # Opens Android Studio
 3. Release > Production > Create new release
 4. Upload `app-release.aab`
 5. Fill out:
-   - **Short description:** "Metabolic armor, maximum VO2 max, and 5 longevity pillars for busy professionals."
+   - **Short description:** "6-week periodization, 2 strength pillars,4 daily longevity habits for busy professionals."
    - **Full description:** see `google-play-listing.md`
    - **Graphics:** upload `feature-graphic.png` and screenshots
 6. Content rating: IARC questionnaire

@@ -15,7 +15,7 @@ By using Armor, you agree to these terms. They're written in plain English where
 Armor is a fitness tracking app. The free version includes:
 - All workout tracking, periodization, plate math
 - All contingency protocols
-- All 5 longevity pillars
+- 2 strength pillars + 4 daily longevity habits
 - Local-first storage
 - Optional cloud sync (you create an account, opt in)
 

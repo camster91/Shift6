@@ -30,7 +30,7 @@
 ```
 Armor is the fitness app for professionals whose schedule doesn't respect their workout. Whether you've got 20 minutes between meetings, a brutal weekend behind you, or a hotel gym in a city you can't pronounce — Armor has a protocol for that.
 
-### 5 PILLARS OF LONGEVITY
+### 2 PILLARS OF LONGEVITY
 
 **1. VO₂ Max — Norwegian 4×4 intervals**
 Four rounds of 4-minute work at 85-95% max heart rate, with 3-minute active rest. The single best predictor of all-cause mortality, and the lowest time-cost of any longevity intervention.
@@ -38,14 +38,15 @@ Four rounds of 4-minute work at 85-95% max heart rate, with 3-minute active rest
 **2. Strength — Periodized 6-week cycles**
 Heavy compound lifts on a planned progression. Armor calculates your sets, reps, and weights from your estimated 1RM. No spreadsheets, no guesswork.
 
-**3. Metabolic Health — Post-meal walks**
-Two 10-minute walks (after lunch, after dinner) blunt glucose spikes by 30%. Non-negotiable. Armor tracks them as part of your daily habit stack.
+### 4 DAILY LONGEVITY HABITS
 
-**4. Mobility — 5-min evening floor work**
-Hips, hamstrings, thoracic spine. Counter the desk-worker posture that compresses your organs and shortens your stride.
+**Post-meal walks** — Two10-minute walks (after lunch, after dinner) blunt glucose spikes by 30%. Tracked as part of your daily habit stack.
 
-**5. Neurological — Single-leg balance, eyes closed**
-2-3 minutes per leg, stacked with a daily anchor (coffee, brushing teeth). Falls kill more adults over 65 than any other injury. Build the reflex now.
+**Single-leg balance** — 2-3 minutes per leg, eyes closed. Build the reflex that prevents falls as you age.
+
+**Evening floor work** — 5-minute mobility routine: hips, hamstrings, thoracic spine. Counter the desk-worker posture.
+
+**Walk (your third daily habit)** — Armor tracks a third walk as part of your daily stack.
 
 ### CONTINGENCY PROTOCOLS (the part that makes Armor different)
 

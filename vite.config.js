@@ -50,7 +50,7 @@ export default defineConfig({
             manifest: {
                 name: 'Armor — Metabolic Fitness',
                 short_name: 'Armor',
-                description: '6-week metabolic periodization, longevity pillars, and contingency protocols for busy professionals',
+                description: '6-week periodization, 2 strength pillars, 4 daily longevity habits, and contingency protocols for busy professionals',
                 theme_color: '#020617',
                 background_color: '#020617',
                 display: 'standalone',

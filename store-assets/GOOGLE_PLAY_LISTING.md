@@ -24,13 +24,17 @@ Armor is the fitness app for professionals whose schedule doesn't respect their 
 
 Whether you've got 20 minutes between meetings, a brutal weekend behind you, or a hotel gym in a city you can't pronounce — Armor has a protocol for that.
 
-🏋️ 5 PILLARS OF LONGEVITY
+🏋️ 2 PILLARS OF LONGEVITY
 
 • VO₂ Max — Norwegian 4×4 intervals
 • Strength — Periodized 6-week cycles
-• Metabolic Health — Post-meal walks
-• Mobility — 5-min evening floor work
-• Neurological — Single-leg balance, eyes closed
+
+➕ 4 DAILY LONGEVITY HABITS
+
+• Post-meal walks — Two 10-minute walks blunt glucose spikes
+• Single-leg balance — 2-3 min per leg, eyes closed
+• Evening floor work — 5-min mobility (hips, hamstrings, thoracic spine)
+• Third daily walk — tracked as part of your habit stack
 
 🛡️ 5 CONTINGENCY PROTOCOLS (the part that makes Armor different)
 
@@ -102,7 +106,7 @@ workout, fitness, vo2, strength, periodization, longevity, gym, plate math
 - ⚔️ icon (large, cyan)
 - "Armor" wordmark
 - Tagline: "Train Through Chaos"
-- "5 Pillars · 5 Contingency Protocols · Free Forever"
+- "2 Pillars · 4 Habits · 5 Contingency Protocols · Free Forever"
 - Background: #020617 with subtle cyan glow
 
 See `feature-graphic.svg` in `store-assets/` for the vector source.

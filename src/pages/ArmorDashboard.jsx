@@ -43,6 +43,11 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
 
 function ModifierRow({ activeModifiers, onToggle }) {
   const entries = Object.values(MODIFIERS);
+  // Short display labels to prevent truncation on390px viewports
+  const labelOverride = {
+    mvdMode: 'MVD',
+    travelMode: 'Travel',
+ };
   return (
     <div>
       <div className="flex items-center gap-1.5 mb-2 px-1">
@@ -52,25 +57,29 @@ function ModifierRow({ activeModifiers, onToggle }) {
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
         )}
       </div>
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-        {entries.map(mod => {
-          const active = activeModifiers[mod.id];
-          return (
-            <button
-              key={mod.id}
-              onClick={() => onToggle(mod.id)}
-              className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all shrink-0 whitespace-nowrap ${
-                active
-                  ? 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30'
-                  : 'bg-white/[0.03] text-slate-500 hover:text-slate-400'
-              }`}
-              style={{ fontSize: '11px', fontWeight: 600 }}
-            >
-              <span>{mod.icon}</span>
-              <span className="whitespace-nowrap">{mod.label}</span>
-            </button>
-          );
-        })}
+      <div className="relative">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          {entries.map(mod => {
+            const active = activeModifiers[mod.id];
+            return (
+              <button
+                key={mod.id}
+                onClick={() => onToggle(mod.id)}
+                className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all shrink-0 whitespace-nowrap ${
+                  active
+                    ? 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30'
+                    : 'bg-white/[0.03] text-slate-500 hover:text-slate-400'
+                }`}
+                style={{ fontSize: '11px', fontWeight: 600 }}
+              >
+                <span>{mod.icon}</span>
+                <span className="whitespace-nowrap">{labelOverride[mod.id] ?? mod.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Right-edge fade gradient signals scrollable content */}
+        <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-r from-transparent to-[#020617] pointer-events-none" />
       </div>
     </div>
   );

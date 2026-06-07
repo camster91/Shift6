@@ -633,6 +633,14 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
 
 /* ── MAIN ──────────────────────────────────────────────────── */
 export default function ArmorWorkoutSession({ onComplete, onCancel, onNavigateToSettings }) {
+  return (
+    <WorkoutErrorBoundary>
+      <ArmorWorkoutSessionInner onComplete={onComplete} onCancel={onCancel} onNavigateToSettings={onNavigateToSettings} />
+    </WorkoutErrorBoundary>
+  );
+}
+
+function ArmorWorkoutSessionInner({ onComplete, onCancel, onNavigateToSettings }) {
   const { activeModifiers, currentCycle, estimated1RMs, effectiveTrack } = useArmorData();
   const { celebration, setCelebration } = usePRDetection();
   const [showConfetti, setShowConfetti] = useState(false);

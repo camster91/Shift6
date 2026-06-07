@@ -105,7 +105,7 @@ export const MODIFIERS = {
     id: 'mvdMode',
     label: 'Minimum Viable Day',
     icon: '🛡️',
-    description: 'Minimum Viable Day. 100 push-ups + 10-min walk + 5-min mobility. Fits in 15 minutes.',
+    description: 'Minimum Viable Day. 5×20 push-ups in a single circuit + 10-min walk + 5-min mobility. Fits in 15 minutes.',
     affects: 'workout',
   },
   highFatigue: {

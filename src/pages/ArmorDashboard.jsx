@@ -421,7 +421,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
         <div className="grid grid-cols-3 gap-2">
           <StatTile icon={<span style={{ fontSize: '18px' }}>📅</span>} label="Week" value={`${currentCycle.week}/6`} accent="cyan" />
           <StatTile icon={<span style={{ fontSize: '18px' }}>⚡</span>} label="Phase" value={weekConfig.phase} accent="emerald" />
-          <StatTile icon={<span style={{ fontSize: '18px' }}>🏆</span>} label={<><JargonTooltip term="1RM" definition="your one-rep max — the heaviest weight you can lift once" /></>} value={displayTop1RM} accent="amber" aria-label={`Top 1 rep max: ${displayTop1RM} ${unit}`} />
+          <StatTile icon={<span style={{ fontSize: '18px' }}>🏆</span>} label={<><JargonTooltip term="1RM" definition="your one-rep max — the heaviest weight you can lift once" /></>} value={displayTop1RM} accent="amber" aria-label={`Top 1 rep max: ${displayTop1RM}`} />
         </div>
       </div>
     </div>

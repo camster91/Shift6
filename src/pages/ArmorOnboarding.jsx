@@ -91,6 +91,7 @@ export default function ArmorOnboarding() {
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
               placeholder="Athlete"
+              maxLength={50}
               autoFocus
               className="w-full rounded-xl px-4 py-3 text-base text-white placeholder:text-slate-500 outline-none"
               style={{ background: 'var(--elevation-1-bg)' }}

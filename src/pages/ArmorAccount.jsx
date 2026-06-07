@@ -156,7 +156,7 @@ function LoginForm() {
         <div>
           <label className="armor-text-caption block mb-1.5">Name</label>
           <input type="text" value={name} onChange={e => setName(e.target.value)}
-            placeholder="Your name" autoComplete="name"
+            placeholder="Your name" autoComplete="name" maxLength={50}
             className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-700 outline-none"
             style={{ background: 'var(--elevation-1-bg)' }} />
         </div>

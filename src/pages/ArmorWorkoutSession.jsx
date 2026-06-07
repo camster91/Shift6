@@ -92,6 +92,78 @@ function TimerRing({ seconds, running, accentColor = '#06b6d4', label = 'Rest' }
   );
 }
 
+/* ── MVD Screen ────────────────────────────────────────────── */
+function MVDScreen({ onComplete }) {
+  const [completed, setCompleted] = useState({});
+
+  const items = [
+    { id: 'pushups', label: '5×20 Push-Ups', description: '5 sets of 20 push-ups, 30 sec rest between sets' },
+    { id: 'walk', label: '10-Minute Walk', description: 'A brisk 10-minute walk to blunt glucose' },
+    { id: 'mobility', label: '5-Minute Mobility', description: 'Hips, hamstrings, thoracic spine' },
+  ];
+
+  const allComplete = items.every(item => completed[item.id]);
+
+  const handleComplete = () => {
+    HAPTIC.success();
+    onComplete?.({
+      date: new Date().toISOString().split('T')[0],
+      day: 1, week: 1, completed: true,
+      exercises: items.map(item => ({
+        id: item.id,
+        sets: completed[item.id] ? [{ set: 1, reps: 1, weight: 0, notes: 'MVD' }] : [],
+      })).filter(e => e.sets.length > 0),
+    });
+  };
+
+  return (
+    <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full">
+      <div className="text-3xl mb-2">🛡️</div>
+      <h2 className="text-2xl font-black text-white mb-1">Minimum Viable Day</h2>
+      <p className="text-sm text-slate-400 mb-6">A self-contained circuit. Fits in 15 minutes.</p>
+
+      <div className="w-full space-y-3 mb-6">
+        {items.map((item) => {
+          const isDone = !!completed[item.id];
+          return (
+            <button
+              key={item.id}
+              onClick={() => setCompleted(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+              className={`w-full text-left p-4 rounded-xl flex items-center gap-3 ${
+                isDone ? 'bg-emerald-500/15 ring-1 ring-emerald-500/30' : 'bg-white/[0.04]'
+              }`}
+            >
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                isDone ? 'bg-emerald-500' : 'bg-white/[0.06]'
+              }`}>
+                {isDone && <Check size={14} className="text-white" strokeWidth={3} />}
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <p className={`text-sm font-bold ${isDone ? 'text-emerald-400 line-through' : 'text-white'}`}>
+                  {item.label}
+                </p>
+                <p className="text-[11px] text-slate-500">{item.description}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={handleComplete}
+        disabled={!allComplete}
+        className={`armor-press w-full py-5 rounded-2xl text-white font-black text-lg ${
+          allComplete ? '' : 'opacity-50 pointer-events-none'
+        }`}
+        style={{ background: 'var(--color-accent)' }}
+      >
+        <Check size={20} className="inline mr-2" strokeWidth={3} />
+        Finish & Log
+      </button>
+    </div>
+  );
+}
+
 /* ── VO2 Max Screen ────────────────────────────────────────── */
 function VO2MaxScreen({ protocol, onComplete }) {
   const [round, setRound] = useState(1);
@@ -247,6 +319,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   }, [phase, timer.timeLeft, timer.running]);
 
   const handleCompleteSet = useCallback(() => {
+    if (!currentEx) return;
     HAPTIC.heavy();
     setCompletedSets(prev => [...prev, { exerciseId: currentEx.exerciseId, set: setNum, reps: currentEx.reps, weight: currentEx.weight, notes }]);
     setJustCompleted(true);
@@ -545,6 +618,8 @@ export default function ArmorWorkoutSession({ onComplete, onCancel, onNavigateTo
       <div className="flex-1 flex">
         {todayWorkout.type === 'vo2max' ? (
           <VO2MaxScreen protocol={VO2MAX_PROTOCOL} onComplete={onComplete} />
+        ) : todayWorkout.type === 'mvd' ? (
+          <MVDScreen onComplete={onComplete} />
         ) : (
           <StrengthScreen
             primaryLift={todayWorkout.primaryLift}

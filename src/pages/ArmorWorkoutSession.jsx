@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Play, Pause, Check, X, ChevronRight } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
-  getTodaysWorkout, VO2MAX_PROTOCOL, getWeekConfig
+  getTodaysWorkout, VO2MAX_PROTOCOL, getWeekConfig, SPLIT_DAYS
 } from '../data/armorEngine';
 import { ConfettiBurst, AwardModal } from '../components/Celebration';
 import PlateVisualizer from '../components/PlateVisualizer';
@@ -207,9 +207,30 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const [notes, setNotes] = useState('');
   const [justCompleted, setJustCompleted] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [showSwap, setShowSwap] = useState(false);
+  const [customQueue, setCustomQueue] = useState(null); // null = use prop-derived queue
+
+  // Build swap alternatives from SPLIT_DAYS based on current exercise body part
+  const swapAlts = useMemo(() => {
+    if (!currentEx) return [];
+    const bodyPart = currentEx.bodyPart || '';
+    // Find days with matching body part
+    const allDays = [...SPLIT_DAYS.full_gym, ...SPLIT_DAYS.home_gym];
+    const matching = allDays.filter(d => d.bodyPart === bodyPart && d.primary && d.primary !== currentEx.exerciseId);
+    // Deduplicate by exercise id
+    const seen = new Set();
+    return matching.filter(d => {
+      if (seen.has(d.primary)) return false;
+      seen.add(d.primary);
+      return true;
+    }).map(d => d.primary);
+  }, [currentEx]);
+
+  // Use custom queue if set, otherwise fall back to prop-derived queue
+  const activeQueue = customQueue || queue;
 
   const { checkPR } = usePRDetection();
-  const currentEx = queue[exIdx];
+  const currentEx = activeQueue[exIdx];
   const totalSets = currentEx?.sets || 3;
   const restSecs = currentEx?.type === 'primary' ? 120 : 90;
   const timer = useTimer(restSecs);
@@ -237,14 +258,14 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
     }
 
     if (setNum >= totalSets) {
-      if (exIdx < queue.length - 1) { setExIdx(prev => prev + 1); }
+      if (exIdx < activeQueue.length - 1) { setExIdx(prev => prev + 1); }
       else { setPhase('done'); HAPTIC.success(); }
     } else {
       setSetNum(prev => prev + 1); setPhase('rest');
       timer.reset(restSecs); timer.start();
     }
     setNotes('');
-  }, [setNum, currentEx, totalSets, exIdx, queue.length, timer, restSecs, notes, checkPR]);
+  }, [setNum, currentEx, totalSets, exIdx, activeQueue.length, timer, restSecs, notes, checkPR]);
 
   const handleFinish = useCallback(() => {
     HAPTIC.medium();
@@ -252,13 +273,13 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
       onComplete?.({
         date: new Date().toISOString().split('T')[0],
         day: currentDay, week: currentWeek, completed: true,
-        exercises: queue.map(ex => ({
+        exercises: activeQueue.map(ex => ({
           id: ex.exerciseId,
           sets: completedSets.filter(s => s.exerciseId === ex.exerciseId),
         })).filter(e => e.sets.length > 0),
       });
     } else { onComplete?.({ completed: false }); }
-  }, [completedSets, currentDay, currentWeek, queue, onComplete]);
+  }, [completedSets, currentDay, currentWeek, activeQueue, onComplete]);
 
   const weekConfig = getWeekConfig(currentWeek);
 
@@ -289,7 +310,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
           </p>
         </div>
         <div className="w-full space-y-1.5">
-          {queue.map((ex, i) => {
+          {activeQueue.map((ex, i) => {
             const exSets = completedSets.filter(s => s.exerciseId === ex.exerciseId);
             if (!exSets.length) return null;
             return (
@@ -353,6 +374,14 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
           <h2 className="text-xl font-black text-white capitalize mt-0.5">
             {currentEx.exerciseId?.replace(/_/g, ' ')}
           </h2>
+          {swapAlts.length > 0 && (
+            <button
+              onClick={() => setShowSwap(true)}
+              className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-slate-400 font-medium hover:text-cyan-400 transition-colors"
+            >
+              Swap
+            </button>
+          )}
           {activeModifiers.highFatigue && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-semibold">
               CNS fatigue: 60% 1RM, hypertrophy
@@ -441,6 +470,46 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
           onConfirm={handleFinish}
           onCancel={() => setShowEndConfirm(false)}
         />
+      )}
+
+      {/* Exercise Swap Modal */}
+      {showSwap && (
+        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowSwap(false)}>
+          <div className="bg-slate-900 w-full max-w-sm mx-auto p-4 border-t border-white/[0.06]" onClick={e => e.stopPropagation()}>
+            <p className="text-sm text-slate-400 mb-3">
+              Swap <span className="text-white font-semibold capitalize">{currentEx.exerciseId?.replace(/_/g, ' ')}</span> for:
+            </p>
+            <div className="space-y-1 mb-3">
+              {swapAlts.map(altId => (
+                <button
+                  key={altId}
+                  onClick={() => {
+                    // Build a new queue with the swapped exercise
+                    const newQueue = activeQueue.map(ex =>
+                      ex.exerciseId === currentEx.exerciseId
+                        ? { ...ex, exerciseId: altId }
+                        : ex
+                    );
+                    setCustomQueue(newQueue);
+                    setExIdx(0);
+                    setPhase('active');
+                    setSetNum(1);
+                    setShowSwap(false);
+                  }}
+                  className="w-full text-left p-3 rounded-xl hover:bg-white/[0.06] text-white font-medium capitalize"
+                >
+                  {altId.replace(/_/g, ' ')}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowSwap(false)}
+              className="w-full p-3 text-slate-500 text-sm font-medium text-center"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

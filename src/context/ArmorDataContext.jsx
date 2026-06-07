@@ -227,16 +227,19 @@ export function ArmorDataProvider({ children }) {
   const updateUserProfile = useCallback((updates) =>
     setData(prev => ({ ...prev, userProfile: { ...prev.userProfile, ...updates } })), []);
   const set1RM = useCallback((exerciseId, value) => {
-      // Reject non-finite, negative, zero, or absurdly high values
-      const cleanValue = Number(value);
-      if (!Number.isFinite(cleanValue) || cleanValue < 0 || cleanValue > 9999) return;
-      return setData(prev => ({
-        ...prev, userProfile: {
-          ...prev.userProfile,
-          estimated1RMs: { ...prev.userProfile.estimated1RMs, [exerciseId]: cleanValue },
-        },
-      }));
-    }, []);
+    // Reject non-finite, zero, negative, or absurdly high values
+    const cleanValue = Number(value);
+    if (!Number.isFinite(cleanValue) || cleanValue <= 0 || cleanValue > 9999) {
+      console.warn(`[ArmorData] set1RM rejected: ${exerciseId} = ${value}`);
+      return;
+    }
+    return setData(prev => ({
+      ...prev, userProfile: {
+        ...prev.userProfile,
+        estimated1RMs: { ...prev.userProfile.estimated1RMs, [exerciseId]: cleanValue },
+      },
+    }));
+  }, []);
   const toggleModifier = useCallback((modifierId) =>
     setData(prev => ({
       ...prev, activeModifiers: { ...prev.activeModifiers, [modifierId]: !prev.activeModifiers[modifierId] },

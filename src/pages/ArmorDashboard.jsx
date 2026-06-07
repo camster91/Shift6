@@ -16,6 +16,32 @@ import StatTile from '../components/ui/StatTile';
    Zero borders. Elevation-based depth. Typographic hierarchy.
    ═══════════════════════════════════════════════════════════ */
 
+// Jargon tooltip helper — wraps a term with an (i) icon
+function JargonTooltip({ term, definition }) {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {term}
+      <span
+        className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold text-slate-400 bg-white/[0.06] cursor-help select-none"
+        title={definition}
+      >
+        i
+      </span>
+    </span>
+  );
+}
+
+const PHASE_DEFINITIONS = {
+  'Base': 'foundation phase — moderate weight, higher reps, building work capacity',
+  'Peak': 'peak phase — heavy weight, low reps, building absolute strength',
+  'Deload': 'deload phase — light weight, active recovery, preparing for next cycle',
+  'Intensify': 'intensify phase — challenging weight, moderate reps, building strength',
+};
+
+function phaseDefinition(phase) {
+  return PHASE_DEFINITIONS[phase] || phase;
+}
+
 function CycleProgress({ week, day, totalCyclesCompleted }) {
   const weekConfig = getWeekConfig(week);
   const totalDays = 30;
@@ -26,7 +52,7 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
     <Card padded={false} className="px-4 py-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="armor-text-caption">Cycle {totalCyclesCompleted + 1} · Week {week}</span>
-        <span className="text-[11px] font-bold text-cyan-400">{weekConfig.phase}</span>
+        <span className="text-[11px] font-bold text-cyan-400"><JargonTooltip term={weekConfig.phase} definition={phaseDefinition(weekConfig.phase)} /></span>
       </div>
       <div className="armor-progress-track">
         <div className="armor-progress-fill" style={{ width: `${pct}%` }} />
@@ -59,6 +85,7 @@ function ModifierRow({ activeModifiers, onToggle }) {
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
           {entries.map(mod => {
             const active = activeModifiers[mod.id];
+            const label = labelOverride[mod.id] ?? mod.label;
             return (
               <button
                 key={mod.id}
@@ -71,7 +98,11 @@ function ModifierRow({ activeModifiers, onToggle }) {
                 style={{ fontSize: '11px', fontWeight: 600 }}
               >
                 <span>{mod.icon}</span>
-                <span className="whitespace-nowrap">{labelOverride[mod.id] ?? mod.label}</span>
+                {mod.id === 'mvdMode' ? (
+                  <JargonTooltip term={label} definition="Minimum Viable Day — bodyweight + walk" />
+                ) : (
+                  <span>{label}</span>
+                )}
               </button>
             );
           })}
@@ -362,7 +393,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
         <div className="grid grid-cols-3 gap-2">
           <StatTile icon={<span style={{ fontSize: '18px' }}>📅</span>} label="Week" value={`${currentCycle.week}/6`} accent="cyan" />
           <StatTile icon={<span style={{ fontSize: '18px' }}>⚡</span>} label="Phase" value={weekConfig.phase} accent="emerald" />
-          <StatTile icon={<span style={{ fontSize: '18px' }}>🏆</span>} label="Top 1RM" value={displayTop1RM} accent="amber" />
+          <StatTile icon={<span style={{ fontSize: '18px' }}>🏆</span>} label={<><JargonTooltip term="1RM" definition="your one-rep max — the heaviest weight you can lift once" /></>} value={displayTop1RM} accent="amber" />
         </div>
       </div>
     </div>

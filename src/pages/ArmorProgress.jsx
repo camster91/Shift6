@@ -148,7 +148,9 @@ function PRTimelineChart({ data, liftName }) {
   return (
     <Card className="p-4 space-y-3">
       <p className="armor-text-caption">Your {liftName} — heaviest set per session</p>
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-[320px] h-[120px]" style={{ display: 'block' }}>
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-[320px] h-[120px]" style={{ display: 'block' }}
+        role="img" aria-label={`PR timeline for ${liftName} — heaviest set per session over time`}
+      >
         {/* Y-axis grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
           const y = h - pad - pct * (h - 2 * pad);
@@ -194,7 +196,9 @@ function VolumeWeeklyChart({ data }) {
   return (
     <Card className="p-4 space-y-3">
       <p className="armor-text-caption">Weekly Volume</p>
-      <svg viewBox={`0 0 ${totalW} ${chartH + labelH}`} className="w-full" style={{ display: 'block', maxHeight: 116 }}>
+      <svg viewBox={`0 0 ${totalW} ${chartH + labelH}`} className="w-full" style={{ display: 'block', maxHeight: 116 }}
+        role="img" aria-label="Weekly volume chart — total weight lifted per week"
+      >
         {/* Y-axis max label */}
         <text x={4} y={10} fontSize={9} fill="rgba(255,255,255,0.3)">
           {Math.round(maxV).toLocaleString()}
@@ -240,7 +244,7 @@ function TimeRangeToggle({ value, onChange }) {
 }
 
 export default function ArmorProgress() {
-  const { currentCycle, workoutHistory, streakData, estimated1RMs } = useArmorData();
+  const { currentCycle, workoutHistory, streakData, estimated1RMs, dailyHabitState } = useArmorData();
   const weekConfig = getWeekConfig(currentCycle.week);
   const [timeRange, setTimeRange] = useState('30d');
 
@@ -369,6 +373,8 @@ export default function ArmorProgress() {
   }, [filteredHistory]);
 
   if (workoutHistory.length === 0) {
+    const hasHabits = (streakData.mvdDates && streakData.mvdDates.length > 0) ||
+      Object.values(dailyHabitState || {}).some(Boolean);
     return (
       <div className="pb-32 max-w-lg mx-auto">
         <div className="px-5 pt-8 pb-6">
@@ -382,7 +388,7 @@ export default function ArmorProgress() {
                 <Flame size={22} className="text-slate-400" />
               </div>
               <div>
-                <p className="text-lg font-black text-slate-400">0 day streak</p>
+                <p className="text-lg font-black text-slate-400" aria-live="polite">0 day streak</p>
                 <p className="text-[11px] text-slate-400">Longest: 0 days</p>
               </div>
             </div>
@@ -402,6 +408,21 @@ export default function ArmorProgress() {
               ))}
             </div>
           </Card>
+          {/* Habits contribution — only shown when user has done habits but no workouts yet */}
+          {hasHabits && (
+            <Card className="bg-amber-500/8 border border-amber-500/20">
+              <div className="flex items-start gap-3">
+                <span style={{ fontSize: '28px' }}>🏃</span>
+                <div>
+                  <p className="text-sm font-bold text-amber-400">Daily Habits Active</p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    You haven&apos;t completed a workout yet, but you&apos;ve been keeping up with your daily habits! 🏃<br />
+                    Complete a workout to unlock the full progress dashboard.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
           {/* Placeholder volume bar */}
           <Card className="opacity-50">
             <div className="flex items-center justify-between">
@@ -446,7 +467,7 @@ export default function ArmorProgress() {
               <Flame size={22} className="text-amber-400" fill="currentColor" />
             </div>
             <div>
-              <p className="text-xl font-black text-white">🔥 {streakData.currentStreak} day streak</p>
+              <p className="text-xl font-black text-white" aria-live="polite">🔥 {streakData.currentStreak} day streak</p>
               <p className="text-[11px] text-slate-400">Longest: {streakData.longestStreak} days</p>
               <p className="text-[10px] text-slate-500 mt-0.5">ⓘ 1 freeze day per week</p>
             </div>

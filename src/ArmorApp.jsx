@@ -1,15 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import {
   Play, BarChart3, Settings as SettingsIcon, Smartphone, User
 } from 'lucide-react';
 import { useArmorData } from './context/ArmorDataContext';
 import ArmorDashboard from './pages/ArmorDashboard';
-import ArmorWorkoutSession from './pages/ArmorWorkoutSession';
+const ArmorWorkoutSession = lazy(() => import('./pages/ArmorWorkoutSession'));
 import ArmorOnboarding from './pages/ArmorOnboarding';
 import ArmorSettings from './pages/ArmorSettings';
 import ArmorProgress from './pages/ArmorProgress';
 import ArmorAccount from './pages/ArmorAccount';
 import UpdatePrompt from './components/UpdatePrompt';
+import FirstRunTour from './components/FirstRunTour';
 
 /**
  * ARMOR App — Main application shell.
@@ -117,14 +118,19 @@ export default function ArmorApp() {
       <UpdatePrompt />
       <main role="main" aria-label="Armor workout app" className="flex-1 overflow-y-auto">
         {workoutActive ? (
-          <ArmorWorkoutSession
-            onComplete={handleWorkoutComplete}
-            onCancel={handleWorkoutCancel}
-          />
+          <Suspense fallback={null}>
+            <ArmorWorkoutSession
+              onComplete={handleWorkoutComplete}
+              onCancel={handleWorkoutCancel}
+            />
+          </Suspense>
         ) : (
           <>
             {activeTab === 'home' && (
-              <ArmorDashboard onStartWorkout={handleStartWorkout} />
+              <>
+                <ArmorDashboard onStartWorkout={handleStartWorkout} />
+                <FirstRunTour />
+              </>
             )}
             {activeTab === 'progress' && <ArmorProgress />}
             {activeTab === 'account' && <ArmorAccount />}

@@ -20,9 +20,10 @@ const StatTile = ({
   value,
   accent = 'cyan',
   className = '',
+  ...rest
 }) => {
   return (
-    <div className={`armor-surface-1 rounded-2xl p-4 text-center ${className}`}>
+    <div className={`armor-surface-1 rounded-2xl p-4 text-center ${className}`} {...rest}>
       {/* Icon — top center, accent colored */}
       <div className={`mb-2 flex justify-center ${accentClasses[accent] ?? accentClasses.cyan}`}>
         {icon}

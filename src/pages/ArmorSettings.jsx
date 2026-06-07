@@ -166,6 +166,7 @@ export default function ArmorSettings() {
                   icon={<Icon size={16} />}
                   onClick={() => updatePreferences({ theme: t.id })}
                   className="flex-1"
+                  aria-pressed={selected}
                 >
                   {t.label}
                 </Button>
@@ -186,11 +187,108 @@ export default function ArmorSettings() {
                   size="sm"
                   onClick={() => updatePreferences({ unit: u })}
                   className="flex-1"
+                  aria-pressed={selected}
                 >
                   {u}
                 </Button>
               );
             })}
+          </div>
+        </Section>
+
+        {/* Reminders */}
+        <Section title="Reminders">
+          <div className="px-4 py-3 space-y-3">
+            {/* Daily habits reminder */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white">Daily habits reminder</p>
+                <p className="text-[11px] text-slate-400">A gentle nudge to do your walks, balance work, and floor stretches</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={preferences.notifications?.habits?.enabled || false}
+                aria-label="Toggle daily habits reminder"
+                onClick={() => updatePreferences({ notifications: { ...preferences.notifications, habits: { ...preferences.notifications?.habits, enabled: !(preferences.notifications?.habits?.enabled || false) } } })}
+                className={`armor-press relative w-11 h-6 rounded-full transition-colors ${(preferences.notifications?.habits?.enabled || false) ? 'bg-cyan-500' : 'bg-white/[0.1]'}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${(preferences.notifications?.habits?.enabled || false) ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+            {(preferences.notifications?.habits?.enabled || false) && (
+              <div className="flex items-center gap-3 pl-2">
+                <span className="text-[11px] text-slate-400">Time</span>
+                <input
+                  type="time"
+                  value={preferences.notifications?.habits?.time || '21:00'}
+                  onChange={e => updatePreferences({ notifications: { ...preferences.notifications, habits: { ...preferences.notifications?.habits, time: e.target.value } } })}
+                  className="flex-1 bg-white/[0.05] text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500/40"
+                />
+              </div>
+            )}
+
+            <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }} />
+
+            {/* Workout reminder */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white">Workout reminder</p>
+                <p className="text-[11px] text-slate-400">Remind me on specific days</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={preferences.notifications?.workout?.enabled || false}
+                aria-label="Toggle workout reminder"
+                onClick={() => updatePreferences({ notifications: { ...preferences.notifications, workout: { ...preferences.notifications?.workout, enabled: !(preferences.notifications?.workout?.enabled || false) } } })}
+                className={`armor-press relative w-11 h-6 rounded-full transition-colors ${(preferences.notifications?.workout?.enabled || false) ? 'bg-cyan-500' : 'bg-white/[0.1]'}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${(preferences.notifications?.workout?.enabled || false) ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+            {(preferences.notifications?.workout?.enabled || false) && (
+              <div className="flex gap-1.5 flex-wrap pl-2">
+                {['M','T','W','Th','F','Sa','Su'].map((d, i) => {
+                  const dayKey = ['mon','tue','wed','thu','fri','sat','sun'][i];
+                  const active = (preferences.notifications?.workout?.days || []).includes(dayKey);
+                  return (
+                    <button
+                      key={d}
+                      aria-pressed={active}
+                      aria-label={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i]}
+                      onClick={() => {
+                        const currentDays = preferences.notifications?.workout?.days || [];
+                        const newDays = active
+                          ? currentDays.filter(x => x !== dayKey)
+                          : [...currentDays, dayKey];
+                        updatePreferences({ notifications: { ...preferences.notifications, workout: { ...preferences.notifications?.workout, days: newDays } } });
+                      }}
+                      className={`armor-press w-8 h-8 rounded-full text-[11px] font-bold transition-colors ${active ? 'bg-cyan-500 text-black' : 'bg-white/[0.06] text-slate-400'}`}
+                    >
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }} />
+
+            {/* Marketing emails */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white">Product updates</p>
+                <p className="text-[11px] text-slate-400">New features and tips · we never spam</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={preferences.notifications?.marketing || false}
+                aria-label="Toggle product updates"
+                onClick={() => updatePreferences({ notifications: { ...preferences.notifications, marketing: !(preferences.notifications?.marketing || false) } })}
+                className={`armor-press relative w-11 h-6 rounded-full transition-colors ${(preferences.notifications?.marketing || false) ? 'bg-cyan-500' : 'bg-white/[0.1]'}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${(preferences.notifications?.marketing || false) ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
           </div>
         </Section>
 
@@ -234,6 +332,7 @@ export default function ArmorSettings() {
             icon={<Trash2 size={16} />}
             onClick={() => setShowReset(true)}
             className="w-full"
+            aria-label="Delete all workout data and start over"
           >
             Reset All Data
           </Button>

@@ -90,6 +90,9 @@ function ModifierRow({ activeModifiers, onToggle }) {
               <button
                 key={mod.id}
                 onClick={() => onToggle(mod.id)}
+                aria-label={`Toggle ${mod.label}`}
+                aria-pressed={active}
+                title={mod.description}
                 className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all shrink-0 whitespace-nowrap ${
                   active
                     ? 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30'
@@ -98,11 +101,7 @@ function ModifierRow({ activeModifiers, onToggle }) {
                 style={{ fontSize: '11px', fontWeight: 600 }}
               >
                 <span>{mod.icon}</span>
-                {mod.id === 'mvdMode' ? (
-                  <JargonTooltip term={label} definition={mod.description} />
-                ) : (
-                  <JargonTooltip term={label} definition={mod.description} />
-                )}
+                <span>{label}</span>
               </button>
             );
           })}
@@ -188,7 +187,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
           <h1 className="armor-text-large-title">
             <span className="text-cyan-400">Armor</span>
           </h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" aria-live="polite" aria-atomic="true">
             {streak > 0 && (
               <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500/10">
                 <Flame size={13} className="text-orange-400" fill="currentColor" />
@@ -422,7 +421,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
         <div className="grid grid-cols-3 gap-2">
           <StatTile icon={<span style={{ fontSize: '18px' }}>📅</span>} label="Week" value={`${currentCycle.week}/6`} accent="cyan" />
           <StatTile icon={<span style={{ fontSize: '18px' }}>⚡</span>} label="Phase" value={weekConfig.phase} accent="emerald" />
-          <StatTile icon={<span style={{ fontSize: '18px' }}>🏆</span>} label={<><JargonTooltip term="1RM" definition="your one-rep max — the heaviest weight you can lift once" /></>} value={displayTop1RM} accent="amber" />
+          <StatTile icon={<span style={{ fontSize: '18px' }}>🏆</span>} label={<><JargonTooltip term="1RM" definition="your one-rep max — the heaviest weight you can lift once" /></>} value={displayTop1RM} accent="amber" aria-label={`Top 1 rep max: ${displayTop1RM} ${unit}`} />
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, memo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
@@ -16,7 +16,7 @@ import StatTile from '../components/ui/StatTile';
    Zero borders. Elevation-based depth. Typographic hierarchy.
    ═══════════════════════════════════════════════════════════ */
 
-function CycleProgress({ week, day, totalCyclesCompleted }) {
+const CycleProgress = memo(({ week, day, totalCyclesCompleted }) => {
   const weekConfig = getWeekConfig(week);
   const totalDays = 30;
   const done = (week - 1) * 5 + Math.min(day - 1, 4);
@@ -43,9 +43,11 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
       </div>
     </Card>
   );
-}
+});
 
-function ModifierRow({ activeModifiers, onToggle }) {
+CycleProgress.displayName = 'CycleProgress';
+
+const ModifierRow = memo(({ activeModifiers, onToggle }) => {
   const entries = Object.values(MODIFIERS);
   // Short display labels to prevent truncation on390px viewports
   const labelOverride = {
@@ -81,9 +83,11 @@ function ModifierRow({ activeModifiers, onToggle }) {
       </div>
     </div>
   );
-}
+});
 
-function HabitCheck({ habit, done, onToggle }) {
+ModifierRow.displayName = 'ModifierRow';
+
+const HabitCheck = memo(({ habit, done, onToggle }) => {
   return (
     <button
       onClick={onToggle}
@@ -111,7 +115,9 @@ function HabitCheck({ habit, done, onToggle }) {
       </span>
     </button>
   );
-}
+});
+
+HabitCheck.displayName = 'HabitCheck';
 
 /* ── MAIN DASHBOARD ────────────────────────────────────────── */
 
@@ -141,12 +147,15 @@ export default function ArmorDashboard({ onStartWorkout }) {
   const streak = streakData.currentStreak || 0;
   const unit = preferences.unit || 'lbs';
 
-  // Filter 1RMs to the active track only
-  const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
-  const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
-  const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
-  const allTrack1RMsZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
-  const displayTop1RM = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
+  // Filter 1RMs to the active track only — memoized to avoid redundant calculations on every render
+  const { allTrack1RMsZero, displayTop1RM } = useMemo(() => {
+    const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
+    const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
+    const top = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
+    const allZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
+    const display = top === 0 ? '—' : (unit === 'kg' ? `${Math.round(top / 2.20462)}${unit}` : `${top}${unit}`);
+    return { allTrack1RMsZero: allZero, displayTop1RM: display };
+  }, [effectiveTrack, estimated1RMs, unit]);
 
   return (
     <div className="pb-32 space-y-5 max-w-lg mx-auto">

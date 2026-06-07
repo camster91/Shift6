@@ -65,18 +65,33 @@ function computeStreak(workoutHistory, mvdDates, freezesAvailable, previousLonge
   mvdDates.forEach(d => allActiveDates.add(d));
   const sorted = [...allActiveDates].sort().reverse();
   if (sorted.length === 0) return { currentStreak: 0, longestStreak: previousLongest };
+
+  const MS_PER_DAY = 86400000;
   const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - MS_PER_DAY).toISOString().split('T')[0];
+
   if (sorted[0] !== today && sorted[0] !== yesterday) return { currentStreak: 0, longestStreak: previousLongest };
+
   let streak = 1;
   let freezesRemaining = freezesAvailable;
-  let prevDate = new Date(sorted[0]);
+
+  // Convert to timestamps once to avoid repeated Date object instantiation in the loop
+  let prevTimestamp = new Date(sorted[0]).getTime();
+
   for (let i = 1; i < sorted.length; i++) {
-    const currDate = new Date(sorted[i]);
-    const dayDiff = Math.round((prevDate - currDate) / 86400000);
-    if (dayDiff === 1) { streak++; prevDate = currDate; }
-    else if (dayDiff === 2 && freezesRemaining > 0) { freezesRemaining--; streak++; prevDate = currDate; }
-    else break;
+    const currTimestamp = new Date(sorted[i]).getTime();
+    const dayDiff = Math.round((prevTimestamp - currTimestamp) / MS_PER_DAY);
+
+    if (dayDiff === 1) {
+      streak++;
+      prevTimestamp = currTimestamp;
+    } else if (dayDiff === 2 && freezesRemaining > 0) {
+      freezesRemaining--;
+      streak++;
+      prevTimestamp = currTimestamp;
+    } else {
+      break;
+    }
   }
   return { currentStreak: streak, longestStreak: Math.max(streak, previousLongest) };
 }
@@ -353,7 +368,7 @@ export function ArmorDataProvider({ children }) {
     save(REVISION_KEY, 1);
   }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     data, revision, syncStatus, lastSyncAt, conflict,
     preferences: data.preferences, userProfile: data.userProfile, currentCycle: data.currentCycle,
     activeModifiers: data.activeModifiers, dailyHabitState: data.dailyHabitState,
@@ -366,7 +381,16 @@ export function ArmorDataProvider({ children }) {
     logWorkout, logMVD, advanceDay, advanceWeek,
     completeOnboarding, resetAll,
     pullFromCloud, resolveConflictKeepLocal, resolveConflictUseServer,
-  };
+  }), [
+    data, revision, syncStatus, lastSyncAt, conflict,
+    onboardingDone, todayStr, habitsNeedReset, todaysWorkoutCompleted, isMVDToday,
+    effectiveTrack, setTodaysTrack,
+    updatePreferences, updateUserProfile, set1RM,
+    toggleModifier, setModifier, toggleHabit, resetDailyHabits,
+    logWorkout, logMVD, advanceDay, advanceWeek,
+    completeOnboarding, resetAll,
+    pullFromCloud, resolveConflictKeepLocal, resolveConflictUseServer,
+  ]);
 
   return (
     <ArmorDataContext.Provider value={value}>

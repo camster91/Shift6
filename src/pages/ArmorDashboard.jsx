@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
-  getTodaysWorkout, getDailyHabits, MODIFIERS, MVD_PROTOCOL,
+  getTodaysWorkout, getDailyHabits, get10MinWorkout, MODIFIERS, MVD_PROTOCOL,
   VO2MAX_PROTOCOL, PERIODIZATION, getWeekConfig, EQUIPMENT_TRACKS,
   EXERCISE_TRACK,
 } from '../data/armorEngine';
@@ -99,9 +99,9 @@ function ModifierRow({ activeModifiers, onToggle }) {
               >
                 <span>{mod.icon}</span>
                 {mod.id === 'mvdMode' ? (
-                  <JargonTooltip term={label} definition="Minimum Viable Day — bodyweight + walk" />
+                  <JargonTooltip term={label} definition={mod.description} />
                 ) : (
-                  <span>{label}</span>
+                  <JargonTooltip term={label} definition={mod.description} />
                 )}
               </button>
             );
@@ -224,7 +224,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
             </p>
             <div className="space-y-2">
               {[
-                { icon: '💪', label: `${MVD_PROTOCOL.pushups.total} Push-Ups`, sub: 'Accumulate throughout the day' },
+                { icon: '💪', label: `${MVD_PROTOCOL.pushups.sets * MVD_PROTOCOL.pushups.reps} Push-Ups`, sub: '5×20 in a single circuit (~10 min)' },
                 { icon: '🚶', label: `${MVD_PROTOCOL.walk.duration}-Minute Walk`, sub: 'Brisk pace, outdoors if possible' },
                 { icon: '🧘', label: `${MVD_PROTOCOL.mobility.duration}-Minute Mobility`, sub: 'Hips, hamstrings, thoracic spine' },
               ].map((item, i) => (
@@ -263,14 +263,6 @@ export default function ArmorDashboard({ onStartWorkout }) {
                 );
               })}
             </div>
-            {/* 0-lbs nudge — shown when all active-track 1RMs are 0 */}
-            {allTrack1RMsZero && (
-              <Card padded={false} className="bg-amber-500/8 border border-amber-500/20 p-4">
-                <p className="text-sm font-semibold text-amber-400">
-                  👋 First time? Set your 1RMs in Settings to get personalized weights. Takes 30 seconds.
-                </p>
-              </Card>
-            )}
             <Card className="p-5 space-y-4 relative overflow-hidden">
             {/* Ambient glow based on workout type */}
             <div className={`absolute top-0 right-0 w-40 h-40 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl opacity-20 ${
@@ -372,12 +364,49 @@ export default function ArmorDashboard({ onStartWorkout }) {
               </p>
             )}
           </Card>
+
+            {/* 10-Minute Express card */}
+            {(() => {
+              const express10 = get10MinWorkout(effectiveTrack);
+              return (
+                <Card padded={false} className="bg-white/[0.03] border border-white/[0.06] p-4">
+                  <div className="flex items-center gap-3">
+                    <span style={{ fontSize: '24px' }}>⚡</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-white">{express10.name}</p>
+                      <p className="text-[11px] text-slate-400">No time? 2 sets + a quick circuit</p>
+                    </div>
+                    {!todayDone && (
+                      <button
+                        onClick={onStartWorkout}
+                        className="armor-press px-4 py-2 rounded-full text-xs font-bold text-white"
+                        style={{ background: 'var(--color-accent)' }}
+                      >
+                        Start express
+                      </button>
+                    )}
+                  </div>
+                </Card>
+              );
+            })()}
+
+            {/* 0-lbs nudge — shown when all active-track 1RMs are 0 */}
+            {allTrack1RMsZero && (
+              <Card padded={false} className="bg-amber-500/8 border border-amber-500/20 p-4">
+                <p className="text-sm font-semibold text-amber-400">
+                  👋 First time? Set your 1RMs in Settings to get personalized weights. Takes 30 seconds.
+                </p>
+              </Card>
+            )}
           </div>
         )}
 
         {/* ── DAILY HABITS ── */}
         <div className="space-y-1.5">
-          <SectionHeader icon={<Check size={10} />} label="Daily Habits" />
+          <div className="flex items-center justify-between">
+            <SectionHeader icon={<Check size={10} />} label="Daily Habits" />
+            <span className="text-[10px] text-slate-500 font-medium">1 freeze day/week</span>
+          </div>
           {dailyHabits.map((habit, i) => (
             <div key={habit.id} className="armor-entrance" style={{ animationDelay: `${0.05 * i}s` }}>
               <HabitCheck

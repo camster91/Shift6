@@ -105,14 +105,14 @@ export const MODIFIERS = {
     id: 'mvdMode',
     label: 'Minimum Viable Day',
     icon: '🛡️',
-    description: '100 push-ups accumulated, 15-min walk, 5-min mobility',
+    description: 'Minimum Viable Day. 100 push-ups + 10-min walk + 5-min mobility. Fits in 15 minutes.',
     affects: 'workout',
   },
   highFatigue: {
     id: 'highFatigue',
     label: 'High CNS Fatigue',
     icon: '😴',
-    description: 'Drops primary compound to 60% 1RM, hypertrophy focus',
+    description: 'High CNS Fatigue. Primary lift drops to 60% 1RM, shifts to hypertrophy (10-12 reps). Protects your central nervous system.',
     affects: 'primaryLift',
     intensityMultiplier: 0.60,
     repChange: 'hypertrophy', // go to 10-12 rep range
@@ -121,7 +121,7 @@ export const MODIFIERS = {
     id: 'heavyMeal',
     label: 'Heavy Meal',
     icon: '🍝',
-    description: 'Extends post-dinner walk to 20 minutes',
+    description: 'Heavy Meal. Extends post-dinner walk from 10 to 20 minutes to blunt the glucose spike.',
     affects: 'dinnerWalk',
     dinnerWalkExtension: 20,
   },
@@ -129,7 +129,7 @@ export const MODIFIERS = {
     id: 'travelMode',
     label: 'Travel / Vacation',
     icon: '✈️',
-    description: 'Freezes progression, bodyweight substitutions',
+    description: 'Travel Mode. Freezes progression. Uses bodyweight substitutions. Streak and habits continue.',
     affects: 'progression',
     freezeProgression: true,
   },
@@ -138,8 +138,8 @@ export const MODIFIERS = {
 // ── MVD (Minimum Viable Day) PROTOCOL ───────────────────────
 
 export const MVD_PROTOCOL = {
-  pushups: { total: 100, label: 'Push-Ups', accumulateThrough: 'day' },
-  walk: { duration: 15, unit: 'min', label: 'Walk' },
+  pushups: { sets: 5, reps: 20, rest: 30, label: 'Push-Ups' }, // 100 in a circuit
+  walk: { duration: 10, unit: 'min', label: 'Walk' }, // shorter
   mobility: { duration: 5, unit: 'min', label: 'Mobility Work' },
 };
 
@@ -360,6 +360,27 @@ export function getDailyHabits(modifiers = {}) {
     }
     return { ...h };
   });
+}
+
+/**
+ * 10-Minute Express workout — fast session for users with no time.
+ * 1 primary lift at ~50% 1RM (or bodyweight) + 2 short accessories.
+ */
+export function get10MinWorkout(track) {
+  return {
+    name: '10-Minute Express',
+    type: 'express',
+    primaryLift: {
+      exerciseId: track === 'home_gym' ? 'goblet_squat' : 'barbell_squat',
+      sets: 2,
+      reps: 8,
+      weight: 0,
+    },
+    accessories: [
+      { exerciseId: 'pushups', sets: 2, reps: 15, weight: 0 },
+      { exerciseId: 'plank', sets: 1, reps: 30, weight: 0, duration: 30 },
+    ],
+  };
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Play, Pause, Check, X, ChevronRight } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
@@ -9,6 +9,35 @@ import PlateVisualizer from '../components/PlateVisualizer';
 import { usePRDetection } from '../hooks/usePRDetection';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
+
+/* ── Inner error boundary for the workout session ─────────────── */
+class WorkoutErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error, info) { console.warn('[WorkoutErrorBoundary]', error, info?.componentStack); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full items-center justify-center space-y-4">
+          <p className="text-slate-400 text-sm">Something went wrong in this set.</p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="px-4 py-2 rounded-xl bg-white/[0.06] text-white text-sm font-semibold"
+          >
+            Try again
+          </button>
+          <button
+            onClick={() => this.props.onSkip?.()}
+            className="px-4 py-2 rounded-xl bg-cyan-500/20 text-cyan-400 text-sm font-semibold"
+          >
+            Skip Set
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR WORKOUT SESSION v2.0 — Apple HIG
@@ -319,25 +348,29 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   }, [phase, timer.timeLeft, timer.running]);
 
   const handleCompleteSet = useCallback(() => {
-    if (!currentEx) return;
-    HAPTIC.heavy();
-    setCompletedSets(prev => [...prev, { exerciseId: currentEx.exerciseId, set: setNum, reps: currentEx.reps, weight: currentEx.weight, notes }]);
-    setJustCompleted(true);
-    setTimeout(() => setJustCompleted(false), 600);
+    try {
+      if (!currentEx) return;
+      HAPTIC.heavy();
+      setCompletedSets(prev => [...prev, { exerciseId: currentEx.exerciseId, set: setNum, reps: currentEx.reps, weight: currentEx.weight, notes }]);
+      setJustCompleted(true);
+      setTimeout(() => setJustCompleted(false), 600);
 
-    // Check for PR on primary lift final set
-    if (currentEx.type === 'primary' && setNum === totalSets) {
-      checkPR(currentEx.exerciseId, currentEx.weight, currentEx.reps);
-    }
+      // Check for PR on primary lift final set
+      if (currentEx.type === 'primary' && setNum === totalSets) {
+        checkPR(currentEx.exerciseId, currentEx.weight, currentEx.reps);
+      }
 
-    if (setNum >= totalSets) {
-      if (exIdx < activeQueue.length - 1) { setExIdx(prev => prev + 1); }
-      else { setPhase('done'); HAPTIC.success(); }
-    } else {
-      setSetNum(prev => prev + 1); setPhase('rest');
-      timer.reset(restSecs); timer.start();
+      if (setNum >= totalSets) {
+        if (exIdx < activeQueue.length - 1) { setExIdx(prev => prev + 1); }
+        else { setPhase('done'); HAPTIC.success(); }
+      } else {
+        setSetNum(prev => prev + 1); setPhase('rest');
+        timer.reset(restSecs); timer.start();
+      }
+      setNotes('');
+    } catch (e) {
+      console.warn('[ArmorWorkout] handleCompleteSet error:', e);
     }
-    setNotes('');
   }, [setNum, currentEx, totalSets, exIdx, activeQueue.length, timer, restSecs, notes, checkPR]);
 
   const handleFinish = useCallback(() => {
@@ -437,8 +470,17 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   }
 
   /* ── ACTIVE SET SCREEN ────────────────────────────────────── */
+  if (!currentEx) {
+    return (
+      <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full items-center justify-center">
+        <p className="text-slate-400 text-sm">Loading exercise…</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 px-6 pt-4 max-w-sm mx-auto w-full armor-entrance">
+    <WorkoutErrorBoundary onSkip={handleCompleteSet}>
+ <div className="flex flex-col flex-1 px-6 pt-4 max-w-sm mx-auto w-full armor-entrance">
       <div className="mb-6">
         <p className="armor-text-caption" style={{ color: 'var(--text-tertiary)' }}>
           {currentEx.type === 'primary' ? 'PRIMARY LIFT' : 'ACCESSORY'}
@@ -501,7 +543,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
             )}
           </div>
         </div>
-        {!showZeroLbsNudge && unit !== 'kg' && (
+        {!showZeroLbsNudge && unit !== 'kg' && currentEx.weight > 0 && (
           <div className="mt-4 pt-4 border-t border-white/[0.06]">
             <PlateVisualizer weight={currentEx.weight} track={track} />
           </div>
@@ -585,6 +627,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         </div>
       )}
     </div>
+    </WorkoutErrorBoundary>
   );
 }
 

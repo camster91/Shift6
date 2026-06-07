@@ -326,7 +326,17 @@ export function getTodaysWorkout(track, cycleDay, cycleWeek, modifiers = {}, est
         phase: 'Travel Maintenance',
       };
     } else if (modifiers.mvdMode) {
-      primaryLift = null; // MVD replaces gym workout
+      // MVD is a self-contained circuit — return the protocol shape directly
+      return {
+        name: 'Minimum Viable Day',
+        type: 'mvd',
+        primaryLift: { exerciseId: 'pushups', sets: 5, reps: 20, weight: 0 },
+        accessories: [
+          { exerciseId: 'walk', sets: 1, reps: 1, weight: 0, duration: 10 },
+          { exerciseId: 'mobility', sets: 1, reps: 1, weight: 0, duration: 5 },
+        ],
+        modifiers: { ...modifiers },
+      };
     } else {
       primaryLift = calculatePrimaryLift(estimated1RMs[dayConfig.primary], cycleWeek, modifiers);
       primaryLift.exerciseId = dayConfig.primary;

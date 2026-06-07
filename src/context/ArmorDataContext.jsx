@@ -117,7 +117,6 @@ export function ArmorDataProvider({ children }) {
   const [lastSyncAt, setLastSyncAt] = useState(null);
   const [conflict, setConflict] = useState(null);
 
-  const saveTimeout = useRef(null);
   const syncTimeout = useRef(null);
 
   // Listen for online/offline
@@ -129,14 +128,10 @@ export function ArmorDataProvider({ children }) {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
 
-  // Persist locally with debounce
+  // Persist locally — immediate write (no debounce) so navigation never loses data
   useEffect(() => {
-    if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => {
-      save(STORAGE_KEY, data);
-      save(REVISION_KEY, revision);
-    }, 100);
-    return () => clearTimeout(saveTimeout.current);
+    save(STORAGE_KEY, data);
+    save(REVISION_KEY, revision);
   }, [data, revision]);
 
   // Cloud sync (debounced 2s after change) — only if logged in

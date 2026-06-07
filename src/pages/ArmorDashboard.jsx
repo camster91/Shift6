@@ -236,6 +236,16 @@ export default function ArmorDashboard({ onStartWorkout }) {
                 </div>
               ))}
             </div>
+            {!todayDone && (
+              <button
+                onClick={onStartWorkout}
+                className="armor-press flex items-center justify-center gap-1.5 w-full py-3 rounded-full text-sm font-bold text-white"
+                style={{ background: 'var(--color-accent)' }}
+              >
+                <Play size={14} className="fill-current" />
+                Start MVD
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-3">

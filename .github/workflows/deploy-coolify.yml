@@ -33,41 +33,59 @@ jobs:
         continue-on-error: true
 
       # Trigger Coolify deploy via REST API. Async, returns ~200ms.
-      # Per Hermes fleet standard — no host secrets, async deploy,
-      # failure here doesn't fail the build (build+test are the gate).
+      # Uses set -e and explicit exit codes so failures actually fail the workflow.
       - name: Trigger Coolify Deployment
         env:
           COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
           COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
         run: |
+          set -e  # Fail on any error
           HTTP_CODE=$(curl -s -o /tmp/deploy-resp.txt -w '%{http_code}' \
-            --max-time 30 \
+            --max-time 60 \
             -X POST \
             -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
             "${COOLIFY_URL}/api/v1/applications/${COOLIFY_APP_UUID}/start")
+          CURL_EXIT=$?
           echo "Response: HTTP ${HTTP_CODE}"
           cat /tmp/deploy-resp.txt | head -c 500
           echo ""
-          if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 400 ]; then
-            echo "Deployment queued!"
-          else
-            echo "Warning: deploy endpoint returned ${HTTP_CODE}"
+          if [ $CURL_EXIT -ne 0 ]; then
+            echo "ERROR: curl failed with exit code $CURL_EXIT (likely timeout)"
+            exit 1
           fi
+          if [ -z "${HTTP_CODE}" ] || [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -ge 400 ]; then
+            echo "ERROR: deploy endpoint returned HTTP ${HTTP_CODE}"
+            exit 1
+          fi
+          echo "Deployment queued!"
 
-      # Smoke test the live site to confirm the deploy actually shipped.
-      # Vite-bundled web PWA — the bundle hash will have changed if a new
-      # build went live. Caching-busted query string avoids the SW cache.
-      - name: Verify live site
+      # Verify the live site is serving the bundle we just built.
+      # Compares the bundle hash from dist/ to what the live site serves.
+      - name: Verify live site bundle matches build
         env:
           SITE: https://getshift6.com
         run: |
-          sleep 30
-          HTML=$(curl -s --max-time 15 "${SITE}/?cb=$(date +%s)")
-          if echo "${HTML}" | grep -q "Armor"; then
-            echo "Live site returned expected brand 'Armor'"
-            echo "${HTML}" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1
-          else
-            echo "Live site did NOT contain expected content — deploy may have failed"
+          # Wait for Coolify to actually deploy
+          sleep 60
+
+          # Get the bundle hash from the dist directory (just built)
+          EXPECTED_JS=$(ls -1 dist/assets/index-*.js 2>/dev/null | head -1 | xargs basename)
+          if [ -z "${EXPECTED_JS}" ]; then
+            echo "ERROR: no bundle in dist/assets/"
             exit 1
           fi
+          echo "Expected bundle: ${EXPECTED_JS}"
+
+          # Curl the live site (cache-busted)
+          HTML=$(curl -s --max-time 15 "${SITE}/?cb=$(date +%s)")
+          DEPLOYED_JS=$(echo "${HTML}" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
+          echo "Live bundle: ${DEPLOYED_JS}"
+
+          if [ "${EXPECTED_JS}" != "${DEPLOYED_JS}" ]; then
+            echo "ERROR: bundle mismatch — live site is serving an old bundle"
+            echo "Expected: ${EXPECTED_JS}"
+            echo "Live: ${DEPLOYED_JS}"
+            exit 1
+          fi
+          echo "Live site serving the expected bundle"

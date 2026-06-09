@@ -34,6 +34,7 @@ const Button = forwardRef(({
   iconRight,
   className = '',
   type = 'button',
+  ...rest
 }, ref) => {
   const disabledClass = disabled ? 'opacity-50 pointer-events-none' : '';
 
@@ -44,12 +45,13 @@ const Button = forwardRef(({
       onClick={onClick}
       disabled={disabled}
       className={[
-        'rounded-xl armor-press transition-all',
+        'rounded-xl armor-press transition-all outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
         variantClasses[variant] ?? variantClasses.primary,
         sizeClasses[size] ?? sizeClasses.md,
         disabledClass,
         className,
       ].join(' ')}
+      {...rest}
     >
       {icon && (
         <span className="inline-flex items-center mr-2">

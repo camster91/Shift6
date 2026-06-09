@@ -101,7 +101,7 @@ function TimerRing({ seconds, running, accentColor = '#06b6d4', label = 'Rest' }
   const urgent = seconds <= 10 && running;
 
   return (
-    <div className="relative w-44 h-44 mx-auto">
+    <div className="relative w-44 h-44 mx-auto" role="timer" aria-live="polite">
       <svg width={176} height={176} className="transform -rotate-90">
         <circle cx={88} cy={88} r={75} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={6} />
         <circle cx={88} cy={88} r={75} fill="none" stroke={accentColor} strokeWidth={6}

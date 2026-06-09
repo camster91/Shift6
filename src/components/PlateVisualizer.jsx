@@ -93,6 +93,7 @@ export default function PlateVisualizer({ weight, track = 'full_gym', compact = 
 
 // SVG barbell: long horizontal bar with two sleeve collars and plates on each side.
 function BarbellSvg({ plates = [], barOnly = false, compact = false }) {
+  const totalWeight = BARBELL_BAR_LBS + (plates.reduce((sum, p) => sum + p.weight, 0) * 2);
   const W = compact ? 200 : 240, H = compact ? 48 : 64;
   const centerY = H / 2;
   const barH = compact ? 5 : 6;
@@ -117,7 +118,14 @@ function BarbellSvg({ plates = [], barOnly = false, compact = false }) {
   }));
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="drop-shadow-md">
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      width={W}
+      height={H}
+      className="drop-shadow-md"
+      role="img"
+      aria-label={barOnly ? "Olympic barbell, 45 lbs" : `Olympic barbell with plates, total weight ${totalWeight} lbs`}
+    >
       <rect x={0} y={centerY - barH / 2} width={W} height={barH} rx={1.5} fill="#cbd5e1" />
       <rect x={W/2 - 30} y={centerY - barH / 2} width={60} height={barH} fill="#94a3b8" />
       <rect x={sleeveL} y={centerY - 5} width={10} height={10} fill="#94a3b8" />
@@ -153,7 +161,14 @@ function DumbbellSvg({ size, color, weight, compact = false }) {
   const handleH = size * scale * 0.18;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="drop-shadow-md">
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      width={W}
+      height={H}
+      className="drop-shadow-md"
+      role="img"
+      aria-label={`${weight} lb dumbbell`}
+    >
       <rect x={W / 2 - handleW / 2} y={centerY - handleH / 2} width={handleW} height={handleH} rx={handleH / 2}
         fill="#cbd5e1" />
       <rect x={W / 2 - handleW / 2 + 4} y={centerY - handleH / 2} width={handleW - 8} height={handleH}

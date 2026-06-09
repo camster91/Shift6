@@ -24,6 +24,7 @@ function JargonTooltip({ term, definition }) {
       <span
         className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold text-slate-400 bg-white/[0.06] cursor-help select-none"
         title={definition}
+        aria-label={`Definition: ${definition}`}
       >
         i
       </span>
@@ -117,7 +118,9 @@ function HabitCheck({ habit, done, onToggle }) {
   return (
     <button
       onClick={onToggle}
-      className={`armor-press w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+      role="checkbox"
+      aria-checked={done}
+      className={`armor-press w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
         done
           ? 'bg-emerald-500/8'
           : 'bg-white/[0.02] hover:bg-white/[0.04]'
@@ -166,7 +169,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
   const isMVD = activeModifiers.mvdMode;
 
   const h = new Date().getHours();
-  const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const greeting = h < 12 ? 'Good morning ☀️' : h < 17 ? 'Good afternoon ⛅' : 'Good evening 🌙';
 
   const streak = streakData.currentStreak || 0;
   const unit = preferences.unit || 'lbs';

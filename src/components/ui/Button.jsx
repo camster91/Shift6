@@ -34,6 +34,7 @@ const Button = forwardRef(({
   iconRight,
   className = '',
   type = 'button',
+  ...props
 }, ref) => {
   const disabledClass = disabled ? 'opacity-50 pointer-events-none' : '';
 
@@ -43,6 +44,7 @@ const Button = forwardRef(({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      {...props}
       className={[
         'rounded-xl armor-press transition-all',
         variantClasses[variant] ?? variantClasses.primary,

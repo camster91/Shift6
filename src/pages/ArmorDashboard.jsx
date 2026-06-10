@@ -117,6 +117,8 @@ function HabitCheck({ habit, done, onToggle }) {
   return (
     <button
       onClick={onToggle}
+      role="checkbox"
+      aria-checked={done}
       className={`armor-press w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
         done
           ? 'bg-emerald-500/8'

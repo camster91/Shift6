@@ -49,12 +49,13 @@ function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
             className="w-20 text-right rounded-lg px-2 py-1 text-sm font-bold text-white outline-none tabular-nums"
             style={{ background: 'rgba(255,255,255,0.05)' }}
           />
-          <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => handleSave(parseInt(v) || 0)} />
+          <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => handleSave(parseInt(v) || 0)} aria-label={`Save ${displayName || exId.replace(/_/g, ' ')}`} />
         </div>
       ) : (
         <button onClick={() => { setV(String(displayVal || '')); setEditing(true); }}
           className="armor-press px-3 py-1.5 rounded-lg bg-white/[0.04] transition-colors duration-300"
           disabled={saved}
+          aria-label={`Edit ${displayName || exId.replace(/_/g, ' ')}`}
         >
           <span className={`text-sm font-bold tabular-nums transition-colors duration-300 ${saved ? 'text-emerald-400' : 'text-cyan-400'}`}>
             {value ? (

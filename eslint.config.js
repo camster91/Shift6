@@ -30,6 +30,8 @@ export default defineConfig([
       'no-useless-escape': 'off',
       'prefer-const': 'off',
       'react-hooks/exhaustive-deps': 'warn',
+      // Fast refresh: too strict for this codebase (context files export both components and hooks)
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])

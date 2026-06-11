@@ -1,0 +1,2 @@
+// Deprecated. This file uses ESLint 8 legacy config which is not compatible with ESLint 9.
+// Use eslint.config.js (flat config) instead.

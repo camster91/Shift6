@@ -1,5 +1,6 @@
 name: Lint
 
+
 # Lint workflow. Runs the project's `lint` script on PRs and pushes.
 # Fails the build if lint errors are found.
 

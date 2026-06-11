@@ -46,15 +46,15 @@ class WorkoutErrorBoundary extends React.Component {
 
 const HAPTIC = {
   // Vibration is optional; suppress no-empty since failure is non-actionable
-  // eslint-disable-next-line no-empty
+   
   light: () => { try { navigator.vibrate?.(10); } catch {} },
-  // eslint-disable-next-line no-empty
+   
   medium: () => { try { navigator.vibrate?.(20); } catch {} },
-  // eslint-disable-next-line no-empty
+   
   heavy: () => { try { navigator.vibrate?.(100); } catch {} },
-  // eslint-disable-next-line no-empty
+   
   success: () => { try { navigator.vibrate?.([50, 30, 100]); } catch {} },
-  // eslint-disable-next-line no-empty
+   
   warning: () => { try { navigator.vibrate?.([200, 100, 200]); } catch {} },
 };
 

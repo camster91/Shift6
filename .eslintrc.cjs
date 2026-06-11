@@ -1,31 +1,3 @@
-module.exports = {
-  root: true,
-  env: {
-    browser: true,
-    es2020: true,
-  },
-  extends: [
-    'eslint:recommended',
-    'plugin:react/recommended',
-    'plugin:react/jsx-runtime',
-    'plugin:react-hooks/recommended',
-  ],
-  ignorePatterns: ['dist', '.eslintrc.cjs', 'android', 'ios'],
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-  },
-  settings: {
-    react: {
-      version: '18.2',
-    },
-  },
-  plugins: ['react-refresh'],
-  rules: {
-    'react-refresh/only-export-components': [
-      'warn',
-      { allowConstantExport: true },
-    ],
-    'react/prop-types': 'off',
-  },
-};
+// This file has been replaced by eslint.config.js (ESLint 9 flat config).
+// See .eslintrc.cjs.removed for the legacy content if needed for reference.
+module.exports = {};

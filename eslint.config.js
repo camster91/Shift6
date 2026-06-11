@@ -9,7 +9,7 @@ export default defineConfig([
     files: ['**/*.{js,jsx}'],
     ignores: ['**/*.test.{js,jsx}', '**/test/**'],
     extends: [
-      reactHooks.configs.flat.recommended,
+      reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
     ],
     languageOptions: {
@@ -21,7 +21,6 @@ export default defineConfig([
       },
     },
     rules: {
-      // Basic ESLint recommended rules (inlined to avoid @eslint/js default export issues)
       'no-undef': 'off',
       'no-unused-vars': 'off',
       'no-empty': 'off',

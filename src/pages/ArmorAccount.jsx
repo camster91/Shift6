@@ -156,7 +156,7 @@ function LoginForm() {
         <div>
           <label className="armor-text-caption block mb-1.5">Name</label>
           <input type="text" value={name} onChange={e => setName(e.target.value)}
-            placeholder="Your name" autoComplete="name"
+            placeholder="Your name" autoComplete="name" maxLength={50}
             className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-700 outline-none"
             style={{ background: 'var(--elevation-1-bg)' }} />
         </div>
@@ -164,7 +164,7 @@ function LoginForm() {
       <div>
         <label className="armor-text-caption block mb-1.5">Email</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-          required placeholder="you@example.com" autoComplete="email"
+          required placeholder="you@example.com" autoComplete="email" maxLength={100}
           className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-700 outline-none"
           style={{ background: 'var(--elevation-1-bg)' }} />
       </div>
@@ -172,6 +172,7 @@ function LoginForm() {
         <label className="armor-text-caption block mb-1.5">Password</label>
         <input type="password" value={password} onChange={e => setPassword(e.target.value)}
           required minLength={8} placeholder="8+ characters" autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          maxLength={128}
           className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-700 outline-none"
           style={{ background: 'var(--elevation-1-bg)' }} />
       </div>

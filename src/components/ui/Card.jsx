@@ -11,15 +11,29 @@ const Card = forwardRef(({
   padded = true,
   interactive = false,
   className = '',
+  onKeyDown,
+  ...props
 }, ref) => {
-  const base = 'armor-surface-1 rounded-2xl';
+  const base = 'armor-surface-1 rounded-2xl relative';
   const padClass = padded ? 'p-5' : '';
-  const interactiveClass = interactive ? 'armor-press cursor-pointer' : '';
+  const interactiveClass = interactive ? 'armor-press cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-500 outline-none' : '';
+
+  const handleKeyDown = (e) => {
+    if (interactive && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      props.onClick?.(e);
+    }
+    onKeyDown?.(e);
+  };
 
   return (
     <div
       ref={ref}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onKeyDown={handleKeyDown}
       className={`${base} ${padClass} ${interactiveClass} ${className}`.trim()}
+      {...props}
     >
       {children}
     </div>

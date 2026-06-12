@@ -104,21 +104,22 @@ export default function ArmorOnboarding() {
             <p className="text-[11px] text-slate-400 mb-3">You can switch per-workout from the dashboard later.</p>
             <div className="grid grid-cols-2 gap-2">
               {Object.values(EQUIPMENT_TRACKS).map(t => (
-                <div
+                <Card
                   key={t.id}
+                  interactive
+                  padded={false}
                   onClick={() => setChosenTrack(chosenTrack === t.id ? null : t.id)}
+                  aria-pressed={chosenTrack === t.id}
                 >
-                  <Card interactive padded={false}>
-                    {chosenTrack === t.id && (
-                      <Check size={14} className="text-cyan-400 absolute top-2 right-2" strokeWidth={3} />
-                    )}
-                    <div className="flex items-center gap-2">
-                      <span style={{ fontSize: '20px' }}>{t.icon}</span>
-                    </div>
-                    <p className="text-sm font-bold text-white mt-1.5">{t.label}</p>
-                    <p className="text-[10px] text-slate-400">{t.sublabel}</p>
-                  </Card>
-                </div>
+                  {chosenTrack === t.id && (
+                    <Check size={14} className="text-cyan-400 absolute top-2 right-2" strokeWidth={3} />
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span style={{ fontSize: '20px' }}>{t.icon}</span>
+                  </div>
+                  <p className="text-sm font-bold text-white mt-1.5">{t.label}</p>
+                  <p className="text-[10px] text-slate-400">{t.sublabel}</p>
+                </Card>
               ))}
             </div>
             <p className="armor-text-caption mt-3" style={{ color: 'var(--text-tertiary)' }}>Don&apos;t worry — you can change this anytime from Settings.</p>

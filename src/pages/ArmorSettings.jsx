@@ -95,22 +95,23 @@ export default function ArmorSettings() {
           {Object.values(EQUIPMENT_TRACKS).map((t, i) => {
             const selected = preferences.equipmentTrack === t.id;
             return (
-              <div
+              <Card
                 key={t.id}
+                interactive
+                padded={false}
                 onClick={() => updatePreferences({ equipmentTrack: t.id })}
+                className="flex items-center gap-3 px-4 py-3.5"
                 style={{ borderTop: i > 0 ? '0.5px solid rgba(255,255,255,0.04)' : 'none' }}
               >
-                <Card interactive padded={false} className="flex items-center gap-3 px-4 py-3.5">
-                  <span style={{ fontSize: '20px' }}>{t.icon}</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-white">{t.label}</p>
-                    <p className="text-[11px] text-slate-400">{t.sublabel}</p>
-                  </div>
-                  {selected && <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
-                    <span className="text-white text-[10px]">✓</span>
-                  </div>}
-                </Card>
-              </div>
+                <span style={{ fontSize: '20px' }}>{t.icon}</span>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-white">{t.label}</p>
+                  <p className="text-[11px] text-slate-400">{t.sublabel}</p>
+                </div>
+                {selected && <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
+                  <span className="text-white text-[10px]">✓</span>
+                </div>}
+              </Card>
             );
           })}
         </Section>

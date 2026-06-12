@@ -25,7 +25,11 @@ function saveJSON(key, data) {
 
 // ── API base URL (env-overridable) ───────────────────────────
 export function getApiBase() {
-  return loadJSON(API_BASE_KEY, DEFAULT_API_BASE);
+  // Only allow localStorage override in development to prevent redirection in production
+  if (import.meta.env.DEV) {
+    return loadJSON(API_BASE_KEY, DEFAULT_API_BASE);
+  }
+  return DEFAULT_API_BASE;
 }
 export function setApiBase(url) {
   saveJSON(API_BASE_KEY, url);

@@ -117,14 +117,16 @@ function HabitCheck({ habit, done, onToggle }) {
   return (
     <button
       onClick={onToggle}
-      className={`armor-press w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+      role="checkbox"
+      aria-checked={done}
+      className={`armor-press w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none ${
         done
           ? 'bg-emerald-500/8'
           : 'bg-white/[0.02] hover:bg-white/[0.04]'
       }`}
     >
-      <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-        done ? 'bg-emerald-500' : 'bg-white/[0.06]'
+      <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200 ${
+        done ? 'bg-emerald-500 scale-110' : 'bg-white/[0.06] scale-100'
       }`}>
         {done ? <Check size={11} className="text-white" strokeWidth={3} /> : null}
       </div>

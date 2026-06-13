@@ -258,6 +258,7 @@ export function ArmorDataProvider({ children }) {
 
   const completeOnboarding = useCallback((onboardingData) => {
     const { equipmentTrack, estimated1RMs, displayName } = onboardingData;
+    const sanitizedDisplayName = displayName ? String(displayName).slice(0, 50) : 'Athlete';
     // Validate and sanitize 1RMs before storing
     const sanitized1RMs = {};
     if (estimated1RMs) {
@@ -271,7 +272,7 @@ export function ArmorDataProvider({ children }) {
       preferences: { ...prev.preferences, equipmentTrack: equipmentTrack || prev.preferences.equipmentTrack },
       userProfile: {
         ...prev.userProfile,
-        displayName: displayName || 'Athlete',
+        displayName: sanitizedDisplayName,
         estimated1RMs: { ...prev.userProfile.estimated1RMs, ...sanitized1RMs },
       },
       currentCycle: { ...prev.currentCycle, week: 1, day: 1, lastWorkoutDate: null, completedDaysThisWeek: [] },

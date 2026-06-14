@@ -568,7 +568,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
       </div>
 
       <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
-        placeholder="RPE, form notes..."
+        placeholder="RPE, form notes..." maxLength={1000}
         className="w-full bg-white/[0.04] rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none mb-6"
       />
 

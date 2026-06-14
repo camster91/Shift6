@@ -257,7 +257,8 @@ export function ArmorDataProvider({ children }) {
   }, [todayStr]);
 
   const completeOnboarding = useCallback((onboardingData) => {
-    const { equipmentTrack, estimated1RMs, displayName } = onboardingData;
+    const { equipmentTrack, estimated1RMs, displayName: rawDisplayName } = onboardingData;
+    const displayName = rawDisplayName ? String(rawDisplayName).slice(0, 50) : rawDisplayName;
     // Validate and sanitize 1RMs before storing
     const sanitized1RMs = {};
     if (estimated1RMs) {
@@ -279,8 +280,20 @@ export function ArmorDataProvider({ children }) {
   }, []);
 
   const logWorkout = useCallback((workoutData) => {
+    // Defense-in-depth: truncate notes to 1000 chars
+    const sanitizedWorkoutData = {
+      ...workoutData,
+      notes: workoutData.notes ? String(workoutData.notes).slice(0, 1000) : workoutData.notes,
+      exercises: workoutData.exercises?.map(ex => ({
+        ...ex,
+        sets: ex.sets?.map(s => ({
+          ...s,
+          notes: s.notes ? String(s.notes).slice(0, 1000) : s.notes,
+        })),
+      })),
+    };
     setData(prev => {
-      const newHistory = [...prev.workoutHistory, { ...workoutData, date: workoutData.date || todayStr }];
+      const newHistory = [...prev.workoutHistory, { ...sanitizedWorkoutData, date: sanitizedWorkoutData.date || todayStr }];
       let nextDay = prev.currentCycle.day;
       let nextWeek = prev.currentCycle.week;
       let completedCycles = prev.currentCycle.totalCyclesCompleted;

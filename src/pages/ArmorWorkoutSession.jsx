@@ -12,33 +12,32 @@ import Card from '../components/ui/Card';
 
 /* ── Inner error boundary for the workout session ─────────────── */
 class WorkoutErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false, error: null, stack: null }; }
-  static getDerivedStateFromError(error) { return { hasError: true, error }; }
-  componentDidCatch(error, info) {
-    console.error('[WorkoutErrorBoundary CAUGHT]', error?.message || String(error), error?.stack?.slice(0, 800));
-    this.setState({ stack: info?.componentStack?.slice(0, 1500) || null });
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error) {
+    // Log to console for developer debugging, but do not store in state to avoid UI leakage
+    console.error('[WorkoutErrorBoundary CAUGHT]', error?.message || String(error));
   }
   render() {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full items-center justify-center space-y-4 p-4">
-          <p className="text-slate-400 text-sm">Something went wrong in this set.</p>
-          <p className="text-rose-400 text-xs font-mono break-all">{(this.state.error?.message || String(this.state.error || 'unknown')).slice(0, 300)}</p>
-          {this.state.stack && (
-            <pre className="text-[9px] text-slate-600 text-left max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{this.state.stack}</pre>
-          )}
-          <button
-            onClick={() => this.setState({ hasError: false, error: null, stack: null })}
-            className="px-4 py-2 rounded-xl bg-white/[0.06] text-white text-sm font-semibold"
-          >
-            Try again
-          </button>
-          <button
-            onClick={() => this.props.onSkip?.()}
-            className="px-4 py-2 rounded-xl bg-cyan-500/20 text-cyan-400 text-sm font-semibold"
-          >
-            Skip Set
-          </button>
+          <p className="text-slate-400 text-sm font-medium">An unexpected error occurred in this set.</p>
+          <p className="text-slate-500 text-xs">Your progress is safe. You can try to reload the set or skip it.</p>
+          <div className="flex flex-col w-full gap-2 pt-2">
+            <button
+              onClick={() => this.setState({ hasError: false })}
+              className="px-4 py-3 rounded-xl bg-white/[0.06] text-white text-sm font-semibold active:scale-95 transition-transform"
+            >
+              Try again
+            </button>
+            <button
+              onClick={() => this.props.onSkip?.()}
+              className="px-4 py-3 rounded-xl bg-cyan-500/20 text-cyan-400 text-sm font-semibold active:scale-95 transition-transform"
+            >
+              Skip Set
+            </button>
+          </div>
         </div>
       );
     }

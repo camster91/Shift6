@@ -9,3 +9,7 @@ This journal tracks critical UX and accessibility insights discovered during dev
 ## 2025-06-08 - Accessible Interactive Cards
 **Learning:** Custom interactive elements like Cards implemented with `div` require explicit `role="button"`, `tabIndex={0}`, and manual keyboard event handlers (Enter/Space) to be accessible to keyboard and screen reader users.
 **Action:** Centralize accessibility logic in shared UI components so that enabling an `interactive` prop automatically handles ARIA roles, tabbing, and keyboard triggers.
+
+## 2025-06-09 - Feedback Loops for Daily Habits
+**Learning:** Daily habit completion feels more rewarding when accompanied by subtle visual transitions (like scaling) and proper semantic state updates (`aria-pressed`), which also ensures the interaction is clear for assistive technologies.
+**Action:** Use `aria-pressed` for toggle buttons and pair state changes with subtle transform animations to provide both accessible and delightful feedback.

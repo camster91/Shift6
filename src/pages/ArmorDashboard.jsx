@@ -10,26 +10,12 @@ import PlateVisualizer from '../components/PlateVisualizer';
 import Card from '../components/ui/Card';
 import SectionHeader from '../components/ui/SectionHeader';
 import StatTile from '../components/ui/StatTile';
+import JargonTooltip from '../components/ui/JargonTooltip';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR DASHBOARD v2.0 — Apple HIG design system
    Zero borders. Elevation-based depth. Typographic hierarchy.
    ═══════════════════════════════════════════════════════════ */
-
-// Jargon tooltip helper — wraps a term with an (i) icon
-function JargonTooltip({ term, definition }) {
-  return (
-    <span className="inline-flex items-center gap-0.5">
-      {term}
-      <span
-        className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold text-slate-400 bg-white/[0.06] cursor-help select-none"
-        title={definition}
-      >
-        i
-      </span>
-    </span>
-  );
-}
 
 const PHASE_DEFINITIONS = {
   'Base': 'foundation phase — moderate weight, higher reps, building work capacity',
@@ -117,6 +103,7 @@ function HabitCheck({ habit, done, onToggle }) {
   return (
     <button
       onClick={onToggle}
+      aria-pressed={done}
       className={`armor-press w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
         done
           ? 'bg-emerald-500/8'

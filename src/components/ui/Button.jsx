@@ -34,6 +34,7 @@ const Button = forwardRef(({
   iconRight,
   className = '',
   type = 'button',
+  ...props
 }, ref) => {
   const disabledClass = disabled ? 'opacity-50 pointer-events-none' : '';
 
@@ -50,6 +51,7 @@ const Button = forwardRef(({
         disabledClass,
         className,
       ].join(' ')}
+      {...props}
     >
       {icon && (
         <span className="inline-flex items-center mr-2">

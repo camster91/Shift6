@@ -4,3 +4,4 @@ export { default as StatTile }    from './StatTile.jsx';
 export { default as EmptyState }  from './EmptyState.jsx';
 export { default as PageHeader }  from './PageHeader.jsx';
 export { default as SectionHeader } from './SectionHeader.jsx';
+export { default as JargonTooltip } from './JargonTooltip.jsx';

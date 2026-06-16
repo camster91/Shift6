@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, memo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
@@ -17,7 +17,7 @@ import StatTile from '../components/ui/StatTile';
    ═══════════════════════════════════════════════════════════ */
 
 // Jargon tooltip helper — wraps a term with an (i) icon
-function JargonTooltip({ term, definition }) {
+const JargonTooltip = memo(({ term, definition }) => {
   return (
     <span className="inline-flex items-center gap-0.5">
       {term}
@@ -29,7 +29,8 @@ function JargonTooltip({ term, definition }) {
       </span>
     </span>
   );
-}
+});
+JargonTooltip.displayName = 'JargonTooltip';
 
 const PHASE_DEFINITIONS = {
   'Base': 'foundation phase — moderate weight, higher reps, building work capacity',
@@ -42,7 +43,7 @@ function phaseDefinition(phase) {
   return PHASE_DEFINITIONS[phase] || phase;
 }
 
-function CycleProgress({ week, day, totalCyclesCompleted }) {
+const CycleProgress = memo(({ week, day, totalCyclesCompleted }) => {
   const weekConfig = getWeekConfig(week);
   const totalDays = 30;
   const done = (week - 1) * 5 + Math.min(day - 1, 4);
@@ -69,23 +70,24 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
       </div>
     </Card>
   );
-}
+});
+CycleProgress.displayName = 'CycleProgress';
 
-function ModifierRow({ activeModifiers, onToggle }) {
-  const entries = Object.values(MODIFIERS);
-  // Short display labels to prevent truncation on390px viewports
-  const labelOverride = {
-    mvdMode: 'MVD',
-    travelMode: 'Travel',
- };
+const MODIFIER_ENTRIES = Object.values(MODIFIERS);
+const MODIFIER_LABEL_OVERRIDES = {
+  mvdMode: 'MVD',
+  travelMode: 'Travel',
+};
+
+const ModifierRow = memo(({ activeModifiers, onToggle }) => {
   return (
     <div>
       <SectionHeader icon={<Zap size={10} />} label="Protocols" />
       <div className="relative">
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {entries.map(mod => {
+          {MODIFIER_ENTRIES.map(mod => {
             const active = activeModifiers[mod.id];
-            const label = labelOverride[mod.id] ?? mod.label;
+            const label = MODIFIER_LABEL_OVERRIDES[mod.id] ?? mod.label;
             return (
               <button
                 key={mod.id}
@@ -111,12 +113,13 @@ function ModifierRow({ activeModifiers, onToggle }) {
       </div>
     </div>
   );
-}
+});
+ModifierRow.displayName = 'ModifierRow';
 
-function HabitCheck({ habit, done, onToggle }) {
+const HabitCheck = memo(({ habit, habitId, done, onToggle }) => {
   return (
     <button
-      onClick={onToggle}
+      onClick={() => onToggle(habitId)}
       className={`armor-press w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
         done
           ? 'bg-emerald-500/8'
@@ -141,7 +144,8 @@ function HabitCheck({ habit, done, onToggle }) {
       </span>
     </button>
   );
-}
+});
+HabitCheck.displayName = 'HabitCheck';
 
 /* ── MAIN DASHBOARD ────────────────────────────────────────── */
 
@@ -162,6 +166,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
     getTodaysWorkout(effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs),
     [effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs]);
   const dailyHabits = useMemo(() => getDailyHabits(activeModifiers), [activeModifiers]);
+  const express10 = useMemo(() => get10MinWorkout(effectiveTrack), [effectiveTrack]);
   const todayDone = todaysWorkoutCompleted || isMVDToday;
   const isMVD = activeModifiers.mvdMode;
 
@@ -171,12 +176,15 @@ export default function ArmorDashboard({ onStartWorkout }) {
   const streak = streakData.currentStreak || 0;
   const unit = preferences.unit || 'lbs';
 
-  // Filter 1RMs to the active track only
-  const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
-  const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
-  const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
-  const allTrack1RMsZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
-  const displayTop1RM = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
+  // PERFORMANCE: Memoize 1RM filtering and display formatting
+  const { displayTop1RM, allTrack1RMsZero } = useMemo(() => {
+    const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
+    const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
+    const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
+    const allZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
+    const display = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
+    return { displayTop1RM: display, allTrack1RMsZero: allZero };
+  }, [effectiveTrack, estimated1RMs, unit]);
 
   return (
     <div className="pb-32 space-y-5 max-w-lg mx-auto">
@@ -375,29 +383,24 @@ export default function ArmorDashboard({ onStartWorkout }) {
           </Card>
 
             {/* 10-Minute Express card */}
-            {(() => {
-              const express10 = get10MinWorkout(effectiveTrack);
-              return (
-                <Card padded={false} className="bg-white/[0.03] border border-white/[0.06] p-4">
-                  <div className="flex items-center gap-3">
-                    <span style={{ fontSize: '24px' }}>⚡</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-white">{express10.name}</p>
-                      <p className="text-[11px] text-slate-400">No time? 2 sets + a quick circuit</p>
-                    </div>
-                    {!todayDone && (
-                      <button
-                        onClick={onStartWorkout}
-                        className="armor-press px-4 py-2 rounded-full text-xs font-bold text-white"
-                        style={{ background: 'var(--color-accent)' }}
-                      >
-                        Start express
-                      </button>
-                    )}
-                  </div>
-                </Card>
-              );
-            })()}
+            <Card padded={false} className="bg-white/[0.03] border border-white/[0.06] p-4">
+              <div className="flex items-center gap-3">
+                <span style={{ fontSize: '24px' }}>⚡</span>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-white">{express10.name}</p>
+                  <p className="text-[11px] text-slate-400">No time? 2 sets + a quick circuit</p>
+                </div>
+                {!todayDone && (
+                  <button
+                    onClick={onStartWorkout}
+                    className="armor-press px-4 py-2 rounded-full text-xs font-bold text-white"
+                    style={{ background: 'var(--color-accent)' }}
+                  >
+                    Start express
+                  </button>
+                )}
+              </div>
+            </Card>
 
             {/* 0-lbs nudge — shown when all active-track 1RMs are 0 */}
             {allTrack1RMsZero && (
@@ -420,8 +423,9 @@ export default function ArmorDashboard({ onStartWorkout }) {
             <div key={habit.id} className="armor-entrance" style={{ animationDelay: `${0.05 * i}s` }}>
               <HabitCheck
                 habit={habit}
+                habitId={habit.id}
                 done={dailyHabitState[habit.id] || false}
-                onToggle={() => toggleHabit(habit.id)}
+                onToggle={toggleHabit}
               />
             </div>
           ))}

@@ -317,6 +317,11 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
   const [customQueue, setCustomQueue] = useState(null); // null = use prop-derived queue
+  // Single-flight lock to prevent double-counting a set on rapid taps
+  // (e.g. the user mashes the Complete button faster than React can
+  // commit the previous state). Resets on the next render.
+  const [completingSet, setCompletingSet] = useState(false);
+  const justCompletedTimerRef = useRef(null);
 
   // Build swap alternatives from SPLIT_DAYS based on current exercise body part
   const swapAlts = useMemo(() => {
@@ -354,31 +359,60 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, timer.timeLeft, timer.running]);
 
+  // Clear the "just completed" celebration timer on unmount so we don't
+  // call setState on a torn-down component (B-5 follow-up).
+  useEffect(() => () => {
+    if (justCompletedTimerRef.current) clearTimeout(justCompletedTimerRef.current);
+  }, []);
+
   const handleCompleteSet = useCallback(() => {
+    // Reject double-taps that slip through React's batching. Without this,
+    // a rapid second click on the Complete button will read the stale
+    // setNum and append a duplicate set to completedSets.
+    if (completingSet) return;
+    setCompletingSet(true);
     try {
-      if (!currentEx) return;
-      HAPTIC.heavy();
-      setCompletedSets(prev => [...prev, { exerciseId: currentEx.exerciseId, set: setNum, reps: currentEx.reps, weight: currentEx.weight, notes }]);
-      setJustCompleted(true);
-      setTimeout(() => setJustCompleted(false), 600);
-
-      // Check for PR on primary lift final set
-      if (currentEx.type === 'primary' && setNum === totalSets) {
-        checkPR(currentEx.exerciseId, currentEx.weight, currentEx.reps);
-      }
-
-      if (setNum >= totalSets) {
-        if (exIdx < activeQueue.length - 1) { setExIdx(prev => prev + 1); }
-        else { setPhase('done'); HAPTIC.success(); }
-      } else {
-        setSetNum(prev => prev + 1); setPhase('rest');
-        timer.reset(restSecs); timer.start();
-      }
+      // Read current setNum via the functional updater below so we get
+      // the post-render value, not the closure's stale value.
+      setSetNum(prevSetNum => {
+        const currentSetNum = prevSetNum;
+        setCompletedSets(prev => [
+          ...prev,
+          { exerciseId: currentEx.exerciseId, set: currentSetNum, reps: currentEx.reps, weight: currentEx.weight, notes },
+        ]);
+        // PR check on final set of the primary lift
+        if (currentEx.type === 'primary' && currentSetNum === totalSets) {
+          checkPR(currentEx.exerciseId, currentEx.weight, currentEx.reps);
+        }
+        // Advance setNum or move to next exercise
+        if (currentSetNum >= totalSets) {
+          if (exIdx < activeQueue.length - 1) {
+            setExIdx(prev => prev + 1);
+            return 1; // reset for the next exercise's first set
+          } else {
+            setPhase('done');
+            HAPTIC.success();
+            return currentSetNum;
+          }
+        } else {
+          setPhase('rest');
+          timer.reset(restSecs);
+          timer.start();
+          return currentSetNum + 1;
+        }
+      });
       setNotes('');
+      setJustCompleted(true);
+      if (justCompletedTimerRef.current) clearTimeout(justCompletedTimerRef.current);
+      justCompletedTimerRef.current = setTimeout(() => setJustCompleted(false), 600);
     } catch (e) {
       console.warn('[ArmorWorkout] handleCompleteSet error:', e);
+    } finally {
+      // Release the lock on the next tick so the user can complete the
+      // next set. Microtask is enough — React 18 will have flushed.
+      queueMicrotask(() => setCompletingSet(false));
     }
-  }, [setNum, currentEx, totalSets, exIdx, activeQueue.length, timer, restSecs, notes, checkPR]);
+  }, [completingSet, currentEx, totalSets, exIdx, activeQueue.length, timer, restSecs, notes, checkPR]);
 
   const handleFinish = useCallback(() => {
     HAPTIC.medium();

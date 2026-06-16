@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef, us
 import {
   fetchCloud, pushCloud, isLoggedIn,
 } from '../lib/syncClient';
+import { computeStreak, rollover1RMs } from '../data/armorEngine';
 
 /**
  * ArmorDataContext — Shared state provider with cloud sync.
@@ -58,40 +59,6 @@ const DEFAULT_DATA = {
     lastActiveDate: null, mvdDates: [], freezesAvailable: 1,
   },
 };
-
-function computeStreak(workoutHistory, mvdDates, freezesAvailable, previousLongest = 0) {
-  const allActiveDates = new Set();
-  workoutHistory.forEach(w => { if (w.completed) allActiveDates.add(w.date); });
-  mvdDates.forEach(d => allActiveDates.add(d));
-  const sorted = [...allActiveDates].sort().reverse();
-  if (sorted.length === 0) return { currentStreak: 0, longestStreak: previousLongest };
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-  if (sorted[0] !== today && sorted[0] !== yesterday) return { currentStreak: 0, longestStreak: previousLongest };
-  let streak = 1;
-  let freezesRemaining = freezesAvailable;
-  let prevDate = new Date(sorted[0]);
-  for (let i = 1; i < sorted.length; i++) {
-    const currDate = new Date(sorted[i]);
-    const dayDiff = Math.round((prevDate - currDate) / 86400000);
-    if (dayDiff === 1) { streak++; prevDate = currDate; }
-    else if (dayDiff === 2 && freezesRemaining > 0) { freezesRemaining--; streak++; prevDate = currDate; }
-    else break;
-  }
-  return { currentStreak: streak, longestStreak: Math.max(streak, previousLongest) };
-}
-
-function rollover1RMs(estimated1RMs) {
-  const UPPER = ['bench_press', 'incline_bench', 'dumbbell_press', 'shoulder_press', 'arnold_press'];
-  const LOWER = ['barbell_squat', 'goblet_squat', 'deadlift', 'romanian_deadlift', 'hip_thrusts', 'leg_press'];
-  const updated = { ...estimated1RMs };
-  for (const [key, val] of Object.entries(updated)) {
-    if (val <= 0) continue;
-    if (LOWER.includes(key)) updated[key] = val + 10;
-    else if (UPPER.includes(key)) updated[key] = val + 5;
-  }
-  return updated;
-}
 
 const ArmorDataContext = createContext(null);
 

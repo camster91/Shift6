@@ -23,10 +23,7 @@ class WorkoutErrorBoundary extends React.Component {
       return (
         <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full items-center justify-center space-y-4 p-4">
           <p className="text-slate-400 text-sm">Something went wrong in this set.</p>
-          <p className="text-rose-400 text-xs font-mono break-all">{(this.state.error?.message || String(this.state.error || 'unknown')).slice(0, 300)}</p>
-          {this.state.stack && (
-            <pre className="text-[9px] text-slate-600 text-left max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{this.state.stack}</pre>
-          )}
+          <p className="text-slate-400 text-[11px]">This error has been logged. You can try reloading or skip this set to continue.</p>
           <button
             onClick={() => this.setState({ hasError: false, error: null, stack: null })}
             className="px-4 py-2 rounded-xl bg-white/[0.06] text-white text-sm font-semibold"

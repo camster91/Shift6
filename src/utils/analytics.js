@@ -1,12 +1,15 @@
 import ReactGA from 'react-ga4';
 
-const GA_ID = 'G-MEASUREMENT_ID'; // Replace with real GA4 ID when ready
+// GA4 ID is read from Vite env at build time. If unset, analytics stays
+// disabled and the SDK adds nothing to the runtime. The PLACEHOLDER_GA_ID
+// string is the only init gate; never ship a real ID by committing one.
+const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'PLACEHOLDER_GA_ID';
 let initialized = false;
 
 export function initAnalytics(measurementId) {
   if (initialized) return;
   const id = measurementId || GA_ID;
-  if (id && id !== 'G-MEASUREMENT_ID') {
+  if (id && id !== 'PLACEHOLDER_GA_ID' && id !== 'G-MEASUREMENT_ID') {
     ReactGA.initialize(id);
     initialized = true;
   }

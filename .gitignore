@@ -39,6 +39,7 @@ android/shift6-release.keystore
 *.apk
 
 .jules/
+.git-rewrite/
 
 # Landing page submodule
 src/landing/node_modules

@@ -166,14 +166,12 @@ export function ArmorDataProvider({ children }) {
     const { totalCyclesCompleted } = data.currentCycle;
     const has1RMs = Object.values(data.userProfile.estimated1RMs).some(v => v > 0);
     return !!displayName || totalCyclesCompleted > 0 || has1RMs;
+    // Intentionally use only the leaf fields we read. Depending on
+    // `data.userProfile` or `data.currentCycle` would re-run the memo on
+    // every unrelated field change in those objects. The exhaustive-deps
+    // rule is wrong here on purpose.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.userProfile.displayName, data.currentCycle.totalCyclesCompleted,
-      data.userProfile.estimated1RMs.barbell_squat,
-      data.userProfile.estimated1RMs.bench_press,
-      data.userProfile.estimated1RMs.deadlift,
-      data.userProfile.estimated1RMs.goblet_squat,
-      data.userProfile.estimated1RMs.dumbbell_press,
-      data.userProfile.estimated1RMs.romanian_deadlift]);
+  }, [data.userProfile.displayName, data.userProfile.estimated1RMs, data.currentCycle.totalCyclesCompleted]);
 
   const habitsNeedReset = data.dailyHabitState.dateString !== todayStr;
 
@@ -395,6 +393,30 @@ export function migrateFromShift6() {
     const oldSettings = load('shift6_settings', null);
     const oldOnboarding = load('shift6_onboarding_done', false);
     if (!oldOnboarding) return null;
-    return { ...DEFAULT_DATA, preferences: { ...DEFAULT_DATA.preferences, equipmentTrack: oldSettings?.equippedIds?.includes('barbell') ? 'full_gym' : 'home_gym' } };
+    // Read the user's REAL 1RMs from old Shift6 data instead of returning
+    // all zeros (or hardcoded placeholders). Preserves whatever they set.
+    const old1RMs = oldSettings?.estimated1RMs || oldSettings?.oneRMs || {};
+    return {
+      ...DEFAULT_DATA,
+      userProfile: {
+        ...DEFAULT_DATA.userProfile,
+        displayName: oldSettings?.displayName || '',
+        estimated1RMs: {
+          ...DEFAULT_DATA.userProfile.estimated1RMs,
+          barbell_squat: old1RMs.barbell_squat || old1RMs.squat || 0,
+          bench_press: old1RMs.bench_press || old1RMs.bench || 0,
+          deadlift: old1RMs.deadlift || 0,
+          barbell_row: old1RMs.barbell_row || 0,
+          shoulder_press: old1RMs.shoulder_press || 0,
+          goblet_squat: old1RMs.goblet_squat || 0,
+          dumbbell_press: old1RMs.dumbbell_press || 0,
+          romanian_deadlift: old1RMs.romanian_deadlift || 0,
+        },
+      },
+      preferences: {
+        ...DEFAULT_DATA.preferences,
+        equipmentTrack: oldSettings?.equippedIds?.includes('barbell') ? 'full_gym' : 'home_gym',
+      },
+    };
   } catch { return null; }
 }

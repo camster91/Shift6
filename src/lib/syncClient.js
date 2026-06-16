@@ -1,7 +1,14 @@
 /**
  * Armor Sync Client — Bridges the local-first ArmorDataContext to a remote
- * backend (Supabase/Postgres via Fastify API). Last-write-wins conflict
- * resolution using a monotonic revision counter.
+ * backend (Fastify + Postgres). Last-write-wins conflict resolution using
+ * a monotonic revision counter.
+ *
+ * Cross-repo: this client expects a sibling repo `armor-sync-api` to be
+ * running and reachable at DEFAULT_API_BASE. The API repo is NOT a part of
+ * this project — see the `armor-sync-api` package on the same GitHub
+ * account for the server side. Until the sync API is deployed, the
+ * ArmorAccount UI in `src/pages/ArmorAccount.jsx` will fail to register
+ * or log in. The rest of the app is fully functional without it.
  *
  * Storage keys for auth state — separate from `armor_data` to keep the
  * auth metadata out of the synced payload.

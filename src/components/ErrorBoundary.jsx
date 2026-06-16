@@ -11,7 +11,7 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('Shift6 ErrorBoundary caught:', error, errorInfo);
+    console.error('Armor ErrorBoundary caught:', error, errorInfo);
   }
 
   handleReload = () => {

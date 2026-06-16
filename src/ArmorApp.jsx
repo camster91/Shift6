@@ -5,10 +5,14 @@ import {
 import { useArmorData } from './context/ArmorDataContext';
 import ArmorDashboard from './pages/ArmorDashboard';
 const ArmorWorkoutSession = lazy(() => import('./pages/ArmorWorkoutSession'));
+// Account page is lazy-loaded so the cloud-sync bundle (~12KB of syncClient
+// + form code) is only fetched when the user actually opens the Account tab.
+// When VITE_SYNC_ENABLED is not set, the tab is hidden and this chunk is
+// never downloaded.
+const ArmorAccount = lazy(() => import('./pages/ArmorAccount'));
 import ArmorOnboarding from './pages/ArmorOnboarding';
 import ArmorSettings from './pages/ArmorSettings';
 import ArmorProgress from './pages/ArmorProgress';
-import ArmorAccount from './pages/ArmorAccount';
 import UpdatePrompt from './components/UpdatePrompt';
 import FirstRunTour from './components/FirstRunTour';
 
@@ -24,7 +28,14 @@ import FirstRunTour from './components/FirstRunTour';
 const TAB_BAR = [
   { id: 'home', label: 'Today', icon: Play },
   { id: 'progress', label: 'Progress', icon: BarChart3 },
-  { id: 'account', label: 'Account', icon: User },
+  // Cloud sync is a future feature. The Account tab is hidden by default
+  // and only appears when the app is built with VITE_SYNC_ENABLED=1.
+  // The sync code in src/lib/syncClient.js and the ArmorAccount page are
+  // preserved and functional, but they call sync.getshift6.com which has
+  // no live backend yet. Setting the env var is opt-in.
+  ...(import.meta.env.VITE_SYNC_ENABLED === '1' || import.meta.env.VITE_SYNC_ENABLED === 'true'
+    ? [{ id: 'account', label: 'Account', icon: User }]
+    : []),
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -44,14 +55,30 @@ export default function ArmorApp() {
   // Check for Shift6 migration on first load
   useEffect(() => {
     if (!onboardingDone && !migrated.current) {
+      const migrationMarker = (() => { try { return localStorage.getItem('armor_migrated_from_shift6'); } catch { return null; } })();
+      if (migrationMarker) return;
       const oldOnboarding = (() => { try { const v = localStorage.getItem('shift6_onboarding_done'); return v ? JSON.parse(v) : false; } catch { return false; } })();
       if (oldOnboarding) {
         const oldSettings = (() => { try { const v = localStorage.getItem('shift6_settings'); return v ? JSON.parse(v) : null; } catch { return null; } })();
+        // Read the user's REAL 1RMs from old Shift6 data instead of overwriting
+        // with hardcoded defaults. The 185/135/225 placeholders previously
+        // shipped here were silent data loss for anyone who set real numbers.
+        const old1RMs = oldSettings?.estimated1RMs || oldSettings?.oneRMs || {};
         completeOnboarding({
           equipmentTrack: oldSettings?.equippedIds?.includes('barbell') ? 'full_gym' : 'home_gym',
-          estimated1RMs: { barbell_squat: 185, bench_press: 135, deadlift: 225 },
+          estimated1RMs: {
+            barbell_squat: old1RMs.barbell_squat || old1RMs.squat || 0,
+            bench_press: old1RMs.bench_press || old1RMs.bench || 0,
+            deadlift: old1RMs.deadlift || 0,
+            barbell_row: old1RMs.barbell_row || 0,
+            shoulder_press: old1RMs.shoulder_press || 0,
+            goblet_squat: old1RMs.goblet_squat || 0,
+            dumbbell_press: old1RMs.dumbbell_press || 0,
+            romanian_deadlift: old1RMs.romanian_deadlift || 0,
+          },
           displayName: oldSettings?.displayName || 'Athlete',
         });
+        try { localStorage.setItem('armor_migrated_from_shift6', '1'); } catch {}
         migrated.current = true;
       }
     }
@@ -133,7 +160,11 @@ export default function ArmorApp() {
               </>
             )}
             {activeTab === 'progress' && <ArmorProgress />}
-            {activeTab === 'account' && <ArmorAccount />}
+            {activeTab === 'account' && (
+              <Suspense fallback={null}>
+                <ArmorAccount />
+              </Suspense>
+            )}
             {activeTab === 'settings' && <ArmorSettings />}
           </>
         )}

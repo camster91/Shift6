@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Save, Sun, Moon, Trash2 } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { EQUIPMENT_TRACKS, EXERCISE_TRACK, EXERCISE_DISPLAY_NAMES, getWeekConfig } from '../data/armorEngine';
@@ -23,18 +23,33 @@ function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
   const [v, setV] = useState(String(value));
   const [saved, setSaved] = useState(false);
   const empty = !value;
+  const savedTimerRef = useRef(null);
 
   const displayVal = unit === 'kg' ? Math.round(value / 2.20462) : value;
 
-  const handleSave = (numValue) => {
-    const saveVal = unit === 'kg' ? Math.round(numValue * 2.20462) : numValue;
+  // Parse + validate the input. Accepts decimals (kg mode) and integers (lbs mode).
+  // Negative or non-numeric input is rejected with no save.
+  const handleSave = (rawValue) => {
+    const num = parseFloat(rawValue);
+    if (!Number.isFinite(num) || num < 0 || num > 9999) {
+      setEditing(false);
+      return;
+    }
+    // Drop fractional lbs (would be a fake 224.7 lb squat), keep fractional kg.
+    const clean = unit === 'lbs' ? Math.round(num) : Math.round(num * 100) / 100;
+    const saveVal = unit === 'kg' ? Math.round(clean * 2.20462) : clean;
     onSave(saveVal);
     setEditing(false);
-    if (numValue) {
+    if (clean > 0) {
       setSaved(true);
-      setTimeout(() => setSaved(false), 1200);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSaved(false), 1200);
     }
   };
+
+  useEffect(() => () => {
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+  }, []);
 
   return (
     <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }}>
@@ -45,11 +60,12 @@ function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
         <div className="flex items-center gap-2">
           <input
             type="number" value={v} onChange={e => setV(e.target.value)} autoFocus
-            onKeyDown={e => e.key === 'Enter' && handleSave(parseInt(v) || 0)}
+            min="0" max="9999" step={unit === 'kg' ? '0.5' : '1'}
+            onKeyDown={e => e.key === 'Enter' && handleSave(v)}
             className="w-20 text-right rounded-lg px-2 py-1 text-sm font-bold text-white outline-none tabular-nums"
             style={{ background: 'rgba(255,255,255,0.05)' }}
           />
-          <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => handleSave(parseInt(v) || 0)} />
+          <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => handleSave(v)} />
         </div>
       ) : (
         <button onClick={() => { setV(String(displayVal || '')); setEditing(true); }}

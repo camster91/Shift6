@@ -314,18 +314,20 @@ export function getTodaysWorkout(track, cycleDay, cycleWeek, modifiers = {}, est
   }
 
   // Calculate primary lift
+  // Travel mode: always show the substituted bodyweight move even when
+  // there's no 1RM for the substitute (the substitute IS a bodyweight
+  // exercise, so no 1RM lookup is meaningful).
   let primaryLift = null;
-  if (dayConfig.primary && estimated1RMs[dayConfig.primary]) {
-    if (modifiers.travelMode) {
-      // Travel: frozen progression, bodyweight focus
-      primaryLift = {
-        exerciseId: dayConfig.primary,
-        sets: 3,
-        reps: 'AMRAP', // as many reps as possible
-        weight: 0,
-        phase: 'Travel Maintenance',
-      };
-    } else if (modifiers.mvdMode) {
+  if (modifiers.travelMode && dayConfig.primary) {
+    primaryLift = {
+      exerciseId: dayConfig.primary,
+      sets: 3,
+      reps: 'AMRAP', // as many reps as possible
+      weight: 0,
+      phase: 'Travel Maintenance',
+    };
+  } else if (dayConfig.primary && estimated1RMs[dayConfig.primary]) {
+    if (modifiers.mvdMode) {
       // MVD is a self-contained circuit — return the protocol shape directly
       return {
         name: 'Minimum Viable Day',

@@ -453,18 +453,19 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         <div>
           <h2 className="armor-text-large-title mb-1">Workout Complete</h2>
           <p className="armor-text-footnote">
-            {completedSets.length} sets · {totalVolume > 0 ? `${totalVolume.toLocaleString()} lbs` : 'Great work'}
+            {completedSets.length} sets · {totalVolume > 0 ? `${(unit === 'kg' ? Math.round(totalVolume / 2.20462) : totalVolume).toLocaleString()} ${unit}` : 'Great work'}
           </p>
         </div>
         <div className="w-full space-y-1.5">
           {activeQueue.map((ex, i) => {
             const exSets = completedSets.filter(s => s.exerciseId === ex.exerciseId);
             if (!exSets.length) return null;
+            const displayWeight = unit === 'kg' ? Math.round(ex.weight / 2.20462) : ex.weight;
             return (
               <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03]">
                 <div className="text-left">
                   <p className="text-sm font-semibold text-white capitalize">{ex.exerciseId?.replace(/_/g, ' ')}</p>
-                  <p className="text-[11px] text-slate-400">{exSets.length} sets × {ex.reps} reps @ {ex.weight}lbs</p>
+                  <p className="text-[11px] text-slate-400">{exSets.length} sets × {ex.reps} reps @ {displayWeight}{unit}</p>
                 </div>
                 <span className="text-[11px] font-bold text-slate-400">{ex.type === 'primary' ? weekConfig.phase : 'Acc'}</span>
               </div>
@@ -586,7 +587,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         </div>
         {!showZeroLbsNudge && unit !== 'kg' && currentEx.weight > 0 && (
           <div className="mt-4 pt-4 border-t border-white/[0.06]">
-            <PlateVisualizer weight={currentEx.weight} track={track} />
+            <PlateVisualizer weight={currentEx.weight} track={track} unit={unit} />
           </div>
         )}
       </Card>

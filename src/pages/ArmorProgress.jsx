@@ -84,7 +84,7 @@ function StreakRing({ streak, best }) {
   );
 }
 
-function VolumeBar({ history }) {
+function VolumeBar({ history, unit }) {
   const data = useMemo(() => {
     const days = [];
     const today = new Date();
@@ -105,7 +105,7 @@ function VolumeBar({ history }) {
     <div className="armor-surface-1 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <p className="armor-text-caption">Last 7 Days · Volume</p>
-        <p className="text-[11px] text-slate-400">lbs lifted</p>
+        <p className="text-[11px] text-slate-400">{unit} lifted</p>
       </div>
       <div className="flex items-end gap-1.5 h-24">
         {data.days.map((v, i) => {
@@ -244,7 +244,8 @@ function TimeRangeToggle({ value, onChange }) {
 }
 
 export default function ArmorProgress() {
-  const { currentCycle, workoutHistory, streakData, estimated1RMs, dailyHabitState } = useArmorData();
+  const { currentCycle, workoutHistory, streakData, estimated1RMs, dailyHabitState, preferences } = useArmorData();
+  const unit = preferences.unit || 'lbs';
   const weekConfig = getWeekConfig(currentCycle.week);
   const [timeRange, setTimeRange] = useState('30d');
 
@@ -427,7 +428,7 @@ export default function ArmorProgress() {
           <Card className="opacity-50">
             <div className="flex items-center justify-between">
               <p className="armor-text-caption text-slate-400">Last 7 Days · Volume</p>
-              <p className="text-[11px] text-slate-400">lbs lifted</p>
+              <p className="text-[11px] text-slate-400">{unit} lifted</p>
             </div>
             <div className="flex items-end gap-1.5 h-24">
               {[40, 60, 30, 70, 50, 80, 45].map((h, i) => (
@@ -504,12 +505,12 @@ export default function ArmorProgress() {
         <StreakRing streak={streakData.currentStreak} best={streakData.longestStreak} />
 
         {/* Volume Chart */}
-        <VolumeBar history={workoutHistory} />
+        <VolumeBar history={workoutHistory} unit={unit} />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-2">
           <Stat label="This Week" value={thisWeekWorkouts.length} sub="sessions" accent="var(--color-accent)" />
-          <Stat label="Weekly Volume" value={`${(weeklyVolume / 1000).toFixed(1)}k`} sub="lbs" accent="var(--color-success)" />
+          <Stat label="Weekly Volume" value={`${(weeklyVolume / 1000).toFixed(1)}k`} sub={unit} accent="var(--color-success)" />
           <Stat label="Total Sets" value={workoutHistory.reduce((s, w) => s + (w.exercises || []).reduce((es, ex) => es + (ex.sets || []).length, 0), 0)} accent="var(--color-cardio)" />
           <Stat label="Cycles" value={currentCycle.totalCyclesCompleted} sub="completed" accent="var(--color-warning)" />
         </div>
@@ -526,8 +527,8 @@ export default function ArmorProgress() {
                     style={{ borderTop: i > 0 ? '0.5px solid rgba(255,255,255,0.04)' : 'none' }}>
                     <span className="text-[10px] font-bold text-slate-400 w-4 tabular-nums">{i + 1}</span>
                     <span className="text-sm font-medium text-white flex-1 capitalize">{id.replace(/_/g, ' ')}</span>
-                    <span className="text-sm font-black text-cyan-400 tabular-nums">{val}</span>
-                    <span className="text-[10px] text-slate-400">lbs</span>
+                    <span className="text-sm font-black text-cyan-400 tabular-nums">{unit === 'kg' ? Math.round(val / 2.20462) : val}</span>
+                    <span className="text-[10px] text-slate-400">{unit}</span>
                     <div className="w-12 h-1 bg-white/[0.04] rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${(val / max) * 100}%`, background: 'var(--color-accent)' }} />
                     </div>

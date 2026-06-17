@@ -35,8 +35,22 @@ const DUMBBELL_HEADS = [
   { weight: 5,  color: '#64748b', size: 30 },
 ];
 
-export default function PlateVisualizer({ weight, track = 'full_gym', compact = false }) {
+export default function PlateVisualizer({ weight, track = 'full_gym', compact = false, unit = 'lbs' }) {
   if (!weight || weight <= 0) return null;
+
+  // The plate math here is hardcoded to lbs (US gym conventions:
+  // 45/35/25/10/5/2.5 plates, 45 lb barbell, 5-50 lb dumbbell set). For
+  // kg users we surface the raw weight and skip the visualizer — the
+  // bar/plate SVG would show wrong equipment for a European gym.
+  if (unit === 'kg') {
+    return (
+      <div className={`flex ${compact ? 'flex-row items-center gap-3' : 'flex-col items-center gap-2'} mt-1`}>
+        {!compact && <p className="armor-text-caption">Loaded</p>}
+        <p className="text-sm font-bold text-cyan-400 tabular-nums">{weight} kg</p>
+        {!compact && <p className="text-[11px] text-slate-500">Plate math is US-standard (lbs)</p>}
+      </div>
+    );
+  }
 
   if (track === 'home_gym') {
     const head = DUMBBELL_HEADS.find(h => h.weight === weight)

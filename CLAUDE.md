@@ -10,14 +10,14 @@ A Capacitor (React + Vite) fitness PWA. 6-week periodization with two equipment 
 - Tailwind CSS 3 (styling)
 - Capacitor 8 (iOS + Android wrapper)
 - PWA via vite-plugin-pwa
-- vitest + jsdom (testing, 60 tests in src/data/)
+- vitest + jsdom (testing, 70 tests in src/data/)
 - ESLint 9 flat config
 - Bundle ID: `com.shift6.app`
 
 ## Live URLs
 
-- Web: https://getshift6.com
-- Marketing site: https://getshift6.com/ (same origin, separate src/landing/ build)
+- Web: https://getshift6.com (apex)
+- Web: https://www.getshift6.com (www)
 - Cloud sync (planned): https://sync.getshift6.com — **not deployed yet**, the Account tab is hidden by default
 
 ## Key files
@@ -27,9 +27,13 @@ A Capacitor (React + Vite) fitness PWA. 6-week periodization with two equipment 
 - `src/data/armorEngine.js` — **Pure functions** for periodization, plate math, modifiers. This is the math the user trusts — treat regressions as blocking.
 - `src/data/armorEngine.test.js` — 47 tests covering the math
 - `src/data/armorEngine.context.test.js` — 13 tests for the context helpers (`computeStreak`, `rollover1RMs`)
+- `src/data/armorEngine.unit.test.js` — 10 tests for the lb/kg display conversion
 - `src/lib/syncClient.js` — Optional cloud sync client (Fastify + Postgres backend, not deployed)
 - `src/pages/ArmorWorkoutSession.jsx` — Strength / VO2 / MVD / rest timer / plate visualizer
 - `src/pages/ArmorSettings.jsx` — 1RM editor, theme, unit, modifiers
+- `ops/traefik-guard.sh` — cron guard for the getshift6.com Traefik route
+- `ops/caddy-removal-guard.sh` — fleet-wide Traefik health + caddy-decommissioned assertions
+- `ops/armor-serve.cjs` — custom Node static server (used because serve@14 --single masks the privacy page)
 - `store-assets/` — App Store listing, screenshots, feature graphic, privacy policy
 - `android/shift6-release.keystore` — release signing key (NEVER commit a password)
 
@@ -44,18 +48,48 @@ npm run cap:android  # build + open Android Studio
 npm run cap:ios      # build + open Xcode
 ```
 
+## Deploy
+
+VPS: 187.77.26.99 (coolify). Architecture as of 2026-06-17:
+
+```
+internet → Traefik (:80/:443) → armor-web (node:20-alpine, port 127.0.0.1:3003)
+                                 Traefik also handles HSTS, CSP, and the other
+                                 16 fleet sites (simaqadeer, lull, splashtown,
+                                 jwhabits, markup, hub, animals, photogen,
+                                 contractions, arcan-painting, lull-relay,
+                                 ai-billing-audit, artisan, relay, status).
+```
+
+**Caddy is decommissioned.** It was the original edge proxy but the fleet migrated to Traefik in June 2026. The `caddy.service` systemd unit is masked. The Caddy binary at `/usr/local/bin/caddy` is kept only so legacy deploy scripts that call `caddy validate` get a real "not configured" error instead of `command not found`. Do not add new Caddyfile routes — add a Traefik entry in `/opt/traefik/dynamic/routers.yml` instead.
+
+### To deploy a new build
+
+```bash
+# Local
+npm run build
+tar -czf /tmp/armor-dist.tar.gz -C dist .
+cat /tmp/armor-dist.tar.gz | ssh root@187.77.26.99 'cat > /tmp/armor-dist.tar.gz'
+
+# Remote
+ssh root@187.77.26.99
+mkdir -p /opt/armor-live
+cd /opt/armor-live && tar xzf /tmp/armor-dist.tar.gz
+docker restart armor-web
+```
+
+### To add a new Traefik route (manual or scripted)
+
+See `ops/traefik-guard.sh` for an example. Routes go in `/opt/traefik/dynamic/routers.yml`. Traefik watches the file and reloads on change — no restart needed.
+
 ## DO NOT
 
 - Do NOT commit a real keystore password. Use `RELEASE_STORE_PASSWORD` env var.
 - Do NOT log workout data to the console in production. The ErrorBoundary logs are debug only.
-- Do NOT change the build pack in Coolify (currently nixpacks).
+- Do NOT add new Caddyfile routes. Use Traefik.
 - Do NOT add a server/ directory back. The cloud sync is a sibling repo.
 - Do NOT call `VITE_SYNC_ENABLED` from anywhere but the App shell. The flag gates the Account tab; the sync code itself runs whether the flag is on or off (no-op when not logged in).
 - Do NOT use the placeholder `G-MEASUREMENT_ID` analytics ID. The init function rejects it; use `VITE_GA_MEASUREMENT_ID` at build time.
-
-## Deploy
-
-VPS: 187.77.26.99 (coolify). Live container: `armor-web` on `127.0.0.1:3003` (node:20-alpine + serve@14). Caddy site block in `/opt/caddy/Caddyfile` covers `getshift6.com` and `www.getshift6.com`. Restart Caddy with `systemctl restart caddy` (admin API is off, so reload silently fails — but systemd restart works).
 
 ## App Store assets
 

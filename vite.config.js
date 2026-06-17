@@ -26,10 +26,17 @@ export default defineConfig({
         react(),
         VitePWA({
             registerType: 'autoUpdate',
-            includeAssets: ['pwa-192x192.png', 'pwa-512x512.png', 'privacy-policy.html'],
+            includeAssets: ['pwa-192x192.png', 'pwa-512x512.png', 'privacy-policy.html', 'legal/index.html'],
             workbox: {
                 // Cache all pages for offline use
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+                // The SPA's navigateFallback is index.html. /legal/ is the
+                // static privacy policy page (precached as legal/index.html
+                // above). Without the denylist, navigating to /legal/ via
+                // the SPA's service worker returns index.html instead of
+                // the privacy content. App Store and Google Play review
+                // bots follow this URL.
+                navigateFallbackDenylist: [/^\/legal\//, /^\/privacy-policy\.html$/],
                 // Runtime caching for fonts
                 runtimeCaching: [
                     {

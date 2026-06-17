@@ -23,7 +23,7 @@
 
   /* Line heights */
   --leading-tight:   1.1;
-  --leading-normal:  1.4;
+  --leading-normal:   1.4;
   --leading-relaxed: 1.6;
 }
 
@@ -82,6 +82,47 @@
   --text-secondary:         #94a3b8;
   --text-tertiary:          #94a3b8;
   --text-disabled:          #475569;
+
+  /* Surfaces (semantic shortcuts for the most common bg tokens) */
+  --color-surface-1:        rgba(255, 255, 255, 0.03);
+  --color-surface-2:        rgba(255, 255, 255, 0.05);
+  --color-surface-3:        rgba(15, 23, 42, 0.85);
+  --color-surface-hover:    rgba(255, 255, 255, 0.08);
+  --color-surface-active:   rgba(255, 255, 255, 0.12);
+
+  /* Dividers */
+  --color-divider:          rgba(255, 255, 255, 0.06);
+  --color-divider-strong:   rgba(255, 255, 255, 0.12);
+}
+
+/* Light theme overrides (keeps the same semantic structure) */
+html.light {
+  --elevation-0-bg:        #f1f5f9;
+  --elevation-1-bg:        rgba(255, 255, 255, 0.85);
+  --elevation-1-shadow:    0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --elevation-2-bg:        #ffffff;
+  --elevation-2-shadow:    0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --elevation-3-bg:        rgba(255, 255, 255, 0.92);
+  --elevation-3-shadow:    0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --elevation-4-bg:        #ffffff;
+  --elevation-4-shadow:    0 16px 48px rgba(0, 0, 0, 0.16);
+
+  --text-primary:           #0f172a;
+  --text-secondary:         #475569;
+  --text-tertiary:          #64748b;
+
+  --color-surface-1:        rgba(255, 255, 255, 0.85);
+  --color-surface-2:        #ffffff;
+  --color-surface-3:        rgba(255, 255, 255, 0.92);
+  --color-surface-hover:    rgba(0, 0, 0, 0.04);
+  --color-surface-active:   rgba(0, 0, 0, 0.08);
+
+  --color-divider:          rgba(0, 0, 0, 0.08);
+  --color-divider-strong:   rgba(0, 0, 0, 0.16);
+
+  --color-accent:           #0891b2;
+  --color-accent-hover:     #06708f;
+  --color-accent-muted:     rgba(8, 145, 178, 0.12);
 }
 
 /* ── MOTION TOKENS ───────────────────────────────────────────
@@ -129,6 +170,19 @@
   --radius-xl:   1.25rem;  /* 20px — primary cards, modals */
   --radius-2xl:  1.5rem;   /* 24px — floating elements, tab bar */
   --radius-full: 9999px;   /* pills, avatars */
+}
+
+/* ── Z-INDEX SCALE ────────────────────────────────────────────
+   One number per layer. Avoid magic numbers. */
+:root {
+  --z-base:        0;
+  --z-elevated:    10;
+  --z-sticky:      20;
+  --z-tab-bar:     30;
+  --z-floating:    40;   /* sheets, modals */
+  --z-toast:       50;
+  --z-overlay:     60;   /* full-screen dialogs */
+  --z-tooltip:     70;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -200,10 +254,20 @@
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
 }
 
+/* ── Divider ─────────────────────────────────────────────────
+   Hairline separator inside cards and lists. Use 0.5px to feel
+   native on retina displays. */
+.armor-divider {
+  border-top: 0.5px solid var(--color-divider);
+}
+.armor-divider-strong {
+  border-top: 0.5px solid var(--color-divider-strong);
+}
+
 /* ── Progress Track ────────────────────────────────────────── */
 .armor-progress-track {
   height: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--color-divider);
   border-radius: 9999px;
   overflow: hidden;
 }
@@ -214,15 +278,95 @@
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Accessibility ─────────────────────────────────────────── */
-/* Visible focus indicators (WCAG 2.4.7) */
+/* ── Button base (matches the Button component) ──────────────
+   Use these on raw <button> elements when you don't want the
+   full Button primitive (e.g. inline toolbar buttons). */
+.armor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  border-radius: var(--radius-md);
+  font-weight: var(--weight-semibold);
+  transition: background var(--motion-fast), transform var(--motion-fast);
+  cursor: pointer;
+  user-select: none;
+}
+.armor-btn-primary   { background: var(--color-accent); color: var(--elevation-0-bg); }
+.armor-btn-primary:hover { background: var(--color-accent-hover); }
+.armor-btn-secondary { background: var(--color-surface-1); color: var(--text-primary); }
+.armor-btn-secondary:hover { background: var(--color-surface-hover); }
+.armor-btn-ghost     { background: transparent; color: var(--text-secondary); }
+.armor-btn-ghost:hover { background: var(--color-surface-1); color: var(--text-primary); }
+.armor-btn-danger    { background: var(--color-danger); color: var(--text-primary); }
+.armor-btn-success   { background: var(--color-success); color: var(--text-primary); }
+.armor-btn-sm { padding: var(--space-xs) var(--space-md); font-size: var(--text-footnote); }
+.armor-btn-md { padding: var(--space-sm) var(--space-lg);  font-size: var(--text-body); }
+.armor-btn-lg { padding: var(--space-md) var(--space-xl); font-size: var(--text-headline); }
+.armor-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+/* ── List item ───────────────────────────────────────────────
+   Standard row used in Settings, Onboarding, 1RM leaderboard. */
+.armor-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  transition: background var(--motion-fast);
+}
+.armor-list-item:hover { background: var(--color-surface-hover); }
+.armor-list-item + .armor-list-item {
+  border-top: 0.5px solid var(--color-divider);
+}
+
+/* ── Badge / pill ─────────────────────────────────────────── */
+.armor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.armor-badge-accent   { background: var(--color-accent-muted);   color: var(--color-accent); }
+.armor-badge-success  { background: var(--color-success-muted);  color: var(--color-success); }
+.armor-badge-warning  { background: var(--color-warning-muted);  color: var(--color-warning); }
+.armor-badge-danger   { background: var(--color-danger-muted);   color: var(--color-danger); }
+.armor-badge-cardio   { background: var(--color-cardio-muted);   color: var(--color-cardio); }
+.armor-badge-neutral  { background: var(--color-surface-2);      color: var(--text-secondary); }
+
+/* ── Inline icon box ─────────────────────────────────────────
+   Standard 40x40 icon container used in list rows. */
+.armor-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.armor-icon-box-accent  { background: var(--color-accent-muted);  color: var(--color-accent); }
+.armor-icon-box-success { background: var(--color-success-muted); color: var(--color-success); }
+.armor-icon-box-warning { background: var(--color-warning-muted); color: var(--color-warning); }
+.armor-icon-box-danger  { background: var(--color-danger-muted);  color: var(--color-danger); }
+
+/* ── Focus Ring ──────────────────────────────────────────────
+   Keyboard navigation indicator. Applied via :focus-visible so
+   it doesn't fire on tap/click. */
 *:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* Honor reduced-motion preference (WCAG 2.3.3) */
+/* ── Reduced Motion ──────────────────────────────────────────
+   Honor the user's OS preference. Required for WCAG 2.3.3. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -234,7 +378,7 @@
   }
 }
 
-/* High contrast: strengthen focus ring */
+/* ── High Contrast ─────────────────────────────────────────── */
 @media (prefers-contrast: more) {
   *:focus-visible {
     outline-width: 3px;
@@ -245,7 +389,7 @@
 /* ── Haptic Ring (timer visualization) ─────────────────────── */
 .armor-ring-track {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.06);
+  stroke: var(--color-divider);
 }
 .armor-ring-fill {
   fill: none;

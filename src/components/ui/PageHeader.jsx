@@ -20,13 +20,13 @@ const PageHeader = ({
         <div className="flex items-center gap-2 flex-wrap">
           <h1 className="armor-text-large-title">{title}</h1>
           {count !== undefined && (
-            <span className="bg-white/[0.06] text-cyan-400 text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="armor-badge armor-badge-accent">
               {count}
             </span>
           )}
         </div>
         {description && (
-          <p className="text-sm text-slate-400">{description}</p>
+          <p className="armor-text-footnote">{description}</p>
         )}
       </div>
 

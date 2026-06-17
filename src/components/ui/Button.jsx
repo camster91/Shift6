@@ -1,23 +1,26 @@
 import { forwardRef } from 'react';
 
 // ── Variant styles ────────────────────────────────────────────────────────────
+// All variants pull from the design-token system (var(--color-*)) rather than
+// hardcoded Tailwind color classes. Theme changes (dark ↔ light) propagate
+// automatically.
 const variantClasses = {
-  primary:   'bg-cyan-600 text-white font-bold',
-  secondary: 'bg-white/[0.04] text-white font-bold',
-  ghost:     'text-slate-300 font-medium',
-  danger:    'bg-red-500 text-white font-bold',
-  success:   'bg-emerald-500 text-white font-bold',
+  primary:   'armor-btn armor-btn-primary',
+  secondary: 'armor-btn armor-btn-secondary',
+  ghost:     'armor-btn armor-btn-ghost',
+  danger:    'armor-btn armor-btn-danger',
+  success:   'armor-btn armor-btn-success',
 };
 
 // ── Size styles ───────────────────────────────────────────────────────────────
 const sizeClasses = {
-  sm: 'py-2 px-3 text-xs',
-  md: 'py-3 px-4 text-sm',
-  lg: 'py-4 px-5 text-base',
+  sm: 'armor-btn-sm',
+  md: 'armor-btn-md',
+  lg: 'armor-btn-lg',
 };
 
 /**
- * Button — 5 variants × 3 sizes, built on armor-press + rounded-xl.
+ * Button — 5 variants × 3 sizes, built on the armor-btn token system.
  * @param {'primary'|'secondary'|'ghost'|'danger'|'success'} variant
  * @param {'sm'|'md'|'lg'} size
  * @param {React.ReactNode} icon      - Left icon (already instantiated, e.g. <Flame size={14} />)
@@ -35,8 +38,6 @@ const Button = forwardRef(({
   className = '',
   type = 'button',
 }, ref) => {
-  const disabledClass = disabled ? 'opacity-50 pointer-events-none' : '';
-
   return (
     <button
       ref={ref}
@@ -44,21 +45,20 @@ const Button = forwardRef(({
       onClick={onClick}
       disabled={disabled}
       className={[
-        'rounded-xl armor-press transition-all',
+        'armor-press',
         variantClasses[variant] ?? variantClasses.primary,
         sizeClasses[size] ?? sizeClasses.md,
-        disabledClass,
         className,
       ].join(' ')}
     >
       {icon && (
-        <span className="inline-flex items-center mr-2">
+        <span className="inline-flex items-center">
           {icon}
         </span>
       )}
       {children}
       {iconRight && (
-        <span className="inline-flex items-center ml-2">
+        <span className="inline-flex items-center">
           {iconRight}
         </span>
       )}

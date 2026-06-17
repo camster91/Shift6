@@ -1,8 +1,9 @@
 import { forwardRef } from 'react';
 
 /**
- * Card — surface container primitive.
- * @param {boolean} padded   - Apply default padding (p-5). Default: true.
+ * Card — surface container primitive. Use `interactive` to get
+ * armor-press tap feedback, focus ring, and keyboard support.
+ * @param {boolean} padded     - Apply default padding (p-5). Default: true.
  * @param {boolean} interactive - Add armor-press for tap feedback. Default: false.
  * @param {string}  className - Additional CSS classes.
  */
@@ -16,7 +17,9 @@ const Card = forwardRef(({
 }, ref) => {
   const base = 'armor-surface-1 rounded-2xl relative';
   const padClass = padded ? 'p-5' : '';
-  const interactiveClass = interactive ? 'armor-press cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-500 outline-none' : '';
+  const interactiveClass = interactive
+    ? 'armor-press cursor-pointer outline-none'
+    : '';
 
   const handleKeyDown = (e) => {
     if (interactive && (e.key === 'Enter' || e.key === ' ')) {

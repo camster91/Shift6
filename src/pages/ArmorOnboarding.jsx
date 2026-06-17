@@ -17,17 +17,29 @@ const DEFAULTS = {
   home_gym: { goblet_squat: 95, dumbbell_press: 100, romanian_deadlift: 155 },
 };
 
-// Jargon tooltip helper — wraps a term with an (i) icon using the armor-press class
+// Jargon tooltip helper — wraps a term with an (i) icon
 function JargonTooltip({ term, definition }) {
   return (
     <span className="inline-flex items-center gap-0.5">
       {term}
       <span
-        className="armor-press inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold text-slate-400 bg-white/[0.06] cursor-help select-none"
+        className="armor-press inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold text-[var(--text-tertiary)] bg-[var(--color-surface-1)] cursor-help select-none"
         title={definition}
       >
         i
       </span>
+    </span>
+  );
+}
+
+// Day-of-week pip — a small numbered circle used in the split preview list.
+function DayPip({ day }) {
+  return (
+    <span
+      className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 bg-[var(--color-accent-muted)] text-[var(--color-accent)]"
+      aria-hidden="true"
+    >
+      {day}
     </span>
   );
 }
@@ -64,16 +76,16 @@ export default function ArmorOnboarding() {
     }, 600);
   };
 
-  const bg = 'var(--elevation-0-bg)';
-
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: bg, color: 'var(--text-primary)' }}>
+    <div className="min-h-screen flex flex-col text-[var(--text-primary)]">
       <div className="flex-1 max-w-lg mx-auto w-full px-6 pt-10 pb-8 flex flex-col">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-6">
-            <span style={{ fontSize: '28px' }}>⚔️</span>
-            <span className="text-xl font-black tracking-tight"><span className="text-cyan-400">ARMOR</span></span>
+            <span className="text-3xl" aria-hidden="true">⚔️</span>
+            <span className="text-xl font-black tracking-tight text-[var(--text-primary)]">
+              <span className="text-[var(--color-accent)]">ARMOR</span>
+            </span>
           </div>
           <PageHeader
             title="Set up in 5 seconds"
@@ -92,8 +104,7 @@ export default function ArmorOnboarding() {
               onChange={e => setDisplayName(e.target.value)}
               placeholder="Athlete"
               autoFocus
-              className="w-full rounded-xl px-4 py-3 text-base text-white placeholder:text-slate-500 outline-none"
-              style={{ background: 'var(--elevation-1-bg)' }}
+              className="armor-surface-1 w-full rounded-xl px-4 py-3 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus-visible:outline-[var(--color-accent)]"
               onKeyDown={e => e.key === 'Enter' && handleCommit(chosenTrack)}
             />
           </div>
@@ -101,7 +112,7 @@ export default function ArmorOnboarding() {
           {/* Track choice — optional */}
           <div>
             <p className="armor-text-caption block mb-2">Where will you train most?</p>
-            <p className="text-[11px] text-slate-400 mb-3">You can switch per-workout from the dashboard later.</p>
+            <p className="armor-text-footnote mb-3">You can switch per-workout from the dashboard later.</p>
             <div className="grid grid-cols-2 gap-2">
               {Object.values(EQUIPMENT_TRACKS).map(t => (
                 <Card
@@ -112,30 +123,31 @@ export default function ArmorOnboarding() {
                   aria-pressed={chosenTrack === t.id}
                 >
                   {chosenTrack === t.id && (
-                    <Check size={14} className="text-cyan-400 absolute top-2 right-2" strokeWidth={3} />
+                    <Check size={14} className="text-[var(--color-accent)] absolute top-2 right-2" strokeWidth={3} />
                   )}
                   <div className="flex items-center gap-2">
-                    <span style={{ fontSize: '20px' }}>{t.icon}</span>
+                    <span className="text-2xl" aria-hidden="true">{t.icon}</span>
                   </div>
-                  <p className="text-sm font-bold text-white mt-1.5">{t.label}</p>
-                  <p className="text-[10px] text-slate-400">{t.sublabel}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)] mt-1.5">{t.label}</p>
+                  <p className="armor-text-caption mt-0.5">{t.sublabel}</p>
                 </Card>
               ))}
             </div>
-            <p className="armor-text-caption mt-3" style={{ color: 'var(--text-tertiary)' }}>Don&apos;t worry — you can change this anytime from Settings.</p>
+            <p className="armor-text-caption mt-3">Don&apos;t worry — you can change this anytime from Settings.</p>
           </div>
 
           {/* Split preview — for whichever track is chosen, or both if skipped */}
           {chosenTrack && (
-            <div className="rounded-2xl p-4" style={{ background: 'var(--elevation-1-bg)' }}>
+            <div className="armor-surface-1 rounded-2xl p-4">
               <p className="armor-text-caption mb-2">Your first week</p>
               <div className="space-y-1.5">
                 {SPLIT_DAYS[chosenTrack].slice(0, 5).map(d => (
                   <div key={d.day} className="flex items-center gap-2 text-xs">
-                    <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                      style={{ background: 'rgba(6,182,212,0.12)', color: 'var(--color-accent)' }}>{d.day}</span>
-                    <span className="text-slate-300 flex-1 truncate">{d.name}</span>
-                    <span className="text-slate-700 text-[10px]">{d.type === 'vo2max' ? 'Cardio' : 'Strength'}</span>
+                    <DayPip day={d.day} />
+                    <span className="text-[var(--text-primary)] flex-1 truncate">{d.name}</span>
+                    <span className="text-[var(--text-disabled)] text-[10px] uppercase tracking-wider">
+                      {d.type === 'vo2max' ? 'Cardio' : 'Strength'}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -146,14 +158,16 @@ export default function ArmorOnboarding() {
 
       {/* Pinned commit footer — three paths. The "Use both" path is the explicit
           zero-commit option. The two track paths give reasonable defaults. */}
-      <div className="px-6 pt-4 pb-6"
+      <div
+        className="px-6 pt-4 pb-6"
         style={{
           paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 0px))',
           background: 'linear-gradient(to top, var(--elevation-0-bg) 70%, transparent)',
-        }}>
+        }}
+      >
         <div className="max-w-lg mx-auto space-y-2">
           {!chosenTrack && !submitting && (
-            <span className="text-[10px] uppercase tracking-widest text-cyan-400 font-bold">✨ Recommended for new users</span>
+            <span className="armor-badge armor-badge-accent">Recommended for new users</span>
           )}
           {submitting ? (
             <Button variant="primary" size="lg" icon={<Check size={20} strokeWidth={3} />} className="w-full" disabled>
@@ -174,7 +188,7 @@ export default function ArmorOnboarding() {
               size="lg"
               icon={<Sparkles size={20} />}
               onClick={() => handleCommit(chosenTrack)}
-              className="w-full text-slate-900"
+              className="w-full"
             >
               Use both — set 1RMs as you go
             </Button>
@@ -182,7 +196,7 @@ export default function ArmorOnboarding() {
           {chosenTrack && !submitting && (
             <button
               onClick={() => handleCommit(null)}
-              className="armor-press w-full py-2.5 rounded-xl text-slate-400 text-sm font-medium"
+              className="armor-press w-full py-2.5 rounded-xl text-[var(--text-secondary)] text-sm font-medium"
             >
               Or skip — use both tracks
             </button>

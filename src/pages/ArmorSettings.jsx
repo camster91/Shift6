@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Save, Sun, Moon, Trash2 } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { EQUIPMENT_TRACKS, EXERCISE_TRACK, EXERCISE_DISPLAY_NAMES, getWeekConfig } from '../data/armorEngine';
-import { Card, PageHeader, SectionHeader, Button } from '../components/ui';
+import { Card, PageHeader, SectionHeader, Button, Toggle } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR SETTINGS v2.0 — Apple HIG
@@ -14,6 +14,18 @@ function Section({ title, children }) {
     <div className="space-y-2">
       <SectionHeader label={title} />
       <Card>{children}</Card>
+    </div>
+  );
+}
+
+// Settings row layout — label on the left, control on the right. Has
+// hairline divider that we toggle off for the first row.
+function SettingRow({ children, divider = true }) {
+  return (
+    <div
+      className={`flex items-center gap-3 px-4 py-3.5 ${divider ? 'armor-divider' : ''}`}
+    >
+      {children}
     </div>
   );
 }
@@ -52,8 +64,8 @@ function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
   }, []);
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }}>
-      <span className={`text-sm font-medium flex-1 ${empty ? 'text-slate-400' : 'text-white'}`}>
+    <SettingRow divider>
+      <span className={`text-sm font-medium flex-1 ${empty ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'}`}>
         {displayName || exId.replace(/_/g, ' ')}
       </span>
       {editing ? (
@@ -62,30 +74,58 @@ function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
             type="number" value={v} onChange={e => setV(e.target.value)} autoFocus
             min="0" max="9999" step={unit === 'kg' ? '0.5' : '1'}
             onKeyDown={e => e.key === 'Enter' && handleSave(v)}
-            className="w-20 text-right rounded-lg px-2 py-1 text-sm font-bold text-white outline-none tabular-nums"
-            style={{ background: 'rgba(255,255,255,0.05)' }}
+            className="w-20 text-right rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-primary)] outline-none tabular-nums bg-[var(--color-surface-2)] focus-visible:outline-[var(--color-accent)]"
           />
           <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => handleSave(v)} />
         </div>
       ) : (
-        <button onClick={() => { setV(String(displayVal || '')); setEditing(true); }}
-          className="armor-press px-3 py-1.5 rounded-lg bg-white/[0.04] transition-colors duration-300"
+        <button
+          onClick={() => { setV(String(displayVal || '')); setEditing(true); }}
+          className="armor-press px-3 py-1.5 rounded-lg bg-[var(--color-surface-1)] transition-colors duration-300"
           disabled={saved}
         >
-          <span className={`text-sm font-bold tabular-nums transition-colors duration-300 ${saved ? 'text-emerald-400' : 'text-cyan-400'}`}>
+          <span className={`text-sm font-bold tabular-nums transition-colors duration-300 ${saved ? 'text-[var(--color-success)]' : 'text-[var(--color-accent)]'}`}>
             {value ? (
               <>
                 {displayVal}
-                {saved && <span className="ml-1 text-emerald-400">✓</span>}
-                <span className="text-slate-400 text-xs"> {unit}</span>
+                {saved && <span className="ml-1 text-[var(--color-success)]" aria-label="saved">✓</span>}
+                <span className="text-[var(--text-tertiary)] text-xs"> {unit}</span>
               </>
             ) : (
-              <span className="text-slate-400 text-xs font-medium">Set</span>
+              <span className="text-[var(--text-tertiary)] text-xs font-medium">Set</span>
             )}
           </span>
         </button>
       )}
-    </div>
+    </SettingRow>
+  );
+}
+
+// Track selector card — used in the "Equipment Track" section.
+function TrackCard({ track, selected, onClick }) {
+  return (
+    <Card
+      interactive
+      padded={false}
+      onClick={onClick}
+      aria-pressed={selected}
+    >
+      {selected && (
+        <span
+          className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center text-[var(--elevation-0-bg)] text-[10px] font-bold"
+          style={{ background: 'var(--color-accent)' }}
+        >
+          ✓
+        </span>
+      )}
+      <div className="flex items-center gap-2 px-4 py-3.5">
+        <span className="text-2xl" aria-hidden="true">{track.icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-[var(--text-primary)]">{track.label}</p>
+          <p className="armor-text-caption">{track.sublabel}</p>
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -94,6 +134,24 @@ export default function ArmorSettings() {
   const [showReset, setShowReset] = useState(false);
 
   const weekConfig = getWeekConfig(currentCycle.week);
+
+  // Notification toggle helpers — small, readable, single source of truth.
+  const toggleNotif = (key) => {
+    const notifs = preferences.notifications || {};
+    updatePreferences({
+      notifications: { ...notifs, [key]: { ...(notifs[key] || {}), enabled: !(notifs[key]?.enabled || false) } },
+    });
+  };
+  const setNotifField = (key, field, value) => {
+    const notifs = preferences.notifications || {};
+    updatePreferences({
+      notifications: { ...notifs, [key]: { ...(notifs[key] || {}), [field]: value } },
+    });
+  };
+  const toggleMarketing = () => {
+    const notifs = preferences.notifications || {};
+    updatePreferences({ notifications: { ...notifs, marketing: !(notifs.marketing || false) } });
+  };
 
   return (
     <div className="pb-32 max-w-lg mx-auto">
@@ -106,30 +164,18 @@ export default function ArmorSettings() {
       </div>
 
       <div className="px-5 space-y-6">
-        {/* Track */}
+        {/* Equipment Track */}
         <Section title="Equipment Track">
-          {Object.values(EQUIPMENT_TRACKS).map((t, i) => {
-            const selected = preferences.equipmentTrack === t.id;
-            return (
-              <Card
+          <div className="p-2 space-y-2">
+            {Object.values(EQUIPMENT_TRACKS).map(t => (
+              <TrackCard
                 key={t.id}
-                interactive
-                padded={false}
+                track={t}
+                selected={preferences.equipmentTrack === t.id}
                 onClick={() => updatePreferences({ equipmentTrack: t.id })}
-                className="flex items-center gap-3 px-4 py-3.5"
-                style={{ borderTop: i > 0 ? '0.5px solid rgba(255,255,255,0.04)' : 'none' }}
-              >
-                <span style={{ fontSize: '20px' }}>{t.icon}</span>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-white">{t.label}</p>
-                  <p className="text-[11px] text-slate-400">{t.sublabel}</p>
-                </div>
-                {selected && <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
-                  <span className="text-white text-[10px]">✓</span>
-                </div>}
-              </Card>
-            );
-          })}
+              />
+            ))}
+          </div>
         </Section>
 
         {/* 1RMs — grouped by track so the user can set 1RMs for both
@@ -141,10 +187,9 @@ export default function ArmorSettings() {
               .filter(([, exTrack]) => exTrack === trackId)
               .map(([exId]) => exId);
             return (
-              <div key={trackId} className={trackIdx > 0 ? '' : ''}
-                style={trackIdx > 0 ? { borderTop: '0.5px solid rgba(255,255,255,0.04)' } : undefined}>
+              <div key={trackId} className={trackIdx > 0 ? 'armor-divider-strong' : ''}>
                 <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-                  <span style={{ fontSize: '14px' }}>{t.icon}</span>
+                  <span className="text-base" aria-hidden="true">{t.icon}</span>
                   <span className="armor-text-caption" style={{ letterSpacing: '0.08em' }}>{t.label}</span>
                 </div>
                 {trackExercises.map(exId => (
@@ -160,7 +205,7 @@ export default function ArmorSettings() {
               </div>
             );
           })}
-          <p className="text-[11px] text-slate-400 px-4 py-3">
+          <p className="armor-text-footnote px-4 py-3">
             Auto-progresses +5 lbs upper / +10 lbs lower per 6-week cycle. Set 1RMs for both tracks
             so you can switch seamlessly between gym and home sessions.
           </p>
@@ -215,170 +260,168 @@ export default function ArmorSettings() {
 
         {/* Reminders */}
         <Section title="Reminders">
-          <div className="px-4 py-3 space-y-3">
+          <div className="py-1">
             {/* Daily habits reminder */}
-            <div className="flex items-center justify-between gap-3">
+            <SettingRow>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white">Daily habits reminder</p>
-                <p className="text-[11px] text-slate-400">A gentle nudge to do your walks, balance work, and floor stretches</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">Daily habits reminder</p>
+                <p className="armor-text-footnote">A gentle nudge to do your walks, balance work, and floor stretches</p>
               </div>
-              <button
-                role="switch"
-                aria-checked={preferences.notifications?.habits?.enabled || false}
-                aria-label="Toggle daily habits reminder"
-                onClick={() => updatePreferences({ notifications: { ...preferences.notifications, habits: { ...preferences.notifications?.habits, enabled: !(preferences.notifications?.habits?.enabled || false) } } })}
-                className={`armor-press relative w-11 h-6 rounded-full transition-colors ${(preferences.notifications?.habits?.enabled || false) ? 'bg-cyan-500' : 'bg-white/[0.1]'}`}
-              >
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${(preferences.notifications?.habits?.enabled || false) ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
-            </div>
-            {(preferences.notifications?.habits?.enabled || false) && (
-              <div className="flex items-center gap-3 pl-2">
-                <span className="text-[11px] text-slate-400">Time</span>
+              <Toggle
+                checked={preferences.notifications?.habits?.enabled || false}
+                ariaLabel="Toggle daily habits reminder"
+                onChange={() => toggleNotif('habits')}
+              />
+            </SettingRow>
+            {preferences.notifications?.habits?.enabled && (
+              <SettingRow>
+                <span className="armor-text-footnote w-12 shrink-0">Time</span>
                 <input
                   type="time"
                   value={preferences.notifications?.habits?.time || '21:00'}
-                  onChange={e => updatePreferences({ notifications: { ...preferences.notifications, habits: { ...preferences.notifications?.habits, time: e.target.value } } })}
-                  className="flex-1 bg-white/[0.05] text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500/40"
+                  onChange={e => setNotifField('habits', 'time', e.target.value)}
+                  className="flex-1 armor-surface-2 text-[var(--text-primary)] text-xs rounded-lg px-3 py-2 outline-none focus-visible:outline-[var(--color-accent)] tabular-nums"
                 />
-              </div>
+              </SettingRow>
             )}
-
-            <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }} />
 
             {/* Workout reminder */}
-            <div className="flex items-center justify-between gap-3">
+            <SettingRow>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white">Workout reminder</p>
-                <p className="text-[11px] text-slate-400">Remind me on specific days</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">Workout reminder</p>
+                <p className="armor-text-footnote">Remind me on specific days</p>
               </div>
-              <button
-                role="switch"
-                aria-checked={preferences.notifications?.workout?.enabled || false}
-                aria-label="Toggle workout reminder"
-                onClick={() => updatePreferences({ notifications: { ...preferences.notifications, workout: { ...preferences.notifications?.workout, enabled: !(preferences.notifications?.workout?.enabled || false) } } })}
-                className={`armor-press relative w-11 h-6 rounded-full transition-colors ${(preferences.notifications?.workout?.enabled || false) ? 'bg-cyan-500' : 'bg-white/[0.1]'}`}
-              >
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${(preferences.notifications?.workout?.enabled || false) ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
-            </div>
-            {(preferences.notifications?.workout?.enabled || false) && (
-              <div className="flex gap-1.5 flex-wrap pl-2">
-                {['M','T','W','Th','F','Sa','Su'].map((d, i) => {
-                  const dayKey = ['mon','tue','wed','thu','fri','sat','sun'][i];
-                  const active = (preferences.notifications?.workout?.days || []).includes(dayKey);
-                  return (
-                    <button
-                      key={d}
-                      aria-pressed={active}
-                      aria-label={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i]}
-                      onClick={() => {
-                        const currentDays = preferences.notifications?.workout?.days || [];
-                        const newDays = active
-                          ? currentDays.filter(x => x !== dayKey)
-                          : [...currentDays, dayKey];
-                        updatePreferences({ notifications: { ...preferences.notifications, workout: { ...preferences.notifications?.workout, days: newDays } } });
-                      }}
-                      className={`armor-press w-8 h-8 rounded-full text-[11px] font-bold transition-colors ${active ? 'bg-cyan-500 text-black' : 'bg-white/[0.06] text-slate-400'}`}
-                    >
-                      {d}
-                    </button>
-                  );
-                })}
-              </div>
+              <Toggle
+                checked={preferences.notifications?.workout?.enabled || false}
+                ariaLabel="Toggle workout reminder"
+                onChange={() => toggleNotif('workout')}
+              />
+            </SettingRow>
+            {preferences.notifications?.workout?.enabled && (
+              <SettingRow>
+                <div className="flex gap-1.5 flex-wrap w-full">
+                  {['M','T','W','Th','F','Sa','Su'].map((d, i) => {
+                    const dayKey = ['mon','tue','wed','thu','fri','sat','sun'][i];
+                    const active = (preferences.notifications?.workout?.days || []).includes(dayKey);
+                    return (
+                      <button
+                        key={d}
+                        aria-pressed={active}
+                        aria-label={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i]}
+                        onClick={() => {
+                          const currentDays = preferences.notifications?.workout?.days || [];
+                          const newDays = active
+                            ? currentDays.filter(x => x !== dayKey)
+                            : [...currentDays, dayKey];
+                          setNotifField('workout', 'days', newDays);
+                        }}
+                        className={`armor-press w-8 h-8 rounded-full text-[11px] font-bold transition-colors ${
+                          active
+                            ? 'bg-[var(--color-accent)] text-[var(--elevation-0-bg)]'
+                            : 'bg-[var(--color-surface-1)] text-[var(--text-secondary)]'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    );
+                  })}
+                </div>
+              </SettingRow>
             )}
 
-            <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }} />
-
             {/* Marketing emails */}
-            <div className="flex items-center justify-between gap-3">
+            <SettingRow>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white">Product updates</p>
-                <p className="text-[11px] text-slate-400">New features and tips · we never spam</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">Product updates</p>
+                <p className="armor-text-footnote">New features and tips · we never spam</p>
               </div>
-              <button
-                role="switch"
-                aria-checked={preferences.notifications?.marketing || false}
-                aria-label="Toggle product updates"
-                onClick={() => updatePreferences({ notifications: { ...preferences.notifications, marketing: !(preferences.notifications?.marketing || false) } })}
-                className={`armor-press relative w-11 h-6 rounded-full transition-colors ${(preferences.notifications?.marketing || false) ? 'bg-cyan-500' : 'bg-white/[0.1]'}`}
-              >
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${(preferences.notifications?.marketing || false) ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
-            </div>
+              <Toggle
+                checked={preferences.notifications?.marketing || false}
+                ariaLabel="Toggle product updates"
+                onChange={toggleMarketing}
+              />
+            </SettingRow>
           </div>
         </Section>
 
         {/* Cycle */}
         <Section title="Current Cycle">
-          <div className="px-4 py-3 space-y-2" style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }}>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Week</span>
-              <span className="text-white font-bold tabular-nums">{currentCycle.week} / 6</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Day</span>
-              <span className="text-white font-bold tabular-nums">{currentCycle.day} / 5</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Phase</span>
-              <span className="text-cyan-400 font-bold">{weekConfig.phase}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Cycles Done</span>
-              <span className="text-cyan-400 font-bold tabular-nums">{currentCycle.totalCyclesCompleted}</span>
-            </div>
+          <div className="py-1">
+            <SettingRow>
+              <span className="text-sm text-[var(--text-secondary)]">Week</span>
+              <span className="text-sm text-[var(--text-primary)] font-bold tabular-nums">{currentCycle.week} / 6</span>
+            </SettingRow>
+            <SettingRow>
+              <span className="text-sm text-[var(--text-secondary)]">Day</span>
+              <span className="text-sm text-[var(--text-primary)] font-bold tabular-nums">{currentCycle.day} / 5</span>
+            </SettingRow>
+            <SettingRow>
+              <span className="text-sm text-[var(--text-secondary)]">Phase</span>
+              <span className="text-sm text-[var(--color-accent)] font-bold">{weekConfig.phase}</span>
+            </SettingRow>
+            <SettingRow>
+              <span className="text-sm text-[var(--text-secondary)]">Cycles Done</span>
+              <span className="text-sm text-[var(--color-accent)] font-bold tabular-nums">{currentCycle.totalCyclesCompleted}</span>
+            </SettingRow>
           </div>
         </Section>
 
         {/* Account */}
         <Section title="Profile">
-          <div className="px-4 py-3" style={{ borderTop: '0.5px solid rgba(255,255,255,0.04)' }}>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Name</span>
-              <span className="text-white font-bold">{userProfile.displayName || 'Athlete'}</span>
-            </div>
-          </div>
+          <SettingRow>
+            <span className="text-sm text-[var(--text-secondary)]">Name</span>
+            <span className="text-sm text-[var(--text-primary)] font-bold">{userProfile.displayName || 'Athlete'}</span>
+          </SettingRow>
         </Section>
 
         {/* Destructive */}
         <Section title="Danger Zone">
-          <Button
-            variant="danger"
-            size="md"
-            icon={<Trash2 size={16} />}
-            onClick={() => setShowReset(true)}
-            className="w-full"
-            aria-label="Delete all workout data and start over"
-          >
-            Reset All Data
-          </Button>
+          <div className="p-3">
+            <Button
+              variant="danger"
+              size="md"
+              icon={<Trash2 size={16} />}
+              onClick={() => setShowReset(true)}
+              className="w-full"
+              aria-label="Delete all workout data and start over"
+            >
+              Reset All Data
+            </Button>
+          </div>
         </Section>
 
-        <p className="text-center text-[11px] text-slate-400 py-4">
+        <p className="text-center armor-text-footnote py-4">
           Armor v3.0.0 · Build {new Date().toISOString().split('T')[0]}
         </p>
       </div>
 
-      {/* Reset modal — elevation-4 */}
+      {/* Reset modal */}
       {showReset && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(20px)' }}
-          onClick={() => setShowReset(false)}>
-          <div className="armor-surface-3 w-full max-w-sm p-6 armor-entrance"
-            onClick={e => e.stopPropagation()}>
-            <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center"
-              style={{ background: 'rgba(239,68,68,0.1)' }}>
-              <Trash2 size={22} className="text-red-400" />
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-xl"
+          onClick={() => setShowReset(false)}
+        >
+          <div
+            className="armor-surface-3 w-full max-w-sm p-6 armor-entrance"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center bg-[var(--color-danger-muted)]">
+              <Trash2 size={22} className="text-[var(--color-danger)]" />
             </div>
-            <h3 className="text-lg font-black text-white text-center mb-1">Reset Everything?</h3>
-            <p className="text-sm text-slate-400 text-center mb-6">
+            <h3 className="text-lg font-black text-[var(--text-primary)] text-center mb-1">Reset Everything?</h3>
+            <p className="text-sm text-[var(--text-secondary)] text-center mb-6">
               This deletes all workout history, 1RMs, settings, and your streak. Cannot be undone.
             </p>
             <div className="flex gap-3">
               <Button variant="secondary" size="md" onClick={() => setShowReset(false)} className="flex-1">
                 Cancel
               </Button>
-              <Button variant="danger" size="md" onClick={() => { resetAll(); setShowReset(false); }} className="flex-1">
+              <Button
+                variant="danger"
+                size="md"
+                onClick={() => { resetAll(); setShowReset(false); }}
+                className="flex-1"
+              >
                 Reset
               </Button>
             </div>

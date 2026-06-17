@@ -11,18 +11,18 @@ import { Card, PageHeader, Button } from '../components/ui';
 
 function StatusDot({ status }) {
   const map = {
-    idle: { icon: Cloud, color: 'text-slate-400', label: 'Ready' },
-    syncing: { icon: RefreshCw, color: 'text-cyan-400', label: 'Syncing', spin: true },
-    synced: { icon: Check, color: 'text-emerald-400', label: 'Synced' },
-    error: { icon: AlertCircle, color: 'text-amber-400', label: 'Sync issue' },
-    offline: { icon: CloudOff, color: 'text-slate-400', label: 'Offline' },
+    idle: { icon: Cloud, color: 'text-[var(--text-secondary)]', label: 'Ready' },
+    syncing: { icon: RefreshCw, color: 'text-[var(--color-accent)]', label: 'Syncing', spin: true },
+    synced: { icon: Check, color: 'text-[var(--color-success)]', label: 'Synced' },
+    error: { icon: AlertCircle, color: 'text-[var(--color-warning)]', label: 'Sync issue' },
+    offline: { icon: CloudOff, color: 'text-[var(--text-secondary)]', label: 'Offline' },
   };
   const s = map[status] || map.idle;
   const Icon = s.icon;
   return (
     <div className="flex items-center gap-2">
       <Icon size={14} className={`${s.color} ${s.spin ? 'animate-spin' : ''}`} />
-      <span className="text-sm font-medium text-slate-400">{s.label}</span>
+      <span className="text-sm font-medium text-[var(--text-secondary)]">{s.label}</span>
     </div>
   );
 }
@@ -30,25 +30,23 @@ function StatusDot({ status }) {
 function ConflictBanner({ conflict, onKeepLocal, onUseServer }) {
   if (!conflict) return null;
   return (
-    <div className="armor-surface-1 p-4 border-amber-500/20 bg-amber-500/5">
+    <div className="armor-surface-1 p-4 border-[var(--color-warning-muted)] bg-[var(--color-warning-muted)]">
       <div className="flex items-start gap-3 mb-3">
-        <GitMerge size={18} className="text-amber-400 shrink-0 mt-0.5" />
+        <GitMerge size={18} className="text-[var(--color-warning)] shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-bold text-white">Sync Conflict</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <p className="text-sm font-bold text-[var(--text-primary)]">Sync Conflict</p>
+          <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
             Server has newer data. Choose which version to keep.
           </p>
         </div>
       </div>
       <div className="flex gap-2">
         <button onClick={onUseServer}
-          className="armor-press flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-300"
-          style={{ background: 'rgba(255,255,255,0.04)' }}>
+          className="armor-press flex-1 py-2.5 rounded-xl text-sm font-bold text-[var(--text-primary)] opacity-80 bg-[var(--color-surface-1)]">
           Use Server
         </button>
         <button onClick={onKeepLocal}
-          className="armor-press flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
-          style={{ background: 'var(--color-accent)' }}>
+          className="armor-press flex-1 py-2.5 rounded-xl text-sm font-bold text-[var(--text-primary)] bg-[var(--color-accent)]">
           Keep Local
         </button>
       </div>
@@ -69,12 +67,12 @@ function ProfileSection() {
     <Card>
       <div className="flex items-center gap-4">
         <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
-          style={{ background: 'var(--color-accent)', color: 'var(--elevation-0-bg)' }}>
+          className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0 bg-[var(--color-accent)] text-[var(--elevation-0-bg)]">
           {initials}
         </div>
         <div className="min-w-0">
-          <p className="text-lg font-bold text-white truncate">{displayName || 'Athlete'}</p>
-          <p className="text-sm text-slate-400 truncate">{email || 'Not signed in'}</p>
+          <p className="text-lg font-bold text-[var(--text-primary)] truncate">{displayName || 'Athlete'}</p>
+          <p className="text-sm text-[var(--text-secondary)] truncate">{email || 'Not signed in'}</p>
         </div>
       </div>
     </Card>
@@ -89,7 +87,7 @@ function SyncStatusCard() {
       <div className="flex items-center justify-between">
         <StatusDot status={syncStatus} />
         {lastSyncAt && (
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-[var(--text-secondary)]">
             Last synced: {new Date(lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
         )}
@@ -113,8 +111,7 @@ function DataExportButton() {
 
   return (
     <button onClick={handleExport}
-      className="armor-press w-full py-3 rounded-xl text-sm font-bold text-slate-300"
-      style={{ background: 'rgba(255,255,255,0.04)' }}>
+      className="armor-press w-full py-3 rounded-xl text-sm font-bold text-[var(--text-primary)] opacity-80 bg-[var(--color-surface-1)]">
       Export my data
     </button>
   );
@@ -157,27 +154,26 @@ function LoginForm() {
           <label className="armor-text-caption block mb-1.5">Name</label>
           <input type="text" value={name} onChange={e => setName(e.target.value)}
             placeholder="Your name" autoComplete="name"
-            className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-700 outline-none"
-            style={{ background: 'var(--elevation-1-bg)' }} />
+            className="w-full rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] outline-none bg-[var(--elevation-1-bg)]" />
         </div>
       )}
       <div>
         <label className="armor-text-caption block mb-1.5">Email</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)}
           required placeholder="you@example.com" autoComplete="email"
-          className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-700 outline-none"
-          style={{ background: 'var(--elevation-1-bg)' }} />
+          className="w-full rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] outline-none bg-[var(--elevation-1-bg)]"
+        />
       </div>
       <div>
         <label className="armor-text-caption block mb-1.5">Password</label>
         <input type="password" value={password} onChange={e => setPassword(e.target.value)}
           required minLength={8} placeholder="8+ characters" autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-700 outline-none"
-          style={{ background: 'var(--elevation-1-bg)' }} />
+          className="w-full rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] outline-none bg-[var(--elevation-1-bg)]"
+        />
       </div>
 
       {error && (
-        <p className="text-xs text-red-400 px-1">{error}</p>
+        <p className="text-xs text-[var(--color-danger)] px-1">{error}</p>
       )}
 
       <Button
@@ -226,19 +222,19 @@ function LoggedInCard() {
     <div className="armor-surface-2 p-5 space-y-4">
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
-          style={{ background: 'var(--color-accent)', color: 'var(--elevation-0-bg)' }}>
+          className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold bg-[var(--color-accent)] text-[var(--elevation-0-bg)]">
           {(user?.displayName || user?.email || '?').charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white truncate">{user?.displayName || user?.email}</p>
-          <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
+          <p className="text-sm font-bold text-[var(--text-primary)] truncate">{user?.displayName || user?.email}</p>
+          <p className="text-[11px] text-[var(--text-secondary)] truncate">{user?.email}</p>
         </div>
       </div>
 
       <div className="flex items-center justify-between px-1">
         <StatusDot status={syncStatus} />
         {lastSyncAt && (
-          <p className="text-[10px] text-slate-400">
+          <p className="text-[10px] text-[var(--text-secondary)]">
             {new Date(lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
         )}
@@ -246,14 +242,12 @@ function LoggedInCard() {
 
       <div className="flex gap-2">
         <button onClick={handlePull}
-          className={`armor-press flex-1 py-2.5 rounded-xl text-sm font-bold text-white ${pulse ? 'opacity-80' : ''}`}
-          style={{ background: 'var(--color-accent)' }}>
+          className={`armor-press flex-1 py-2.5 rounded-xl text-sm font-bold text-[var(--text-primary)] bg-[var(--color-accent)] ${pulse ? 'opacity-80' : ''}`}>
           <RefreshCw size={14} className={`inline mr-1.5 ${pulse ? 'animate-spin' : ''}`} />
           Pull Now
         </button>
         <button onClick={handleLogout}
-          className="armor-press px-4 py-2.5 rounded-xl text-sm font-bold text-slate-400"
-          style={{ background: 'rgba(255,255,255,0.04)' }}>
+          className="armor-press px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--color-surface-1)]">
           <LogOut size={14} className="inline mr-1.5" />
           Sign Out
         </button>
@@ -290,7 +284,7 @@ export default function ArmorAccount() {
         </Card>
       )}
 
-      <div className="text-center text-[10px] text-slate-400 px-4">
+      <div className="text-center text-[10px] text-[var(--text-secondary)] px-4">
         <p>Your data stays on this device until you sign in.</p>
         <p>Sync uses a revision counter — no data loss from conflicts.</p>
       </div>

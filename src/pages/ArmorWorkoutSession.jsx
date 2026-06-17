@@ -22,20 +22,20 @@ class WorkoutErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full items-center justify-center space-y-4 p-4">
-          <p className="text-slate-400 text-sm">Something went wrong in this set.</p>
-          <p className="text-rose-400 text-xs font-mono break-all">{(this.state.error?.message || String(this.state.error || 'unknown')).slice(0, 300)}</p>
+          <p className="text-[var(--text-secondary)] text-sm">Something went wrong in this set.</p>
+          <p className="text-[var(--color-cardio)] text-xs font-mono break-all">{(this.state.error?.message || String(this.state.error || 'unknown')).slice(0, 300)}</p>
           {this.state.stack && (
-            <pre className="text-[9px] text-slate-600 text-left max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{this.state.stack}</pre>
+            <pre className="text-[9px] text-[var(--text-disabled)] text-left max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{this.state.stack}</pre>
           )}
           <button
             onClick={() => this.setState({ hasError: false, error: null, stack: null })}
-            className="px-4 py-2 rounded-xl bg-white/[0.06] text-white text-sm font-semibold"
+            className="px-4 py-2 rounded-xl bg-[var(--color-surface-1)] text-[var(--text-primary)] text-sm font-semibold"
           >
             Try again
           </button>
           <button
             onClick={() => this.props.onSkip?.()}
-            className="px-4 py-2 rounded-xl bg-cyan-500/20 text-cyan-400 text-sm font-semibold"
+            className="px-4 py-2 rounded-xl bg-[var(--color-accent-muted)] text-[var(--color-accent)] text-sm font-semibold"
           >
             Skip Set
           </button>
@@ -96,7 +96,7 @@ function useTimer(initialSeconds) {
 // ── PlateVisualizer moved to components/PlateVisualizer.jsx so the dashboard
 //    and workout session can share the same barbell/dumbbell renderer.
 
-function TimerRing({ seconds, running, accentColor = '#06b6d4', label = 'Rest' }) {
+function TimerRing({ seconds, running, accentColor = 'var(--color-accent)', label = 'Rest' }) {
   const initialRef = useRef(Math.max(seconds, 1));
   if (seconds > initialRef.current) initialRef.current = seconds;
   const total = initialRef.current;
@@ -119,10 +119,10 @@ function TimerRing({ seconds, running, accentColor = '#06b6d4', label = 'Rest' }
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`text-[3rem] font-black tabular-nums leading-none ${urgent ? 'text-amber-400' : 'text-white'}`}>
+        <span className={`text-[3rem] font-black tabular-nums leading-none ${urgent ? 'text-[var(--color-warning)]' : 'text-[var(--text-primary)]'}`}>
           {mins}:{secs.toString().padStart(2, '0')}
         </span>
-        <span className="armor-text-caption mt-1" style={{ color: 'var(--text-tertiary)' }}>{label}</span>
+        <span className="armor-text-caption mt-1">{label}</span>
       </div>
     </div>
   );
@@ -155,8 +155,8 @@ function MVDScreen({ onComplete }) {
   return (
     <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full">
       <div className="text-3xl mb-2">🛡️</div>
-      <h2 className="text-2xl font-black text-white mb-1">Minimum Viable Day</h2>
-      <p className="text-sm text-slate-400 mb-6">A self-contained circuit. Fits in 15 minutes.</p>
+      <h2 className="text-2xl font-black text-[var(--text-primary)] mb-1">Minimum Viable Day</h2>
+      <p className="text-sm text-[var(--text-secondary)] mb-6">A self-contained circuit. Fits in 15 minutes.</p>
 
       <div className="w-full space-y-3 mb-6">
         {items.map((item) => {
@@ -166,19 +166,19 @@ function MVDScreen({ onComplete }) {
               key={item.id}
               onClick={() => setCompleted(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
               className={`w-full text-left p-4 rounded-xl flex items-center gap-3 ${
-                isDone ? 'bg-emerald-500/15 ring-1 ring-emerald-500/30' : 'bg-white/[0.04]'
+                isDone ? 'bg-[var(--color-success-muted)] ring-1 ring-[var(--color-success-muted)]' : 'bg-[var(--color-surface-1)]'
               }`}
             >
               <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                isDone ? 'bg-emerald-500' : 'bg-white/[0.06]'
+                isDone ? 'bg-[var(--color-success)]' : 'bg-[var(--color-surface-1)]'
               }`}>
-                {isDone && <Check size={14} className="text-white" strokeWidth={3} />}
+                {isDone && <Check size={14} className="text-[var(--text-primary)]" strokeWidth={3} />}
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className={`text-sm font-bold ${isDone ? 'text-emerald-400 line-through' : 'text-white'}`}>
+                <p className={`text-sm font-bold ${isDone ? 'text-[var(--color-success)] line-through' : 'text-[var(--text-primary)]'}`}>
                   {item.label}
                 </p>
-                <p className="text-[11px] text-slate-500">{item.description}</p>
+                <p className="text-[11px] text-[var(--text-tertiary)]">{item.description}</p>
               </div>
             </button>
           );
@@ -188,10 +188,9 @@ function MVDScreen({ onComplete }) {
       <button
         onClick={handleComplete}
         disabled={!allComplete}
-        className={`armor-press w-full py-5 rounded-2xl text-white font-black text-lg ${
+        className={`armor-press w-full py-5 rounded-2xl text-[var(--text-primary)] font-black text-lg bg-[var(--color-accent)] ${
           allComplete ? '' : 'opacity-50 pointer-events-none'
         }`}
-        style={{ background: 'var(--color-accent)' }}
       >
         <Check size={20} className="inline mr-2" strokeWidth={3} />
         Finish & Log
@@ -229,19 +228,19 @@ function VO2MaxScreen({ protocol, onComplete }) {
 
   return (
     <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full">
-      <p className="armor-text-caption" style={{ color: 'var(--color-cardio)' }}>Round {round}/{protocol.rounds}</p>
+      <p className="armor-text-caption text-[var(--color-cardio)]">Round {round}/{protocol.rounds}</p>
 
       <div className="my-8">
-        <TimerRing seconds={timer.timeLeft} running={timer.running} accentColor="#f43f5e" label={isWork ? 'GO HARD' : isRest ? 'RECOVER' : 'READY'} />
+        <TimerRing seconds={timer.timeLeft} running={timer.running} accentColor="var(--color-cardio)" label={isWork ? 'GO HARD' : isRest ? 'RECOVER' : 'READY'} />
       </div>
 
       <div className={`rounded-2xl px-6 py-5 mb-8 transition-all ${
-        isWork ? 'bg-rose-500/10' : isRest ? 'bg-emerald-500/10' : 'bg-white/[0.03]'
+        isWork ? 'bg-[var(--color-cardio-muted)]' : isRest ? 'bg-[var(--color-success-muted)]' : 'bg-[var(--color-surface-1)]'
       }`}>
-        <p className={`text-xl font-black ${isWork ? 'text-rose-400' : isRest ? 'text-emerald-400' : 'text-slate-400'}`}>
+        <p className={`text-xl font-black ${isWork ? 'text-[var(--color-cardio)]' : isRest ? 'text-[var(--color-success)]' : 'text-[var(--text-secondary)]'}`}>
           {isWork ? '🏃 PUSH' : isRest ? '😮‍💨 BREATHE' : 'Ready?'}
         </p>
-        <p className="text-[11px] text-slate-400 mt-1">
+        <p className="text-[11px] text-[var(--text-secondary)] mt-1">
           {isWork ? protocol.targetHR : isRest ? 'Slow down, deep breaths' : 'Tap to begin'}
         </p>
       </div>
@@ -249,25 +248,24 @@ function VO2MaxScreen({ protocol, onComplete }) {
       <div className="mt-auto pb-8 space-y-3">
         {phase === 'idle' && (
           <button onClick={() => { setPhase('work'); timer.start(); HAPTIC.medium(); }}
-            className="armor-press w-full py-5 rounded-2xl text-white font-black text-lg"
-            style={{ background: 'var(--color-cardio)' }}>
+            className="armor-press w-full py-5 rounded-2xl text-[var(--text-primary)] font-black text-lg bg-[var(--color-cardio)]">
             <Play size={20} className="inline mr-2 fill-current" /> Start Intervals
           </button>
         )}
         {(isWork || isRest) && timer.running && (
           <button onClick={() => { timer.pause(); HAPTIC.light(); }}
-            className="armor-press w-full py-4 rounded-2xl bg-white/[0.06] text-white font-bold">
+            className="armor-press w-full py-4 rounded-2xl bg-[var(--color-surface-1)] text-[var(--text-primary)] font-bold">
             <Pause size={16} className="inline mr-2" /> Pause
           </button>
         )}
         {(isWork || isRest) && !timer.running && (
           <button onClick={() => { timer.start(); HAPTIC.light(); }}
-            className="armor-press w-full py-4 rounded-2xl bg-white/[0.06] text-white font-bold">
+            className="armor-press w-full py-4 rounded-2xl bg-[var(--color-surface-1)] text-[var(--text-primary)] font-bold">
             <Play size={16} className="inline mr-2 fill-current" /> Resume
           </button>
         )}
         <button onClick={() => { HAPTIC.light(); onComplete?.(); }}
-          className="w-full py-3 text-slate-600 text-sm font-semibold">
+          className="w-full py-3 text-[var(--text-disabled)] text-sm font-semibold">
           End Early
         </button>
       </div>
@@ -278,17 +276,17 @@ function VO2MaxScreen({ protocol, onComplete }) {
 /* ── End Workout Confirmation Modal ───────────────────────── */
 function EndWorkoutConfirm({ setCount, onConfirm, onCancel }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.7)' }}>
-      <div className="bg-white/[0.06] rounded-2xl p-6 max-w-sm w-full">
-        <p className="text-lg font-bold text-white mb-2">End workout?</p>
-        <p className="text-sm text-slate-400 mb-6">You&apos;ve completed {setCount} set{setCount !== 1 ? 's' : ''}.</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" className="bg-black/70">
+      <div className="bg-[var(--color-surface-1)] rounded-2xl p-6 max-w-sm w-full">
+        <p className="text-lg font-bold text-[var(--text-primary)] mb-2">End workout?</p>
+        <p className="text-sm text-[var(--text-secondary)] mb-6">You&apos;ve completed {setCount} set{setCount !== 1 ? 's' : ''}.</p>
         <div className="flex gap-3">
           <button onClick={onCancel}
-            className="flex-1 py-3 rounded-xl bg-white/[0.06] text-white font-semibold">
+            className="flex-1 py-3 rounded-xl bg-[var(--color-surface-1)] text-[var(--text-primary)] font-semibold">
             Cancel
           </button>
           <button onClick={onConfirm}
-            className="flex-1 py-3 rounded-xl bg-rose-500/20 text-rose-400 font-semibold">
+            className="flex-1 py-3 rounded-xl bg-[var(--color-cardio-muted)] text-[var(--color-cardio)] font-semibold">
             End Workout
           </button>
         </div>
@@ -462,19 +460,18 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
             if (!exSets.length) return null;
             const displayWeight = unit === 'kg' ? Math.round(ex.weight / 2.20462) : ex.weight;
             return (
-              <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03]">
+              <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--color-surface-1)]">
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-white capitalize">{ex.exerciseId?.replace(/_/g, ' ')}</p>
-                  <p className="text-[11px] text-slate-400">{exSets.length} sets × {ex.reps} reps @ {displayWeight}{unit}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)] capitalize">{ex.exerciseId?.replace(/_/g, ' ')}</p>
+                  <p className="text-[11px] text-[var(--text-secondary)]">{exSets.length} sets × {ex.reps} reps @ {displayWeight}{unit}</p>
                 </div>
-                <span className="text-[11px] font-bold text-slate-400">{ex.type === 'primary' ? weekConfig.phase : 'Acc'}</span>
+                <span className="text-[11px] font-bold text-[var(--text-secondary)]">{ex.type === 'primary' ? weekConfig.phase : 'Acc'}</span>
               </div>
             );
           })}
         </div>
         <button onClick={handleFinish}
-          className="armor-press w-full py-5 rounded-2xl text-white font-black text-lg"
-          style={{ background: 'var(--color-accent)' }}>
+          className="armor-press w-full py-5 rounded-2xl text-[var(--text-primary)] font-black text-lg bg-[var(--color-accent)]">
           <Check size={20} className="inline mr-2" strokeWidth={3} /> Finish & Log
         </button>
       </div>
@@ -486,12 +483,12 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
     return (
       <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full armor-entrance">
         <p className="armor-text-caption mb-1">Recover</p>
-        <h3 className="text-base font-bold text-white mb-6">
+        <h3 className="text-base font-bold text-[var(--text-primary)] mb-6">
           Set {setNum} of {totalSets} · {currentEx.reps} reps @ {Math.round(currentEx.weight / (unit === 'kg' ? 2.20462 : 1))}{unit}
         </h3>
-        <TimerRing seconds={timer.timeLeft} running={timer.running} accentColor="#06b6d4" label="Rest" />
+        <TimerRing seconds={timer.timeLeft} running={timer.running} accentColor="var(--color-accent)" label="Rest" />
         {timer.timeLeft <= 10 && timer.running && (
-          <p className="text-amber-400 text-sm font-bold mt-3 armor-entrance">Ready up</p>
+          <p className="text-[var(--color-warning)] text-sm font-bold mt-3 armor-entrance">Ready up</p>
         )}
         <div className="flex items-center justify-center gap-3 mt-6">
           <Button variant="secondary" size="sm" onClick={() => { timer.addTime(-15); HAPTIC.light(); }}>-15</Button>
@@ -515,7 +512,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   if (!currentEx) {
     return (
       <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full items-center justify-center">
-        <p className="text-slate-400 text-sm">Loading exercise…</p>
+        <p className="text-[var(--text-secondary)] text-sm">Loading exercise…</p>
       </div>
     );
   }
@@ -524,23 +521,23 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
     <WorkoutErrorBoundary onSkip={handleCompleteSet}>
  <div className="flex flex-col flex-1 px-6 pt-4 max-w-sm mx-auto w-full armor-entrance">
       <div className="mb-6">
-        <p className="armor-text-caption" style={{ color: 'var(--text-tertiary)' }}>
+        <p className="armor-text-caption">
           {currentEx.type === 'primary' ? 'PRIMARY LIFT' : 'ACCESSORY'}
         </p>
         <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-xl font-black text-white capitalize mt-0.5">
+          <h2 className="text-xl font-black text-[var(--text-primary)] capitalize mt-0.5">
             {currentEx.exerciseId?.replace(/_/g, ' ')}
           </h2>
           {swapAlts.length > 0 && (
             <button
               onClick={() => setShowSwap(true)}
-              className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-slate-400 font-medium hover:text-cyan-400 transition-colors"
+              className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--color-surface-1)] text-[var(--text-secondary)] font-medium hover:text-[var(--color-accent)] transition-colors"
             >
               Swap
             </button>
           )}
           {activeModifiers.highFatigue && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-semibold">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-warning-muted)] text-[var(--color-warning)] font-semibold">
               CNS fatigue: 60% 1RM, hypertrophy
             </span>
           )}
@@ -550,13 +547,13 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
             </span>
           )}
         </div>
-        <p className="armor-text-footnote" style={{ color: 'var(--text-tertiary)' }}>
+        <p className="armor-text-footnote">
           {weekConfig.phase} · Week {currentWeek} · Set {setNum}/{totalSets}
         </p>
       </div>
 
       {lastEntry && (
-        <p className="armor-text-caption mb-3" style={{ color: 'var(--text-tertiary)' }}>
+        <p className="armor-text-caption mb-3">
           Last: {Math.round(lastEntry.weight / (unit === 'kg' ? 2.20462 : 1))} {unit} × {lastEntry.reps}
         </p>
       )}
@@ -565,28 +562,28 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <p className="armor-text-caption mb-1">Sets</p>
-            <p className="text-2xl font-black text-white">{totalSets}</p>
+            <p className="text-2xl font-black text-[var(--text-primary)]">{totalSets}</p>
           </div>
           <div>
             <p className="armor-text-caption mb-1">Reps</p>
-            <p className="text-2xl font-black text-cyan-400">{currentEx.reps}</p>
+            <p className="text-2xl font-black text-[var(--color-accent)]">{currentEx.reps}</p>
           </div>
           <div>
             <p className="armor-text-caption mb-1">Weight</p>
             {showZeroLbsNudge ? (
               <button
                 onClick={() => { HAPTIC.light(); onNavigateToSettings ? onNavigateToSettings() : console.warn('onNavigateToSettings not provided'); }}
-                className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 underline"
+                className="text-sm font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent)] opacity-80 underline"
               >
                 Set your 1RM in Settings →
               </button>
             ) : (
-              <p className="text-2xl font-black text-white">{Math.round(currentEx.weight / (unit === 'kg' ? 2.20462 : 1))}<span className="text-sm text-slate-400 ml-1">{unit}</span></p>
+              <p className="text-2xl font-black text-[var(--text-primary)]">{Math.round(currentEx.weight / (unit === 'kg' ? 2.20462 : 1))}<span className="text-sm text-[var(--text-secondary)] ml-1">{unit}</span></p>
             )}
           </div>
         </div>
         {!showZeroLbsNudge && unit !== 'kg' && currentEx.weight > 0 && (
-          <div className="mt-4 pt-4 border-t border-white/[0.06]">
+          <div className="mt-4 pt-4 border-t border-t border-[var(--color-divider)]">
             <PlateVisualizer weight={currentEx.weight} track={track} unit={unit} />
           </div>
         )}
@@ -595,16 +592,16 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
       <div className="flex justify-center gap-2 mb-6">
         {Array.from({ length: totalSets }).map((_, i) => (
           <div key={i} className={`w-2.5 h-2.5 rounded-full transition-all ${
-            i < setNum - 1 ? 'bg-emerald-500 scale-100' :
-            i === setNum - 1 ? 'bg-cyan-400 scale-125 shadow-[0_0_8px_rgba(6,182,212,0.5)]' :
-            'bg-white/[0.06]'
+            i < setNum - 1 ? 'bg-[var(--color-success)] scale-100' :
+            i === setNum - 1 ? 'bg-[var(--color-accent)] scale-125 shadow-[0_0_8px_var(--color-accent-glow)]' :
+            'bg-[var(--color-surface-1)]'
           }`} />
         ))}
       </div>
 
       <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
         placeholder="RPE, form notes..."
-        className="w-full bg-white/[0.04] rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none mb-6"
+        className="w-full bg-[var(--color-surface-1)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none mb-6"
       />
 
       <Button
@@ -632,9 +629,9 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
       {/* Exercise Swap Modal */}
       {showSwap && (
         <div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowSwap(false)}>
-          <div className="bg-slate-900 w-full max-w-sm mx-auto p-4 border-t border-white/[0.06]" onClick={e => e.stopPropagation()}>
-            <p className="text-sm text-slate-400 mb-3">
-              Swap <span className="text-white font-semibold capitalize">{currentEx.exerciseId?.replace(/_/g, ' ')}</span> for:
+          <div className="bg-[var(--elevation-4-bg)] w-full max-w-sm mx-auto p-4 border-t border-t border-[var(--color-divider)]" onClick={e => e.stopPropagation()}>
+            <p className="text-sm text-[var(--text-secondary)] mb-3">
+              Swap <span className="text-[var(--text-primary)] font-semibold capitalize">{currentEx.exerciseId?.replace(/_/g, ' ')}</span> for:
             </p>
             <div className="space-y-1 mb-3">
               {swapAlts.map(altId => (
@@ -653,7 +650,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
                     setSetNum(1);
                     setShowSwap(false);
                   }}
-                  className="w-full text-left p-3 rounded-xl hover:bg-white/[0.06] text-white font-medium capitalize"
+                  className="w-full text-left p-3 rounded-xl hover:bg-[var(--color-surface-1)] text-[var(--text-primary)] font-medium capitalize"
                 >
                   {altId.replace(/_/g, ' ')}
                 </button>
@@ -661,7 +658,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
             </div>
             <button
               onClick={() => setShowSwap(false)}
-              className="w-full p-3 text-slate-500 text-sm font-medium text-center"
+              className="w-full p-3 text-[var(--text-tertiary)] text-sm font-medium text-center"
             >
               Cancel
             </button>
@@ -692,18 +689,18 @@ function ArmorWorkoutSessionInner({ onComplete, onCancel, onNavigateToSettings }
     [effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--elevation-0-bg)' }}>
+    <div className="fixed inset-0 z-50 flex flex-col" className="bg-[var(--elevation-0-bg)]">
       {showConfetti && <ConfettiBurst count={50} />}
       {celebration && <AwardModal achievement={celebration} onDismiss={() => { setShowConfetti(false); setCelebration(null); }} />}
 
       <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
         <button onClick={() => { HAPTIC.light(); onCancel?.(); }}
-          className="armor-press w-10 h-10 rounded-full bg-white/[0.04] flex items-center justify-center">
-          <X size={18} className="text-slate-400" />
+          className="armor-press w-10 h-10 rounded-full bg-[var(--color-surface-1)] flex items-center justify-center">
+          <X size={18} className="text-[var(--text-secondary)]" />
         </button>
         <div className="text-center">
-          <p className="text-xs font-bold text-cyan-400 uppercase tracking-widest">{todayWorkout.name}</p>
-          <p className="text-[10px] text-slate-600">Week {currentCycle.week} · Day {currentCycle.day}</p>
+          <p className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-widest">{todayWorkout.name}</p>
+          <p className="text-[10px] text-[var(--text-disabled)]">Week {currentCycle.week} · Day {currentCycle.day}</p>
         </div>
         <div className="w-10" />
       </div>

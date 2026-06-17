@@ -2,19 +2,25 @@ import { useMemo, useState } from 'react';
 import { Flame, Trophy } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { PERIODIZATION, getWeekConfig } from '../data/armorEngine';
-import { Card, PageHeader, EmptyState } from '../components/ui';
+import { Card, PageHeader, EmptyState, Button } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
-   ARMOR PROGRESS v2.0 — Apple HIG
-   Six pillars visualization. Volume charts. Streak ring.
+   ARMOR PROGRESS v3.0 — Token-driven colors
+   Charts use CSS variables so dark/light theme and accent swaps
+   propagate without touching this file.
    ═══════════════════════════════════════════════════════════ */
 
 function Stat({ label, value, sub, accent }) {
   return (
     <div className="armor-surface-1 p-4 space-y-1">
-      <p className="armor-text-caption" style={{ color: 'var(--text-tertiary)' }}>{label}</p>
-      <p className="text-2xl font-black tabular-nums" style={{ color: accent || 'white' }}>{value}</p>
-      {sub && <p className="text-[11px] text-slate-400">{sub}</p>}
+      <p className="armor-text-caption">{label}</p>
+      <p
+        className="text-2xl font-black tabular-nums"
+        style={{ color: accent || 'var(--text-primary)' }}
+      >
+        {value}
+      </p>
+      {sub && <p className="armor-text-footnote">{sub}</p>}
     </div>
   );
 }
@@ -24,7 +30,7 @@ function CycleBlocks({ week, totalCycles }) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <p className="armor-text-caption">Cycle {totalCycles + 1}</p>
-        <p className="text-[11px] text-slate-400">Week {week}/6</p>
+        <p className="armor-text-footnote">Week {week}/6</p>
       </div>
       <div className="flex gap-1.5">
         {PERIODIZATION.map(w => {
@@ -32,15 +38,20 @@ function CycleBlocks({ week, totalCycles }) {
           const current = w.week === week;
           return (
             <div key={w.week} className="flex-1 space-y-1">
-              <div className={`h-8 rounded-lg transition-all ${
-                done ? '' : current ? '' : ''
-              }`} style={{
-                background: done ? 'rgba(16,185,129,0.4)' :
-                  current ? 'var(--color-accent)' :
-                  'rgba(255,255,255,0.04)',
-                boxShadow: current ? '0 0 12px rgba(6,182,212,0.4)' : 'none'
-              }} />
-              <p className={`text-[9px] font-bold text-center ${current ? 'text-cyan-400' : done ? 'text-emerald-500/60' : 'text-slate-400'}`}>
+              <div
+                className="h-8 rounded-lg transition-all"
+                style={{
+                  background: done ? 'rgba(16,185,129,0.4)' : current ? 'var(--color-accent)' : 'var(--color-surface-1)',
+                  boxShadow: current ? '0 0 12px rgba(6,182,212,0.4)' : 'none',
+                }}
+              />
+              <p
+                className={`text-[9px] font-bold text-center ${
+                  current ? 'text-[var(--color-accent)]' :
+                  done ? 'text-[var(--color-success)] opacity-60' :
+                  'text-[var(--text-secondary)]'
+                }`}
+              >
                 {w.phase.slice(0, 4)}
               </p>
             </div>
@@ -61,9 +72,14 @@ function StreakRing({ streak, best }) {
   return (
     <div className="armor-surface-2 p-5 flex items-center gap-4">
       <div className="relative w-24 h-24 shrink-0">
-        <svg width={96} height={96} className="transform -rotate-90">
-          <circle cx={48} cy={48} r={radius} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={6} />
-          <circle cx={48} cy={48} r={radius} fill="none" stroke="var(--color-warning)" strokeWidth={6}
+        <svg width={96} height={96} className="transform -rotate-90" aria-hidden="true">
+          <circle
+            cx={48} cy={48} r={radius}
+            fill="none" stroke="var(--color-divider)" strokeWidth={6}
+          />
+          <circle
+            cx={48} cy={48} r={radius}
+            fill="none" stroke="var(--color-warning)" strokeWidth={6}
             strokeDasharray={circ} strokeDashoffset={offset}
             strokeLinecap="round"
             style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
@@ -71,14 +87,16 @@ function StreakRing({ streak, best }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <Flame size={14} className="text-amber-400 mb-0.5" fill="currentColor" />
-          <span className="text-lg font-black text-white tabular-nums">{streak}</span>
+          <Flame size={14} className="text-[var(--color-warning)] mb-0.5" fill="currentColor" />
+          <span className="text-lg font-black text-[var(--text-primary)] tabular-nums">{streak}</span>
         </div>
       </div>
-      <div className="flex-1">
-        <p className="text-sm font-bold text-white">Day Streak</p>
-        <p className="text-[11px] text-slate-400">Best: {best} days · Freeze: 1</p>
-        <p className="text-[11px] text-amber-400 mt-0.5">{target - streak > 0 ? `${target - streak} to 30-day badge` : '30-day badge earned'}</p>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-[var(--text-primary)]">Day Streak</p>
+        <p className="armor-text-footnote">Best: {best} days · Freeze: 1</p>
+        <p className="armor-text-footnote text-[var(--color-warning)] mt-0.5">
+          {target - streak > 0 ? `${target - streak} to 30-day badge` : '30-day badge earned'}
+        </p>
       </div>
     </div>
   );
@@ -105,7 +123,7 @@ function VolumeBar({ history, unit }) {
     <div className="armor-surface-1 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <p className="armor-text-caption">Last 7 Days · Volume</p>
-        <p className="text-[11px] text-slate-400">{unit} lifted</p>
+        <p className="armor-text-footnote">{unit} lifted</p>
       </div>
       <div className="flex items-end gap-1.5 h-24">
         {data.days.map((v, i) => {
@@ -114,14 +132,19 @@ function VolumeBar({ history, unit }) {
           day.setDate(day.getDate() - (6 - i));
           return (
             <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-              <div className="w-full rounded-t-md transition-all"
+              <div
+                className="w-full rounded-t-md transition-all"
                 style={{
                   height: `${Math.max(4, pct * 100)}%`,
-                  background: v > 0 ? 'linear-gradient(180deg, var(--color-accent), rgba(6,182,212,0.3))' : 'rgba(255,255,255,0.04)',
+                  background: v > 0
+                    ? 'linear-gradient(180deg, var(--color-accent), rgba(6,182,212,0.3))'
+                    : 'var(--color-surface-1)',
                   boxShadow: v > 0 ? '0 0 8px rgba(6,182,212,0.3)' : 'none',
                 }}
+                role="img"
+                aria-label={`Day ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][day.getDay()]}: ${v} ${unit} lifted`}
               />
-              <span className="text-[9px] text-slate-400 font-bold">
+              <span className="text-[9px] text-[var(--text-tertiary)] font-bold">
                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'][day.getDay()]}
               </span>
             </div>
@@ -148,17 +171,27 @@ function PRTimelineChart({ data, liftName }) {
   return (
     <Card className="p-4 space-y-3">
       <p className="armor-text-caption">Your {liftName} — heaviest set per session</p>
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-[320px] h-[120px]" style={{ display: 'block' }}
-        role="img" aria-label={`PR timeline for ${liftName} — heaviest set per session over time`}
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="w-full max-w-[320px] h-[120px] block"
+        role="img"
+        aria-label={`PR timeline for ${liftName} — heaviest set per session over time`}
       >
         {/* Y-axis grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
           const y = h - pad - pct * (h - 2 * pad);
           return (
             <g key={i}>
-              <line x1={pad} y1={y} x2={w - pad} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
+              <line
+                x1={pad} y1={y} x2={w - pad} y2={y}
+                stroke="var(--color-divider)" strokeWidth={1}
+              />
               {i === 0 ? null : (
-                <text x={pad - 4} y={y + 4} textAnchor="end" fontSize={9} fill="rgba(255,255,255,0.3)">
+                <text
+                  x={pad - 4} y={y + 4}
+                  textAnchor="end" fontSize={9}
+                  fill="var(--text-disabled)"
+                >
                   {Math.round(pct * yMax)}
                 </text>
               )}
@@ -166,16 +199,27 @@ function PRTimelineChart({ data, liftName }) {
           );
         })}
         {/* Line */}
-        <path d={path} fill="none" stroke="rgb(6,182,212)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <path
+          d={path} fill="none"
+          stroke="var(--color-accent)" strokeWidth={2}
+          strokeLinejoin="round" strokeLinecap="round"
+        />
         {/* Dots */}
         {data.map((d, i) => (
-          <circle key={i} cx={xs[i]} cy={ys[i]} r={3} fill="rgb(6,182,212)" />
+          <circle
+            key={i} cx={xs[i]} cy={ys[i]} r={3}
+            fill="var(--color-accent)"
+          />
         ))}
- {/* X-axis labels */}
+        {/* X-axis labels */}
         {data.map((d, i) => {
           const label = new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           return (
-            <text key={i} x={xs[i]} y={h - 4} textAnchor="middle" fontSize={8} fill="rgba(255,255,255,0.3)">
+            <text
+              key={i} x={xs[i]} y={h - 4}
+              textAnchor="middle" fontSize={8}
+              fill="var(--text-disabled)"
+            >
               {label}
             </text>
           );
@@ -196,11 +240,14 @@ function VolumeWeeklyChart({ data }) {
   return (
     <Card className="p-4 space-y-3">
       <p className="armor-text-caption">Weekly Volume</p>
-      <svg viewBox={`0 0 ${totalW} ${chartH + labelH}`} className="w-full" style={{ display: 'block', maxHeight: 116 }}
-        role="img" aria-label="Weekly volume chart — total weight lifted per week"
+      <svg
+        viewBox={`0 0 ${totalW} ${chartH + labelH}`}
+        className="w-full block max-h-[116px]"
+        role="img"
+        aria-label="Weekly volume chart — total weight lifted per week"
       >
         {/* Y-axis max label */}
-        <text x={4} y={10} fontSize={9} fill="rgba(255,255,255,0.3)">
+        <text x={4} y={10} fontSize={9} fill="var(--text-disabled)">
           {Math.round(maxV).toLocaleString()}
         </text>
         {/* Bars */}
@@ -210,8 +257,15 @@ function VolumeWeeklyChart({ data }) {
           const y = chartH - barH + labelH;
           return (
             <g key={i}>
-              <rect x={x} y={y} width={barW} height={barH} rx={4} fill="rgb(6,182,212)" />
-              <text x={x + barW / 2} y={chartH + labelH - 2} textAnchor="middle" fontSize={8} fill="rgba(255,255,255,0.3)">
+              <rect
+                x={x} y={y} width={barW} height={barH} rx={4}
+                fill="var(--color-accent)"
+              />
+              <text
+                x={x + barW / 2} y={chartH + labelH - 2}
+                textAnchor="middle" fontSize={8}
+                fill="var(--text-disabled)"
+              >
                 {d.label}
               </text>
             </g>
@@ -230,15 +284,28 @@ function TimeRangeToggle({ value, onChange }) {
         <button
           key={opt}
           onClick={() => onChange(opt)}
+          aria-pressed={value === opt}
           className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
             value === opt
-              ? 'bg-cyan-400 text-black'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-[var(--color-accent)] text-[var(--elevation-0-bg)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           {opt}
         </button>
       ))}
+    </div>
+  );
+}
+
+// List item used for the 1RM leaderboard and Recent Sessions —
+// two columns that look the same and were inlined before.
+function ListRow({ index, divider = true, children }) {
+  return (
+    <div
+      className={`flex items-center gap-3 px-4 py-3 ${divider ? 'armor-divider' : ''}`}
+    >
+      {children}
     </div>
   );
 }
@@ -385,38 +452,38 @@ export default function ArmorProgress() {
           {/* Placeholder streak card */}
           <Card className="opacity-50">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/[0.04]">
-                <Flame size={22} className="text-slate-400" />
+              <div className="w-14 h-14 rounded-full flex items-center justify-center bg-[var(--color-surface-1)]">
+                <Flame size={22} className="text-[var(--text-disabled)]" />
               </div>
               <div>
-                <p className="text-lg font-black text-slate-400" aria-live="polite">0 day streak</p>
-                <p className="text-[11px] text-slate-400">Longest: 0 days</p>
+                <p className="text-lg font-black text-[var(--text-disabled)]" aria-live="polite">0 day streak</p>
+                <p className="armor-text-footnote">Longest: 0 days</p>
               </div>
             </div>
           </Card>
           {/* Placeholder cycle blocks */}
           <Card className="opacity-50">
             <div className="flex items-center justify-between mb-3">
-              <p className="armor-text-caption text-slate-400">Cycle 1</p>
-              <p className="text-[11px] text-slate-400">Week 1/6</p>
+              <p className="armor-text-caption text-[var(--text-disabled)]">Cycle 1</p>
+              <p className="armor-text-footnote">Week 1/6</p>
             </div>
             <div className="flex gap-1.5">
               {PERIODIZATION.map(w => (
                 <div key={w.week} className="flex-1 space-y-1">
-                  <div className="h-8 rounded-lg bg-white/[0.04]" />
-                  <p className="text-[9px] font-bold text-center text-slate-400">{w.phase.slice(0, 4)}</p>
+                  <div className="h-8 rounded-lg bg-[var(--color-surface-1)]" />
+                  <p className="text-[9px] font-bold text-center text-[var(--text-disabled)]">{w.phase.slice(0, 4)}</p>
                 </div>
               ))}
             </div>
           </Card>
           {/* Habits contribution — only shown when user has done habits but no workouts yet */}
           {hasHabits && (
-            <Card className="bg-amber-500/8 border border-amber-500/20">
+            <Card className="bg-[var(--color-warning-muted)]">
               <div className="flex items-start gap-3">
-                <span style={{ fontSize: '28px' }}>🏃</span>
+                <span className="text-3xl" aria-hidden="true">🏃</span>
                 <div>
-                  <p className="text-sm font-bold text-amber-400">Daily Habits Active</p>
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-sm font-bold text-[var(--color-warning)]">Daily Habits Active</p>
+                  <p className="armor-text-footnote mt-1">
                     You haven&apos;t completed a workout yet, but you&apos;ve been keeping up with your daily habits! 🏃<br />
                     Complete a workout to unlock the full progress dashboard.
                   </p>
@@ -427,14 +494,17 @@ export default function ArmorProgress() {
           {/* Placeholder volume bar */}
           <Card className="opacity-50">
             <div className="flex items-center justify-between">
-              <p className="armor-text-caption text-slate-400">Last 7 Days · Volume</p>
-              <p className="text-[11px] text-slate-400">{unit} lifted</p>
+              <p className="armor-text-caption text-[var(--text-disabled)]">Last 7 Days · Volume</p>
+              <p className="armor-text-footnote">{unit} lifted</p>
             </div>
             <div className="flex items-end gap-1.5 h-24">
               {[40, 60, 30, 70, 50, 80, 45].map((h, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                  <div className="w-full rounded-t-md bg-white/[0.06]" style={{ height: `${h}%` }} />
-                  <span className="text-[9px] text-slate-400 font-bold">
+                  <div
+                    className="w-full rounded-t-md bg-[var(--color-surface-2)]"
+                    style={{ height: `${h}%` }}
+                  />
+                  <span className="text-[9px] text-[var(--text-disabled)] font-bold">
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'][i]}</span>
                 </div>
               ))}
@@ -442,7 +512,7 @@ export default function ArmorProgress() {
           </Card>
           {/* CTA copy */}
           <EmptyState
-            icon={<Trophy size={48} className="text-slate-400" />}
+            icon={<Trophy size={48} className="text-[var(--text-disabled)]" />}
             title="No Sessions Yet"
             description="Complete your first workout to unlock your progress dashboard."
           />
@@ -464,21 +534,23 @@ export default function ArmorProgress() {
         {/* Streak Counter Card */}
         <Card>
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center bg-amber-500/10">
-              <Flame size={22} className="text-amber-400" fill="currentColor" />
+            <div className="w-14 h-14 rounded-full flex items-center justify-center bg-[var(--color-warning-muted)]">
+              <Flame size={22} className="text-[var(--color-warning)]" fill="currentColor" />
             </div>
             <div>
-              <p className="text-xl font-black text-white" aria-live="polite">🔥 {streakData.currentStreak} day streak</p>
-              <p className="text-[11px] text-slate-400">Longest: {streakData.longestStreak} days</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">ⓘ 1 freeze day per week</p>
+              <p className="text-xl font-black text-[var(--text-primary)]" aria-live="polite">
+                {streakData.currentStreak} day streak
+              </p>
+              <p className="armor-text-footnote">Longest: {streakData.longestStreak} days</p>
+              <p className="armor-text-footnote text-[var(--text-tertiary)] mt-0.5">ⓘ 1 freeze day per week</p>
             </div>
           </div>
         </Card>
 
         {/* Session Count Chip */}
         <div className="px-4 py-3 armor-surface-1 flex items-center justify-between">
-          <span className="text-sm font-semibold text-white">Workouts Completed</span>
-          <span className="text-sm font-black text-cyan-400 tabular-nums">
+          <span className="text-sm font-semibold text-[var(--text-primary)]">Workouts Completed</span>
+          <span className="text-sm font-black text-[var(--color-accent)] tabular-nums">
             {workoutHistory.filter(w => w.completed).length}
           </span>
         </div>
@@ -511,7 +583,11 @@ export default function ArmorProgress() {
         <div className="grid grid-cols-2 gap-2">
           <Stat label="This Week" value={thisWeekWorkouts.length} sub="sessions" accent="var(--color-accent)" />
           <Stat label="Weekly Volume" value={`${(weeklyVolume / 1000).toFixed(1)}k`} sub={unit} accent="var(--color-success)" />
-          <Stat label="Total Sets" value={workoutHistory.reduce((s, w) => s + (w.exercises || []).reduce((es, ex) => es + (ex.sets || []).length, 0), 0)} accent="var(--color-cardio)" />
+          <Stat
+            label="Total Sets"
+            value={workoutHistory.reduce((s, w) => s + (w.exercises || []).reduce((es, ex) => es + (ex.sets || []).length, 0), 0)}
+            accent="var(--color-cardio)"
+          />
           <Stat label="Cycles" value={currentCycle.totalCyclesCompleted} sub="completed" accent="var(--color-warning)" />
         </div>
 
@@ -523,16 +599,20 @@ export default function ArmorProgress() {
               {sorted1RMs.slice(0, 6).map(([id, val], i) => {
                 const max = sorted1RMs[0]?.[1] || val;
                 return (
-                  <div key={id} className="flex items-center gap-3 px-4 py-3"
-                    style={{ borderTop: i > 0 ? '0.5px solid rgba(255,255,255,0.04)' : 'none' }}>
-                    <span className="text-[10px] font-bold text-slate-400 w-4 tabular-nums">{i + 1}</span>
-                    <span className="text-sm font-medium text-white flex-1 capitalize">{id.replace(/_/g, ' ')}</span>
-                    <span className="text-sm font-black text-cyan-400 tabular-nums">{unit === 'kg' ? Math.round(val / 2.20462) : val}</span>
-                    <span className="text-[10px] text-slate-400">{unit}</span>
-                    <div className="w-12 h-1 bg-white/[0.04] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${(val / max) * 100}%`, background: 'var(--color-accent)' }} />
+                  <ListRow key={id} index={i} divider={i > 0}>
+                    <span className="text-[10px] font-bold text-[var(--text-secondary)] w-4 tabular-nums">{i + 1}</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)] flex-1 capitalize">{id.replace(/_/g, ' ')}</span>
+                    <span className="text-sm font-black text-[var(--color-accent)] tabular-nums">
+                      {unit === 'kg' ? Math.round(val / 2.20462) : val}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-secondary)]">{unit}</span>
+                    <div className="w-12 h-1 bg-[var(--color-surface-1)] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[var(--color-accent)]"
+                        style={{ width: `${(val / max) * 100}%` }}
+                      />
                     </div>
-                  </div>
+                  </ListRow>
                 );
               })}
             </div>
@@ -544,20 +624,22 @@ export default function ArmorProgress() {
           <p className="armor-text-caption px-4" style={{ letterSpacing: '0.1em' }}>Recent Sessions</p>
           <div className="armor-surface-1 overflow-hidden">
             {[...workoutHistory].reverse().slice(0, 6).map((w, i) => (
-              <div key={i} className="px-4 py-3"
-                style={{ borderTop: i > 0 ? '0.5px solid rgba(255,255,255,0.04)' : 'none' }}>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-white">
+              <ListRow key={i} index={i} divider={i > 0}>
+                <div className="flex items-center justify-between w-full">
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">
                     {new Date(w.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </p>
-                  <span className="text-[10px] font-bold uppercase" style={{ color: w.type === 'vo2max' ? 'var(--color-cardio)' : 'var(--color-accent)' }}>
+                  <span
+                    className="text-[10px] font-bold uppercase"
+                    style={{ color: w.type === 'vo2max' ? 'var(--color-cardio)' : 'var(--color-accent)' }}
+                  >
                     {w.type === 'vo2max' ? 'Cardio' : 'Strength'}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-0.5">
+                <p className="armor-text-footnote mt-0.5">
                   {(w.exercises || []).length} exercises · {(w.exercises || []).reduce((s, e) => s + (e.sets || []).length, 0)} sets
                 </p>
-              </div>
+              </ListRow>
             ))}
           </div>
         </div>

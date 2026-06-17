@@ -1,10 +1,20 @@
 // ── Accent color maps ─────────────────────────────────────────────────────────
+// Maps semantic accent names to the design-token color classes. The
+// underlying tokens (--color-accent, --color-success, etc.) are the
+// single source of truth — these classes just resolve them.
 const accentClasses = {
-  cyan:   'text-cyan-400',
-  emerald: 'text-emerald-400',
-  amber:  'text-amber-400',
-  rose:   'text-rose-400',
-  slate:  'text-slate-400',
+  cyan:   'text-[var(--color-accent)]',
+  emerald: 'text-[var(--color-success)]',
+  amber:  'text-[var(--color-warning)]',
+  rose:   'text-[var(--color-cardio)]',
+  slate:  'text-[var(--text-secondary)]',
+};
+const accentBgClasses = {
+  cyan:   'bg-[var(--color-accent-muted)]',
+  emerald: 'bg-[var(--color-success-muted)]',
+  amber:  'bg-[var(--color-warning-muted)]',
+  rose:   'bg-[var(--color-cardio-muted)]',
+  slate:  'bg-[var(--color-surface-1)]',
 };
 
 /**
@@ -23,14 +33,20 @@ const StatTile = ({
   ...rest
 }) => {
   return (
-    <div className={`armor-surface-1 rounded-2xl p-4 text-center ${className}`} {...rest}>
-      {/* Icon — top center, accent colored */}
-      <div className={`mb-2 flex justify-center ${accentClasses[accent] ?? accentClasses.cyan}`}>
+    <div
+      className={`armor-surface-1 rounded-2xl p-4 text-center ${className}`}
+      {...rest}
+    >
+      {/* Icon — top center, accent-tinted background */}
+      <div
+        className={`mb-3 mx-auto w-10 h-10 rounded-xl flex items-center justify-center ${accentBgClasses[accent] ?? accentBgClasses.cyan} ${accentClasses[accent] ?? accentClasses.cyan}`}
+        aria-hidden="true"
+      >
         {icon}
       </div>
 
       {/* Value — large bold */}
-      <div className="text-2xl font-bold text-white mb-1">
+      <div className="text-2xl font-bold mb-1 text-[var(--text-primary)] tabular-nums">
         {value}
       </div>
 

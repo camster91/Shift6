@@ -157,7 +157,10 @@ export default function ArmorApp() {
           <>
             {activeTab === 'home' && (
               <>
-                <ArmorDashboard onStartWorkout={handleStartWorkout} />
+                <ArmorDashboard
+                  onStartWorkout={handleStartWorkout}
+                  onNavigateToSettings={() => setActiveTab('settings')}
+                />
                 <FirstRunTour />
               </>
             )}

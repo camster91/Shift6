@@ -87,6 +87,12 @@ function ModifierRow({ activeModifiers, onToggle }) {
     <div>
       <SectionHeader icon={<Zap size={10} />} label="Protocols" />
       <div className="relative">
+        {/* Right-edge fade so users know the row is horizontally scrollable
+            when more modifiers are added than fit the viewport. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[var(--elevation-0-bg)] to-transparent z-10"
+        />
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
           {entries.map(mod => {
             const active = activeModifiers[mod.id];
@@ -154,7 +160,7 @@ function HabitCheck({ habit, done, onToggle }) {
 
 /* ── MAIN DASHBOARD ────────────────────────────────────────── */
 
-export default function ArmorDashboard({ onStartWorkout }) {
+export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings }) {
   const {
     activeModifiers, dailyHabitState, currentCycle, userProfile,
     toggleModifier, toggleHabit, resetDailyHabits,
@@ -436,10 +442,25 @@ export default function ArmorDashboard({ onStartWorkout }) {
 
             {/* 0-lbs nudge — shown when all active-track 1RMs are 0 */}
             {allTrack1RMsZero && (
-              <Card padded={false} className="bg-[var(--color-warning-muted)] p-4">
-                <p className="text-sm font-semibold text-[var(--color-warning)]">
-                  👋 First time? Set your 1RMs in Settings to get personalized weights. Takes 30 seconds.
-                </p>
+              <Card padded={false} className="bg-[var(--color-warning-muted)] p-4 flex items-start gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[var(--color-warning)]">
+                    👋 First time? Set your 1RMs to get personalized weights.
+                  </p>
+                  <p className="armor-text-footnote text-[var(--color-warning)] mt-0.5 opacity-80">
+                    Takes 30 seconds. Skip if you'd rather enter as you go.
+                  </p>
+                </div>
+                {onNavigateToSettings && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={onNavigateToSettings}
+                    className="bg-[var(--color-warning)] shrink-0"
+                  >
+                    Set 1RMs
+                  </Button>
+                )}
               </Card>
             )}
           </div>

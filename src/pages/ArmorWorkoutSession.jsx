@@ -483,9 +483,12 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
     return (
       <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full armor-entrance">
         <p className="armor-text-caption mb-1">Recover</p>
-        <h3 className="text-base font-bold text-[var(--text-primary)] mb-6">
-          Set {setNum} of {totalSets} · {currentEx.reps} reps @ {Math.round(currentEx.weight / (unit === 'kg' ? 2.20462 : 1))}{unit}
+        <h3 className="text-base font-bold text-[var(--text-primary)] mb-1 capitalize">
+          {currentEx.exerciseId?.replace(/_/g, ' ')}
         </h3>
+        <p className="text-sm text-[var(--text-secondary)] mb-6">
+          Set {setNum} of {totalSets} · {currentEx.reps} reps @ {Math.round(currentEx.weight / (unit === 'kg' ? 2.20462 : 1))}{unit}
+        </p>
         <TimerRing seconds={timer.timeLeft} running={timer.running} accentColor="var(--color-accent)" label="Rest" />
         {timer.timeLeft <= 10 && timer.running && (
           <p className="text-[var(--color-warning)] text-sm font-bold mt-3 armor-entrance">Ready up</p>

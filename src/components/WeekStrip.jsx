@@ -64,20 +64,30 @@ export default function WeekStrip({ completedDates = [], mvdDates = [], classNam
 function DayBadge({ day }) {
   // Color map driven by design tokens. Light mode (--color-warning) and
   // dark mode both have a real color value, so this degrades cleanly.
+  //
+  // 'mvd' uses a half-fill effect: a left-half gradient from warning to
+  // transparent. This visually says "partial credit" without competing
+  // with the full-accent 'done' state.
   const stateClasses = {
     done:   'bg-[var(--color-accent)] text-[var(--elevation-0-bg)] border-transparent',
     mvd:    'bg-[var(--color-warning-muted)] text-[var(--color-warning)] border-[var(--color-warning)]/30',
     today:  'bg-transparent text-[var(--text-primary)] border-[var(--color-accent)]',
     missed: 'bg-[var(--color-surface-1)] text-[var(--text-disabled)] border-transparent',
   };
-  const base = 'flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl border-2 text-[10px] font-bold';
+  const base = 'flex-1 relative flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl border-2 text-[10px] font-bold overflow-hidden';
   return (
     <div
       className={`${base} ${stateClasses[day.state]}`}
       aria-label={`${day.dayLabel} ${day.dayNum}: ${day.state}`}
     >
-      <span className="text-[9px] uppercase tracking-wider opacity-70">{day.dayLabel}</span>
-      <span className="text-sm leading-none tabular-nums">{day.dayNum}</span>
+      {day.state === 'mvd' && (
+        <span
+          aria-hidden="true"
+          className="absolute left-0 top-0 bottom-0 w-1/2 bg-[var(--color-warning)] opacity-50"
+        />
+      )}
+      <span className="relative text-[9px] uppercase tracking-wider opacity-70">{day.dayLabel}</span>
+      <span className="relative text-sm leading-none tabular-nums">{day.dayNum}</span>
     </div>
   );
 }

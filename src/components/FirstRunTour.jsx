@@ -77,13 +77,13 @@ export default function FirstRunTour() {
             {STEPS.map((_, i) => (
               <div
                 key={i}
-                className={`w-6 h-1 rounded-full transition-all ${i === step ? 'bg-cyan-400 w-8' : 'bg-white/10'}`}
+                className={`w-6 h-1 rounded-full transition-all ${i === step ? 'bg-[var(--color-accent)] w-8' : 'bg-[var(--color-surface-1)]'}`}
               />
             ))}
           </div>
           <button
             onClick={handleDismiss}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--color-surface-hover)] transition-colors"
             aria-label="Dismiss tour"
           >
             <X size={14} />
@@ -91,22 +91,22 @@ export default function FirstRunTour() {
         </div>
 
         {/* Step number */}
-        <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1">
+        <p className="text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-widest mb-1">
           {step + 1} of {STEPS.length}
         </p>
 
         {/* Title */}
-        <h3 className="text-base font-black text-white mb-2">{current.title}</h3>
+        <h3 className="text-base font-black text-[var(--text-primary)] mb-2">{current.title}</h3>
 
         {/* Body */}
-        <p className="text-sm text-slate-300 leading-relaxed">{current.body}</p>
+        <p className="text-sm text-[var(--text-primary)] opacity-80 leading-relaxed">{current.body}</p>
 
         {/* Actions */}
         <div className="flex items-center justify-between mt-5">
           {step > 0 ? (
             <button
               onClick={() => setStep(step - 1)}
-              className="text-xs text-slate-400 hover:text-white font-medium px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] font-medium px-2 py-1.5 rounded-lg hover:bg-[var(--color-surface-1)] transition-colors"
             >
               Back
             </button>
@@ -115,8 +115,7 @@ export default function FirstRunTour() {
           )}
           <button
             onClick={handleNext}
-            className="armor-press flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold text-white"
-            style={{ background: 'var(--color-accent)' }}
+            className="armor-press flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold text-[var(--text-primary)] bg-[var(--color-accent)]"
           >
             {isLast ? 'Got it' : 'Next'}
             {!isLast && <ChevronRight size={14} />}

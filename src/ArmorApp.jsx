@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import {
   Play, BarChart3, Settings as SettingsIcon, Smartphone, User
 } from 'lucide-react';
-import { useArmorData } from './context/ArmorDataContext';
+import { useArmorData, migrateFromShift6 } from './context/ArmorDataContext';
 import ArmorDashboard from './pages/ArmorDashboard';
 const ArmorWorkoutSession = lazy(() => import('./pages/ArmorWorkoutSession'));
 // Account page is lazy-loaded so the cloud-sync bundle (~12KB of syncClient
@@ -43,7 +43,7 @@ export default function ArmorApp() {
   const armor = useArmorData();
   const {
     onboardingDone, preferences, completeOnboarding,
-    logWorkout,
+    logWorkout, persistenceFailed,
   } = armor;
 
   const [activeTab, setActiveTab] = useState('home');
@@ -55,32 +55,23 @@ export default function ArmorApp() {
   // Check for Shift6 migration on first load
   useEffect(() => {
     if (!onboardingDone && !migrated.current) {
+      // Idempotent: skip if already migrated on a previous load.
       const migrationMarker = (() => { try { return localStorage.getItem('armor_migrated_from_shift6'); } catch { return null; } })();
       if (migrationMarker) return;
-      const oldOnboarding = (() => { try { const v = localStorage.getItem('shift6_onboarding_done'); return v ? JSON.parse(v) : false; } catch { return false; } })();
-      if (oldOnboarding) {
-        const oldSettings = (() => { try { const v = localStorage.getItem('shift6_settings'); return v ? JSON.parse(v) : null; } catch { return null; } })();
-        // Read the user's REAL 1RMs from old Shift6 data instead of overwriting
-        // with hardcoded defaults. The 185/135/225 placeholders previously
-        // shipped here were silent data loss for anyone who set real numbers.
-        const old1RMs = oldSettings?.estimated1RMs || oldSettings?.oneRMs || {};
-        completeOnboarding({
-          equipmentTrack: oldSettings?.equippedIds?.includes('barbell') ? 'full_gym' : 'home_gym',
-          estimated1RMs: {
-            barbell_squat: old1RMs.barbell_squat || old1RMs.squat || 0,
-            bench_press: old1RMs.bench_press || old1RMs.bench || 0,
-            deadlift: old1RMs.deadlift || 0,
-            barbell_row: old1RMs.barbell_row || 0,
-            shoulder_press: old1RMs.shoulder_press || 0,
-            goblet_squat: old1RMs.goblet_squat || 0,
-            dumbbell_press: old1RMs.dumbbell_press || 0,
-            romanian_deadlift: old1RMs.romanian_deadlift || 0,
-          },
-          displayName: oldSettings?.displayName || 'Athlete',
-        });
+      const migratedData = migrateFromShift6();
+      if (migratedData) {
+        // migrateFromShift6 returns a full DEFAULT_DATA-shaped object with
+        // the user's real 1RMs from the legacy shift6_* keys. Apply it
+        // through completeOnboarding so the rest of the app sees the
+        // same flow as a fresh signup.
+        completeOnboarding(migratedData.userProfile.displayName ? {
+          equipmentTrack: migratedData.preferences.equipmentTrack,
+          estimated1RMs: migratedData.userProfile.estimated1RMs,
+          displayName: migratedData.userProfile.displayName,
+        } : migratedData);
         try { localStorage.setItem('armor_migrated_from_shift6', '1'); } catch {}
-        migrated.current = true;
       }
+      migrated.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -141,8 +132,19 @@ export default function ArmorApp() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="min-h-screen bg-[var(--elevation-0-bg)] text-[var(--text-primary)] flex flex-col">
       <UpdatePrompt />
+      {/* Persistence warning — shown when localStorage writes are failing.
+          Private mode / quota exceeded / disabled storage: data lives only
+          in memory until the user takes action. */}
+      {persistenceFailed && (
+        <div
+          role="alert"
+          className="bg-[var(--color-warning-muted)] text-[var(--color-warning)] text-xs px-4 py-2 text-center font-medium"
+        >
+          ⚠️ Data isn't being saved. Check browser storage permissions and reload.
+        </div>
+      )}
       <main role="main" aria-label="Armor workout app" className="flex-1 overflow-y-auto">
         {workoutActive ? (
           <Suspense fallback={null}>
@@ -173,7 +175,7 @@ export default function ArmorApp() {
       {!workoutActive && (
         <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-sm">
           <div
-            className="flex justify-around py-2 px-2 rounded-2xl border border-white/5"
+            className="flex justify-around py-2 px-2 rounded-2xl border border-[var(--color-divider)]"
             role="tablist"
             style={{ background: 'var(--elevation-0-bg)', boxShadow: 'var(--elevation-3-shadow)' }}
           >
@@ -189,12 +191,12 @@ export default function ArmorApp() {
                   aria-label={tab.label}
                   className={`armor-press flex flex-col items-center py-2 px-4 rounded-xl transition-all relative ${
                     isActive
-                      ? 'text-cyan-400'
-                      : 'text-slate-600'
+                      ? 'text-[var(--color-accent)]'
+                      : 'text-[var(--text-disabled)]'
                   }`}
                 >
                   {isActive && (
-                    <span className="absolute inset-0 bg-cyan-500/10 rounded-xl" />
+                    <span className="absolute inset-0 bg-[var(--color-accent-muted)] rounded-xl" />
                   )}
                   <Icon size={20} aria-hidden="true" className="relative z-10" strokeWidth={isActive ? 2.5 : 1.5} />
                   <span className={`text-[10px] mt-0.5 font-semibold relative z-10 ${
@@ -217,18 +219,17 @@ export default function ArmorApp() {
               <Smartphone size={20} style={{ color: 'var(--color-accent)' }} />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-white mb-0.5">Add Armor to Home Screen</p>
-              <p className="text-[11px] text-slate-500">Quick access between sets — no browser bar.</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] mb-0.5">Add Armor to Home Screen</p>
+              <p className="text-[11px] text-[var(--text-tertiary)]">Quick access between sets — no browser bar.</p>
             </div>
           </div>
           <div className="flex gap-2 mt-3">
             <button onClick={handleInstall}
-              className="armor-press flex-1 py-2.5 rounded-xl text-white text-sm font-bold"
-              style={{ background: 'var(--color-accent)' }}>
+              className="armor-press flex-1 py-2.5 rounded-xl text-[var(--text-primary)] text-sm font-bold bg-[var(--color-accent)]">
               Install
             </button>
             <button onClick={() => { localStorage.setItem('armor_install_dismissed', '1'); setShowInstallPrompt(false); }}
-              className="px-4 py-2.5 text-slate-400 text-sm font-medium">
+              className="px-4 py-2.5 text-[var(--text-secondary)] text-sm font-medium">
               Not now
             </button>
           </div>

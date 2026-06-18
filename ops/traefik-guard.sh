@@ -50,6 +50,9 @@ armor_mw = """
         contentTypeNosniff: true
         referrerPolicy: "strict-origin-when-cross-origin"
         permissionsPolicy: "geolocation=(), microphone=(), camera=(), payment=(), accelerometer=(), gyroscope=(), magnetometer=()"
+
+    armor-compress:
+      compress: {}
 """
 text = text.replace(mw_marker, mw_marker + armor_mw, 1)
 
@@ -59,10 +62,17 @@ before, after = text.split(services_split, 1)
 if not before.endswith("\n\n"):
     before = before.rstrip("\n") + "\n\n"
 armor_routers = """    getshift6:
-      rule: "Host(\`getshift6.com\`) || Host(\`www.getshift6.com\`)"
+      rule: "Host(`getshift6.com`)"
       entryPoints: [websecure]
       service: armor
-      middlewares: [armor-security]
+      middlewares: [armor-compress, armor-security]
+      tls:
+        certResolver: letsencrypt
+    getshift6-www:
+      rule: "Host(`www.getshift6.com`)"
+      entryPoints: [websecure]
+      service: armor
+      middlewares: [armor-compress, armor-security]
       tls:
         certResolver: letsencrypt
 """

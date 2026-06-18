@@ -50,14 +50,14 @@ export default function UpdatePrompt() {
   if (!showUpdate) return null;
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-cyan-500 text-slate-900 px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 max-w-sm">
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[var(--color-accent)] text-[var(--elevation-0-bg)] px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 max-w-sm">
       <span className="text-sm font-bold">New version available</span>
       <button
         onClick={() => {
           waitingWorker?.postMessage({ type: 'SKIP_WAITING' });
           window.location.reload();
         }}
-        className="px-3 py-1 bg-slate-900 text-cyan-400 rounded-lg text-sm font-bold"
+        className="px-3 py-1 bg-[var(--elevation-0-bg)] text-[var(--color-accent)] rounded-lg text-sm font-bold"
       >
         Reload
       </button>

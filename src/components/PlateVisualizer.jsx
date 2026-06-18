@@ -46,8 +46,8 @@ export default function PlateVisualizer({ weight, track = 'full_gym', compact = 
     return (
       <div className={`flex ${compact ? 'flex-row items-center gap-3' : 'flex-col items-center gap-2'} mt-1`}>
         {!compact && <p className="armor-text-caption">Loaded</p>}
-        <p className="text-sm font-bold text-cyan-400 tabular-nums">{weight} kg</p>
-        {!compact && <p className="text-[11px] text-slate-500">Plate math is US-standard (lbs)</p>}
+        <p className="text-sm font-bold text-[var(--color-accent)] tabular-nums">{weight} kg</p>
+        {!compact && <p className="text-[11px] text-[var(--text-tertiary)]">Plate math is US-standard (lbs)</p>}
       </div>
     );
   }
@@ -62,7 +62,7 @@ export default function PlateVisualizer({ weight, track = 'full_gym', compact = 
       <div className={`flex ${compact ? 'flex-row items-center gap-3' : 'flex-col items-center gap-2'} mt-1`}>
         {!compact && <p className="armor-text-caption">Load per hand</p>}
         <DumbbellSvg size={compact ? Math.min(head.size, 48) : head.size} color={head.color} weight={weight} compact={compact} />
-        {!compact && <p className="text-[11px] text-slate-500">{weight} lb dumbbell</p>}
+        {!compact && <p className="text-[11px] text-[var(--text-tertiary)]">{weight} lb dumbbell</p>}
       </div>
     );
   }
@@ -72,7 +72,7 @@ export default function PlateVisualizer({ weight, track = 'full_gym', compact = 
       <div className={`flex ${compact ? 'flex-row items-center gap-3' : 'flex-col items-center gap-2'} mt-1`}>
         {!compact && <p className="armor-text-caption">Bar only</p>}
         <BarbellSvg plates={[]} barOnly compact={compact} />
-        {!compact && <p className="text-[11px] text-slate-500">45 lb bar (use less than bar weight if possible)</p>}
+        {!compact && <p className="text-[11px] text-[var(--text-tertiary)]">45 lb bar (use less than bar weight if possible)</p>}
       </div>
     );
   }
@@ -98,8 +98,8 @@ export default function PlateVisualizer({ weight, track = 'full_gym', compact = 
             style={{ background: p.color + '33', color: p.color }}>
             {p.weight}
           </span>
-        )) : <span className="text-[10px] text-slate-600">empty bar</span>}
-        {!compact && <span className="text-[10px] text-slate-600 self-center ml-1">lbs/side</span>}
+        )) : <span className="text-[10px] text-[var(--text-disabled)]">empty bar</span>}
+        {!compact && <span className="text-[10px] text-[var(--text-disabled)] self-center ml-1">lbs/side</span>}
       </div>
     </div>
   );

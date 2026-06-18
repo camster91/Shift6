@@ -62,6 +62,55 @@ const DEFAULT_DATA = {
 
 const ArmorDataContext = createContext(null);
 
+/**
+ * Pure state-update logic for `logWorkout`. Exported for unit testing.
+ * Given the previous state and a workout event, returns the next state.
+ * Does not touch localStorage, doesn't run side effects.
+ *
+ * Why extracted: this is the heart of the cycle rollover logic — the
+ * part that advances the user's week/day/cycle and rolls over their
+ * 1RMs. A bug here silently corrupts user progress, so it gets its
+ * own tests instead of relying on a heavy React component test.
+ */
+export function computeNextStateAfterWorkout(prev, workoutData, todayStr) {
+  const newHistory = [...prev.workoutHistory, { ...workoutData, date: workoutData.date || todayStr }];
+  let nextDay = prev.currentCycle.day;
+  let nextWeek = prev.currentCycle.week;
+  let completedCycles = prev.currentCycle.totalCyclesCompleted;
+  let next1RMs = { ...prev.userProfile.estimated1RMs };
+  const completedDays = [...(prev.currentCycle.completedDaysThisWeek || [])];
+
+  if (workoutData.completed !== false && !prev.activeModifiers.travelMode) {
+    if (!completedDays.includes(nextDay)) completedDays.push(nextDay);
+    nextDay = nextDay >= 5 ? 1 : nextDay + 1;
+    if (completedDays.length >= 5 || nextDay === 1) {
+      if (nextWeek >= 6) {
+        nextWeek = 1;
+        completedCycles += 1;
+        next1RMs = rollover1RMs(prev.userProfile.estimated1RMs);
+      } else {
+        nextWeek += 1;
+      }
+      completedDays.length = 0;
+    }
+  }
+  const { currentStreak, longestStreak } = computeStreak(newHistory, prev.streakData.mvdDates, prev.streakData.freezesAvailable, prev.streakData.longestStreak);
+  return {
+    ...prev,
+    workoutHistory: newHistory,
+    userProfile: { ...prev.userProfile, estimated1RMs: next1RMs },
+    currentCycle: {
+      ...prev.currentCycle,
+      day: nextDay, week: nextWeek, totalCyclesCompleted: completedCycles,
+      lastWorkoutDate: todayStr, completedDaysThisWeek: completedDays,
+      // Clear the per-workout track override once the workout is logged,
+      // so tomorrow's session returns to the user's primary track by default.
+      todaysTrack: null,
+    },
+    streakData: { ...prev.streakData, currentStreak, longestStreak, lastActiveDate: todayStr },
+  };
+}
+
 export function ArmorDataProvider({ children }) {
   const [data, setData] = useState(() => {
     const loaded = load(STORAGE_KEY, null);
@@ -95,17 +144,53 @@ export function ArmorDataProvider({ children }) {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
 
-  // Persist locally — immediate write (no debounce) so navigation never loses data
+  // Tracks whether localStorage persistence is failing. When set, we
+  // log to the console and surface a soft warning to the user — silent
+  // data loss (browser private mode, quota exceeded, disabled storage)
+  // is worse than telling the user their data isn't being saved.
+  const [persistenceFailed, setPersistenceFailed] = useState(false);
+
+  // Persist locally — immediate write (no debounce) so navigation never loses data.
+  // Failures are captured so the UI can warn the user.
   useEffect(() => {
-    save(STORAGE_KEY, data);
-    save(REVISION_KEY, revision);
+    try {
+      save(STORAGE_KEY, data);
+      save(REVISION_KEY, revision);
+      if (persistenceFailed) setPersistenceFailed(false);
+    } catch (err) {
+      // Most common causes: Safari private mode (quota 0), storage full,
+      // browser settings blocking storage. The app keeps running in
+      // memory but data won't survive a reload. Surface this.
+      console.error('[ArmorData] localStorage write failed:', err);
+      if (!persistenceFailed) setPersistenceFailed(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, revision]);
 
   // Cloud sync (debounced 2s after change) — only if logged in
+  //
+  // Behavior: on the FIRST effect run after a state change, we skip the
+  // push (no diff). On subsequent runs, we push. This prevents the
+  // "I just logged in and immediately pushed everything back" case where
+  // a freshly-loaded page would echo all local data to the server before
+  // the user has done anything.
+  //
+  // We also re-check `isLoggedIn()` inside the timeout callback so a
+  // logout-during-debounce cancels the push.
+  const isFirstSyncRun = useRef(true);
   useEffect(() => {
-    if (!isLoggedIn()) return;
+    if (!isLoggedIn()) {
+      isFirstSyncRun.current = true;
+      return;
+    }
+    if (isFirstSyncRun.current) {
+      isFirstSyncRun.current = false;
+      return;
+    }
     if (syncTimeout.current) clearTimeout(syncTimeout.current);
     syncTimeout.current = setTimeout(async () => {
+      // Re-check at fire time: user may have logged out during the debounce.
+      if (!isLoggedIn()) return;
       try {
         setSyncStatus('syncing');
         const res = await pushCloud(data, revision);
@@ -244,44 +329,7 @@ export function ArmorDataProvider({ children }) {
   }, []);
 
   const logWorkout = useCallback((workoutData) => {
-    setData(prev => {
-      const newHistory = [...prev.workoutHistory, { ...workoutData, date: workoutData.date || todayStr }];
-      let nextDay = prev.currentCycle.day;
-      let nextWeek = prev.currentCycle.week;
-      let completedCycles = prev.currentCycle.totalCyclesCompleted;
-      let next1RMs = { ...prev.userProfile.estimated1RMs };
-      const completedDays = [...(prev.currentCycle.completedDaysThisWeek || [])];
-
-      if (workoutData.completed !== false && !prev.activeModifiers.travelMode) {
-        if (!completedDays.includes(nextDay)) completedDays.push(nextDay);
-        nextDay = nextDay >= 5 ? 1 : nextDay + 1;
-        if (completedDays.length >= 5 || nextDay === 1) {
-          if (nextWeek >= 6) {
-            nextWeek = 1;
-            completedCycles += 1;
-            next1RMs = rollover1RMs(prev.userProfile.estimated1RMs);
-          } else {
-            nextWeek += 1;
-          }
-          completedDays.length = 0;
-        }
-      }
-      const { currentStreak, longestStreak } = computeStreak(newHistory, prev.streakData.mvdDates, prev.streakData.freezesAvailable, prev.streakData.longestStreak);
-      return {
-        ...prev,
-        workoutHistory: newHistory,
-        userProfile: { ...prev.userProfile, estimated1RMs: next1RMs },
-        currentCycle: {
-          ...prev.currentCycle,
-          day: nextDay, week: nextWeek, totalCyclesCompleted: completedCycles,
-          lastWorkoutDate: todayStr, completedDaysThisWeek: completedDays,
-          // Clear the per-workout track override once the workout is logged,
-          // so tomorrow's session returns to the user's primary track by default.
-          todaysTrack: null,
-        },
-        streakData: { ...prev.streakData, currentStreak, longestStreak, lastActiveDate: todayStr },
-      };
-    });
+    setData(prev => computeNextStateAfterWorkout(prev, workoutData, todayStr));
   }, [todayStr]);
 
   const logMVD = useCallback(() => {
@@ -331,6 +379,7 @@ export function ArmorDataProvider({ children }) {
     logWorkout, logMVD, advanceDay, advanceWeek,
     completeOnboarding, resetAll,
     pullFromCloud, resolveConflictKeepLocal, resolveConflictUseServer,
+    persistenceFailed,
   }), [
     data, revision, syncStatus, lastSyncAt, conflict,
     onboardingDone, todayStr, habitsNeedReset, todaysWorkoutCompleted, isMVDToday,
@@ -340,6 +389,7 @@ export function ArmorDataProvider({ children }) {
     logWorkout, logMVD, advanceDay, advanceWeek,
     completeOnboarding, resetAll,
     pullFromCloud, resolveConflictKeepLocal, resolveConflictUseServer,
+    persistenceFailed,
   ]);
 
   return (

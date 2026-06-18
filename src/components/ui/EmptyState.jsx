@@ -16,17 +16,17 @@ const EmptyState = ({
   return (
     <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
       {/* Icon */}
-      <div className="text-slate-500 mb-4 flex items-center justify-center">
+      <div className="text-[var(--text-tertiary)] mb-4 flex items-center justify-center">
         {icon}
       </div>
 
       {/* Title */}
-      <p className="text-lg font-bold text-white mb-2">
+      <p className="text-lg font-bold text-[var(--text-primary)] mb-2">
         {title}
       </p>
 
       {/* Description */}
-      <p className="text-sm text-slate-400 mb-6 max-w-xs">
+      <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-xs">
         {description}
       </p>
 

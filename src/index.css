@@ -7,18 +7,15 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --brand-primary: #06b6d4;
-    --brand-accent: #22d3ee;
-    --neon-cyan: #06b6d4;
-    --neon-blue: #3b82f6;
-  }
-
   html, body {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     font-family: 'Outfit', system-ui, sans-serif;
-    @apply bg-slate-950 text-slate-100 overflow-x-hidden min-h-screen relative;
+    background-color: var(--elevation-0-bg);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    min-height: 100vh;
+    position: relative;
   }
 
   body::before {
@@ -38,13 +35,8 @@
 
   /* Light theme */
   html.light, html.light body {
-    @apply bg-slate-100 text-slate-900;
-  }
-  html.light body::before {
-    background:
-      radial-gradient(circle at 20% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 40% 60%, rgba(34, 211, 238, 0.05) 0%, transparent 40%);
+    background-color: var(--elevation-0-bg);
+    color: var(--text-primary);
   }
 
   * {
@@ -53,17 +45,24 @@
 }
 
 @layer components {
-  /* Glass morphism card */
+  /* Glass morphism card — uses design-token surface */
   .glass-card {
-    @apply bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 shadow-xl;
+    background-color: var(--color-surface-3);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--color-divider-strong);
+    box-shadow: var(--elevation-3-shadow);
   }
   html.light .glass-card {
-    @apply bg-white/80 backdrop-blur-xl border border-slate-200/50 shadow-lg;
+    background-color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(0, 0, 0, 0.16);
+    box-shadow: var(--elevation-3-shadow);
   }
 
   /* Neon glow border */
   .neon-border {
-    @apply border border-cyan-500/40 shadow-[0_0_10px_rgba(6,182,212,0.15)];
+    border: 1px solid var(--color-accent-muted);
+    box-shadow: 0 0 10px var(--color-accent-muted);
   }
 
   .neon-glow {
@@ -71,27 +70,48 @@
   }
 
   .premium-shadow {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--elevation-4-shadow);
   }
 
   .active-scale {
-    @apply active:scale-95 transition-transform duration-100;
+    transition: transform 0.1s ease-out;
+  }
+  .active-scale:active {
+    transform: scale(0.95);
   }
 
   /* Bottom tab bar */
   .tab-bar {
-    @apply fixed bottom-0 left-0 right-0 z-40 border-t;
-    @apply bg-slate-900/90 backdrop-blur-xl border-slate-800;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-tab-bar);
+    border-top: 1px solid var(--color-divider);
+    background-color: var(--color-surface-3);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
   }
 
   /* FAB button */
   .fab {
-    @apply fixed bottom-24 right-4 z-30 w-16 h-16;
-    @apply bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full;
-    @apply shadow-xl shadow-cyan-500/30;
-    @apply flex items-center justify-center text-white;
-    @apply hover:scale-105 active:scale-95 transition-transform;
+    position: fixed;
+    bottom: 6rem;
+    right: 1rem;
+    z-index: var(--z-floating);
+    width: 4rem;
+    height: 4rem;
+    background-image: linear-gradient(to bottom right, var(--color-accent), #3b82f6);
+    border-radius: var(--radius-full);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    transition: transform 0.2s ease-out;
   }
+  .fab:hover { transform: scale(1.05); }
+  .fab:active { transform: scale(0.95); }
 
   /* Scrollbar hide */
   .no-scrollbar::-webkit-scrollbar { display: none; }

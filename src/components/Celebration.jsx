@@ -58,10 +58,10 @@ function AwardModal({ achievement, onDismiss }) {
         <div className="armor-pr-pulse mx-auto mb-4" style={{ fontSize: '64px', width: 'fit-content' }}>
           {config.icon}
         </div>
-        <h2 className="armor-text-title text-white mb-1">{config.title}</h2>
+        <h2 className="armor-text-title text-[var(--text-primary)] mb-1">{config.title}</h2>
         <p className="armor-text-footnote mb-6">{config.sub}</p>
         <button onClick={onDismiss}
-          className="armor-press w-full py-3 rounded-2xl text-white font-bold"
+          className="armor-press w-full py-3 rounded-2xl text-[var(--text-primary)] font-bold bg-[var(--color-accent)]"
           style={{ background: 'var(--color-accent)' }}>
           <Sparkles size={16} className="inline mr-2" /> Continue
         </button>
@@ -81,15 +81,15 @@ function Toast({ message, sub, onDismiss, duration = 3000 }) {
       <div className="armor-surface-3 px-4 py-3 flex items-center gap-3">
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
           style={{ background: 'rgba(16,185,129,0.2)' }}>
-          <Check size={14} className="text-emerald-400" strokeWidth={3} />
+          <Check size={14} className="text-[var(--color-success)]" strokeWidth={3} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white">{message}</p>
-          {sub && <p className="text-[11px] text-slate-500">{sub}</p>}
+          <p className="text-sm font-bold text-[var(--text-primary)]">{message}</p>
+          {sub && <p className="text-[11px] text-[var(--text-tertiary)]">{sub}</p>}
         </div>
         <button onClick={onDismiss}
           className="armor-press p-1">
-          <X size={14} className="text-slate-500" />
+          <X size={14} className="text-[var(--text-tertiary)]" />
         </button>
       </div>
     </div>

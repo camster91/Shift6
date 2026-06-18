@@ -66,16 +66,25 @@ internet → Traefik (:80/:443) → armor-web (node:20-alpine, port 127.0.0.1:30
 ### To deploy a new build
 
 ```bash
-# Local
+ops/deploy.sh
+```
+
+The script builds, tars, pushes to VPS, extracts into `/opt/armor-live/dist/`
+(the runtime container serves this path — do not extract at the top level or
+you'll get a mix of old and new files), restarts the `armor-web` container,
+and verifies the new asset hash is being served at https://getshift6.com/.
+
+Manual fallback (only if the script is broken):
+```bash
 npm run build
 tar -czf /tmp/armor-dist.tar.gz -C dist .
 cat /tmp/armor-dist.tar.gz | ssh root@187.77.26.99 'cat > /tmp/armor-dist.tar.gz'
-
-# Remote
-ssh root@187.77.26.99
-mkdir -p /opt/armor-live
-cd /opt/armor-live && tar xzf /tmp/armor-dist.tar.gz
-docker restart armor-web
+ssh root@187.77.26.99 "
+  rm -rf /opt/armor-live/dist
+  mkdir -p /opt/armor-live/dist
+  tar -xzf /tmp/armor-dist.tar.gz -C /opt/armor-live/dist
+  docker restart armor-web
+"
 ```
 
 ### To add a new Traefik route (manual or scripted)

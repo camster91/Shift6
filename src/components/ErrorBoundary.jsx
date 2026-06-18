@@ -42,15 +42,15 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+        <div className="min-h-screen bg-[var(--elevation-0-bg)] text-[var(--text-primary)] flex items-center justify-center p-6">
           <div className="text-center max-w-sm">
             <div className="text-4xl mb-4">⚠️</div>
             <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
-            <p className="text-sm text-slate-400 mb-6">The app hit an unexpected error. Your data is safe — everything is stored locally.</p>
+            <p className="text-sm text-[var(--text-secondary)] mb-6">The app hit an unexpected error. Your data is safe — everything is stored locally.</p>
             <div className="space-y-3">
               <button
                 onClick={this.handleReload}
-                className="w-full px-6 py-3 bg-cyan-500 text-white rounded-xl font-bold active:scale-95 transition-transform"
+                className="w-full px-6 py-3 bg-[var(--color-accent)] text-[var(--elevation-0-bg)] rounded-xl font-bold active:scale-95 transition-transform"
               >
                 Reload App
               </button>
@@ -60,7 +60,7 @@ export default class ErrorBoundary extends Component {
               >
                 Reset Data & Start Fresh
               </button>
-              <p className="text-xs text-slate-600 mt-2">Reset clears logs, goals, and settings. This cannot be undone.</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-2">Reset clears logs, goals, and settings. This cannot be undone.</p>
             </div>
           </div>
         </div>

@@ -582,9 +582,13 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
             )}
           </div>
         </div>
-        {!showZeroLbsNudge && unit !== 'kg' && currentEx.weight > 0 && (
+        {!showZeroLbsNudge && currentEx.weight > 0 && (
           <div className="mt-4 pt-4 border-t border-t border-[var(--color-divider)]">
-            <PlateVisualizer weight={currentEx.weight} track={track} unit={unit} />
+            <PlateVisualizer
+              weight={unit === 'kg' ? Math.round(currentEx.weight / 2.20462) : currentEx.weight}
+              track={track}
+              unit={unit}
+            />
           </div>
         )}
       </Card>

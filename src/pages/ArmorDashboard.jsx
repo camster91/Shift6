@@ -358,12 +358,15 @@ export default function ArmorDashboard({ onStartWorkout }) {
                       </div>
                     </div>
                     {/* Inline plate visualizer so the user knows exactly what to load
-                        before tapping Start. */}
-                    {unit !== 'kg' && (
-                      <div className="mt-3 -mx-2">
-                        <PlateVisualizer weight={todayWorkout.primaryLift.weight} track={effectiveTrack} compact />
-                      </div>
-                    )}
+                        before tapping Start. Weight must be in the selected unit. */}
+                    <div className="mt-3 -mx-2">
+                      <PlateVisualizer
+                        weight={unit === 'kg' ? Math.round(todayWorkout.primaryLift.weight / 2.20462) : todayWorkout.primaryLift.weight}
+                        track={effectiveTrack}
+                        compact
+                        unit={unit}
+                      />
+                    </div>
                     {activeModifiers.highFatigue && (
                       <p className="armor-text-footnote text-[var(--color-warning)] mt-2 font-medium">
                         CNS fatigue active — reduced to 60%, hypertrophy focus

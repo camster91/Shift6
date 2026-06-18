@@ -4,27 +4,43 @@
  * Renders an SVG barbell (full_gym) with colored plates stacked on each side,
  * or a single dumbbell (home_gym) sized and colored to the prescribed weight.
  *
- * Standard plate set:
- *   45 lb red, 35 lb blue, 25 lb yellow, 10 lb green, 5 lb silver, 2.5 lb red.
- * Bar is 45 lb (Olympic standard). Weights below 45 lb show the bar only.
+ * The `weight` prop is in the user's selected unit (lbs or kg). The visualizer
+ * works in whichever unit you pass — it does not convert internally.
  *
- * Dumbbell sizes: 5/10/15/20/25/30/40/50 lb standard home-gym set.
+ * Plate sets:
+ *   US lbs:  45/35/25/10/5/2.5 — 45 lb bar (Olympic standard)
+ *   Metric:  25/20/15/10/5/2.5/1.25 — 20 kg bar (Olympic standard, IPF)
+ *
+ * Dumbbell sizes (home_gym):
+ *   US lbs:  5/10/15/20/25/30/40/50 (common home set)
+ *   Metric:  2.5/5/7.5/10/12.5/15/20/25 (common home set)
  */
 
-// Standard barbell plate set in lbs. Visual size scales with weight; colors
-// match common gym conventions (red=45, blue=35, yellow=25, green=10, white=5, red=2.5).
-const BAR_PLATES = [
-  { weight: 45, color: '#ef4444', size: 64 },
-  { weight: 35, color: '#3b82f6', size: 56 },
-  { weight: 25, color: '#eab308', size: 48 },
-  { weight: 10, color: '#22c55e', size: 36 },
-  { weight: 5,  color: '#94a3b8', size: 28 },
-  { weight: 2.5, color: '#f87171', size: 22 },
+// US Olympic plate set (lbs). Colors follow common gym conventions.
+const BAR_PLATES_LBS = [
+  { weight: 45,   color: '#ef4444', size: 64 },
+  { weight: 35,   color: '#3b82f6', size: 56 },
+  { weight: 25,   color: '#eab308', size: 48 },
+  { weight: 10,   color: '#22c55e', size: 36 },
+  { weight: 5,    color: '#94a3b8', size: 28 },
+  { weight: 2.5,  color: '#f87171', size: 22 },
+];
+
+// IPF/competition Olympic plate set (kg). Standard colors per IWF spec.
+const BAR_PLATES_KG = [
+  { weight: 25,   color: '#ef4444', size: 64 },
+  { weight: 20,   color: '#3b82f6', size: 60 },
+  { weight: 15,   color: '#eab308', size: 54 },
+  { weight: 10,   color: '#22c55e', size: 46 },
+  { weight: 5,    color: '#f8fafc', size: 36 },
+  { weight: 2.5,  color: '#ef4444', size: 28 },
+  { weight: 1.25, color: '#cbd5e1', size: 22 },
 ];
 
 const BARBELL_BAR_LBS = 45;
+const BARBELL_BAR_KG = 20;
 
-const DUMBBELL_HEADS = [
+const DUMBBELL_HEADS_LBS = [
   { weight: 50, color: '#ef4444', size: 60 },
   { weight: 40, color: '#3b82f6', size: 56 },
   { weight: 30, color: '#eab308', size: 52 },
@@ -35,78 +51,92 @@ const DUMBBELL_HEADS = [
   { weight: 5,  color: '#64748b', size: 30 },
 ];
 
+const DUMBBELL_HEADS_KG = [
+  { weight: 25,  color: '#ef4444', size: 60 },
+  { weight: 20,  color: '#3b82f6', size: 56 },
+  { weight: 15,  color: '#eab308', size: 52 },
+  { weight: 12.5, color: '#22c55e', size: 48 },
+  { weight: 10,  color: '#a855f7', size: 44 },
+  { weight: 7.5, color: '#06b6d4', size: 40 },
+  { weight: 5,   color: '#94a3b8', size: 36 },
+  { weight: 2.5, color: '#64748b', size: 30 },
+];
+
 export default function PlateVisualizer({ weight, track = 'full_gym', compact = false, unit = 'lbs' }) {
   if (!weight || weight <= 0) return null;
 
-  // The plate math here is hardcoded to lbs (US gym conventions:
-  // 45/35/25/10/5/2.5 plates, 45 lb barbell, 5-50 lb dumbbell set). For
-  // kg users we surface the raw weight and skip the visualizer — the
-  // bar/plate SVG would show wrong equipment for a European gym.
-  if (unit === 'kg') {
-    return (
-      <div className={`flex ${compact ? 'flex-row items-center gap-3' : 'flex-col items-center gap-2'} mt-1`}>
-        {!compact && <p className="armor-text-caption">Loaded</p>}
-        <p className="text-sm font-bold text-[var(--color-accent)] tabular-nums">{weight} kg</p>
-        {!compact && <p className="text-[11px] text-[var(--text-tertiary)]">Plate math is US-standard (lbs)</p>}
-      </div>
-    );
-  }
+  const isKg = unit === 'kg';
+  const bar = isKg ? BARBELL_BAR_KG : BARBELL_BAR_LBS;
+  const plates = isKg ? BAR_PLATES_KG : BAR_PLATES_LBS;
+  const dumbbells = isKg ? DUMBBELL_HEADS_KG : DUMBBELL_HEADS_LBS;
+  const epsilon = 0.01;
 
   if (track === 'home_gym') {
-    const head = DUMBBELL_HEADS.find(h => h.weight === weight)
-      || DUMBBELL_HEADS.reduce((closest, h) =>
+    // Snap to the closest dumbbell in the user's unit.
+    const head = dumbbells.find(h => Math.abs(h.weight - weight) < epsilon)
+      || dumbbells.reduce((closest, h) =>
         Math.abs(h.weight - weight) < Math.abs(closest.weight - weight) ? h : closest,
-        DUMBBELL_HEADS[0]);
+        dumbbells[0]);
 
     return (
       <div className={`flex ${compact ? 'flex-row items-center gap-3' : 'flex-col items-center gap-2'} mt-1`}>
         {!compact && <p className="armor-text-caption">Load per hand</p>}
-        <DumbbellSvg size={compact ? Math.min(head.size, 48) : head.size} color={head.color} weight={weight} compact={compact} />
-        {!compact && <p className="text-[11px] text-[var(--text-tertiary)]">{weight} lb dumbbell</p>}
+        <DumbbellSvg size={compact ? Math.min(head.size, 48) : head.size} color={head.color} weight={weight} unit={unit} compact={compact} />
+        {!compact && <p className="text-[11px] text-[var(--text-tertiary)]">{weight} {unit} dumbbell</p>}
       </div>
     );
   }
 
-  if (weight < BARBELL_BAR_LBS) {
+  if (weight < bar) {
     return (
       <div className={`flex ${compact ? 'flex-row items-center gap-3' : 'flex-col items-center gap-2'} mt-1`}>
         {!compact && <p className="armor-text-caption">Bar only</p>}
-        <BarbellSvg plates={[]} barOnly compact={compact} />
-        {!compact && <p className="text-[11px] text-[var(--text-tertiary)]">45 lb bar (use less than bar weight if possible)</p>}
+        <BarbellSvg plates={[]} barOnly bar={bar} unit={unit} compact={compact} />
+        {!compact && <p className="text-[11px] text-[var(--text-tertiary)]">{bar} {unit} bar (use less than bar weight if possible)</p>}
       </div>
     );
   }
 
-  const perSide = (weight - BARBELL_BAR_LBS) / 2;
-  const plates = [];
+  const perSide = (weight - bar) / 2;
+  const used = [];
   let remaining = perSide;
-  for (const p of BAR_PLATES) {
-    while (remaining >= p.weight - 0.001) {
-      plates.push(p);
+  for (const p of plates) {
+    while (remaining >= p.weight - epsilon) {
+      used.push(p);
       remaining -= p.weight;
     }
   }
+  // Tolerate tiny remainders from unit-conversion rounding (e.g. 0.4 kg left
+  // after picking all the 25/20/15/10/5/2.5 plates). Round the remainder to
+  // one decimal and surface it as a "+X.X" tag so the user knows the
+  // visualizer is close-but-not-exact.
+  const remainder = Math.round(remaining * 10) / 10;
 
   return (
     <div className={`flex ${compact ? 'flex-row items-center gap-2' : 'flex-col items-center gap-2'} mt-1`}>
       {!compact && <p className="armor-text-caption">Per side</p>}
-      <BarbellSvg plates={plates} compact={compact} />
+      <BarbellSvg plates={used} bar={bar} unit={unit} compact={compact} />
       <div className="flex flex-wrap gap-1 justify-center max-w-[280px]">
-        {plates.length > 0 ? plates.map((p, i) => (
+        {used.length > 0 ? used.map((p, i) => (
           <span key={i}
             className="px-1.5 py-0.5 rounded text-[9px] font-bold"
             style={{ background: p.color + '33', color: p.color }}>
             {p.weight}
           </span>
         )) : <span className="text-[10px] text-[var(--text-disabled)]">empty bar</span>}
-        {!compact && <span className="text-[10px] text-[var(--text-disabled)] self-center ml-1">lbs/side</span>}
+        {remainder > 0 && (
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[var(--color-warning-muted)] text-[var(--color-warning)]">
+            +{remainder}
+          </span>
+        )}
+        {!compact && <span className="text-[10px] text-[var(--text-disabled)] self-center ml-1">{unit}/side</span>}
       </div>
     </div>
   );
 }
 
 // SVG barbell: long horizontal bar with two sleeve collars and plates on each side.
-function BarbellSvg({ plates = [], barOnly = false, compact = false }) {
+function BarbellSvg({ plates = [], barOnly = false, bar = 45, unit = 'lbs', compact = false }) {
   const W = compact ? 200 : 240, H = compact ? 48 : 64;
   const centerY = H / 2;
   const barH = compact ? 5 : 6;
@@ -149,7 +179,7 @@ function BarbellSvg({ plates = [], barOnly = false, compact = false }) {
       {!compact && (
         <text x={W / 2} y={H - 2} textAnchor="middle"
           fontSize="8" fill="rgba(148,163,184,0.6)" fontFamily="monospace">
-          {barOnly ? '45 LB BAR' : '45 LB BAR + PLATES'}
+          {barOnly ? `${bar} ${unit.toUpperCase()} BAR` : `${bar} ${unit.toUpperCase()} BAR + PLATES`}
         </text>
       )}
     </svg>
@@ -157,7 +187,7 @@ function BarbellSvg({ plates = [], barOnly = false, compact = false }) {
 }
 
 // SVG dumbbell: handle + two weighted heads.
-function DumbbellSvg({ size, color, weight, compact = false }) {
+function DumbbellSvg({ size, color, weight, unit = 'lbs', compact = false }) {
   const scale = compact ? 0.8 : 1;
   const W = compact ? 140 : 160, H = size * scale + (compact ? 12 : 20);
   const centerY = H / 2;
@@ -179,7 +209,7 @@ function DumbbellSvg({ size, color, weight, compact = false }) {
       {!compact && (
         <text x={W / 2} y={H - 4} textAnchor="middle"
           fontSize="9" fontWeight="bold" fill={color} fontFamily="monospace">
-          {weight} LB
+          {weight} {unit.toUpperCase()}
         </text>
       )}
     </svg>

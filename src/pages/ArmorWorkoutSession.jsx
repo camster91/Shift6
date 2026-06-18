@@ -542,7 +542,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
             </span>
           )}
           {activeModifiers.travelMode && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 font-semibold">
+            <span className="text-[10px] px-2 py-0.5 rounded-full armor-badge armor-badge-accent font-semibold">
               Travel: bodyweight subs
             </span>
           )}

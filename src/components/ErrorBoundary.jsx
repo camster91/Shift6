@@ -56,7 +56,7 @@ export default class ErrorBoundary extends Component {
               </button>
               <button
                 onClick={this.handleReset}
-                className="w-full px-6 py-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-bold active:scale-95 transition-transform text-sm"
+                className="w-full px-6 py-3 bg-[var(--color-danger-muted)] border border-[var(--color-danger)]/20 text-[var(--color-danger)] rounded-xl font-bold active:scale-95 transition-transform text-sm"
               >
                 Reset Data & Start Fresh
               </button>

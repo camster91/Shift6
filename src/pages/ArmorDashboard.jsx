@@ -7,6 +7,7 @@ import {
   EXERCISE_TRACK,
 } from '../data/armorEngine';
 import PlateVisualizer from '../components/PlateVisualizer';
+import WeekStrip from '../components/WeekStrip';
 import { Card, SectionHeader, StatTile, Button } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
@@ -159,6 +160,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
     toggleModifier, toggleHabit, resetDailyHabits,
     estimated1RMs, equipmentTrack, effectiveTrack, todaysTrack, setTodaysTrack,
     todaysWorkoutCompleted, habitsNeedReset, streakData, isMVDToday, preferences,
+    workoutHistory,
   } = useArmorData();
 
   useEffect(() => {
@@ -211,6 +213,12 @@ export default function ArmorDashboard({ onStartWorkout }) {
       </div>
 
       <div className="px-5 space-y-5">
+        {/* ── WEEK HISTORY (last 7 days) ── */}
+        <WeekStrip
+          completedDates={workoutHistory.filter(w => w.completed).map(w => w.date)}
+          mvdDates={streakData.mvdDates || []}
+        />
+
         {/* ── CYCLE PROGRESS ── */}
         <CycleProgress
           week={currentCycle.week}
@@ -291,7 +299,7 @@ export default function ArmorDashboard({ onStartWorkout }) {
               {/* Ambient glow based on workout type */}
               <div
                 className={`absolute top-0 right-0 w-40 h-40 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl opacity-20 ${
-                  workoutAccent === 'cardio' ? 'bg-rose-500' : 'bg-cyan-500'
+                  workoutAccent === 'cardio' ? 'bg-[var(--color-cardio)]' : 'bg-[var(--color-accent)]'
                 }`}
               />
 

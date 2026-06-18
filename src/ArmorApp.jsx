@@ -94,6 +94,15 @@ export default function ArmorApp() {
     const theme = preferences?.theme || 'dark';
     if (theme === 'light') {
       document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+    // Sync the browser chrome theme color (PWA status bar, Android taskbar,
+    // Safari address bar) with the active theme. Without this the status
+    // bar stays dark on a light theme and looks jarring.
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute('content', theme === 'light' ? '#f1f5f9' : '#020617');
     }
     try {
       localStorage.setItem('armor_theme', theme);

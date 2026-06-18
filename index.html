@@ -10,6 +10,18 @@
   <meta name="description"
     content="Armor — 6-week periodization, 2 strength pillars, 4 daily longevity habits, and contingency protocols for professionals whose schedule doesn't respect their workout." />
 
+  <!-- Open Graph + Twitter Card (so shared links get a proper preview) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Armor — Train Through Chaos" />
+  <meta property="og:description" content="6-week periodization, 2 strength pillars, 4 daily longevity habits, contingency protocols. Local-first, free, no ads." />
+  <meta property="og:image" content="https://getshift6.com/pwa-512x512.png" />
+  <meta property="og:url" content="https://getshift6.com" />
+  <meta property="og:site_name" content="Armor" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Armor — Train Through Chaos" />
+  <meta name="twitter:description" content="6-week periodization, 2 strength pillars, 4 daily longevity habits, contingency protocols. Local-first, free, no ads." />
+  <meta name="twitter:image" content="https://getshift6.com/pwa-512x512.png" />
+
   <!-- Apple PWA Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -32,12 +44,17 @@
     }
   </style>
   <script>
-    // Prevent white flash: apply saved theme before paint
+    // Prevent white flash: apply saved theme + sync the browser chrome
+    // theme color before paint.
     (function() {
       try {
         var theme = localStorage.getItem('armor_theme') || localStorage.getItem('shift6_theme');
         if (theme === 'light') {
           document.documentElement.classList.add('light');
+        }
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) {
+          meta.setAttribute('content', theme === 'light' ? '#f1f5f9' : '#020617');
         }
       } catch(e) {}
     })();

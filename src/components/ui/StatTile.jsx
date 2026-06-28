@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 // ── Accent color maps ─────────────────────────────────────────────────────────
 // Maps semantic accent names to the design-token color classes. The
 // underlying tokens (--color-accent, --color-success, etc.) are the
@@ -9,6 +11,7 @@ const accentClasses = {
   rose:   'text-[var(--color-cardio)]',
   slate:  'text-[var(--text-secondary)]',
 };
+
 const accentBgClasses = {
   cyan:   'bg-[var(--color-accent-muted)]',
   emerald: 'bg-[var(--color-success-muted)]',
@@ -24,7 +27,7 @@ const accentBgClasses = {
  * @param {React.ReactNode|string} value - Large bold metric
  * @param {'cyan'|'emerald'|'amber'|'rose'|'slate'} accent - Icon/text accent color
  */
-const StatTile = ({
+const StatTile = memo(({
   icon,
   label,
   value,
@@ -56,7 +59,7 @@ const StatTile = ({
       </div>
     </div>
   );
-};
+});
 
 StatTile.displayName = 'StatTile';
 

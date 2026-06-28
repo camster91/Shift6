@@ -8,27 +8,12 @@ import {
 } from '../data/armorEngine';
 import PlateVisualizer from '../components/PlateVisualizer';
 import WeekStrip from '../components/WeekStrip';
-import { Card, SectionHeader, StatTile, Button } from '../components/ui';
+import { Card, SectionHeader, StatTile, Button, JargonTooltip } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR DASHBOARD v3.0 — Apple HIG design system
    Zero borders. Token-driven colors. Elevation-based depth.
    ═══════════════════════════════════════════════════════════ */
-
-// Jargon tooltip helper — wraps a term with an (i) icon
-function JargonTooltip({ term, definition }) {
-  return (
-    <span className="inline-flex items-center gap-0.5">
-      {term}
-      <span
-        className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold text-[var(--text-tertiary)] bg-[var(--color-surface-1)] cursor-help select-none"
-        title={definition}
-      >
-        i
-      </span>
-    </span>
-  );
-}
 
 const PHASE_DEFINITIONS = {
   'Base': 'foundation phase — moderate weight, higher reps, building work capacity',

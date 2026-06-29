@@ -9,3 +9,7 @@ This journal tracks critical UX and accessibility insights discovered during dev
 ## 2025-06-08 - Accessible Interactive Cards
 **Learning:** Custom interactive elements like Cards implemented with `div` require explicit `role="button"`, `tabIndex={0}`, and manual keyboard event handlers (Enter/Space) to be accessible to keyboard and screen reader users.
 **Action:** Centralize accessibility logic in shared UI components so that enabling an `interactive` prop automatically handles ARIA roles, tabbing, and keyboard triggers.
+
+## 2025-06-10 - Centralized Accessible Tooltips
+**Learning:** Terminology tooltips implemented as `<span>` with `title` attributes are inaccessible to keyboard and screen reader users. Centralizing them as a `<button>` based component ensures consistent accessibility and focus management.
+**Action:** Use a `<button>` with `aria-label` for small informational tooltips to ensure they are discoverable and focusable.

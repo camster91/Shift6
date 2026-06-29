@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { Check, Sparkles } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { EQUIPMENT_TRACKS, SPLIT_DAYS } from '../data/armorEngine';
-import PageHeader from '../components/ui/PageHeader.jsx';
-import Card from '../components/ui/Card.jsx';
-import Button from '../components/ui/Button.jsx';
+import { PageHeader, Card, Button, JargonTooltip } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR ONBOARDING v3.0 — Apple HIG
@@ -16,21 +14,6 @@ const DEFAULTS = {
   full_gym: { barbell_squat: 185, bench_press: 135, deadlift: 225 },
   home_gym: { goblet_squat: 95, dumbbell_press: 100, romanian_deadlift: 155 },
 };
-
-// Jargon tooltip helper — wraps a term with an (i) icon
-function JargonTooltip({ term, definition }) {
-  return (
-    <span className="inline-flex items-center gap-0.5">
-      {term}
-      <span
-        className="armor-press inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold text-[var(--text-tertiary)] bg-[var(--color-surface-1)] cursor-help select-none"
-        title={definition}
-      >
-        i
-      </span>
-    </span>
-  );
-}
 
 // Day-of-week pip — a small numbered circle used in the split preview list.
 function DayPip({ day }) {

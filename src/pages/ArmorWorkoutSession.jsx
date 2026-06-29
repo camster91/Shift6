@@ -321,6 +321,12 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const [completingSet, setCompletingSet] = useState(false);
   const justCompletedTimerRef = useRef(null);
 
+  // Use custom queue if set, otherwise fall back to prop-derived queue
+  const activeQueue = customQueue || queue;
+
+  const { checkPR } = usePRDetection();
+  const currentEx = activeQueue[exIdx];
+
   // Build swap alternatives from SPLIT_DAYS based on current exercise body part
   const swapAlts = useMemo(() => {
     if (!currentEx) return [];
@@ -336,12 +342,6 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
       return true;
     }).map(d => d.primary);
   }, [currentEx]);
-
-  // Use custom queue if set, otherwise fall back to prop-derived queue
-  const activeQueue = customQueue || queue;
-
-  const { checkPR } = usePRDetection();
-  const currentEx = activeQueue[exIdx];
   const totalSets = currentEx?.sets || 3;
   const restSecs = currentEx?.type === 'primary' ? 120 : 90;
   const timer = useTimer(restSecs);
@@ -607,7 +607,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
       </div>
 
       <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
-        placeholder="RPE, form notes..."
+        placeholder="RPE, form notes..." maxLength={500}
         className="w-full bg-[var(--color-surface-1)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none mb-6"
       />
 

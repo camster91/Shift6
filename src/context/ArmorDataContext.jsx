@@ -321,7 +321,7 @@ export function ArmorDataProvider({ children }) {
       preferences: { ...prev.preferences, equipmentTrack: equipmentTrack || prev.preferences.equipmentTrack },
       userProfile: {
         ...prev.userProfile,
-        displayName: displayName || 'Athlete',
+        displayName: (displayName || 'Athlete').slice(0, 50),
         estimated1RMs: { ...prev.userProfile.estimated1RMs, ...sanitized1RMs },
       },
       currentCycle: { ...prev.currentCycle, week: 1, day: 1, lastWorkoutDate: null, completedDaysThisWeek: [] },

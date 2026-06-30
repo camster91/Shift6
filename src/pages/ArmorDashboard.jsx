@@ -9,6 +9,7 @@ import {
 import PlateVisualizer from '../components/PlateVisualizer';
 import ExerciseIllustration from '../components/ExerciseIllustration';
 import WeekStrip from '../components/WeekStrip';
+import TravelModeBanner from '../components/TravelModeBanner';
 import { Card, SectionHeader, StatTile, Button } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
@@ -236,6 +237,17 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
         {/* ── MODIFIERS ── */}
         <ModifierRow activeModifiers={activeModifiers} onToggle={toggleModifier} />
 
+        {/* ── TRAVEL MODE BANNER ── */}
+        {/* Prominent indicator above the workout card so users always
+            know when they've enabled travel mode and why the workout
+            is different from usual. The compact in-card text is a
+            secondary reminder. */}
+        {activeModifiers.travelMode && todayWorkout?.primaryLift && (
+          <TravelModeBanner
+            todayExerciseId={todayWorkout.primaryLift.exerciseId}
+          />
+        )}
+
         {/* ── TODAY'S WORKOUT ── */}
         {isMVD ? (
           <div className="armor-surface-2 p-5 space-y-3 relative overflow-hidden">
@@ -363,12 +375,21 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
                         {todayWorkout.primaryLift.exerciseId?.replace(/_/g, ' ')}
                       </span>
                       <div className="text-right">
-                        <span className="text-2xl font-black text-[var(--color-accent)] tabular-nums">
-                          {Math.round(todayWorkout.primaryLift.weight / (unit === 'kg' ? 2.20462 : 1))}
-                        </span>
-                        <span className="text-sm text-[var(--text-secondary)] ml-1">{unit}</span>
+                        {todayWorkout.primaryLift.weight > 0 ? (
+                          <>
+                            <span className="text-2xl font-black text-[var(--color-accent)] tabular-nums">
+                              {Math.round(todayWorkout.primaryLift.weight / (unit === 'kg' ? 2.20462 : 1))}
+                            </span>
+                            <span className="text-sm text-[var(--text-secondary)] ml-1">{unit}</span>
+                          </>
+                        ) : (
+                          <span className="text-sm font-bold text-[var(--text-secondary)]">Bodyweight</span>
+                        )}
                         <p className="armor-text-footnote font-medium">
-                          {todayWorkout.primaryLift.sets}×{todayWorkout.primaryLift.reps} @ {Math.round(todayWorkout.primaryLift.pct * 100)}%
+                          {todayWorkout.primaryLift.sets}×{todayWorkout.primaryLift.reps}
+                          {Number.isFinite(todayWorkout.primaryLift.pct)
+                            ? ` @ ${Math.round(todayWorkout.primaryLift.pct * 100)}%`
+                            : ''}
                         </p>
                       </div>
                     </div>
@@ -416,11 +437,9 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
                 </p>
               )}
 
-              {activeModifiers.travelMode && (
-                <p className="relative z-10 armor-text-footnote text-[var(--color-accent)] opacity-80 font-medium bg-[var(--color-accent-muted)] rounded-lg px-3 py-2">
-                  ✈️ Travel mode — progression frozen, bodyweight substitutions active
-                </p>
-              )}
+              {/* Travel-mode substitution notice used to live here as
+                  small italic text. Now hoisted to <TravelModeBanner />
+                  above the card for visibility — see line 246. */}
             </Card>
 
             {/* 10-Minute Express card */}

@@ -21,7 +21,9 @@ export const EXERCISE_IMAGES = {
   barbell_squat: '/exercises/barbell_squat.webp',
   bench_press: '/exercises/bench_press.webp',
   deadlift: '/exercises/deadlift.webp',
+  dumbbell_press: '/exercises/dumbbell_press.webp',
   goblet_squat: '/exercises/goblet_squat.webp',
+  romanian_deadlift: '/exercises/romanian_deadlift.webp',
 };
 
 /**

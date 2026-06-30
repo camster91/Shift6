@@ -322,6 +322,15 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const [completingSet, setCompletingSet] = useState(false);
   const justCompletedTimerRef = useRef(null);
 
+  // Use custom queue if set, otherwise fall back to prop-derived queue
+  // (must be declared before anything that reads `currentEx`)
+  const activeQueue = customQueue || queue;
+  const { checkPR } = usePRDetection();
+  const currentEx = activeQueue[exIdx];
+  const totalSets = currentEx?.sets || 3;
+  const restSecs = currentEx?.type === 'primary' ? 120 : 90;
+  const timer = useTimer(restSecs);
+
   // Build swap alternatives from SPLIT_DAYS based on current exercise body part
   const swapAlts = useMemo(() => {
     if (!currentEx) return [];
@@ -337,15 +346,6 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
       return true;
     }).map(d => d.primary);
   }, [currentEx]);
-
-  // Use custom queue if set, otherwise fall back to prop-derived queue
-  const activeQueue = customQueue || queue;
-
-  const { checkPR } = usePRDetection();
-  const currentEx = activeQueue[exIdx];
-  const totalSets = currentEx?.sets || 3;
-  const restSecs = currentEx?.type === 'primary' ? 120 : 90;
-  const timer = useTimer(restSecs);
 
   // Reset state when exercise index changes; currentEx is derived from exIdx via queue[exIdx]
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -481,24 +481,48 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
 
   /* ── REST SCREEN ──────────────────────────────────────────── */
   if (phase === 'rest') {
+    // Peek at the next exercise in the queue, if any. Show its
+    // illustration as a "what's next" preview under the timer.
+    const nextEx = exIdx < activeQueue.length - 1 ? activeQueue[exIdx + 1] : null;
     return (
       <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full armor-entrance">
         <p className="armor-text-caption mb-1">Recover</p>
         <h3 className="text-base font-bold text-[var(--text-primary)] mb-1 capitalize">
           {currentEx.exerciseId?.replace(/_/g, ' ')}
         </h3>
-        <p className="text-sm text-[var(--text-secondary)] mb-6">
+        <p className="text-sm text-[var(--text-secondary)] mb-4">
           Set {setNum} of {totalSets} · {currentEx.reps} reps @ {Math.round(currentEx.weight / (unit === 'kg' ? 2.20462 : 1))}{unit}
         </p>
         <TimerRing seconds={timer.timeLeft} running={timer.running} accentColor="var(--color-accent)" label="Rest" />
         {timer.timeLeft <= 10 && timer.running && (
           <p className="text-[var(--color-warning)] text-sm font-bold mt-3 armor-entrance">Ready up</p>
         )}
-        <div className="flex items-center justify-center gap-3 mt-6">
+        <div className="flex items-center justify-center gap-3 mt-4">
           <Button variant="secondary" size="sm" onClick={() => { timer.addTime(-15); HAPTIC.light(); }}>-15</Button>
           <Button variant="secondary" size="sm" onClick={() => { timer.addTime(15); HAPTIC.light(); }}>+15</Button>
         </div>
-        <div className="mt-auto pb-8 space-y-3">
+        {nextEx && (
+          <div className="mt-5 pt-4 border-t border-[var(--color-divider)]">
+            <p className="armor-text-caption mb-2">Up next</p>
+            <div className="flex items-center gap-3">
+              <ExerciseIllustration
+                exerciseId={nextEx.exerciseId}
+                compact
+                className="w-16 h-16 shrink-0 rounded-lg"
+              />
+              <div className="text-left min-w-0">
+                <p className="text-sm font-semibold capitalize truncate">
+                  {nextEx.exerciseId?.replace(/_/g, ' ')}
+                </p>
+                <p className="armor-text-footnote">
+                  {nextEx.reps} reps
+                  {nextEx.type === 'primary' && ` @ ${Math.round((nextEx.weight || 0) / (unit === 'kg' ? 2.20462 : 1))}${unit}`}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="mt-auto pb-8 pt-6">
           <Button
             variant="primary"
             size="lg"

@@ -13,7 +13,9 @@ describe('getExerciseImage', () => {
     expect(getExerciseImage('barbell_squat')).toBe('/exercises/barbell_squat.webp');
     expect(getExerciseImage('bench_press')).toBe('/exercises/bench_press.webp');
     expect(getExerciseImage('deadlift')).toBe('/exercises/deadlift.webp');
+    expect(getExerciseImage('dumbbell_press')).toBe('/exercises/dumbbell_press.webp');
     expect(getExerciseImage('goblet_squat')).toBe('/exercises/goblet_squat.webp');
+    expect(getExerciseImage('romanian_deadlift')).toBe('/exercises/romanian_deadlift.webp');
   });
 
   it('returns null for an exercise without an illustration', () => {

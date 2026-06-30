@@ -16,11 +16,16 @@ describe('getExerciseImage', () => {
     expect(getExerciseImage('dumbbell_press')).toBe('/exercises/dumbbell_press.webp');
     expect(getExerciseImage('goblet_squat')).toBe('/exercises/goblet_squat.webp');
     expect(getExerciseImage('romanian_deadlift')).toBe('/exercises/romanian_deadlift.webp');
+    expect(getExerciseImage('pushups')).toBe('/exercises/pushups.webp');
+    expect(getExerciseImage('plank')).toBe('/exercises/plank.webp');
+    expect(getExerciseImage('lunges')).toBe('/exercises/lunges.webp');
+    expect(getExerciseImage('glute_bridge')).toBe('/exercises/glute_bridge.webp');
+    expect(getExerciseImage('calf_raises')).toBe('/exercises/calf_raises.webp');
   });
 
   it('returns null for an exercise without an illustration', () => {
     expect(getExerciseImage('bicep_curl')).toBeNull();
-    expect(getExerciseImage('pullups')).toBeNull();
+    expect(getExerciseImage('leg_press')).toBeNull();
     expect(getExerciseImage('does_not_exist')).toBeNull();
   });
 });

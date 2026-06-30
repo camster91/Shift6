@@ -119,4 +119,9 @@ export const EXERCISE_LABELS = {
   goblet_squat: 'Dumbbell Goblet Squat',
   dumbbell_press: 'Dumbbell Bench Press',
   romanian_deadlift: 'Romanian Deadlift (DB)',
+  pushups: 'Push-Ups',
+  plank: 'Forearm Plank',
+  lunges: 'Walking Lunge',
+  glute_bridge: 'Glute Bridge',
+  calf_raises: 'Standing Calf Raise',
 };

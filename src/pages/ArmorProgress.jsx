@@ -3,6 +3,7 @@ import { Flame, Trophy } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import { PERIODIZATION, getWeekConfig } from '../data/armorEngine';
 import { Card, PageHeader, EmptyState, Button } from '../components/ui';
+import PersonalRecords from '../components/PersonalRecords';
 
 /* ═══════════════════════════════════════════════════════════
    ARMOR PROGRESS v3.0 — Token-driven colors
@@ -590,6 +591,12 @@ export default function ArmorProgress() {
           />
           <Stat label="Cycles" value={currentCycle.totalCyclesCompleted} sub="completed" accent="var(--color-warning)" />
         </div>
+
+        {/* Personal Records — what the user has actually lifted,
+            computed from workoutHistory. Distinct from the 1RM
+            leaderboard below (which shows self-entered estimates).
+            For a complete lift, both can exist. */}
+        <PersonalRecords workoutHistory={workoutHistory} unit={unit} />
 
         {/* 1RM Leaderboard */}
         {sorted1RMs.length > 0 && (

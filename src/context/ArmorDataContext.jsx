@@ -399,12 +399,14 @@ export function ArmorDataProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useArmorData() {
   const ctx = useContext(ArmorDataContext);
   if (!ctx) throw new Error('useArmorData must be used within ArmorDataProvider');
   return ctx;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function migrateFromShift6() {
   try {
     const oldSettings = load('shift6_settings', null);

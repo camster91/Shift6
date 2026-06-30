@@ -11,6 +11,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   computeStreak,
+  streakStatus,
   rollover1RMs,
   EXERCISE_TRACK,
   EXERCISE_DISPLAY_NAMES,
@@ -85,6 +86,64 @@ describe('computeStreak', () => {
     const today = new Date().toISOString().split('T')[0];
     const r = computeStreak([{ date: today, completed: true }], [], 1, 99);
     expect(r.longestStreak).toBe(99);
+  });
+});
+
+describe('streakStatus', () => {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0];
+
+  it('returns ok for a new user with no streak data', () => {
+    expect(streakStatus(null).state).toBe('ok');
+    expect(streakStatus({}).banner).toBeNull();
+  });
+
+  it('returns at_risk when the user logged yesterday and has an active streak', () => {
+    const r = streakStatus({
+      currentStreak: 7,
+      longestStreak: 14,
+      lastActiveDate: yesterday,
+      freezesAvailable: 1,
+    });
+    expect(r.state).toBe('at_risk');
+    expect(r.banner.title).toMatch(/7-day/i);
+    expect(r.banner.body).toMatch(/Log today/i);
+  });
+
+  it('returns broken when currentStreak=0 and longestStreak >= 3', () => {
+    const r = streakStatus({
+      currentStreak: 0,
+      longestStreak: 14,
+      lastActiveDate: threeDaysAgo,
+      freezesAvailable: 1,
+    });
+    expect(r.state).toBe('broken');
+    expect(r.banner.title).toBe('Streak ended');
+    expect(r.banner.body).toMatch(/14-day streak ended/i);
+  });
+
+  it('returns ok (no banner) for short streaks that ended', () => {
+    // longestStreak < 3 means it was barely a streak, not worth a banner
+    const r = streakStatus({
+      currentStreak: 0,
+      longestStreak: 2,
+      lastActiveDate: threeDaysAgo,
+      freezesAvailable: 1,
+    });
+    expect(r.state).toBe('ok');
+    expect(r.banner).toBeNull();
+  });
+
+  it('returns ok when the user logged today', () => {
+    const r = streakStatus({
+      currentStreak: 7,
+      longestStreak: 7,
+      lastActiveDate: today,
+      freezesAvailable: 1,
+    });
+    expect(r.state).toBe('ok');
+    expect(r.banner).toBeNull();
   });
 });
 

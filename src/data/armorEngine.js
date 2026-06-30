@@ -301,6 +301,60 @@ export function computeStreak(workoutHistory, mvdDates, freezesAvailable, previo
 }
 
 /**
+ * streakStatus — returns a structured view of the user's streak
+ * state for the dashboard banner. Encodes three cases that
+ * require user attention:
+ *
+ *  - 'at_risk': yesterday was the last active day. If they don't
+ *    act today, the streak resets to 0.
+ *  - 'broken': they had a streak but didn't act for 2+ days and the
+ *    streak is now 0. Could have used a freeze day but didn't.
+ *  - 'frozen': they used a freeze day (currentStreak > 0, lastActive
+ *    has a 2-day gap to prior active date)
+ *  - 'ok': streak is alive, no action needed
+ *
+ * Plus a "should show banner" flag for the dashboard.
+ */
+export function streakStatus(streakData) {
+  if (!streakData) return { state: 'ok', banner: null };
+  const { currentStreak, longestStreak, lastActiveDate, freezesAvailable = 0 } = streakData;
+  if (!lastActiveDate) {
+    // Brand new user, no streak yet
+    return { state: 'ok', banner: null };
+  }
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const daysSinceActive = Math.floor(
+    (new Date(today) - new Date(lastActiveDate)) / 86400000
+  );
+  if (currentStreak === 0 && longestStreak >= 3) {
+    // Streak is gone and they had a meaningful one
+    return {
+      state: 'broken',
+      banner: {
+        kind: 'broken',
+        title: 'Streak ended',
+        body: `Your ${longestStreak}-day streak ended. ${freezesAvailable > 0 ? `${freezesAvailable} freeze day${freezesAvailable === 1 ? '' : 's'} available this week.` : 'Streak freezes reset each week.'}`,
+        cta: freezesAvailable > 0 ? 'Streak is gone — keep logging!' : null,
+      },
+    };
+  }
+  if (currentStreak > 0 && lastActiveDate === yesterday) {
+    // Streak is alive but at risk if they don't act today
+    return {
+      state: 'at_risk',
+      banner: {
+        kind: 'at_risk',
+        title: `Don't break your ${currentStreak}-day streak`,
+        body: `Log today's workout or MVD to keep it alive. ${freezesAvailable > 0 ? `(${freezesAvailable} freeze day${freezesAvailable === 1 ? '' : 's'} available — used automatically on next gap.)` : ''}`,
+        cta: null,
+      },
+    };
+  }
+  return { state: 'ok', banner: null };
+}
+
+/**
  * VO2 Max protocol: Norwegian 4x4 intervals.
  * 4 minutes work, 3 minutes rest, 4 rounds.
  */

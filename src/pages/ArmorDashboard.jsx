@@ -4,12 +4,13 @@ import { useArmorData } from '../context/ArmorDataContext';
 import {
   getTodaysWorkout, getDailyHabits, get10MinWorkout, MODIFIERS, MVD_PROTOCOL,
   VO2MAX_PROTOCOL, PERIODIZATION, getWeekConfig, EQUIPMENT_TRACKS,
-  EXERCISE_TRACK,
+  EXERCISE_TRACK, streakStatus,
 } from '../data/armorEngine';
 import PlateVisualizer from '../components/PlateVisualizer';
 import ExerciseIllustration from '../components/ExerciseIllustration';
 import WeekStrip from '../components/WeekStrip';
 import TravelModeBanner from '../components/TravelModeBanner';
+import StreakBanner from '../components/StreakBanner';
 import { Card, SectionHeader, StatTile, Button } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
@@ -233,6 +234,16 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
           day={currentCycle.day}
           totalCyclesCompleted={currentCycle.totalCyclesCompleted}
         />
+
+        {/* ── STREAK STATUS BANNER ── */}
+        {/* Shows a warning if the user's streak is at risk today, or
+            a muted acknowledgement if a streak was just broken. Hidden
+            when streak is healthy. Calculated from lastActiveDate +
+            currentStreak. */}
+        {(() => {
+          const status = streakStatus(streakData);
+          return <StreakBanner status={status} />;
+        })()}
 
         {/* ── MODIFIERS ── */}
         <ModifierRow activeModifiers={activeModifiers} onToggle={toggleModifier} />

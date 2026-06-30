@@ -377,7 +377,7 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
                     <ExerciseIllustration
                       exerciseId={todayWorkout.primaryLift.exerciseId}
                       compact
-                      className="mt-3"
+                      className="w-full mt-3"
                     />
                     {/* Inline plate visualizer so the user knows exactly what to load
                         before tapping Start. Weight must be in the selected unit. */}

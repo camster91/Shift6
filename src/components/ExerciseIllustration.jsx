@@ -34,7 +34,7 @@ export default function ExerciseIllustration({
   if (compact) {
     return (
       <div
-        className={`relative w-full aspect-square overflow-hidden rounded-xl bg-[var(--color-surface-1)] ${className}`}
+        className={`relative aspect-square overflow-hidden rounded-xl bg-[var(--color-surface-1)] ${className || 'w-16 h-16'}`}
         role="img"
         aria-label={altText}
       >

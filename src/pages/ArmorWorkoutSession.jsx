@@ -510,7 +510,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
                 compact
                 className="w-16 h-16 shrink-0 rounded-lg"
               />
-              <div className="text-left min-w-0">
+              <div className="text-left min-w-0 flex-1">
                 <p className="text-sm font-semibold capitalize truncate">
                   {nextEx.exerciseId?.replace(/_/g, ' ')}
                 </p>

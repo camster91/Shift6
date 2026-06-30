@@ -26,6 +26,7 @@ export default function WorkoutSummary({
   nextWorkout,
   isFirstWorkout = false,
   isCycleComplete = false,
+  onApplyDeload,
 }) {
   // Compute summary stats. Hooks must run before any early return.
   const stats = useMemo(() => {
@@ -45,6 +46,14 @@ export default function WorkoutSummary({
   }, [workout]);
 
   const isEmpty = stats.totalSets === 0;
+  // Recommend deload when the user failed 3+ sets in a single session.
+  // This is the engine's most direct signal that the prescribed weights
+  // are too aggressive for today's condition. The actual toggle lives
+  // in ArmorDataContext (highFatigue modifier → 60% intensity).
+  // The check is INDEPENDENT of isEmpty: a session with 0 completed
+  // and 3+ failed is exactly the case where deload matters most.
+  const failedSetsCount = workout?.failedSetsCount || 0;
+  const shouldRecommendDeload = failedSetsCount >= 3;
 
   if (!workout) return null;
 
@@ -141,6 +150,32 @@ export default function WorkoutSummary({
                 </div>
                 <ChevronRight size={20} className="text-[var(--text-tertiary)]" />
               </div>
+            </div>
+          )}
+
+          {/* Deload recommendation — shown when 3+ sets were failed.
+              Gives the user a one-click path to apply the highFatigue
+              modifier (60% intensity) for the next session. */}
+          {shouldRecommendDeload && (
+            <div
+              className="bg-[var(--color-warning-muted)] border border-[var(--color-warning)] border-opacity-20 rounded-2xl px-4 py-3 mb-5"
+              data-testid="deload-recommendation"
+            >
+              <p className="text-sm font-bold text-[var(--color-warning)]">
+                Consider a Deload
+              </p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+                {failedSetsCount} sets failed today. The next session will be at
+                60% intensity to give your CNS a break.
+              </p>
+              {onApplyDeload && (
+                <button
+                  onClick={() => { onApplyDeload(); onDismiss(); }}
+                  className="armor-press mt-2 w-full py-2 rounded-xl text-sm font-bold bg-[var(--color-warning)] text-[var(--elevation-0-bg)]"
+                >
+                  Apply Deload
+                </button>
+              )}
             </div>
           )}
 

@@ -100,6 +100,45 @@ describe('WorkoutSummary', () => {
     expect(screen.queryByText(/Up next/i)).toBeNull();
   });
 
+  it('shows the deload recommendation when 3+ sets failed', () => {
+    const manyFailures = { ...baseWorkout, failedSetsCount: 4 };
+    render(<WorkoutSummary workout={manyFailures} onDismiss={() => {}} />);
+    expect(screen.getByText(/Consider a Deload/i)).toBeTruthy();
+    expect(screen.getByText(/4 sets failed today/i)).toBeTruthy();
+  });
+
+  it('does not show the deload recommendation when fewer than 3 sets failed', () => {
+    const fewFailures = { ...baseWorkout, failedSetsCount: 2 };
+    render(<WorkoutSummary workout={fewFailures} onDismiss={() => {}} />);
+    expect(screen.queryByText(/Consider a Deload/i)).toBeNull();
+  });
+
+  it('does show the deload recommendation for empty workouts when 3+ sets failed', () => {
+    // The deload banner is the most useful when the user bails with
+    // many failures and no completions — that's the highest-signal case
+    // for "today's weights were too aggressive".
+    const empty = { completed: false, day: 1, week: 1, failedSetsCount: 5 };
+    render(<WorkoutSummary workout={empty} onDismiss={() => {}} />);
+    expect(screen.getByText(/Consider a Deload/i)).toBeTruthy();
+  });
+
+  it('calls onApplyDeload when Apply Deload is clicked, then dismisses', () => {
+    const onApply = vi.fn();
+    const onDismiss = vi.fn();
+    const manyFailures = { ...baseWorkout, failedSetsCount: 3 };
+    render(
+      <WorkoutSummary
+        workout={manyFailures}
+        onDismiss={onDismiss}
+        onApplyDeload={onApply}
+      />
+    );
+    const applyBtn = screen.getByText(/Apply Deload/i);
+    fireEvent.click(applyBtn);
+    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
   it('calls onDismiss when Done button is clicked', () => {
     const onDismiss = vi.fn();
     render(<WorkoutSummary workout={baseWorkout} onDismiss={onDismiss} />);

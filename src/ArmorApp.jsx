@@ -46,6 +46,7 @@ export default function ArmorApp() {
   const {
     onboardingDone, preferences, completeOnboarding,
     logWorkout, persistenceFailed, currentCycle, userProfile, workoutHistory,
+    setModifier,
   } = armor;
 
   const [activeTab, setActiveTab] = useState('home');
@@ -278,6 +279,7 @@ export default function ArmorApp() {
           nextWorkout={workoutSummary.nextWorkout}
           isFirstWorkout={workoutSummary.isFirstWorkout}
           isCycleComplete={workoutSummary.isCycleComplete}
+          onApplyDeload={() => setModifier('highFatigue', true)}
           onDismiss={() => setWorkoutSummary(null)}
         />
       )}

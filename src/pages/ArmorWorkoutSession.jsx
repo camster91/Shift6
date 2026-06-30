@@ -311,6 +311,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const [setNum, setSetNum] = useState(1);
   const [phase, setPhase] = useState('active');
   const [completedSets, setCompletedSets] = useState([]);
+  const [failedSets, setFailedSets] = useState([]);
   const [notes, setNotes] = useState('');
   const [justCompleted, setJustCompleted] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
@@ -413,19 +414,57 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
     }
   }, [completingSet, currentEx, totalSets, exIdx, activeQueue.length, timer, restSecs, notes, checkPR]);
 
+  // Mark the active set as failed and advance. Lets users record when
+  // they couldn't hit the prescribed weight/reps. Tracked separately
+  // from completedSets so the workout summary + engine can compute
+  // deload recommendations based on failure rate.
+  const handleFailSet = useCallback(() => {
+    if (completingSet) return;
+    setCompletingSet(true);
+    try {
+      setSetNum(prevSetNum => {
+        const currentSetNum = prevSetNum;
+        setFailedSets(prev => [
+          ...prev,
+          { exerciseId: currentEx.exerciseId, set: currentSetNum, reps: currentEx.reps, weight: currentEx.weight, notes },
+        ]);
+        if (currentSetNum >= totalSets) {
+          if (exIdx < activeQueue.length - 1) {
+            setExIdx(prev => prev + 1);
+            return 1;
+          } else {
+            setPhase('done');
+            HAPTIC.warning();
+            return currentSetNum;
+          }
+        } else {
+          setPhase('rest');
+          timer.reset(restSecs);
+          timer.start();
+          return currentSetNum + 1;
+        }
+      });
+      setNotes('');
+    } finally {
+      setCompletingSet(false);
+    }
+  }, [completingSet, currentEx, totalSets, exIdx, activeQueue.length, timer, restSecs, notes]);
+
   const handleFinish = useCallback(() => {
     HAPTIC.medium();
-    if (completedSets.length > 0) {
+    if (completedSets.length > 0 || failedSets.length > 0) {
       onComplete?.({
         date: new Date().toISOString().split('T')[0],
         day: currentDay, week: currentWeek, completed: true,
         exercises: activeQueue.map(ex => ({
           id: ex.exerciseId,
           sets: completedSets.filter(s => s.exerciseId === ex.exerciseId),
-        })).filter(e => e.sets.length > 0),
+          failedSets: failedSets.filter(s => s.exerciseId === ex.exerciseId),
+        })).filter(e => e.sets.length > 0 || e.failedSets.length > 0),
+        failedSetsCount: failedSets.length,
       });
     } else { onComplete?.({ completed: false }); }
-  }, [completedSets, currentDay, currentWeek, activeQueue, onComplete]);
+  }, [completedSets, failedSets, currentDay, currentWeek, activeQueue, onComplete]);
 
   const weekConfig = getWeekConfig(currentWeek);
 
@@ -650,7 +689,21 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         Complete Set {setNum}
       </Button>
 
-      <Button variant="ghost" size="sm" onClick={() => setShowEndConfirm(true)} className="w-full mt-3">
+      {/* Fail Set — marks the active set as failed. Distinct from
+          End Workout because the workout continues; distinct from
+          ErrorBoundary's "Skip Set" because there's no error.
+          Triggers a warning haptic and feeds the deload heuristic. */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleFailSet}
+        className="w-full mt-2 text-[var(--color-warning)]"
+        data-testid="fail-set-button"
+      >
+        Fail Set {setNum}
+      </Button>
+
+      <Button variant="ghost" size="sm" onClick={() => setShowEndConfirm(true)} className="w-full mt-2">
         End Workout
       </Button>
 

@@ -74,8 +74,25 @@
   }
 
   .active-scale {
-    transition: transform 0.1s ease-out;
+    transition: transform 120ms ease-out;
   }
+
+  /* Exercise illustration dark-mode integration:
+     The illustrations are designed against a neutral light-gray
+     background (RGB ~241). In dark mode that pops against the deep
+     navy UI. We apply a brightness filter to dim the image and
+     blend it toward the surface color so it looks like part of
+     the design system rather than a clipped stock image.
+     Light mode is unaffected because the rule scopes to pages
+     without html.light. */
+  .exercise-illustration-img {
+    filter: brightness(0.85) contrast(0.92) saturate(0.85);
+    transition: filter 200ms ease-out;
+  }
+  html.light .exercise-illustration-img {
+    filter: none;
+  }
+
   .active-scale:active {
     transform: scale(0.95);
   }

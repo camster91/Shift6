@@ -11,6 +11,12 @@
  * background to keep the visual calm. Adjusts size for
  * `compact` (smaller, used on dashboard primary-lift card) vs
  * full size (used on the workout active-set screen).
+ *
+ * Dark-mode treatment: the illustrations are designed against a
+ * neutral light-gray background that clashes with the dark UI.
+ * The CSS rule for `.exercise-illustration-img` in index.css
+ * applies a brightness/saturate filter in dark mode so the image
+ * integrates with the surface color; light mode is unaffected.
  */
 import { getExerciseImage } from '../data/exerciseImages';
 
@@ -37,7 +43,7 @@ export default function ExerciseIllustration({
           alt=""
           loading="lazy"
           decoding="async"
-          className="absolute inset-0 w-full h-full object-contain"
+          className="absolute inset-0 w-full h-full object-contain exercise-illustration-img"
         />
       </div>
     );
@@ -54,7 +60,7 @@ export default function ExerciseIllustration({
         alt=""
         loading="lazy"
         decoding="async"
-        className="absolute inset-0 w-full h-full object-contain"
+        className="absolute inset-0 w-full h-full object-contain exercise-illustration-img"
       />
     </div>
   );

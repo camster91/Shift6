@@ -28,8 +28,11 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['pwa-192x192.png', 'pwa-512x512.png', 'privacy-policy.html', 'legal/index.html'],
             workbox: {
-                // Cache all pages for offline use
-                globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+                // Cache all pages for offline use. WebP included so the
+                // exercise illustrations render on first visit even
+                // offline (otherwise the user sees broken images until the
+                // runtime cache fills from the network).
+                globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
                 // The SPA's navigateFallback is index.html. /legal/ is the
                 // static privacy policy page (precached as legal/index.html
                 // above). Without the denylist, navigating to /legal/ via

@@ -1,0 +1,11 @@
+
+> shift6@3.0.0 dev /app
+> vite
+
+Re-optimizing dependencies because lockfile has changed
+
+  VITE v5.4.21  ready in 381 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+9:17:31 AM [vite] hmr update /src/pages/ArmorWorkoutSession.jsx, /src/index.css

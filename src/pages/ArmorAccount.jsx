@@ -66,8 +66,7 @@ function ProfileSection() {
   return (
     <Card>
       <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
-          className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0 bg-[var(--color-accent)] text-[var(--elevation-0-bg)]">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0 bg-[var(--color-accent)] text-[var(--elevation-0-bg)]">
           {initials}
         </div>
         <div className="min-w-0">
@@ -221,8 +220,7 @@ function LoggedInCard() {
   return (
     <div className="armor-surface-2 p-5 space-y-4">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
-          className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold bg-[var(--color-accent)] text-[var(--elevation-0-bg)]">
+        <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold bg-[var(--color-accent)] text-[var(--elevation-0-bg)]">
           {(user?.displayName || user?.email || '?').charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">

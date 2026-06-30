@@ -30,6 +30,12 @@ A Capacitor (React + Vite) fitness PWA. 6-week periodization with two equipment 
 - `src/data/armorEngine.unit.test.js` — 10 tests for the lb/kg display conversion
 - `src/lib/syncClient.js` — Optional cloud sync client (Fastify + Postgres backend, not deployed)
 - `src/pages/ArmorWorkoutSession.jsx` — Strength / VO2 / MVD / rest timer / plate visualizer
+- `src/pages/ArmorDashboard.jsx` — Today's workout, WeekStrip, modifiers, daily habits
+- `src/components/ExerciseIllustration.jsx` — Lazy-loaded WebP illustration for an exercise; falls back cleanly when no asset exists
+- `src/data/exerciseImages.js` — Maps exerciseId → `/exercises/<id>.webp` path. Edit this when adding/removing illustrations
+- `public/exercises/*.webp` — Generated exercise illustrations (4 currently: barbell_squat, bench_press, deadlift, goblet_squat). Generated via MiniMax image-01 + Imagen 4 T2I (no reference images — all output owned under vendor commercial-use terms)
+- `ops/exerciseIllustrationPrompts.js` — Source prompts for the 4 illustrations. Edit prompts here, then `node ops/generateExerciseIllustrations.js --only <exercise>` to regenerate
+- `ops/generateExerciseIllustrations.js` — Run the 6 prompts through MiniMax image-01; saves to ops/exercise-candidates/<exercise>/. Convert to WebP via `cwebp -q 80` before committing
 - `src/pages/ArmorSettings.jsx` — 1RM editor, theme, unit, modifiers
 - `ops/traefik-guard.sh` — cron guard for the getshift6.com Traefik route
 - `ops/caddy-removal-guard.sh` — fleet-wide Traefik health + caddy-decommissioned assertions
@@ -99,6 +105,8 @@ See `ops/traefik-guard.sh` for an example. Routes go in `/opt/traefik/dynamic/ro
 - Do NOT add a server/ directory back. The cloud sync is a sibling repo.
 - Do NOT call `VITE_SYNC_ENABLED` from anywhere but the App shell. The flag gates the Account tab; the sync code itself runs whether the flag is on or off (no-op when not logged in).
 - Do NOT use the placeholder `G-MEASUREMENT_ID` analytics ID. The init function rejects it; use `VITE_GA_MEASUREMENT_ID` at build time.
+- Do NOT bundle any "free" exercise dataset in the app. The hasaneyldrm/exercises-dataset and similar re-hosts of ExerciseDB v1 by AscendAPI forbid commercial use. To add an illustration, T2I-generate with text-only prompts (MiniMax image-01 or Imagen 4) — never use a reference image and never rehost the dataset. See `third-party-content-owner-tos-compliance` skill, "Class 5" section.
+- Do NOT expect text-to-image to nail every exercise pose on the first prompt. The MiniMax image-01 model has stable priors toward barbell-on-shoulders-in-front (front squat pattern) and arms-extended (top-of-bench-press pattern). If a prompt keeps yielding wrong positions, switch to Imagen 4 (better prompt adherence for character poses), use a from-behind camera angle to break the prior, or skip the illustration.
 
 ## App Store assets
 

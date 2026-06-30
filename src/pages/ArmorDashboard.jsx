@@ -7,6 +7,7 @@ import {
   EXERCISE_TRACK,
 } from '../data/armorEngine';
 import PlateVisualizer from '../components/PlateVisualizer';
+import ExerciseIllustration from '../components/ExerciseIllustration';
 import WeekStrip from '../components/WeekStrip';
 import { Card, SectionHeader, StatTile, Button } from '../components/ui';
 
@@ -371,6 +372,13 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
                         </p>
                       </div>
                     </div>
+                    {/* Exercise illustration — what the lift looks like.
+                        Falls back to null (no extra space) if no image. */}
+                    <ExerciseIllustration
+                      exerciseId={todayWorkout.primaryLift.exerciseId}
+                      compact
+                      className="mt-3"
+                    />
                     {/* Inline plate visualizer so the user knows exactly what to load
                         before tapping Start. Weight must be in the selected unit. */}
                     <div className="mt-3 -mx-2">

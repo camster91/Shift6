@@ -6,6 +6,7 @@ import {
 } from '../data/armorEngine';
 import { ConfettiBurst, AwardModal } from '../components/Celebration';
 import PlateVisualizer from '../components/PlateVisualizer';
+import ExerciseIllustration from '../components/ExerciseIllustration';
 import { usePRDetection } from '../hooks/usePRDetection';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -527,6 +528,10 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         <p className="armor-text-caption">
           {currentEx.type === 'primary' ? 'PRIMARY LIFT' : 'ACCESSORY'}
         </p>
+        <ExerciseIllustration
+          exerciseId={currentEx.exerciseId}
+          className="mb-4 -mx-2"
+        />
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-xl font-black text-[var(--text-primary)] capitalize mt-0.5">
             {currentEx.exerciseId?.replace(/_/g, ' ')}

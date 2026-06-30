@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useArmorData } from '../context/ArmorDataContext';
 import {
@@ -42,7 +42,13 @@ function phaseDefinition(phase) {
   return PHASE_DEFINITIONS[phase] || phase;
 }
 
-function CycleProgress({ week, day, totalCyclesCompleted }) {
+const MODIFIER_ENTRIES = Object.values(MODIFIERS);
+const MODIFIER_LABEL_OVERRIDES = {
+  mvdMode: 'MVD',
+  travelMode: 'Travel',
+};
+
+const CycleProgress = React.memo(({ week, day, totalCyclesCompleted }) => {
   const weekConfig = getWeekConfig(week);
   const totalDays = 30;
   const done = (week - 1) * 5 + Math.min(day - 1, 4);
@@ -75,15 +81,11 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
       </div>
     </Card>
   );
-}
+});
 
-function ModifierRow({ activeModifiers, onToggle }) {
-  const entries = Object.values(MODIFIERS);
-  // Short display labels to prevent truncation on 390px viewports
-  const labelOverride = {
-    mvdMode: 'MVD',
-    travelMode: 'Travel',
-  };
+CycleProgress.displayName = 'CycleProgress';
+
+const ModifierRow = React.memo(({ activeModifiers, onToggle }) => {
   return (
     <div>
       <SectionHeader icon={<Zap size={10} />} label="Protocols" />
@@ -95,9 +97,9 @@ function ModifierRow({ activeModifiers, onToggle }) {
           className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[var(--elevation-0-bg)] to-transparent z-10"
         />
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {entries.map(mod => {
+          {MODIFIER_ENTRIES.map(mod => {
             const active = activeModifiers[mod.id];
-            const label = labelOverride[mod.id] ?? mod.label;
+            const label = MODIFIER_LABEL_OVERRIDES[mod.id] ?? mod.label;
             return (
               <button
                 key={mod.id}
@@ -125,12 +127,14 @@ function ModifierRow({ activeModifiers, onToggle }) {
       </div>
     </div>
   );
-}
+});
 
-function HabitCheck({ habit, done, onToggle }) {
+ModifierRow.displayName = 'ModifierRow';
+
+const HabitCheck = React.memo(({ habit, done, onToggle }) => {
   return (
     <button
-      onClick={onToggle}
+      onClick={() => onToggle(habit.id)}
       className={`armor-press w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
         done
           ? 'bg-[var(--color-success-muted)]'
@@ -157,7 +161,9 @@ function HabitCheck({ habit, done, onToggle }) {
       </span>
     </button>
   );
-}
+});
+
+HabitCheck.displayName = 'HabitCheck';
 
 /* ── MAIN DASHBOARD ────────────────────────────────────────── */
 
@@ -189,12 +195,28 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
   const streak = streakData.currentStreak || 0;
   const unit = preferences.unit || 'lbs';
 
-  // Filter 1RMs to the active track only
-  const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
-  const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
-  const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
-  const allTrack1RMsZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
-  const displayTop1RM = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
+  // PERFORMANCE: Memoize 1RM filtering and display logic to avoid O(N) recalculations
+  const { top1RM, allTrack1RMsZero, displayTop1RM } = useMemo(() => {
+    const ids = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
+    const rms = ids.map(id => estimated1RMs[id] || 0);
+    const top = rms.length > 0 ? Math.max(...rms, 0) : 0;
+    const allZero = rms.length > 0 && rms.every(v => v === 0);
+    const display = top === 0 ? '—' : (unit === 'kg' ? `${Math.round(top / 2.20462)}${unit}` : `${top}${unit}`);
+    return { top1RM: top, allTrack1RMsZero: allZero, displayTop1RM: display };
+  }, [effectiveTrack, estimated1RMs, unit]);
+
+  const express10 = useMemo(() => get10MinWorkout(effectiveTrack), [effectiveTrack]);
+
+  // PERFORMANCE: Stabilize JSX props for StatTile to ensure React.memo effectiveness
+  const statIcons = useMemo(() => ({
+    week: <span aria-hidden="true">📅</span>,
+    phase: <span aria-hidden="true">⚡</span>,
+    top1RM: <span aria-hidden="true">🏆</span>,
+  }), []);
+
+  const top1RMLabel = useMemo(() => (
+    <JargonTooltip term="1RM" definition="your one-rep max — the heaviest weight you can lift once" />
+  ), []);
 
   return (
     <div className="pb-32 space-y-5 max-w-lg mx-auto">
@@ -424,29 +446,24 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
             </Card>
 
             {/* 10-Minute Express card */}
-            {(() => {
-              const express10 = get10MinWorkout(effectiveTrack);
-              return (
-                <Card padded={false} className="bg-[var(--color-surface-1)] p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl" aria-hidden="true">⚡</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[var(--text-primary)]">{express10.name}</p>
-                      <p className="armor-text-footnote">No time? 2 sets + a quick circuit</p>
-                    </div>
-                    {!todayDone && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={onStartWorkout}
-                      >
-                        Start express
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-              );
-            })()}
+            <Card padded={false} className="bg-[var(--color-surface-1)] p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl" aria-hidden="true">⚡</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">{express10.name}</p>
+                  <p className="armor-text-footnote">No time? 2 sets + a quick circuit</p>
+                </div>
+                {!todayDone && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={onStartWorkout}
+                  >
+                    Start express
+                  </Button>
+                )}
+              </div>
+            </Card>
 
             {/* 0-lbs nudge — shown when all active-track 1RMs are 0 */}
             {allTrack1RMsZero && (
@@ -485,7 +502,7 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
               <HabitCheck
                 habit={habit}
                 done={dailyHabitState[habit.id] || false}
-                onToggle={() => toggleHabit(habit.id)}
+                onToggle={toggleHabit}
               />
             </div>
           ))}
@@ -493,11 +510,11 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
 
         {/* ── QUICK STATS ── */}
         <div className="grid grid-cols-3 gap-2">
-          <StatTile icon={<span aria-hidden="true">📅</span>} label="Week" value={`${currentCycle.week}/6`} accent="cyan" />
-          <StatTile icon={<span aria-hidden="true">⚡</span>} label="Phase" value={weekConfig.phase} accent="emerald" />
+          <StatTile icon={statIcons.week} label="Week" value={`${currentCycle.week}/6`} accent="cyan" />
+          <StatTile icon={statIcons.phase} label="Phase" value={weekConfig.phase} accent="emerald" />
           <StatTile
-            icon={<span aria-hidden="true">🏆</span>}
-            label={<><JargonTooltip term="1RM" definition="your one-rep max — the heaviest weight you can lift once" /></>}
+            icon={statIcons.top1RM}
+            label={top1RMLabel}
             value={displayTop1RM}
             accent="amber"
             aria-label={`Top 1 rep max: ${displayTop1RM}`}

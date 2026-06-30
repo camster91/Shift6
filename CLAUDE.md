@@ -54,6 +54,21 @@ npm run cap:android  # build + open Android Studio
 npm run cap:ios      # build + open Xcode
 ```
 
+### Release-signed AAB (Play Store)
+
+Requires 3 env vars (NEVER commit, set locally before each build):
+
+```bash
+export RELEASE_STORE_PASSWORD='***'  # password for the .keystore file
+export RELEASE_KEY_ALIAS='...'        # key alias inside the keystore
+export RELEASE_KEY_PASSWORD='***'     # password for that specific key
+bash ops/build-release-aab.sh
+```
+
+Output: `android/app/build/outputs/bundle/release/app-release.aab`
+
+Verify the signature with `apksigner verify --print-certs <aab-path>`. Upload to Play Console via `https://play.google.com/console` → Internal testing → Create release → Upload the AAB.
+
 ## Deploy
 
 VPS: 187.77.26.99 (coolify). Architecture as of 2026-06-17:

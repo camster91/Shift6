@@ -31,6 +31,13 @@ export const EXERCISE_IMAGES = {
   lunges: '/exercises/lunges.webp',                     // Imagen 4
   glute_bridge: '/exercises/glute_bridge.webp',         // Imagen 4
   calf_raises: '/exercises/calf_raises.webp',           // Imagen 4 Ultra
+  // Machine / cable / advanced accessories
+  leg_press: '/exercises/leg_press.webp',               // Imagen 4
+  leg_curls: '/exercises/leg_curls.webp',               // Imagen 4
+  incline_bench: '/exercises/incline_bench.webp',       // Imagen 4 Ultra
+  lateral_raise: '/exercises/lateral_raise.webp',       // Imagen 4 Ultra
+  bicep_curl: '/exercises/bicep_curl.webp',             // Imagen 4
+  tricep_dips: '/exercises/tricep_dips.webp',           // Imagen 4
 };
 
 /**

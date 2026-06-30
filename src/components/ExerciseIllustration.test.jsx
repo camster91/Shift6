@@ -10,22 +10,31 @@ import { getExerciseImage } from '../data/exerciseImages';
 
 describe('getExerciseImage', () => {
   it('returns the asset path for an exercise that has an illustration', () => {
+    // Primary lifts
     expect(getExerciseImage('barbell_squat')).toBe('/exercises/barbell_squat.webp');
     expect(getExerciseImage('bench_press')).toBe('/exercises/bench_press.webp');
     expect(getExerciseImage('deadlift')).toBe('/exercises/deadlift.webp');
     expect(getExerciseImage('dumbbell_press')).toBe('/exercises/dumbbell_press.webp');
     expect(getExerciseImage('goblet_squat')).toBe('/exercises/goblet_squat.webp');
     expect(getExerciseImage('romanian_deadlift')).toBe('/exercises/romanian_deadlift.webp');
+    // Bodyweight accessories
     expect(getExerciseImage('pushups')).toBe('/exercises/pushups.webp');
     expect(getExerciseImage('plank')).toBe('/exercises/plank.webp');
     expect(getExerciseImage('lunges')).toBe('/exercises/lunges.webp');
     expect(getExerciseImage('glute_bridge')).toBe('/exercises/glute_bridge.webp');
     expect(getExerciseImage('calf_raises')).toBe('/exercises/calf_raises.webp');
+    // Machine / cable accessories
+    expect(getExerciseImage('leg_press')).toBe('/exercises/leg_press.webp');
+    expect(getExerciseImage('leg_curls')).toBe('/exercises/leg_curls.webp');
+    expect(getExerciseImage('incline_bench')).toBe('/exercises/incline_bench.webp');
+    expect(getExerciseImage('lateral_raise')).toBe('/exercises/lateral_raise.webp');
+    expect(getExerciseImage('bicep_curl')).toBe('/exercises/bicep_curl.webp');
+    expect(getExerciseImage('tricep_dips')).toBe('/exercises/tricep_dips.webp');
   });
 
   it('returns null for an exercise without an illustration', () => {
-    expect(getExerciseImage('bicep_curl')).toBeNull();
-    expect(getExerciseImage('leg_press')).toBeNull();
+    expect(getExerciseImage('hammer_curl')).toBeNull();
+    expect(getExerciseImage('tricep_pushdown')).toBeNull();
     expect(getExerciseImage('does_not_exist')).toBeNull();
   });
 });
@@ -41,7 +50,7 @@ describe('ExerciseIllustration', () => {
   });
 
   it('renders null (no DOM) for an exercise without an illustration', () => {
-    const { container } = render(<ExerciseIllustration exerciseId="bicep_curl" />);
+    const { container } = render(<ExerciseIllustration exerciseId="hammer_curl" />);
     expect(container.innerHTML).toBe('');
   });
 

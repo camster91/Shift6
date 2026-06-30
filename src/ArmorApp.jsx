@@ -15,6 +15,8 @@ import ArmorSettings from './pages/ArmorSettings';
 import ArmorProgress from './pages/ArmorProgress';
 import UpdatePrompt from './components/UpdatePrompt';
 import FirstRunTour from './components/FirstRunTour';
+import WorkoutSummary from './components/WorkoutSummary';
+import { getTodaysWorkout } from './data/armorEngine';
 
 /**
  * ARMOR App — Main application shell.
@@ -43,12 +45,13 @@ export default function ArmorApp() {
   const armor = useArmorData();
   const {
     onboardingDone, preferences, completeOnboarding,
-    logWorkout, persistenceFailed,
+    logWorkout, persistenceFailed, currentCycle, userProfile, workoutHistory,
   } = armor;
 
   const [activeTab, setActiveTab] = useState('home');
   const [workoutActive, setWorkoutActive] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [workoutSummary, setWorkoutSummary] = useState(null);
   const installPromptRef = useRef(null);
   const migrated = useRef(false);
 
@@ -125,6 +128,24 @@ export default function ArmorApp() {
   const handleWorkoutComplete = (workoutData) => {
     logWorkout(workoutData);
     setWorkoutActive(false);
+    // Show the post-workout summary. Compute the next workout preview
+    // using the same engine the dashboard uses, so the user sees what
+    // they're up against next. The summary covers the "did it work?"
+    // confirmation gap and the "what's next" planning beat.
+    const completedCount = (workoutHistory?.length || 0) + 1;
+    const isFirstWorkout = completedCount === 1;
+    const isCycleComplete = workoutData?.week >= 6 && workoutData?.day >= 5;
+    // For an empty (bailed-out) workout, fall back to the user's current
+    // cycle position so the next-workout preview still renders.
+    const baseDay = workoutData?.day || currentCycle?.day || 1;
+    const baseWeek = workoutData?.week || currentCycle?.week || 1;
+    const nextDay = baseDay >= 5 ? 1 : baseDay + 1;
+    const nextWeek = baseDay >= 5
+      ? (baseWeek >= 6 ? 1 : baseWeek + 1)
+      : baseWeek;
+    const track = preferences?.equipmentTrack || 'full_gym';
+    const nextWorkout = getTodaysWorkout(track, nextDay, nextWeek, {}, userProfile?.estimated1RMs || {});
+    setWorkoutSummary({ workout: workoutData, nextWorkout, isFirstWorkout, isCycleComplete });
   };
 
   const handleWorkoutCancel = () => {
@@ -246,6 +267,19 @@ export default function ArmorApp() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Post-workout summary — fires when a workout completes.
+          Sits at z-90 (above install prompt at z-50, below lazy chunks).
+          Closes on backdrop click and on the Done button. */}
+      {workoutSummary && (
+        <WorkoutSummary
+          workout={workoutSummary.workout}
+          nextWorkout={workoutSummary.nextWorkout}
+          isFirstWorkout={workoutSummary.isFirstWorkout}
+          isCycleComplete={workoutSummary.isCycleComplete}
+          onDismiss={() => setWorkoutSummary(null)}
+        />
       )}
     </div>
   );

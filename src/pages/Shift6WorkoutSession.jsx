@@ -590,11 +590,11 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
 
   return (
     <WorkoutErrorBoundary onSkip={handleCompleteSet}>
- <div className="flex flex-col flex-1 px-6 pt-4 max-w-sm mx-auto w-full armor-entrance">
+      <div className="flex flex-col flex-1 px-6 pt-4 pb-32 max-w-sm mx-auto w-full armor-entrance overflow-y-auto">
       <div className="mb-6">
         <ExerciseIllustration
           exerciseId={currentEx.exerciseId}
-          className="mb-4 -mx-2"
+          className="mb-4 -mx-2 max-h-56"
         />
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-xl font-black text-[var(--text-primary)] capitalize mt-0.5">

@@ -64,13 +64,19 @@ jobs:
           REF="${{ github.ref }}"
           if [[ "$REF" == refs/tags/* ]]; then
             TAG="${REF#refs/tags/}"
+          elif [[ "$REF" == refs/pull/* ]]; then
+            TAG="pr-${{ github.event.pull_request.number }}"
           elif [[ "$REF" == refs/heads/main || "$REF" == refs/heads/master ]]; then
             TAG="main"
           else
             TAG="${REF#refs/heads/}"
           fi
-          SHA_SHORT="${{ github.event.pull_request.head.sha || github.sha }}" | head -c 7
-          SHA_SHORT=$(echo "${{ github.sha }}" | head -c 7)
+          # Sanitize TAG: replace / with -
+          TAG=$(echo "$TAG" | tr '/' '-')
+
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          SHA_SHORT=$(echo "$SHA" | head -c 7)
+
           echo "image=ghcr.io/camster91/${REPO_NAME}" >> $GITHUB_OUTPUT
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "sha=${SHA_SHORT}" >> $GITHUB_OUTPUT

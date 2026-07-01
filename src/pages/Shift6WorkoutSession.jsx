@@ -483,7 +483,12 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
     return prevSet;
   }, [workoutHistory, currentEx]);
 
-  const showZeroLbsNudge = currentEx?.type === 'primary' && currentEx?.weight === 0;
+  // Show the "Set 1RMs in Settings" nudge whenever the active exercise
+  // has a 0 weight — without it, an empty-state user sees "Weight: 0 lbs"
+  // which is meaningless and concerning. Previously this fired only on
+  // primary lifts, but accessories (e.g. Leg Press) also need it because
+  // the empty user has no 1RM entries at all.
+  const showZeroLbsNudge = currentEx?.weight === 0;
 
   /* ── DONE SCREEN ─────────────────────────────────────────── */
   if (phase === 'done') {

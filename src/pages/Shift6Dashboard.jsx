@@ -431,11 +431,11 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
                     </p>
                   )}
                 </div>
-              ) : (
-                <p className="armor-text-footnote text-center py-4">
-                  Set your 1RMs in Settings to calculate workout weights.
-                </p>
-              )}
+                // The orange "First time?" callout below already covers
+                // this exact case — without this guard, empty-state
+                // users saw the same 1RM-setup prompt twice in close
+                // vertical proximity.
+              ) : null}
 
               {/* Travel-mode substitution notice used to live here as
                   small italic text. Now hoisted to <TravelModeBanner />

@@ -346,6 +346,10 @@ export function Shift6DataProvider({ children }) {
 
   const completeOnboarding = useCallback((onboardingData) => {
     const { equipmentTrack, estimated1RMs, displayName } = onboardingData;
+
+    // Sanitize displayName (maxLength: 50)
+    const sanitizedDisplayName = (displayName || 'Athlete').slice(0, 50);
+
     // Validate and sanitize 1RMs before storing
     const sanitized1RMs = {};
     if (estimated1RMs) {
@@ -359,7 +363,7 @@ export function Shift6DataProvider({ children }) {
       preferences: { ...prev.preferences, equipmentTrack: equipmentTrack || prev.preferences.equipmentTrack },
       userProfile: {
         ...prev.userProfile,
-        displayName: displayName || 'Athlete',
+        displayName: sanitizedDisplayName,
         estimated1RMs: { ...prev.userProfile.estimated1RMs, ...sanitized1RMs },
       },
       currentCycle: { ...prev.currentCycle, week: 1, day: 1, lastWorkoutDate: null, completedDaysThisWeek: [] },

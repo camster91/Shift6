@@ -66,11 +66,15 @@ jobs:
             TAG="${REF#refs/tags/}"
           elif [[ "$REF" == refs/heads/main || "$REF" == refs/heads/master ]]; then
             TAG="main"
+          elif [[ "$REF" == refs/pull/* ]]; then
+            TAG="pr-$(echo $REF | cut -d'/' -f3)"
           else
             TAG="${REF#refs/heads/}"
           fi
-          SHA_SHORT="${{ github.event.pull_request.head.sha || github.sha }}" | head -c 7
-          SHA_SHORT=$(echo "${{ github.sha }}" | head -c 7)
+          # Sanitize: Docker tags cannot contain slashes
+          TAG=$(echo "$TAG" | sed 's/\//-/g')
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          SHA_SHORT=$(echo "$SHA" | head -c 7)
           echo "image=ghcr.io/camster91/${REPO_NAME}" >> $GITHUB_OUTPUT
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "sha=${SHA_SHORT}" >> $GITHUB_OUTPUT

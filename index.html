@@ -8,24 +8,24 @@
     content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#020617" />
   <meta name="description"
-    content="Armor — 6-week periodization, 2 strength pillars, 4 daily longevity habits, and contingency protocols for professionals whose schedule doesn't respect their workout." />
+    content="Shift6 — Six-week periodization, two equipment tracks, plate math, and adaptive deload. Six weeks. One cycle. Zero guesswork." />
 
   <!-- Open Graph + Twitter Card (so shared links get a proper preview) -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Armor — Train Through Chaos" />
-  <meta property="og:description" content="6-week periodization, 2 strength pillars, 4 daily longevity habits, contingency protocols. Local-first, free, no ads." />
+  <meta property="og:title" content="Shift6 — Six weeks. One cycle. Zero guesswork." />
+  <meta property="og:description" content="Six-week periodization, two equipment tracks, plate math, and adaptive deload. Local-first, free, no ads." />
   <meta property="og:image" content="https://getshift6.com/pwa-512x512.png" />
   <meta property="og:url" content="https://getshift6.com" />
-  <meta property="og:site_name" content="Armor" />
+  <meta property="og:site_name" content="Shift6" />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Armor — Train Through Chaos" />
-  <meta name="twitter:description" content="6-week periodization, 2 strength pillars, 4 daily longevity habits, contingency protocols. Local-first, free, no ads." />
+  <meta name="twitter:title" content="Shift6 — Six weeks. One cycle. Zero guesswork." />
+  <meta name="twitter:description" content="Six-week periodization, two equipment tracks, plate math, and adaptive deload. Local-first, free, no ads." />
   <meta name="twitter:image" content="https://getshift6.com/pwa-512x512.png" />
 
   <!-- Apple PWA Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Armor" />
+  <meta name="apple-mobile-web-app-title" content="Shift6" />
   <link rel="apple-touch-icon" href="/pwa-192x192.png" />
 
   <!-- Premium Typography -->
@@ -33,7 +33,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
 
-  <title>Armor — 2 Pillars, 4 Daily Habits, Train Through Chaos</title>
+  <title>Shift6 — Six weeks. One cycle. Zero guesswork.</title>
 
   <style>
     body {
@@ -45,10 +45,11 @@
   </style>
   <script>
     // Prevent white flash: apply saved theme + sync the browser chrome
-    // theme color before paint.
+    // theme color before paint. Reads from either legacy armor_theme
+    // or current shift6_theme so users mid-migration don't see a flash.
     (function() {
       try {
-        var theme = localStorage.getItem('armor_theme') || localStorage.getItem('shift6_theme');
+        var theme = localStorage.getItem('shift6_theme') || localStorage.getItem('armor_theme');
         if (theme === 'light') {
           document.documentElement.classList.add('light');
         }

@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import ArmorApp from './ArmorApp.jsx'
-import { ArmorDataProvider } from './context/ArmorDataContext.jsx'
+import Shift6App from './Shift6App.jsx'
+import { Shift6DataProvider } from './context/Shift6DataContext.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { initAnalytics } from './utils/analytics.js'
 import './index.css'
@@ -30,9 +30,9 @@ if ('serviceWorker' in navigator) {
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         <ErrorBoundary>
-            <ArmorDataProvider>
-                <ArmorApp />
-            </ArmorDataProvider>
+            <Shift6DataProvider>
+                <Shift6App />
+            </Shift6DataProvider>
         </ErrorBoundary>
     </React.StrictMode>,
 )

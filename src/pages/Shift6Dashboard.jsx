@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
-import { useArmorData } from '../context/ArmorDataContext';
+import { useShift6Data } from '../context/Shift6DataContext';
 import {
   getTodaysWorkout, getDailyHabits, get10MinWorkout, MODIFIERS, MVD_PROTOCOL,
   VO2MAX_PROTOCOL, PERIODIZATION, getWeekConfig, EQUIPMENT_TRACKS,
   EXERCISE_TRACK, streakStatus,
-} from '../data/armorEngine';
+} from '../data/shift6Engine';
 import PlateVisualizer from '../components/PlateVisualizer';
 import ExerciseIllustration from '../components/ExerciseIllustration';
 import WeekStrip from '../components/WeekStrip';
@@ -14,7 +14,7 @@ import StreakBanner from '../components/StreakBanner';
 import { Card, SectionHeader, StatTile, Button } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
-   ARMOR DASHBOARD v3.0 — Apple HIG design system
+   SHIFT6 DASHBOARD v3.0 — Apple HIG design system
    Zero borders. Token-driven colors. Elevation-based depth.
    ═══════════════════════════════════════════════════════════ */
 
@@ -163,14 +163,14 @@ function HabitCheck({ habit, done, onToggle }) {
 
 /* ── MAIN DASHBOARD ────────────────────────────────────────── */
 
-export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings }) {
+export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }) {
   const {
     activeModifiers, dailyHabitState, currentCycle, userProfile,
     toggleModifier, toggleHabit, resetDailyHabits,
     estimated1RMs, equipmentTrack, effectiveTrack, todaysTrack, setTodaysTrack,
     todaysWorkoutCompleted, habitsNeedReset, streakData, isMVDToday, preferences,
     workoutHistory,
-  } = useArmorData();
+  } = useShift6Data();
 
   useEffect(() => {
     if (habitsNeedReset) resetDailyHabits();
@@ -205,7 +205,7 @@ export default function ArmorDashboard({ onStartWorkout, onNavigateToSettings })
         <p className="armor-text-caption mb-1">{greeting}{userProfile.displayName ? `, ${userProfile.displayName}` : ''}</p>
         <div className="flex items-center justify-between">
           <h1 className="armor-text-large-title">
-            <span className="text-[var(--color-accent)]">Armor</span>
+            <span className="text-[var(--color-accent)]">Shift6</span>
           </h1>
           <div className="flex items-center gap-2" aria-live="polite" aria-atomic="true">
             {streak > 0 && (

@@ -2,10 +2,10 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef, us
 import {
   fetchCloud, pushCloud, isLoggedIn,
 } from '../lib/syncClient';
-import { computeStreak, rollover1RMs } from '../data/armorEngine';
+import { computeStreak, rollover1RMs } from '../data/shift6Engine';
 
 /**
- * ArmorDataContext — Shared state provider with cloud sync.
+ * Shift6DataContext — Shared state provider with cloud sync.
  * v1.2 — Added optional cloud sync via syncClient (Supabase/Postgres).
  *
  * Sync behavior:
@@ -23,8 +23,46 @@ function load(key, fallback) {
 }
 function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
-const STORAGE_KEY = 'armor_data';
-const REVISION_KEY = 'armor_revision';
+// One-time migration: rename armor_* keys to shift6_* keys.
+// Runs synchronously at module load. After it runs once, the marker
+// shift6_migrated_from_armor is set and the next import is a no-op.
+// The marker name reflects the FROM direction: came from Armor.
+const MIGRATION_MARKER = 'shift6_migrated_from_armor';
+const ARMOR_TO_SHIFT6_KEYS = {
+  armor_data: 'shift6_data',
+  armor_revision: 'shift6_revision',
+  armor_migrated_from_shift6: 'shift6_migrated_from_v1', // legacy marker
+  armor_theme: 'shift6_theme',
+  armor_install_dismissed: 'shift6_install_dismissed',
+  armor_tour_shown: 'shift6_tour_shown',
+  armor_auth: 'shift6_auth',
+  armor_api_base: 'shift6_api_base',
+};
+function migrateArmorToShift6() {
+  try {
+    if (localStorage.getItem(MIGRATION_MARKER)) return;
+    let migrated = 0;
+    for (const [armorKey, shift6Key] of Object.entries(ARMOR_TO_SHIFT6_KEYS)) {
+      const val = localStorage.getItem(armorKey);
+      if (val === null) continue;
+      if (localStorage.getItem(shift6Key) === null) {
+        localStorage.setItem(shift6Key, val);
+        migrated++;
+      }
+      localStorage.removeItem(armorKey);
+    }
+    if (migrated > 0) {
+      console.info(`[Shift6] Migrated ${migrated} localStorage keys from armor_* to shift6_*`);
+    }
+    localStorage.setItem(MIGRATION_MARKER, '1');
+  } catch (e) {
+    // localStorage may be unavailable (Safari private mode, etc.) — fail silent
+  }
+}
+migrateArmorToShift6();
+
+const STORAGE_KEY = 'shift6_data';
+const REVISION_KEY = 'shift6_revision';
 
 const DEFAULT_DATA = {
   userId: null,
@@ -60,7 +98,7 @@ const DEFAULT_DATA = {
   },
 };
 
-const ArmorDataContext = createContext(null);
+const Shift6DataContext = createContext(null);
 
 /**
  * Pure state-update logic for `logWorkout`. Exported for unit testing.
@@ -111,7 +149,7 @@ export function computeNextStateAfterWorkout(prev, workoutData, todayStr) {
   };
 }
 
-export function ArmorDataProvider({ children }) {
+export function Shift6DataProvider({ children }) {
   const [data, setData] = useState(() => {
     const loaded = load(STORAGE_KEY, null);
     if (!loaded || !loaded.userProfile || !loaded.preferences || !loaded.currentCycle) {
@@ -161,7 +199,7 @@ export function ArmorDataProvider({ children }) {
       // Most common causes: Safari private mode (quota 0), storage full,
       // browser settings blocking storage. The app keeps running in
       // memory but data won't survive a reload. Surface this.
-      console.error('[ArmorData] localStorage write failed:', err);
+      console.error('[Shift6Data] localStorage write failed:', err);
       if (!persistenceFailed) setPersistenceFailed(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -275,7 +313,7 @@ export function ArmorDataProvider({ children }) {
     // Reject non-finite, zero, negative, or absurdly high values
     const cleanValue = Number(value);
     if (!Number.isFinite(cleanValue) || cleanValue <= 0 || cleanValue > 9999) {
-      console.warn(`[ArmorData] set1RM rejected: ${exerciseId} = ${value}`);
+      console.warn(`[Shift6Data] set1RM rejected: ${exerciseId} = ${value}`);
       return;
     }
     return setData(prev => ({
@@ -393,15 +431,15 @@ export function ArmorDataProvider({ children }) {
   ]);
 
   return (
-    <ArmorDataContext.Provider value={value}>
+    <Shift6DataContext.Provider value={value}>
       {children}
-    </ArmorDataContext.Provider>
+    </Shift6DataContext.Provider>
   );
 }
 
-export function useArmorData() {
-  const ctx = useContext(ArmorDataContext);
-  if (!ctx) throw new Error('useArmorData must be used within ArmorDataProvider');
+export function useShift6Data() {
+  const ctx = useContext(Shift6DataContext);
+  if (!ctx) throw new Error('useShift6Data must be used within Shift6DataProvider');
   return ctx;
 }
 

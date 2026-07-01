@@ -1,4 +1,4 @@
-# Armor — Test Plan & Verification Checklist
+# Shift6 — Test Plan & Verification Checklist
 
 Use this before declaring the app "shipped." Each section has a pass/fail.
 
@@ -20,7 +20,7 @@ ssh coolify 'curl -sI http://127.0.0.1:4002/ | head -1'
 # Expect: HTTP/1.1 200 OK
 
 # Android APK exists
-ls -la ~/Shift6/store-assets/Armor-v3.0.0-debug.apk
+ls -la ~/Shift6/store-assets/Shift6-v3.0.0-debug.apk
 # Expect: -rw-r--r-- ~7MB file
 ```
 
@@ -34,15 +34,15 @@ ls -la ~/Shift6/store-assets/Armor-v3.0.0-debug.apk
 ## 2. Single-device flow (15 min, on real phone)
 
 ### Install
-- [ ] Transfer `Armor-v3.0.0-debug.apk` to phone (USB, email, or `adb install`)
+- [ ] Transfer `Shift6-v3.0.0-debug.apk` to phone (USB, email, or `adb install`)
 - [ ] Open APK, accept unknown source
 - [ ] App opens to "Choose Your Track"
 
 ### Onboarding
 - [ ] Select Full Gym, tap Continue
 - [ ] Open Barbell Squat row, enter weight+reps, save (or Skip)
-- [ ] On "You're Ready" screen, enter name, tap "Begin Armor Protocol"
-- [ ] Button morphs to "Entering Armor..." in green (proves submitting state works)
+- [ ] On "You're Ready" screen, enter name, tap "Begin Shift6 Protocol"
+- [ ] Button morphs to "Entering Shift6..." in green (proves submitting state works)
 - [ ] Lands on dashboard
 
 ### Dashboard
@@ -107,7 +107,7 @@ For each, toggle on the dashboard, verify behavior:
 - [ ] Day 1 Heavy Squats calculated as 4×5 @ 80% = 180 lbs
 - [ ] Complete all sets with 180
 - [ ] Next day, edit 1RM to 195 (lower, simulating you're a beginner)
-- [ ] Open the workout — Armor's calc is now 156 lbs
+- [ ] Open the workout — Shift6.s calc is now 156 lbs
 - [ ] Complete all sets with 156
 - [ ] Should NOT trigger confetti (no PR)
 
@@ -119,7 +119,7 @@ To trigger confetti, do the opposite: lower 1RM to 100, complete sets, then rais
 
 ### Pre-reqs
 - [ ] DNS A record for `sync.getshift6.com` pointing to VPS (see DNS_SETUP.md)
-- [ ] Both devices have the latest Armor APK installed
+- [ ] Both devices have the latest Shift6 APK installed
 - [ ] Both have completed onboarding to the same point (or not — sync is per-account)
 
 ### Account creation

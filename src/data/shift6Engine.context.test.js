@@ -1,12 +1,12 @@
 /**
- * ArmorDataContext.test.js — Tests for the data context's core flows.
+ * Shift6DataContext.test.js — Tests for the data context's core flows.
  * Covers the migration logic, the workout advancement state machine,
  * the modifier-aware periodization, and the streak/cycle math that
  * drives the user-facing progress dashboard.
  *
  * React is NOT loaded here; the test exercises the pure helpers and the
  * state-update functions that the context wraps. For the hook layer
- * (useArmorData), see the live integration tests in the app.
+ * (useShift6Data), see the live integration tests in the app.
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -15,7 +15,7 @@ import {
   rollover1RMs,
   EXERCISE_TRACK,
   EXERCISE_DISPLAY_NAMES,
-} from './armorEngine';
+} from './shift6Engine';
 
 describe('computeStreak', () => {
   it('returns 0 streak and 0 longest for empty history', () => {
@@ -193,7 +193,7 @@ describe('Track and display-name coverage', () => {
     });
   });
 
-  it('EXERCISE_TRACK covers all 8 default 1RMs in ArmorDataContext', () => {
+  it('EXERCISE_TRACK covers all 8 default 1RMs in Shift6DataContext', () => {
     const default1RMs = [
       'barbell_squat', 'bench_press', 'deadlift', 'barbell_row',
       'shoulder_press', 'goblet_squat', 'dumbbell_press', 'romanian_deadlift',

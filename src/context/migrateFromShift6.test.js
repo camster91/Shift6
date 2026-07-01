@@ -8,7 +8,7 @@
  * bug (track guess wrong).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { migrateFromShift6 } from './ArmorDataContext';
+import { migrateFromShift6 } from './Shift6DataContext';
 
 beforeEach(() => {
   localStorage.clear();
@@ -91,7 +91,7 @@ describe('migrateFromShift6', () => {
 
   it('fills missing 1RMs with 0 (never with hardcoded placeholders)', () => {
     // This is the regression that caused silent data loss: the old
-    // ArmorApp.jsx inline migration overwrote unset lifts with
+    // Shift6App.jsx inline migration overwrote unset lifts with
     // 185/135/225 placeholders. The fix is to use 0, which the UI
     // surfaces as "Set your 1RM" so the user fills it in.
     localStorage.setItem('shift6_onboarding_done', 'true');

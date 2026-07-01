@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useArmorData } from '../context/ArmorDataContext';
+import { useShift6Data } from '../context/Shift6DataContext';
 
 /**
  * usePRDetection — Watches for personal-record-breaking lifts during a session.
@@ -8,7 +8,7 @@ import { useArmorData } from '../context/ArmorDataContext';
  * Threshold is 2% over the stored 1RM to avoid flagging rounding noise.
  */
 export function usePRDetection() {
-  const { estimated1RMs } = useArmorData();
+  const { estimated1RMs } = useShift6Data();
   const [celebration, setCelebration] = useState(null);
 
   const checkPR = useCallback((exerciseId, weight, reps) => {

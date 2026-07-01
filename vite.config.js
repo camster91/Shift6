@@ -58,8 +58,8 @@ export default defineConfig({
                 clientsClaim: true
             },
             manifest: {
-                name: 'Armor — Metabolic Fitness',
-                short_name: 'Armor',
+                name: 'Shift6 — Six-Week Periodization',
+                short_name: 'Shift6',
                 description: '6-week periodization, 2 strength pillars, 4 daily longevity habits, and contingency protocols for busy professionals',
                 theme_color: '#020617',
                 background_color: '#020617',

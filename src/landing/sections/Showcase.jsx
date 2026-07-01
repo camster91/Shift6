@@ -13,7 +13,7 @@ export default function Showcase() {
   return (
     <section id="showcase" className="py-20 px-6">
       <div ref={ref} className={`max-w-6xl mx-auto ${inView ? 'reveal visible' : 'reveal'}`}>
-        <p className="eyebrow text-center mb-3">Inside Armor</p>
+        <p className="eyebrow text-center mb-3">Inside Shift6</p>
         <h2 className="text-3xl md:text-5xl font-black text-center mb-4 leading-tight">
           Apple-caliber design.<br />
           <span className="text-slate-400">No clutter. No upsells.</span>

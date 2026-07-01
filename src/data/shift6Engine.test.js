@@ -1,5 +1,5 @@
 /**
- * armorEngine.test.js — Smoke tests for the pure-function workout math.
+ * shift6Engine.test.js — Smoke tests for the pure-function workout math.
  * These are the easiest tests to write (no React, no DOM) and the
  * highest-value ones: the periodization numbers directly drive the
  * weights the user is told to lift.
@@ -32,7 +32,7 @@ import {
   EQUIPMENT_TRACKS,
   EXERCISE_TRACK,
   EXERCISE_DISPLAY_NAMES,
-} from './armorEngine';
+} from './shift6Engine';
 
 describe('estimate1RM (Epley)', () => {
   it('returns 0 for non-positive input', () => {

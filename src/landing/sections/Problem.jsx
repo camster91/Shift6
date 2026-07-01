@@ -35,7 +35,7 @@ export default function Problem() {
         </div>
 
         <p className="text-center text-slate-400 mt-10 text-sm max-w-xl mx-auto">
-          Other apps treat real life as an edge case. Armor treats it as <span className="text-cyan-400 font-bold">the default</span>.
+          Other apps treat real life as an edge case. Shift6 treats it as <span className="text-cyan-400 font-bold">the default</span>.
         </p>
       </div>
     </section>

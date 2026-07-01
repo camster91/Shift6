@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { Save, Sun, Moon, Trash2 } from 'lucide-react';
-import { useArmorData } from '../context/ArmorDataContext';
-import { EQUIPMENT_TRACKS, EXERCISE_TRACK, EXERCISE_DISPLAY_NAMES, getWeekConfig } from '../data/armorEngine';
+import { useShift6Data } from '../context/Shift6DataContext';
+import { EQUIPMENT_TRACKS, EXERCISE_TRACK, EXERCISE_DISPLAY_NAMES, getWeekConfig } from '../data/shift6Engine';
 import { Card, PageHeader, SectionHeader, Button, Toggle } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
-   ARMOR SETTINGS v2.0 — Apple HIG
+   SHIFT6 SETTINGS v2.0 — Apple HIG
    Zero borders. Section grouping. Destructive confirmations.
    ═══════════════════════════════════════════════════════════ */
 
@@ -129,8 +129,8 @@ function TrackCard({ track, selected, onClick }) {
   );
 }
 
-export default function ArmorSettings() {
-  const { preferences, userProfile, estimated1RMs, currentCycle, updatePreferences, set1RM, resetAll } = useArmorData();
+export default function Shift6Settings() {
+  const { preferences, userProfile, estimated1RMs, currentCycle, updatePreferences, set1RM, resetAll } = useShift6Data();
   const [showReset, setShowReset] = useState(false);
 
   const weekConfig = getWeekConfig(currentCycle.week);
@@ -391,7 +391,7 @@ export default function ArmorSettings() {
         </Section>
 
         <p className="text-center armor-text-footnote py-4">
-          Armor v3.0.0 · Build {new Date().toISOString().split('T')[0]}
+          Shift6 v3.0.0 · Build {new Date().toISOString().split('T')[0]}
         </p>
       </div>
 

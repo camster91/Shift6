@@ -1,6 +1,6 @@
-# Armor — Apple App Store Listing Copy
+# Shift6 — Apple App Store Listing Copy
 
-**App name:** Armor (30 chars max — fits)
+**App name:** Shift6 (30 chars max — fits)
 **Subtitle:** Train Through Chaos (30 chars max — fits)
 **Category:** Health & Fitness (primary), Lifestyle (secondary)
 **Content rating:** 4+ (no objectionable content)
@@ -28,7 +28,7 @@
 ## Description (4000 chars max)
 
 ```
-Armor is the fitness app for professionals whose schedule doesn't respect their workout. Whether you've got 20 minutes between meetings, a brutal weekend behind you, or a hotel gym in a city you can't pronounce — Armor has a protocol for that.
+Shift6 is the fitness app for professionals whose schedule doesn't respect their workout. Whether you've got 20 minutes between meetings, a brutal weekend behind you, or a hotel gym in a city you can't pronounce — Shift6 has a protocol for that.
 
 ### 2 PILLARS OF LONGEVITY
 
@@ -36,7 +36,7 @@ Armor is the fitness app for professionals whose schedule doesn't respect their 
 Four rounds of 4-minute work at 85-95% max heart rate, with 3-minute active rest. The single best predictor of all-cause mortality, and the lowest time-cost of any longevity intervention.
 
 **2. Strength — Periodized 6-week cycles**
-Heavy compound lifts on a planned progression. Armor calculates your sets, reps, and weights from your estimated 1RM. No spreadsheets, no guesswork.
+Heavy compound lifts on a planned progression. Shift6 calculates your sets, reps, and weights from your estimated 1RM. No spreadsheets, no guesswork.
 
 ### 4 DAILY LONGEVITY HABITS
 
@@ -46,13 +46,13 @@ Heavy compound lifts on a planned progression. Armor calculates your sets, reps,
 
 **Evening floor work** — 5-minute mobility routine: hips, hamstrings, thoracic spine. Counter the desk-worker posture.
 
-**Walk (your third daily habit)** — Armor tracks a third walk as part of your daily stack.
+**Walk (your third daily habit)** — Shift6 tracks a third walk as part of your daily stack.
 
-### CONTINGENCY PROTOCOLS (the part that makes Armor different)
+### CONTINGENCY PROTOCOLS (the part that makes Shift6 different)
 
 **🛡️ Minimum Viable Day** — No gym? No problem. 100 push-ups, 15-minute walk, 5-minute mobility. Streak protected. Your CNS gets the recovery it needs.
 
-**⏱️ 20-Minute Window** — In a meeting crunch. Armor strips your workout to the essential primary lift or one VO₂ block. Accessories skipped. Plate math stays correct.
+**⏱️ 20-Minute Window** — In a meeting crunch. Shift6 strips your workout to the essential primary lift or one VO₂ block. Accessories skipped. Plate math stays correct.
 
 **😴 High CNS Fatigue** — After a brutal weekend. Auto-downgrades your primary compound to 60% 1RM and shifts the rep range to hypertrophy. Protects the central nervous system.
 
@@ -77,7 +77,7 @@ No subscription. No data harvesting. Your training data lives on your phone. Clo
 
 ### PRIVACY
 
-Armor is local-first. Nothing leaves your device until you opt into cloud sync. We do not sell your data. We do not show you ads. The optional cloud sync is end-to-end yours — your password is hashed with bcrypt, your data lives in Postgres, and you can wipe your cloud account at any time.
+Shift6 is local-first. Nothing leaves your device until you opt into cloud sync. We do not sell your data. We do not show you ads. The optional cloud sync is end-to-end yours — your password is hashed with bcrypt, your data lives in Postgres, and you can wipe your cloud account at any time.
 
 ### ACCESSIBILITY
 
@@ -103,7 +103,7 @@ Built by people who know the meeting runs long.
 ## What's New in This Version (4000 chars max)
 
 ```
-v3.0 — Complete Armor redesign
+v3.0 — Complete Shift6 redesign
 
 NEW:
 • Apple-caliber design system with zero borders, full elevation layers, and spring-physics motion

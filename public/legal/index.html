@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - Armor</title>
+    <title>Privacy Policy - Shift6</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -38,19 +38,19 @@
     </style>
 </head>
 <body>
-    <h1>Privacy Policy for Armor</h1>
-    <p class="updated">Last Updated: June 16, 2026</p>
+    <h1>Privacy Policy for Shift6</h1>
+    <p class="updated">Last Updated: June 30, 2026</p>
 
     <div class="summary">
-        <strong>Summary:</strong> Armor is local-first by default. All your workout data lives on your device, and the app works fully offline. Optional cloud sync (workouts, 1RMs, preferences) is opt-in &mdash; it activates only when you create an account. We do not collect, sell, or share data with third parties.
+        <strong>Summary:</strong> Shift6 is local-first by default. All your workout data lives on your device, and the app works fully offline. Optional cloud sync (workouts, 1RMs, preferences) is opt-in &mdash; it activates only when you create an account. We do not collect, sell, or share data with third parties.
     </div>
 
     <h2>Introduction</h2>
-    <p>Armor (formerly "Shift6") is a fitness application developed by Cameron Ashley and published under the brand name Armor. This Privacy Policy describes how the Armor mobile application (iOS App Store and Google Play) and the web app at <a href="https://getshift6.com">getshift6.com</a> handle information. We are committed to protecting the privacy of everyone who uses our app.</p>
-    <p>By installing or using Armor, you agree to the practices described in this Privacy Policy.</p>
+    <p>Shift6 is a fitness application developed by Cameron Ashley and published under the brand name Shift6. (The app was previously released under the names "Shift6 v1" and "Armor"; this Privacy Policy applies to all versions.) This Privacy Policy describes how the Shift6 mobile application (iOS App Store and Google Play) and the web app at <a href="https://getshift6.com">getshift6.com</a> handle information. We are committed to protecting the privacy of everyone who uses our app.</p>
+    <p>By installing or using Shift6, you agree to the practices described in this Privacy Policy.</p>
 
     <h2>Data Stored Locally on Your Device (always)</h2>
-    <p>Armor stores the following data in your device's local storage (localStorage on the web, device storage on iOS and Android) to provide its functionality:</p>
+    <p>Shift6 stores the following data in your device's local storage (localStorage on the web, device storage on iOS and Android) to provide its functionality:</p>
     <ul>
         <li><strong>Workout History:</strong> Records of completed exercises, dates, sets, reps, and performance metrics.</li>
         <li><strong>Progress Data:</strong> Your advancement through the 6-week program, current cycle / week / day, and cycle completion count.</li>
@@ -70,8 +70,8 @@
     </ul>
 
     <h2>Optional Cloud Sync (opt-in account feature)</h2>
-    <p>Armor offers an optional cloud sync feature that lets you back up your data and access it from multiple devices. <strong>This feature is off by default and requires you to explicitly create an account.</strong></p>
-    <p>If you create an Armor account and choose to sync, we store:</p>
+    <p>Shift6 offers an optional cloud sync feature that lets you back up your data and access it from multiple devices. <strong>This feature is off by default and requires you to explicitly create an account.</strong></p>
+    <p>If you create a Shift6 account and choose to sync, we store:</p>
     <ul>
         <li>Your email address (for login only &mdash; never used for marketing or shared)</li>
         <li>A <strong>bcrypt</strong> hash of your password (the plain-text password is never stored)</li>
@@ -83,8 +83,13 @@
     <p>All cloud-sync traffic is over HTTPS. The sync endpoint is <code>sync.getshift6.com</code>. Authentication is via a JWT issued at login and stored in your device's localStorage (not a cookie).</p>
     <p>You can delete your account and all cloud-stored data at any time from the Account tab. Deletion is permanent; we do not retain backups of deleted accounts. Your local data on the device remains intact.</p>
 
-    <h2>Migration From Shift6</h2>
-    <p>Armor can read the local-storage keys left by the previous Shift6 app on first launch. Migration happens entirely on-device: the old <code>shift6_settings</code> and <code>shift6_onboarding_done</code> keys are read, the values are translated to the new <code>armor_*</code> keys, and the old keys are left in place (you can clear them via your browser's site data tools). No data is sent off-device during migration.</p>
+    <h2>Migration From Earlier Versions</h2>
+    <p>If you used a previous version of this app, Shift6 will read any local-storage keys it left behind on first launch and migrate them to the current <code>shift6_*</code> keys. Migration happens entirely on-device &mdash; no data is sent off-device during migration. The exact keys migrated depend on which version you used:</p>
+    <ul>
+        <li><strong>Original Shift6 v1:</strong> <code>shift6_settings</code>, <code>shift6_onboarding_done</code>, <code>shift6_logs</code>, <code>shift6_goals</code>, <code>shift6_my_exercises</code> are read once and the old keys are left in place (you can clear them via your browser's site data tools).</li>
+        <li><strong>Armor (the v2 build that pre-dated the Shift6 rebrand):</strong> <code>armor_data</code>, <code>armor_revision</code>, <code>armor_theme</code>, <code>armor_install_dismissed</code>, <code>armor_tour_shown</code>, <code>armor_auth</code>, <code>armor_api_base</code> are read once, copied to their <code>shift6_*</code> equivalents, and then deleted.</li>
+    </ul>
+    <p>After the migration runs once, a marker (<code>shift6_migrated_from_armor</code>) is set so the migration is a no-op on every subsequent load. You can clear all local data (including the migration marker) from the in-app reset button in ErrorBoundary, or via your browser's site data tools.</p>
 
     <h2>No Internet Required for Core Features</h2>
     <p>The app's core features (onboarding, workout logging, progress charts, periodization, plate math, rest timer, daily habits) all work fully offline. Network requests occur only in the following cases:</p>
@@ -108,21 +113,21 @@
     <p>The marketing landing page at <a href="https://getshift6.com">getshift6.com</a> uses Google Fonts. The PWA itself does not.</p>
 
     <h2>No Account Required</h2>
-    <p>Armor does not require you to create an account to use the app. The "Account" tab in the bottom navigation only appears after you have created an account. The default local-only experience is fully functional.</p>
+    <p>Shift6 does not require you to create an account to use the app. The "Account" tab in the bottom navigation only appears after you have created an account. The default local-only experience is fully functional.</p>
 
     <h2>Data Deletion</h2>
     <p>You have complete and immediate control over your data:</p>
     <ul>
-        <li><strong>Local Data:</strong> Open Settings &rarr; Factory Reset to clear all <code>armor_*</code> keys from local storage on the current device.</li>
+        <li><strong>Local Data:</strong> Open Settings &rarr; Factory Reset to clear all <code>shift6_*</code> keys from local storage on the current device.</li>
         <li><strong>Cloud Data:</strong> Sign in, then go to Account &rarr; Delete Account to permanently remove all data we hold for your account, including the account record itself.</li>
         <li><strong>Uninstall:</strong> Removing the app deletes all associated data from your device. Cloud-stored data, if any, is retained until you delete your account.</li>
     </ul>
 
     <h2>Children's Privacy</h2>
-    <p>Armor does not knowingly collect any information from anyone, including children under the age of 13. The app does not require any personal information to function. The app is intended for general audiences and is not specifically directed at children.</p>
+    <p>Shift6 does not knowingly collect any information from anyone, including children under the age of 13. The app does not require any personal information to function. The app is intended for general audiences and is not specifically directed at children.</p>
 
     <h2>Permissions</h2>
-    <p>Armor may request the following device permissions:</p>
+    <p>Shift6 may request the following device permissions:</p>
     <ul>
         <li><strong>Vibration / Haptics:</strong> To provide haptic feedback during workouts (optional).</li>
         <li><strong>Notifications:</strong> To send locally scheduled workout and habit reminders (optional, user-initiated).</li>
@@ -140,7 +145,7 @@
     </table>
 
     <h2>International Users</h2>
-    <p>Armor is designed to comply with international data protection regulations, including:</p>
+    <p>Shift6 is designed to comply with international data protection regulations, including:</p>
     <ul>
         <li><strong>GDPR</strong> (General Data Protection Regulation &mdash; European Union)</li>
         <li><strong>CCPA / CPRA</strong> (California Consumer Privacy Act / California Privacy Rights Act &mdash; United States)</li>
@@ -162,7 +167,7 @@
 
     <hr>
     <p style="color: #64748b; font-size: 0.9rem; text-align: center;">
-        &copy; 2026 Cameron Ashley. All rights reserved. This privacy policy is effective as of June 16, 2026.
+        &copy; 2026 Cameron Ashley. All rights reserved. This privacy policy is effective as of June 30, 2026.
     </p>
 </body>
 </html>

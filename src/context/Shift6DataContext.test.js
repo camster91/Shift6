@@ -8,7 +8,7 @@
  * specifically so we can test it without React.
  */
 import { describe, it, expect } from 'vitest';
-import { computeNextStateAfterWorkout } from './ArmorDataContext';
+import { computeNextStateAfterWorkout } from './Shift6DataContext';
 
 // Minimal stand-in for the DEFAULT_DATA shape. Only the fields that
 // logWorkout actually reads are populated.

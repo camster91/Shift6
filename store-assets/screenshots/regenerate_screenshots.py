@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Regenerate marketing screenshots with fixed overlay layout (no text collision).
-ARMOR at top of overlay, headline below, subhead at bottom — all separated.
+SHIFT6 at top of overlay, headline below, subhead at bottom — all separated.
 Uses existing final images as base, but clears the overlay region first.
 """
 
@@ -19,13 +19,13 @@ COLOR_SLATE_300 = (203, 213, 225)  # slate-300
 
 # Layout constants (for iPhone 6.7" at 1290×2796)
 OVERLAY_FRACTION = 0.45  # bottom 45%
-ARMOR_MARGIN_TOP = 60    # from start of overlay region
-HEADLINE_MARGIN_TOP = 80 # below ARMOR
+SHIFT6_MARGIN_TOP = 60    # from start of overlay region
+HEADLINE_MARGIN_TOP = 80 # below SHIFT6
 SUBHEAD_MARGIN_TOP = 40  # below headline
 
 # Text sizes (adjusted to fit within available width)
-ARMOR_ICON_SIZE = 60
-ARMOR_WORD_SIZE = 60
+SHIFT6_ICON_SIZE = 60
+SHIFT6_WORD_SIZE = 60
 HEADLINE_SIZE = 90       # reduced from 130 to fit width
 SUBHEAD_SIZE = 45        # reduced from 64 to fit width
 
@@ -98,12 +98,12 @@ def add_text_overlay(draw, overlay_top, scale, screenshot_type):
     s = scale
     
     # Scale dimensions
-    armor_margin = scale_value(ARMOR_MARGIN_TOP, s)
+    armor_margin = scale_value(SHIFT6_MARGIN_TOP, s)
     headline_margin = scale_value(HEADLINE_MARGIN_TOP, s)
     subhead_margin = scale_value(SUBHEAD_MARGIN_TOP, s)
     
-    icon_size = scale_value(ARMOR_ICON_SIZE, s)
-    word_size = scale_value(ARMOR_WORD_SIZE, s)
+    icon_size = scale_value(SHIFT6_ICON_SIZE, s)
+    word_size = scale_value(SHIFT6_WORD_SIZE, s)
     headline_size = scale_value(HEADLINE_SIZE, s)
     subhead_size = scale_value(SUBHEAD_SIZE, s)
     
@@ -125,8 +125,8 @@ def add_text_overlay(draw, overlay_top, scale, screenshot_type):
     # Draw ⚔ icon
     draw.text((icon_x, y_icon), "⚔", font=icon_font, fill=COLOR_CYAN)
     
-    # Draw "ARMOR" wordmark
-    draw.text((text_x, y_word), "ARMOR", font=word_font, fill=COLOR_CYAN)
+    # Draw "SHIFT6" wordmark
+    draw.text((text_x, y_word), "SHIFT6", font=word_font, fill=COLOR_CYAN)
     
     # Headline and subhead depend on screenshot type
     if screenshot_type == "onboarding":

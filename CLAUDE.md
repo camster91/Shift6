@@ -1,4 +1,4 @@
-# CLAUDE.md — Armor (formerly Shift6)
+# CLAUDE.md — Shift6 (formerly Shift6, then briefly Armor)
 
 ## What this is
 
@@ -22,24 +22,24 @@ A Capacitor (React + Vite) fitness PWA. 6-week periodization with two equipment 
 
 ## Key files
 
-- `src/ArmorApp.jsx` — App shell, tab nav, Shift6→Armor migration
-- `src/context/ArmorDataContext.jsx` — Single provider: workout, preferences, modifiers, habits, streak
-- `src/data/armorEngine.js` — **Pure functions** for periodization, plate math, modifiers. This is the math the user trusts — treat regressions as blocking.
-- `src/data/armorEngine.test.js` — 47 tests covering the math
-- `src/data/armorEngine.context.test.js` — 13 tests for the context helpers (`computeStreak`, `rollover1RMs`)
-- `src/data/armorEngine.unit.test.js` — 10 tests for the lb/kg display conversion
+- `src/Shift6App.jsx` — App shell, tab nav, on-load migration from armor_* localStorage keys
+- `src/context/Shift6DataContext.jsx` — Single provider: workout, preferences, modifiers, habits, streak
+- `src/data/shift6Engine.js` — **Pure functions** for periodization, plate math, modifiers. This is the math the user trusts — treat regressions as blocking.
+- `src/data/shift6Engine.test.js` — 47 tests covering the math
+- `src/data/shift6Engine.context.test.js` — 13 tests for the context helpers (`computeStreak`, `rollover1RMs`)
+- `src/data/shift6Engine.unit.test.js` — 10 tests for the lb/kg display conversion
 - `src/lib/syncClient.js` — Optional cloud sync client (Fastify + Postgres backend, not deployed)
-- `src/pages/ArmorWorkoutSession.jsx` — Strength / VO2 / MVD / rest timer / plate visualizer
-- `src/pages/ArmorDashboard.jsx` — Today's workout, WeekStrip, modifiers, daily habits
+- `src/pages/Shift6WorkoutSession.jsx` — Strength / VO2 / MVD / rest timer / plate visualizer
+- `src/pages/Shift6Dashboard.jsx` — Today's workout, WeekStrip, modifiers, daily habits
 - `src/components/ExerciseIllustration.jsx` — Lazy-loaded WebP illustration for an exercise; falls back cleanly when no asset exists
 - `src/data/exerciseImages.js` — Maps exerciseId → `/exercises/<id>.webp` path. Edit this when adding/removing illustrations
 - `public/exercises/*.webp` — Generated exercise illustrations (4 currently: barbell_squat, bench_press, deadlift, goblet_squat). Generated via MiniMax image-01 + Imagen 4 T2I (no reference images — all output owned under vendor commercial-use terms)
 - `ops/exerciseIllustrationPrompts.js` — Source prompts for the 4 illustrations. Edit prompts here, then `node ops/generateExerciseIllustrations.js --only <exercise>` to regenerate
 - `ops/generateExerciseIllustrations.js` — Run the 6 prompts through MiniMax image-01; saves to ops/exercise-candidates/<exercise>/. Convert to WebP via `cwebp -q 80` before committing
-- `src/pages/ArmorSettings.jsx` — 1RM editor, theme, unit, modifiers
+- `src/pages/Shift6Settings.jsx` — 1RM editor, theme, unit, modifiers
 - `ops/traefik-guard.sh` — cron guard for the getshift6.com Traefik route
 - `ops/caddy-removal-guard.sh` — fleet-wide Traefik health + caddy-decommissioned assertions
-- `ops/armor-serve.cjs` — custom Node static server (used because serve@14 --single masks the privacy page)
+- `ops/shift6-serve.cjs` — custom Node static server (used because serve@14 --single masks the privacy page)
 - `store-assets/` — App Store listing, screenshots, feature graphic, privacy policy
 - `android/shift6-release.keystore` — release signing key (NEVER commit a password)
 
@@ -127,7 +127,7 @@ See `ops/traefik-guard.sh` for an example. Routes go in `/opt/traefik/dynamic/ro
 
 Already prepared in `store-assets/`:
 - `APP_STORE_LISTING.md` — full description, keywords
-- `PRIVACY_POLICY.md` — Armor (not Shift6) wording; cloud sync is opt-in
+- `PRIVACY_POLICY.md` — Shift6 wording; cloud sync is opt-in
 - `GOOGLE_PLAY_LISTING.md`
 - `screenshots/` folder
 - `BUILD_SUBMISSION_GUIDE.md`

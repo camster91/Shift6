@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Flame, Trophy } from 'lucide-react';
-import { useArmorData } from '../context/ArmorDataContext';
-import { PERIODIZATION, getWeekConfig } from '../data/armorEngine';
+import { useShift6Data } from '../context/Shift6DataContext';
+import { PERIODIZATION, getWeekConfig } from '../data/shift6Engine';
 import { Card, PageHeader, EmptyState, Button } from '../components/ui';
 import PersonalRecords from '../components/PersonalRecords';
 
 /* ═══════════════════════════════════════════════════════════
-   ARMOR PROGRESS v3.0 — Token-driven colors
+   SHIFT6 PROGRESS v3.0 — Token-driven colors
    Charts use CSS variables so dark/light theme and accent swaps
    propagate without touching this file.
    ═══════════════════════════════════════════════════════════ */
@@ -311,8 +311,8 @@ function ListRow({ index, divider = true, children }) {
   );
 }
 
-export default function ArmorProgress() {
-  const { currentCycle, workoutHistory, streakData, estimated1RMs, dailyHabitState, preferences } = useArmorData();
+export default function Shift6Progress() {
+  const { currentCycle, workoutHistory, streakData, estimated1RMs, dailyHabitState, preferences } = useShift6Data();
   const unit = preferences.unit || 'lbs';
   const weekConfig = getWeekConfig(currentCycle.week);
   const [timeRange, setTimeRange] = useState('30d');

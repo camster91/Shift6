@@ -9,7 +9,7 @@ const QUOTES = [
     location: 'Toronto',
   },
   {
-    text: "Tried four apps before this. All of them punished me for missing a day. Armor's MVD mode treats my life like the constraint it is, instead of asking me to be a different person.",
+    text: "Tried four apps before this. All of them punished me for missing a day. Shift6's MVD mode treats my life like the constraint it is, instead of asking me to be a different person.",
     name: 'Priya K.',
     role: 'Pediatric Resident',
     location: 'Vancouver',

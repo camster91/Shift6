@@ -1,5 +1,5 @@
 /**
- * Armor Sync Client — Bridges the local-first ArmorDataContext to a remote
+ * Shift6 Sync Client — Bridges the local-first Shift6DataContext to a remote
  * backend (Fastify + Postgres). Last-write-wins conflict resolution using
  * a monotonic revision counter.
  *
@@ -7,19 +7,19 @@
  * running and reachable at DEFAULT_API_BASE. The API repo is NOT a part of
  * this project — see the `armor-sync-api` package on the same GitHub
  * account for the server side. Until the sync API is deployed, the
- * ArmorAccount UI in `src/pages/ArmorAccount.jsx` will fail to register
+ * Shift6Account UI in `src/pages/Shift6Account.jsx` will fail to register
  * or log in. The rest of the app is fully functional without it.
  *
  * Storage keys for auth state — separate from `armor_data` to keep the
  * auth metadata out of the synced payload.
  */
 
-const AUTH_KEY = 'armor_auth';
-const API_BASE_KEY = 'armor_api_base';
+const AUTH_KEY = 'shift6_auth';
+const API_BASE_KEY = 'shift6_api_base';
 
 // Default API base — production endpoint on Cam's VPS via Coolify
 // Local dev: run `npm run dev` in armor-sync-api and override via localStorage
-//   localStorage.setItem('armor_api_base', 'http://localhost:4001')
+//   localStorage.setItem('shift6_api_base', 'http://localhost:4001')
 const DEFAULT_API_BASE = 'https://sync.getshift6.com';
 
 function loadJSON(key, fallback) {

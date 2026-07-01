@@ -1,4 +1,4 @@
-# GitHub Actions CI — Auto-build + deploy for Armor
+# GitHub Actions CI — Auto-build + deploy for Shift6
 
 Three workflows to ship:
 
@@ -15,7 +15,7 @@ Each requires the same GitHub Secrets (set in repo Settings → Secrets):
 ## armor-web-ci.yml (place in `~/Shift6/.github/workflows/`)
 
 ```yaml
-name: Build and Deploy Armor PWA
+name: Build and Deploy Shift6 PWA
 
 on:
   push:
@@ -77,7 +77,7 @@ jobs:
 ## armor-landing-ci.yml (place in `~/projects/armor-landing/.github/workflows/`)
 
 ```yaml
-name: Build and Deploy Armor Landing
+name: Build and Deploy Shift6 Landing
 
 on:
   push:
@@ -128,7 +128,7 @@ jobs:
 ## armor-sync-api-ci.yml (place in `~/projects/armor-sync-api/.github/workflows/`)
 
 ```yaml
-name: Build and Deploy Armor Sync API
+name: Build and Deploy Shift6 Sync API
 
 on:
   push:

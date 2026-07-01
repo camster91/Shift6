@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { LogIn, LogOut, RefreshCw, Check, AlertCircle, Cloud, CloudOff, GitMerge } from 'lucide-react';
-import { useArmorData } from '../context/ArmorDataContext';
+import { useShift6Data } from '../context/Shift6DataContext';
 import { register, login, logout, getAuth, isLoggedIn, getApiBase } from '../lib/syncClient';
 import { Card, PageHeader, Button } from '../components/ui';
 
 /**
- * Armor Account — Login/register form, sync status, conflict resolution.
+ * Shift6 Account — Login/register form, sync status, conflict resolution.
  * Apple HIG. Zero borders. Elevation layers.
  */
 
@@ -55,7 +55,7 @@ function ConflictBanner({ conflict, onKeepLocal, onUseServer }) {
 }
 
 function ProfileSection() {
-  const { userProfile } = useArmorData();
+  const { userProfile } = useShift6Data();
   const auth = getAuth();
   const displayName = auth?.user?.displayName || userProfile?.displayName || '';
   const email = auth?.user?.email || userProfile?.email || '';
@@ -80,7 +80,7 @@ function ProfileSection() {
 }
 
 function SyncStatusCard() {
-  const { syncStatus, lastSyncAt } = useArmorData();
+  const { syncStatus, lastSyncAt } = useShift6Data();
 
   return (
     <Card>
@@ -97,7 +97,7 @@ function SyncStatusCard() {
 }
 
 function DataExportButton() {
-  const { userProfile, preferences, estimated1RMs, workoutHistory, streakData, currentCycle } = useArmorData();
+  const { userProfile, preferences, estimated1RMs, workoutHistory, streakData, currentCycle } = useShift6Data();
 
   const handleExport = () => {
     const data = { userProfile, preferences, estimated1RMs, workoutHistory, streakData, currentCycle, exportedAt: new Date().toISOString() };
@@ -118,7 +118,7 @@ function DataExportButton() {
 }
 
 function LoginForm() {
-  const { pullFromCloud } = useArmorData();
+  const { pullFromCloud } = useShift6Data();
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -202,7 +202,7 @@ function LoginForm() {
 
 function LoggedInCard() {
   const { user, lastSyncAt } = getAuth();
-  const { pullFromCloud, syncStatus, conflict, resolveConflictKeepLocal, resolveConflictUseServer, logout: ctxLogout } = useArmorData();
+  const { pullFromCloud, syncStatus, conflict, resolveConflictKeepLocal, resolveConflictUseServer, logout: ctxLogout } = useShift6Data();
   const [pulse, setPulse] = useState(false);
 
   const handlePull = async () => {
@@ -262,7 +262,7 @@ function LoggedInCard() {
   );
 }
 
-export default function ArmorAccount() {
+export default function Shift6Account() {
   const loggedIn = isLoggedIn();
 
   return (

@@ -49,7 +49,7 @@ export default function WorkoutSummary({
   // Recommend deload when the user failed 3+ sets in a single session.
   // This is the engine's most direct signal that the prescribed weights
   // are too aggressive for today's condition. The actual toggle lives
-  // in ArmorDataContext (highFatigue modifier → 60% intensity).
+  // in Shift6DataContext (highFatigue modifier → 60% intensity).
   // The check is INDEPENDENT of isEmpty: a session with 0 completed
   // and 3+ failed is exactly the case where deload matters most.
   const failedSetsCount = workout?.failedSetsCount || 0;

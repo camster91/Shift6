@@ -1,6 +1,6 @@
 /**
  * exerciseIllustrationPrompts.js — text-to-image prompts for the 6
- * Armor primary lifts.
+ * Shift6 primary lifts.
  *
  * No reference images — these are pure T2I prompts. Output is owned
  * outright under MiniMax's commercial-use terms. Style is anchored

@@ -26,7 +26,7 @@ export default function FirstRunTour() {
 
   useEffect(() => {
     try {
-      const shown = localStorage.getItem('armor_tour_shown');
+      const shown = localStorage.getItem('shift6_tour_shown');
       if (!shown) setVisible(true);
     } catch {
       setVisible(false);
@@ -35,7 +35,7 @@ export default function FirstRunTour() {
 
   const handleDismiss = () => {
     try {
-      localStorage.setItem('armor_tour_shown', '1');
+      localStorage.setItem('shift6_tour_shown', '1');
     } catch { /* ignore */ }
     setDismissed(true);
     setVisible(false);

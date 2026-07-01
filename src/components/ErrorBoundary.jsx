@@ -11,7 +11,7 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('Armor ErrorBoundary caught:', error, errorInfo);
+    console.error('Shift6 ErrorBoundary caught:', error, errorInfo);
   }
 
   handleReload = () => {
@@ -20,19 +20,21 @@ export default class ErrorBoundary extends Component {
 
   handleReset = () => {
     try {
-      // Clear all Armor data, then any leftover Shift6 v1 keys.
+      // Clear all Shift6 data. Two groups: the current shift6_* keys,
+      // and the legacy shift6 v1 keys from the original app.
       // The list is in two groups so it's easy to see which is which
       // if someone debugs the reset from the Application panel.
-      const ARMOR_KEYS = [
-        'armor_data', 'armor_revision', 'armor_auth', 'armor_api_base',
-        'armor_migrated_from_shift6', 'armor_theme', 'armor_install_dismissed',
+      const SHIFT6_KEYS = [
+        'shift6_data', 'shift6_revision', 'shift6_auth', 'shift6_api_base',
+        'shift6_migrated_from_v1', 'shift6_theme', 'shift6_install_dismissed',
+        'shift6_tour_shown', 'shift6_migrated_from_armor',
       ];
       const SHIFT6_LEGACY_KEYS = [
         'shift6_logs', 'shift6_goals', 'shift6_my_exercises',
         'shift6_onboarding_done', 'shift6_settings',
         'shift6_install_dismissed', 'shift6_theme',
       ];
-      [...ARMOR_KEYS, ...SHIFT6_LEGACY_KEYS].forEach(k => localStorage.removeItem(k));
+      [...SHIFT6_KEYS, ...SHIFT6_LEGACY_KEYS].forEach(k => localStorage.removeItem(k));
     } catch {
       // Storage may be disabled or quota exceeded; reload still proceeds
     }

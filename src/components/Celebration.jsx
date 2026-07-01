@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, Sparkles, Check } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
-   ARMOR CELEBRATIONS — PR detection + confetti + awards
+   SHIFT6 CELEBRATIONS — PR detection + confetti + awards
    ═══════════════════════════════════════════════════════════ */
 
 const COLORS = ['#06b6d4', '#10b981', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6'];

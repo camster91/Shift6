@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Create marketing screenshots for Armor fitness app.
+Create marketing screenshots for Shift6 fitness app.
 Adds overlay text, gradient, wordmark to raw app captures.
 """
 import os
@@ -129,13 +129,13 @@ def add_overlay_to_screenshot(raw_path, output_path, size_config):
         sub_font = load_font(sub_size, bold=False)
         
         # Measure text widths
-        bbox = draw.textbbox((0, 0), "ARMOR", font=headline_font)
+        bbox = draw.textbbox((0, 0), "SHIFT6", font=headline_font)
         armor_w = bbox[2] - bbox[0]
         sword = "⚔"
         sword_bbox = draw.textbbox((0, 0), sword, font=headline_font)
         sword_w = sword_bbox[2] - sword_bbox[0]
         
-        # Wordmark: ⚔ ARMOR with cyan accent line
+        # Wordmark: ⏩ SHIFT6 with cyan accent line
         accent_bar_height = 4
         accent_bar_width = 60
         accent_y = text_bottom - headline_size - 20
@@ -146,10 +146,10 @@ def add_overlay_to_screenshot(raw_path, output_path, size_config):
             fill=CYAN
         )
         
-        # Draw sword icon + ARMOR wordmark
+        # Draw fast-forward + SHIFT6 wordmark
         wordmark_y = accent_y - headline_size - 10
         draw.text((padding, wordmark_y), sword, fill=CYAN, font=headline_font)
-        draw.text((padding + sword_w + 5, wordmark_y), "ARMOR", fill=WHITE, font=headline_font)
+        draw.text((padding + sword_w + 5, wordmark_y), "SHIFT6", fill=WHITE, font=headline_font)
         
         # Draw headline
         headline_y = wordmark_y - headline_size - 15
@@ -217,7 +217,7 @@ def create_marketing_screenshot(raw_path, size_config, headline, sub):
         sub_font = load_font(sub_size, bold=False)
         
         # Measure wordmark
-        bbox_h = draw.textbbox((0, 0), "ARMOR", font=headline_font)
+        bbox_h = draw.textbbox((0, 0), "SHIFT6", font=headline_font)
         armor_w = bbox_h[2] - bbox_h[0]
         bbox_s = draw.textbbox((0, 0), "⚔", font=headline_font)
         sword_w = bbox_s[2] - bbox_s[0]
@@ -230,10 +230,10 @@ def create_marketing_screenshot(raw_path, size_config, headline, sub):
             fill=CYAN
         )
         
-        # Wordmark line: ⚔ ARMOR
+        # Wordmark line: ⏩ SHIFT6
         wordmark_y = accent_y - headline_size - 15
         draw.text((padding, wordmark_y), "⚔", fill=CYAN, font=headline_font)
-        draw.text((padding + sword_w + 8, wordmark_y), "ARMOR", fill=WHITE, font=headline_font)
+        draw.text((padding + sword_w + 8, wordmark_y), "SHIFT6", fill=WHITE, font=headline_font)
         
         # Headline
         headline_y = wordmark_y - headline_size - 20

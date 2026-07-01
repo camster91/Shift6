@@ -7,7 +7,7 @@ export default function Footer() {
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl">⚔️</span>
               <span className="font-black tracking-tight text-lg">
-                <span className="text-cyan-400">Armor</span>
+                <span className="text-cyan-400">Shift6</span>
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
@@ -37,7 +37,7 @@ export default function Footer() {
         </div>
 
         <div className="pt-6 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-[10px] text-slate-400">© 2026 Armor. Built with no shortcuts, by hand.</p>
+          <p className="text-[10px] text-slate-400">© 2026 Shift6. Built with no shortcuts, by hand.</p>
           <p className="text-[10px] text-slate-400">
             v3.0 · Local-first · WCAG 2.1 AA · <span className="text-cyan-400">Cloud sync optional</span>
           </p>

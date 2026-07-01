@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy the Armor PWA to VPS 187.77.26.99.
+# Deploy the Shift6 PWA to VPS 187.77.26.99.
 #
 # The container's runtime/serve.cjs serves /opt/armor-live/dist/ (NOT the
 # top-level /opt/armor-live/). The tarball must be extracted INTO the dist/

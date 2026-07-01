@@ -1,6 +1,6 @@
-# Armor — Build & App Store Submission Guide
+# Shift6 — Build & App Store Submission Guide
 
-**App name:** Armor (formerly Shift6)
+**App name:** Shift6 (formerly Shift6)
 **Bundle ID:** `com.shift6.app` (preserved for store listing continuity)
 **Version:** 3.0.0 (versionCode 3)
 
@@ -77,7 +77,7 @@ npm run cap:android  # Opens Android Studio
 
 ### Google Play Submission Steps
 1. Log in to https://play.google.com/console
-2. Select **Shift6** (or create new app named **Armor**)
+2. Select **Shift6** (or create new app named **Shift6**)
 3. Release > Production > Create new release
 4. Upload `app-release.aab`
 5. Fill out:
@@ -117,11 +117,11 @@ In Xcode:
 ## Part 4: iOS App Store Submission
 
 ### What's pre-configured
-- [x] `CFBundleDisplayName: Armor` in Info.plist
+- [x] `CFBundleDisplayName: Shift6` in Info.plist
 - [x] `UIUserInterfaceStyle: Dark` (forces dark mode on launch)
 - [x] `UIStatusBarStyle: LightContent` (white status bar on dark)
 - [x] Portrait-only orientation (workout apps are portrait)
-- [x] `LaunchScreen.storyboard` rebuilt with crossed-swords + ARMOR wordmark
+- [x] `LaunchScreen.storyboard rebuilt with ⏩ + SHIFT6 wordmark
 - [x] `AppDelegate.swift` sets light status bar on launch
 - [x] `MARKETING_VERSION 3.0.0`, `CURRENT_PROJECT_VERSION 3`
 - [x] Web assets synced via `npx cap sync ios`
@@ -144,7 +144,7 @@ In Xcode:
 1. https://appstoreconnect.apple.com
 2. My Apps > **Shift6** (existing app — bundle ID preserved) > + Version 3.0.0
 3. Update version metadata:
-   - **What's New in This Version:** "Complete Armor redesign — Apple HIG design system, 6-week periodization, VO2 Max intervals, plate math, and 5 contingency protocols."
+   - **What's New in This Version:** "Complete Shift6 redesign — Apple HIG design system, 6-week periodization, VO2 Max intervals, plate math, and 5 contingency protocols."
    - Screenshots: 6.5" (iPhone 11 Pro Max) and 5.5" (iPhone 8 Plus) required
 4. Submit for review (24-48 hours typical)
 

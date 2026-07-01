@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Play, Pause, Check, X, ChevronRight } from 'lucide-react';
-import { useArmorData } from '../context/ArmorDataContext';
+import { useShift6Data } from '../context/Shift6DataContext';
 import {
   getTodaysWorkout, VO2MAX_PROTOCOL, getWeekConfig, SPLIT_DAYS
-} from '../data/armorEngine';
+} from '../data/shift6Engine';
 import { ConfettiBurst, AwardModal } from '../components/Celebration';
 import PlateVisualizer from '../components/PlateVisualizer';
 import ExerciseIllustration from '../components/ExerciseIllustration';
@@ -48,7 +48,7 @@ class WorkoutErrorBoundary extends React.Component {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ARMOR WORKOUT SESSION v2.0 — Apple HIG
+   SHIFT6 WORKOUT SESSION v2.0 — Apple HIG
    Haptic map. Spring animations. PR detection. Confetti.
    ═══════════════════════════════════════════════════════════ */
 
@@ -298,7 +298,7 @@ function EndWorkoutConfirm({ setCount, onConfirm, onCancel }) {
 
 /* ── Strength Workout Screen ───────────────────────────────── */
 function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onComplete, track = 'full_gym', onNavigateToSettings, activeModifiers = {} }) {
-  const { workoutHistory, preferences } = useArmorData();
+  const { workoutHistory, preferences } = useShift6Data();
   const unit = preferences.unit || 'lbs';
   const queue = useMemo(() => {
     const q = [];
@@ -406,7 +406,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
       if (justCompletedTimerRef.current) clearTimeout(justCompletedTimerRef.current);
       justCompletedTimerRef.current = setTimeout(() => setJustCompleted(false), 600);
     } catch (e) {
-      console.warn('[ArmorWorkout] handleCompleteSet error:', e);
+      console.warn('[Shift6Workout] handleCompleteSet error:', e);
     } finally {
       // Release the lock on the next tick so the user can complete the
       // next set. Microtask is enough — React 18 will have flushed.
@@ -760,16 +760,16 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
 }
 
 /* ── MAIN ──────────────────────────────────────────────────── */
-export default function ArmorWorkoutSession({ onComplete, onCancel, onNavigateToSettings }) {
+export default function Shift6WorkoutSession({ onComplete, onCancel, onNavigateToSettings }) {
   return (
     <WorkoutErrorBoundary>
-      <ArmorWorkoutSessionInner onComplete={onComplete} onCancel={onCancel} onNavigateToSettings={onNavigateToSettings} />
+      <Shift6WorkoutSessionInner onComplete={onComplete} onCancel={onCancel} onNavigateToSettings={onNavigateToSettings} />
     </WorkoutErrorBoundary>
   );
 }
 
-function ArmorWorkoutSessionInner({ onComplete, onCancel, onNavigateToSettings }) {
-  const { activeModifiers, currentCycle, estimated1RMs, effectiveTrack } = useArmorData();
+function Shift6WorkoutSessionInner({ onComplete, onCancel, onNavigateToSettings }) {
+  const { activeModifiers, currentCycle, estimated1RMs, effectiveTrack } = useShift6Data();
   const { celebration, setCelebration } = usePRDetection();
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -778,7 +778,7 @@ function ArmorWorkoutSessionInner({ onComplete, onCancel, onNavigateToSettings }
     [effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" className="bg-[var(--elevation-0-bg)]">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--elevation-0-bg)]">
       {showConfetti && <ConfettiBurst count={50} />}
       {celebration && <AwardModal achievement={celebration} onDismiss={() => { setShowConfetti(false); setCelebration(null); }} />}
 

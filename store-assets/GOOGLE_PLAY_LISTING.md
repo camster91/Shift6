@@ -1,6 +1,6 @@
-# Armor — Google Play Store Listing Copy
+# Shift6 — Google Play Store Listing Copy
 
-**App name:** Armor (50 chars max — fits)
+**App name:** Shift6 (50 chars max — fits)
 **Short description:** 80 chars max
 **Full description:** 4000 chars max
 **Category:** Health & Fitness (primary), Lifestyle (secondary)
@@ -20,9 +20,9 @@
 ## Full Description (4000 chars max)
 
 ```
-Armor is the fitness app for professionals whose schedule doesn't respect their workout.
+Shift6 is the fitness app for professionals whose schedule doesn't respect their workout.
 
-Whether you've got 20 minutes between meetings, a brutal weekend behind you, or a hotel gym in a city you can't pronounce — Armor has a protocol for that.
+Whether you've got 20 minutes between meetings, a brutal weekend behind you, or a hotel gym in a city you can't pronounce — Shift6 has a protocol for that.
 
 🏋️ 2 PILLARS OF LONGEVITY
 
@@ -36,7 +36,7 @@ Whether you've got 20 minutes between meetings, a brutal weekend behind you, or 
 • Evening floor work — 5-min mobility (hips, hamstrings, thoracic spine)
 • Third daily walk — tracked as part of your habit stack
 
-🛡️ 5 CONTINGENCY PROTOCOLS (the part that makes Armor different)
+🛡️ 5 CONTINGENCY PROTOCOLS (the part that makes Shift6 different)
 
 • Minimum Viable Day — No gym? No problem. Streak protected.
 • 20-Minute Window — In a meeting crunch. Workout stripped to essentials.
@@ -61,7 +61,7 @@ No subscription. No data harvesting. Your training data lives on your phone.
 
 🔐 PRIVACY
 
-Armor is local-first. Nothing leaves your device until you opt into cloud sync. We do not sell your data. We do not show you ads. The optional cloud sync is end-to-end yours — your password is hashed with bcrypt, your data lives in Postgres, and you can wipe your cloud account at any time.
+Shift6 is local-first. Nothing leaves your device until you opt into cloud sync. We do not sell your data. We do not show you ads. The optional cloud sync is end-to-end yours — your password is hashed with bcrypt, your data lives in Postgres, and you can wipe your cloud account at any time.
 
 ♿ ACCESSIBILITY
 
@@ -104,7 +104,7 @@ workout, fitness, vo2, strength, periodization, longevity, gym, plate math
 
 **Content:**
 - ⚔️ icon (large, cyan)
-- "Armor" wordmark
+- "Shift6" wordmark
 - Tagline: "Train Through Chaos"
 - "2 Pillars · 4 Habits · 5 Contingency Protocols · Free Forever"
 - Background: #020617 with subtle cyan glow

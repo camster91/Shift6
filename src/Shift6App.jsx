@@ -2,24 +2,24 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import {
   Play, BarChart3, Settings as SettingsIcon, Smartphone, User
 } from 'lucide-react';
-import { useArmorData, migrateFromShift6 } from './context/ArmorDataContext';
-import ArmorDashboard from './pages/ArmorDashboard';
-const ArmorWorkoutSession = lazy(() => import('./pages/ArmorWorkoutSession'));
+import { useShift6Data, migrateFromShift6 } from './context/Shift6DataContext';
+import Shift6Dashboard from './pages/Shift6Dashboard';
+const Shift6WorkoutSession = lazy(() => import('./pages/Shift6WorkoutSession'));
 // Account page is lazy-loaded so the cloud-sync bundle (~12KB of syncClient
 // + form code) is only fetched when the user actually opens the Account tab.
 // When VITE_SYNC_ENABLED is not set, the tab is hidden and this chunk is
 // never downloaded.
-const ArmorAccount = lazy(() => import('./pages/ArmorAccount'));
-import ArmorOnboarding from './pages/ArmorOnboarding';
-import ArmorSettings from './pages/ArmorSettings';
-import ArmorProgress from './pages/ArmorProgress';
+const Shift6Account = lazy(() => import('./pages/Shift6Account'));
+import Shift6Onboarding from './pages/Shift6Onboarding';
+import Shift6Settings from './pages/Shift6Settings';
+import Shift6Progress from './pages/Shift6Progress';
 import UpdatePrompt from './components/UpdatePrompt';
 import FirstRunTour from './components/FirstRunTour';
 import WorkoutSummary from './components/WorkoutSummary';
-import { getTodaysWorkout } from './data/armorEngine';
+import { getTodaysWorkout } from './data/shift6Engine';
 
 /**
- * ARMOR App — Main application shell.
+ * SHIFT6 App — Main application shell.
  * Tab-based navigation:
  *   home → Dashboard (today's workout, habits, modifiers)
  *   workout → WorkoutSession (active workout)
@@ -32,7 +32,7 @@ const TAB_BAR = [
   { id: 'progress', label: 'Progress', icon: BarChart3 },
   // Cloud sync is a future feature. The Account tab is hidden by default
   // and only appears when the app is built with VITE_SYNC_ENABLED=1.
-  // The sync code in src/lib/syncClient.js and the ArmorAccount page are
+  // The sync code in src/lib/syncClient.js and the Shift6Account page are
   // preserved and functional, but they call sync.getshift6.com which has
   // no live backend yet. Setting the env var is opt-in.
   ...(import.meta.env.VITE_SYNC_ENABLED === '1' || import.meta.env.VITE_SYNC_ENABLED === 'true'
@@ -41,8 +41,8 @@ const TAB_BAR = [
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
-export default function ArmorApp() {
-  const armor = useArmorData();
+export default function Shift6App() {
+  const armor = useShift6Data();
   const {
     onboardingDone, preferences, completeOnboarding,
     logWorkout, persistenceFailed, currentCycle, userProfile, workoutHistory,
@@ -60,7 +60,7 @@ export default function ArmorApp() {
   useEffect(() => {
     if (!onboardingDone && !migrated.current) {
       // Idempotent: skip if already migrated on a previous load.
-      const migrationMarker = (() => { try { return localStorage.getItem('armor_migrated_from_shift6'); } catch { return null; } })();
+      const migrationMarker = (() => { try { return localStorage.getItem('shift6_migrated_from_v1'); } catch { return null; } })();
       if (migrationMarker) return;
       const migratedData = migrateFromShift6();
       if (migratedData) {
@@ -73,7 +73,7 @@ export default function ArmorApp() {
           estimated1RMs: migratedData.userProfile.estimated1RMs,
           displayName: migratedData.userProfile.displayName,
         } : migratedData);
-        try { localStorage.setItem('armor_migrated_from_shift6', '1'); } catch {}
+        try { localStorage.setItem('shift6_migrated_from_v1', '1'); } catch {}
       }
       migrated.current = true;
     }
@@ -86,7 +86,7 @@ export default function ArmorApp() {
     const handler = (e) => {
       e.preventDefault();
       installPromptRef.current = e;
-      const dismissed = localStorage.getItem('armor_install_dismissed');
+      const dismissed = localStorage.getItem('shift6_install_dismissed');
       if (!dismissed) setShowInstallPrompt(true);
     };
     window.addEventListener('beforeinstallprompt', handler);
@@ -109,7 +109,7 @@ export default function ArmorApp() {
       themeColorMeta.setAttribute('content', theme === 'light' ? '#f1f5f9' : '#020617');
     }
     try {
-      localStorage.setItem('armor_theme', theme);
+      localStorage.setItem('shift6_theme', theme);
     } catch (e) { /* ignore */ }
   }, [preferences?.theme]);
 
@@ -117,7 +117,7 @@ export default function ArmorApp() {
     if (!installPromptRef.current) return;
     installPromptRef.current.prompt();
     await installPromptRef.current.userChoice;
-    localStorage.setItem('armor_install_dismissed', '1');
+    localStorage.setItem('shift6_install_dismissed', '1');
     setShowInstallPrompt(false);
     installPromptRef.current = null;
   };
@@ -157,7 +157,7 @@ export default function ArmorApp() {
   if (!onboardingDone) {
     return (
       <main role="main" aria-label="Onboarding">
-        <ArmorOnboarding />
+        <Shift6Onboarding />
       </main>
     );
   }
@@ -176,10 +176,10 @@ export default function ArmorApp() {
           ⚠️ Data isn't being saved. Check browser storage permissions and reload.
         </div>
       )}
-      <main role="main" aria-label="Armor workout app" className="flex-1 overflow-y-auto">
+      <main role="main" aria-label="Shift6 workout app" className="flex-1 overflow-y-auto">
         {workoutActive ? (
           <Suspense fallback={null}>
-            <ArmorWorkoutSession
+            <Shift6WorkoutSession
               onComplete={handleWorkoutComplete}
               onCancel={handleWorkoutCancel}
             />
@@ -188,20 +188,20 @@ export default function ArmorApp() {
           <>
             {activeTab === 'home' && (
               <>
-                <ArmorDashboard
+                <Shift6Dashboard
                   onStartWorkout={handleStartWorkout}
                   onNavigateToSettings={() => setActiveTab('settings')}
                 />
                 <FirstRunTour />
               </>
             )}
-            {activeTab === 'progress' && <ArmorProgress />}
+            {activeTab === 'progress' && <Shift6Progress />}
             {activeTab === 'account' && (
               <Suspense fallback={null}>
-                <ArmorAccount />
+                <Shift6Account />
               </Suspense>
             )}
-            {activeTab === 'settings' && <ArmorSettings />}
+            {activeTab === 'settings' && <Shift6Settings />}
           </>
         )}
       </main>
@@ -253,7 +253,7 @@ export default function ArmorApp() {
               <Smartphone size={20} style={{ color: 'var(--color-accent)' }} />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-[var(--text-primary)] mb-0.5">Add Armor to Home Screen</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] mb-0.5">Add Shift6 to Home Screen</p>
               <p className="text-[11px] text-[var(--text-tertiary)]">Quick access between sets — no browser bar.</p>
             </div>
           </div>
@@ -262,7 +262,7 @@ export default function ArmorApp() {
               className="armor-press flex-1 py-2.5 rounded-xl text-[var(--text-primary)] text-sm font-bold bg-[var(--color-accent)]">
               Install
             </button>
-            <button onClick={() => { localStorage.setItem('armor_install_dismissed', '1'); setShowInstallPrompt(false); }}
+            <button onClick={() => { localStorage.setItem('shift6_install_dismissed', '1'); setShowInstallPrompt(false); }}
               className="px-4 py-2.5 text-[var(--text-secondary)] text-sm font-medium">
               Not now
             </button>

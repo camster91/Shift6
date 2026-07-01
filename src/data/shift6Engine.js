@@ -1,5 +1,5 @@
 /**
- * Armor Engine — Core workout math, periodization, plate math, contingencies.
+ * Shift6 Engine — Core workout math, periodization, plate math, contingencies.
  * Pure functions. No UI, no state, no side effects.
  */
 
@@ -258,7 +258,7 @@ export function rolloverProgression(exerciseId, current1RM) {
 /**
  * Bulk rollover: bump every 1RM in `estimated1RMs` by its track-appropriate
  * increment. Zero/unset values are skipped. Returns a new object; the input
- * is not mutated. Used by the cycle-complete hook in ArmorDataContext.
+ * is not mutated. Used by the cycle-complete hook in Shift6DataContext.
  */
 export function rollover1RMs(estimated1RMs) {
   const updated = { ...estimated1RMs };

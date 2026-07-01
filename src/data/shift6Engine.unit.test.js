@@ -1,15 +1,15 @@
 /**
- * armorEngine.unit.test.js — Tests for the unit conversion logic.
+ * shift6Engine.unit.test.js — Tests for the unit conversion logic.
  *
- * The display layer in ArmorWorkoutSession and ArmorProgress converts
+ * The display layer in Shift6WorkoutSession and Shift6Progress converts
  * stored lbs values to kg for display when the user has set their
  * preferred unit. This file captures the conversion rule so the math
  * is regression-tested in one place.
  */
 import { describe, it, expect } from 'vitest';
 
-// Match the conversion used in ArmorWorkoutSession.jsx and
-// ArmorProgress.jsx. 1 lb = 0.453592 kg exactly, so 1/2.20462 is the
+// Match the conversion used in Shift6WorkoutSession.jsx and
+// Shift6Progress.jsx. 1 lb = 0.453592 kg exactly, so 1/2.20462 is the
 // inverse (close to 1/2.20462 = 0.45359737...). The app uses 2.20462
 // throughout, so we lock that constant here.
 const LB_PER_KG = 2.20462;

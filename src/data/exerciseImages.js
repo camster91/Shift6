@@ -1,8 +1,8 @@
 /**
- * exerciseImages.js — maps Armor exercise IDs to their illustration
+ * exerciseImages.js — maps Shift6 exercise IDs to their illustration
  * assets. Used by <ExerciseIllustration /> to render a small image
- * next to the exercise name in ArmorWorkoutSession and
- * ArmorDashboard.
+ * next to the exercise name in Shift6WorkoutSession and
+ * Shift6Dashboard.
  *
  * Asset ownership: every image in this map was generated via text-
  * to-image on MiniMax image-01 (4 exercises), Imagen 4 (6 exercises)

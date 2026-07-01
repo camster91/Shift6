@@ -35,7 +35,7 @@ function Nav() {
         <a href="#top" className="flex items-center gap-2">
           <span className="text-xl">⚔️</span>
           <span className="font-black tracking-tight text-lg">
-            <span className="text-cyan-400">Armor</span>
+            <span className="text-cyan-400">Shift6</span>
           </span>
         </a>
         <div className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-400">
@@ -45,7 +45,7 @@ function Nav() {
           <a href="#showcase" className="hover:text-white transition-colors">Inside</a>
         </div>
         <a href="#download" className="btn-primary text-sm px-5 py-2.5">
-          Get Armor
+          Get Shift6
         </a>
       </div>
     </nav>

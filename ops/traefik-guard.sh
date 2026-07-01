@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Armor (Shift6) Traefik route guard.
+# Shift6 Traefik route guard.
 #
-# Ensures the Armor site is routed through Traefik to the armor-web
+# Ensures the Shift6 site is routed through Traefik to the armor-web
 # container on 127.0.0.1:3003. Re-adds the routers, middleware, and
 # service entries if a fleet-wide edit drops them.
 #

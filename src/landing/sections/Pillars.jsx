@@ -6,7 +6,7 @@ const PILLARS = [
     icon: '🦵',
     title: 'Strength',
     sub: 'Periodized 6-week cycles',
-    desc: 'Heavy compound lifts on a planned progression. Armor calculates your sets, reps, and weights from your estimated 1RM — no spreadsheets, no guesswork.',
+    desc: 'Heavy compound lifts on a planned progression. Shift6 calculates your sets, reps, and weights from your estimated 1RM — no spreadsheets, no guesswork.',
     color: 'cyan',
   },
   {
@@ -45,7 +45,7 @@ export default function Pillars() {
           Two interventions, maximum ROI.
         </h2>
         <p className="text-center text-slate-400 max-w-2xl mx-auto mb-12">
-          Everything in Armor serves these two pillars. Strength and VO₂ Max are the only
+          Everything in Shift6 serves these two pillars. Strength and VO₂ Max are the only
           interventions with strong evidence for mortality risk reduction independent of each other.
         </p>
 

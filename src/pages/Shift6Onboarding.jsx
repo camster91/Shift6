@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Check, Sparkles } from 'lucide-react';
-import { useArmorData } from '../context/ArmorDataContext';
-import { EQUIPMENT_TRACKS, SPLIT_DAYS } from '../data/armorEngine';
+import { useShift6Data } from '../context/Shift6DataContext';
+import { EQUIPMENT_TRACKS, SPLIT_DAYS } from '../data/shift6Engine';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 
 /* ═══════════════════════════════════════════════════════════
-   ARMOR ONBOARDING v3.0 — Apple HIG
+   SHIFT6 ONBOARDING v3.0 — Apple HIG
    One-screen setup. Name + 1RM choice (or skip). No forced track pick.
    The dashboard's track switcher handles per-workout selection.
    ═══════════════════════════════════════════════════════════ */
@@ -44,8 +44,8 @@ function DayPip({ day }) {
   );
 }
 
-export default function ArmorOnboarding() {
-  const { completeOnboarding } = useArmorData();
+export default function Shift6Onboarding() {
+  const { completeOnboarding } = useShift6Data();
   const [displayName, setDisplayName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [chosenTrack, setChosenTrack] = useState(null);
@@ -84,7 +84,7 @@ export default function ArmorOnboarding() {
           <div className="flex items-center gap-2 mb-6">
             <span className="text-3xl" aria-hidden="true">⚔️</span>
             <span className="text-xl font-black tracking-tight text-[var(--text-primary)]">
-              <span className="text-[var(--color-accent)]">ARMOR</span>
+              <span className="text-[var(--color-accent)]">SHIFT6</span>
             </span>
           </div>
           <PageHeader
@@ -171,7 +171,7 @@ export default function ArmorOnboarding() {
           )}
           {submitting ? (
             <Button variant="primary" size="lg" icon={<Check size={20} strokeWidth={3} />} className="w-full" disabled>
-              Welcome to Armor
+              Welcome to Shift6
             </Button>
           ) : chosenTrack ? (
             <Button

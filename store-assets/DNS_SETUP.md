@@ -1,8 +1,8 @@
-# Armor — DNS Setup for getshift6.com / ashbi.ca
+# Shift6 — DNS Setup for getshift6.com / ashbi.ca
 
 ## Overview
 
-Armor is served from **187.77.26.99** (Cam's VPS at Hetzner/Hostinger). Coolify + Traefik on the VPS handle TLS termination. Three subdomains need DNS records:
+Shift6 is served from **187.77.26.99** (Cam's VPS at Hetzner/Hostinger). Coolify + Traefik on the VPS handle TLS termination. Three subdomains need DNS records:
 
 | Subdomain | Purpose | Container |
 |-----------|---------|-----------|
@@ -61,13 +61,13 @@ Current state on the VPS:
 
 ```bash
 # Landing page
-curl -sI https://armor.ashbi.ca/   # 200 OK + Armor title
+curl -sI https://armor.ashbi.ca/   # 200 OK + Shift6 title
 
 # Sync API
 curl -s https://sync.getshift6.com/health   # {"status":"ok",...}
 
 # PWA (existing)
-curl -sI https://getshift6.com/   # 200 OK + Shift6 / Armor
+curl -sI https://getshift6.com/   # 200 OK + Shift6
 ```
 
 ---
@@ -84,7 +84,7 @@ If Cam wants `*.getshift6.com` to work for any future subdomain, do DNS-01 with 
 
 **"Cert not issued after 60s"** — check `docker logs coolify-proxy` for the Let's Encrypt error. Most common cause: DNS-01 vs HTTP-01 mismatch. Traefik uses HTTP-01 by default, so DNS must resolve to the server IP.
 
-**"Mixed content warnings"** — all Armor assets are relative paths. If you see warnings, check that the PWA's `index.html` has `<meta http-equiv="Content-Security-Policy">` (currently does not, which is fine — but document it).
+**"Mixed content warnings"** — all Shift6 assets are relative paths. If you see warnings, check that the PWA's `index.html` has `<meta http-equiv="Content-Security-Policy">` (currently does not, which is fine — but document it).
 
 **"armor-sync-api unhealthy in Coolify"** — cosmetic. The IPv6-vs-IPv4 healthcheck race I worked around in the Dockerfile. The service itself returns 200 OK on manual `curl`. Monitor with:
 ```bash

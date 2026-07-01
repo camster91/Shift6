@@ -68,7 +68,7 @@ function PhoneMockup() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] text-slate-400 uppercase tracking-wider">Good morning, Cam</p>
-              <p className="text-xl font-black"><span className="text-cyan-400">Armor</span></p>
+              <p className="text-xl font-black"><span className="text-cyan-400">Shift6</span></p>
             </div>
             <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500/10">
               <span className="text-[10px] font-bold text-orange-400">🔥 4</span>

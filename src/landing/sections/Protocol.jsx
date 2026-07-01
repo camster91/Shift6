@@ -20,7 +20,7 @@ export default function Protocol() {
           <span className="text-cyan-400">All the math done for you.</span>
         </h2>
         <p className="text-center text-slate-400 max-w-2xl mx-auto mb-12">
-          Each week has a clear purpose. Armor calculates sets, reps, and weight as a percentage of your 1RM.
+          Each week has a clear purpose. Shift6 calculates sets, reps, and weight as a percentage of your 1RM.
           Plus a 5-rep max test on day 1 estimates your baseline — no dangerous max testing.
         </p>
 

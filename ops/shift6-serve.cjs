@@ -1,5 +1,5 @@
 /**
- * Minimal static file server for the Armor PWA.
+ * Minimal static file server for the Shift6 PWA.
  *
  * Why this exists: `serve@14 --single` rewrites ALL not-found requests
  * to index.html, which means /legal/ returns the SPA shell instead of

@@ -12,7 +12,7 @@ const PROTOCOLS = [
     emoji: '⏱️',
     name: '20-Minute Window',
     short: 'In a meeting crunch.',
-    desc: 'Armor strips your workout to the essential primary lift or one VO₂ block. Accessories and warm-up sets are skipped. Plate math stays correct.',
+    desc: 'Shift6 strips your workout to the essential primary lift or one VO₂ block. Accessories and warm-up sets are skipped. Plate math stays correct.',
     accent: 'cyan',
   },
   {
@@ -57,7 +57,7 @@ export default function Contingency() {
           Built for the days that didn&apos;t go to plan.
         </h2>
         <p className="text-center text-slate-400 max-w-2xl mx-auto mb-12">
-          Most apps assume you&apos;re going to show up. Armor assumes you&apos;ll show up most days,
+          Most apps assume you&apos;re going to show up. Shift6 assumes you&apos;ll show up most days,
           and on the others — it&apos;ll meet you where you are.
         </p>
 

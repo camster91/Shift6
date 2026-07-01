@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useShift6Data } from '../context/Shift6DataContext';
 import {
-  getTodaysWorkout, getDailyHabits, get10MinWorkout, MODIFIERS, MVD_PROTOCOL,
+  getTodaysWorkout, getDailyHabits, MODIFIERS, MVD_PROTOCOL,
   VO2MAX_PROTOCOL, PERIODIZATION, getWeekConfig, EQUIPMENT_TRACKS,
   EXERCISE_TRACK, streakStatus,
 } from '../data/shift6Engine';
@@ -80,7 +80,14 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
 }
 
 function ModifierRow({ activeModifiers, onToggle }) {
-  const entries = Object.values(MODIFIERS);
+  // Only surface the modifier the user is most likely to toggle during
+  // a workout session (travel). The other modifiers (mvd, highFatigue,
+  // heavyMeal) are still in the data model and toggled via Settings,
+  // the post-workout summary, or programmatic flows like the adaptive
+  // deload recommendation. The roster lives in MODIFIERS so adding a
+  // new toggleable one requires only editing this filter.
+  const visibleModIds = ['travelMode'];
+  const entries = Object.values(MODIFIERS).filter(m => visibleModIds.includes(m.id));
   // Short display labels to prevent truncation on 390px viewports
   const labelOverride = {
     mvdMode: 'MVD',
@@ -88,16 +95,8 @@ function ModifierRow({ activeModifiers, onToggle }) {
   };
   return (
     <div>
-      <SectionHeader icon={<Zap size={10} />} label="Protocols" />
-      <div className="relative">
-        {/* Right-edge fade so users know the row is horizontally scrollable
-            when more modifiers are added than fit the viewport. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[var(--elevation-0-bg)] to-transparent z-10"
-        />
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {entries.map(mod => {
+      <div className="flex gap-1.5">
+        {entries.map(mod => {
             const active = activeModifiers[mod.id];
             const label = labelOverride[mod.id] ?? mod.label;
             return (
@@ -118,12 +117,6 @@ function ModifierRow({ activeModifiers, onToggle }) {
               </button>
             );
           })}
-        </div>
-        {/* Right-edge fade gradient signals scrollable content */}
-        <div
-          className="absolute inset-y-0 right-0 w-12 pointer-events-none"
-          style={{ background: 'linear-gradient(to right, transparent, var(--elevation-0-bg))' }}
-        />
       </div>
     </div>
   );
@@ -204,9 +197,9 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
       <div className="px-5 pt-8 pb-2">
         <p className="armor-text-caption mb-1">{greeting}{userProfile.displayName ? `, ${userProfile.displayName}` : ''}</p>
         <div className="flex items-center justify-between">
-          <h1 className="armor-text-large-title">
-            <span className="text-[var(--color-accent)]">Shift6</span>
-          </h1>
+          {/* Brand wordmark intentionally omitted — the brand is in the URL,
+              PWA name, page <title>, and bottom tab bar. A large display
+              header eats ~80px of vertical space that the workout card needs. */}
           <div className="flex items-center gap-2" aria-live="polite" aria-atomic="true">
             {streak > 0 && (
               <span className="armor-badge armor-badge-warning">
@@ -223,16 +216,15 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
 
       <div className="px-5 space-y-5">
         {/* ── WEEK HISTORY (last 7 days) ── */}
+        <div className="flex items-center justify-between">
+          <p className="armor-text-caption">This week</p>
+          <p className="armor-text-caption">
+            <span className="text-[var(--text-primary)] font-bold">Week {currentCycle.week}</span> of 6 · Cycle {currentCycle.totalCyclesCompleted + 1}
+          </p>
+        </div>
         <WeekStrip
           completedDates={workoutHistory.filter(w => w.completed).map(w => w.date)}
           mvdDates={streakData.mvdDates || []}
-        />
-
-        {/* ── CYCLE PROGRESS ── */}
-        <CycleProgress
-          week={currentCycle.week}
-          day={currentCycle.day}
-          totalCyclesCompleted={currentCycle.totalCyclesCompleted}
         />
 
         {/* ── STREAK STATUS BANNER ── */}
@@ -428,18 +420,15 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
                     )}
                   </div>
 
-                  {/* Accessories — compact */}
+                  {/* Accessories — plain text line, not chips.
+                       A user only needs to know what's coming after the
+                       primary lift; per-exercise chips waste vertical space. */}
                   {todayWorkout.accessories.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {todayWorkout.accessories.slice(0, 3).map((acc, i) => (
-                        <span
-                          key={i}
-                          className="px-3 py-1.5 rounded-full bg-[var(--color-surface-1)] text-[11px] text-[var(--text-secondary)] font-medium"
-                        >
-                          {acc.exerciseId?.replace(/_/g, ' ')} · {acc.sets}×{acc.reps}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="text-[11px] text-[var(--text-tertiary)] leading-relaxed">
+                      Also: {todayWorkout.accessories.slice(0, 3).map(acc =>
+                        `${acc.exerciseId?.replace(/_/g, ' ')} · ${acc.sets}×${acc.reps}`
+                      ).join(' · ')}
+                    </p>
                   )}
                 </div>
               ) : (
@@ -452,31 +441,6 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
                   small italic text. Now hoisted to <TravelModeBanner />
                   above the card for visibility — see line 246. */}
             </Card>
-
-            {/* 10-Minute Express card */}
-            {(() => {
-              const express10 = get10MinWorkout(effectiveTrack);
-              return (
-                <Card padded={false} className="bg-[var(--color-surface-1)] p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl" aria-hidden="true">⚡</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[var(--text-primary)]">{express10.name}</p>
-                      <p className="armor-text-footnote">No time? 2 sets + a quick circuit</p>
-                    </div>
-                    {!todayDone && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={onStartWorkout}
-                      >
-                        Start express
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-              );
-            })()}
 
             {/* 0-lbs nudge — shown when all active-track 1RMs are 0 */}
             {allTrack1RMsZero && (
@@ -505,33 +469,31 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
         )}
 
         {/* ── DAILY HABITS ── */}
+        {/* Compact 2-row list instead of 4 stacked cards — keeps the habits
+            present (they count toward the streak) but stops them from
+            dominating the screen. */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <SectionHeader icon={<Check size={10} />} label="Daily Habits" />
-            <span className="text-[10px] text-[var(--text-disabled)] font-medium">1 freeze day/week</span>
+          <SectionHeader icon={<Check size={10} />} label="Daily Habits" />
+          <div className="flex flex-wrap gap-1.5">
+            {dailyHabits.map(habit => {
+              const done = dailyHabitState[habit.id] || false;
+              return (
+                <button
+                  key={habit.id}
+                  onClick={() => toggleHabit(habit.id)}
+                  className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all ${
+                    done
+                      ? 'bg-[var(--color-success)] text-[var(--elevation-0-bg)]'
+                      : 'bg-[var(--color-surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                  aria-pressed={done}
+                >
+                  {done ? <Check size={11} strokeWidth={3} /> : <span aria-hidden="true">{habit.icon}</span>}
+                  <span>{habit.label}</span>
+                </button>
+              );
+            })}
           </div>
-          {dailyHabits.map((habit, i) => (
-            <div key={habit.id} className="armor-entrance" style={{ animationDelay: `${0.05 * i}s` }}>
-              <HabitCheck
-                habit={habit}
-                done={dailyHabitState[habit.id] || false}
-                onToggle={() => toggleHabit(habit.id)}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* ── QUICK STATS ── */}
-        <div className="grid grid-cols-3 gap-2">
-          <StatTile icon={<span aria-hidden="true">📅</span>} label="Week" value={`${currentCycle.week}/6`} accent="cyan" />
-          <StatTile icon={<span aria-hidden="true">⚡</span>} label="Phase" value={weekConfig.phase} accent="emerald" />
-          <StatTile
-            icon={<span aria-hidden="true">🏆</span>}
-            label={<><JargonTooltip term="1RM" definition="your one-rep max — the heaviest weight you can lift once" /></>}
-            value={displayTop1RM}
-            accent="amber"
-            aria-label={`Top 1 rep max: ${displayTop1RM}`}
-          />
         </div>
       </div>
     </div>

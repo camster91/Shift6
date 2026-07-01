@@ -325,12 +325,6 @@ export default function Shift6Progress() {
     return workoutHistory.filter(w => new Date(w.date) >= weekStart);
   }, [workoutHistory]);
 
-  const weeklyVolume = useMemo(() => {
-    return thisWeekWorkouts.reduce((s, w) =>
-      s + (w.exercises || []).reduce((es, ex) =>
-        es + (ex.sets || []).reduce((ss, x) => ss + (x.reps || 0) * (x.weight || 0), 0), 0), 0);
-  }, [thisWeekWorkouts]);
-
   const sorted1RMs = Object.entries(estimated1RMs).filter(([, v]) => v > 0).sort(([, a], [, b]) => b - a);
 
   /* ── Filtered history based on time range ── */
@@ -574,22 +568,25 @@ export default function Shift6Progress() {
           <CycleBlocks week={currentCycle.week} totalCycles={currentCycle.totalCyclesCompleted} />
         </div>
 
-        {/* Streak Ring */}
-        <StreakRing streak={streakData.currentStreak} best={streakData.longestStreak} />
+        {/* Streak Ring — REMOVED. The radial chart duplicated the
+            streak counter at the top of the page (current + longest
+            days). A second visualization of the same number pulled
+            attention without adding information. */}
 
-        {/* Volume Chart */}
-        <VolumeBar history={workoutHistory} unit={unit} />
+        {/* Volume Bar — REMOVED. The weekly VolumeWeeklyChart above
+            already shows lift volume. The 7-day bar at this position
+            repeated the same data points in a less useful order. */}
 
-        {/* Stats Grid */}
+        {/* Stats Grid — slimmed from 2x2 to 1x2. Weekly Volume lives
+            in the chart above; Cycles is the same number as the
+            CycleBlocks above. Keep the two that aren't duplicated. */}
         <div className="grid grid-cols-2 gap-2">
           <Stat label="This Week" value={thisWeekWorkouts.length} sub="sessions" accent="var(--color-accent)" />
-          <Stat label="Weekly Volume" value={`${(weeklyVolume / 1000).toFixed(1)}k`} sub={unit} accent="var(--color-success)" />
           <Stat
             label="Total Sets"
             value={workoutHistory.reduce((s, w) => s + (w.exercises || []).reduce((es, ex) => es + (ex.sets || []).length, 0), 0)}
             accent="var(--color-cardio)"
           />
-          <Stat label="Cycles" value={currentCycle.totalCyclesCompleted} sub="completed" accent="var(--color-warning)" />
         </div>
 
         {/* Personal Records — what the user has actually lifted,

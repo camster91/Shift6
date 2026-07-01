@@ -313,6 +313,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
   const [completedSets, setCompletedSets] = useState([]);
   const [failedSets, setFailedSets] = useState([]);
   const [notes, setNotes] = useState('');
+  const [showNotes, setShowNotes] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
@@ -402,6 +403,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         }
       });
       setNotes('');
+      setShowNotes(false);
       setJustCompleted(true);
       if (justCompletedTimerRef.current) clearTimeout(justCompletedTimerRef.current);
       justCompletedTimerRef.current = setTimeout(() => setJustCompleted(false), 600);
@@ -445,6 +447,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         }
       });
       setNotes('');
+      setShowNotes(false);
     } finally {
       setCompletingSet(false);
     }
@@ -525,7 +528,8 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
     const nextEx = exIdx < activeQueue.length - 1 ? activeQueue[exIdx + 1] : null;
     return (
       <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full armor-entrance">
-        <p className="armor-text-caption mb-1">Recover</p>
+        {/* 'Recover' label removed — the big timer labeled 'Rest' is the
+            primary visual focus; the duplicate text label was chrome. */}
         <h3 className="text-base font-bold text-[var(--text-primary)] mb-1 capitalize">
           {currentEx.exerciseId?.replace(/_/g, ' ')}
         </h3>
@@ -588,9 +592,6 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
     <WorkoutErrorBoundary onSkip={handleCompleteSet}>
  <div className="flex flex-col flex-1 px-6 pt-4 max-w-sm mx-auto w-full armor-entrance">
       <div className="mb-6">
-        <p className="armor-text-caption">
-          {currentEx.type === 'primary' ? 'PRIMARY LIFT' : 'ACCESSORY'}
-        </p>
         <ExerciseIllustration
           exerciseId={currentEx.exerciseId}
           className="mb-4 -mx-2"
@@ -664,20 +665,30 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
         )}
       </Card>
 
-      <div className="flex justify-center gap-2 mb-6">
-        {Array.from({ length: totalSets }).map((_, i) => (
-          <div key={i} className={`w-2.5 h-2.5 rounded-full transition-all ${
-            i < setNum - 1 ? 'bg-[var(--color-success)] scale-100' :
-            i === setNum - 1 ? 'bg-[var(--color-accent)] scale-125 shadow-[0_0_8px_var(--color-accent-glow)]' :
-            'bg-[var(--color-surface-1)]'
-          }`} />
-        ))}
-      </div>
+      {/* Set X of Y indicator — replaces the page-dot pagination.
+           Text tells the user exactly where they are in the workout
+           without an extra row of dots taking vertical space. */}
+      <p className="text-center text-[11px] uppercase tracking-widest text-[var(--text-tertiary)] mb-4">
+        Set {setNum} of {totalSets}
+      </p>
 
-      <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
-        placeholder="RPE, form notes..."
-        className="w-full bg-[var(--color-surface-1)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none mb-6"
-      />
+      {showNotes ? (
+        <input
+          type="text"
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          autoFocus
+          placeholder="RPE, form notes..."
+          className="w-full bg-[var(--color-surface-1)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none mb-6"
+        />
+      ) : (
+        <button
+          onClick={() => setShowNotes(true)}
+          className="armor-press w-full text-left text-[11px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] mb-4 px-1 py-1 transition-colors"
+        >
+          + Add note (RPE, form)
+        </button>
+      )}
 
       <Button
         variant="primary"

@@ -7,11 +7,9 @@ const STEPS = [
     body: 'Your daily workout is right here. Tap Start when you\'re ready to train.',
     anchor: 'h1', // targets the main title
   },
-  {
-    title: 'Protocol modifiers',
-    body: 'Toggle CNS Fatigue or Travel mode if your day requires it. Long-press any chip for more info.',
-    anchor: 'modifiers',
-  },
+  // 'Protocol modifiers' step was removed — after cutting the modifier
+  // chip row to a single Travel toggle, the step had no UI to point at.
+  // The Travel banner on the dashboard already covers this when active.
   {
     title: 'Set your 1RMs',
     body: 'Head to Settings → Estimated 1RMs to get personalized weights. Takes 30 seconds.',

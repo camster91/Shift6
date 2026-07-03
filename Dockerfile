@@ -1,5 +1,6 @@
 # Build stage
-FROM node:20-alpine AS builder
+# node:22 required by @capacitor/cli v8+
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci

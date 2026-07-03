@@ -184,12 +184,16 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
   const streak = streakData.currentStreak || 0;
   const unit = preferences.unit || 'lbs';
 
-  // Filter 1RMs to the active track only
-  const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
-  const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
-  const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
-  const allTrack1RMsZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
-  const displayTop1RM = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
+  // PERFORMANCE: Memoize 1RM derived state to avoid recalculating track-specific
+  // 0-lbs nudges and display values on every dashboard render.
+  const { allTrack1RMsZero, displayTop1RM } = useMemo(() => {
+    const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
+    const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
+    const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
+    const allZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
+    const display = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
+    return { allTrack1RMsZero: allZero, displayTop1RM: display };
+  }, [effectiveTrack, estimated1RMs, unit]);
 
   return (
     <div className="pb-32 space-y-5 max-w-lg mx-auto">

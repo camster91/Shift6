@@ -1,3 +1,5 @@
+import React from 'react';
+
 // ── Accent color maps ─────────────────────────────────────────────────────────
 // Maps semantic accent names to the design-token color classes. The
 // underlying tokens (--color-accent, --color-success, etc.) are the
@@ -24,7 +26,10 @@ const accentBgClasses = {
  * @param {React.ReactNode|string} value - Large bold metric
  * @param {'cyan'|'emerald'|'amber'|'rose'|'slate'} accent - Icon/text accent color
  */
-const StatTile = ({
+// PERFORMANCE: StatTile is memoized to prevent redundant re-renders of metric
+// blocks in high-frequency dashboard updates. Accepting primitive props
+// allows React.memo to perform efficient shallow comparison.
+const StatTile = React.memo(({
   icon,
   label,
   value,
@@ -56,7 +61,7 @@ const StatTile = ({
       </div>
     </div>
   );
-};
+});
 
 StatTile.displayName = 'StatTile';
 

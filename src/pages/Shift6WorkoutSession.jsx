@@ -277,7 +277,7 @@ function VO2MaxScreen({ protocol, onComplete }) {
 /* ── End Workout Confirmation Modal ───────────────────────── */
 function EndWorkoutConfirm({ setCount, onConfirm, onCancel }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" className="bg-black/70">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70">
       <div className="bg-[var(--color-surface-1)] rounded-2xl p-6 max-w-sm w-full">
         <p className="text-lg font-bold text-[var(--text-primary)] mb-2">End workout?</p>
         <p className="text-sm text-[var(--text-secondary)] mb-6">You&apos;ve completed {setCount} set{setCount !== 1 ? 's' : ''}.</p>
@@ -682,6 +682,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
           type="text"
           value={notes}
           onChange={e => setNotes(e.target.value)}
+          maxLength={500}
           autoFocus
           placeholder="RPE, form notes..."
           className="w-full bg-[var(--color-surface-1)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none mb-6"

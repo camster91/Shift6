@@ -345,7 +345,11 @@ export function Shift6DataProvider({ children }) {
   }, [todayStr]);
 
   const completeOnboarding = useCallback((onboardingData) => {
-    const { equipmentTrack, estimated1RMs, displayName } = onboardingData;
+    const { equipmentTrack, estimated1RMs, displayName: rawDisplayName } = onboardingData;
+
+    // Sanitize displayName by slicing it to 50 characters to ensure data integrity
+    const displayName = typeof rawDisplayName === 'string' ? rawDisplayName.slice(0, 50) : rawDisplayName;
+
     // Validate and sanitize 1RMs before storing
     const sanitized1RMs = {};
     if (estimated1RMs) {

@@ -104,6 +104,7 @@ export default function Shift6Onboarding() {
               onChange={e => setDisplayName(e.target.value)}
               placeholder="Athlete"
               autoFocus
+              maxLength={50}
               className="armor-surface-1 w-full rounded-xl px-4 py-3 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus-visible:outline-[var(--color-accent)]"
               onKeyDown={e => e.key === 'Enter' && handleCommit(chosenTrack)}
             />

@@ -126,10 +126,12 @@ ModifierRow.displayName = 'ModifierRow';
 
 // PERFORMANCE: Extract HabitPill and wrap in React.memo to prevent
 // unnecessary re-renders when other dashboard state changes.
+// Uses habitId instead of raw function to avoid breaking memoization
+// with inline closures in the parent.
 const HabitPill = memo(({ habit, done, onToggle }) => {
   return (
     <button
-      onClick={onToggle}
+      onClick={() => onToggle(habit.id)}
       className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all ${
         done
           ? 'bg-[var(--color-success)] text-[var(--elevation-0-bg)]'
@@ -514,7 +516,7 @@ const Shift6Dashboard = memo(({ onStartWorkout, onNavigateToSettings }) => {
                 key={habit.id}
                 habit={habit}
                 done={dailyHabitState[habit.id] || false}
-                onToggle={() => toggleHabit(habit.id)}
+                onToggle={toggleHabit}
               />
             ))}
           </div>

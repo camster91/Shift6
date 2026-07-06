@@ -59,8 +59,9 @@ jobs:
       - name: Resolve image metadata
         id: meta
         run: |
-          REPO_NAME="${{ github.event.repository.name }}"
-          if [ -n "${{ inputs.image_name }}" ]; then REPO_NAME="${{ inputs.image_name }}"; fi
+          # Docker repo names must be lowercase
+          REPO_NAME=$(echo "${{ inputs.image_name || github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+
           REF="${{ github.ref }}"
           if [[ "$REF" == refs/tags/* ]]; then
             TAG="${REF#refs/tags/}"
@@ -71,8 +72,14 @@ jobs:
           else
             TAG="${REF#refs/heads/}"
           fi
-          SHA_SHORT="${{ github.event.pull_request.head.sha || github.sha }}" | head -c 7
-          SHA_SHORT=$(echo "${{ github.sha }}" | head -c 7)
+
+          # Sanitize tag: replace / with - and lowercase
+          TAG=$(echo "$TAG" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+
+          # Calculate short SHA
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          SHA_SHORT=$(echo "$SHA" | head -c 7)
+
           echo "image=ghcr.io/camster91/${REPO_NAME}" >> $GITHUB_OUTPUT
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "sha=${SHA_SHORT}" >> $GITHUB_OUTPUT

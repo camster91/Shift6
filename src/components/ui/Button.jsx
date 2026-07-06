@@ -37,6 +37,7 @@ const Button = forwardRef(({
   iconRight,
   className = '',
   type = 'button',
+  ...props
 }, ref) => {
   return (
     <button
@@ -50,6 +51,7 @@ const Button = forwardRef(({
         sizeClasses[size] ?? sizeClasses.md,
         className,
       ].join(' ')}
+      {...props}
     >
       {icon && (
         <span className="inline-flex items-center">

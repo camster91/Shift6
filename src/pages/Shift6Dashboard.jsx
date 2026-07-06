@@ -303,6 +303,8 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
                   <button
                     key={t.id}
                     onClick={() => setTodaysTrack(t.id === equipmentTrack ? null : t.id)}
+                    aria-pressed={active}
+                    aria-label={`Use ${t.label} track`}
                     className={`armor-press flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
                       active
                         ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]'

@@ -74,13 +74,21 @@ function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
             type="number" value={v} onChange={e => setV(e.target.value)} autoFocus
             min="0" max="9999" step={unit === 'kg' ? '0.5' : '1'}
             onKeyDown={e => e.key === 'Enter' && handleSave(v)}
+            aria-label={`Enter 1RM for ${displayName || exId.replace(/_/g, ' ')}`}
             className="w-20 text-right rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-primary)] outline-none tabular-nums bg-[var(--color-surface-2)] focus-visible:outline-[var(--color-accent)]"
           />
-          <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => handleSave(v)} />
+          <Button
+            variant="primary"
+            size="sm"
+            icon={<Save size={14} />}
+            onClick={() => handleSave(v)}
+            aria-label={`Save 1RM for ${displayName || exId.replace(/_/g, ' ')}`}
+          />
         </div>
       ) : (
         <button
           onClick={() => { setV(String(displayVal || '')); setEditing(true); }}
+          aria-label={`Edit 1RM for ${displayName || exId.replace(/_/g, ' ')}. Current: ${value ? displayVal + ' ' + unit : 'Not set'}`}
           className="armor-press px-3 py-1.5 rounded-lg bg-[var(--color-surface-1)] transition-colors duration-300"
           disabled={saved}
         >

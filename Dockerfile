@@ -1,5 +1,6 @@
 # Build stage
-FROM node:20-alpine AS builder
+# node:20 is deprecated for Capacitor 8+ (requires >= 22)
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci

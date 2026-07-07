@@ -24,10 +24,7 @@ class WorkoutErrorBoundary extends React.Component {
       return (
         <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full items-center justify-center space-y-4 p-4">
           <p className="text-[var(--text-secondary)] text-sm">Something went wrong in this set.</p>
-          <p className="text-[var(--color-cardio)] text-xs font-mono break-all">{(this.state.error?.message || String(this.state.error || 'unknown')).slice(0, 300)}</p>
-          {this.state.stack && (
-            <pre className="text-[9px] text-[var(--text-disabled)] text-left max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{this.state.stack}</pre>
-          )}
+          <p className="text-[var(--color-cardio)] text-xs font-mono break-all">A technical error occurred.</p>
           <button
             onClick={() => this.setState({ hasError: false, error: null, stack: null })}
             className="px-4 py-2 rounded-xl bg-[var(--color-surface-1)] text-[var(--text-primary)] text-sm font-semibold"
@@ -277,7 +274,7 @@ function VO2MaxScreen({ protocol, onComplete }) {
 /* ── End Workout Confirmation Modal ───────────────────────── */
 function EndWorkoutConfirm({ setCount, onConfirm, onCancel }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" className="bg-black/70">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70">
       <div className="bg-[var(--color-surface-1)] rounded-2xl p-6 max-w-sm w-full">
         <p className="text-lg font-bold text-[var(--text-primary)] mb-2">End workout?</p>
         <p className="text-sm text-[var(--text-secondary)] mb-6">You&apos;ve completed {setCount} set{setCount !== 1 ? 's' : ''}.</p>
@@ -683,6 +680,7 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
           value={notes}
           onChange={e => setNotes(e.target.value)}
           autoFocus
+          maxLength={500}
           placeholder="RPE, form notes..."
           className="w-full bg-[var(--color-surface-1)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none mb-6"
         />

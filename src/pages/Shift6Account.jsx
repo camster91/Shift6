@@ -66,8 +66,7 @@ function ProfileSection() {
   return (
     <Card>
       <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
-          className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0 bg-[var(--color-accent)] text-[var(--elevation-0-bg)]">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0 bg-[var(--color-accent)] text-[var(--elevation-0-bg)]">
           {initials}
         </div>
         <div className="min-w-0">
@@ -153,14 +152,14 @@ function LoginForm() {
         <div>
           <label className="armor-text-caption block mb-1.5">Name</label>
           <input type="text" value={name} onChange={e => setName(e.target.value)}
-            placeholder="Your name" autoComplete="name"
+            placeholder="Your name" autoComplete="name" maxLength={50}
             className="w-full rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] outline-none bg-[var(--elevation-1-bg)]" />
         </div>
       )}
       <div>
         <label className="armor-text-caption block mb-1.5">Email</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-          required placeholder="you@example.com" autoComplete="email"
+          required placeholder="you@example.com" autoComplete="email" maxLength={254}
           className="w-full rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] outline-none bg-[var(--elevation-1-bg)]"
         />
       </div>
@@ -168,6 +167,7 @@ function LoginForm() {
         <label className="armor-text-caption block mb-1.5">Password</label>
         <input type="password" value={password} onChange={e => setPassword(e.target.value)}
           required minLength={8} placeholder="8+ characters" autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          maxLength={128}
           className="w-full rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] outline-none bg-[var(--elevation-1-bg)]"
         />
       </div>
@@ -221,8 +221,7 @@ function LoggedInCard() {
   return (
     <div className="armor-surface-2 p-5 space-y-4">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
-          className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold bg-[var(--color-accent)] text-[var(--elevation-0-bg)]">
+        <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold bg-[var(--color-accent)] text-[var(--elevation-0-bg)]">
           {(user?.displayName || user?.email || '?').charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">

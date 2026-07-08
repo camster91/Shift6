@@ -97,8 +97,9 @@ export default function Shift6Onboarding() {
         <div className="flex-1 space-y-6">
           {/* Name */}
           <div>
-            <label className="armor-text-caption block mb-2">Your name (optional)</label>
+            <label htmlFor="onboarding-name" className="armor-text-caption block mb-2">Your name (optional)</label>
             <input
+              id="onboarding-name"
               type="text"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}

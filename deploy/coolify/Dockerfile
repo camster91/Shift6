@@ -1,15 +1,17 @@
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
+RUN npm install -g pnpm
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+COPY pnpm-lock.yaml package.json ./
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 RUN apk add --no-cache dumb-init python3 make g++
-COPY package*.json ./
-RUN npm install --omit=dev && npm rebuild better-sqlite3
+RUN npm install -g pnpm
+COPY pnpm-lock.yaml package.json ./
+RUN pnpm install --frozen-lockfile --omit=dev && pnpm rebuild better-sqlite3
 COPY --from=builder /app/dist ./dist
 COPY server ./server
 USER node

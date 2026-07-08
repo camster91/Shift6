@@ -17,9 +17,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: 'pnpm'
 
       - name: Setup JDK
         uses: actions/setup-java@v4
@@ -31,12 +37,12 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install deps
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build web + sync Capacitor
         run: |
-          npm run build
-          npx cap sync android
+          pnpm run build
+          pnpm exec cap sync android
 
       - name: Decode keystore
         env:

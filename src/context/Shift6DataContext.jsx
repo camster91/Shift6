@@ -15,6 +15,38 @@ import { computeStreak, rollover1RMs } from '../data/shift6Engine';
  *
  * Cloud data is stored as-is (same shape as localStorage) — the context
  * does NOT do any transformation, only persistence transport.
+ *
+ * ───────────────────────────────────────────────────────────────────
+ * MIGRATION ARCHITECTURE (the rebrand history left two paths)
+ * ───────────────────────────────────────────────────────────────────
+ * The app has been renamed twice: Shift6 v1 → Armor (v2) → Shift6 v3.
+ * Two one-time migration functions live in this file. They're
+ * independent and idempotent, gated by separate localStorage markers:
+ *
+ *   1. migrateArmorToShift6() — auto-runs at module load (bottom of
+ *      this file's top-level code). Copies `armor_*` localStorage keys
+ *      → `shift6_*` keys. Marker: `shift6_migrated_from_armor = '1'`.
+ *      Used by users who installed the "Armor" build (v2.x) before the
+ *      2026-06-29 rename back to Shift6.
+ *
+ *   2. migrateFromShift6() — exported helper, called manually from
+ *      Shift6App.jsx on first load. Reads OLD `shift6_settings` and
+ *      `shift6_onboarding_done` from the pre-v1.2 build (when the data
+ *      shape was different) and returns a DEFAULT_DATA-shaped object
+ *      with the user's real 1RMs and display name preserved. Marker:
+ *      `shift6_migrated_from_v1 = '1'` (set in Shift6App.jsx after
+ *      successful migration).
+ *
+ *   Both run on first launch of v3.x, see exactly one of the markers
+ *   set, and never run again. The factory-reset path in
+ *   src/components/ErrorBoundary.jsx wipes both markers so a "reset all"
+ *   user gets a clean re-onboarding without re-running migrations.
+ *
+ *   Naming note: `migrateArmorToShift6` reads "armor → shift6" (from
+ *   armor); `migrateFromShift6` reads "shift6 → ?" but actually means
+ *   "from the OLD Shift6 v1 layout" (to the current v3 layout). Both
+ *   are FROM-→TO directions, just phrased differently. Touch with care.
+ * ───────────────────────────────────────────────────────────────────
  */
 
 function load(key, fallback) {

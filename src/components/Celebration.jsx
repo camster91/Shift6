@@ -53,17 +53,18 @@ function AwardModal({ achievement, onDismiss }) {
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-6"
       style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(20px)' }}
       onClick={onDismiss}>
-      <div className="armor-surface-3 p-8 text-center max-w-xs w-full armor-spring-in"
+      <div role="dialog" aria-modal="true" aria-labelledby="award-modal-title"
+        className="armor-surface-3 p-8 text-center max-w-xs w-full armor-spring-in"
         onClick={e => e.stopPropagation()}>
-        <div className="armor-pr-pulse mx-auto mb-4" style={{ fontSize: '64px', width: 'fit-content' }}>
+        <div className="armor-pr-pulse mx-auto mb-4" style={{ fontSize: '64px', width: 'fit-content' }} aria-hidden="true">
           {config.icon}
         </div>
-        <h2 className="armor-text-title text-[var(--text-primary)] mb-1">{config.title}</h2>
+        <h2 id="award-modal-title" className="armor-text-title text-[var(--text-primary)] mb-1">{config.title}</h2>
         <p className="armor-text-footnote mb-6">{config.sub}</p>
-        <button onClick={onDismiss}
+        <button onClick={onDismiss} autoFocus
           className="armor-press w-full py-3 rounded-2xl text-[var(--text-primary)] font-bold bg-[var(--color-accent)]"
           style={{ background: 'var(--color-accent)' }}>
-          <Sparkles size={16} className="inline mr-2" /> Continue
+          <Sparkles size={16} className="inline mr-2" aria-hidden="true" /> Continue
         </button>
       </div>
     </div>

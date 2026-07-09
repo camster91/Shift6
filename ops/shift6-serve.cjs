@@ -60,6 +60,13 @@ function send(res, status, body, headers = {}) {
 
 const server = http.createServer((req, res) => {
     const urlPath = req.url.split('?')[0];
+
+    // Health endpoint — used by Docker HEALTHCHECK + Coolify upstream probe.
+    // No backend exists; return a minimal 200 so the container reports healthy.
+    if (urlPath === '/api/health') {
+        return send(res, 200, 'ok\n', { 'Content-Type': 'text/plain' });
+    }
+
     let target = safeJoin(ROOT, urlPath);
     if (!target) return send(res, 400, 'Bad request');
 

@@ -277,7 +277,7 @@ function VO2MaxScreen({ protocol, onComplete }) {
 /* ── End Workout Confirmation Modal ───────────────────────── */
 function EndWorkoutConfirm({ setCount, onConfirm, onCancel }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" className="bg-black/70">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70">
       <div className="bg-[var(--color-surface-1)] rounded-2xl p-6 max-w-sm w-full">
         <p className="text-lg font-bold text-[var(--text-primary)] mb-2">End workout?</p>
         <p className="text-sm text-[var(--text-secondary)] mb-6">You&apos;ve completed {setCount} set{setCount !== 1 ? 's' : ''}.</p>
@@ -799,8 +799,11 @@ function Shift6WorkoutSessionInner({ onComplete, onCancel, onNavigateToSettings 
       {celebration && <AwardModal achievement={celebration} onDismiss={() => { setShowConfetti(false); setCelebration(null); }} />}
 
       <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
-        <button onClick={() => { HAPTIC.light(); onCancel?.(); }}
-          className="armor-press w-10 h-10 rounded-full bg-[var(--color-surface-1)] flex items-center justify-center">
+        <button
+          onClick={() => { HAPTIC.light(); onCancel?.(); }}
+          aria-label="Close workout session"
+          className="armor-press w-10 h-10 rounded-full bg-[var(--color-surface-1)] flex items-center justify-center"
+        >
           <X size={18} className="text-[var(--text-secondary)]" />
         </button>
         <div className="text-center">

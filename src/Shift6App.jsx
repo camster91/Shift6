@@ -281,6 +281,7 @@ export default function Shift6App() {
           isCycleComplete={workoutSummary.isCycleComplete}
           onApplyDeload={() => setModifier('highFatigue', true)}
           onDismiss={() => setWorkoutSummary(null)}
+          unit={preferences.unit || 'lbs'}
         />
       )}
     </div>

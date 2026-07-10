@@ -9,3 +9,7 @@ This journal tracks critical UX and accessibility insights discovered during dev
 ## 2025-06-08 - Accessible Interactive Cards
 **Learning:** Custom interactive elements like Cards implemented with `div` require explicit `role="button"`, `tabIndex={0}`, and manual keyboard event handlers (Enter/Space) to be accessible to keyboard and screen reader users.
 **Action:** Centralize accessibility logic in shared UI components so that enabling an `interactive` prop automatically handles ARIA roles, tabbing, and keyboard triggers.
+
+## 2026-07-10 - Improving Form Clarity and Accessibility
+**Learning:** Associating labels with inputs and providing context-aware feedback (e.g., dynamic button text for "Sign In" vs. "Create Account") significantly improves accessibility for screen readers and clarity for all users.
+**Action:** Always verify proper label-input associations and use dynamic loading states that accurately reflect the user's current operation.

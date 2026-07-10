@@ -112,7 +112,7 @@ export default function Shift6Onboarding() {
 
           {/* Track choice — optional */}
           <div>
-            <p className="armor-text-caption block mb-2">Where will you train most?</p>
+            <h2 className="armor-text-caption block mb-2">Where will you train most?</h2>
             <p className="armor-text-footnote mb-3">You can switch per-workout from the dashboard later.</p>
             <div className="grid grid-cols-2 gap-2">
               {Object.values(EQUIPMENT_TRACKS).map(t => (

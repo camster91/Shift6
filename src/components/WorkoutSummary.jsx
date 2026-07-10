@@ -27,6 +27,7 @@ export default function WorkoutSummary({
   isFirstWorkout = false,
   isCycleComplete = false,
   onApplyDeload,
+  unit = 'lbs',
 }) {
   // Compute summary stats. Hooks must run before any early return.
   const stats = useMemo(() => {
@@ -69,6 +70,9 @@ export default function WorkoutSummary({
         data-testid="workout-summary-modal"
       >
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="workout-summary-title"
           className="armor-surface-3 p-6 max-w-sm w-full armor-spring-in"
           onClick={e => e.stopPropagation()}
         >
@@ -81,12 +85,12 @@ export default function WorkoutSummary({
               {isCycleComplete ? (
                 <Trophy size={32} className="text-[var(--color-warning)]" strokeWidth={2.5} />
               ) : isEmpty ? (
-                <span className="text-3xl">⏹</span>
+                <span className="text-3xl" aria-hidden="true">⏹</span>
               ) : (
                 <Check size={32} className="text-[var(--color-success)]" strokeWidth={3} />
               )}
             </div>
-            <h2 className="armor-text-large-title text-[var(--text-primary)]">
+            <h2 id="workout-summary-title" className="armor-text-large-title text-[var(--text-primary)]">
               {isCycleComplete
                 ? '6-Week Cycle Complete'
                 : isEmpty
@@ -115,7 +119,7 @@ export default function WorkoutSummary({
               <div className="w-px bg-[var(--color-divider)]" />
               <StatTile
                 value={stats.totalVolume.toLocaleString()}
-                label="Volume lbs"
+                label={`Volume ${unit}`}
                 color="text-[var(--color-accent)]"
               />
             </div>
@@ -182,10 +186,11 @@ export default function WorkoutSummary({
           {/* Done button */}
           <button
             onClick={onDismiss}
+            autoFocus
             className="armor-press w-full py-3.5 rounded-2xl text-[var(--text-primary)] font-bold flex items-center justify-center gap-2"
             style={{ background: 'var(--color-accent)' }}
           >
-            <Sparkles size={16} /> {isCycleComplete ? 'Start New Cycle' : 'Done'}
+            <Sparkles size={16} aria-hidden="true" /> {isCycleComplete ? 'Start New Cycle' : 'Done'}
           </button>
         </div>
       </div>

@@ -19,9 +19,10 @@ export default function Toggle({ checked, ariaLabel, onChange, accent = 'cyan' }
       aria-checked={checked}
       aria-label={ariaLabel}
       onClick={() => onChange(!checked)}
-      className={`armor-press relative w-11 h-6 rounded-full transition-colors ${trackColor}`}
+      className={`armor-press relative w-11 h-6 rounded-full transition-colors ${trackColor} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--elevation-0-bg)]`}
     >
       <span
+        aria-hidden="true"
         className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}
       />
     </button>

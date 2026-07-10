@@ -217,7 +217,7 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
       <div className="px-5 space-y-5">
         {/* ── WEEK HISTORY (last 7 days) ── */}
         <div className="flex items-center justify-between">
-          <p className="armor-text-caption">This week</p>
+          <h2 className="armor-text-caption">This week</h2>
           <p className="armor-text-caption">
             <span className="text-[var(--text-primary)] font-bold">Week {currentCycle.week}</span> of 6 · Cycle {currentCycle.totalCyclesCompleted + 1}
           </p>

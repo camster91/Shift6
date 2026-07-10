@@ -74,6 +74,7 @@ function EditRow({ exId, displayName, value, onSave, unit = 'lbs' }) {
             type="number" value={v} onChange={e => setV(e.target.value)} autoFocus
             min="0" max="9999" step={unit === 'kg' ? '0.5' : '1'}
             onKeyDown={e => e.key === 'Enter' && handleSave(v)}
+            aria-label={`${displayName || exId.replace(/_/g, ' ')} 1RM in ${unit}`}
             className="w-20 text-right rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-primary)] outline-none tabular-nums bg-[var(--color-surface-2)] focus-visible:outline-[var(--color-accent)]"
           />
           <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => handleSave(v)} />

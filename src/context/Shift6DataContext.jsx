@@ -143,7 +143,14 @@ const Shift6DataContext = createContext(null);
  * own tests instead of relying on a heavy React component test.
  */
 export function computeNextStateAfterWorkout(prev, workoutData, todayStr) {
-  const newHistory = [...prev.workoutHistory, { ...workoutData, date: workoutData.date || todayStr }];
+  const sanitizedExercises = (workoutData.exercises || []).map(ex => ({
+    ...ex,
+    sets: (ex.sets || []).map(s => ({ ...s, notes: s.notes?.slice(0, 500) })),
+    failedSets: (ex.failedSets || []).map(s => ({ ...s, notes: s.notes?.slice(0, 500) })),
+  }));
+  const sanitizedWorkout = { ...workoutData, exercises: sanitizedExercises };
+
+  const newHistory = [...prev.workoutHistory, { ...sanitizedWorkout, date: sanitizedWorkout.date || todayStr }];
   let nextDay = prev.currentCycle.day;
   let nextWeek = prev.currentCycle.week;
   let completedCycles = prev.currentCycle.totalCyclesCompleted;
@@ -339,8 +346,11 @@ export function Shift6DataProvider({ children }) {
   // ── Updaters (unchanged) ─────────────────────────────────────
   const updatePreferences = useCallback((updates) =>
     setData(prev => ({ ...prev, preferences: { ...prev.preferences, ...updates } })), []);
-  const updateUserProfile = useCallback((updates) =>
-    setData(prev => ({ ...prev, userProfile: { ...prev.userProfile, ...updates } })), []);
+  const updateUserProfile = useCallback((updates) => {
+    const cleanUpdates = { ...updates };
+    if (cleanUpdates.displayName) cleanUpdates.displayName = cleanUpdates.displayName.slice(0, 50);
+    setData(prev => ({ ...prev, userProfile: { ...prev.userProfile, ...cleanUpdates } }));
+  }, []);
   const set1RM = useCallback((exerciseId, value) => {
     // Reject non-finite, zero, negative, or absurdly high values
     const cleanValue = Number(value);
@@ -378,6 +388,7 @@ export function Shift6DataProvider({ children }) {
 
   const completeOnboarding = useCallback((onboardingData) => {
     const { equipmentTrack, estimated1RMs, displayName } = onboardingData;
+    const cleanDisplayName = displayName ? displayName.slice(0, 50) : 'Athlete';
     // Validate and sanitize 1RMs before storing
     const sanitized1RMs = {};
     if (estimated1RMs) {
@@ -391,7 +402,7 @@ export function Shift6DataProvider({ children }) {
       preferences: { ...prev.preferences, equipmentTrack: equipmentTrack || prev.preferences.equipmentTrack },
       userProfile: {
         ...prev.userProfile,
-        displayName: displayName || 'Athlete',
+        displayName: cleanDisplayName,
         estimated1RMs: { ...prev.userProfile.estimated1RMs, ...sanitized1RMs },
       },
       currentCycle: { ...prev.currentCycle, week: 1, day: 1, lastWorkoutDate: null, completedDaysThisWeek: [] },

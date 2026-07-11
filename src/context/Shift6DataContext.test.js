@@ -179,4 +179,24 @@ describe('computeNextStateAfterWorkout', () => {
     const next = computeNextStateAfterWorkout(prev, { completed: true }, '2026-06-17');
     expect(next.workoutHistory[0].date).toBe('2026-06-17');
   });
+
+  it('truncates workout notes to 500 characters', () => {
+    const longNote = 'a'.repeat(1000);
+    const prev = makeState();
+    const workoutData = {
+      completed: true,
+      exercises: [
+        {
+          id: 'squat',
+          sets: [{ reps: 5, weight: 100, notes: longNote }],
+          failedSets: [{ reps: 2, weight: 100, notes: longNote }],
+        },
+      ],
+    };
+    const next = computeNextStateAfterWorkout(prev, workoutData, '2026-06-17');
+    const savedEx = next.workoutHistory[0].exercises[0];
+    expect(savedEx.sets[0].notes).toHaveLength(500);
+    expect(savedEx.failedSets[0].notes).toHaveLength(500);
+    expect(savedEx.sets[0].notes).toBe('a'.repeat(500));
+  });
 });

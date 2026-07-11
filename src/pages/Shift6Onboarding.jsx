@@ -103,6 +103,7 @@ export default function Shift6Onboarding() {
               type="text"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
+              maxLength={50}
               placeholder="Athlete"
               autoFocus
               className="armor-surface-1 w-full rounded-xl px-4 py-3 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus-visible:outline-[var(--color-accent)]"

@@ -800,6 +800,7 @@ function Shift6WorkoutSessionInner({ onComplete, onCancel, onNavigateToSettings 
 
       <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
         <button onClick={() => { HAPTIC.light(); onCancel?.(); }}
+          aria-label="Close workout session"
           className="armor-press w-10 h-10 rounded-full bg-[var(--color-surface-1)] flex items-center justify-center">
           <X size={18} className="text-[var(--text-secondary)]" />
         </button>

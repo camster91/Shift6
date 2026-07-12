@@ -689,7 +689,6 @@ function StrengthScreen({ primaryLift, accessories, currentWeek, currentDay, onC
           value={notes}
           onChange={e => setNotes(e.target.value)}
           autoFocus
-          maxLength={500}
           placeholder="RPE, form notes..."
           className="w-full bg-[var(--color-surface-1)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none mb-6"
         />

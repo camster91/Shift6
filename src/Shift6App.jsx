@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
 import {
   Play, BarChart3, Settings as SettingsIcon, Smartphone, User
 } from 'lucide-react';
@@ -55,6 +55,8 @@ export default function Shift6App() {
   const [workoutSummary, setWorkoutSummary] = useState(null);
   const installPromptRef = useRef(null);
   const migrated = useRef(false);
+
+  const handleNavigateToSettings = useCallback(() => setActiveTab('settings'), []);
 
   // Check for Shift6 migration on first load
   useEffect(() => {
@@ -122,9 +124,9 @@ export default function Shift6App() {
     installPromptRef.current = null;
   };
 
-  const handleStartWorkout = () => {
+  const handleStartWorkout = useCallback(() => {
     setWorkoutActive(true);
-  };
+  }, []);
 
   const handleWorkoutComplete = (workoutData) => {
     logWorkout(workoutData);
@@ -190,7 +192,7 @@ export default function Shift6App() {
               <>
                 <Shift6Dashboard
                   onStartWorkout={handleStartWorkout}
-                  onNavigateToSettings={() => setActiveTab('settings')}
+                  onNavigateToSettings={handleNavigateToSettings}
                 />
                 <FirstRunTour />
               </>

@@ -18,6 +18,8 @@ import { Card, SectionHeader, StatTile, Button, JargonTooltip } from '../compone
    Zero borders. Token-driven colors. Elevation-based depth.
    ═══════════════════════════════════════════════════════════ */
 
+// Jargon tooltip helper — wraps a term with an (i) icon
+
 const PHASE_DEFINITIONS = {
   'Base': 'foundation phase — moderate weight, higher reps, building work capacity',
   'Peak': 'peak phase — heavy weight, low reps, building absolute strength',

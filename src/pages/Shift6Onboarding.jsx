@@ -15,6 +15,8 @@ const DEFAULTS = {
   home_gym: { goblet_squat: 95, dumbbell_press: 100, romanian_deadlift: 155 },
 };
 
+// Jargon tooltip helper — wraps a term with an (i) icon
+
 // Day-of-week pip — a small numbered circle used in the split preview list.
 function DayPip({ day }) {
   return (

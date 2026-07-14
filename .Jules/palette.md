@@ -13,3 +13,7 @@ This journal tracks critical UX and accessibility insights discovered during dev
 ## 2026-07-10 - Improving Form Clarity and Accessibility
 **Learning:** Associating labels with inputs and providing context-aware feedback (e.g., dynamic button text for "Sign In" vs. "Create Account") significantly improves accessibility for screen readers and clarity for all users.
 **Action:** Always verify proper label-input associations and use dynamic loading states that accurately reflect the user's current operation.
+
+## 2026-07-14 - Accessible Technical Definitions (Jargon Tooltips)
+**Learning:** Using the `title` attribute for technical jargon is an anti-pattern that excludes keyboard and screen reader users. Replacing it with a focusable button and `aria-label` ensures all users can access critical definitions.
+**Action:** Use the centralized `JargonTooltip` component for all technical terms (1RM, CNS, etc.) and avoid the native `title` attribute for primary information delivery.

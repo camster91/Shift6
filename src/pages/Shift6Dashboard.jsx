@@ -11,27 +11,12 @@ import ExerciseIllustration from '../components/ExerciseIllustration';
 import WeekStrip from '../components/WeekStrip';
 import TravelModeBanner from '../components/TravelModeBanner';
 import StreakBanner from '../components/StreakBanner';
-import { Card, SectionHeader, StatTile, Button } from '../components/ui';
+import { Card, SectionHeader, StatTile, Button, JargonTooltip } from '../components/ui';
 
 /* ═══════════════════════════════════════════════════════════
    SHIFT6 DASHBOARD v3.0 — Apple HIG design system
    Zero borders. Token-driven colors. Elevation-based depth.
    ═══════════════════════════════════════════════════════════ */
-
-// Jargon tooltip helper — wraps a term with an (i) icon
-function JargonTooltip({ term, definition }) {
-  return (
-    <span className="inline-flex items-center gap-0.5">
-      {term}
-      <span
-        className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold text-[var(--text-tertiary)] bg-[var(--color-surface-1)] cursor-help select-none"
-        title={definition}
-      >
-        i
-      </span>
-    </span>
-  );
-}
 
 const PHASE_DEFINITIONS = {
   'Base': 'foundation phase — moderate weight, higher reps, building work capacity',
@@ -215,6 +200,12 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
       </div>
 
       <div className="px-5 space-y-5">
+        <CycleProgress
+          week={currentCycle.week}
+          day={currentCycle.day}
+          totalCyclesCompleted={currentCycle.totalCyclesCompleted}
+        />
+
         {/* ── WEEK HISTORY (last 7 days) ── */}
         <div className="flex items-center justify-between">
           <h2 className="armor-text-caption">This week</h2>

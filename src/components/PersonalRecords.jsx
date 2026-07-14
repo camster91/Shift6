@@ -6,10 +6,10 @@
  *
  * Renders nothing if there's no history.
  */
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { Trophy, Calendar } from 'lucide-react';
 
-export default function PersonalRecords({ workoutHistory = [], unit = 'lbs', limit = 6 }) {
+const PersonalRecords = memo(function PersonalRecords({ workoutHistory = [], unit = 'lbs', limit = 6 }) {
   const records = useMemo(() => {
     const map = new Map(); // exerciseId → { weight, date, workoutId }
     workoutHistory.forEach(w => {
@@ -106,4 +106,6 @@ export default function PersonalRecords({ workoutHistory = [], unit = 'lbs', lim
       </div>
     </div>
   );
-}
+});
+
+export default PersonalRecords;

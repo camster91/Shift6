@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, memo } from 'react';
 import { Flame, Trophy } from 'lucide-react';
 import { useShift6Data } from '../context/Shift6DataContext';
 import { PERIODIZATION, getWeekConfig } from '../data/shift6Engine';
@@ -311,7 +311,7 @@ function ListRow({ index, divider = true, children }) {
   );
 }
 
-export default function Shift6Progress() {
+const Shift6Progress = memo(function Shift6Progress() {
   const { currentCycle, workoutHistory, streakData, estimated1RMs, dailyHabitState, preferences } = useShift6Data();
   const unit = preferences.unit || 'lbs';
   const weekConfig = getWeekConfig(currentCycle.week);
@@ -677,7 +677,9 @@ export default function Shift6Progress() {
       </div>
     </div>
   );
-}
+});
+
+export default Shift6Progress;
 
 /* ── ISO week helper ── */
 function getISOWeek(date) {

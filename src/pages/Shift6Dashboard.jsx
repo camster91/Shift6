@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, memo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useShift6Data } from '../context/Shift6DataContext';
 import {
@@ -79,7 +79,7 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
   );
 }
 
-function ModifierRow({ activeModifiers, onToggle }) {
+const ModifierRow = memo(function ModifierRow({ activeModifiers, onToggle }) {
   // Only surface the modifier the user is most likely to toggle during
   // a workout session (travel). The other modifiers (mvd, highFatigue,
   // heavyMeal) are still in the data model and toggled via Settings,
@@ -120,7 +120,7 @@ function ModifierRow({ activeModifiers, onToggle }) {
       </div>
     </div>
   );
-}
+});
 
 function HabitCheck({ habit, done, onToggle }) {
   return (
@@ -156,7 +156,7 @@ function HabitCheck({ habit, done, onToggle }) {
 
 /* ── MAIN DASHBOARD ────────────────────────────────────────── */
 
-export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }) {
+const Shift6Dashboard = memo(function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }) {
   const {
     activeModifiers, dailyHabitState, currentCycle, userProfile,
     toggleModifier, toggleHabit, resetDailyHabits,
@@ -184,11 +184,33 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
   const streak = streakData.currentStreak || 0;
   const unit = preferences.unit || 'lbs';
 
+  // PERFORMANCE: Memoize expensive history derivations to prevent redundant
+  // computations on every re-render.
+
+  // O(N) filtering and mapping. Stabilizes the completed dates array for WeekStrip.
+  const completedDates = useMemo(() =>
+    workoutHistory.filter(w => w.completed).map(w => w.date),
+    [workoutHistory]
+  );
+
   // Filter 1RMs to the active track only
-  const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
-  const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
+  const trackExerciseIds = useMemo(() =>
+    Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack),
+    [effectiveTrack]
+  );
+
+  const track1RMs = useMemo(() =>
+    trackExerciseIds.map(id => estimated1RMs[id] || 0),
+    [trackExerciseIds, estimated1RMs]
+  );
+
   const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
-  const allTrack1RMsZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
+
+  const allTrack1RMsZero = useMemo(() =>
+    track1RMs.length > 0 && track1RMs.every(v => v === 0),
+    [track1RMs]
+  );
+
   const displayTop1RM = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
 
   return (
@@ -223,7 +245,7 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
           </p>
         </div>
         <WeekStrip
-          completedDates={workoutHistory.filter(w => w.completed).map(w => w.date)}
+          completedDates={completedDates}
           mvdDates={streakData.mvdDates || []}
         />
 
@@ -498,4 +520,6 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
       </div>
     </div>
   );
-}
+});
+
+export default Shift6Dashboard;

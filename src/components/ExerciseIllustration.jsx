@@ -18,9 +18,10 @@
  * applies a brightness/saturate filter in dark mode so the image
  * integrates with the surface color; light mode is unaffected.
  */
+import { memo } from 'react';
 import { getExerciseImage } from '../data/exerciseImages';
 
-export default function ExerciseIllustration({
+const ExerciseIllustration = memo(function ExerciseIllustration({
   exerciseId,
   compact = false,
   className = '',
@@ -64,4 +65,6 @@ export default function ExerciseIllustration({
       />
     </div>
   );
-}
+});
+
+export default ExerciseIllustration;

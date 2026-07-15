@@ -15,6 +15,7 @@
  *   US lbs:  5/10/15/20/25/30/40/50 (common home set)
  *   Metric:  2.5/5/7.5/10/12.5/15/20/25 (common home set)
  */
+import { memo } from 'react';
 
 // US Olympic plate set (lbs). Colors follow common gym conventions.
 const BAR_PLATES_LBS = [
@@ -62,7 +63,7 @@ const DUMBBELL_HEADS_KG = [
   { weight: 2.5, color: '#64748b', size: 30 },
 ];
 
-export default function PlateVisualizer({ weight, track = 'full_gym', compact = false, unit = 'lbs' }) {
+const PlateVisualizer = memo(function PlateVisualizer({ weight, track = 'full_gym', compact = false, unit = 'lbs' }) {
   if (!weight || weight <= 0) return null;
 
   const isKg = unit === 'kg';
@@ -133,7 +134,9 @@ export default function PlateVisualizer({ weight, track = 'full_gym', compact = 
       </div>
     </div>
   );
-}
+});
+
+export default PlateVisualizer;
 
 // SVG barbell: long horizontal bar with two sleeve collars and plates on each side.
 function BarbellSvg({ plates = [], barOnly = false, bar = 45, unit = 'lbs', compact = false }) {

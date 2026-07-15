@@ -16,17 +16,25 @@ class WorkoutErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null, stack: null }; }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
   componentDidCatch(error, info) {
-    console.error('[WorkoutErrorBoundary CAUGHT]', error?.message || String(error), error?.stack?.slice(0, 800));
-    this.setState({ stack: info?.componentStack?.slice(0, 1500) || null });
+    // Security: Only leak diagnostic info to the console and state in development mode
+    if (import.meta.env.DEV) {
+      console.error('[WorkoutErrorBoundary CAUGHT]', error?.message || String(error), error?.stack?.slice(0, 800));
+      this.setState({ stack: info?.componentStack?.slice(0, 1500) || null });
+    }
   }
   render() {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full items-center justify-center space-y-4 p-4">
           <p className="text-[var(--text-secondary)] text-sm">Something went wrong in this set.</p>
-          <p className="text-[var(--color-cardio)] text-xs font-mono break-all">{(this.state.error?.message || String(this.state.error || 'unknown')).slice(0, 300)}</p>
-          {this.state.stack && (
-            <pre className="text-[9px] text-[var(--text-disabled)] text-left max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{this.state.stack}</pre>
+          {/* Security: Prevent stack trace/raw error leakage in production */}
+          {import.meta.env.DEV && (
+            <>
+              <p className="text-[var(--color-cardio)] text-xs font-mono break-all">{(this.state.error?.message || String(this.state.error || 'unknown')).slice(0, 300)}</p>
+              {this.state.stack && (
+                <pre className="text-[9px] text-[var(--text-disabled)] text-left max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{this.state.stack}</pre>
+              )}
+            </>
           )}
           <button
             onClick={() => this.setState({ hasError: false, error: null, stack: null })}

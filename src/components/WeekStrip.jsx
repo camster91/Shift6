@@ -13,6 +13,7 @@
  *
  * Pure: takes the activity data, computes the strip. No data fetching.
  */
+import { memo } from 'react';
 import { getLocalDateString } from '../utils/date';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -22,7 +23,7 @@ const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
  * @param {string[]} props.completedDates - YYYY-MM-DD strings for full workouts
  * @param {string[]} props.mvdDates - YYYY-MM-DD strings for MVD completions
  */
-export default function WeekStrip({ completedDates = [], mvdDates = [], className = '' }) {
+const WeekStrip = memo(({ completedDates = [], mvdDates = [], className = '' }) => {
   const today = new Date();
   const todayStr = getLocalDateString(today);
 
@@ -59,7 +60,9 @@ export default function WeekStrip({ completedDates = [], mvdDates = [], classNam
       ))}
     </div>
   );
-}
+});
+
+export default WeekStrip;
 
 function DayBadge({ day }) {
   // Color map driven by design tokens. Light mode (--color-warning) and

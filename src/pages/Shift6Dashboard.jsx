@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, memo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useShift6Data } from '../context/Shift6DataContext';
 import {
@@ -44,7 +44,7 @@ function phaseDefinition(phase) {
   return PHASE_DEFINITIONS[phase] || phase;
 }
 
-function CycleProgress({ week, day, totalCyclesCompleted }) {
+const CycleProgress = memo(({ week, day, totalCyclesCompleted }) => {
   const weekConfig = getWeekConfig(week);
   const totalDays = 30;
   const done = (week - 1) * 5 + Math.min(day - 1, 4);
@@ -77,9 +77,9 @@ function CycleProgress({ week, day, totalCyclesCompleted }) {
       </div>
     </Card>
   );
-}
+});
 
-function ModifierRow({ activeModifiers, onToggle }) {
+const ModifierRow = memo(({ activeModifiers, onToggle }) => {
   // Only surface the modifier the user is most likely to toggle during
   // a workout session (travel). The other modifiers (mvd, highFatigue,
   // heavyMeal) are still in the data model and toggled via Settings,
@@ -120,7 +120,26 @@ function ModifierRow({ activeModifiers, onToggle }) {
       </div>
     </div>
   );
-}
+});
+
+// Compact habit pill used on the dashboard. Memoized to prevent
+// re-renders when other dashboard state (like sync status) changes.
+const HabitPill = memo(({ habit, done, onToggle }) => {
+  return (
+    <button
+      onClick={() => onToggle(habit.id)}
+      className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all ${
+        done
+          ? 'bg-[var(--color-success)] text-[var(--elevation-0-bg)]'
+          : 'bg-[var(--color-surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+      }`}
+      aria-pressed={done}
+    >
+      {done ? <Check size={11} strokeWidth={3} /> : <span aria-hidden="true">{habit.icon}</span>}
+      <span>{habit.label}</span>
+    </button>
+  );
+});
 
 function HabitCheck({ habit, done, onToggle }) {
   return (
@@ -184,12 +203,28 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
   const streak = streakData.currentStreak || 0;
   const unit = preferences.unit || 'lbs';
 
-  // Filter 1RMs to the active track only
-  const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
-  const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
-  const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
-  const allTrack1RMsZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
-  const displayTop1RM = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
+  // PERFORMANCE: Memoize derived state to prevent redundant computations
+  // and referential instability that triggers child re-renders.
+
+  // O(N) history filter. Stabilizes the WeekStrip props.
+  const completedDates = useMemo(() =>
+    workoutHistory.filter(w => w.completed).map(w => w.date),
+    [workoutHistory]
+  );
+
+  // O(E) derivation where E is exercise count. Filter 1RMs to active track.
+  const { top1RM, allTrack1RMsZero } = useMemo(() => {
+    const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
+    const t1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
+    const top = t1RMs.length > 0 ? Math.max(...t1RMs, 0) : 0;
+    const allZero = t1RMs.length > 0 && t1RMs.every(v => v === 0);
+    return { top1RM: top, allTrack1RMsZero: allZero };
+  }, [effectiveTrack, estimated1RMs]);
+
+  const displayTop1RM = useMemo(() =>
+    top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`),
+    [top1RM, unit]
+  );
 
   return (
     <div className="pb-32 space-y-5 max-w-lg mx-auto">
@@ -223,7 +258,7 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
           </p>
         </div>
         <WeekStrip
-          completedDates={workoutHistory.filter(w => w.completed).map(w => w.date)}
+          completedDates={completedDates}
           mvdDates={streakData.mvdDates || []}
         />
 
@@ -475,24 +510,14 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
         <div className="space-y-1.5">
           <SectionHeader icon={<Check size={10} />} label="Daily Habits" />
           <div className="flex flex-wrap gap-1.5">
-            {dailyHabits.map(habit => {
-              const done = dailyHabitState[habit.id] || false;
-              return (
-                <button
-                  key={habit.id}
-                  onClick={() => toggleHabit(habit.id)}
-                  className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all ${
-                    done
-                      ? 'bg-[var(--color-success)] text-[var(--elevation-0-bg)]'
-                      : 'bg-[var(--color-surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-                  aria-pressed={done}
-                >
-                  {done ? <Check size={11} strokeWidth={3} /> : <span aria-hidden="true">{habit.icon}</span>}
-                  <span>{habit.label}</span>
-                </button>
-              );
-            })}
+            {dailyHabits.map(habit => (
+              <HabitPill
+                key={habit.id}
+                habit={habit}
+                done={dailyHabitState[habit.id] || false}
+                onToggle={toggleHabit}
+              />
+            ))}
           </div>
         </div>
       </div>

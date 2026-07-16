@@ -1,0 +1,100 @@
+              PWA name, page <title>, and bottom tab bar. A large display
+              header eats ~80px of vertical space that the workout card needs. */}
+          <div className="flex items-center gap-2" aria-live="polite" aria-atomic="true">
+            {streak > 0 && (
+              <span className="armor-badge armor-badge-warning">
+                <Flame size={11} fill="currentColor" />
+                <span className="tabular-nums">{streak}</span>
+              </span>
+            )}
+            {todayDone && (
+              <span className="armor-badge armor-badge-success">Done</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 space-y-5">
+        {/* ── WEEK HISTORY (last 7 days) ── */}
+        <div className="flex items-center justify-between">
+          <h2 className="armor-text-caption">This week</h2>
+          <p className="armor-text-caption">
+            <span className="text-[var(--text-primary)] font-bold">Week {currentCycle.week}</span> of 6 · Cycle {currentCycle.totalCyclesCompleted + 1}
+          </p>
+        </div>
+        <WeekStrip
+          completedDates={workoutHistory.filter(w => w.completed).map(w => w.date)}
+          mvdDates={streakData.mvdDates || []}
+        />
+
+        {/* ── STREAK STATUS BANNER ── */}
+        {/* Shows a warning if the user's streak is at risk today, or
+            a muted acknowledgement if a streak was just broken. Hidden
+            when streak is healthy. Calculated from lastActiveDate +
+            currentStreak. */}
+        {(() => {
+          const status = streakStatus(streakData);
+          return <StreakBanner status={status} />;
+        })()}
+
+        {/* ── MODIFIERS ── */}
+        <ModifierRow activeModifiers={activeModifiers} onToggle={toggleModifier} />
+
+        {/* ── TRAVEL MODE BANNER ── */}
+        {/* Prominent indicator above the workout card so users always
+            know when they've enabled travel mode and why the workout
+            is different from usual. The compact in-card text is a
+            secondary reminder. */}
+        {activeModifiers.travelMode && todayWorkout?.primaryLift && (
+          <TravelModeBanner
+            todayExerciseId={todayWorkout.primaryLift.exerciseId}
+          />
+        )}
+
+        {/* ── TODAY'S WORKOUT ── */}
+        {isMVD ? (
+          <div className="armor-surface-2 p-5 space-y-3 relative overflow-hidden">
+            <div
+              className="absolute top-0 right-0 w-32 h-32 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl bg-[var(--color-warning-muted)]"
+            />
+            <div className="flex items-center gap-2">
+              <Shield size={18} className="text-[var(--color-warning)]" />
+              <h2 className="text-lg font-black text-[var(--color-warning)]">Minimum Viable Day</h2>
+            </div>
+            <p className="armor-text-footnote text-[var(--color-warning)] opacity-60">
+              Your streak is protected. Complete these three things.
+            </p>
+            <div className="space-y-2">
+              {[
+                { icon: '💪', label: `${MVD_PROTOCOL.pushups.sets * MVD_PROTOCOL.pushups.reps} Push-Ups`, sub: '5×20 in a single circuit (~10 min)' },
+                { icon: '🚶', label: `${MVD_PROTOCOL.walk.duration}-Minute Walk`, sub: 'Brisk pace, outdoors if possible' },
+                { icon: '🧘', label: `${MVD_PROTOCOL.mobility.duration}-Minute Mobility`, sub: 'Hips, hamstrings, thoracic spine' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[var(--color-surface-1)]">
+                  <span className="text-2xl" aria-hidden="true">{item.icon}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">{item.label}</p>
+                    <p className="armor-text-footnote">{item.sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {!todayDone && (
+              <Button
+                variant="primary"
+                size="md"
+                icon={<Play size={14} className="fill-current" />}
+                onClick={onStartWorkout}
+                className="w-full bg-[var(--color-warning)]"
+              >
+                Start MVD
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* Per-workout track switcher. Default is the user's primary track;
+                tapping a track flips today's session only. */}
+            <div className="armor-press flex items-center gap-1 p-1 rounded-xl bg-[var(--elevation-1-bg)]">
+              {Object.values(EQUIPMENT_TRACKS).map(t => {
+                const active = effectiveTrack === t.id;

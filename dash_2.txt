@@ -1,0 +1,100 @@
+            const label = labelOverride[mod.id] ?? mod.label;
+            return (
+              <button
+                key={mod.id}
+                onClick={() => onToggle(mod.id)}
+                aria-label={`Toggle ${mod.label}`}
+                aria-pressed={active}
+                title={mod.description}
+                className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all shrink-0 whitespace-nowrap text-[11px] font-semibold ${
+                  active
+                    ? 'bg-[var(--color-warning-muted)] text-[var(--color-warning)] ring-1 ring-[var(--color-warning-muted)]'
+                    : 'bg-[var(--color-surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <span>{mod.icon}</span>
+                <span>{label}</span>
+              </button>
+            );
+          })}
+      </div>
+    </div>
+  );
+}
+
+function HabitCheck({ habit, done, onToggle }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={`armor-press w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+        done
+          ? 'bg-[var(--color-success-muted)]'
+          : 'bg-[var(--color-surface-1)] hover:bg-[var(--color-surface-hover)]'
+      }`}
+    >
+      <div
+        className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+          done ? 'bg-[var(--color-success)]' : 'bg-[var(--color-surface-active)]'
+        }`}
+      >
+        {done ? <Check size={11} className="text-white" strokeWidth={3} /> : null}
+      </div>
+      <div className="flex-1 text-left min-w-0">
+        <p className={`text-sm font-medium truncate ${done ? 'text-[var(--color-success)]' : 'text-[var(--text-primary)]'}`}>
+          {habit.label}
+        </p>
+        <p className="armor-text-footnote">
+          {habit.duration}{habit.unit} · {habit.anchor}
+        </p>
+      </div>
+      <span className="text-[11px] font-semibold text-[var(--text-secondary)] tabular-nums">
+        {habit.duration}m
+      </span>
+    </button>
+  );
+}
+
+/* ── MAIN DASHBOARD ────────────────────────────────────────── */
+
+export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }) {
+  const {
+    activeModifiers, dailyHabitState, currentCycle, userProfile,
+    toggleModifier, toggleHabit, resetDailyHabits,
+    estimated1RMs, equipmentTrack, effectiveTrack, todaysTrack, setTodaysTrack,
+    todaysWorkoutCompleted, habitsNeedReset, streakData, isMVDToday, preferences,
+    workoutHistory,
+  } = useShift6Data();
+
+  useEffect(() => {
+    if (habitsNeedReset) resetDailyHabits();
+  }, [habitsNeedReset, resetDailyHabits]);
+
+  const weekConfig = getWeekConfig(currentCycle.week);
+  const todayWorkout = useMemo(() =>
+    getTodaysWorkout(effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs),
+    [effectiveTrack, currentCycle.day, currentCycle.week, activeModifiers, estimated1RMs]);
+  const dailyHabits = useMemo(() => getDailyHabits(activeModifiers), [activeModifiers]);
+  const todayDone = todaysWorkoutCompleted || isMVDToday;
+  const isMVD = activeModifiers.mvdMode;
+  const workoutAccent = todayWorkout.type === 'vo2max' ? 'cardio' : 'accent';
+
+  const h = new Date().getHours();
+  const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+
+  const streak = streakData.currentStreak || 0;
+  const unit = preferences.unit || 'lbs';
+
+  // Filter 1RMs to the active track only
+  const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
+  const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
+  const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
+  const allTrack1RMsZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
+  const displayTop1RM = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
+
+  return (
+    <div className="pb-32 space-y-5 max-w-lg mx-auto">
+      {/* ── HEADER ── */}
+      <div className="px-5 pt-8 pb-2">
+        <p className="armor-text-caption mb-1">{greeting}{userProfile.displayName ? `, ${userProfile.displayName}` : ''}</p>
+        <div className="flex items-center justify-between">
+          {/* Brand wordmark intentionally omitted — the brand is in the URL,

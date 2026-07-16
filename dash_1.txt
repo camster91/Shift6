@@ -1,0 +1,100 @@
+import { useEffect, useMemo } from 'react';
+import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
+import { useShift6Data } from '../context/Shift6DataContext';
+import {
+  getTodaysWorkout, getDailyHabits, MODIFIERS, MVD_PROTOCOL,
+  VO2MAX_PROTOCOL, PERIODIZATION, getWeekConfig, EQUIPMENT_TRACKS,
+  EXERCISE_TRACK, streakStatus,
+} from '../data/shift6Engine';
+import PlateVisualizer from '../components/PlateVisualizer';
+import ExerciseIllustration from '../components/ExerciseIllustration';
+import WeekStrip from '../components/WeekStrip';
+import TravelModeBanner from '../components/TravelModeBanner';
+import StreakBanner from '../components/StreakBanner';
+import { Card, SectionHeader, StatTile, Button } from '../components/ui';
+
+/* ═══════════════════════════════════════════════════════════
+   SHIFT6 DASHBOARD v3.0 — Apple HIG design system
+   Zero borders. Token-driven colors. Elevation-based depth.
+   ═══════════════════════════════════════════════════════════ */
+
+// Jargon tooltip helper — wraps a term with an (i) icon
+function JargonTooltip({ term, definition }) {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {term}
+      <span
+        className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold text-[var(--text-tertiary)] bg-[var(--color-surface-1)] cursor-help select-none"
+        title={definition}
+      >
+        i
+      </span>
+    </span>
+  );
+}
+
+const PHASE_DEFINITIONS = {
+  'Base': 'foundation phase — moderate weight, higher reps, building work capacity',
+  'Peak': 'peak phase — heavy weight, low reps, building absolute strength',
+  'Deload': 'deload phase — light weight, active recovery, preparing for next cycle',
+  'Intensify': 'intensify phase — challenging weight, moderate reps, building strength',
+};
+
+function phaseDefinition(phase) {
+  return PHASE_DEFINITIONS[phase] || phase;
+}
+
+function CycleProgress({ week, day, totalCyclesCompleted }) {
+  const weekConfig = getWeekConfig(week);
+  const totalDays = 30;
+  const done = (week - 1) * 5 + Math.min(day - 1, 4);
+  const pct = Math.max(2, (done / totalDays) * 100);
+
+  return (
+    <Card padded={false} className="px-4 py-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="armor-text-caption">Cycle {totalCyclesCompleted + 1} · Week {week}</span>
+        <span className="text-[11px] font-bold text-[var(--color-accent)]">
+          <JargonTooltip term={weekConfig.phase} definition={phaseDefinition(weekConfig.phase)} />
+        </span>
+      </div>
+      <div className="armor-progress-track">
+        <div className="armor-progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="flex justify-between">
+        {PERIODIZATION.map(w => (
+          <span
+            key={w.week}
+            className={`text-[9px] font-bold tracking-wide transition-colors ${
+              w.week === week ? 'text-[var(--color-accent)]' :
+              w.week < week ? 'text-[var(--color-success)] opacity-60' :
+              'text-[var(--text-disabled)]'
+            }`}
+          >
+            {w.week}
+          </span>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function ModifierRow({ activeModifiers, onToggle }) {
+  // Only surface the modifier the user is most likely to toggle during
+  // a workout session (travel). The other modifiers (mvd, highFatigue,
+  // heavyMeal) are still in the data model and toggled via Settings,
+  // the post-workout summary, or programmatic flows like the adaptive
+  // deload recommendation. The roster lives in MODIFIERS so adding a
+  // new toggleable one requires only editing this filter.
+  const visibleModIds = ['travelMode'];
+  const entries = Object.values(MODIFIERS).filter(m => visibleModIds.includes(m.id));
+  // Short display labels to prevent truncation on 390px viewports
+  const labelOverride = {
+    mvdMode: 'MVD',
+    travelMode: 'Travel',
+  };
+  return (
+    <div>
+      <div className="flex gap-1.5">
+        {entries.map(mod => {
+            const active = activeModifiers[mod.id];

@@ -1,0 +1,101 @@
+                    <ExerciseIllustration
+                      exerciseId={todayWorkout.primaryLift.exerciseId}
+                      compact
+                      className="w-full mt-3"
+                    />
+                    {/* Inline plate visualizer so the user knows exactly what to load
+                        before tapping Start. Weight must be in the selected unit. */}
+                    <div className="mt-3 -mx-2">
+                      <PlateVisualizer
+                        weight={unit === 'kg' ? Math.round(todayWorkout.primaryLift.weight / 2.20462) : todayWorkout.primaryLift.weight}
+                        track={effectiveTrack}
+                        compact
+                        unit={unit}
+                      />
+                    </div>
+                    {activeModifiers.highFatigue && (
+                      <p className="armor-text-footnote text-[var(--color-warning)] mt-2 font-medium">
+                        CNS fatigue active — reduced to 60%, hypertrophy focus
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Accessories — plain text line, not chips.
+                       A user only needs to know what's coming after the
+                       primary lift; per-exercise chips waste vertical space. */}
+                  {todayWorkout.accessories.length > 0 && (
+                    <p className="text-[11px] text-[var(--text-tertiary)] leading-relaxed">
+                      Also: {todayWorkout.accessories.slice(0, 3).map(acc =>
+                        `${acc.exerciseId?.replace(/_/g, ' ')} · ${acc.sets}×${acc.reps}`
+                      ).join(' · ')}
+                    </p>
+                  )}
+                </div>
+                // The orange "First time?" callout below already covers
+                // this exact case — without this guard, empty-state
+                // users saw the same 1RM-setup prompt twice in close
+                // vertical proximity.
+              ) : null}
+
+              {/* Travel-mode substitution notice used to live here as
+                  small italic text. Now hoisted to <TravelModeBanner />
+                  above the card for visibility — see line 246. */}
+            </Card>
+
+            {/* 0-lbs nudge — shown when all active-track 1RMs are 0 */}
+            {allTrack1RMsZero && (
+              <Card padded={false} className="bg-[var(--color-warning-muted)] p-4 flex items-start gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[var(--color-warning)]">
+                    👋 First time? Set your 1RMs to get personalized weights.
+                  </p>
+                  <p className="armor-text-footnote text-[var(--color-warning)] mt-0.5 opacity-80">
+                    Takes 30 seconds. Skip if you'd rather enter as you go.
+                  </p>
+                </div>
+                {onNavigateToSettings && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={onNavigateToSettings}
+                    className="bg-[var(--color-warning)] shrink-0"
+                  >
+                    Set 1RMs
+                  </Button>
+                )}
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* ── DAILY HABITS ── */}
+        {/* Compact 2-row list instead of 4 stacked cards — keeps the habits
+            present (they count toward the streak) but stops them from
+            dominating the screen. */}
+        <div className="space-y-1.5">
+          <SectionHeader icon={<Check size={10} />} label="Daily Habits" />
+          <div className="flex flex-wrap gap-1.5">
+            {dailyHabits.map(habit => {
+              const done = dailyHabitState[habit.id] || false;
+              return (
+                <button
+                  key={habit.id}
+                  onClick={() => toggleHabit(habit.id)}
+                  className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all ${
+                    done
+                      ? 'bg-[var(--color-success)] text-[var(--elevation-0-bg)]'
+                      : 'bg-[var(--color-surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                  aria-pressed={done}
+                >
+                  {done ? <Check size={11} strokeWidth={3} /> : <span aria-hidden="true">{habit.icon}</span>}
+                  <span>{habit.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

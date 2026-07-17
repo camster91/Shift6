@@ -339,8 +339,15 @@ export function Shift6DataProvider({ children }) {
   // ── Updaters (unchanged) ─────────────────────────────────────
   const updatePreferences = useCallback((updates) =>
     setData(prev => ({ ...prev, preferences: { ...prev.preferences, ...updates } })), []);
-  const updateUserProfile = useCallback((updates) =>
-    setData(prev => ({ ...prev, userProfile: { ...prev.userProfile, ...updates } })), []);
+  const updateUserProfile = useCallback((updates) => {
+    // Sanitize and validate updates (defense in depth)
+    const sanitized = { ...updates };
+    if (updates.displayName !== undefined) {
+      const rawName = typeof updates.displayName === 'string' ? updates.displayName.trim() : '';
+      sanitized.displayName = rawName.replace(/<[^>]*>/g, '').slice(0, 50) || 'Athlete';
+    }
+    return setData(prev => ({ ...prev, userProfile: { ...prev.userProfile, ...sanitized } }));
+  }, []);
   const set1RM = useCallback((exerciseId, value) => {
     // Reject non-finite, zero, negative, or absurdly high values
     const cleanValue = Number(value);
@@ -386,12 +393,15 @@ export function Shift6DataProvider({ children }) {
         sanitized1RMs[k] = (Number.isFinite(clean) && clean >= 0 && clean <= 9999) ? clean : 0;
       }
     }
+    const rawName = typeof displayName === 'string' ? displayName.trim() : '';
+    const cleanName = rawName.replace(/<[^>]*>/g, '').slice(0, 50) || 'Athlete';
+
     setData(prev => ({
       ...prev,
       preferences: { ...prev.preferences, equipmentTrack: equipmentTrack || prev.preferences.equipmentTrack },
       userProfile: {
         ...prev.userProfile,
-        displayName: displayName || 'Athlete',
+        displayName: cleanName,
         estimated1RMs: { ...prev.userProfile.estimated1RMs, ...sanitized1RMs },
       },
       currentCycle: { ...prev.currentCycle, week: 1, day: 1, lastWorkoutDate: null, completedDaysThisWeek: [] },

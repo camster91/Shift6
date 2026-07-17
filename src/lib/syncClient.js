@@ -71,19 +71,66 @@ async function apiRequest(path, options = {}) {
   return res.json();
 }
 
+// ── Input validation and sanitization (defense in depth) ─────
+function validateRegisterInput(email, password, displayName) {
+  const cleanEmail = typeof email === 'string' ? email.trim() : '';
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!cleanEmail || cleanEmail.length > 254 || !emailRegex.test(cleanEmail)) {
+    throw new Error('Invalid email format');
+  }
+
+  const pwd = typeof password === 'string' ? password : '';
+  if (pwd.length < 8 || pwd.length > 128) {
+    throw new Error('Password must be between 8 and 128 characters');
+  }
+
+  let cleanName = null;
+  if (displayName !== null && displayName !== undefined) {
+    const rawName = typeof displayName === 'string' ? displayName.trim() : '';
+    // Strip simple HTML tags to avoid render injection artifacts
+    cleanName = rawName.replace(/<[^>]*>/g, '').slice(0, 50);
+  }
+
+  return { email: cleanEmail, password: pwd, displayName: cleanName };
+}
+
+function validateLoginInput(email, password) {
+  const cleanEmail = typeof email === 'string' ? email.trim() : '';
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!cleanEmail || cleanEmail.length > 254 || !emailRegex.test(cleanEmail)) {
+    throw new Error('Invalid email format');
+  }
+
+  const pwd = typeof password === 'string' ? password : '';
+  if (!pwd) {
+    throw new Error('Password is required');
+  }
+
+  return { email: cleanEmail, password: pwd };
+}
+
 export async function register(email, password, displayName) {
+  const validated = validateRegisterInput(email, password, displayName);
   const data = await apiRequest('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, password, displayName }),
+    body: JSON.stringify({
+      email: validated.email,
+      password: validated.password,
+      displayName: validated.displayName || undefined
+    }),
   });
   setAuth({ token: data.token, user: data.user });
   return data.user;
 }
 
 export async function login(email, password) {
+  const validated = validateLoginInput(email, password);
   const data = await apiRequest('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({
+      email: validated.email,
+      password: validated.password
+    }),
   });
   setAuth({ token: data.token, user: data.user });
   return data.user;

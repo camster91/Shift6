@@ -49,7 +49,7 @@ export default class ErrorBoundary extends Component {
             <div className="text-4xl mb-4" aria-hidden="true">⚠️</div>
             <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
             <p className="text-sm text-[var(--text-secondary)] mb-6">The app hit an unexpected error. Your data is safe — everything is stored locally.</p>
-            {this.state.error?.message && (
+            {import.meta.env.DEV && this.state.error?.message && (
               <details className="mb-6 text-left bg-[var(--color-surface-1)] rounded-xl p-3 text-xs">
                 <summary className="cursor-pointer text-[var(--text-secondary)] font-medium select-none">
                   Show error details

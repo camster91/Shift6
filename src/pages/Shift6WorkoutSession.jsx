@@ -24,9 +24,13 @@ class WorkoutErrorBoundary extends React.Component {
       return (
         <div className="flex flex-col flex-1 px-6 pt-4 text-center max-w-sm mx-auto w-full items-center justify-center space-y-4 p-4">
           <p className="text-[var(--text-secondary)] text-sm">Something went wrong in this set.</p>
-          <p className="text-[var(--color-cardio)] text-xs font-mono break-all">{(this.state.error?.message || String(this.state.error || 'unknown')).slice(0, 300)}</p>
-          {this.state.stack && (
-            <pre className="text-[9px] text-[var(--text-disabled)] text-left max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{this.state.stack}</pre>
+          {import.meta.env.DEV && (
+            <>
+              <p className="text-[var(--color-cardio)] text-xs font-mono break-all">{(this.state.error?.message || String(this.state.error || 'unknown')).slice(0, 300)}</p>
+              {this.state.stack && (
+                <pre className="text-[9px] text-[var(--text-disabled)] text-left max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{this.state.stack}</pre>
+              )}
+            </>
           )}
           <button
             onClick={() => this.setState({ hasError: false, error: null, stack: null })}

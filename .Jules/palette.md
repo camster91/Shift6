@@ -13,3 +13,7 @@ This journal tracks critical UX and accessibility insights discovered during dev
 ## 2026-07-10 - Improving Form Clarity and Accessibility
 **Learning:** Associating labels with inputs and providing context-aware feedback (e.g., dynamic button text for "Sign In" vs. "Create Account") significantly improves accessibility for screen readers and clarity for all users.
 **Action:** Always verify proper label-input associations and use dynamic loading states that accurately reflect the user's current operation.
+
+## 2026-07-11 - Accessible central tooltip with focusable buttons
+**Learning:** Using generic HTML `title` attributes on non-interactive `<span>` elements for tooltips is an accessibility anti-pattern. Keyboard and screen reader users cannot focus or discover them. Replacing them with focusable `<button type="button">` with focus-visible rings and explicit `aria-label` makes them universally accessible.
+**Action:** Always wrap informational jargon/tooltips in interactive `<button type="button">` elements with semantic ARIA labels and focus states.

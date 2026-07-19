@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, memo } from 'react';
 import { Play, Flame, Check, Shield, Zap } from 'lucide-react';
 import { useShift6Data } from '../context/Shift6DataContext';
 import {
@@ -139,6 +139,25 @@ function HabitCheck({ habit, done, onToggle }) {
   );
 }
 
+// Memoized so parent context updates don't re-render every pill; props are
+// stable (dailyHabits is useMemo'd, toggleHabit is a context useCallback).
+const HabitPill = memo(function HabitPill({ habit, done, onToggle }) {
+  return (
+    <button
+      onClick={() => onToggle(habit.id)}
+      className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all ${
+        done
+          ? 'bg-[var(--color-success)] text-[var(--elevation-0-bg)]'
+          : 'bg-[var(--color-surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+      }`}
+      aria-pressed={done}
+    >
+      {done ? <Check size={11} strokeWidth={3} /> : <span aria-hidden="true">{habit.icon}</span>}
+      <span>{habit.label}</span>
+    </button>
+  );
+});
+
 /* ── MAIN DASHBOARD ────────────────────────────────────────── */
 
 export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }) {
@@ -169,12 +188,17 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
   const streak = streakData.currentStreak || 0;
   const unit = preferences.unit || 'lbs';
 
-  // Filter 1RMs to the active track only
-  const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
-  const track1RMs = trackExerciseIds.map(id => estimated1RMs[id] || 0);
-  const top1RM = track1RMs.length > 0 ? Math.max(...track1RMs, 0) : 0;
-  const allTrack1RMsZero = track1RMs.length > 0 && track1RMs.every(v => v === 0);
-  const displayTop1RM = top1RM === 0 ? '—' : (unit === 'kg' ? `${Math.round(top1RM / 2.20462)}${unit}` : `${top1RM}${unit}`);
+  // Memoized: avoids re-filtering/re-mapping workoutHistory on every render.
+  const completedDates = useMemo(() =>
+    workoutHistory.filter(w => w.completed).map(w => w.date),
+    [workoutHistory]
+  );
+
+  // Memoized 1RM track check (unused top1RM/displayTop1RM derivations pruned).
+  const allTrack1RMsZero = useMemo(() => {
+    const trackExerciseIds = Object.keys(EXERCISE_TRACK).filter(id => EXERCISE_TRACK[id] === effectiveTrack);
+    return trackExerciseIds.length > 0 && trackExerciseIds.every(id => (estimated1RMs[id] || 0) === 0);
+  }, [effectiveTrack, estimated1RMs]);
 
   return (
     <div className="pb-32 space-y-5 max-w-lg mx-auto">
@@ -208,7 +232,7 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
           </p>
         </div>
         <WeekStrip
-          completedDates={workoutHistory.filter(w => w.completed).map(w => w.date)}
+          completedDates={completedDates}
           mvdDates={streakData.mvdDates || []}
         />
 
@@ -460,24 +484,14 @@ export default function Shift6Dashboard({ onStartWorkout, onNavigateToSettings }
         <div className="space-y-1.5">
           <SectionHeader icon={<Check size={10} />} label="Daily Habits" />
           <div className="flex flex-wrap gap-1.5">
-            {dailyHabits.map(habit => {
-              const done = dailyHabitState[habit.id] || false;
-              return (
-                <button
-                  key={habit.id}
-                  onClick={() => toggleHabit(habit.id)}
-                  className={`armor-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all ${
-                    done
-                      ? 'bg-[var(--color-success)] text-[var(--elevation-0-bg)]'
-                      : 'bg-[var(--color-surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-                  aria-pressed={done}
-                >
-                  {done ? <Check size={11} strokeWidth={3} /> : <span aria-hidden="true">{habit.icon}</span>}
-                  <span>{habit.label}</span>
-                </button>
-              );
-            })}
+            {dailyHabits.map(habit => (
+              <HabitPill
+                key={habit.id}
+                habit={habit}
+                done={dailyHabitState[habit.id] || false}
+                onToggle={toggleHabit}
+              />
+            ))}
           </div>
         </div>
       </div>

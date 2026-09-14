@@ -16,7 +16,9 @@ import {
 import { getLatestTrainingCycle, saveTrainingCycle } from '../src/db/cycleRepository';
 import { useLocalDatabase } from '../src/db/context';
 import { getCycleProgressSummary } from '../src/db/progressRepository';
+import { getUserProgramVersion, saveProgramVersion } from '../src/db/programRepository';
 import { demoCycle, demoProgramVersion } from '../src/domain/fixtures/home';
+import { demoProgram } from '../src/domain/fixtures/home';
 import { buildCycleProgressSummary, getWeekSixGuidance } from '../src/domain/progression';
 import { createTrainingCycle } from '../src/domain/cycle';
 import type { CycleProgressSummary } from '../src/domain/progression';
@@ -26,6 +28,8 @@ import { colors, spacing } from '../src/design/tokens';
 export default function CycleReviewScreen() {
   const database = useLocalDatabase();
   const [cycle, setCycle] = useState<TrainingCycle>(demoCycle);
+  const [program, setProgram] = useState(demoProgram);
+  const [programVersion, setProgramVersion] = useState(demoProgramVersion);
   const [summary, setSummary] = useState<CycleProgressSummary>(() =>
     buildCycleProgressSummary(getPlannedWorkoutCount(demoCycle), []),
   );
@@ -43,6 +47,11 @@ export default function CycleReviewScreen() {
     void (async () => {
       try {
         const latestCycle = (await getLatestTrainingCycle(database, 'guest-user')) ?? demoCycle;
+        const snapshot = await getUserProgramVersion(
+          database,
+          'guest-user',
+          latestCycle.programVersionId,
+        );
         const nextSummary = await getCycleProgressSummary(
           database,
           latestCycle.id,
@@ -50,6 +59,10 @@ export default function CycleReviewScreen() {
         );
         if (!active) return;
         setCycle(latestCycle);
+        if (snapshot) {
+          setProgram(snapshot.program);
+          setProgramVersion(snapshot.version);
+        }
         setSummary(nextSummary);
       } catch {
         if (active) setError('We could not load the local cycle review.');
@@ -73,7 +86,7 @@ export default function CycleReviewScreen() {
     );
   }
 
-  const guidance = getWeekSixGuidance(demoProgramVersion.cycleModel.weekSixMeaning);
+  const guidance = getWeekSixGuidance(programVersion.cycleModel.weekSixMeaning);
   const isComplete = cycle.status === 'complete';
 
   const handleRepeatCycle = async () => {
@@ -85,10 +98,13 @@ export default function CycleReviewScreen() {
       const nextCycle = createTrainingCycle({
         id: `cycle-guest-user-${demoCycle.id}-${Date.now()}`,
         userId: 'guest-user',
-        programVersion: demoProgramVersion,
+        programVersion,
         startedAt: new Date().toISOString(),
       });
-      if (database) await saveTrainingCycle(database, nextCycle);
+      if (database) {
+        await saveProgramVersion(database, 'guest-user', program, programVersion);
+        await saveTrainingCycle(database, nextCycle);
+      }
       router.replace('/');
     } catch (repeatError) {
       setError(

@@ -20,6 +20,7 @@ import { buildCycleProgressSummary, type CycleProgressSummary } from '../../src/
 import { useLocalDatabase } from '../../src/db/context';
 import { getLatestTrainingCycle } from '../../src/db/cycleRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
+import { getUserProgramVersion } from '../../src/db/programRepository';
 import {
   getCycleProgressSummary,
   getLatestCompletedWorkoutSets,
@@ -30,6 +31,7 @@ import { colors, spacing } from '../../src/design/tokens';
 export default function ProgressScreen() {
   const database = useLocalDatabase();
   const [currentCycle, setCurrentCycle] = useState(demoCycle);
+  const [currentProgram, setCurrentProgram] = useState(demoProgram);
   const [summary, setSummary] = useState<CycleProgressSummary>(() =>
     buildCycleProgressSummary(getPlannedWorkoutCount(demoCycle), []),
   );
@@ -52,22 +54,28 @@ export default function ProgressScreen() {
       try {
         const storedCycle = await getLatestTrainingCycle(database, 'guest-user');
         const cycle = storedCycle ?? demoCycle;
+        const snapshot = storedCycle
+          ? await getUserProgramVersion(database, 'guest-user', cycle.programVersionId)
+          : null;
+        const program = snapshot?.program ?? demoProgram;
+        const workout = snapshot?.version.workouts[0] ?? demoWorkout;
         const nextSummary = await getCycleProgressSummary(
           database,
           cycle.id,
           getPlannedWorkoutCount(cycle),
         );
-        const latestSets = await getLatestCompletedWorkoutSets(database, cycle.id, demoWorkout.id);
+        const latestSets = await getLatestCompletedWorkoutSets(database, cycle.id, workout.id);
         const profile = await getOnboardingProfile(database, 'guest-user');
         const nextSessionTargets = buildNextSessionTargets(
-          demoWorkout,
-          demoProgram.progressionStrategy,
+          workout,
+          program.progressionStrategy,
           latestSets,
           profile?.user.unitSystem ?? 'imperial',
         );
 
         if (!active) return;
         setCurrentCycle(cycle);
+        setCurrentProgram(program);
         setSummary(nextSummary);
         setNextTargets(latestSets.length > 0 ? nextSessionTargets : []);
       } catch {
@@ -110,7 +118,7 @@ export default function ProgressScreen() {
         <View style={styles.cardHeader}>
           <View>
             <Text variant="caption" tone="muted">
-              {demoProgram.title.toUpperCase()}
+              {currentProgram.title.toUpperCase()}
             </Text>
             <Text variant="h2">Week {currentCycle.currentWeek} of 6</Text>
           </View>

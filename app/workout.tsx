@@ -32,6 +32,7 @@ import {
   getActiveTrainingCycle,
 } from '../src/db/cycleRepository';
 import { getOnboardingProfile } from '../src/db/profileRepository';
+import { getUserProgramVersion } from '../src/db/programRepository';
 import { getLatestCompletedWorkoutSets } from '../src/db/progressRepository';
 import {
   completeWorkoutSession,
@@ -53,11 +54,16 @@ interface SetInputValues {
 export default function ActiveWorkoutScreen() {
   const database = useLocalDatabase();
   const { workoutId } = useLocalSearchParams<{ workoutId?: string }>();
-  const activeWorkout = useMemo(
-    () => demoProgramVersion.workouts.find((workout) => workout.id === workoutId) ?? demoWorkout,
-    [workoutId],
-  );
   const [activeCycle, setActiveCycle] = useState<TrainingCycle>(demoCycle);
+  const [activeProgram, setActiveProgram] = useState(demoProgram);
+  const [activeProgramVersion, setActiveProgramVersion] = useState(demoProgramVersion);
+  const activeWorkout = useMemo(
+    () =>
+      activeProgramVersion.workouts.find((workout) => workout.id === workoutId) ??
+      activeProgramVersion.workouts[0] ??
+      demoWorkout,
+    [activeProgramVersion, workoutId],
+  );
   const [startedAt] = useState(() => new Date().toISOString());
   const [values, setValues] = useState<Record<string, SetInputValues>>(() =>
     buildInitialValues(activeWorkout),
@@ -95,8 +101,17 @@ export default function ActiveWorkoutScreen() {
 
     let active = true;
     void getActiveTrainingCycle(database, 'guest-user')
-      .then((cycle) => {
-        if (active && cycle) setActiveCycle(cycle);
+      .then(async (cycle) => {
+        if (!active || !cycle) return;
+        setActiveCycle(cycle);
+        const snapshot = await getUserProgramVersion(
+          database,
+          'guest-user',
+          cycle.programVersionId,
+        );
+        if (!active || !snapshot) return;
+        setActiveProgram(snapshot.program);
+        setActiveProgramVersion(snapshot.version);
       })
       .catch(() => undefined)
       .finally(() => {
@@ -136,7 +151,7 @@ export default function ActiveWorkoutScreen() {
           previousSets.length > 0
             ? buildNextSessionTargets(
                 activeWorkout,
-                demoProgram.progressionStrategy,
+                activeProgram.progressionStrategy,
                 previousSets,
                 unitSystem,
               )

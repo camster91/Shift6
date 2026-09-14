@@ -6,6 +6,7 @@ import { Platform, StyleSheet, TextInput, View } from 'react-native';
 import { Button, Card, ErrorState, IconButton, Screen, Text } from '../src/components/ui';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { demoProgram, demoProgramVersion } from '../src/domain/fixtures/home';
+import { createTrainingCycle } from '../src/domain/cycle';
 import {
   addExerciseToWorkout,
   createCustomExercise,
@@ -14,6 +15,7 @@ import {
 } from '../src/domain/programBuilder';
 import type { Exercise } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
+import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { saveCustomExercise, saveProgramVersion } from '../src/db/programRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
 
@@ -35,6 +37,7 @@ export default function ProgramBuilderScreen() {
   const [customName, setCustomName] = useState('');
   const [customExercise, setCustomExercise] = useState<Exercise | null>(null);
   const [saving, setSaving] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,6 +115,36 @@ export default function ProgramBuilderScreen() {
       setError(saveError instanceof Error ? saveError.message : 'We could not save this program.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleStartCycle = async () => {
+    if (starting || saving) return;
+
+    setStarting(true);
+    setError(null);
+    try {
+      const program = renameProgram(draft.program, draft.program.title);
+      const startedAt = new Date().toISOString();
+      const cycle = createTrainingCycle({
+        id: `cycle-guest-user-${draft.program.id}`,
+        userId: 'guest-user',
+        programVersion: draft.version,
+        startedAt,
+      });
+      if (database) {
+        if (customExercise) {
+          await saveCustomExercise(database, 'guest-user', customExercise, startedAt);
+        }
+        await saveProgramVersion(database, 'guest-user', program, draft.version);
+        await saveTrainingCycle(database, cycle);
+      }
+      setDraft((current) => ({ ...current, program }));
+      router.replace('/');
+    } catch (startError) {
+      setError(startError instanceof Error ? startError.message : 'We could not start this cycle.');
+    } finally {
+      setStarting(false);
     }
   };
 
@@ -242,6 +275,18 @@ export default function ProgramBuilderScreen() {
         icon={<Ionicons name="checkmark" size={18} color={colors.white} />}
         style={styles.saveButton}
       />
+      <Button
+        label="Start this six-week cycle"
+        variant="secondary"
+        onPress={() => void handleStartCycle()}
+        loading={starting}
+        icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
+        style={styles.startButton}
+      />
+      <Text variant="caption" tone="muted" style={styles.startNote}>
+        Starting snapshots this private version. The public template and completed history stay
+        unchanged.
+      </Text>
     </Screen>
   );
 }
@@ -319,5 +364,12 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: spacing.xl,
+  },
+  startButton: {
+    marginTop: spacing.md,
+  },
+  startNote: {
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
 });

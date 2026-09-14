@@ -363,10 +363,10 @@ The first #275 editing surface now supports a safe user-owned draft path:
 - `createProgramCopy` deep-clones a curated program version into new workout, exercise, and set IDs, records `ownerId`/`sourceProgramId`, and marks the copy as non-template draft data;
 - builder operations are immutable and validate set counts and reorder completeness before returning a new version snapshot;
 - `createCustomExercise` creates a draft, user-owned record with the same tracking and safety fields as curated exercises;
-- `app/builder.tsx` exposes a small, reviewable UI for naming a copy, adding an accessory or custom movement, and saving the draft locally;
+- `app/builder.tsx` exposes a small, reviewable UI for naming a copy, adding an accessory or custom movement, saving the draft locally, and starting a cycle from that private snapshot;
 - canonical templates and existing completed-session records are never mutated by these operations.
 
-The builder does not yet publish versions, support full drag-and-drop/superset/circuit editing, or start a custom cycle. Those are intentionally separate increments.
+The builder does not yet publish versions or support full drag-and-drop/superset/circuit editing. Those are intentionally separate increments. Active workout routing now resolves the stored user-owned snapshot when one exists; the editing surface still needs broader workout block controls.
 
 ## Sync outbox implementation checkpoint — 2026-09-13
 

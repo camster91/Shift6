@@ -17,6 +17,7 @@ import { useLocalDatabase } from '../src/db/context';
 import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { createTrainingCycle } from '../src/domain/cycle';
 import { demoProgram, demoProgramVersion } from '../src/domain/fixtures/home';
+import { saveProgramVersion } from '../src/db/programRepository';
 import { colors, spacing } from '../src/design/tokens';
 
 export default function ProgramDetailScreen() {
@@ -37,7 +38,10 @@ export default function ProgramDetailScreen() {
         programVersion: demoProgramVersion,
         startedAt,
       });
-      if (database) await saveTrainingCycle(database, cycle);
+      if (database) {
+        await saveProgramVersion(database, 'guest-user', demoProgram, demoProgramVersion);
+        await saveTrainingCycle(database, cycle);
+      }
       router.replace('/');
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : 'We could not start this cycle.');

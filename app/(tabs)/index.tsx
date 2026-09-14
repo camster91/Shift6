@@ -14,6 +14,9 @@ import {
   Text,
   WorkoutCard,
 } from '../../src/components/ui';
+import { useLocalDatabase } from '../../src/db/context';
+import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
+import { getUserProgramVersion } from '../../src/db/programRepository';
 import {
   demoCycle,
   demoProgram,
@@ -21,21 +24,30 @@ import {
   demoUser,
   demoWorkout,
 } from '../../src/domain/fixtures/home';
-import { useLocalDatabase } from '../../src/db/context';
-import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
 import { colors, radii, spacing } from '../../src/design/tokens';
 
 export default function HomeScreen() {
   const database = useLocalDatabase();
   const [currentCycle, setCurrentCycle] = useState(demoCycle);
+  const [currentProgram, setCurrentProgram] = useState(demoProgram);
+  const [todayWorkout, setTodayWorkout] = useState(demoWorkout);
 
   useEffect(() => {
     if (!database) return;
 
     let active = true;
     void getActiveTrainingCycle(database, 'guest-user')
-      .then((cycle) => {
-        if (active && cycle) setCurrentCycle(cycle);
+      .then(async (cycle) => {
+        if (!active || !cycle) return;
+        setCurrentCycle(cycle);
+        const snapshot = await getUserProgramVersion(
+          database,
+          'guest-user',
+          cycle.programVersionId,
+        );
+        if (!active || !snapshot) return;
+        setCurrentProgram(snapshot.program);
+        setTodayWorkout(snapshot.version.workouts[0] ?? demoWorkout);
       })
       .catch(() => undefined);
 
@@ -81,7 +93,7 @@ export default function HomeScreen() {
               Week {currentCycle.currentWeek} of 6
             </Text>
             <Text variant="small" tone="muted">
-              {demoProgram.title} · {currentCycle.weeks[currentCycle.currentWeek - 1]?.phase}
+              {currentProgram.title} · {currentCycle.weeks[currentCycle.currentWeek - 1]?.phase}
             </Text>
           </View>
           <View style={styles.cycleBadge}>
@@ -104,14 +116,21 @@ export default function HomeScreen() {
           </Text>
           <Text variant="h2">Ready when you are.</Text>
         </View>
-        <Chip label={`${demoWorkout.estimatedDurationMinutes} min`} selected />
+        <Chip label={`${todayWorkout.estimatedDurationMinutes} min`} selected />
       </View>
 
-      <WorkoutCard workout={demoWorkout} onPress={() => router.push('/workout')} />
+      <WorkoutCard
+        workout={todayWorkout}
+        onPress={() =>
+          router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
+        }
+      />
       <Button
         label="Start workout"
         icon={<Ionicons name="arrow-forward" size={18} color={colors.white} />}
-        onPress={() => router.push('/workout')}
+        onPress={() =>
+          router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
+        }
         style={styles.primaryAction}
       />
 

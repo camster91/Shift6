@@ -443,6 +443,8 @@ The builder now also exposes deterministic substitution choices for catalogue-ba
 
 The builder can now search and append a catalogue exercise to any private workout. Default targets are selected by the typed exercise tracking mode (conservative reps, time, distance, or combined cardio target) and remain editable through the existing target boundary; the picker does not publish draft content or bypass equipment/review status.
 
+Programs now exposes a separate blank-builder entry point. It creates an empty private six-week version, treats newly added workouts as required for cycle advancement, and refuses to start until at least one required workout exists. Template-copy editing retains its optional-workout behavior.
+
 Each builder mount now allocates a timestamped user-owned program/version namespace. A later builder visit cannot upsert the snapshot referenced by an earlier completed cycle, and custom exercise IDs are scoped to that namespace. This preserves the immutable-history boundary even though the current draft editor is intentionally session-scoped.
 
 Active-workout substitution now follows the same copy-on-write rule. The replacement is written to a new private `ProgramVersion` ID, the active cycle points to that revision, and an unfinished session's version pointer is updated and re-queued. Workout/exercise/set identities are preserved inside the revision, while completed sessions continue resolving against the version they recorded.

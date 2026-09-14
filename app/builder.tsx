@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
@@ -13,6 +13,7 @@ import { searchExercises } from '../src/domain/exerciseCatalog';
 import {
   addExerciseToWorkout,
   addWorkoutToProgram,
+  createBlankProgram,
   createCustomExercise,
   createProgramCopy,
   removeExerciseFromWorkout,
@@ -30,7 +31,9 @@ import { colors, radii, spacing } from '../src/design/tokens';
 
 export default function ProgramBuilderScreen() {
   const database = useLocalDatabase();
-  const [draft, setDraft] = useState(() => createInitialBuilderDraft());
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isBlankBuilder = mode === 'blank';
+  const [draft, setDraft] = useState(() => createInitialBuilderDraft(isBlankBuilder));
   const [customName, setCustomName] = useState('');
   const [newWorkoutTitle, setNewWorkoutTitle] = useState('');
   const [newWorkoutSequence, setNewWorkoutSequence] = useState(0);
@@ -114,7 +117,7 @@ export default function ProgramBuilderScreen() {
         focus: 'mixed',
         estimatedDurationMinutes: 20,
         equipmentIds: ['equipment-bodyweight'],
-        isOptional: true,
+        isOptional: !isBlankBuilder,
       });
       setDraft((current) => ({ ...current, version }));
       setNewWorkoutSequence(nextSequence);
@@ -180,6 +183,11 @@ export default function ProgramBuilderScreen() {
   const handleStartCycle = async () => {
     if (starting || saving) return;
 
+    if (!draft.version.workouts.some((workout) => !workout.isOptional)) {
+      setError('Add at least one required workout before starting a six-week cycle.');
+      return;
+    }
+
     setStarting(true);
     setError(null);
     try {
@@ -222,11 +230,12 @@ export default function ProgramBuilderScreen() {
       </View>
 
       <Text variant="display" accessibilityRole="header" style={styles.title}>
-        Make it yours.
+        {isBlankBuilder ? 'Build from first principles.' : 'Make it yours.'}
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
-        This is a private copy of Barbell 30. Your edits create a user-owned version and leave the
-        public template and completed history unchanged.
+        {isBlankBuilder
+          ? 'Start with an empty six-week plan, add the sessions you need, and keep the whole draft private.'
+          : 'This is a private copy of Barbell 30. Your edits create a user-owned version and leave the public template and completed history unchanged.'}
       </Text>
 
       <Text variant="smallMedium" style={styles.fieldLabel}>
@@ -252,8 +261,9 @@ export default function ProgramBuilderScreen() {
           {draft.version.workouts.length} workouts · six-week model retained
         </Text>
         <Text variant="small" tone="muted">
-          The source version is copied before editing, so future template changes cannot rewrite
-          this draft or its history.
+          {isBlankBuilder
+            ? 'This draft starts empty and remains private until you choose to save or start it.'
+            : 'The source version is copied before editing, so future template changes cannot rewrite this draft or its history.'}
         </Text>
       </Card>
 
@@ -508,19 +518,22 @@ export default function ProgramBuilderScreen() {
         </Card>
       ))}
 
-      <Button
-        label="Add plank to Strength A"
-        variant="secondary"
-        icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
-        onPress={handleAddPlank}
-        style={styles.addButton}
-      />
+      {!isBlankBuilder ? (
+        <Button
+          label={`Add plank to ${firstWorkout?.title ?? 'first workout'}`}
+          variant="secondary"
+          icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
+          onPress={handleAddPlank}
+          disabled={!firstWorkout}
+          style={styles.addButton}
+        />
+      ) : null}
 
       <Text variant="smallMedium" style={styles.fieldLabel}>
-        Add an optional workout
+        {isBlankBuilder ? 'Add a required workout' : 'Add an optional workout'}
       </Text>
       <TextInput
-        accessibilityLabel="Optional workout name"
+        accessibilityLabel={isBlankBuilder ? 'Required workout name' : 'Optional workout name'}
         onChangeText={setNewWorkoutTitle}
         placeholder="e.g. Saturday mobility"
         placeholderTextColor={colors.inkMuted}
@@ -528,14 +541,16 @@ export default function ProgramBuilderScreen() {
         value={newWorkoutTitle}
       />
       <Button
-        label="Add optional workout"
+        label={isBlankBuilder ? 'Add required workout' : 'Add optional workout'}
         variant="ghost"
         icon={<Ionicons name="calendar-outline" size={18} color={colors.ink} />}
         onPress={handleAddWorkout}
         style={styles.customButton}
       />
       <Text variant="caption" tone="muted" style={styles.optionalWorkoutNote}>
-        Optional sessions add flexibility without changing the required weekly completion count.
+        {isBlankBuilder
+          ? 'Blank plans use required sessions for cycle advancement. Add at least one before starting.'
+          : 'Optional sessions add flexibility without changing the required weekly completion count.'}
       </Text>
 
       <Text variant="smallMedium" style={styles.fieldLabel}>
@@ -594,7 +609,17 @@ export default function ProgramBuilderScreen() {
   );
 }
 
-function createInitialBuilderDraft() {
+function createInitialBuilderDraft(isBlankBuilder: boolean) {
+  if (isBlankBuilder) {
+    const programId = `program-blank-guest-user-${Date.now()}`;
+    return createBlankProgram({
+      userId: 'guest-user',
+      newProgramId: programId,
+      newVersionId: `${programId}-version-1`,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
   const copyId = `program-custom-barbell-30-guest-${Date.now()}`;
   return createProgramCopy({
     sourceProgram: demoProgram,

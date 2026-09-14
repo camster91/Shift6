@@ -24,6 +24,13 @@ export interface CreateProgramCopyInput {
   createdAt: string;
 }
 
+export interface CreateBlankProgramInput {
+  userId: string;
+  newProgramId: string;
+  newVersionId: string;
+  createdAt: string;
+}
+
 export interface AddExerciseInput {
   exerciseId: string;
   setCount?: number;
@@ -108,6 +115,60 @@ export function createProgramVersionRevision(
       })),
     })),
   };
+}
+
+export function createBlankProgram({
+  userId,
+  newProgramId,
+  newVersionId,
+  createdAt,
+}: CreateBlankProgramInput): ProgramCopy {
+  const programId = newProgramId.trim();
+  const versionId = newVersionId.trim();
+  if (!programId || !versionId) {
+    throw new Error('A custom program needs stable program and version IDs.');
+  }
+
+  const program: Program = {
+    id: programId,
+    slug: `${programId}-slug`,
+    title: 'My SHIFT6 plan',
+    description: 'A private six-week plan built around the way you train.',
+    goals: ['general-health'],
+    targetUser: 'A user-created training plan.',
+    experience: ['beginner', 'intermediate', 'advanced'],
+    daysPerWeek: 3,
+    sessionLengthMinutes: 30,
+    requiredEquipmentIds: [],
+    optionalEquipmentIds: [],
+    progressionStrategy: 'double-progression',
+    currentVersionId: versionId,
+    isTemplate: false,
+    ownerId: userId,
+  };
+  const version: ProgramVersion = {
+    id: versionId,
+    programId,
+    version: 1,
+    status: 'draft',
+    cycleModel: {
+      lengthWeeks: 6,
+      weekSixMeaning: 'normal-training',
+      phases: {
+        1: 'Establish',
+        2: 'Repeatability',
+        3: 'Build',
+        4: 'Build',
+        5: 'Challenge',
+        6: 'Review',
+      },
+    },
+    workouts: [],
+    progressionRuleIds: [],
+    createdAt,
+  };
+
+  return { program, version };
 }
 
 export function renameProgram(program: Program, title: string): Program {

@@ -2,6 +2,7 @@ import { demoProgram, demoProgramVersion } from './fixtures/home';
 import {
   addExerciseToWorkout,
   addWorkoutToProgram,
+  createBlankProgram,
   createCustomExercise,
   createProgramCopy,
   createProgramVersionRevision,
@@ -13,6 +14,27 @@ import {
 } from './programBuilder';
 
 describe('immutable custom program builder', () => {
+  it('creates an empty private six-week program without template ownership', () => {
+    const blank = createBlankProgram({
+      userId: 'guest-user',
+      newProgramId: 'program-blank-1',
+      newVersionId: 'program-blank-1-version-1',
+      createdAt: '2026-09-14T15:00:00.000Z',
+    });
+
+    expect(blank.program).toMatchObject({
+      title: 'My SHIFT6 plan',
+      isTemplate: false,
+      ownerId: 'guest-user',
+      currentVersionId: blank.version.id,
+    });
+    expect(blank.version).toMatchObject({
+      programId: blank.program.id,
+      status: 'draft',
+      workouts: [],
+    });
+  });
+
   it('copies a template into a user-owned version without sharing mutable workout objects', () => {
     const copy = createProgramCopy({
       sourceProgram: demoProgram,

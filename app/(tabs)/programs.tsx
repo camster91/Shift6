@@ -222,6 +222,14 @@ export default function ProgramsScreen() {
         style={styles.builderButton}
       />
 
+      <Button
+        label="Build from blank"
+        variant="ghost"
+        icon={<Ionicons name="add-circle-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push({ pathname: '/builder', params: { mode: 'blank' } })}
+        style={styles.builderButton}
+      />
+
       <Text variant="h2" style={styles.moreProgramsTitle}>
         More ways to train
       </Text>

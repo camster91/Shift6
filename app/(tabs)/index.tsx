@@ -53,7 +53,11 @@ export default function HomeScreen() {
       ])
         .then(async ([profile, cycle]) => {
           if (!active) return;
-          if (profile) setCurrentUser(profile.user);
+          if (!profile) {
+            router.replace('/onboarding');
+            return;
+          }
+          setCurrentUser(profile.user);
           if (!cycle) return;
           const [snapshot, completedIds] = await Promise.all([
             getUserProgramVersion(database, 'guest-user', cycle.programVersionId),

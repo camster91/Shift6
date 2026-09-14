@@ -500,3 +500,5 @@ The Home surface now keeps its presentation tied to the local source of truth wh
 - the web preview continues to use typed Barbell 30 fixtures because it intentionally has no durable SQLite provider.
 
 The schedule selector is pure domain logic with deterministic tests. Calendar-driven reminders, user-selected training weekdays, and multi-workout-per-day presentation remain later product surfaces.
+
+The native Home boundary also treats a missing local onboarding profile as a first-run state and routes to onboarding before showing the demo shell. The web provider deliberately has no database and therefore remains a navigable preview surface rather than pretending to implement first-install persistence.

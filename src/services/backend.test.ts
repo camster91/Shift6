@@ -34,6 +34,7 @@ describe('backend boundary', () => {
           JSON.stringify({
             acknowledgedMutationIds: ['outbox-1', 'outbox-1'],
             rejectedMutationIds: [],
+            conflicts: [{ mutationId: 'outbox-1', code: 'version-conflict' }],
             serverVersion: 3,
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
@@ -44,6 +45,7 @@ describe('backend boundary', () => {
     await expect(client.sync([mutation])).resolves.toEqual({
       acknowledgedMutationIds: ['outbox-1'],
       rejectedMutationIds: [],
+      conflicts: [{ mutationId: 'outbox-1', code: 'version-conflict' }],
       serverVersion: 3,
     });
     expect(requests[0]?.url).toBe('https://api.example.test/v1/sync');
@@ -75,6 +77,13 @@ describe('backend boundary', () => {
     );
     expect(() =>
       parseSyncResult({ acknowledgedMutationIds: [], rejectedMutationIds: [2] }),
+    ).toThrow(BackendProtocolError);
+    expect(() =>
+      parseSyncResult({
+        acknowledgedMutationIds: [],
+        rejectedMutationIds: [],
+        conflicts: [{ mutationId: 'outbox-1', code: 'unknown-conflict' }],
+      }),
     ).toThrow(BackendProtocolError);
   });
 });

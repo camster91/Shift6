@@ -11,6 +11,7 @@ function runResult(overrides: Partial<Awaited<ReturnType<SyncFlush>>> = {}) {
     attemptedMutationIds: ['mutation-1'],
     acknowledgedMutationIds: ['mutation-1'],
     rejectedMutationIds: [],
+    conflictedMutationIds: [],
     failedMutationIds: [],
     ...overrides,
   };
@@ -61,6 +62,18 @@ describe('flushWhenOnline', () => {
 
     expect(failed.outcome).toBe('failed');
     expect(partial.outcome).toBe('partial');
+  });
+
+  it('surfaces a conflict outcome for user review', async () => {
+    const conflict = await flushWhenOnline(
+      database,
+      backend,
+      { getStatus: async () => 'online' },
+      50,
+      async () => runResult({ conflictedMutationIds: ['mutation-1'] }),
+    );
+
+    expect(conflict.outcome).toBe('conflict');
   });
 
   it('distinguishes an already-empty outbox', async () => {

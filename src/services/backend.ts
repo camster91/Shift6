@@ -1,4 +1,10 @@
-import type { BackendClient, SyncMutation, SyncResult } from './contracts';
+import type {
+  BackendClient,
+  SyncConflict,
+  SyncConflictCode,
+  SyncMutation,
+  SyncResult,
+} from './contracts';
 
 export type BackendAvailability = 'unconfigured' | 'adapter-pending' | 'available';
 
@@ -96,10 +102,16 @@ export function parseSyncResult(value: unknown): SyncResult {
     throw new BackendProtocolError('The sync response did not contain mutation results.');
   }
 
+  const conflicts = syncConflicts(value.conflicts);
+  if (conflicts === null) {
+    throw new BackendProtocolError('The sync response contained invalid conflict details.');
+  }
+
   const serverVersion = typeof value.serverVersion === 'number' ? value.serverVersion : undefined;
   return {
     acknowledgedMutationIds: unique(acknowledgedMutationIds),
     rejectedMutationIds: unique(rejectedMutationIds),
+    ...(conflicts.length > 0 ? { conflicts } : {}),
     ...(serverVersion === undefined ? {} : { serverVersion }),
   };
 }
@@ -110,6 +122,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function stringArray(value: unknown): string[] | null {
   return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value : null;
+}
+
+function syncConflicts(value: unknown): SyncConflict[] | null {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) return null;
+
+  const conflicts: SyncConflict[] = [];
+  for (const item of value) {
+    if (!isRecord(item) || typeof item.mutationId !== 'string' || !isConflictCode(item.code)) {
+      return null;
+    }
+    conflicts.push({ mutationId: item.mutationId, code: item.code });
+  }
+  return conflicts;
+}
+
+function isConflictCode(value: unknown): value is SyncConflictCode {
+  return (
+    value === 'version-conflict' ||
+    value === 'ownership-conflict' ||
+    value === 'validation-conflict'
+  );
 }
 
 function unique(values: readonly string[]): string[] {

@@ -684,3 +684,13 @@ six-week funnel milestones (`onboarding_started`, `onboarding_completed`, `progr
 coach text, raw health samples, email, and location are not accepted by the allowlist. A concrete
 crash/analytics provider, retention policy implementation, and production observability backend
 remain release-gated work.
+
+## Sync conflict checkpoint — 2026-09-14
+
+The sync result contract now distinguishes typed `version-conflict`, `ownership-conflict`, and
+`validation-conflict` outcomes from ordinary rejected or failed mutations. The outbox retains
+conflicted rows, never deletes an ID reported as both acknowledged and conflicted, and records a
+safe review-required error for retry/inspection. Coordinator/runtime state exposes `conflict`, and
+Profile renders an accessible “Sync needs review” banner so a future-plan collision is not hidden
+as a successful sync. Conflict resolution UI and server-side version policy remain separate work;
+the mobile client does not auto-merge or auto-overwrite user plans.

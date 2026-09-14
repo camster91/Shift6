@@ -18,7 +18,7 @@ export type SyncFlush = (
 
 export interface SyncCoordinatorResult {
   connectivity: ConnectivityStatus;
-  outcome: 'offline' | 'empty' | 'synced' | 'partial' | 'failed';
+  outcome: 'offline' | 'empty' | 'synced' | 'partial' | 'conflict' | 'failed';
   run: SyncRunResult | null;
 }
 
@@ -41,6 +41,9 @@ export async function flushWhenOnline(
   const run = await flush(database, backend, limit);
   if (run.attemptedMutationIds.length === 0) {
     return { connectivity: status, outcome: 'empty', run };
+  }
+  if (run.conflictedMutationIds.length > 0) {
+    return { connectivity: status, outcome: 'conflict', run };
   }
   if (run.failedMutationIds.length > 0) {
     return { connectivity: status, outcome: 'failed', run };

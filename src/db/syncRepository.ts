@@ -15,6 +15,7 @@ export interface SyncRunResult {
   attemptedMutationIds: string[];
   acknowledgedMutationIds: string[];
   rejectedMutationIds: string[];
+  conflictedMutationIds: string[];
   failedMutationIds: string[];
 }
 
@@ -53,6 +54,7 @@ export async function flushSyncOutbox(
       attemptedMutationIds,
       acknowledgedMutationIds: [],
       rejectedMutationIds: [],
+      conflictedMutationIds: [],
       failedMutationIds: [],
     };
   }
@@ -67,21 +69,38 @@ export async function flushSyncOutbox(
       attemptedMutationIds,
       acknowledgedMutationIds: [],
       rejectedMutationIds: [],
+      conflictedMutationIds: [],
       failedMutationIds: attemptedMutationIds,
     };
   }
 
   const attemptedSet = new Set(attemptedMutationIds);
-  const rejectedMutationIds = uniqueKnownIds(result.rejectedMutationIds, attemptedSet);
+  const conflictedMutationIds = uniqueKnownIds(
+    (result.conflicts ?? []).map((conflict) => conflict.mutationId),
+    attemptedSet,
+  );
+  const conflictedSet = new Set(conflictedMutationIds);
+  const rejectedMutationIds = uniqueKnownIds(result.rejectedMutationIds, attemptedSet).filter(
+    (id) => !conflictedSet.has(id),
+  );
   const rejectedSet = new Set(rejectedMutationIds);
   const acknowledgedMutationIds = uniqueKnownIds(
     result.acknowledgedMutationIds,
     attemptedSet,
-  ).filter((id) => !rejectedSet.has(id));
-  const resolvedIds = new Set([...acknowledgedMutationIds, ...rejectedMutationIds]);
+  ).filter((id) => !rejectedSet.has(id) && !conflictedSet.has(id));
+  const resolvedIds = new Set([
+    ...acknowledgedMutationIds,
+    ...rejectedMutationIds,
+    ...conflictedMutationIds,
+  ]);
   const failedMutationIds = attemptedMutationIds.filter((id) => !resolvedIds.has(id));
 
   await acknowledgeSyncMutations(database, acknowledgedMutationIds);
+  await recordSyncFailure(
+    database,
+    conflictedMutationIds,
+    'The backend reported a conflict. Review is required before this change can sync.',
+  );
   await recordSyncFailure(database, rejectedMutationIds, 'The backend rejected this mutation.');
   await recordSyncFailure(
     database,
@@ -93,6 +112,7 @@ export async function flushSyncOutbox(
     attemptedMutationIds,
     acknowledgedMutationIds,
     rejectedMutationIds,
+    conflictedMutationIds,
     failedMutationIds,
   };
 }

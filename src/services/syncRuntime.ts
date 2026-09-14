@@ -5,7 +5,8 @@ import type { BackendClient } from './contracts';
 import { flushWhenOnline, type SyncCoordinatorResult } from './syncCoordinator';
 import type { ConnectivityProvider } from './syncCoordinator';
 
-export type SyncRuntimeState = 'idle' | 'offline' | 'syncing' | 'synced' | 'partial' | 'failed';
+export type SyncRuntimeState =
+  'idle' | 'offline' | 'syncing' | 'synced' | 'partial' | 'conflict' | 'failed';
 
 export interface AuthenticatedSyncResult {
   kind: 'skipped-unauthenticated' | 'attempted';
@@ -62,6 +63,7 @@ export async function runAuthenticatedSync(
 export function syncRuntimeStateFromResult(result: SyncCoordinatorResult | null): SyncRuntimeState {
   if (!result) return 'idle';
   if (result.outcome === 'offline') return 'offline';
+  if (result.outcome === 'conflict') return 'conflict';
   if (result.outcome === 'failed') return 'failed';
   if (result.outcome === 'partial') return 'partial';
   if (result.outcome === 'synced') return 'synced';

@@ -50,6 +50,7 @@ describe('syncRepository', () => {
       attemptedMutationIds: ['outbox-set-1', 'outbox-set-2'],
       acknowledgedMutationIds: ['outbox-set-1'],
       rejectedMutationIds: ['outbox-set-2'],
+      conflictedMutationIds: [],
       failedMutationIds: [],
     });
     expect(calls[0]?.sql).toContain('DELETE FROM sync_outbox');
@@ -77,6 +78,7 @@ describe('syncRepository', () => {
       attemptedMutationIds: ['outbox-set-1'],
       acknowledgedMutationIds: [],
       rejectedMutationIds: [],
+      conflictedMutationIds: [],
       failedMutationIds: ['outbox-set-1'],
     });
     expect(calls[0]?.sql).toContain('UPDATE sync_outbox');
@@ -102,9 +104,40 @@ describe('syncRepository', () => {
     await expect(flushSyncOutbox(database, backend)).resolves.toMatchObject({
       acknowledgedMutationIds: [],
       rejectedMutationIds: ['outbox-set-1'],
+      conflictedMutationIds: [],
       failedMutationIds: [],
     });
     expect(calls.some((call) => call.sql.includes('DELETE FROM sync_outbox'))).toBe(false);
     expect(calls[0]?.sql).toContain('UPDATE sync_outbox');
+  });
+
+  it('retains a version conflict and never acknowledges it', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const database = {
+      getAllAsync: async () => [pendingRow],
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+    } as unknown as SQLiteDatabase;
+    const backend: BackendClient = {
+      sync: async () => ({
+        acknowledgedMutationIds: ['outbox-set-1'],
+        rejectedMutationIds: [],
+        conflicts: [{ mutationId: 'outbox-set-1', code: 'version-conflict' }],
+      }),
+    };
+
+    await expect(flushSyncOutbox(database, backend)).resolves.toMatchObject({
+      acknowledgedMutationIds: [],
+      rejectedMutationIds: [],
+      conflictedMutationIds: ['outbox-set-1'],
+      failedMutationIds: [],
+    });
+    expect(calls.some((call) => call.sql.includes('DELETE FROM sync_outbox'))).toBe(false);
+    expect(calls[0]?.params).toEqual([
+      'The backend reported a conflict. Review is required before this change can sync.',
+      'outbox-set-1',
+    ]);
   });
 });

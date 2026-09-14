@@ -247,4 +247,9 @@ events through a privacy-safe allowlist; free-text, coach conversation, raw heal
 and location remain excluded. A production analytics/crash provider, retention controls, and
 device-level observability verification remain open #272/#280/#281 work.
 
+The sync boundary now distinguishes typed backend conflicts from transient failures. Version,
+ownership, and validation conflicts remain queued, are never auto-merged, and surface through a
+runtime `conflict` state and an accessible Profile banner. Conflict-resolution UX, server-side
+version policy, authenticated backend behavior, and native reconnect proof remain open #272 work.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

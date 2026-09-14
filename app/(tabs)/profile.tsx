@@ -49,9 +49,11 @@ export default function ProfileScreen() {
       ? ('offline' as const)
       : syncRuntime.state === 'syncing'
         ? ('syncing' as const)
-        : syncRuntime.state === 'failed' || syncRuntime.state === 'partial'
-          ? ('sync-failed' as const)
-          : null;
+        : syncRuntime.state === 'conflict'
+          ? ('sync-conflict' as const)
+          : syncRuntime.state === 'failed' || syncRuntime.state === 'partial'
+            ? ('sync-failed' as const)
+            : null;
 
   const handleExport = async () => {
     if (!database) {

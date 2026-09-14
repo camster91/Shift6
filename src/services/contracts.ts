@@ -35,9 +35,17 @@ export interface SyncMutation {
   createdAt: ISODateString;
 }
 
+export type SyncConflictCode = 'version-conflict' | 'ownership-conflict' | 'validation-conflict';
+
+export interface SyncConflict {
+  mutationId: EntityId;
+  code: SyncConflictCode;
+}
+
 export interface SyncResult {
   acknowledgedMutationIds: EntityId[];
   rejectedMutationIds: EntityId[];
+  conflicts?: SyncConflict[];
   serverVersion?: number;
 }
 

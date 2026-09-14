@@ -5,7 +5,7 @@ import { colors, radii, spacing } from '../../design/tokens';
 import { Shift6Icon } from './Shift6Icon';
 import { Text } from './Text';
 
-export type OfflineStatus = 'offline' | 'syncing' | 'sync-failed';
+export type OfflineStatus = 'offline' | 'syncing' | 'sync-failed' | 'sync-conflict';
 
 export interface OfflineBannerProps {
   status: OfflineStatus;
@@ -25,6 +25,11 @@ const copy: Record<OfflineStatus, { title: string; message: string; icon: Shift6
   'sync-failed': {
     title: 'Sync paused',
     message: 'Your workout is safe on this device. We’ll retry later.',
+    icon: 'warning',
+  },
+  'sync-conflict': {
+    title: 'Sync needs review',
+    message: 'A plan change was not applied automatically. Your local data is safe.',
     icon: 'warning',
   },
 };

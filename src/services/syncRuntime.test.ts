@@ -113,6 +113,7 @@ describe('authenticated sync runtime', () => {
     expect(attempted.result).toBe(expected);
     expect(syncRuntimeStateFromResult(expected)).toBe('synced');
     expect(syncRuntimeStateFromResult(result('partial'))).toBe('partial');
+    expect(syncRuntimeStateFromResult(result('conflict'))).toBe('conflict');
     expect(syncRuntimeStateFromResult(result('failed'))).toBe('failed');
     expect(syncRuntimeStateFromResult(result('offline'))).toBe('offline');
   });

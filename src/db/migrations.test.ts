@@ -111,4 +111,12 @@ describe('local database migrations', () => {
       'FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE',
     );
   });
+
+  it('stores the preferred training time needed for local schedule decisions', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain(
+      "ADD COLUMN preferred_training_time TEXT NOT NULL DEFAULT 'morning'",
+    );
+  });
 });

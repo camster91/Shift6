@@ -14,6 +14,7 @@ interface UserProfileRow {
   experience: string;
   training_days_per_week: number;
   preferred_session_minutes: number;
+  preferred_training_time: string;
   coach_tone: string;
   coach_intervention: string;
   health_connection: string;
@@ -90,8 +91,8 @@ export async function migrateLocalUserToAccount(
 
     const sourceProfile = await database.getFirstAsync<UserProfileRow>(
       `SELECT id, display_name, unit_system, goals_json, experience, training_days_per_week,
-              preferred_session_minutes, coach_tone, coach_intervention, health_connection,
-              completed_at, created_at, updated_at
+              preferred_session_minutes, preferred_training_time, coach_tone, coach_intervention,
+              health_connection, completed_at, created_at, updated_at
          FROM user_profiles
         WHERE id = ?
         LIMIT 1;`,
@@ -171,9 +172,9 @@ export async function migrateLocalUserToAccount(
       await database.runAsync(
         `INSERT INTO user_profiles
           (id, display_name, unit_system, goals_json, experience, training_days_per_week,
-           preferred_session_minutes, coach_tone, coach_intervention, health_connection,
-           completed_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+           preferred_session_minutes, preferred_training_time, coach_tone, coach_intervention,
+           health_connection, completed_at, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         destinationUserId,
         sourceProfile.display_name,
         sourceProfile.unit_system,
@@ -181,6 +182,7 @@ export async function migrateLocalUserToAccount(
         sourceProfile.experience,
         sourceProfile.training_days_per_week,
         sourceProfile.preferred_session_minutes,
+        sourceProfile.preferred_training_time,
         sourceProfile.coach_tone,
         sourceProfile.coach_intervention,
         sourceProfile.health_connection,

@@ -55,6 +55,7 @@ export type CoachProposalStatus =
 export type CoachTone = 'concise' | 'supportive' | 'technical';
 export type CoachIntervention = 'conservative' | 'balanced' | 'proactive';
 export type HealthConnectionPreference = 'not-now' | 'apple-health' | 'health-connect';
+export type PreferredTrainingTime = 'morning' | 'afternoon' | 'evening';
 export type NotificationPreferenceKey =
   'workoutReminders' | 'restTimer' | 'weeklyReview' | 'cycleReview' | 'coachMessages';
 
@@ -67,6 +68,7 @@ export interface User {
   equipmentIds: EntityId[];
   trainingDaysPerWeek: number;
   preferredSessionMinutes: number;
+  preferredTrainingTime: PreferredTrainingTime;
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }

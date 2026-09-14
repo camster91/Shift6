@@ -43,6 +43,7 @@ export const demoUser: User = {
   equipmentIds: demoEquipment.map((equipment) => equipment.id),
   trainingDaysPerWeek: 3,
   preferredSessionMinutes: 30,
+  preferredTrainingTime: 'morning',
   createdAt: now,
   updatedAt: now,
 };

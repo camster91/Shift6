@@ -14,6 +14,7 @@ describe('onboarding domain', () => {
     equipmentIds: demoEquipment.map((equipment) => equipment.id),
     trainingDaysPerWeek: 3,
     preferredSessionMinutes: 30,
+    preferredTrainingTime: 'morning' as const,
     unitSystem: 'imperial' as const,
     coachTone: 'supportive' as const,
     coachIntervention: 'balanced' as const,
@@ -32,6 +33,7 @@ describe('onboarding domain', () => {
     expect(profile.user.displayName).toBe('Cameron');
     expect(profile.coachIntervention).toBe('balanced');
     expect(profile.healthConnection).toBe('not-now');
+    expect(profile.user.preferredTrainingTime).toBe('morning');
     expect(profile.completedAt).toBe(profile.user.updatedAt);
   });
 

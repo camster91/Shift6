@@ -208,7 +208,9 @@ Progress and Review now show deterministic completed training days and active cy
 
 Active workout set rows now expose target-driven RPE/RIR inputs and reject out-of-range values locally before persistence. This keeps effort-aware progression grounded in the user's recorded set rather than an omitted or unvalidated field.
 
-Notification settings now have a user-scoped local preference row with opt-in-safe defaults, granular controls, privacy export/delete coverage, and guest-account ownership transfer. A native `expo-notifications` permission adapter is wired behind a provider boundary; the web preview stays explicit about unavailable delivery. Reminder scheduling, training-time choice, deep links, remote push credentials, and background delivery remain open #280/#281 work.
+Notification settings now have a user-scoped local preference row with opt-in-safe defaults, granular controls, privacy export/delete coverage, and guest-account ownership transfer. A native `expo-notifications` permission adapter is wired behind a provider boundary; the web preview stays explicit about unavailable delivery. Reminder scheduling, deep links, remote push credentials, and background delivery remain open #280/#281 work.
+
+Onboarding now stores a coarse preferred training window (morning, afternoon, or evening) in the local profile and sync payload, with existing profiles migrating to a morning default. Profile surfaces the choice for transparency. Exact reminder scheduling still requires an explicit schedule and native delivery verification.
 
 The health boundary now validates and normalizes provider summaries in the domain layer, deduplicates by source plus stable sample ID, and exposes explicit UTC-day trend aggregation rules for additive, average, and latest-value metrics. Native permission adapters, local health persistence, disclosure UI, and device verification remain later #279/#280 gates.
 

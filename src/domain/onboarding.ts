@@ -6,6 +6,7 @@ import type {
   CoachTone,
   HealthConnectionPreference,
   OnboardingProfile,
+  PreferredTrainingTime,
   Program,
   UnitSystem,
 } from './types';
@@ -17,6 +18,7 @@ export interface OnboardingDraft {
   equipmentIds: EntityId[];
   trainingDaysPerWeek: number | null;
   preferredSessionMinutes: number | null;
+  preferredTrainingTime: PreferredTrainingTime | null;
   unitSystem: UnitSystem | null;
   coachTone: CoachTone | null;
   coachIntervention: CoachIntervention | null;
@@ -160,6 +162,28 @@ export const healthConnectionOptions: readonly {
   },
 ];
 
+export const preferredTrainingTimeOptions: readonly {
+  value: PreferredTrainingTime;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'morning',
+    label: 'Morning',
+    description: 'Start the day with a clear training window.',
+  },
+  {
+    value: 'afternoon',
+    label: 'Afternoon',
+    description: 'Train around the middle of your day.',
+  },
+  {
+    value: 'evening',
+    label: 'Evening',
+    description: 'Make training part of your wind-down routine.',
+  },
+];
+
 export function createOnboardingDraft(displayName = ''): OnboardingDraft {
   return {
     displayName,
@@ -168,6 +192,7 @@ export function createOnboardingDraft(displayName = ''): OnboardingDraft {
     equipmentIds: [],
     trainingDaysPerWeek: null,
     preferredSessionMinutes: null,
+    preferredTrainingTime: null,
     unitSystem: null,
     coachTone: null,
     coachIntervention: null,
@@ -183,6 +208,7 @@ export function fromOnboardingProfile(profile: OnboardingProfile): OnboardingDra
     equipmentIds: [...profile.user.equipmentIds],
     trainingDaysPerWeek: profile.user.trainingDaysPerWeek,
     preferredSessionMinutes: profile.user.preferredSessionMinutes,
+    preferredTrainingTime: profile.user.preferredTrainingTime,
     unitSystem: profile.user.unitSystem,
     coachTone: profile.coachTone,
     coachIntervention: profile.coachIntervention,
@@ -197,6 +223,7 @@ export function isOnboardingComplete(draft: OnboardingDraft): boolean {
     draft.experience &&
     draft.trainingDaysPerWeek &&
     draft.preferredSessionMinutes &&
+    draft.preferredTrainingTime &&
     draft.unitSystem &&
     draft.coachTone &&
     draft.coachIntervention &&
@@ -223,6 +250,7 @@ export function toOnboardingProfile(
       equipmentIds: draft.equipmentIds,
       trainingDaysPerWeek: draft.trainingDaysPerWeek as number,
       preferredSessionMinutes: draft.preferredSessionMinutes as number,
+      preferredTrainingTime: draft.preferredTrainingTime as PreferredTrainingTime,
       createdAt: now,
       updatedAt: now,
     },

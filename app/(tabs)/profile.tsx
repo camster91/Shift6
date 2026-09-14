@@ -6,6 +6,7 @@ import { Alert, Platform, Share, StyleSheet, View } from 'react-native';
 import { Button, Card, Chip, OfflineBanner, Screen, Text } from '../../src/components/ui';
 import { equipmentCatalog } from '../../src/domain/equipment';
 import { demoUser } from '../../src/domain/fixtures/home';
+import { preferredTrainingTimeOptions } from '../../src/domain/onboarding';
 import { useLocalDatabase } from '../../src/db/context';
 import { deleteLocalUserData, exportLocalUserData } from '../../src/db/privacyRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
@@ -40,6 +41,9 @@ export default function ProfileScreen() {
   const selectedEquipment = equipmentCatalog.filter((equipment) =>
     equipmentIds.includes(equipment.id),
   );
+  const preferredTimeLabel =
+    preferredTrainingTimeOptions.find((option) => option.value === user.preferredTrainingTime)
+      ?.label ?? 'Training time not set';
   const syncStatus =
     syncRuntime.connectivity === 'offline'
       ? ('offline' as const)
@@ -135,7 +139,8 @@ export default function ProfileScreen() {
           {user.displayName}
         </Text>
         <Text variant="small" style={styles.profileMeta}>
-          {user.experience} · {user.preferredSessionMinutes}-minute sessions · {user.unitSystem}
+          {user.experience} · {user.preferredSessionMinutes}-minute sessions · {preferredTimeLabel}{' '}
+          · {user.unitSystem}
         </Text>
       </Card>
 

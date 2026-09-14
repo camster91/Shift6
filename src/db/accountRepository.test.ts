@@ -11,6 +11,7 @@ function profileRow() {
     experience: 'beginner',
     training_days_per_week: 3,
     preferred_session_minutes: 30,
+    preferred_training_time: 'morning',
     coach_tone: 'supportive',
     coach_intervention: 'balanced',
     health_connection: 'not-now',

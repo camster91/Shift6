@@ -10,6 +10,7 @@ interface UserProfileRow {
   experience: OnboardingProfile['user']['experience'];
   training_days_per_week: number;
   preferred_session_minutes: number;
+  preferred_training_time?: OnboardingProfile['user']['preferredTrainingTime'];
   coach_tone: OnboardingProfile['coachTone'];
   coach_intervention: OnboardingProfile['coachIntervention'];
   health_connection: OnboardingProfile['healthConnection'];
@@ -30,9 +31,9 @@ export async function saveOnboardingProfile(
     await database.runAsync(
       `INSERT INTO user_profiles
         (id, display_name, unit_system, goals_json, experience, training_days_per_week,
-         preferred_session_minutes, coach_tone, coach_intervention, health_connection,
-         completed_at, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         preferred_session_minutes, preferred_training_time, coach_tone, coach_intervention,
+         health_connection, completed_at, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          display_name = excluded.display_name,
          unit_system = excluded.unit_system,
@@ -40,6 +41,7 @@ export async function saveOnboardingProfile(
          experience = excluded.experience,
          training_days_per_week = excluded.training_days_per_week,
          preferred_session_minutes = excluded.preferred_session_minutes,
+         preferred_training_time = excluded.preferred_training_time,
          coach_tone = excluded.coach_tone,
          coach_intervention = excluded.coach_intervention,
          health_connection = excluded.health_connection,
@@ -52,6 +54,7 @@ export async function saveOnboardingProfile(
       profile.user.experience,
       profile.user.trainingDaysPerWeek,
       profile.user.preferredSessionMinutes,
+      profile.user.preferredTrainingTime,
       profile.coachTone,
       profile.coachIntervention,
       profile.healthConnection,
@@ -94,8 +97,8 @@ export async function getOnboardingProfile(
 ): Promise<OnboardingProfile | null> {
   const row = await database.getFirstAsync<UserProfileRow>(
     `SELECT id, display_name, unit_system, goals_json, experience, training_days_per_week,
-            preferred_session_minutes, coach_tone, coach_intervention, health_connection,
-            completed_at, created_at, updated_at
+            preferred_session_minutes, preferred_training_time, coach_tone, coach_intervention,
+            health_connection, completed_at, created_at, updated_at
        FROM user_profiles
       WHERE id = ?;`,
     userId,
@@ -117,6 +120,7 @@ export async function getOnboardingProfile(
       equipmentIds: equipmentRows.map((equipment) => equipment.equipment_id),
       trainingDaysPerWeek: row.training_days_per_week,
       preferredSessionMinutes: row.preferred_session_minutes,
+      preferredTrainingTime: row.preferred_training_time ?? 'morning',
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     },

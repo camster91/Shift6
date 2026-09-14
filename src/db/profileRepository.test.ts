@@ -14,6 +14,7 @@ const profile: OnboardingProfile = {
     equipmentIds: demoEquipment.slice(0, 4).map((equipment) => equipment.id),
     trainingDaysPerWeek: 3,
     preferredSessionMinutes: 30,
+    preferredTrainingTime: 'morning',
     createdAt: '2026-09-13T12:00:00.000Z',
     updatedAt: '2026-09-13T12:00:00.000Z',
   },

@@ -24,6 +24,7 @@ import {
   healthConnectionOptions,
   isOnboardingComplete,
   recommendPrograms,
+  preferredTrainingTimeOptions,
   toOnboardingProfile,
   unitOptions,
 } from '../src/domain/onboarding';
@@ -192,7 +193,11 @@ function getCanContinue(step: number, draft: ReturnType<typeof createOnboardingD
     case 3:
       return draft.equipmentIds.length > 0;
     case 4:
-      return draft.trainingDaysPerWeek !== null && draft.preferredSessionMinutes !== null;
+      return (
+        draft.trainingDaysPerWeek !== null &&
+        draft.preferredSessionMinutes !== null &&
+        draft.preferredTrainingTime !== null
+      );
     case 5:
       return draft.unitSystem !== null;
     case 6:
@@ -349,6 +354,18 @@ function renderStep(
               />
             ))}
           </View>
+          <Text variant="smallMedium" style={styles.fieldLabel}>
+            Usual training time
+          </Text>
+          {preferredTrainingTimeOptions.map((option) => (
+            <OptionCard
+              key={option.value}
+              label={option.label}
+              description={option.description}
+              selected={draft.preferredTrainingTime === option.value}
+              onPress={() => updateDraft('preferredTrainingTime', option.value)}
+            />
+          ))}
         </OptionStep>
       );
     case 5:

@@ -242,6 +242,14 @@ export const MIGRATIONS: readonly Migration[] = [
       );`,
     ],
   },
+  {
+    version: 14,
+    name: 'preferred-training-time',
+    statements: [
+      `ALTER TABLE user_profiles
+        ADD COLUMN preferred_training_time TEXT NOT NULL DEFAULT 'morning';`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

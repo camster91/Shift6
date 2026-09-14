@@ -238,4 +238,6 @@ The provider-backed Coach boundary now has a tested HTTP adapter with bounded st
 
 The first native health adapter increment is now implemented for iOS HealthKit and Android Health Connect behind the same provider contract. The import service reads only granted types, writes normalized summaries to local SQLite, never adds health records to the workout sync outbox, and keeps web/unavailable states explicit. Configuration is read-only and opt-in: HealthKit update/background access is disabled and Android declares only the six matching read permissions. A custom native development build, device permission/revocation verification, health privacy review, and store health-data declarations are still required before release claims.
 
+The cycle-review increment now persists optional user reflection locally (overall rating, next-block focus, note, and explicit repeat/adjust/change-program choice) with a replaceable `cycle-review` outbox mutation. Export, delete, and guest-account adoption cover the record. It does not change deterministic progression or apply a Coach proposal; native migration/restart proof and the remaining progress/change-next-cycle matrix remain open.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

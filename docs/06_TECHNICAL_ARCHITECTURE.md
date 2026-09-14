@@ -660,3 +660,14 @@ This is a source/configuration increment, not native device proof. A rebuilt iOS
 ## Provider-backed Coach boundary checkpoint — 2026-09-14
 
 `src/services/coach.ts` now provides a vendor-neutral HTTP adapter for `/v1/coach/message` and `/v1/coach/proposal`, reusing the injected auth token and a bounded allowlist of structured facts. Message responses are size/type validated and unsafe generated text is rerouted through the deterministic safety classifier. Proposal responses must be pending, actionable, explicitly user-confirmed, and valid under the existing Coach schema before they can reach the local approval repository. The Coach tab falls back to the deterministic offline explainer when the provider, auth session, network, or backend is unavailable; no provider credential or automatic plan mutation was added.
+
+## Cycle reflection checkpoint — 2026-09-14
+
+The end-of-cycle review now has a small persisted feedback boundary:
+
+- migration 15 creates one user-scoped `cycle_reviews` row per cycle with an optional 1–5 rating, next-block focus, and bounded free-text note;
+- `cycleReviewRepository.ts` upserts the reflection and queues a stable `cycle-review` outbox mutation, so edits replace the pending payload rather than creating duplicates;
+- the Review route reloads and saves the reflection, records the user's explicit repeat/adjust/change-program choice when those paths are used, and leaves derived facts and program snapshots unchanged;
+- privacy export/delete and guest-to-account adoption include the new row and its queued mutation.
+
+Reflection data is local-first and remains optional. Native migration execution and end-of-cycle device QA remain open verification gates.

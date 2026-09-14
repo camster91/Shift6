@@ -20,6 +20,7 @@ describe('exportLocalUserData', () => {
         if (sql.includes('user_exercises')) return [{ id: 'exercise-1', user_id: 'guest-user' }];
         if (sql.includes('health_summaries')) return [{ id: 'health-1', user_id: 'guest-user' }];
         if (sql.includes('notification_preferences')) return [];
+        if (sql.includes('cycle_reviews')) return [];
         return [{ id: 'proposal-1', user_id: 'guest-user' }];
       },
     } as unknown as SQLiteDatabase;
@@ -27,7 +28,7 @@ describe('exportLocalUserData', () => {
     await expect(
       exportLocalUserData(database, 'guest-user', '2026-09-14T12:00:00.000Z'),
     ).resolves.toEqual({
-      schemaVersion: 4,
+      schemaVersion: 5,
       exportedAt: '2026-09-14T12:00:00.000Z',
       userId: 'guest-user',
       userProfiles: [{ id: 'guest-user', display_name: 'Cameron' }],
@@ -43,6 +44,7 @@ describe('exportLocalUserData', () => {
       coachProposals: [{ id: 'proposal-1', user_id: 'guest-user' }],
       healthSummaries: [{ id: 'health-1', user_id: 'guest-user' }],
       notificationPreferences: [],
+      cycleReviews: [],
     });
   });
 });
@@ -62,14 +64,15 @@ describe('deleteLocalUserData', () => {
 
     await expect(deleteLocalUserData(database, 'guest-user')).resolves.toBeUndefined();
 
-    expect(calls).toHaveLength(14);
+    expect(calls).toHaveLength(15);
     expect(calls[0]?.sql).toContain('DELETE FROM sync_outbox');
     expect(calls[0]?.params.every((param) => param === 'guest-user')).toBe(true);
     expect(calls[1]?.sql).toContain('DELETE FROM notification_preferences');
     expect(calls[2]?.sql).toContain('DELETE FROM health_summaries');
-    expect(calls[3]?.sql).toContain('DELETE FROM completed_sets');
-    expect(calls[4]?.sql).toContain('DELETE FROM workout_drafts');
-    expect(calls[5]?.sql).toContain('DELETE FROM workout_check_ins');
+    expect(calls[3]?.sql).toContain('DELETE FROM cycle_reviews');
+    expect(calls[4]?.sql).toContain('DELETE FROM completed_sets');
+    expect(calls[5]?.sql).toContain('DELETE FROM workout_drafts');
+    expect(calls[6]?.sql).toContain('DELETE FROM workout_check_ins');
     expect(calls.at(-1)?.sql).toContain('DELETE FROM user_profiles');
   });
 });

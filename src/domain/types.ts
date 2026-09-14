@@ -272,6 +272,29 @@ export interface WorkoutSession {
 
 export type CheckInRating = 1 | 2 | 3 | 4 | 5;
 
+export type CycleReviewFocus =
+  | 'same-course'
+  | 'more-strength'
+  | 'more-conditioning'
+  | 'more-mobility'
+  | 'improve-consistency'
+  | 'recover-better';
+
+export type CycleReviewAction =
+  'repeat' | 'progress' | 'adjust' | 'change-exercises' | 'change-program' | 'build-new';
+
+export interface CycleReview {
+  id: EntityId;
+  userId: EntityId;
+  cycleId: EntityId;
+  overallRating?: CheckInRating;
+  focus?: CycleReviewFocus;
+  nextAction?: CycleReviewAction;
+  note?: string;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
 export interface WorkoutCheckIn {
   sessionId: EntityId;
   energy?: CheckInRating;

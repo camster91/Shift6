@@ -250,6 +250,27 @@ export const MIGRATIONS: readonly Migration[] = [
         ADD COLUMN preferred_training_time TEXT NOT NULL DEFAULT 'morning';`,
     ],
   },
+  {
+    version: 15,
+    name: 'cycle-review-reflections',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS cycle_reviews (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL,
+        cycle_id TEXT NOT NULL UNIQUE,
+        overall_rating INTEGER,
+        focus TEXT,
+        next_action TEXT,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE,
+        FOREIGN KEY (cycle_id) REFERENCES training_cycles(id) ON DELETE CASCADE
+      );`,
+      `CREATE INDEX IF NOT EXISTS cycle_reviews_user_updated
+        ON cycle_reviews(user_id, updated_at DESC);`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

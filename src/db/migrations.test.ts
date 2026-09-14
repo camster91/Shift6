@@ -119,4 +119,14 @@ describe('local database migrations', () => {
       "ADD COLUMN preferred_training_time TEXT NOT NULL DEFAULT 'morning'",
     );
   });
+
+  it('stores one user-scoped reflection for each completed cycle', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS cycle_reviews');
+    expect(statements).toContain('cycle_id TEXT NOT NULL UNIQUE');
+    expect(statements).toContain('overall_rating INTEGER');
+    expect(statements).toContain('next_action TEXT');
+    expect(statements).toContain('FOREIGN KEY (cycle_id) REFERENCES training_cycles(id)');
+  });
 });

@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export interface LocalDataExport {
-  schemaVersion: 4;
+  schemaVersion: 5;
   exportedAt: string;
   userId: string;
   userProfiles: Record<string, unknown>[];
@@ -17,6 +17,7 @@ export interface LocalDataExport {
   coachProposals: Record<string, unknown>[];
   healthSummaries: Record<string, unknown>[];
   notificationPreferences: Record<string, unknown>[];
+  cycleReviews: Record<string, unknown>[];
 }
 
 export async function exportLocalUserData(
@@ -100,9 +101,15 @@ export async function exportLocalUserData(
       WHERE user_id = ?;`,
     userId,
   );
+  const cycleReviews = await database.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM cycle_reviews
+      WHERE user_id = ?
+      ORDER BY updated_at ASC, id ASC;`,
+    userId,
+  );
 
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     exportedAt,
     userId,
     userProfiles,
@@ -118,6 +125,7 @@ export async function exportLocalUserData(
     coachProposals,
     healthSummaries,
     notificationPreferences,
+    cycleReviews,
   };
 }
 
@@ -134,6 +142,9 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
            OR (entity_type = 'notification-preference' AND entity_id = ?)
            OR (entity_type = 'training-cycle' AND entity_id IN (
                 SELECT id FROM training_cycles WHERE user_id = ?
+              ))
+           OR (entity_type = 'cycle-review' AND entity_id IN (
+                SELECT id FROM cycle_reviews WHERE user_id = ?
               ))
            OR (entity_type = 'workout-session' AND entity_id IN (
                 SELECT workout_sessions.id
@@ -176,9 +187,11 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
       userId,
       userId,
       userId,
+      userId,
     );
     await database.runAsync('DELETE FROM notification_preferences WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM health_summaries WHERE user_id = ?;', userId);
+    await database.runAsync('DELETE FROM cycle_reviews WHERE user_id = ?;', userId);
     await database.runAsync(
       `DELETE FROM completed_sets
         WHERE session_id IN (

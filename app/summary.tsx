@@ -15,6 +15,7 @@ import {
 } from '../src/components/ui';
 import { getWorkoutCheckIn, saveWorkoutCheckIn } from '../src/db/checkInRepository';
 import { useLocalDatabase } from '../src/db/context';
+import { getUserProgramVersion } from '../src/db/programRepository';
 import { getCompletedSets, getWorkoutSession } from '../src/db/workoutRepository';
 import { demoProgramVersion, demoWorkout } from '../src/domain/fixtures/home';
 import type {
@@ -45,14 +46,16 @@ export default function WorkoutSummaryScreen() {
   const [discomfortReported, setDiscomfortReported] = useState(false);
   const [note, setNote] = useState('');
 
-  const workout = useMemo<Workout>(
+  const previewWorkout = useMemo<Workout>(
     () =>
       demoProgramVersion.workouts.find((candidate) => candidate.id === workoutId) ?? demoWorkout,
     [workoutId],
   );
+  const [workout, setWorkout] = useState<Workout>(previewWorkout);
 
   useEffect(() => {
     if (!database || !sessionId) {
+      setWorkout(previewWorkout);
       setLoading(false);
       return;
     }
@@ -65,10 +68,18 @@ export default function WorkoutSummaryScreen() {
           getCompletedSets(database, sessionId),
           getWorkoutCheckIn(database, sessionId),
         ]);
+        const snapshot = localSession
+          ? await getUserProgramVersion(database, 'guest-user', localSession.programVersionId)
+          : null;
+        const localWorkout =
+          snapshot?.version.workouts.find(
+            (candidate) => candidate.id === localSession?.workoutId,
+          ) ?? previewWorkout;
         if (!active) return;
         setSession(localSession);
         setSets(localSets);
         setExistingCheckIn(checkIn);
+        setWorkout(localWorkout);
         if (checkIn) {
           setEnergy(checkIn.energy ?? null);
           setSoreness(checkIn.soreness ?? null);
@@ -86,7 +97,7 @@ export default function WorkoutSummaryScreen() {
     return () => {
       active = false;
     };
-  }, [database, sessionId]);
+  }, [database, previewWorkout, sessionId]);
 
   const facts = useMemo(() => buildSummaryFacts(session, sets, workout), [session, sets, workout]);
 

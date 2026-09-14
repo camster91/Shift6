@@ -20,6 +20,27 @@ export type AuthenticatedFlush = (
 ) => Promise<SyncCoordinatorResult>;
 
 /**
+ * Coalesces overlapping runtime triggers. Foreground, reconnect, and manual
+ * retry events may arrive together, but one outbox flush must own the active
+ * attempt so the backend cannot see duplicate concurrent submissions.
+ */
+export function createSingleFlight<Args extends readonly unknown[], Result>(
+  operation: (...args: Args) => Promise<Result>,
+): (...args: Args) => Promise<Result> {
+  let inFlight: Promise<Result> | null = null;
+
+  return (...args: Args) => {
+    if (inFlight) return inFlight;
+
+    const next = operation(...args);
+    inFlight = next.finally(() => {
+      inFlight = null;
+    });
+    return inFlight;
+  };
+}
+
+/**
  * Runs sync only for an authenticated account. Guest/local-first sessions keep
  * their outbox untouched until an auth provider is available.
  */

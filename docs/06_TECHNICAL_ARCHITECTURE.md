@@ -591,6 +591,8 @@ The Exercise Library and detail route now merge the foundational catalogue with 
 
 `SyncRuntimeProvider` now centralizes foreground, app-resume, and connectivity-reconnect sync attempts behind `runAuthenticatedSync`. It reads the injected auth session before invoking the outbox coordinator, so the default guest shell leaves queued mutations untouched and makes no backend request. Runtime state distinguishes idle, offline, syncing, synced, partial, and failed outcomes for future status UI. A native background task, token refresh, conflict resolution, concrete backend, and device fault proof remain release-gated work.
 
+Runtime triggers now pass through a single-flight guard in `src/services/syncRuntime.ts`. A reconnect, foreground transition, or manual retry arriving during an existing attempt reuses that promise; a later trigger can retry after completion or failure. This prevents overlapping outbox flushes without changing the underlying idempotency contract.
+
 ## Active workout presentation checkpoint — 2026-09-14
 
 The active workout now renders the private snapshot's section label, superset/circuit grouping cue, and bounded exercise note next to the same set controls that persist locally. Custom exercises are resolved from the merged user catalogue for both names and substitution ranking. These are read-only workout cues; set identity, correction, rest timing, and copy-on-write history boundaries are unchanged.

@@ -2,6 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { AppServices } from './appServices';
 import {
+  createSingleFlight,
   runAuthenticatedSync,
   syncRuntimeStateFromResult,
   type AuthenticatedFlush,
@@ -33,6 +34,44 @@ function result(outcome: SyncCoordinatorResult['outcome']): SyncCoordinatorResul
 }
 
 describe('authenticated sync runtime', () => {
+  it('coalesces overlapping runtime triggers and allows a later retry', async () => {
+    let resolveOperation: (() => void) | undefined;
+    let calls = 0;
+    const run = createSingleFlight(async () => {
+      calls += 1;
+      await new Promise<void>((resolve) => {
+        resolveOperation = resolve;
+      });
+      return 'complete';
+    });
+
+    const first = run();
+    const overlapping = run();
+    expect(overlapping).toBe(first);
+    expect(calls).toBe(1);
+
+    resolveOperation?.();
+    await expect(first).resolves.toBe('complete');
+    const later = run();
+    resolveOperation?.();
+    await expect(later).resolves.toBe('complete');
+    expect(calls).toBe(2);
+  });
+
+  it('clears the active flight after a rejected attempt', async () => {
+    let shouldFail = true;
+    const run = createSingleFlight(async () => {
+      if (shouldFail) {
+        shouldFail = false;
+        throw new Error('temporary failure');
+      }
+      return 'recovered';
+    });
+
+    await expect(run()).rejects.toThrow('temporary failure');
+    await expect(run()).resolves.toBe('recovered');
+  });
+
   it('leaves a guest outbox untouched', async () => {
     let flushCalls = 0;
     const flush: AuthenticatedFlush = async () => {

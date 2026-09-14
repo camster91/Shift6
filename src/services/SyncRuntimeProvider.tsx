@@ -9,6 +9,7 @@ import { createExpoSecureAuthProvider } from './auth';
 import { subscribeToConnectivity } from './connectivity';
 import {
   runAuthenticatedSync,
+  createSingleFlight,
   syncRuntimeStateFromResult,
   type SyncRuntimeState,
 } from './syncRuntime';
@@ -46,7 +47,7 @@ export function SyncRuntimeProvider({
     connectivity: 'unknown',
   });
 
-  const flushNow = useCallback(async () => {
+  const performFlush = useCallback(async () => {
     if (!database) return;
 
     setSnapshot((current) => ({ ...current, state: 'syncing' }));
@@ -62,6 +63,7 @@ export function SyncRuntimeProvider({
       setSnapshot((current) => ({ ...current, state: 'failed' }));
     }
   }, [database, services]);
+  const flushNow = useMemo(() => createSingleFlight(performFlush), [performFlush]);
 
   useEffect(() => {
     if (!database) return;

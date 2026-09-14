@@ -232,6 +232,7 @@ The initial rebuild branch implements this architecture as a small, native-first
 - Native builds mount `SQLiteProvider` through `src/db/LocalDatabaseProvider.tsx`. `src/db/migrations.ts` owns versioned schema changes, and `src/db/workoutRepository.ts` persists a workout session or completed set with its idempotent sync-outbox mutation in one transaction. The success UI must be downstream of that transaction when the active workout is implemented. Workout sessions also snapshot focus so later progress aggregation can distinguish cardio from strength without consulting mutable program data.
 - `LocalDatabaseProvider.web.tsx` intentionally makes web a non-persistent preview surface. It prevents the current SDK 57 SQLite WASM worker packaging gap from blocking UI smoke tests and must not be treated as workout durability evidence.
 - `src/domain/types.ts` uses stable string IDs, ISO timestamps, explicit program versions, cycle snapshots, immutable completed-session records, and a program-specific `CycleModel.weekSixMeaning`.
+- `src/domain/equipment.ts` is the first equipment taxonomy and compatibility boundary. `src/domain/fixtures/exercises.ts` seeds 50 schema-complete foundational exercise records with stable IDs, tracking types, muscle/pattern metadata, and explicit `contentStatus: 'draft'`; no draft record is treated as technique-reviewed production media.
 - `src/services/contracts.ts` exposes replaceable `BackendClient`, `CoachGateway`, and privacy-safe analytics contracts. No backend endpoint, AI provider, credential, or cloud mutation is included in this foundation increment.
 - `src/config/env.ts` reads only `EXPO_PUBLIC_*` values. `.env.example` documents public configuration; secrets are not accepted by the mobile bundle.
 
@@ -285,6 +286,18 @@ The first progress read boundary now derives the scorecard from the same local r
 - the Progress tab resolves the active persisted cycle and renders local facts, while the web target continues to show an explicitly non-persistent preview.
 
 This checkpoint does not yet calculate personal records, advance cycle weeks, reconcile sync outbox rows, or produce the full six-week review. Those require additional domain events and later vertical-slice increments.
+
+## Exercise catalogue implementation checkpoint — 2026-09-14
+
+The first #274 content increment establishes catalogue behavior without importing the archived application or unreviewed imagery:
+
+- the taxonomy covers 23 equipment types from free weights, machines, cardio, bodyweight, accessories, and mobility;
+- the first 50 foundational exercise records share the canonical schema, stable IDs, tracking types, tags, and review status;
+- `searchExercises` searches names, aliases, movement patterns, muscles, and tags while optionally restricting results to the saved equipment profile;
+- `findExerciseSubstitutions` ranks compatible candidates by movement pattern, shared primary muscles, and tags, with no AI or network dependency;
+- the Exercise Library surface makes the draft/review boundary visible and does not present placeholder media as approved instruction.
+
+The catalogue is not yet the 300+ launch set: content review, custom exercises, exercise detail, substitution selection, media production, and the remaining records are still required.
 
 ## Sync outbox implementation checkpoint — 2026-09-13
 

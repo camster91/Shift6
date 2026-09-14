@@ -32,7 +32,7 @@ The default branch now contains planning only. Do not restore old application co
 
 ### Foundation implementation checkpoint
 
-The first implementation branch is `feat/shift6-rebuild-foundation`. It introduces a clean Expo SDK 57 / React Native 0.86 / TypeScript application shell, Expo Router tabs, token-driven UI primitives, typed domain fixtures, versioned SQLite migrations for native builds, an idempotent workout-session/completed-set outbox and flush contract, persisted guest onboarding/profile setup, a versioned Barbell 30 six-week cycle start flow, and local progress aggregation from completed workout records.
+The first implementation branch is `feat/shift6-rebuild-foundation`. It introduces a clean Expo SDK 57 / React Native 0.86 / TypeScript application shell, Expo Router tabs, token-driven UI primitives, typed domain fixtures, versioned SQLite migrations for native builds, an idempotent workout-session/completed-set outbox and flush contract, persisted guest onboarding/profile setup, a versioned Barbell 30 six-week cycle start flow, local progress aggregation from completed workout records, and a searchable 50-record draft exercise library with equipment-aware filtering.
 
 The branch deliberately does not restore the archived web application. The archived implementation was inspected and rejected for direct reuse because it is a Vite/Capacitor app built around browser `localStorage`, a single mutable state payload, and fixed progression assumptions that conflict with the new program-version and program-specific Week 6 model.
 

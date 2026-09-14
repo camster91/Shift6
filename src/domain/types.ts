@@ -110,6 +110,8 @@ export interface Exercise {
   tags: string[];
   media: ExerciseMedia[];
   isCustom: boolean;
+  contentStatus: 'draft' | 'reviewed' | 'retired';
+  reviewedAt?: ISODateString;
 }
 
 export interface ExerciseVariant {

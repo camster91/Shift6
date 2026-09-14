@@ -38,6 +38,14 @@ export default function ProgramsScreen() {
         style={styles.personalizeButton}
       />
 
+      <Button
+        label="Browse exercise library"
+        variant="ghost"
+        icon={<Ionicons name="search-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/exercises')}
+        style={styles.exerciseLibraryButton}
+      />
+
       <Card tone="mint" style={styles.foundationCard}>
         <Ionicons name="construct-outline" size={24} color={colors.ink} />
         <Text variant="h3" style={styles.cardTitle}>
@@ -74,6 +82,9 @@ const styles = StyleSheet.create({
   },
   personalizeButton: {
     marginTop: spacing.md,
+  },
+  exerciseLibraryButton: {
+    marginTop: spacing.xs,
   },
   cardTitle: {
     marginTop: spacing.xs,

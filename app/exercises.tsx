@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Card, Chip, EmptyState, IconButton, Screen, Text } from '../src/components/ui';
 import { getOnboardingProfile } from '../src/db/profileRepository';
@@ -103,31 +103,40 @@ export default function ExerciseLibraryScreen() {
           icon={<Ionicons name="search-outline" size={28} color={colors.ink} />}
         />
       ) : (
-        visibleExercises.map((exercise) => (
-          <Card
-            key={exercise.id}
-            tone={exercise.contentStatus === 'reviewed' ? 'white' : 'lavender'}
-            style={styles.exerciseCard}
-            accessibilityLabel={`${exercise.name}. ${exercise.movementPattern}. ${exercise.contentStatus === 'draft' ? 'Technique review pending.' : 'Reviewed.'}`}
-          >
-            <View style={styles.exerciseHeader}>
-              <Text variant="h3" style={styles.exerciseName}>
-                {exercise.name}
-              </Text>
-              <Text variant="caption" tone="muted">
-                {exercise.trackingType}
-              </Text>
-            </View>
-            <Text variant="small" tone="muted" style={styles.exerciseMeta}>
-              {formatLabel(exercise.movementPattern)} · {exercise.primaryMuscles.join(', ')}
-            </Text>
-            <Text variant="caption" tone="warning" style={styles.reviewStatus}>
-              {exercise.contentStatus === 'draft'
-                ? 'Technique and media review pending'
-                : 'Reviewed catalogue record'}
-            </Text>
-          </Card>
-        ))
+        visibleExercises.map((exercise) => {
+          const accessibilityLabel = `${exercise.name}. ${exercise.movementPattern}. ${exercise.contentStatus === 'draft' ? 'Technique review pending.' : 'Reviewed.'}`;
+          return (
+            <Pressable
+              key={exercise.id}
+              accessibilityLabel={`${accessibilityLabel} Open exercise details.`}
+              accessibilityRole="button"
+              onPress={() =>
+                router.push({ pathname: '/exercise/[id]', params: { id: exercise.id } })
+              }
+              style={({ pressed }) => [pressed && styles.exercisePressed]}
+            >
+              <Card
+                tone={exercise.contentStatus === 'reviewed' ? 'white' : 'lavender'}
+                style={styles.exerciseCard}
+              >
+                <View style={styles.exerciseHeader}>
+                  <Text variant="h3" style={styles.exerciseName}>
+                    {exercise.name}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.inkMuted} />
+                </View>
+                <Text variant="small" tone="muted" style={styles.exerciseMeta}>
+                  {formatLabel(exercise.movementPattern)} · {exercise.primaryMuscles.join(', ')}
+                </Text>
+                <Text variant="caption" tone="warning" style={styles.reviewStatus}>
+                  {exercise.contentStatus === 'draft'
+                    ? 'Technique and media review pending'
+                    : 'Reviewed catalogue record'}
+                </Text>
+              </Card>
+            </Pressable>
+          );
+        })
       )}
     </Screen>
   );
@@ -179,6 +188,9 @@ const styles = StyleSheet.create({
   },
   exerciseCard: {
     marginBottom: spacing.sm,
+  },
+  exercisePressed: {
+    opacity: 0.82,
   },
   exerciseHeader: {
     flexDirection: 'row',

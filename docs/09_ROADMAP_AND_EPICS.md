@@ -182,6 +182,8 @@ The Exercise Library and detail route now include persisted user-owned custom mo
 
 The app shell now mounts an authenticated-only sync runtime that retries the local outbox on foreground/resume/reconnect when a real auth session is injected; the default guest configuration intentionally skips backend work. Native background scheduling, auth/token refresh, conflict resolution, and device-level reconnect proof remain open #272/release gates.
 
+The auth boundary now includes Expo SecureStore-backed session persistence with malformed/expired-session cleanup and explicit sign-out. No provider-specific sign-in flow, credential, or backend account conversion is claimed yet.
+
 The active workout now carries builder-authored section, superset/circuit, note, and custom-exercise cues into the logging surface without changing completed-set identity.
 
 Active workout drafts now flush on inactive/background app-state transitions as well as during debounced editing, improving pause/reopen durability without adding a network dependency.

@@ -5,7 +5,7 @@ import { AppState } from 'react-native';
 import { useLocalDatabase } from '../db/context';
 import { runtimeConfig } from '../config/env';
 import { createAppServices, type AppServices } from './appServices';
-import { UnavailableAuthProvider } from './auth';
+import { createExpoSecureAuthProvider } from './auth';
 import { subscribeToConnectivity } from './connectivity';
 import {
   runAuthenticatedSync,
@@ -25,7 +25,7 @@ export interface SyncRuntimeContextValue extends SyncRuntimeSnapshot {
 }
 
 const defaultServices = createAppServices({
-  auth: new UnavailableAuthProvider(),
+  auth: createExpoSecureAuthProvider(),
   apiBaseUrl: runtimeConfig.apiBaseUrl,
 });
 

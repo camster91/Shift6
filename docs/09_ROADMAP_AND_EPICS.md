@@ -327,3 +327,8 @@ The same #276 surface now supports skipping an untouched session with a bounded 
 transaction persists a `skipped` session, queues the mutation through the idempotent outbox, and
 removes the draft without advancing the cycle or counting the session toward adherence. The
 summary retains the decision; native restart/offline/device proof remains a release gate.
+
+The #277/#275 Review → progression-copy path now applies ordinary deterministic target changes from
+the completed cycle to a new private version. Matching uses canonical exercise plus immediate
+source-workout identity; safety/readiness flags and confirmation-requiring strategies hold the
+source target. The builder shows the change list before the user saves or starts the next cycle.

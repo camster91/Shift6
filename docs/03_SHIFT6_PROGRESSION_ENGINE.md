@@ -201,3 +201,13 @@ The AI coach receives those facts and turns them into an understandable review. 
 - Week 6 guidance is derived from the program's declared meaning and never assumes a universal deload.
 
 This checkpoint is unit-tested domain logic, not yet connected to active workout persistence, cycle creation, or the Coach proposal UI.
+
+## Deterministic next-cycle copy checkpoint — 2026-09-14
+
+`src/domain/cycleProgression.ts` now connects completed local performance to the Review → “Build a
+progression copy” path. Completed sets are matched by canonical exercise ID and immediate source
+workout ID, so repeated movements in one week cannot borrow evidence from another exposure. The
+new private version applies only ordinary deterministic target decisions; volume, density, and
+skill changes remain explicit review items. Missing history, limited/rest readiness, and discomfort
+hold the source prescription. The result includes a typed change list for the builder to show
+before the user saves or starts the next cycle, and never mutates the completed snapshot.

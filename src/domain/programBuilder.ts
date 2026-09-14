@@ -662,6 +662,7 @@ function cloneProgramVersion(
     workouts: sourceVersion.workouts.map((workout, workoutIndex) => ({
       ...workout,
       id: `${versionId}-workout-${workoutIndex + 1}`,
+      sourceWorkoutId: workout.id,
       programVersionId: versionId,
       exercises: workout.exercises.map((exercise, exerciseIndex) => ({
         ...exercise,

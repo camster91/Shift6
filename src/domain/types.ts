@@ -187,6 +187,7 @@ export interface WorkoutExercise {
 
 export interface Workout {
   id: EntityId;
+  sourceWorkoutId?: EntityId;
   programVersionId: EntityId;
   title: string;
   dayOfWeek: number;

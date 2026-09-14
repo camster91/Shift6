@@ -59,8 +59,12 @@ interface ExerciseProgressRow {
   reps: number | null;
   duration_seconds: number | null;
   distance_meters: number | null;
+  rpe: number | null;
+  rir: number | null;
   workout_id: string;
   version_json: string | null;
+  readiness: WorkoutReadiness | null;
+  discomfort_reported: number | null;
 }
 
 interface CardioProgressRow {
@@ -88,11 +92,14 @@ export async function getCycleCompletedSetRecords(
     `SELECT completed_sets.session_id, completed_sets.exercise_id,
             completed_sets.workout_exercise_id, completed_sets.completed_at,
             completed_sets.load, completed_sets.reps, completed_sets.duration_seconds,
-            completed_sets.distance_meters, workout_sessions.workout_id,
-            user_program_versions.version_json
+            completed_sets.distance_meters, completed_sets.rpe, completed_sets.rir,
+            workout_sessions.workout_id, workout_sessions.readiness,
+            workout_check_ins.discomfort_reported, user_program_versions.version_json
        FROM completed_sets
        INNER JOIN workout_sessions
          ON workout_sessions.id = completed_sets.session_id
+       LEFT JOIN workout_check_ins
+         ON workout_check_ins.session_id = workout_sessions.id
        LEFT JOIN user_program_versions
          ON user_program_versions.id = workout_sessions.program_version_id
       WHERE workout_sessions.cycle_id = ?
@@ -108,12 +115,17 @@ export async function getCycleCompletedSetRecords(
     return [
       {
         sessionId: row.session_id,
+        workoutId: row.workout_id,
         exerciseId,
         completedAt: row.completed_at,
         load: row.load ?? undefined,
         reps: row.reps ?? undefined,
         durationSeconds: row.duration_seconds ?? undefined,
         distanceMeters: row.distance_meters ?? undefined,
+        ...(row.rpe === null || row.rpe === undefined ? {} : { rpe: row.rpe }),
+        ...(row.rir === null || row.rir === undefined ? {} : { rir: row.rir }),
+        ...(row.discomfort_reported === 1 ? { discomfortFlag: true } : {}),
+        ...(row.readiness ? { readiness: row.readiness } : {}),
       },
     ];
   });
@@ -195,11 +207,14 @@ export async function getExerciseProgress(
     `SELECT completed_sets.session_id, completed_sets.exercise_id,
             completed_sets.workout_exercise_id, completed_sets.completed_at,
             completed_sets.load, completed_sets.reps, completed_sets.duration_seconds,
-            completed_sets.distance_meters, workout_sessions.workout_id,
-            user_program_versions.version_json
+            completed_sets.distance_meters, completed_sets.rpe, completed_sets.rir,
+            workout_sessions.workout_id, workout_sessions.readiness,
+            workout_check_ins.discomfort_reported, user_program_versions.version_json
        FROM completed_sets
        INNER JOIN workout_sessions
          ON workout_sessions.id = completed_sets.session_id
+       LEFT JOIN workout_check_ins
+         ON workout_check_ins.session_id = workout_sessions.id
        LEFT JOIN user_program_versions
          ON user_program_versions.id = workout_sessions.program_version_id
       WHERE workout_sessions.cycle_id = ?
@@ -217,19 +232,26 @@ export async function getExerciseProgress(
       return [
         {
           sessionId: row.session_id,
+          workoutId: row.workout_id,
           exerciseId: resolvedExerciseId,
           completedAt: row.completed_at,
           load: row.load ?? undefined,
           reps: row.reps ?? undefined,
           durationSeconds: row.duration_seconds ?? undefined,
           distanceMeters: row.distance_meters ?? undefined,
+          ...(row.rpe === null || row.rpe === undefined ? {} : { rpe: row.rpe }),
+          ...(row.rir === null || row.rir === undefined ? {} : { rir: row.rir }),
+          ...(row.discomfort_reported === 1 ? { discomfortFlag: true } : {}),
+          ...(row.readiness ? { readiness: row.readiness } : {}),
         },
       ];
     }),
   );
 }
 
-function resolveLegacyExerciseId(row: ExerciseProgressRow): string | undefined {
+function resolveLegacyExerciseId(
+  row: Pick<ExerciseProgressRow, 'version_json' | 'workout_id' | 'workout_exercise_id'>,
+): string | undefined {
   if (!row.version_json) return undefined;
 
   try {

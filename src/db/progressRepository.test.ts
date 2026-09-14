@@ -223,6 +223,7 @@ describe('getCycleProgressSummary', () => {
     await expect(getCycleCompletedSetRecords(database, 'cycle-1')).resolves.toEqual([
       {
         sessionId: 'session-1',
+        workoutId: 'workout-1',
         exerciseId: 'exercise-squat',
         completedAt: '2026-09-14T12:05:00.000Z',
         load: 185,

@@ -17,6 +17,10 @@ import { equipmentCatalog, findExerciseSubstitutions } from '../src/domain/equip
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { demoProgram, demoProgramVersion, demoUser } from '../src/domain/fixtures/home';
 import { createTrainingCycle } from '../src/domain/cycle';
+import {
+  buildCycleProgressionCopy,
+  type CycleProgressionChange,
+} from '../src/domain/cycleProgression';
 import { defaultTargetForTrackingType, resolveTrackingType } from '../src/domain/exerciseTracking';
 import { searchExercises } from '../src/domain/exerciseCatalog';
 import {
@@ -49,8 +53,9 @@ import type {
   WorkoutExercise,
 } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
-import { saveTrainingCycle } from '../src/db/cycleRepository';
+import { getLatestTrainingCycle, saveTrainingCycle } from '../src/db/cycleRepository';
 import { getOnboardingProfile } from '../src/db/profileRepository';
+import { getCycleCompletedSetRecords } from '../src/db/progressRepository';
 import {
   getUserExercises,
   getUserProgramVersion,
@@ -69,6 +74,7 @@ export default function ProgramBuilderScreen() {
     sourceVersionId?: string;
   }>();
   const isBlankBuilder = mode === 'blank';
+  const isProgressBuilder = mode === 'progress';
   const builderTitle =
     mode === 'progress'
       ? 'Build the next progression.'
@@ -102,6 +108,10 @@ export default function ProgramBuilderScreen() {
   const [sourceLoading, setSourceLoading] = useState(shouldLoadSource);
   const [sourceLoadError, setSourceLoadError] = useState(false);
   const [sourceRetryKey, setSourceRetryKey] = useState(0);
+  const [progressionChanges, setProgressionChanges] = useState<readonly CycleProgressionChange[]>(
+    [],
+  );
+  const [progressionPerformanceSetCount, setProgressionPerformanceSetCount] = useState(0);
   const trackedProgramCreation = useRef(false);
 
   const trackProgramCreation = () => {
@@ -152,8 +162,10 @@ export default function ProgramBuilderScreen() {
     void Promise.all([
       getUserProgramVersion(database, 'guest-user', sourceVersionId),
       getUserExercises(database, 'guest-user'),
+      isProgressBuilder ? getLatestTrainingCycle(database, 'guest-user') : Promise.resolve(null),
+      isProgressBuilder ? getOnboardingProfile(database, 'guest-user') : Promise.resolve(null),
     ])
-      .then(([snapshot, userExercises]) => {
+      .then(async ([snapshot, userExercises, latestCycle, profile]) => {
         if (!active) return;
         if (!snapshot) {
           setSourceLoadError(true);
@@ -161,7 +173,29 @@ export default function ProgramBuilderScreen() {
           return;
         }
 
-        setDraft(() => createProgramDraftFromSource(snapshot.program, snapshot.version));
+        const baseDraft = createProgramDraftFromSource(snapshot.program, snapshot.version);
+        let nextDraft = baseDraft;
+        setProgressionChanges([]);
+        setProgressionPerformanceSetCount(0);
+
+        if (
+          isProgressBuilder &&
+          latestCycle?.status === 'complete' &&
+          latestCycle.programVersionId === sourceVersionId
+        ) {
+          const priorSets = await getCycleCompletedSetRecords(database, latestCycle.id);
+          const progression = buildCycleProgressionCopy(
+            baseDraft.program,
+            baseDraft.version,
+            priorSets,
+            profile?.user.unitSystem ?? 'imperial',
+          );
+          nextDraft = { ...baseDraft, version: progression.version };
+          setProgressionChanges(progression.changes);
+          setProgressionPerformanceSetCount(progression.performanceSetCount);
+        }
+
+        setDraft(() => nextDraft);
         const referencedExerciseIds = new Set(
           snapshot.version.workouts.flatMap((workout) =>
             workout.exercises.map((exercise) => exercise.exerciseId),
@@ -189,7 +223,7 @@ export default function ProgramBuilderScreen() {
     return () => {
       active = false;
     };
-  }, [database, isBlankBuilder, sourceRetryKey, sourceVersionId]);
+  }, [database, isBlankBuilder, isProgressBuilder, sourceRetryKey, sourceVersionId]);
 
   const firstWorkout = draft.version.workouts[0];
   const exerciseNameById = useMemo(
@@ -458,6 +492,42 @@ export default function ProgramBuilderScreen() {
             : 'The source version is copied before editing, so future template changes cannot rewrite this draft or its history.'}
         </Text>
       </Card>
+
+      {isProgressBuilder ? (
+        <Card
+          tone={progressionChanges.length > 0 ? 'mint' : 'blue'}
+          style={styles.progressionCard}
+          accessibilityLabel="Deterministic progression review"
+        >
+          <Text variant="caption" tone="muted">
+            DETERMINISTIC STARTING TARGETS
+          </Text>
+          <Text variant="h3" style={styles.progressionTitle}>
+            {progressionChanges.length > 0
+              ? `${progressionChanges.length} target${progressionChanges.length === 1 ? '' : 's'} ready for the next block.`
+              : 'Targets remain conservative.'}
+          </Text>
+          <Text variant="small" tone="muted">
+            {progressionChanges.length > 0
+              ? 'These ordinary target changes come from the completed cycle record. Review or edit them below before saving or starting.'
+              : progressionPerformanceSetCount > 0
+                ? 'No automatic target change was applied. Missing, limited, or safety-flagged evidence stays held, and volume, density, and skill changes require explicit review.'
+                : database
+                  ? 'No completed-set history was available, so the next block keeps the source targets.'
+                  : 'Web preview does not load completed-cycle performance, so the source targets remain unchanged.'}
+          </Text>
+          {progressionChanges.map((change) => (
+            <Text
+              key={change.workoutExerciseId}
+              variant="smallMedium"
+              style={styles.progressionChange}
+            >
+              {change.workoutTitle}: {formatProgressionTarget(change.from)} →{' '}
+              {formatProgressionTarget(change.to)}
+            </Text>
+          ))}
+        </Card>
+      ) : null}
 
       <Text variant="h2" style={styles.sectionTitle}>
         Workout structure
@@ -1421,6 +1491,19 @@ function formatRepsTarget(reps: SetTarget['reps']): string {
   return `${reps.min}-${reps.max}`;
 }
 
+function formatProgressionTarget(target: SetTarget): string {
+  const parts: string[] = [];
+  if (target.reps !== undefined) parts.push(`${formatRepsTarget(target.reps)} reps`);
+  if (target.load?.value !== undefined) {
+    parts.push(`${target.load.value} ${target.load.unit === 'imperial' ? 'lb' : 'kg'}`);
+  }
+  if (target.durationSeconds !== undefined) parts.push(`${target.durationSeconds}s`);
+  if (target.distanceMeters !== undefined) parts.push(`${target.distanceMeters}m`);
+  if (target.rpe !== undefined) parts.push(`RPE ${target.rpe}`);
+  if (target.rir !== undefined) parts.push(`RIR ${target.rir}`);
+  return parts.join(' · ') || 'current target';
+}
+
 function hasTargetValue(target: SetTarget): boolean {
   return Boolean(
     target.reps !== undefined ||
@@ -1555,6 +1638,16 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   versionTitle: {
+    marginTop: spacing.xs,
+  },
+  progressionCard: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  progressionTitle: {
+    marginTop: spacing.xs,
+  },
+  progressionChange: {
     marginTop: spacing.xs,
   },
   sectionTitle: {

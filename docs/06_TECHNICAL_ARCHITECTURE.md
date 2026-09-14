@@ -813,3 +813,13 @@ The same internal boundary supports `skipped` sessions when no set has been logg
 session uses the same bounded reason vocabulary and atomic outbox/draft cleanup, remains out of
 adherence, cycle advancement, and completed-session progression, and is retained as an explicit
 user decision for history and later sync.
+
+## Deterministic next-cycle progression checkpoint — 2026-09-14
+
+The Review → progression-copy path now loads complete-cycle set records with workout identity,
+readiness, and discomfort context. `buildCycleProgressionCopy` applies the existing version-owned
+progression rule only when `calculateNextTarget` returns an ordinary non-confirmation decision;
+the builder renders the resulting changes as editable starting targets. Copy versions retain an
+immediate `sourceWorkoutId` so repeated program namespaces resolve history without conflating
+duplicated exercises. No cross-cycle change is applied for missing evidence, limited/rest
+readiness, discomfort, or strategies that require confirmation.

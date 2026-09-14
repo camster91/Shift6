@@ -1,14 +1,26 @@
 import type { CycleProgressSummary } from './progression';
-import type { EntityId, Exercise, PersonalRecord, ProgressPoint, TrainingCycle } from './types';
+import type {
+  EntityId,
+  Exercise,
+  PersonalRecord,
+  ProgressPoint,
+  TrainingCycle,
+  WorkoutReadiness,
+} from './types';
 
 export interface ProgressSetInput {
   sessionId: EntityId;
+  workoutId?: EntityId;
   exerciseId: EntityId;
   completedAt: string;
   load?: number;
   reps?: number;
   durationSeconds?: number;
   distanceMeters?: number;
+  rpe?: number;
+  rir?: number;
+  discomfortFlag?: boolean;
+  readiness?: WorkoutReadiness;
 }
 
 export interface ExerciseProgress {

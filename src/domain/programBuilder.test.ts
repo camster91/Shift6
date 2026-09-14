@@ -103,6 +103,27 @@ describe('immutable custom program builder', () => {
     );
   });
 
+  it('keeps the immediate source workout identity for repeated progression history', () => {
+    const firstCopy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-copy-source-1',
+      newVersionId: 'program-copy-source-1-version-1',
+      createdAt: '2026-09-14T12:00:00.000Z',
+    });
+    const secondCopy = createProgramCopy({
+      sourceProgram: firstCopy.program,
+      sourceVersion: firstCopy.version,
+      userId: 'guest-user',
+      newProgramId: 'program-copy-source-2',
+      newVersionId: 'program-copy-source-2-version-1',
+      createdAt: '2026-09-14T13:00:00.000Z',
+    });
+
+    expect(secondCopy.version.workouts[0]?.sourceWorkoutId).toBe(firstCopy.version.workouts[0]?.id);
+  });
+
   it('creates a new version namespace while preserving planned identities', () => {
     const revision = createProgramVersionRevision(
       demoProgramVersion,

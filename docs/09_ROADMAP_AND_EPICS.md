@@ -186,6 +186,8 @@ The active workout now carries builder-authored section, superset/circuit, note,
 
 Active workout drafts now flush on inactive/background app-state transitions as well as during debounced editing, improving pause/reopen durability without adding a network dependency.
 
+Readiness selections from workout preflight now feed the deterministic next-session target calculation: limited/rest context holds progression and ready context uses the normal rule, with all plan changes still requiring the existing user-approved boundaries.
+
 Progress movement history now includes deterministic duration and distance points and personal records, with the Progress selector and accessible chart presenting cardio/timed metrics alongside strength history. The underlying values remain local-first and version-scoped; no estimated strength value is generated for a timed or distance movement.
 
 Cycle advancement now uses distinct required workout identities from persisted complete sessions, so duplicate attempts cannot advance a week before its required schedule is represented.

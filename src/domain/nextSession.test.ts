@@ -1,5 +1,5 @@
 import { demoProgram, demoWorkout } from './fixtures/home';
-import { buildNextSessionTargets } from './nextSession';
+import { buildNextSessionTargets, readinessInputForWorkout } from './nextSession';
 
 describe('deterministic next-session targets', () => {
   it('uses observed local load and the program strategy to calculate the next target', () => {
@@ -65,5 +65,30 @@ describe('deterministic next-session targets', () => {
 
     expect(target?.currentTarget.load).toBeUndefined();
     expect(target?.decision.action).toBe('hold');
+  });
+
+  it('holds progression when the user marks the session limited or a rest day', () => {
+    const squat = demoWorkout.exercises[0]!;
+    const completedSets = squat.sets.map((set) => ({
+      id: `completed-${set.id}`,
+      sessionId: 'session-1',
+      workoutExerciseId: squat.id,
+      setNumber: set.setNumber,
+      load: 185,
+      reps: 5,
+      completedAt: '2026-09-14T12:05:00.000Z',
+      idempotencyKey: `session-1:${squat.id}:${set.setNumber}`,
+    }));
+
+    expect(
+      buildNextSessionTargets(
+        demoWorkout,
+        demoProgram.progressionStrategy,
+        completedSets,
+        'imperial',
+        readinessInputForWorkout('limited'),
+      )[0]?.decision,
+    ).toMatchObject({ action: 'hold' });
+    expect(readinessInputForWorkout('rest')).toMatchObject({ energy: 1, soreness: 5 });
   });
 });

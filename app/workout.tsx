@@ -23,7 +23,7 @@ import {
   demoWorkout,
 } from '../src/domain/fixtures/home';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
-import { buildNextSessionTargets } from '../src/domain/nextSession';
+import { buildNextSessionTargets, readinessInputForWorkout } from '../src/domain/nextSession';
 import { resolveTrackingType } from '../src/domain/exerciseTracking';
 import {
   createProgramVersionRevision,
@@ -257,6 +257,7 @@ export default function ActiveWorkoutScreen() {
                   activeProgram.progressionStrategy,
                   previousSets,
                   unitSystem,
+                  readinessInputForWorkout(readiness),
                 )
               : [];
           const overrides = Object.fromEntries(

@@ -1,4 +1,11 @@
-import type { CompletedSet, ProgressionStrategy, SetTarget, UnitSystem, Workout } from './types';
+import type {
+  CompletedSet,
+  ProgressionStrategy,
+  SetTarget,
+  UnitSystem,
+  Workout,
+  WorkoutReadiness,
+} from './types';
 import { calculateNextTarget, type ProgressionDecision, type ReadinessInput } from './progression';
 
 export interface NextSessionTarget {
@@ -15,6 +22,33 @@ const normalReadiness: ReadinessInput = {
   timeAvailableMinutes: 30,
   discomfort: false,
 };
+
+export function readinessInputForWorkout(
+  readiness: WorkoutReadiness | null | undefined,
+): ReadinessInput {
+  switch (readiness) {
+    case 'limited':
+      return {
+        energy: 2,
+        soreness: 3,
+        sleepQuality: 3,
+        timeAvailableMinutes: 30,
+        discomfort: false,
+      };
+    case 'rest':
+      return {
+        energy: 1,
+        soreness: 5,
+        sleepQuality: 2,
+        timeAvailableMinutes: 30,
+        discomfort: false,
+      };
+    case 'ready':
+    case null:
+    case undefined:
+      return normalReadiness;
+  }
+}
 
 export function buildNextSessionTargets(
   workout: Workout,

@@ -190,4 +190,6 @@ Progress movement history now includes deterministic duration and distance point
 
 Cycle advancement now uses distinct required workout identities from persisted complete sessions, so duplicate attempts cannot advance a week before its required schedule is represented.
 
+CI now runs on feature-branch pushes in addition to pull requests, so the foundation gate is available before a branch is opened for review.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

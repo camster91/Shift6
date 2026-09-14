@@ -461,6 +461,8 @@ Per-exercise progress history now preserves the completed set's timed and distan
 
 Cycle advancement now counts distinct completed required workout IDs within the persisted week. Repeating a single workout cannot satisfy the required schedule by itself, and optional cardio/workout IDs remain excluded from the advancement threshold.
 
+The quality workflow now runs on every branch push as well as pull requests, keeping feature-branch checkpoints covered by formatting, lint, typecheck, Expo Doctor, dependency audit, tests, and web export before review.
+
 ## Builder target configuration checkpoint — 2026-09-14
 
 The builder now exposes a tracking-aware target editor for each exercise. Reps, load, RPE, and RIR are available for rep-based movements; time and distance fields are shown for timed/cardio movements. The immutable `setWorkoutExerciseTarget` operation applies a cloned prescription to all sets in that exercise while preserving set IDs and the source version. This is an intentionally compact first target boundary: per-set overrides, rest editing, sections, supersets/circuits, warm-ups, cooldowns, and blank-workout creation remain separate increments.

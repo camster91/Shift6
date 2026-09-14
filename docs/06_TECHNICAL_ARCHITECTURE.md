@@ -519,4 +519,6 @@ The native Home boundary also treats a missing local onboarding profile as a fir
 
 Profile saves now queue the complete user-confirmed onboarding snapshot in the same SQLite transaction as the profile and equipment rows. The mutation uses a stable user-scoped idempotency key and replaces its pending payload on later edits, so offline setup changes remain local-first and retry-safe without creating duplicate profile mutations.
 
+The private builder now exposes immutable workout metadata edits (name, weekday, focus, duration), shared rest-period configuration, and bounded exercise notes. These fields stay inside the user-owned `ProgramVersion` snapshot; the public template and completed session history remain unchanged.
+
 Starting the curated Barbell 30 template now creates a uniquely identified private program/version snapshot (with the public template recorded as `sourceProgramId`) before persisting the cycle. This keeps the public fixture/template separate from user edits and gives later cycle history a stable version reference from the moment the cycle begins.

@@ -9,8 +9,11 @@ import {
   removeExerciseFromWorkout,
   replaceExerciseInWorkout,
   reorderWorkoutExercises,
+  setWorkoutExerciseNotes,
+  setWorkoutExerciseRestSeconds,
   setWorkoutExerciseSetCount,
   setWorkoutExerciseTarget,
+  updateWorkoutMetadata,
 } from './programBuilder';
 
 describe('immutable custom program builder', () => {
@@ -197,6 +200,82 @@ describe('immutable custom program builder', () => {
         estimatedDurationMinutes: 20,
       }),
     ).toThrow('between 1 and 7');
+  });
+
+  it('updates workout metadata immutably while preserving its exercises', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-workout-metadata',
+      newVersionId: 'program-custom-workout-metadata-version-1',
+      createdAt: '2026-09-14T15:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const updated = updateWorkoutMetadata(copy.version, workout.id, {
+      title: 'Strength A express',
+      dayOfWeek: 6,
+      focus: 'conditioning',
+      estimatedDurationMinutes: 25,
+      equipmentIds: ['equipment-dumbbells'],
+    });
+
+    expect(updated.workouts[0]).toMatchObject({
+      title: 'Strength A express',
+      dayOfWeek: 6,
+      focus: 'conditioning',
+      estimatedDurationMinutes: 25,
+      equipmentIds: ['equipment-dumbbells'],
+    });
+    expect(updated.workouts[0]?.exercises).toEqual(workout.exercises);
+    expect(copy.version.workouts[0]?.title).toBe(workout.title);
+  });
+
+  it('applies shared rest and notes to an exercise without changing set IDs', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-exercise-details',
+      newVersionId: 'program-custom-exercise-details-version-1',
+      createdAt: '2026-09-14T15:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const exercise = workout.exercises[0]!;
+    const setIds = exercise.sets.map((set) => set.id);
+    const withRest = setWorkoutExerciseRestSeconds(copy.version, workout.id, exercise.id, 120);
+    const withNotes = setWorkoutExerciseNotes(
+      withRest,
+      workout.id,
+      exercise.id,
+      'Pause at the bottom and keep the brace steady.',
+    );
+    const updated = withNotes.workouts[0]!.exercises[0]!;
+
+    expect(updated.sets.map((set) => set.id)).toEqual(setIds);
+    expect(updated.sets.map((set) => set.restSeconds)).toEqual([120, 120, 120]);
+    expect(updated.notes).toBe('Pause at the bottom and keep the brace steady.');
+    expect(copy.version.workouts[0]?.exercises[0]?.notes).toBeUndefined();
+  });
+
+  it('rejects unsafe rest and oversized notes', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-exercise-validation',
+      newVersionId: 'program-custom-exercise-validation-version-1',
+      createdAt: '2026-09-14T15:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const exercise = workout.exercises[0]!;
+
+    expect(() => setWorkoutExerciseRestSeconds(copy.version, workout.id, exercise.id, 1.5)).toThrow(
+      'whole number between 0 and 3600',
+    );
+    expect(() =>
+      setWorkoutExerciseNotes(copy.version, workout.id, exercise.id, 'x'.repeat(501)),
+    ).toThrow('500 characters or fewer');
   });
 
   it('creates a reviewable custom exercise rather than silently treating it as curated', () => {

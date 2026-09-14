@@ -47,6 +47,14 @@ export interface AddWorkoutInput {
   isOptional?: boolean;
 }
 
+export interface UpdateWorkoutInput {
+  title?: string;
+  dayOfWeek?: number;
+  focus?: Workout['focus'];
+  estimatedDurationMinutes?: number;
+  equipmentIds?: string[];
+}
+
 export interface CreateCustomExerciseInput {
   id: string;
   name: string;
@@ -176,6 +184,39 @@ export function renameProgram(program: Program, title: string): Program {
   if (!trimmedTitle) throw new Error('A custom program needs a name.');
 
   return { ...program, title: trimmedTitle };
+}
+
+export function updateWorkoutMetadata(
+  version: ProgramVersion,
+  workoutId: string,
+  input: UpdateWorkoutInput,
+): ProgramVersion {
+  const workout = version.workouts.find((candidate) => candidate.id === workoutId);
+  if (!workout) throw new Error('Workout not found in this program version.');
+
+  const title = input.title === undefined ? workout.title : input.title.trim();
+  if (!title) throw new Error('A workout needs a name.');
+
+  const dayOfWeek = input.dayOfWeek ?? workout.dayOfWeek;
+  if (!Number.isInteger(dayOfWeek) || dayOfWeek < 1 || dayOfWeek > 7) {
+    throw new Error('A workout day must be between 1 and 7.');
+  }
+
+  const estimatedDurationMinutes =
+    input.estimatedDurationMinutes ?? workout.estimatedDurationMinutes;
+  if (!Number.isInteger(estimatedDurationMinutes) || estimatedDurationMinutes < 1) {
+    throw new Error('A workout needs a positive duration.');
+  }
+
+  return updateWorkout(version, workoutId, (currentWorkout) => ({
+    ...currentWorkout,
+    title,
+    dayOfWeek,
+    focus: input.focus ?? currentWorkout.focus,
+    estimatedDurationMinutes,
+    equipmentIds:
+      input.equipmentIds === undefined ? currentWorkout.equipmentIds : [...input.equipmentIds],
+  }));
 }
 
 export function addWorkoutToProgram(
@@ -390,6 +431,60 @@ export function setWorkoutExerciseTarget(
   }));
 }
 
+export function setWorkoutExerciseRestSeconds(
+  version: ProgramVersion,
+  workoutId: string,
+  workoutExerciseId: string,
+  restSeconds: number | undefined,
+): ProgramVersion {
+  assertRestSeconds(restSeconds);
+
+  const workout = version.workouts.find((candidate) => candidate.id === workoutId);
+  if (!workout) throw new Error('Workout not found in this program version.');
+  if (!workout.exercises.some((exercise) => exercise.id === workoutExerciseId)) {
+    throw new Error('Exercise not found in this workout.');
+  }
+
+  return updateWorkout(version, workoutId, (currentWorkout) => ({
+    ...currentWorkout,
+    exercises: currentWorkout.exercises.map((exercise) =>
+      exercise.id === workoutExerciseId
+        ? {
+            ...exercise,
+            sets: exercise.sets.map((set) => ({ ...set, restSeconds })),
+          }
+        : exercise,
+    ),
+  }));
+}
+
+export function setWorkoutExerciseNotes(
+  version: ProgramVersion,
+  workoutId: string,
+  workoutExerciseId: string,
+  notes: string,
+): ProgramVersion {
+  const trimmedNotes = notes.trim();
+  if (trimmedNotes.length > 500) {
+    throw new Error('Exercise notes must be 500 characters or fewer.');
+  }
+
+  const workout = version.workouts.find((candidate) => candidate.id === workoutId);
+  if (!workout) throw new Error('Workout not found in this program version.');
+  if (!workout.exercises.some((exercise) => exercise.id === workoutExerciseId)) {
+    throw new Error('Exercise not found in this workout.');
+  }
+
+  return updateWorkout(version, workoutId, (currentWorkout) => ({
+    ...currentWorkout,
+    exercises: currentWorkout.exercises.map((exercise) =>
+      exercise.id === workoutExerciseId
+        ? { ...exercise, notes: trimmedNotes || undefined }
+        : exercise,
+    ),
+  }));
+}
+
 export function createCustomExercise({
   id,
   name,
@@ -501,5 +596,14 @@ function assertSetCount(setCount: number): void {
 function assertTarget(target: SetTarget): void {
   if (Object.keys(target).length === 0) {
     throw new Error('A workout exercise needs at least one target value.');
+  }
+}
+
+function assertRestSeconds(restSeconds: number | undefined): void {
+  if (
+    restSeconds !== undefined &&
+    (!Number.isInteger(restSeconds) || restSeconds < 0 || restSeconds > 3600)
+  ) {
+    throw new Error('Rest must be a whole number between 0 and 3600 seconds.');
   }
 }

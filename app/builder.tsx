@@ -6,6 +6,7 @@ import { Platform, StyleSheet, TextInput, View } from 'react-native';
 import {
   Button,
   Card,
+  Chip,
   ErrorState,
   IconButton,
   LoadingSkeleton,
@@ -30,6 +31,9 @@ import {
   renameProgram,
   setWorkoutExerciseSetCount,
   setWorkoutExerciseTarget,
+  setWorkoutExerciseNotes,
+  setWorkoutExerciseRestSeconds,
+  updateWorkoutMetadata,
 } from '../src/domain/programBuilder';
 import type { Exercise, SetTarget, TrackingType, UnitSystem, Workout } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
@@ -398,6 +402,12 @@ export default function ProgramBuilderScreen() {
               Day {workout.dayOfWeek}
             </Text>
           </View>
+          <WorkoutMetadataEditor
+            workout={workout}
+            onChange={(metadata) => {
+              updateDraftVersion((version) => updateWorkoutMetadata(version, workout.id, metadata));
+            }}
+          />
           {workout.exercises.length === 0 ? (
             <View style={styles.emptyWorkout}>
               <Text variant="small" tone="muted">
@@ -537,11 +547,28 @@ export default function ProgramBuilderScreen() {
                     exerciseName={exerciseName}
                     setCount={exercise.sets.length}
                     target={exercise.sets[0]?.target ?? {}}
+                    restSeconds={exercise.sets[0]?.restSeconds}
+                    notes={exercise.notes}
                     trackingType={trackingType}
                     unitSystem={unitSystem}
                     onChange={(target) => {
                       updateDraftVersion((version) =>
                         setWorkoutExerciseTarget(version, workout.id, exercise.id, target),
+                      );
+                    }}
+                    onRestChange={(restSeconds) => {
+                      updateDraftVersion((version) =>
+                        setWorkoutExerciseRestSeconds(
+                          version,
+                          workout.id,
+                          exercise.id,
+                          restSeconds,
+                        ),
+                      );
+                    }}
+                    onNotesChange={(notes) => {
+                      updateDraftVersion((version) =>
+                        setWorkoutExerciseNotes(version, workout.id, exercise.id, notes),
                       );
                     }}
                   />
@@ -763,22 +790,156 @@ function getNextAvailableWorkoutDay(workouts: readonly Workout[]): number {
   return Array.from({ length: 7 }, (_, index) => index + 1).find((day) => !usedDays.has(day)) ?? 7;
 }
 
+interface WorkoutMetadataEditorProps {
+  workout: Workout;
+  onChange: (
+    metadata: Partial<
+      Pick<Workout, 'title' | 'dayOfWeek' | 'focus' | 'estimatedDurationMinutes' | 'equipmentIds'>
+    >,
+  ) => void;
+}
+
+function WorkoutMetadataEditor({ workout, onChange }: WorkoutMetadataEditorProps) {
+  const [title, setTitle] = useState(workout.title);
+  const [dayOfWeek, setDayOfWeek] = useState(String(workout.dayOfWeek));
+  const [duration, setDuration] = useState(String(workout.estimatedDurationMinutes));
+
+  useEffect(() => {
+    setTitle(workout.title);
+    setDayOfWeek(String(workout.dayOfWeek));
+    setDuration(String(workout.estimatedDurationMinutes));
+  }, [workout.dayOfWeek, workout.estimatedDurationMinutes, workout.id, workout.title]);
+
+  const commitTitle = () => {
+    const nextTitle = title.trim();
+    if (!nextTitle) {
+      setTitle(workout.title);
+      return;
+    }
+    if (nextTitle !== workout.title) onChange({ title: nextTitle });
+  };
+
+  const commitDay = () => {
+    const nextDay = Number(dayOfWeek.trim());
+    if (!Number.isInteger(nextDay) || nextDay < 1 || nextDay > 7) {
+      setDayOfWeek(String(workout.dayOfWeek));
+      return;
+    }
+    if (nextDay !== workout.dayOfWeek) onChange({ dayOfWeek: nextDay });
+  };
+
+  const commitDuration = () => {
+    const nextDuration = Number(duration.trim());
+    if (!Number.isInteger(nextDuration) || nextDuration < 1) {
+      setDuration(String(workout.estimatedDurationMinutes));
+      return;
+    }
+    if (nextDuration !== workout.estimatedDurationMinutes) {
+      onChange({ estimatedDurationMinutes: nextDuration });
+    }
+  };
+
+  const focusOptions: readonly Workout['focus'][] = [
+    'strength',
+    'cardio',
+    'mobility',
+    'conditioning',
+    'recovery',
+    'mixed',
+  ];
+
+  return (
+    <View style={styles.metadataEditor} accessibilityLabel={`Edit details for ${workout.title}`}>
+      <Text variant="caption" tone="muted">
+        WORKOUT DETAILS
+      </Text>
+      <View style={styles.metadataFields}>
+        <View style={styles.metadataTitleField}>
+          <Text variant="caption" tone="muted">
+            Name
+          </Text>
+          <TextInput
+            accessibilityLabel={`Name for ${workout.title}`}
+            onBlur={commitTitle}
+            onChangeText={setTitle}
+            placeholder="Workout name"
+            placeholderTextColor={colors.inkMuted}
+            style={styles.metadataInput}
+            value={title}
+          />
+        </View>
+        <View style={styles.metadataNumberField}>
+          <Text variant="caption" tone="muted">
+            Day
+          </Text>
+          <TextInput
+            accessibilityLabel={`Day of week for ${workout.title}`}
+            keyboardType="number-pad"
+            onBlur={commitDay}
+            onChangeText={setDayOfWeek}
+            placeholder="1–7"
+            placeholderTextColor={colors.inkMuted}
+            style={styles.metadataInput}
+            value={dayOfWeek}
+          />
+        </View>
+        <View style={styles.metadataNumberField}>
+          <Text variant="caption" tone="muted">
+            Minutes
+          </Text>
+          <TextInput
+            accessibilityLabel={`Duration in minutes for ${workout.title}`}
+            keyboardType="number-pad"
+            onBlur={commitDuration}
+            onChangeText={setDuration}
+            placeholder="30"
+            placeholderTextColor={colors.inkMuted}
+            style={styles.metadataInput}
+            value={duration}
+          />
+        </View>
+      </View>
+      <Text variant="caption" tone="muted" style={styles.focusLabel}>
+        FOCUS
+      </Text>
+      <View style={styles.focusOptions} accessibilityRole="radiogroup">
+        {focusOptions.map((focus) => (
+          <Chip
+            key={focus}
+            label={formatFocusLabel(focus)}
+            selected={workout.focus === focus}
+            onPress={() => onChange({ focus })}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 interface TargetEditorProps {
   exerciseName: string;
   setCount: number;
   target: SetTarget;
+  restSeconds?: number;
+  notes?: string;
   trackingType: TrackingType;
   unitSystem: UnitSystem;
   onChange: (target: SetTarget) => void;
+  onRestChange: (restSeconds: number | undefined) => void;
+  onNotesChange: (notes: string) => void;
 }
 
 function TargetEditor({
   exerciseName,
   setCount,
   target,
+  restSeconds,
+  notes,
   trackingType,
   unitSystem,
   onChange,
+  onRestChange,
+  onNotesChange,
 }: TargetEditorProps) {
   const commit = (field: NumericTargetField, rawValue: string): boolean => {
     const nextTarget = updateNumericTarget(target, field, rawValue, unitSystem);
@@ -837,6 +998,25 @@ function TargetEditor({
             onCommit={(value) => commit('distanceMeters', value)}
           />
         ) : null}
+        <TargetField
+          label="Rest (sec)"
+          accessibilityLabel={`Rest target for ${exerciseName}`}
+          value={restSeconds === undefined ? '' : String(restSeconds)}
+          placeholder="90"
+          onCommit={(value) => {
+            const trimmedValue = value.trim();
+            if (!trimmedValue) {
+              onRestChange(undefined);
+              return true;
+            }
+            const parsedValue = Number(trimmedValue);
+            if (!Number.isInteger(parsedValue) || parsedValue < 0 || parsedValue > 3600) {
+              return false;
+            }
+            onRestChange(parsedValue);
+            return true;
+          }}
+        />
         {showsEffort ? (
           <>
             <TargetField
@@ -856,6 +1036,20 @@ function TargetEditor({
           </>
         ) : null}
       </View>
+      <Text variant="caption" tone="muted" style={styles.notesLabel}>
+        EXERCISE NOTE
+      </Text>
+      <TextInput
+        accessibilityLabel={`Notes for ${exerciseName}`}
+        maxLength={500}
+        multiline
+        onChangeText={onNotesChange}
+        placeholder="Add a cue, setup note, or reminder"
+        placeholderTextColor={colors.inkMuted}
+        style={styles.notesInput}
+        textAlignVertical="top"
+        value={notes ?? ''}
+      />
     </View>
   );
 }
@@ -977,6 +1171,10 @@ function hasTargetValue(target: SetTarget): boolean {
   );
 }
 
+function formatFocusLabel(focus: Workout['focus']): string {
+  return focus.charAt(0).toUpperCase() + focus.slice(1);
+}
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -1040,6 +1238,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  metadataEditor: {
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: spacing.xs,
+  },
+  metadataFields: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  metadataTitleField: {
+    flexGrow: 1,
+    flexBasis: 150,
+    gap: spacing.xxs,
+  },
+  metadataNumberField: {
+    width: 78,
+    gap: spacing.xxs,
+  },
+  metadataInput: {
+    minHeight: 40,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.canvas,
+    color: colors.ink,
+    fontSize: 15,
+  },
+  focusLabel: {
+    marginTop: spacing.xs,
+  },
+  focusOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
   exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1066,6 +1302,19 @@ const styles = StyleSheet.create({
   targetField: {
     width: 86,
     gap: spacing.xxs,
+  },
+  notesLabel: {
+    marginTop: spacing.sm,
+  },
+  notesInput: {
+    minHeight: 64,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.canvas,
+    color: colors.ink,
+    fontSize: 15,
   },
   targetInput: {
     minHeight: 42,

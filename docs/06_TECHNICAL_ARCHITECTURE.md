@@ -459,3 +459,5 @@ The active workout now offers deterministic catalogue substitutions before the f
 ## Post-workout summary checkpoint — 2026-09-14
 
 Migration 9 adds a structured, user-scoped `workout_check_ins` record. The completed workout now routes to `app/summary.tsx`, which reads the local session and completed sets, resolves the workout from the session's stored program-version snapshot, presents duration/set/volume facts, captures optional energy/soreness/effort/discomfort values, and queues the check-in through an idempotent outbox mutation. Notes stay local to the workout data boundary and are not accepted by the analytics allowlist. The summary explicitly labels web as preview-only when no durable database is available.
+
+The Review surface now exposes the deterministic cycle record in decision-ready language: completion/adherence, logged sets, volume, progression events, reported effort, cardio minutes, and discomfort flags. A completed cycle offers repeat, private-copy adjustment, or program-library selection; no AI-generated action is applied automatically.

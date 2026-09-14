@@ -160,6 +160,15 @@ export default function CycleReviewScreen() {
         <Fact label="Volume" value={summary.facts.totalTrainingVolume.toLocaleString()} />
       </View>
 
+      <Card tone="blue" style={styles.signalCard} accessibilityLabel={formatReviewSignals(summary)}>
+        <Text variant="caption" tone="muted">
+          WHAT THE RECORD SAYS
+        </Text>
+        <Text variant="small" tone="muted" style={styles.signalCopy}>
+          {formatReviewSignals(summary)}
+        </Text>
+      </Card>
+
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
 
       {isComplete ? (
@@ -183,6 +192,13 @@ export default function CycleReviewScreen() {
             variant="secondary"
             onPress={() => router.push('/builder')}
             icon={<Ionicons name="create-outline" size={18} color={colors.ink} />}
+            style={styles.actionButton}
+          />
+          <Button
+            label="Choose another program"
+            variant="ghost"
+            onPress={() => router.push('/programs')}
+            icon={<Ionicons name="library-outline" size={18} color={colors.ink} />}
             style={styles.actionButton}
           />
           <Text variant="caption" tone="muted" style={styles.persistenceNote}>
@@ -221,6 +237,20 @@ function getPlannedWorkoutCount(currentCycle: TrainingCycle): number {
   return currentCycle.weeks.reduce((total, week) => total + week.plannedWorkoutCount, 0);
 }
 
+function formatReviewSignals(summary: CycleProgressSummary): string {
+  const { facts } = summary;
+  const effort =
+    facts.averageReportedEffort === undefined
+      ? 'effort not reported'
+      : `average effort ${facts.averageReportedEffort.toFixed(1)} of 5`;
+  const cardio = `${Math.round(facts.cardioMinutes)} cardio minutes`;
+  const discomfort =
+    facts.discomfortFlags === 0
+      ? 'no discomfort flags'
+      : `${facts.discomfortFlags} discomfort flag${facts.discomfortFlags === 1 ? '' : 's'}`;
+  return `${facts.progressionEvents} progression events, ${effort}, ${cardio}, and ${discomfort}.`;
+}
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -257,6 +287,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
     marginTop: spacing.xl,
+  },
+  signalCard: {
+    marginTop: spacing.xl,
+  },
+  signalCopy: {
+    marginTop: spacing.sm,
   },
   fact: {
     flexGrow: 1,

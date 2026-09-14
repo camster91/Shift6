@@ -175,6 +175,14 @@ export default function ProfileScreen() {
         </Text>
       </Card>
 
+      <Button
+        label="Manage health connections"
+        variant="secondary"
+        icon={<Ionicons name="heart-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/health')}
+        style={styles.healthButton}
+      />
+
       <Text variant="h2" style={styles.sectionTitle}>
         Data & privacy
       </Text>
@@ -271,6 +279,9 @@ const styles = StyleSheet.create({
   },
   editSetupButton: {
     marginTop: spacing.xl,
+  },
+  healthButton: {
+    marginTop: spacing.md,
   },
   settingsTitle: {
     marginTop: spacing.md,

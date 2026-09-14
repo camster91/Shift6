@@ -396,6 +396,11 @@ Migration 12 adds a user-scoped `health_summaries` table and `src/db/healthRepos
 
 Native adapters, permission disclosure, remote health policy, and device verification remain open.
 
+The new `/health` settings route now makes the optional choice and proposed data types visible,
+loads the saved preference locally on native builds, and explicitly reports that the current
+connector is unavailable. Profile links to this route; no permission request is triggered and web
+preview remains non-persistent.
+
 ## Local privacy boundary checkpoint — 2026-09-14
 
 `src/db/privacyRepository.ts` now provides two user-scoped local operations:

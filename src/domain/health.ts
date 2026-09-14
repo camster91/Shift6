@@ -25,6 +25,39 @@ export interface HealthDateRange {
   endAt: string;
 }
 
+export const healthDataTypeDetails = {
+  steps: {
+    label: 'Steps',
+    unit: 'count',
+    reason: 'Understand everyday movement outside planned workouts.',
+  },
+  workouts: {
+    label: 'Recorded workouts',
+    unit: 'count',
+    reason: 'Include activity recorded by another health app in your trends.',
+  },
+  'heart-rate': {
+    label: 'Heart rate',
+    unit: 'bpm',
+    reason: 'Add context to cardio effort when the platform provides a summary.',
+  },
+  'resting-heart-rate': {
+    label: 'Resting heart rate',
+    unit: 'bpm',
+    reason: 'Show a longer-term recovery context without making a medical claim.',
+  },
+  'sleep-duration': {
+    label: 'Sleep duration',
+    unit: 'seconds',
+    reason: 'Compare reported sleep duration with consistency and readiness context.',
+  },
+  weight: {
+    label: 'Weight',
+    unit: 'kg or lb',
+    reason: 'Show optional body-metric trends when you choose to share them.',
+  },
+} as const satisfies Record<HealthDataType, { label: string; unit: string; reason: string }>;
+
 export type HealthAggregationMode = 'sum' | 'average' | 'latest';
 
 export interface HealthTrendPoint {

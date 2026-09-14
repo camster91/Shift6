@@ -1,6 +1,20 @@
-import { buildDailyHealthTrends, healthAggregationMode, normalizeHealthSummaries } from './health';
+import {
+  buildDailyHealthTrends,
+  healthAggregationMode,
+  healthDataTypeDetails,
+  normalizeHealthSummaries,
+} from './health';
 
 describe('provider-neutral health normalization', () => {
+  it('defines a disclosure reason and unit for every supported health type', () => {
+    expect(Object.keys(healthDataTypeDetails)).toHaveLength(6);
+    for (const detail of Object.values(healthDataTypeDetails)) {
+      expect(detail.label.length).toBeGreaterThan(0);
+      expect(detail.unit.length).toBeGreaterThan(0);
+      expect(detail.reason.length).toBeGreaterThan(0);
+    }
+  });
+
   it('drops invalid samples, canonicalizes timestamps, deduplicates source IDs, and sorts', () => {
     const samples = normalizeHealthSummaries([
       {

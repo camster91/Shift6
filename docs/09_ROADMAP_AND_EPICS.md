@@ -200,6 +200,8 @@ The health boundary now validates and normalizes provider summaries in the domai
 
 Normalized health summaries now have a local SQLite repository with user-scoped upserts, filtered reads, local export/delete coverage, and guest-account ownership transfer. They remain outside the sync outbox until a least-privilege remote health policy is approved.
 
+Profile now links to a health-settings route that discloses the optional data types and current unavailable connector state without requesting permissions. Native adapters and last-sync/disconnect controls remain release-gated.
+
 Authenticated sync triggers now use a single-flight runtime guard so foreground, reconnect, and manual attempts cannot overlap; retries remain available after the active attempt settles.
 
 Cycle advancement now uses distinct required workout identities from persisted complete sessions, so duplicate attempts cannot advance a week before its required schedule is represented.

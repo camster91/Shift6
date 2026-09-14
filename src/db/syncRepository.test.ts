@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { BackendClient } from '../services/contracts';
-import { flushSyncOutbox, getPendingSyncMutations } from './syncRepository';
+import { flushSyncOutbox, getPendingSyncIssues, getPendingSyncMutations } from './syncRepository';
 
 const pendingRow = {
   id: 'outbox-set-1',
@@ -10,6 +10,16 @@ const pendingRow = {
   entity_id: 'set-1',
   payload_json: JSON.stringify({ id: 'set-1', reps: 5 }),
   created_at: '2026-09-13T12:05:00.000Z',
+};
+
+const issueRow = {
+  id: 'outbox-program-1',
+  entity_type: 'program-version' as const,
+  entity_id: 'program-version-1',
+  created_at: '2026-09-14T12:05:00.000Z',
+  attempt_count: 2,
+  last_error:
+    'The backend reported a version-conflict. Review is required before this change can sync.',
 };
 
 describe('syncRepository', () => {
@@ -26,6 +36,24 @@ describe('syncRepository', () => {
         entityId: pendingRow.entity_id,
         payload: { id: 'set-1', reps: 5 },
         createdAt: pendingRow.created_at,
+      },
+    ]);
+  });
+
+  it('reads reviewable sync issues without exposing mutation payloads', async () => {
+    const database = {
+      getAllAsync: async () => [issueRow],
+    } as unknown as SQLiteDatabase;
+
+    await expect(getPendingSyncIssues(database, 10)).resolves.toEqual([
+      {
+        id: issueRow.id,
+        entityType: issueRow.entity_type,
+        entityId: issueRow.entity_id,
+        createdAt: issueRow.created_at,
+        attemptCount: issueRow.attempt_count,
+        lastError: issueRow.last_error,
+        kind: 'conflict',
       },
     ]);
   });
@@ -136,7 +164,7 @@ describe('syncRepository', () => {
     });
     expect(calls.some((call) => call.sql.includes('DELETE FROM sync_outbox'))).toBe(false);
     expect(calls[0]?.params).toEqual([
-      'The backend reported a conflict. Review is required before this change can sync.',
+      'The backend reported a version-conflict. Review is required before this change can sync.',
       'outbox-set-1',
     ]);
   });

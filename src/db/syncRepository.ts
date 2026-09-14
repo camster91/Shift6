@@ -11,6 +11,25 @@ interface SyncOutboxRow {
   created_at: string;
 }
 
+export interface SyncIssue {
+  id: string;
+  entityType: SyncMutation['entityType'];
+  entityId: string;
+  createdAt: string;
+  attemptCount: number;
+  lastError: string;
+  kind: 'conflict' | 'rejected' | 'failed';
+}
+
+interface SyncIssueRow {
+  id: string;
+  entity_type: SyncMutation['entityType'];
+  entity_id: string;
+  created_at: string;
+  attempt_count: number;
+  last_error: string;
+}
+
 export interface SyncRunResult {
   attemptedMutationIds: string[];
   acknowledgedMutationIds: string[];
@@ -39,6 +58,32 @@ export async function getPendingSyncMutations(
     entityId: row.entity_id,
     payload: JSON.parse(row.payload_json) as Record<string, unknown>,
     createdAt: row.created_at,
+  }));
+}
+
+/** Read-only local issue summary for an explicit review surface. */
+export async function getPendingSyncIssues(
+  database: SQLiteDatabase,
+  limit = 50,
+): Promise<SyncIssue[]> {
+  const safeLimit = Math.max(1, Math.floor(limit));
+  const rows = await database.getAllAsync<SyncIssueRow>(
+    `SELECT id, entity_type, entity_id, created_at, attempt_count, last_error
+       FROM sync_outbox
+      WHERE last_error IS NOT NULL
+      ORDER BY created_at ASC, id ASC
+      LIMIT ?;`,
+    safeLimit,
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    createdAt: row.created_at,
+    attemptCount: row.attempt_count,
+    lastError: row.last_error,
+    kind: issueKind(row.last_error),
   }));
 }
 
@@ -96,11 +141,20 @@ export async function flushSyncOutbox(
   const failedMutationIds = attemptedMutationIds.filter((id) => !resolvedIds.has(id));
 
   await acknowledgeSyncMutations(database, acknowledgedMutationIds);
-  await recordSyncFailure(
-    database,
-    conflictedMutationIds,
-    'The backend reported a conflict. Review is required before this change can sync.',
-  );
+  const conflictsByCode = new Map<string, string[]>();
+  for (const conflict of result.conflicts ?? []) {
+    if (!conflictedSet.has(conflict.mutationId)) continue;
+    const ids = conflictsByCode.get(conflict.code) ?? [];
+    ids.push(conflict.mutationId);
+    conflictsByCode.set(conflict.code, ids);
+  }
+  for (const [code, ids] of conflictsByCode) {
+    await recordSyncFailure(
+      database,
+      ids,
+      `The backend reported a ${code}. Review is required before this change can sync.`,
+    );
+  }
   await recordSyncFailure(database, rejectedMutationIds, 'The backend rejected this mutation.');
   await recordSyncFailure(
     database,
@@ -139,6 +193,12 @@ async function recordSyncFailure(
     message,
     ...ids,
   );
+}
+
+function issueKind(message: string): SyncIssue['kind'] {
+  if (message.toLowerCase().includes('conflict')) return 'conflict';
+  if (message.toLowerCase().includes('rejected')) return 'rejected';
+  return 'failed';
 }
 
 function uniqueKnownIds(ids: readonly string[], knownIds: ReadonlySet<string>): string[] {

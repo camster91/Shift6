@@ -30,6 +30,7 @@ export default function RootLayout() {
               <Stack.Screen name="summary" options={{ presentation: 'card' }} />
               <Stack.Screen name="cycle" options={{ presentation: 'card' }} />
               <Stack.Screen name="notifications" options={{ presentation: 'card' }} />
+              <Stack.Screen name="sync-review" options={{ presentation: 'card' }} />
               <Stack.Screen name="workout" options={{ presentation: 'modal' }} />
             </Stack>
           </NotificationRuntimeProvider>

@@ -131,7 +131,19 @@ export default function ProfileScreen() {
         Your goals, equipment, schedule, and preferences shape the plan.
       </Text>
 
-      {syncStatus ? <OfflineBanner status={syncStatus} /> : null}
+      {syncStatus ? (
+        <View style={styles.syncStatus}>
+          <OfflineBanner status={syncStatus} />
+          {syncStatus === 'sync-conflict' ? (
+            <Button
+              label="Review sync issues"
+              variant="ghost"
+              onPress={() => router.push('/sync-review')}
+              style={styles.syncReviewButton}
+            />
+          ) : null}
+        </View>
+      ) : null}
 
       <Card tone="ink" style={styles.profileCard}>
         <View style={styles.avatar}>
@@ -253,6 +265,13 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: spacing.md,
+  },
+  syncStatus: {
+    marginTop: spacing.xl,
+  },
+  syncReviewButton: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.xs,
   },
   profileCard: {
     marginTop: spacing.xl,

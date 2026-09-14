@@ -268,4 +268,9 @@ next-session targets; missing or draft rules use conservative defaults until pro
 parameters are reviewed. This is an implementation checkpoint for #277, not a claim that all 20
 launch programs have production-reviewed progression rules.
 
+The #272 sync slice now includes a local review route for outbox failures and backend conflicts.
+It reads issue metadata without sending or displaying mutation payloads, explains the no-auto-merge
+boundary, and provides an explicit retry. Resolution choices remain blocked until server-side
+version policy and a diff contract exist.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

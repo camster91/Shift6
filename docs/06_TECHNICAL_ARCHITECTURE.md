@@ -718,3 +718,11 @@ time/distance increments; active workout and Progress callers pass the version's
 defaults, while the selected strategy and all safety/readiness gates remain owned by
 `progression.ts`. This keeps progression calculations independent of AI and makes future program
 versions able to change rules without rewriting completed history.
+
+## Sync review surface checkpoint — 2026-09-14
+
+`getPendingSyncIssues` exposes only local outbox metadata and sanitized issue classification, not
+mutation payloads. The Profile conflict banner now links to `app/sync-review.tsx`, which explains
+that local plan data remains safe and offers an explicit retry. The route deliberately has no
+keep-local/keep-server default: a real resolution action still requires a backend version policy
+and a user-visible diff, so the client cannot silently merge or discard a future plan.

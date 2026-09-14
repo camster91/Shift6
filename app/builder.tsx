@@ -176,7 +176,7 @@ export default function ProgramBuilderScreen() {
       const program = renameProgram(draft.program, draft.program.title);
       const startedAt = new Date().toISOString();
       const cycle = createTrainingCycle({
-        id: `cycle-guest-user-${draft.program.id}`,
+        id: `cycle-guest-user-${draft.program.id}-${Date.now()}`,
         userId: 'guest-user',
         programVersion: draft.version,
         startedAt,

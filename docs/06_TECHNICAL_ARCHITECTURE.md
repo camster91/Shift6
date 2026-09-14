@@ -345,6 +345,8 @@ The next #276/#277 vertical-slice increment closes the first deterministic cycle
 - the Review route derives its facts from local records and exposes explicit repeat/adjust paths; repeating creates a new local cycle snapshot while the completed cycle remains unchanged;
 - Progress reads the latest cycle so a completed cycle can surface its review entry point, while the web target remains an honest non-persistent preview.
 
+Program Detail and Builder cycle starts now use timestamp-derived guest cycle IDs, so starting the same program again creates a new snapshot instead of overwriting a prior cycle row. The active-cycle pause behavior remains scoped to the user, and completed workout/history rows are not rewritten.
+
 Workout completion, cycle advancement, both sync mutations, and draft removal now run behind one repository transaction, reducing the risk that a crash leaves a completed session on a stale cycle week. The full review still needs personal-record detail, cardio/mobility trend views, user feedback, change-program/build-new-cycle options, and native device verification.
 
 ## Coach safety boundary checkpoint — 2026-09-14

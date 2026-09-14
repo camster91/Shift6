@@ -33,7 +33,7 @@ export default function ProgramDetailScreen() {
     try {
       const startedAt = new Date().toISOString();
       const cycle = createTrainingCycle({
-        id: `cycle-guest-user-${demoProgram.id}`,
+        id: `cycle-guest-user-${demoProgram.id}-${Date.now()}`,
         userId: 'guest-user',
         programVersion: demoProgramVersion,
         startedAt,

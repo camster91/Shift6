@@ -37,7 +37,7 @@ import {
   getExerciseProgress,
   getLatestCompletedWorkoutSets,
 } from '../../src/db/progressRepository';
-import type { SetTarget } from '../../src/domain/types';
+import type { ProgressPoint, SetTarget, TrackingType } from '../../src/domain/types';
 import { colors, spacing } from '../../src/design/tokens';
 
 export default function ProgressScreen() {
@@ -148,6 +148,9 @@ export default function ProgressScreen() {
   }
 
   const { facts } = summary;
+  const selectedExercise = exerciseChoices.find(
+    (choice) => choice.exerciseId === selectedExerciseId,
+  );
 
   const handleSelectExercise = async (exerciseId: string) => {
     setSelectedExerciseId(exerciseId);
@@ -245,8 +248,8 @@ export default function ProgressScreen() {
         <View style={styles.exerciseSelector} accessibilityLabel="Movement trend selector">
           <Text variant="h3">Movement trends</Text>
           <Text variant="small" tone="muted" style={styles.selectorCopy}>
-            Compare rep-based movements from the active program. Values come from completed local
-            sets.
+            Compare strength, cardio, and timed movements from the active program. Values come from
+            completed local sets.
           </Text>
           <View style={styles.selectorChips}>
             {exerciseChoices.map((choice) => (
@@ -296,7 +299,11 @@ export default function ProgressScreen() {
       {exerciseProgressLoading ? (
         <LoadingSkeleton height={180} style={styles.historyLoading} />
       ) : exerciseProgress ? (
-        <ProgressHistoryCard progress={exerciseProgress} />
+        <ProgressHistoryCard
+          progress={exerciseProgress}
+          label={selectedExercise?.label}
+          trackingType={selectedExercise?.trackingType}
+        />
       ) : null}
 
       {currentCycle.status === 'complete' ? (
@@ -343,13 +350,14 @@ function formatExerciseName(exerciseId: string): string {
 interface ProgressExerciseChoice {
   exerciseId: string;
   label: string;
+  trackingType: TrackingType;
 }
 
 function getProgressExerciseChoices(
   version: typeof demoProgramVersion,
   userExercises: readonly ExerciseLike[] = [],
 ): ProgressExerciseChoice[] {
-  const exerciseNames = new Map<string, { name: string; trackingType: string }>([
+  const exerciseNames = new Map<string, { name: string; trackingType: TrackingType }>([
     ...foundationalExercises.map((exercise) => [exercise.id, exercise] as const),
     ...userExercises.map((exercise) => [exercise.id, exercise] as const),
   ]);
@@ -360,14 +368,12 @@ function getProgressExerciseChoices(
       if (seen.has(workoutExercise.exerciseId)) return [];
       seen.add(workoutExercise.exerciseId);
       const exercise = exerciseNames.get(workoutExercise.exerciseId);
-      if (exercise && exercise.trackingType !== 'reps' && exercise.trackingType !== 'custom') {
-        return [];
-      }
 
       return [
         {
           exerciseId: workoutExercise.exerciseId,
           label: exercise?.name ?? formatExerciseName(workoutExercise.exerciseId),
+          trackingType: exercise?.trackingType ?? 'reps',
         },
       ];
     }),
@@ -377,7 +383,7 @@ function getProgressExerciseChoices(
 interface ExerciseLike {
   id: string;
   name: string;
-  trackingType: string;
+  trackingType: TrackingType;
 }
 
 function formatTarget(target: SetTarget): string {
@@ -399,19 +405,26 @@ function formatAction(action: NextSessionTarget['decision']['action']): string {
   return action === 'hold' ? 'KEEP' : action.replaceAll('-', ' ').toUpperCase();
 }
 
-function ProgressHistoryCard({ progress }: { progress: ExerciseProgress }) {
+function ProgressHistoryCard({
+  progress,
+  label: providedLabel,
+  trackingType = 'reps',
+}: {
+  progress: ExerciseProgress;
+  label?: string;
+  trackingType?: TrackingType;
+}) {
   const exercise = foundationalExercises.find((candidate) => candidate.id === progress.exerciseId);
-  const label = exercise?.name ?? formatExerciseName(progress.exerciseId);
-  const values = progress.points.map(
-    (point) => point.estimatedOneRepMax ?? point.bestLoad ?? point.bestReps ?? 0,
-  );
+  const label = providedLabel ?? exercise?.name ?? formatExerciseName(progress.exerciseId);
+  const metric = getHistoryMetric(progress.points, trackingType);
+  const values = progress.points.map((point) => getHistoryValue(point, metric));
   const maximum = Math.max(...values, 1);
   const latest = progress.points.at(-1);
   const recordCount = progress.personalRecords.length;
   const chartSummary = progress.points
     .map((point, index) => {
-      const value = point.estimatedOneRepMax ?? point.bestLoad ?? point.bestReps;
-      return `Session ${index + 1}: ${value === undefined ? 'not measured' : Math.round(value)}`;
+      const value = getHistoryValue(point, metric);
+      return `Session ${index + 1}: ${value === 0 ? 'not measured' : formatHistoryValue(point, metric)}`;
     })
     .join('; ');
 
@@ -419,7 +432,7 @@ function ProgressHistoryCard({ progress }: { progress: ExerciseProgress }) {
     <Card
       tone="blue"
       style={styles.historyCard}
-      accessibilityLabel={`${label} strength trend. ${chartSummary || 'No completed sessions yet.'}`}
+      accessibilityLabel={`${label} ${historyMetricLabel(metric).toLowerCase()} trend. ${chartSummary || 'No completed sessions yet.'}`}
     >
       <Text variant="caption" tone="muted">
         MOVEMENT TREND
@@ -429,7 +442,7 @@ function ProgressHistoryCard({ progress }: { progress: ExerciseProgress }) {
           <Text variant="h3">{label}</Text>
           <Text variant="small" tone="muted">
             {progress.points.length > 0
-              ? `${recordCount} recorded best${recordCount === 1 ? '' : 's'} · estimated 1RM where load and reps are available`
+              ? `${recordCount} recorded best${recordCount === 1 ? '' : 's'} · ${historyMetricLabel(metric)}`
               : 'Complete this movement to start a local trend.'}
           </Text>
         </View>
@@ -455,17 +468,78 @@ function ProgressHistoryCard({ progress }: { progress: ExerciseProgress }) {
             })}
           </View>
           <Text variant="smallMedium" style={styles.historyValue}>
-            Latest:{' '}
-            {latest?.estimatedOneRepMax
-              ? `${Math.round(latest.estimatedOneRepMax)} estimated`
-              : latest?.bestLoad
-                ? `${latest.bestLoad} load`
-                : 'Rep trend'}
+            Latest: {formatHistoryValue(latest, metric)}
           </Text>
         </>
       ) : null}
     </Card>
   );
+}
+
+type HistoryMetric = 'strength' | 'reps' | 'duration' | 'distance';
+
+function getHistoryMetric(
+  points: readonly ProgressPoint[],
+  trackingType: TrackingType,
+): HistoryMetric {
+  if (trackingType === 'time') return 'duration';
+  if (trackingType === 'distance') return 'distance';
+  if (trackingType === 'duration-and-distance') {
+    return points.some((point) => point.bestDurationSeconds !== undefined)
+      ? 'duration'
+      : 'distance';
+  }
+  if (trackingType === 'custom') {
+    return points.some(
+      (point) => point.estimatedOneRepMax !== undefined || point.bestLoad !== undefined,
+    )
+      ? 'strength'
+      : 'reps';
+  }
+  return points.some(
+    (point) => point.estimatedOneRepMax !== undefined || point.bestLoad !== undefined,
+  )
+    ? 'strength'
+    : 'reps';
+}
+
+function getHistoryValue(point: ProgressPoint | undefined, metric: HistoryMetric): number {
+  if (!point) return 0;
+  if (metric === 'duration') return point.bestDurationSeconds ?? 0;
+  if (metric === 'distance') return point.bestDistanceMeters ?? 0;
+  if (metric === 'reps') return point.bestReps ?? 0;
+  return point.estimatedOneRepMax ?? point.bestLoad ?? point.bestReps ?? 0;
+}
+
+function historyMetricLabel(metric: HistoryMetric): string {
+  if (metric === 'duration') return 'Best duration';
+  if (metric === 'distance') return 'Best distance';
+  if (metric === 'reps') return 'Best reps';
+  return 'Estimated 1RM, load, or reps';
+}
+
+function formatHistoryValue(point: ProgressPoint | undefined, metric: HistoryMetric): string {
+  const value = getHistoryValue(point, metric);
+  if (value === 0) return 'Not measured';
+  if (metric === 'duration') return formatDuration(value);
+  if (metric === 'distance') return formatDistance(value);
+  if (metric === 'reps') return `${Math.round(value)} reps`;
+  if (point?.estimatedOneRepMax !== undefined) return `${Math.round(value)} estimated`;
+  if (point?.bestLoad !== undefined) return `${Math.round(value)} load`;
+  return `${Math.round(value)} reps`;
+}
+
+function formatDuration(seconds: number): string {
+  const roundedSeconds = Math.round(seconds);
+  const minutes = Math.floor(roundedSeconds / 60);
+  const remainder = roundedSeconds % 60;
+  return minutes > 0 ? `${minutes}m${remainder > 0 ? ` ${remainder}s` : ''}` : `${remainder}s`;
+}
+
+function formatDistance(meters: number): string {
+  return meters >= 1000
+    ? `${(meters / 1000).toFixed(meters >= 10_000 ? 0 : 1)} km`
+    : `${Math.round(meters)} m`;
 }
 
 function CycleComparisonCard({ comparison }: { comparison: CycleProgressComparison }) {

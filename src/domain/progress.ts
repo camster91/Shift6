@@ -7,6 +7,8 @@ export interface ProgressSetInput {
   completedAt: string;
   load?: number;
   reps?: number;
+  durationSeconds?: number;
+  distanceMeters?: number;
 }
 
 export interface ExerciseProgress {
@@ -101,6 +103,8 @@ export function estimateOneRepMax(
 function buildPoint(exerciseId: EntityId, sets: readonly ProgressSetInput[]): ProgressPoint {
   const bestLoad = max(sets.map((set) => set.load));
   const bestReps = max(sets.map((set) => set.reps));
+  const bestDurationSeconds = max(sets.map((set) => set.durationSeconds));
+  const bestDistanceMeters = max(sets.map((set) => set.distanceMeters));
   const estimatedOneRepMax = max(sets.map((set) => estimateOneRepMax(set.load, set.reps)));
   const volume = sets.reduce((total, set) => total + (set.load ?? 0) * (set.reps ?? 0), 0);
   const latestSet = [...sets].sort((left, right) => {
@@ -114,6 +118,8 @@ function buildPoint(exerciseId: EntityId, sets: readonly ProgressSetInput[]): Pr
     completedAt: latestSet?.completedAt ?? new Date(0).toISOString(),
     ...(bestLoad === undefined ? {} : { bestLoad }),
     ...(bestReps === undefined ? {} : { bestReps }),
+    ...(bestDurationSeconds === undefined ? {} : { bestDurationSeconds }),
+    ...(bestDistanceMeters === undefined ? {} : { bestDistanceMeters }),
     ...(estimatedOneRepMax === undefined ? {} : { estimatedOneRepMax }),
     volume,
   };
@@ -130,6 +136,8 @@ function buildPersonalRecords(
     const candidates: Array<[PersonalRecord['metric'], number | undefined]> = [
       ['load', point.bestLoad],
       ['reps', point.bestReps],
+      ['duration', point.bestDurationSeconds],
+      ['distance', point.bestDistanceMeters],
       ['estimated-one-rep-max', point.estimatedOneRepMax],
     ];
     for (const [metric, value] of candidates) {

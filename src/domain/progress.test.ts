@@ -80,4 +80,34 @@ describe('deterministic progress history', () => {
     expect(comparison.loggedSets).toMatchObject({ current: 3, previous: 1, delta: 2 });
     expect(comparison.cardioMinutes).toMatchObject({ current: 25, previous: 10, delta: 15 });
   });
+
+  it('tracks timed and distance movements without strength estimates', () => {
+    const progress = buildExerciseProgress('exercise-bike', [
+      {
+        sessionId: 'session-1',
+        exerciseId: 'exercise-bike',
+        completedAt: '2026-09-13T12:00:00.000Z',
+        durationSeconds: 900,
+        distanceMeters: 3000,
+      },
+      {
+        sessionId: 'session-2',
+        exerciseId: 'exercise-bike',
+        completedAt: '2026-09-14T12:00:00.000Z',
+        durationSeconds: 1200,
+        distanceMeters: 3200,
+      },
+    ]);
+
+    expect(progress.points).toMatchObject([
+      { sessionId: 'session-1', bestDurationSeconds: 900, bestDistanceMeters: 3000 },
+      { sessionId: 'session-2', bestDurationSeconds: 1200, bestDistanceMeters: 3200 },
+    ]);
+    expect(progress.personalRecords.map((record) => record.metric)).toEqual([
+      'duration',
+      'distance',
+      'duration',
+      'distance',
+    ]);
+  });
 });

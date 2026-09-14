@@ -285,7 +285,8 @@ export interface CompletedSet {
   idempotencyKey: string;
 }
 
-export type PersonalRecordMetric = 'load' | 'reps' | 'estimated-one-rep-max';
+export type PersonalRecordMetric =
+  'load' | 'reps' | 'duration' | 'distance' | 'estimated-one-rep-max';
 
 export interface ProgressPoint {
   sessionId: EntityId;
@@ -293,6 +294,8 @@ export interface ProgressPoint {
   completedAt: ISODateString;
   bestLoad?: number;
   bestReps?: number;
+  bestDurationSeconds?: number;
+  bestDistanceMeters?: number;
   estimatedOneRepMax?: number;
   volume: number;
 }

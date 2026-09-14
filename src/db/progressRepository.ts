@@ -47,6 +47,8 @@ interface ExerciseProgressRow {
   completed_at: string;
   load: number | null;
   reps: number | null;
+  duration_seconds: number | null;
+  distance_meters: number | null;
   workout_id: string;
   version_json: string | null;
 }
@@ -108,7 +110,8 @@ export async function getExerciseProgress(
   const rows = await database.getAllAsync<ExerciseProgressRow>(
     `SELECT completed_sets.session_id, completed_sets.exercise_id,
             completed_sets.workout_exercise_id, completed_sets.completed_at,
-            completed_sets.load, completed_sets.reps, workout_sessions.workout_id,
+            completed_sets.load, completed_sets.reps, completed_sets.duration_seconds,
+            completed_sets.distance_meters, workout_sessions.workout_id,
             user_program_versions.version_json
        FROM completed_sets
        INNER JOIN workout_sessions
@@ -134,6 +137,8 @@ export async function getExerciseProgress(
           completedAt: row.completed_at,
           load: row.load ?? undefined,
           reps: row.reps ?? undefined,
+          durationSeconds: row.duration_seconds ?? undefined,
+          distanceMeters: row.distance_meters ?? undefined,
         },
       ];
     }),
@@ -243,6 +248,8 @@ function buildCyclePersonalRecords(
       completedAt: string;
       load?: number;
       reps?: number;
+      durationSeconds?: number;
+      distanceMeters?: number;
     }>
   >();
 
@@ -258,6 +265,8 @@ function buildCyclePersonalRecords(
       completedAt: row.completed_at ?? new Date(0).toISOString(),
       load: row.load ?? undefined,
       reps: row.reps ?? undefined,
+      durationSeconds: row.duration_seconds ?? undefined,
+      distanceMeters: row.distance_meters ?? undefined,
     });
     setsByExercise.set(exerciseId, exerciseSets);
   }

@@ -184,4 +184,6 @@ The app shell now mounts an authenticated-only sync runtime that retries the loc
 
 The active workout now carries builder-authored section, superset/circuit, note, and custom-exercise cues into the logging surface without changing completed-set identity.
 
+Progress movement history now includes deterministic duration and distance points and personal records, with the Progress selector and accessible chart presenting cardio/timed metrics alongside strength history. The underlying values remain local-first and version-scoped; no estimated strength value is generated for a timed or distance movement.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

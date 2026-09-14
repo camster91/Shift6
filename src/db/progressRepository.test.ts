@@ -191,6 +191,29 @@ describe('getCycleProgressSummary', () => {
       points: [{ sessionId: 'session-legacy', bestLoad: 185 }],
     });
   });
+
+  it('maps timed and distance fields into movement history', async () => {
+    const database = {
+      getAllAsync: async () => [
+        {
+          session_id: 'session-bike',
+          exercise_id: 'exercise-bike',
+          workout_exercise_id: 'workout-exercise-bike',
+          completed_at: '2026-09-13T12:05:00.000Z',
+          load: null,
+          reps: null,
+          duration_seconds: 900,
+          distance_meters: 3000,
+          workout_id: 'workout-cardio',
+          version_json: null,
+        },
+      ],
+    } as unknown as SQLiteDatabase;
+
+    await expect(getExerciseProgress(database, 'cycle-1', 'exercise-bike')).resolves.toMatchObject({
+      points: [{ sessionId: 'session-bike', bestDurationSeconds: 900, bestDistanceMeters: 3000 }],
+    });
+  });
 });
 
 describe('getCompletedWorkoutIds', () => {

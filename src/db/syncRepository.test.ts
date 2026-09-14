@@ -82,4 +82,29 @@ describe('syncRepository', () => {
     expect(calls[0]?.sql).toContain('UPDATE sync_outbox');
     expect(calls[0]?.params).toEqual(['Network unavailable', 'outbox-set-1']);
   });
+
+  it('does not delete a mutation when a backend reports both acknowledgement and rejection', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const database = {
+      getAllAsync: async () => [pendingRow],
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+    } as unknown as SQLiteDatabase;
+    const backend: BackendClient = {
+      sync: async () => ({
+        acknowledgedMutationIds: ['outbox-set-1'],
+        rejectedMutationIds: ['outbox-set-1'],
+      }),
+    };
+
+    await expect(flushSyncOutbox(database, backend)).resolves.toMatchObject({
+      acknowledgedMutationIds: [],
+      rejectedMutationIds: ['outbox-set-1'],
+      failedMutationIds: [],
+    });
+    expect(calls.some((call) => call.sql.includes('DELETE FROM sync_outbox'))).toBe(false);
+    expect(calls[0]?.sql).toContain('UPDATE sync_outbox');
+  });
 });

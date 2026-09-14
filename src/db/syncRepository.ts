@@ -72,8 +72,12 @@ export async function flushSyncOutbox(
   }
 
   const attemptedSet = new Set(attemptedMutationIds);
-  const acknowledgedMutationIds = uniqueKnownIds(result.acknowledgedMutationIds, attemptedSet);
   const rejectedMutationIds = uniqueKnownIds(result.rejectedMutationIds, attemptedSet);
+  const rejectedSet = new Set(rejectedMutationIds);
+  const acknowledgedMutationIds = uniqueKnownIds(
+    result.acknowledgedMutationIds,
+    attemptedSet,
+  ).filter((id) => !rejectedSet.has(id));
   const resolvedIds = new Set([...acknowledgedMutationIds, ...rejectedMutationIds]);
   const failedMutationIds = attemptedMutationIds.filter((id) => !resolvedIds.has(id));
 

@@ -386,6 +386,7 @@ No network call is made by the active workout, and no sync provider or credentia
 - an explicit offline status skips backend work and leaves the local outbox untouched;
 - online or unknown connectivity delegates to the existing idempotent flush contract;
 - callers receive separate `offline`, `empty`, `synced`, `partial`, and `failed` outcomes for UI/retry policy;
+- contradictory backend acknowledgement/rejection responses are treated as rejected and remain queued rather than being deleted;
 - connectivity, backend, and future background scheduling remain injectable rather than embedded in workout/domain logic.
 
 The current app does not yet install a native connectivity listener or background task. Native reconnect, app-background execution, conflict resolution, and device fault testing remain release gates.

@@ -20,6 +20,7 @@ interface WorkoutSessionRow {
   started_at: string;
   completed_at: string | null;
   is_offline: number;
+  readiness: WorkoutSession['readiness'] | null;
 }
 
 interface TrainingCycleRow {
@@ -56,8 +57,8 @@ export async function saveWorkoutSession(
     await database.runAsync(
       `INSERT OR IGNORE INTO workout_sessions
         (id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-         started_at, completed_at, is_offline)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+         started_at, completed_at, is_offline, readiness)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       session.id,
       session.cycleId,
       session.cycleWeek,
@@ -68,6 +69,7 @@ export async function saveWorkoutSession(
       session.startedAt,
       session.completedAt ?? null,
       session.isOffline ? 1 : 0,
+      session.readiness ?? null,
     );
     await database.runAsync(
       `INSERT OR IGNORE INTO sync_outbox
@@ -169,7 +171,7 @@ export async function getWorkoutSession(
 ): Promise<WorkoutSession | null> {
   const row = await database.getFirstAsync<WorkoutSessionRow>(
     `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-            started_at, completed_at, is_offline
+            started_at, completed_at, is_offline, readiness
        FROM workout_sessions
       WHERE id = ?
       LIMIT 1;`,
@@ -187,7 +189,7 @@ export async function getInProgressWorkoutSession(
 ): Promise<WorkoutSession | null> {
   const row = await database.getFirstAsync<WorkoutSessionRow>(
     `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-            started_at, completed_at, is_offline
+            started_at, completed_at, is_offline, readiness
        FROM workout_sessions
       WHERE cycle_id = ?
         AND cycle_week = ?
@@ -222,7 +224,41 @@ export async function updateWorkoutSessionProgramVersion(
 
     const row = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, is_offline
+              started_at, completed_at, is_offline, readiness
+         FROM workout_sessions
+        WHERE id = ?
+        LIMIT 1;`,
+      sessionId,
+    );
+    if (!row) return;
+
+    updatedSession = mapWorkoutSession(row);
+    await queueWorkoutSessionSync(database, updatedSession);
+  });
+
+  return updatedSession;
+}
+
+export async function updateWorkoutSessionReadiness(
+  database: SQLiteDatabase,
+  sessionId: string,
+  readiness: WorkoutSession['readiness'],
+): Promise<WorkoutSession | null> {
+  let updatedSession: WorkoutSession | null = null;
+
+  await database.withTransactionAsync(async () => {
+    const result = await database.runAsync(
+      `UPDATE workout_sessions
+          SET readiness = ?
+        WHERE id = ? AND status = 'in-progress';`,
+      readiness ?? null,
+      sessionId,
+    );
+    if (result.changes === 0) return;
+
+    const row = await database.getFirstAsync<WorkoutSessionRow>(
+      `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
+              started_at, completed_at, is_offline, readiness
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -348,7 +384,7 @@ export async function completeWorkoutSession(
 
     const row = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, is_offline
+              started_at, completed_at, is_offline, readiness
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -385,7 +421,7 @@ export async function completeWorkoutSessionAndAdvanceCycle(
 
     const sessionRow = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, is_offline
+              started_at, completed_at, is_offline, readiness
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -446,6 +482,7 @@ function mapWorkoutSession(row: WorkoutSessionRow): WorkoutSession {
     startedAt: row.started_at,
     completedAt: row.completed_at ?? undefined,
     isOffline: row.is_offline === 1,
+    readiness: row.readiness ?? undefined,
   };
 }
 

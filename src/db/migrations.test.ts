@@ -85,4 +85,10 @@ describe('local database migrations', () => {
 
     expect(statements).toContain('ADD COLUMN exercise_id TEXT');
   });
+
+  it('stores optional workout readiness context on the local session', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('ADD COLUMN readiness TEXT');
+  });
 });

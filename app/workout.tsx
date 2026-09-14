@@ -6,6 +6,7 @@ import { AppState, StyleSheet, TextInput, View } from 'react-native';
 import {
   Button,
   Card,
+  Chip,
   ErrorState,
   IconButton,
   LoadingSkeleton,
@@ -13,7 +14,7 @@ import {
   Screen,
   Text,
 } from '../src/components/ui';
-import { findExerciseSubstitutions } from '../src/domain/equipment';
+import { equipmentCatalog, findExerciseSubstitutions } from '../src/domain/equipment';
 import {
   demoCycle,
   demoProgram,
@@ -34,7 +35,9 @@ import type {
   SetTarget,
   TrainingCycle,
   WorkoutDraftSetValues,
+  Workout,
   WorkoutExercise,
+  WorkoutReadiness,
   WorkoutSession,
 } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
@@ -54,6 +57,7 @@ import {
   saveCompletedSet,
   saveWorkoutDraft,
   saveWorkoutSession,
+  updateWorkoutSessionReadiness,
   updateWorkoutSessionProgramVersion,
   updateCompletedSet,
 } from '../src/db/workoutRepository';
@@ -101,6 +105,8 @@ export default function ActiveWorkoutScreen() {
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
   const [restSecondsRemaining, setRestSecondsRemaining] = useState(0);
   const [connectivity, setConnectivity] = useState<ConnectivityStatus>('unknown');
+  const [readiness, setReadiness] = useState<WorkoutReadiness | null>(null);
+  const [readinessSaving, setReadinessSaving] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -129,6 +135,7 @@ export default function ActiveWorkoutScreen() {
     setCompletedSetKeys(new Set());
     setEditingSetKey(null);
     setSubstitutionFor(null);
+    setReadiness(null);
     setLoadingSession(database !== null);
     setDraftReady(database === null);
   }, [activeWorkout.id, database]);
@@ -149,8 +156,9 @@ export default function ActiveWorkoutScreen() {
       status: 'in-progress',
       startedAt,
       isOffline: connectivity === 'offline',
+      readiness: readiness ?? undefined,
     }),
-    [activeCycle.id, activeCycle.currentWeek, activeWorkout, connectivity, startedAt],
+    [activeCycle.id, activeCycle.currentWeek, activeWorkout, connectivity, readiness, startedAt],
   );
   const session = resumedSession ?? proposedSession;
 
@@ -222,39 +230,51 @@ export default function ActiveWorkoutScreen() {
           previousSets,
           unitSystem: profile?.user.unitSystem ?? 'imperial',
           equipmentIds: profile?.user.equipmentIds ?? demoUser.equipmentIds,
+          readiness: sessionToUse.readiness,
           draft,
           userExercises,
         };
       })
-      .then(({ completedSets, previousSets, unitSystem, equipmentIds, draft, userExercises }) => {
-        if (!active) return;
-        setCustomExercises(userExercises);
-        setAvailableEquipmentIds(equipmentIds);
-        setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
-        const nextTargets =
-          previousSets.length > 0
-            ? buildNextSessionTargets(
-                activeWorkout,
-                activeProgram.progressionStrategy,
-                previousSets,
-                unitSystem,
-              )
-            : [];
-        const overrides = Object.fromEntries(
-          nextTargets.map((target) => [target.workoutExerciseId, target.decision.nextTarget]),
-        );
-        setTargetOverrides(overrides);
-        setValues((current) =>
-          mergeDraftValues(
-            mergeCompletedSetValues(
-              mergeInitialValues(activeWorkout, overrides, current),
-              completedSets,
+      .then(
+        ({
+          completedSets,
+          previousSets,
+          unitSystem,
+          equipmentIds,
+          readiness,
+          draft,
+          userExercises,
+        }) => {
+          if (!active) return;
+          setCustomExercises(userExercises);
+          setAvailableEquipmentIds(equipmentIds);
+          setReadiness(readiness ?? null);
+          setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
+          const nextTargets =
+            previousSets.length > 0
+              ? buildNextSessionTargets(
+                  activeWorkout,
+                  activeProgram.progressionStrategy,
+                  previousSets,
+                  unitSystem,
+                )
+              : [];
+          const overrides = Object.fromEntries(
+            nextTargets.map((target) => [target.workoutExerciseId, target.decision.nextTarget]),
+          );
+          setTargetOverrides(overrides);
+          setValues((current) =>
+            mergeDraftValues(
+              mergeCompletedSetValues(
+                mergeInitialValues(activeWorkout, overrides, current),
+                completedSets,
+              ),
+              draft,
             ),
-            draft,
-          ),
-        );
-        setDraftReady(true);
-      })
+          );
+          setDraftReady(true);
+        },
+      )
       .catch(() => {
         if (active) setError('We could not load this workout from local storage.');
       })
@@ -399,6 +419,35 @@ export default function ActiveWorkoutScreen() {
     router.back();
   };
 
+  const handleReadinessChange = async (nextReadiness: WorkoutReadiness) => {
+    if (readinessSaving || readiness === nextReadiness) return;
+
+    const previousReadiness = readiness;
+    setReadiness(nextReadiness);
+    setError(null);
+    if (!database) return;
+
+    setReadinessSaving(true);
+    try {
+      const updatedSession = await updateWorkoutSessionReadiness(
+        database,
+        session.id,
+        nextReadiness,
+      );
+      if (!updatedSession) throw new Error('This workout session is no longer active locally.');
+      setResumedSession(updatedSession);
+    } catch (readinessError) {
+      setReadiness(previousReadiness);
+      setError(
+        readinessError instanceof Error
+          ? readinessError.message
+          : 'We could not save your readiness locally.',
+      );
+    } finally {
+      setReadinessSaving(false);
+    }
+  };
+
   const handleSubstituteExercise = async (
     workoutExercise: WorkoutExercise,
     replacementExerciseId: string,
@@ -513,6 +562,15 @@ export default function ActiveWorkoutScreen() {
       </Text>
 
       {connectivity === 'offline' ? <OfflineBanner status="offline" /> : null}
+
+      <WorkoutPreflight
+        workout={activeWorkout}
+        availableEquipmentIds={availableEquipmentIds}
+        hasLocalDatabase={database !== null}
+        readiness={readiness}
+        saving={readinessSaving}
+        onReadinessChange={(nextReadiness) => void handleReadinessChange(nextReadiness)}
+      />
 
       <Card tone={database ? 'mint' : 'yellow'} style={styles.localFirstCard}>
         <View style={styles.localFirstHeader}>
@@ -721,6 +779,87 @@ export default function ActiveWorkoutScreen() {
         }
       />
     </Screen>
+  );
+}
+
+interface WorkoutPreflightProps {
+  workout: Workout;
+  availableEquipmentIds: readonly string[];
+  hasLocalDatabase: boolean;
+  readiness: WorkoutReadiness | null;
+  saving: boolean;
+  onReadinessChange: (readiness: WorkoutReadiness) => void;
+}
+
+function WorkoutPreflight({
+  workout,
+  availableEquipmentIds,
+  hasLocalDatabase,
+  readiness,
+  saving,
+  onReadinessChange,
+}: WorkoutPreflightProps) {
+  const requiredEquipment = equipmentCatalog.filter((equipment) =>
+    workout.equipmentIds.includes(equipment.id),
+  );
+  const missingEquipment = requiredEquipment.filter(
+    (equipment) => !availableEquipmentIds.includes(equipment.id),
+  );
+  const readinessOptions: readonly { value: WorkoutReadiness; label: string }[] = [
+    { value: 'ready', label: 'Ready to train' },
+    { value: 'limited', label: 'Limited today' },
+    { value: 'rest', label: 'I need rest' },
+  ];
+
+  return (
+    <Card tone="lavender" style={styles.preflightCard} accessibilityLabel="Workout preflight">
+      <View style={styles.preflightHeader}>
+        <View style={styles.preflightIcon}>
+          <Ionicons name="checkmark-circle-outline" size={22} color={colors.ink} />
+        </View>
+        <View style={styles.preflightCopy}>
+          <Text variant="caption" tone="muted">
+            WORKOUT PREFLIGHT
+          </Text>
+          <Text variant="h3">Set your context.</Text>
+        </View>
+      </View>
+      <Text variant="small" tone="muted" style={styles.preflightSummary}>
+        {workout.estimatedDurationMinutes} min · {workout.exercises.length} movements
+      </Text>
+      <Text variant="smallMedium" style={styles.preflightLabel}>
+        Equipment check
+      </Text>
+      <Text variant="small" tone="muted">
+        {requiredEquipment.length === 0
+          ? 'No equipment required.'
+          : missingEquipment.length === 0
+            ? `Ready with ${requiredEquipment.map((equipment) => equipment.name).join(', ')}.`
+            : `Missing ${missingEquipment.map((equipment) => equipment.name).join(', ')}. Use a substitution below if needed.`}
+      </Text>
+      <Text variant="smallMedium" style={styles.preflightLabel}>
+        How are you feeling?
+      </Text>
+      <View style={styles.readinessOptions} accessibilityRole="radiogroup">
+        {readinessOptions.map((option) => (
+          <Chip
+            key={option.value}
+            label={option.label}
+            selected={readiness === option.value}
+            onPress={() => onReadinessChange(option.value)}
+          />
+        ))}
+      </View>
+      <Text variant="caption" tone="muted" style={styles.preflightNote}>
+        {saving
+          ? 'Saving your answer locally…'
+          : readiness
+            ? hasLocalDatabase
+              ? 'This context is saved with the workout session. It does not change your plan.'
+              : 'This context is kept in the browser preview for this session. It does not change your plan.'
+            : 'Optional context for this session. Workout logging stays available either way.'}
+      </Text>
+    </Card>
   );
 }
 
@@ -978,6 +1117,40 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: spacing.md,
+  },
+  preflightCard: {
+    marginTop: spacing.xl,
+    gap: spacing.xs,
+  },
+  preflightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  preflightIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.md,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  preflightCopy: {
+    gap: spacing.xxs,
+  },
+  preflightSummary: {
+    marginTop: spacing.xs,
+  },
+  preflightLabel: {
+    marginTop: spacing.sm,
+  },
+  readinessOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  preflightNote: {
+    marginTop: spacing.xs,
   },
   localFirstCard: {
     marginTop: spacing.xl,

@@ -198,6 +198,14 @@ export const MIGRATIONS: readonly Migration[] = [
         ADD COLUMN exercise_id TEXT;`,
     ],
   },
+  {
+    version: 11,
+    name: 'workout-session-readiness',
+    statements: [
+      `ALTER TABLE workout_sessions
+        ADD COLUMN readiness TEXT;`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

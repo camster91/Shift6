@@ -49,6 +49,7 @@ export type CycleStatus = 'planned' | 'active' | 'complete' | 'paused' | 'cancel
 export type CycleWeekStatus = 'completed' | 'current' | 'upcoming' | 'missed' | 'partial';
 export type WorkoutSessionStatus = 'planned' | 'in-progress' | 'complete' | 'skipped' | 'abandoned';
 export type WorkoutGroupType = 'superset' | 'circuit';
+export type WorkoutReadiness = 'ready' | 'limited' | 'rest';
 export type CoachProposalStatus =
   'pending' | 'accepted' | 'partially-accepted' | 'rejected' | 'expired';
 export type CoachTone = 'concise' | 'supportive' | 'technical';
@@ -252,6 +253,7 @@ export interface WorkoutSession {
   startedAt: ISODateString;
   completedAt?: ISODateString;
   isOffline: boolean;
+  readiness?: WorkoutReadiness;
 }
 
 export type CheckInRating = 1 | 2 | 3 | 4 | 5;

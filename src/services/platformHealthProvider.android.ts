@@ -1,5 +1,6 @@
 import {
   getSdkStatus,
+  getGrantedPermissions,
   initialize,
   readRecords,
   requestPermission,
@@ -42,12 +43,18 @@ class AndroidHealthConnectProvider implements HealthProvider {
       return { status: 'unavailable', grantedTypes: [], deniedTypes: requestedTypes };
     }
 
-    await initialize();
+    if (!(await initialize())) {
+      return { status: 'unavailable', grantedTypes: [], deniedTypes: requestedTypes };
+    }
     const requestedPermissions: Permission[] = requestedTypes.map((type) => ({
       accessType: 'read',
       recordType: recordTypes[type],
     }));
-    const grantedPermissions = await requestPermission(requestedPermissions);
+    await requestPermission(requestedPermissions);
+    // Read back the permission controller after the prompt. The request result
+    // is not the authoritative source when a user has revoked one type in
+    // Health Connect settings or grants only a subset of the request.
+    const grantedPermissions = await getGrantedPermissions();
     const grantedTypes = requestedTypes.filter((type) =>
       grantedPermissions.some(
         (permission) =>
@@ -70,7 +77,7 @@ class AndroidHealthConnectProvider implements HealthProvider {
   ): Promise<HealthSummary[]> {
     if (!validRange(range) || !(await this.isAvailable())) return [];
 
-    await initialize();
+    if (!(await initialize())) return [];
     const summaries: HealthSummary[] = [];
     for (const type of uniqueTypes(types)) {
       summaries.push(...(await readType(type, range)));

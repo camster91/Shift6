@@ -29,16 +29,12 @@ import type {
   WorkoutSession,
 } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
-import {
-  advanceTrainingCycleAfterCompletedWorkout,
-  getActiveTrainingCycle,
-} from '../src/db/cycleRepository';
+import { getActiveTrainingCycle } from '../src/db/cycleRepository';
 import { getOnboardingProfile } from '../src/db/profileRepository';
 import { getUserProgramVersion } from '../src/db/programRepository';
 import { getLatestCompletedWorkoutSets } from '../src/db/progressRepository';
 import {
-  completeWorkoutSession,
-  deleteWorkoutDraft,
+  completeWorkoutSessionAndAdvanceCycle,
   getCompletedSets,
   getWorkoutDraft,
   saveCompletedSet,
@@ -347,15 +343,8 @@ export default function ActiveWorkoutScreen() {
     setFinishing(true);
     setError(null);
     try {
-      if (database) await completeWorkoutSession(database, session.id, new Date().toISOString());
-      if (database) {
-        await advanceTrainingCycleAfterCompletedWorkout(
-          database,
-          session.cycleId,
-          session.cycleWeek,
-        );
-        await deleteWorkoutDraft(database, session.id);
-      }
+      if (database)
+        await completeWorkoutSessionAndAdvanceCycle(database, session.id, new Date().toISOString());
       router.replace({
         pathname: '/summary',
         params: { sessionId: session.id, workoutId: activeWorkout.id },

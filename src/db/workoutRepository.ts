@@ -1,6 +1,12 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { CompletedSet, WorkoutDraftValues, WorkoutSession } from '../domain/types';
+import { advanceCycleAfterCompletedWorkout } from '../domain/cycle';
+import type {
+  CompletedSet,
+  TrainingCycle,
+  WorkoutDraftValues,
+  WorkoutSession,
+} from '../domain/types';
 
 interface WorkoutSessionRow {
   id: string;
@@ -13,6 +19,16 @@ interface WorkoutSessionRow {
   started_at: string;
   completed_at: string | null;
   is_offline: number;
+}
+
+interface TrainingCycleRow {
+  id: string;
+  user_id: string;
+  program_version_id: string;
+  status: TrainingCycle['status'];
+  current_week: number;
+  started_at: string;
+  weeks_json: string;
 }
 
 interface CompletedSetRow {
@@ -285,6 +301,81 @@ export async function completeWorkoutSession(
   });
 }
 
+/**
+ * Completes a workout, advances its cycle when the persisted week is complete,
+ * queues both sync mutations, and removes the draft in one SQLite transaction.
+ * Keeping these writes together prevents a crash between workout completion and
+ * cycle advancement from leaving the user on a stale week.
+ */
+export async function completeWorkoutSessionAndAdvanceCycle(
+  database: SQLiteDatabase,
+  sessionId: string,
+  completedAt: string,
+): Promise<TrainingCycle | null> {
+  let updatedCycle: TrainingCycle | null = null;
+
+  await database.withTransactionAsync(async () => {
+    const result = await database.runAsync(
+      `UPDATE workout_sessions
+          SET status = 'complete', completed_at = ?
+        WHERE id = ? AND status = 'in-progress';`,
+      completedAt,
+      sessionId,
+    );
+    if (result.changes === 0) return;
+
+    const sessionRow = await database.getFirstAsync<WorkoutSessionRow>(
+      `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
+              started_at, completed_at, is_offline
+         FROM workout_sessions
+        WHERE id = ?
+        LIMIT 1;`,
+      sessionId,
+    );
+    if (!sessionRow) throw new Error('Completed workout could not be reloaded locally.');
+
+    const session = mapWorkoutSession(sessionRow);
+    await queueCompletedWorkoutSessionSync(database, session);
+
+    const cycleRow = await database.getFirstAsync<TrainingCycleRow>(
+      `SELECT id, user_id, program_version_id, status, current_week, started_at, weeks_json
+         FROM training_cycles
+        WHERE id = ?
+        LIMIT 1;`,
+      session.cycleId,
+    );
+    if (cycleRow) {
+      const cycle = mapTrainingCycle(cycleRow);
+      if (cycle.currentWeek === session.cycleWeek) {
+        const countRow = await database.getFirstAsync<{ count: number }>(
+          `SELECT COUNT(*) AS count
+             FROM workout_sessions
+            WHERE cycle_id = ? AND cycle_week = ? AND status = 'complete';`,
+          session.cycleId,
+          session.cycleWeek,
+        );
+        updatedCycle = advanceCycleAfterCompletedWorkout(cycle, countRow?.count ?? 0);
+        await database.runAsync(
+          `UPDATE training_cycles
+              SET status = ?, current_week = ?, weeks_json = ?
+            WHERE id = ?;`,
+          updatedCycle.status,
+          updatedCycle.currentWeek,
+          JSON.stringify(updatedCycle.weeks),
+          updatedCycle.id,
+        );
+        await queueTrainingCycleSync(database, updatedCycle);
+      } else {
+        updatedCycle = cycle;
+      }
+    }
+
+    await database.runAsync('DELETE FROM workout_drafts WHERE session_id = ?;', sessionId);
+  });
+
+  return updatedCycle;
+}
+
 function mapWorkoutSession(row: WorkoutSessionRow): WorkoutSession {
   return {
     id: row.id,
@@ -297,6 +388,18 @@ function mapWorkoutSession(row: WorkoutSessionRow): WorkoutSession {
     startedAt: row.started_at,
     completedAt: row.completed_at ?? undefined,
     isOffline: row.is_offline === 1,
+  };
+}
+
+function mapTrainingCycle(row: TrainingCycleRow): TrainingCycle {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    programVersionId: row.program_version_id,
+    status: row.status,
+    currentWeek: row.current_week,
+    startedAt: row.started_at,
+    weeks: JSON.parse(row.weeks_json) as TrainingCycle['weeks'],
   };
 }
 
@@ -317,5 +420,26 @@ async function queueCompletedWorkoutSessionSync(
     session.id,
     JSON.stringify(session),
     session.startedAt,
+  );
+}
+
+async function queueTrainingCycleSync(
+  database: SQLiteDatabase,
+  cycle: TrainingCycle,
+): Promise<void> {
+  await database.runAsync(
+    `INSERT INTO sync_outbox
+      (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(idempotency_key) DO UPDATE SET
+       payload_json = excluded.payload_json,
+       created_at = excluded.created_at,
+       last_error = NULL;`,
+    `outbox-training-cycle-${cycle.id}`,
+    `training-cycle:${cycle.id}`,
+    'training-cycle',
+    cycle.id,
+    JSON.stringify(cycle),
+    cycle.startedAt,
   );
 }

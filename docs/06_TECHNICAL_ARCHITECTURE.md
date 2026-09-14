@@ -327,7 +327,7 @@ The next #276/#277 vertical-slice increment closes the first deterministic cycle
 - the Review route derives its facts from local records and exposes explicit repeat/adjust paths; repeating creates a new local cycle snapshot while the completed cycle remains unchanged;
 - Progress reads the latest cycle so a completed cycle can surface its review entry point, while the web target remains an honest non-persistent preview.
 
-The two SQLite transactions currently separate workout completion from cycle advancement. A future reliability increment should combine those writes behind one repository operation before native crash/restart verification is considered complete. The full review still needs personal-record detail, cardio/mobility trend views, user feedback, change-program/build-new-cycle options, and native device verification.
+Workout completion, cycle advancement, both sync mutations, and draft removal now run behind one repository transaction, reducing the risk that a crash leaves a completed session on a stale cycle week. The full review still needs personal-record detail, cardio/mobility trend views, user feedback, change-program/build-new-cycle options, and native device verification.
 
 ## Coach safety boundary checkpoint — 2026-09-14
 

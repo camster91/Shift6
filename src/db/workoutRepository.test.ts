@@ -3,6 +3,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import type { CompletedSet } from '../domain/types';
 import {
   completeWorkoutSession,
+  completeWorkoutSessionAndAdvanceCycle,
   getCompletedSets,
   getWorkoutDraft,
   saveCompletedSet,
@@ -178,6 +179,71 @@ describe('saveWorkoutSession', () => {
     expect(calls[1]).toContain('INSERT OR IGNORE INTO workout_sessions');
     expect(calls[2]).toContain('INSERT OR IGNORE INTO sync_outbox');
     expect(calls[3]).toBe('COMMIT TRANSACTION');
+  });
+});
+
+describe('completeWorkoutSessionAndAdvanceCycle', () => {
+  it('commits completion, cycle advancement, sync mutations, and draft deletion together', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const database = {
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      getFirstAsync: async (sql: string) => {
+        if (sql.includes('COUNT(*)')) return { count: 1 };
+        if (sql.includes('FROM workout_sessions')) {
+          return {
+            id: 'session-1',
+            cycle_id: 'cycle-1',
+            cycle_week: 1,
+            workout_id: 'workout-1',
+            program_version_id: 'program-version-1',
+            workout_focus: 'strength',
+            status: 'complete',
+            started_at: '2026-09-13T12:00:00.000Z',
+            completed_at: '2026-09-13T12:30:00.000Z',
+            is_offline: 1,
+          };
+        }
+        if (sql.includes('FROM training_cycles')) {
+          return {
+            id: 'cycle-1',
+            user_id: 'guest-user',
+            program_version_id: 'program-version-1',
+            status: 'active',
+            current_week: 1,
+            started_at: '2026-09-13T12:00:00.000Z',
+            weeks_json: JSON.stringify(
+              Array.from({ length: 6 }, (_, index) => ({
+                weekNumber: index + 1,
+                label: `Week ${index + 1}`,
+                phase: 'Training',
+                status: index === 0 ? 'current' : 'upcoming',
+                completedWorkoutCount: 0,
+                plannedWorkoutCount: 1,
+              })),
+            ),
+          };
+        }
+        return null;
+      },
+      withTransactionAsync: async (callback: () => Promise<void>) => {
+        calls.push({ sql: 'BEGIN TRANSACTION', params: [] });
+        await callback();
+        calls.push({ sql: 'COMMIT TRANSACTION', params: [] });
+      },
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      completeWorkoutSessionAndAdvanceCycle(database, 'session-1', '2026-09-13T12:30:00.000Z'),
+    ).resolves.toMatchObject({ currentWeek: 2 });
+
+    expect(calls[0]?.sql).toBe('BEGIN TRANSACTION');
+    expect(calls.some((call) => call.sql.includes('UPDATE workout_sessions'))).toBe(true);
+    expect(calls.some((call) => call.sql.includes('UPDATE training_cycles'))).toBe(true);
+    expect(calls.some((call) => call.sql.includes('DELETE FROM workout_drafts'))).toBe(true);
+    expect(calls.at(-1)?.sql).toBe('COMMIT TRANSACTION');
   });
 });
 

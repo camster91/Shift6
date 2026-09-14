@@ -7,6 +7,7 @@ export type ConnectivityStatus = 'online' | 'offline' | 'unknown';
 
 export interface ConnectivityProvider {
   getStatus(): Promise<ConnectivityStatus>;
+  subscribe?(listener: (status: ConnectivityStatus) => void): { remove: () => void };
 }
 
 export type SyncFlush = (

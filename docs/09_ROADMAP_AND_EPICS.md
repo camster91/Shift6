@@ -180,4 +180,8 @@ The onboarding increment intentionally stops at saving preferences and returning
 
 The Exercise Library and detail route now include persisted user-owned custom movements alongside the foundational catalogue; custom records remain private and explicitly unreviewed until separate content and technique approval.
 
+The app shell now mounts an authenticated-only sync runtime that retries the local outbox on foreground/resume/reconnect when a real auth session is injected; the default guest configuration intentionally skips backend work. Native background scheduling, auth/token refresh, conflict resolution, and device-level reconnect proof remain open #272/release gates.
+
+The active workout now carries builder-authored section, superset/circuit, note, and custom-exercise cues into the logging surface without changing completed-set identity.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

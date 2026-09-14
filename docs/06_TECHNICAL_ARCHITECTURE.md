@@ -544,3 +544,11 @@ Progress now resolves the immediately prior local cycle by timestamp and stable 
 ## User exercise catalogue checkpoint — 2026-09-14
 
 The Exercise Library and detail route now merge the foundational catalogue with user-owned custom exercise records loaded from SQLite. The library refreshes on focus so a custom movement created in the builder becomes discoverable, searchable, and equipment-filterable without duplicating catalogue logic. Custom records are labelled private and remain distinct from public technique/media review status; substitutions can use the merged local set while never implying that draft content has passed human review.
+
+## Authenticated sync runtime checkpoint — 2026-09-14
+
+`SyncRuntimeProvider` now centralizes foreground, app-resume, and connectivity-reconnect sync attempts behind `runAuthenticatedSync`. It reads the injected auth session before invoking the outbox coordinator, so the default guest shell leaves queued mutations untouched and makes no backend request. Runtime state distinguishes idle, offline, syncing, synced, partial, and failed outcomes for future status UI. A native background task, token refresh, conflict resolution, concrete backend, and device fault proof remain release-gated work.
+
+## Active workout presentation checkpoint — 2026-09-14
+
+The active workout now renders the private snapshot's section label, superset/circuit grouping cue, and bounded exercise note next to the same set controls that persist locally. Custom exercises are resolved from the merged user catalogue for both names and substitution ranking. These are read-only workout cues; set identity, correction, rest timing, and copy-on-write history boundaries are unchanged.

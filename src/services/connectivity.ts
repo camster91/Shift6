@@ -17,6 +17,10 @@ export class ExpoConnectivityProvider implements ConnectivityProvider {
       return 'unknown';
     }
   }
+
+  subscribe(listener: (status: ConnectivityStatus) => void): { remove: () => void } {
+    return subscribeToConnectivity(listener);
+  }
 }
 
 export function subscribeToConnectivity(listener: (status: ConnectivityStatus) => void): {

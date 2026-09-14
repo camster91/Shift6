@@ -610,16 +610,11 @@ export default function ActiveWorkoutScreen() {
 
       {activeWorkout.exercises.map((workoutExercise) => {
         const exerciseName = formatExerciseName(workoutExercise.exerciseId, availableExercises);
-        const sourceExercise = foundationalExercises.find(
+        const sourceExercise = availableExercises.find(
           (candidate) => candidate.id === workoutExercise.exerciseId,
         );
         const substitutions = sourceExercise
-          ? findExerciseSubstitutions(
-              sourceExercise,
-              foundationalExercises,
-              availableEquipmentIds,
-              3,
-            )
+          ? findExerciseSubstitutions(sourceExercise, availableExercises, availableEquipmentIds, 3)
           : [];
 
         return (
@@ -649,6 +644,29 @@ export default function ActiveWorkoutScreen() {
                 />
               ) : null}
             </View>
+            <View
+              style={styles.exerciseMetaRow}
+              accessibilityLabel={`${formatSection(workoutExercise.section)}${workoutExercise.groupType ? `. ${formatGroupType(workoutExercise.groupType)}` : ''}`}
+            >
+              <Chip label={formatSection(workoutExercise.section)} />
+              {workoutExercise.groupType ? (
+                <Chip label={formatGroupType(workoutExercise.groupType)} selected />
+              ) : null}
+            </View>
+            {workoutExercise.notes ? (
+              <Card
+                tone="lavender"
+                style={styles.exerciseNote}
+                accessibilityLabel={`Exercise note for ${exerciseName}: ${workoutExercise.notes}`}
+              >
+                <Text variant="caption" tone="muted">
+                  EXERCISE NOTE
+                </Text>
+                <Text variant="small" style={styles.exerciseNoteCopy}>
+                  {workoutExercise.notes}
+                </Text>
+              </Card>
+            ) : null}
             {substitutionFor === workoutExercise.id ? (
               <Card
                 tone="lavender"
@@ -1006,6 +1024,17 @@ function formatTimer(totalSeconds: number): string {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
+function formatSection(section: WorkoutExercise['section']): string {
+  return section
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatGroupType(groupType: NonNullable<WorkoutExercise['groupType']>): string {
+  return groupType === 'superset' ? 'Superset' : 'Circuit';
+}
+
 function formatExerciseName(
   exerciseId: string,
   exercises: readonly Exercise[] = foundationalExercises,
@@ -1189,6 +1218,19 @@ const styles = StyleSheet.create({
   exerciseCopy: {
     flex: 1,
     gap: spacing.xxs,
+  },
+  exerciseMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+  },
+  exerciseNote: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+  },
+  exerciseNoteCopy: {
+    marginTop: spacing.xs,
   },
   substitutionToggle: {
     minHeight: 40,

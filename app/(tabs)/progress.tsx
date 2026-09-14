@@ -119,6 +119,8 @@ export default function ProgressScreen() {
           program.progressionStrategy,
           latestSets,
           profile?.user.unitSystem ?? 'imperial',
+          undefined,
+          programVersion.progressionRuleIds,
         );
 
         if (!active) return;

@@ -708,3 +708,13 @@ to design and test.
 The deterministic cycle suite now also walks a complete six-week Barbell 30 sequence, asserting
 that each week completes exactly once, the next current week is selected in order, and Week 6
 finishes the cycle without a universal deload or max-test assumption.
+
+## Versioned progression-rule checkpoint — 2026-09-14
+
+`src/domain/progressionRules.ts` now provides the first typed deterministic rule catalogue. The
+Barbell 30 `ProgramVersion` rule ID resolves to unit-aware load increments and the existing
+time/distance increments; active workout and Progress callers pass the version's rule IDs into
+`buildNextSessionTargets`. Missing or not-yet-reviewed rules use conservative deterministic
+defaults, while the selected strategy and all safety/readiness gates remain owned by
+`progression.ts`. This keeps progression calculations independent of AI and makes future program
+versions able to change rules without rewriting completed history.

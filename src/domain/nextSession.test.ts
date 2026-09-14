@@ -1,4 +1,4 @@
-import { demoProgram, demoWorkout } from './fixtures/home';
+import { demoProgram, demoProgramVersion, demoWorkout } from './fixtures/home';
 import { buildNextSessionTargets, readinessInputForWorkout } from './nextSession';
 
 describe('deterministic next-session targets', () => {
@@ -18,6 +18,8 @@ describe('deterministic next-session targets', () => {
         idempotencyKey: `session-1:${squat.id}:${set.setNumber}`,
       })),
       'imperial',
+      undefined,
+      demoProgramVersion.progressionRuleIds,
     );
 
     expect(targets[0]).toMatchObject({
@@ -40,6 +42,29 @@ describe('deterministic next-session targets', () => {
       requiresUserConfirmation: false,
     });
     expect(target?.decision.reason).toContain('not enough completed-set data');
+  });
+
+  it('uses the versioned rule parameters for metric load increments', () => {
+    const squat = demoWorkout.exercises[0]!;
+    const [target] = buildNextSessionTargets(
+      demoWorkout,
+      demoProgram.progressionStrategy,
+      squat.sets.map((set) => ({
+        id: `completed-${set.id}`,
+        sessionId: 'session-metric',
+        workoutExerciseId: squat.id,
+        setNumber: set.setNumber,
+        load: 100,
+        reps: 5,
+        completedAt: '2026-09-14T12:05:00.000Z',
+        idempotencyKey: `session-metric:${squat.id}:${set.setNumber}`,
+      })),
+      'metric',
+      undefined,
+      demoProgramVersion.progressionRuleIds,
+    );
+
+    expect(target?.decision.nextTarget.load).toEqual({ value: 102.5, unit: 'metric' });
   });
 
   it('does not carry old exercise performance into a replacement movement', () => {
@@ -87,6 +112,7 @@ describe('deterministic next-session targets', () => {
         completedSets,
         'imperial',
         readinessInputForWorkout('limited'),
+        demoProgramVersion.progressionRuleIds,
       )[0]?.decision,
     ).toMatchObject({ action: 'hold' });
     expect(readinessInputForWorkout('rest')).toMatchObject({ energy: 1, soreness: 5 });

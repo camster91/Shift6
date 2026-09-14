@@ -262,4 +262,10 @@ carryover remains open until its deterministic rules are defined.
 The cycle engine now has a regression test for the full six-week transition sequence, in addition
 to isolated partial, next-week, and Week 6 completion cases.
 
+The progression boundary now resolves version-owned rule IDs through a typed deterministic
+catalogue. Barbell 30's rule is unit-aware and is consumed by both active workout and Progress
+next-session targets; missing or draft rules use conservative defaults until program-specific
+parameters are reviewed. This is an implementation checkpoint for #277, not a claim that all 20
+launch programs have production-reviewed progression rules.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

@@ -1,5 +1,6 @@
 import type {
   CompletedSet,
+  EntityId,
   ProgressionStrategy,
   SetTarget,
   UnitSystem,
@@ -7,6 +8,7 @@ import type {
   WorkoutReadiness,
 } from './types';
 import { calculateNextTarget, type ProgressionDecision, type ReadinessInput } from './progression';
+import { resolveProgressionParameters } from './progressionRules';
 
 export interface NextSessionTarget {
   workoutExerciseId: string;
@@ -56,7 +58,14 @@ export function buildNextSessionTargets(
   completedSets: readonly CompletedSet[],
   unitSystem: UnitSystem,
   readiness: ReadinessInput = normalReadiness,
+  progressionRuleIds: readonly EntityId[] = [],
 ): NextSessionTarget[] {
+  const progressionParameters = resolveProgressionParameters(
+    progressionRuleIds,
+    progressionStrategy,
+    unitSystem,
+  );
+
   return workout.exercises.map((workoutExercise) => {
     const exerciseSets = completedSets.filter(
       (completedSet) =>
@@ -86,9 +95,11 @@ export function buildNextSessionTargets(
         rir: completedSet.rir,
       })),
       readiness,
-      loadIncrement: 5,
-      durationIncrementSeconds: 60,
-      distanceIncrementMeters: 250,
+      loadIncrement: progressionParameters.loadIncrement,
+      durationIncrementSeconds: progressionParameters.durationIncrementSeconds,
+      distanceIncrementMeters: progressionParameters.distanceIncrementMeters,
+      totalRepTarget: progressionParameters.totalRepTarget,
+      skillReady: progressionParameters.skillReady,
     });
 
     return {

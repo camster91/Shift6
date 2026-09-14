@@ -290,6 +290,7 @@ export default function ActiveWorkoutScreen() {
                   previousSets,
                   unitSystem,
                   readinessInputForWorkout(readiness),
+                  activeProgramVersion.progressionRuleIds,
                 )
               : [];
           const overrides = Object.fromEntries(

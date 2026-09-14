@@ -322,3 +322,8 @@ least one set. A bounded reason is persisted with the local `partial` session, q
 sync, and shown in the summary; partial sessions remain out of required adherence and cycle
 advancement while preserving the logged-set record. The focused repository/migration tests and
 web accessibility smoke path pass. Native restart/offline/device proof remains a release gate.
+
+The same #276 surface now supports skipping an untouched session with a bounded reason. The local
+transaction persists a `skipped` session, queues the mutation through the idempotent outbox, and
+removes the draft without advancing the cycle or counting the session toward adherence. The
+summary retains the decision; native restart/offline/device proof remains a release gate.

@@ -409,13 +409,38 @@ export async function finishWorkoutSessionPartially(
   completedAt: string,
   completionReason: Exclude<NonNullable<WorkoutSession['completionReason']>, 'all-targets'>,
 ): Promise<WorkoutSession | null> {
+  return finishWorkoutSessionEarly(database, sessionId, completedAt, 'partial', completionReason);
+}
+
+/**
+ * Ends an in-progress workout as skipped when the user has not logged a set.
+ * The reason is retained for review context, but skipped sessions never
+ * advance the cycle or count toward required adherence.
+ */
+export async function finishWorkoutSessionSkipped(
+  database: SQLiteDatabase,
+  sessionId: string,
+  completedAt: string,
+  completionReason: Exclude<NonNullable<WorkoutSession['completionReason']>, 'all-targets'>,
+): Promise<WorkoutSession | null> {
+  return finishWorkoutSessionEarly(database, sessionId, completedAt, 'skipped', completionReason);
+}
+
+async function finishWorkoutSessionEarly(
+  database: SQLiteDatabase,
+  sessionId: string,
+  completedAt: string,
+  status: Extract<WorkoutSession['status'], 'partial' | 'skipped'>,
+  completionReason: Exclude<NonNullable<WorkoutSession['completionReason']>, 'all-targets'>,
+): Promise<WorkoutSession | null> {
   let finishedSession: WorkoutSession | null = null;
 
   await database.withTransactionAsync(async () => {
     const result = await database.runAsync(
       `UPDATE workout_sessions
-          SET status = 'partial', completed_at = ?, completion_reason = ?
+          SET status = ?, completed_at = ?, completion_reason = ?
         WHERE id = ? AND status = 'in-progress';`,
+      status,
       completedAt,
       completionReason,
       sessionId,
@@ -430,7 +455,7 @@ export async function finishWorkoutSessionPartially(
         LIMIT 1;`,
       sessionId,
     );
-    if (!row) throw new Error('Partially saved workout could not be reloaded locally.');
+    if (!row) throw new Error('Early-ended workout could not be reloaded locally.');
 
     finishedSession = mapWorkoutSession(row);
     await queueWorkoutSessionSync(database, finishedSession);

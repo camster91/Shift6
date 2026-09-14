@@ -53,6 +53,7 @@ import { getLatestCompletedWorkoutSets } from '../src/db/progressRepository';
 import {
   completeWorkoutSessionAndAdvanceCycle,
   finishWorkoutSessionPartially,
+  finishWorkoutSessionSkipped,
   getCompletedSets,
   getInProgressWorkoutSession,
   getWorkoutDraft,
@@ -123,7 +124,7 @@ export default function ActiveWorkoutScreen() {
   const [savingSetKey, setSavingSetKey] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [partialFinishing, setPartialFinishing] = useState(false);
-  const [partialReasonOpen, setPartialReasonOpen] = useState(false);
+  const [earlyStopReasonOpen, setEarlyStopReasonOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
   const [restSecondsRemaining, setRestSecondsRemaining] = useState(0);
@@ -160,6 +161,7 @@ export default function ActiveWorkoutScreen() {
     setCompletedSetKeys(new Set());
     setEditingSetKey(null);
     setSubstitutionFor(null);
+    setEarlyStopReasonOpen(false);
     setReadiness(null);
     setLoadingSession(database !== null);
     setDraftReady(database === null);
@@ -637,24 +639,37 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
-  const handleFinishPartially = async (reason: PartialWorkoutReason) => {
-    if (completedCount === 0 || finishing || partialFinishing) return;
+  const handleFinishEarly = async (
+    status: Extract<WorkoutSession['status'], 'partial' | 'skipped'>,
+    reason: PartialWorkoutReason,
+  ) => {
+    const canFinish =
+      status === 'partial' ? completedCount > 0 && !allSetsComplete : completedCount === 0;
+    if (!canFinish || finishing || partialFinishing) return;
 
     setPartialFinishing(true);
     setError(null);
     try {
       if (database) {
-        const finishedSession = await finishWorkoutSessionPartially(
-          database,
-          session.id,
-          new Date().toISOString(),
-          reason,
-        );
+        const finishedSession =
+          status === 'partial'
+            ? await finishWorkoutSessionPartially(
+                database,
+                session.id,
+                new Date().toISOString(),
+                reason,
+              )
+            : await finishWorkoutSessionSkipped(
+                database,
+                session.id,
+                new Date().toISOString(),
+                reason,
+              );
         if (!finishedSession) {
           throw new Error('This workout session is no longer active locally.');
         }
       }
-      trackAnalyticsEvent(analytics, 'workout_partial', {
+      trackAnalyticsEvent(analytics, status === 'partial' ? 'workout_partial' : 'workout_skipped', {
         workoutId: session.workoutId,
         cycleWeek: session.cycleWeek,
         reason,
@@ -665,7 +680,7 @@ export default function ActiveWorkoutScreen() {
         params: {
           sessionId: session.id,
           workoutId: activeWorkout.id,
-          completionStatus: 'partial',
+          completionStatus: status,
           completionReason: reason,
           completedSetCount: String(completedCount),
         },
@@ -967,20 +982,33 @@ export default function ActiveWorkoutScreen() {
         );
       })}
 
-      {completedCount > 0 && !allSetsComplete ? (
-        <Card tone="yellow" style={styles.partialCard} accessibilityLabel="Save a partial workout">
-          <Text variant="smallMedium">Need to stop early?</Text>
+      {!allSetsComplete ? (
+        <Card
+          tone="yellow"
+          style={styles.partialCard}
+          accessibilityLabel={completedCount > 0 ? 'Save a partial workout' : 'Skip workout'}
+        >
+          <Text variant="smallMedium">
+            {completedCount > 0 ? 'Need to stop early?' : 'Need to skip this session?'}
+          </Text>
           <Text variant="small" tone="muted" style={styles.partialCopy}>
-            Save the sets you completed with a reason. This keeps your record honest and does not
-            advance the six-week cycle.
+            {completedCount > 0
+              ? 'Save the sets you completed with a reason. This keeps your record honest and does not advance the six-week cycle.'
+              : 'Record that you chose not to train today with a reason. The session stays out of cycle advancement.'}
           </Text>
           <Button
-            label={partialReasonOpen ? 'Hide reasons' : 'Save partial workout'}
+            label={
+              earlyStopReasonOpen
+                ? 'Hide reasons'
+                : completedCount > 0
+                  ? 'Save partial workout'
+                  : 'Skip workout'
+            }
             variant="secondary"
-            onPress={() => setPartialReasonOpen((current) => !current)}
+            onPress={() => setEarlyStopReasonOpen((current) => !current)}
             style={styles.partialToggle}
           />
-          {partialReasonOpen ? (
+          {earlyStopReasonOpen ? (
             <View style={styles.partialOptions}>
               {partialWorkoutReasonOptions.map((option) => (
                 <Button
@@ -988,8 +1016,17 @@ export default function ActiveWorkoutScreen() {
                   label={option.label}
                   variant="ghost"
                   loading={partialFinishing}
-                  onPress={() => void handleFinishPartially(option.reason)}
-                  accessibilityHint="Ends this session without advancing the current cycle week"
+                  onPress={() =>
+                    void handleFinishEarly(
+                      completedCount > 0 ? 'partial' : 'skipped',
+                      option.reason,
+                    )
+                  }
+                  accessibilityHint={
+                    completedCount > 0
+                      ? 'Ends this session without advancing the current cycle week'
+                      : 'Marks this session skipped without advancing the current cycle week'
+                  }
                   style={styles.partialOption}
                 />
               ))}

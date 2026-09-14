@@ -57,8 +57,9 @@ export default function WorkoutSummaryScreen() {
   );
 
   const previewSession = useMemo<WorkoutSession | null>(() => {
+    const status = parseCompletionStatus(completionStatus);
     const reason = parseCompletionReason(completionReason);
-    if (completionStatus !== 'partial' || !sessionId || !reason) return null;
+    if (!status || !sessionId || !reason) return null;
 
     const now = new Date().toISOString();
     return {
@@ -68,7 +69,7 @@ export default function WorkoutSummaryScreen() {
       workoutId: workoutId ?? demoWorkout.id,
       programVersionId: demoProgramVersion.id,
       workoutFocus: previewWorkout.focus,
-      status: 'partial',
+      status,
       startedAt: now,
       completedAt: now,
       completionReason: reason,
@@ -126,8 +127,10 @@ export default function WorkoutSummaryScreen() {
 
   const facts = useMemo(() => buildSummaryFacts(session, sets, workout), [session, sets, workout]);
   const isPartial = session?.status === 'partial';
+  const isSkipped = session?.status === 'skipped';
+  const isEarlyStop = isPartial || isSkipped;
   const displayedSetCount =
-    database || !isPartial
+    database || !isEarlyStop
       ? facts.setCount
       : (parsePreviewSetCount(completedSetCount) ?? facts.setCount);
 
@@ -184,18 +187,26 @@ export default function WorkoutSummaryScreen() {
       </View>
 
       <Text variant="display" accessibilityRole="header" style={styles.title}>
-        {isPartial ? 'Workout saved partially.' : 'Workout complete.'}
+        {isPartial
+          ? 'Workout saved partially.'
+          : isSkipped
+            ? 'Workout skipped.'
+            : 'Workout complete.'}
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
         {isPartial
           ? `${workout.title} is recorded locally as a partial session${session?.completionReason ? ` because ${formatCompletionReason(session.completionReason).toLowerCase()}` : ''}. The cycle stays on this week.`
-          : `${workout.title} is recorded locally. Take a moment to capture how the session felt before you move on.`}
+          : isSkipped
+            ? `${workout.title} is recorded locally as skipped${session?.completionReason ? ` because ${formatCompletionReason(session.completionReason).toLowerCase()}` : ''}. The cycle stays on this week.`
+            : `${workout.title} is recorded locally. Take a moment to capture how the session felt before you move on.`}
       </Text>
 
       <Card
-        tone={isPartial ? 'yellow' : 'mint'}
+        tone={isPartial ? 'yellow' : isSkipped ? 'lavender' : 'mint'}
         style={styles.completeCard}
-        accessibilityLabel={isPartial ? 'Partial workout saved' : 'Workout complete'}
+        accessibilityLabel={
+          isPartial ? 'Partial workout saved' : isSkipped ? 'Workout skipped' : 'Workout complete'
+        }
       >
         <View style={styles.completeHeader}>
           <View style={styles.completeIcon}>
@@ -213,17 +224,32 @@ export default function WorkoutSummaryScreen() {
           <SummaryFact label="Cardio" value={facts.cardioLabel} />
           <SummaryFact
             label="Status"
-            value={database ? (isPartial ? 'Saved partial' : 'Saved') : 'Preview'}
+            value={
+              database
+                ? isPartial
+                  ? 'Saved partial'
+                  : isSkipped
+                    ? 'Saved skipped'
+                    : 'Saved'
+                : 'Preview'
+            }
           />
         </View>
       </Card>
 
-      {isPartial ? (
-        <Card tone="lavender" style={styles.partialNote} accessibilityLabel="Partial workout note">
-          <Text variant="smallMedium">Your cycle was not advanced.</Text>
+      {isEarlyStop ? (
+        <Card
+          tone="lavender"
+          style={styles.partialNote}
+          accessibilityLabel={isPartial ? 'Partial workout note' : 'Skipped workout note'}
+        >
+          <Text variant="smallMedium">
+            {isPartial ? 'Your cycle was not advanced.' : 'This session stays out of adherence.'}
+          </Text>
           <Text variant="small" tone="muted" style={styles.partialNoteCopy}>
-            The completed sets remain available for your history. Resume the planned workout later
-            or continue with the next scheduled session.
+            {isPartial
+              ? 'The completed sets remain available for your history. Resume the planned workout later or continue with the next scheduled session.'
+              : 'No completed sets were recorded. You can return to the planned workout later or continue with the next scheduled session.'}
           </Text>
         </Card>
       ) : null}
@@ -407,6 +433,12 @@ function parseCompletionReason(
     default:
       return undefined;
   }
+}
+
+function parseCompletionStatus(
+  value: string | undefined,
+): Extract<WorkoutSession['status'], 'partial' | 'skipped'> | undefined {
+  return value === 'partial' || value === 'skipped' ? value : undefined;
 }
 
 function parsePreviewSetCount(value: string | undefined): number | undefined {

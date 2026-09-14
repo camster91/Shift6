@@ -6,6 +6,7 @@ import {
   completeWorkoutSession,
   completeWorkoutSessionAndAdvanceCycle,
   finishWorkoutSessionPartially,
+  finishWorkoutSessionSkipped,
   getCompletedSets,
   getInProgressWorkoutSession,
   getWorkoutDraft,
@@ -397,7 +398,7 @@ describe('finishWorkoutSessionPartially', () => {
       cycleWeek: 2,
     });
     expect(calls[0]).toMatchObject({
-      params: ['2026-09-14T12:12:00.000Z', 'time-limited', 'session-1'],
+      params: ['partial', '2026-09-14T12:12:00.000Z', 'time-limited', 'session-1'],
     });
     expect(calls[1]?.sql).toContain('INSERT INTO sync_outbox');
     expect(JSON.parse(String(calls[1]?.params[4]))).toMatchObject({
@@ -421,6 +422,43 @@ describe('finishWorkoutSessionPartially', () => {
     await expect(
       finishWorkoutSessionPartially(database, 'session-1', '2026-09-14T12:12:00.000Z', 'other'),
     ).resolves.toBeNull();
+  });
+
+  it('can mark an untouched session skipped with an explicit reason', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const database = {
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      getFirstAsync: async () => ({
+        id: 'session-2',
+        cycle_id: 'cycle-1',
+        cycle_week: 1,
+        workout_id: 'workout-1',
+        program_version_id: 'program-version-1',
+        workout_focus: 'strength',
+        status: 'skipped',
+        started_at: '2026-09-15T12:00:00.000Z',
+        completed_at: '2026-09-15T12:01:00.000Z',
+        completion_reason: 'readiness',
+        is_offline: 0,
+        readiness: 'rest',
+      }),
+      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      finishWorkoutSessionSkipped(database, 'session-2', '2026-09-15T12:01:00.000Z', 'readiness'),
+    ).resolves.toMatchObject({ status: 'skipped', completionReason: 'readiness' });
+    expect(calls[0]?.params).toEqual([
+      'skipped',
+      '2026-09-15T12:01:00.000Z',
+      'readiness',
+      'session-2',
+    ]);
+    expect(calls[1]?.sql).toContain('INSERT INTO sync_outbox');
+    expect(calls.at(-1)?.sql).toContain('DELETE FROM workout_drafts');
   });
 });
 

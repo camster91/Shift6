@@ -100,6 +100,11 @@ their logged-set count, while adherence and cycle advancement continue to requir
 workout. Web preview passes the selected state through the route because native SQLite is
 intentionally unavailable there.
 
+The same boundary supports skipping an untouched session with a bounded reason. Native SQLite
+persists the session as `skipped`, queues it for later sync, deletes the draft, and keeps the session
+out of adherence, cycle advancement, and completed-session progression while retaining the user’s
+decision in the summary.
+
 The first implementation branch is `feat/shift6-rebuild-foundation`. It introduces a clean Expo SDK 57 / React Native 0.86 / TypeScript application shell, Expo Router tabs, token-driven UI primitives, typed domain fixtures, versioned SQLite migrations for native builds, an idempotent workout-session/completed-set outbox and flush contract, persisted guest onboarding/profile setup, a versioned Barbell 30 six-week cycle start flow, local progress aggregation from completed workout records with deterministic next-session targets, a persisted cycle-week transition and review boundary, a provider-neutral Coach safety classifier and proposal validator, a searchable 50-record draft exercise library with equipment-aware filtering, metadata for the planned 20-program library with explicit startability status, and a copy-on-write custom builder foundation.
 
 The branch deliberately does not restore the archived web application. The archived implementation was inspected and rejected for direct reuse because it is a Vite/Capacitor app built around browser `localStorage`, a single mutable state payload, and fixed progression assumptions that conflict with the new program-version and program-specific Week 6 model. The design layer now also exposes semantic icon names and an original SVG asset handoff boundary; the current Ionicons glyphs are explicitly temporary fallbacks pending Figma review.

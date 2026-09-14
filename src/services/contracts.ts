@@ -94,6 +94,7 @@ export type AnalyticsEventName =
   | 'workout_started'
   | 'workout_completed'
   | 'workout_partial'
+  | 'workout_skipped'
   | 'week_2_reached'
   | 'cycle_completed'
   | 'next_cycle_started'

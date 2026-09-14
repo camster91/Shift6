@@ -808,3 +808,8 @@ progression baseline. The summary preserves the reason and logged-set count and 
 that the cycle remains on the current week. Existing completed history is untouched. Web preview
 uses validated route parameters to display the same state because its documented no-persistence
 provider cannot reload a native session.
+
+The same internal boundary supports `skipped` sessions when no set has been logged. A skipped
+session uses the same bounded reason vocabulary and atomic outbox/draft cleanup, remains out of
+adherence, cycle advancement, and completed-session progression, and is retained as an explicit
+user decision for history and later sync.

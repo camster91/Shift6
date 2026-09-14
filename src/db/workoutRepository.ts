@@ -2,6 +2,21 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { CompletedSet, WorkoutSession } from '../domain/types';
 
+interface CompletedSetRow {
+  id: string;
+  session_id: string;
+  workout_exercise_id: string;
+  set_number: number;
+  load: number | null;
+  reps: number | null;
+  duration_seconds: number | null;
+  distance_meters: number | null;
+  rpe: number | null;
+  rir: number | null;
+  completed_at: string;
+  idempotency_key: string;
+}
+
 export async function saveWorkoutSession(
   database: SQLiteDatabase,
   session: WorkoutSession,
@@ -68,4 +83,47 @@ export async function saveCompletedSet(
   });
 
   return inserted ? 'inserted' : 'duplicate';
+}
+
+export async function getCompletedSets(
+  database: SQLiteDatabase,
+  sessionId: string,
+): Promise<CompletedSet[]> {
+  const rows = await database.getAllAsync<CompletedSetRow>(
+    `SELECT id, session_id, workout_exercise_id, set_number, load, reps, duration_seconds,
+            distance_meters, rpe, rir, completed_at, idempotency_key
+       FROM completed_sets
+      WHERE session_id = ?
+      ORDER BY workout_exercise_id, set_number;`,
+    sessionId,
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    sessionId: row.session_id,
+    workoutExerciseId: row.workout_exercise_id,
+    setNumber: row.set_number,
+    load: row.load ?? undefined,
+    reps: row.reps ?? undefined,
+    durationSeconds: row.duration_seconds ?? undefined,
+    distanceMeters: row.distance_meters ?? undefined,
+    rpe: row.rpe ?? undefined,
+    rir: row.rir ?? undefined,
+    completedAt: row.completed_at,
+    idempotencyKey: row.idempotency_key,
+  }));
+}
+
+export async function completeWorkoutSession(
+  database: SQLiteDatabase,
+  sessionId: string,
+  completedAt: string,
+): Promise<void> {
+  await database.runAsync(
+    `UPDATE workout_sessions
+        SET status = 'complete', completed_at = ?
+      WHERE id = ? AND status = 'in-progress';`,
+    completedAt,
+    sessionId,
+  );
 }

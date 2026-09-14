@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { CompletedSet } from '../domain/types';
-import { saveCompletedSet } from './workoutRepository';
+import { completeWorkoutSession, getCompletedSets, saveCompletedSet } from './workoutRepository';
 
 const completedSet: CompletedSet = {
   id: 'set-1',
@@ -55,5 +55,43 @@ describe('saveCompletedSet', () => {
       expect.stringContaining('completed_sets'),
       'COMMIT TRANSACTION',
     ]);
+  });
+
+  it('reads completed sets by stable session and exercise IDs', async () => {
+    const database = {
+      getAllAsync: async () => [
+        {
+          id: 'set-1',
+          session_id: 'session-1',
+          workout_exercise_id: 'workout-exercise-1',
+          set_number: 1,
+          load: 185,
+          reps: 5,
+          duration_seconds: null,
+          distance_meters: null,
+          rpe: null,
+          rir: 2,
+          completed_at: '2026-09-13T12:05:00.000Z',
+          idempotency_key: 'session-1:workout-exercise-1:1',
+        },
+      ],
+    } as unknown as SQLiteDatabase;
+
+    await expect(getCompletedSets(database, 'session-1')).resolves.toEqual([completedSet]);
+  });
+
+  it('only completes an in-progress session', async () => {
+    const calls: unknown[][] = [];
+    const database = {
+      runAsync: async (_sql: string, ...params: unknown[]) => {
+        calls.push(params);
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      completeWorkoutSession(database, 'session-1', '2026-09-13T12:30:00.000Z'),
+    ).resolves.toBeUndefined();
+    expect(calls).toEqual([['2026-09-13T12:30:00.000Z', 'session-1']]);
   });
 });

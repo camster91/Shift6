@@ -250,3 +250,15 @@ The next #273 increment adds a real multi-step onboarding route at `app/onboardi
 This is an implementation checkpoint, not a release claim. Native migration execution, restart persistence, and small/large iOS/Android accessibility verification still require device runtimes.
 
 The foundation quality gate currently passes lint, strict typecheck, formatting, Jest, Expo Doctor, high-severity production-dependency audit, and web export. `npm audit --omit=dev` still reports 14 moderate transitive advisories whose forced remediation would introduce breaking Expo changes; this is a release-hardening risk to revisit during dependency maintenance, not a reason to apply an unreviewed forced upgrade now.
+
+## Active workout implementation checkpoint — 2026-09-13
+
+The first active-workout increment replaces the preview at `app/workout.tsx` with a typed Barbell 30 set surface:
+
+- native startup creates or resumes an in-progress session and reloads completed sets by stable IDs;
+- completing a set calls the SQLite repository before the UI marks it done, preserving the idempotent completed-set/outbox transaction;
+- the web preview keeps set state in memory and labels that limitation instead of claiming native durability;
+- reps, optional load, duration, distance, RPE, and RIR fields have accessible labels; a timestamp-based rest timer recalculates after app backgrounding;
+- finishing is disabled until all fixture sets are complete and then marks the local session complete before returning Home.
+
+This is not yet the full #276 release gate: network reachability detection, background sync execution, crash/restart device proof, correction workflow, substitutions, notes, cardio blocks, and VoiceOver/TalkBack end-to-end review remain outstanding.

@@ -7,6 +7,7 @@ Build the smallest complete vertical slice first: onboarding → program → wor
 ## Phase 0 — Foundation
 
 Epic 1: Product/design system
+
 - Figma token system
 - logo/app icon
 - navigation
@@ -14,6 +15,7 @@ Epic 1: Product/design system
 - accessibility baselines
 
 Epic 2: Repository/app bootstrap
+
 - Expo TypeScript app
 - environments
 - lint/typecheck/tests
@@ -23,6 +25,7 @@ Epic 2: Repository/app bootstrap
 - backend skeleton
 
 Epic 3: Auth/profile
+
 - guest mode
 - account conversion
 - Apple/Google/email auth
@@ -33,6 +36,7 @@ Exit gate: app boots on representative iOS/Android devices, CI green, design tok
 ## Phase 1 — Workout core
 
 Epic 4: Exercise catalogue
+
 - schema
 - search/filter
 - seed 50 foundational exercises first
@@ -40,12 +44,14 @@ Epic 4: Exercise catalogue
 - media placeholders
 
 Epic 5: Program model
+
 - templates
 - custom program builder
 - workout builder
 - versioning
 
 Epic 6: Active workout
+
 - offline set logging
 - timer
 - notes
@@ -58,6 +64,7 @@ Exit gate: complete Barbell 30 entirely offline and retain data after app restar
 ## Phase 2 — SHIFT6 differentiation
 
 Epic 7: Six-week engine
+
 - cycle creation
 - progression strategies
 - cycle dashboard
@@ -65,6 +72,7 @@ Epic 7: Six-week engine
 - review facts
 
 Epic 8: Progress
+
 - strength charts
 - records
 - consistency
@@ -72,6 +80,7 @@ Epic 8: Progress
 - cycle comparison
 
 Epic 9: AI coach
+
 - provider-agnostic gateway
 - structured context
 - chat
@@ -84,21 +93,25 @@ Exit gate: user can complete a full simulated six-week cycle and approve/reject 
 ## Phase 3 — Breadth
 
 Epic 10: 20 curated programs
+
 - content review
 - equipment filters
 - recommendation logic
 
 Epic 11: 300+ exercise catalogue
+
 - exercise QA
 - substitution graph
 - media production
 
 Epic 12: Cardio/mobility/power/balance
+
 - session types
 - interval builder
 - mobility routines
 
 Epic 13: Health integrations
+
 - Apple Health
 - Health Connect
 - permissions
@@ -129,6 +142,7 @@ Epic 20: Release pipeline and staged rollout
 ## Issue-writing rule
 
 Every implementation issue should include:
+
 - objective;
 - user value;
 - source doc links;
@@ -327,6 +341,11 @@ The same #276 surface now supports skipping an untouched session with a bounded 
 transaction persists a `skipped` session, queues the mutation through the idempotent outbox, and
 removes the draft without advancing the cycle or counting the session toward adherence. The
 summary retains the decision; native restart/offline/device proof remains a release gate.
+
+The active-workout slice now links barbell users to an editable, unit-aware plate calculator. Its
+pure domain algorithm loads only symmetric plate pairs, never overshoots a target, and makes an
+underloaded result explicit when the local inventory cannot match exactly. It does not change
+workout targets or persisted history.
 
 The #277/#275 Review → progression-copy path now applies ordinary deterministic target changes from
 the completed cycle to a new private version. Matching uses canonical exercise plus immediate

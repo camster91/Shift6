@@ -39,6 +39,7 @@ import type {
   WorkoutExercise,
   WorkoutReadiness,
   WorkoutSession,
+  UnitSystem,
 } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
 import { getActiveTrainingCycle, saveTrainingCycle } from '../src/db/cycleRepository';
@@ -98,6 +99,7 @@ export default function ActiveWorkoutScreen() {
   const [activeProgramVersion, setActiveProgramVersion] = useState(demoProgramVersion);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>(demoUser.unitSystem);
   const availableExercises = useMemo(
     () => [...foundationalExercises, ...customExercises],
     [customExercises],
@@ -296,6 +298,7 @@ export default function ActiveWorkoutScreen() {
           if (!active) return;
           setCustomExercises(userExercises);
           setAvailableEquipmentIds(equipmentIds);
+          setUnitSystem(unitSystem);
           setRestTimerEnabled(restTimerEnabled);
           setReadiness(readiness ?? null);
           setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
@@ -760,6 +763,21 @@ export default function ActiveWorkoutScreen() {
             : 'Native SQLite is not active in this preview. Set state is kept in memory for this browser session.'}
         </Text>
       </Card>
+
+      {activeWorkout.equipmentIds.includes('equipment-barbell') ? (
+        <Button
+          label="Open plate calculator"
+          variant="ghost"
+          icon={<Ionicons name="calculator-outline" size={18} color={colors.ink} />}
+          onPress={() =>
+            router.push({
+              pathname: '/plate-calculator',
+              params: { unitSystem },
+            })
+          }
+          style={styles.plateCalculatorButton}
+        />
+      ) : null}
 
       {restSecondsRemaining > 0 ? (
         <Card
@@ -1449,6 +1467,10 @@ const styles = StyleSheet.create({
   },
   localFirstText: {
     marginTop: spacing.sm,
+  },
+  plateCalculatorButton: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.xs,
   },
   timerCard: {
     marginTop: spacing.md,

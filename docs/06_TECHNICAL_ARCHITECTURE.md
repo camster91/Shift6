@@ -842,3 +842,16 @@ Schedule overrides are included in local export/delete and guest-to-account adop
 The web provider intentionally remains non-persistent; native SQLite and reconnect/device proof
 remain release-gated. Multi-workout date planning, drag interactions, server conflict resolution,
 and calendar notifications that honor overrides remain follow-up work.
+
+## Plate calculator checkpoint — 2026-09-14
+
+The optional barbell utility is implemented as a pure domain calculation in
+`src/domain/plateCalculator.ts`. It accepts the total target, barbell weight, and editable total
+plate inventory; it searches bounded symmetric pairs, prefers an exact result, and otherwise
+returns the closest safe load without overshooting. Imperial and metric defaults are convenience
+fixtures only and are resettable by the user.
+
+`/plate-calculator` is an accessible route from barbell workouts and remains independent of the
+workout persistence path. It is a loading aid rather than a progression authority: target values
+still come from the versioned workout and deterministic progression engine, and the UI includes a
+safe-setup disclaimer. Native device layout and keyboard verification remain release-gated.

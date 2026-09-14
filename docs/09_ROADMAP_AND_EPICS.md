@@ -163,4 +163,17 @@ Every implementation issue should include:
 13. Health integrations
 14. release hardening
 
+## First foundation execution sequence — #271 + #272
+
+The reset repository has no application code, so the first two epics are delivered as small, independently reviewable slices:
+
+1. **Repository and runtime bootstrap (#272):** Expo SDK 57 project metadata, TypeScript strictness, public environment example, dependency alignment, and a quality CI workflow.
+2. **Design-token baseline (#271):** implementation tokens for colour, typography, spacing, radius, elevation, motion, icons, touch targets, and semantic states; keep the Figma variable names aligned with the code vocabulary.
+3. **Core primitives (#271):** `Screen`, `Text`, `Button`, `IconButton`, `Card`, `ProgramCard`, `WorkoutCard`, `Chip`, `ProgressIndicator`, `SixWeekIndicator`, `BottomNavigation`, `EmptyState`, `ErrorState`, `OfflineBanner`, and `LoadingSkeleton`, including accessible labels and non-colour state cues.
+4. **Domain and local durability boundary (#272):** stable typed entities, Barbell 30 fixture data, a versioned SQLite migration, and an atomic completed-set/outbox repository. Do not connect UI success states until the active workout uses this repository.
+5. **Navigation and real fixture surfaces (#271/#272):** Home, Programs, Coach, Progress, and Profile tabs; a six-week cycle motif; a typed Barbell 30 Home card; and an honest workout-preview route that makes the next vertical-slice boundary visible.
+6. **Verification gate:** lint, format, typecheck, unit/component tests, Expo doctor, web bundle and accessibility smoke tests; then native simulator/device boot, signed preview build, and native SQLite restart/offline tests before calling the foundation device-verified.
+
+Current branch status: steps 1–5 are implemented; step 6 is partially verified on the web/tooling surface. Native device verification and the signed preview build still require the corresponding local runtimes/EAS credentials and must not be inferred from a web export.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

@@ -30,6 +30,14 @@ This repository was intentionally reset on 2026-09-13 to become the canonical SH
 
 The default branch now contains planning only. Do not restore old application code into `main` without an explicit migration decision.
 
+### Foundation implementation checkpoint
+
+The first implementation branch is `feat/shift6-rebuild-foundation`. It introduces a clean Expo SDK 57 / React Native 0.86 / TypeScript application shell, Expo Router tabs, token-driven UI primitives, typed domain fixtures, a versioned SQLite migration boundary for native builds, and an idempotent completed-set outbox contract.
+
+The branch deliberately does not restore the archived web application. The archived implementation was inspected and rejected for direct reuse because it is a Vite/Capacitor app built around browser `localStorage`, a single mutable state payload, and fixed progression assumptions that conflict with the new program-version and program-specific Week 6 model.
+
+The web target is a UI preview only: it uses a platform-specific no-persistence provider because the SDK 57 SQLite web worker requires a WASM asset that is not present in the resolved package. iOS and Android continue to use the real SQLite provider. Native simulator/device boot remains a separate verification gate because this workstation has no usable `simctl` runtime or connected Android device.
+
 ## Canonical planning docs
 
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition

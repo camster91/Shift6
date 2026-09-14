@@ -221,3 +221,18 @@ Never send free-text health notes or raw workout notes to analytics.
 - exercise search responsive with hundreds/thousands of records;
 - image/video loaded progressively;
 - no workout loss on crash/restart.
+
+## Foundation implementation record — 2026-09-13
+
+The initial rebuild branch implements this architecture as a small, native-first foundation:
+
+- Expo SDK 57, React Native 0.86, React 19, TypeScript, Expo Router, and the New Architecture-compatible dependency set are the current mobile baseline.
+- `src/design/tokens.ts` is the first implementation token source. It mirrors the documented colour, type, spacing, radius, motion, icon-size, touch-target, elevation, and semantic-state vocabulary. A system sans fallback is used until the Figma font decision and licensed font asset are approved.
+- `src/components/ui/` contains the first internal component layer. `BottomNavigation` implements the planned black floating capsule; temporary Ionicons provide semantic fallbacks while the original SHIFT6 icon family and provenance pipeline are produced under #271.
+- Native builds mount `SQLiteProvider` through `src/db/LocalDatabaseProvider.tsx`. `src/db/migrations.ts` owns versioned schema changes, and `src/db/workoutRepository.ts` persists a completed set and its idempotent sync-outbox mutation in one transaction. The success UI must be downstream of that transaction when the active workout is implemented.
+- `LocalDatabaseProvider.web.tsx` intentionally makes web a non-persistent preview surface. It prevents the current SDK 57 SQLite WASM worker packaging gap from blocking UI smoke tests and must not be treated as workout durability evidence.
+- `src/domain/types.ts` uses stable string IDs, ISO timestamps, explicit program versions, cycle snapshots, immutable completed-session records, and a program-specific `CycleModel.weekSixMeaning`.
+- `src/services/contracts.ts` exposes replaceable `BackendClient`, `CoachGateway`, and privacy-safe analytics contracts. No backend endpoint, AI provider, credential, or cloud mutation is included in this foundation increment.
+- `src/config/env.ts` reads only `EXPO_PUBLIC_*` values. `.env.example` documents public configuration; secrets are not accepted by the mobile bundle.
+
+This record is an implementation checkpoint, not a release claim. Native boot, signed EAS builds, backend connectivity, SQLite restart durability on device, and full offline workout completion remain later verification gates.

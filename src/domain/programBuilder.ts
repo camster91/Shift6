@@ -79,9 +79,7 @@ export function addExerciseToWorkout(
   workoutId: string,
   { exerciseId, setCount = 3, target = { reps: 8 } }: AddExerciseInput,
 ): ProgramVersion {
-  if (setCount < 1 || setCount > 20) {
-    throw new Error('A workout exercise needs between 1 and 20 sets.');
-  }
+  assertSetCount(setCount);
 
   const workout = version.workouts.find((candidate) => candidate.id === workoutId);
   if (!workout) throw new Error('Workout not found in this program version.');
@@ -144,6 +142,51 @@ export function reorderWorkoutExercises(
   return updateWorkout(version, workoutId, (currentWorkout) => ({
     ...currentWorkout,
     exercises: orderedExerciseIds.map((id, index) => ({ ...byId.get(id)!, order: index + 1 })),
+  }));
+}
+
+export function setWorkoutExerciseSetCount(
+  version: ProgramVersion,
+  workoutId: string,
+  workoutExerciseId: string,
+  setCount: number,
+): ProgramVersion {
+  assertSetCount(setCount);
+
+  const workout = version.workouts.find((candidate) => candidate.id === workoutId);
+  if (!workout) throw new Error('Workout not found in this program version.');
+
+  const workoutExercise = workout.exercises.find((exercise) => exercise.id === workoutExerciseId);
+  if (!workoutExercise) throw new Error('Exercise not found in this workout.');
+
+  return updateWorkout(version, workoutId, (currentWorkout) => ({
+    ...currentWorkout,
+    exercises: currentWorkout.exercises.map((exercise) => {
+      if (exercise.id !== workoutExerciseId) return exercise;
+
+      const currentSets = exercise.sets.slice(0, setCount).map((set, index) => ({
+        ...set,
+        setNumber: index + 1,
+        target: cloneTarget(set.target),
+      }));
+      const templateSet = exercise.sets.at(-1) ?? {
+        id: `${workoutExerciseId}-set-0`,
+        setNumber: 0,
+        target: { reps: 8 },
+        restSeconds: 90,
+      };
+      const addedSets = Array.from(
+        { length: Math.max(0, setCount - currentSets.length) },
+        (_, index) => ({
+          id: `${workoutExerciseId}-set-${currentSets.length + index + 1}`,
+          setNumber: currentSets.length + index + 1,
+          target: cloneTarget(templateSet.target),
+          restSeconds: templateSet.restSeconds,
+        }),
+      );
+
+      return { ...exercise, sets: [...currentSets, ...addedSets] };
+    }),
   }));
 }
 
@@ -236,4 +279,10 @@ function cloneTarget(target: SetTarget): SetTarget {
     reps: typeof target.reps === 'object' ? { ...target.reps } : target.reps,
     load: target.load ? { ...target.load } : undefined,
   };
+}
+
+function assertSetCount(setCount: number): void {
+  if (!Number.isInteger(setCount) || setCount < 1 || setCount > 20) {
+    throw new Error('A workout exercise needs between 1 and 20 sets.');
+  }
 }

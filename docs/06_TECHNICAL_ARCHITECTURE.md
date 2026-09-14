@@ -401,6 +401,18 @@ The first #275 editing surface now supports a safe user-owned draft path:
 
 The builder does not yet publish versions or support full drag-and-drop/superset/circuit editing. Those are intentionally separate increments. Active workout routing now resolves the stored user-owned snapshot when one exists; the editing surface still needs broader workout block controls.
 
+## Custom builder controls checkpoint — 2026-09-14
+
+The next #275 increment turns the exercise list into an editable, accessible surface:
+
+- up/down controls reorder only the private version and renumber exercise order through the domain operation;
+- remove controls delete an exercise from the private workout copy without touching the canonical template or completed history;
+- set-count controls support 1–20 sets, preserve existing set IDs/targets, and clone the last target/rest definition for added sets;
+- custom exercises are tracked by stable, unique IDs in the draft UI and all saved user-owned custom records are persisted with the program version;
+- the domain tests cover immutable set-count changes and invalid counts.
+
+Drag-and-drop, supersets/circuits, target editing, and warm-up/cooldown/cardio block authoring remain separate builder increments.
+
 ## Sync outbox implementation checkpoint — 2026-09-13
 
 The local/cloud handoff now has an explicit provider boundary without introducing a backend vendor:

@@ -5,6 +5,7 @@ import {
   createProgramCopy,
   removeExerciseFromWorkout,
   reorderWorkoutExercises,
+  setWorkoutExerciseSetCount,
 } from './programBuilder';
 
 describe('immutable custom program builder', () => {
@@ -75,5 +76,61 @@ describe('immutable custom program builder', () => {
       contentStatus: 'draft',
       trackingType: 'distance',
     });
+  });
+
+  it('changes set count immutably while preserving existing targets and IDs', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-3',
+      newVersionId: 'program-custom-3-version-1',
+      createdAt: '2026-09-14T12:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const exercise = workout.exercises[0]!;
+    const originalIds = exercise.sets.map((set) => set.id);
+
+    const increased = setWorkoutExerciseSetCount(
+      copy.version,
+      workout.id,
+      exercise.id,
+      exercise.sets.length + 1,
+    );
+    const increasedExercise = increased.workouts[0]!.exercises[0]!;
+
+    expect(increasedExercise.sets).toHaveLength(exercise.sets.length + 1);
+    expect(increasedExercise.sets.slice(0, originalIds.length).map((set) => set.id)).toEqual(
+      originalIds,
+    );
+    expect(increasedExercise.sets.at(-1)?.target).toEqual(exercise.sets.at(-1)?.target);
+
+    const decreased = setWorkoutExerciseSetCount(increased, workout.id, exercise.id, 1);
+    expect(decreased.workouts[0]!.exercises[0]!.sets).toHaveLength(1);
+    expect(decreased.workouts[0]!.exercises[0]!.sets[0]?.id).toBe(originalIds[0]);
+    expect(copy.version.workouts[0]!.exercises[0]!.sets.map((set) => set.id)).toEqual(originalIds);
+  });
+
+  it('rejects non-integer and out-of-range set counts', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-4',
+      newVersionId: 'program-custom-4-version-1',
+      createdAt: '2026-09-14T12:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const exercise = workout.exercises[0]!;
+
+    expect(() => setWorkoutExerciseSetCount(copy.version, workout.id, exercise.id, 0)).toThrow(
+      'between 1 and 20 sets',
+    );
+    expect(() => setWorkoutExerciseSetCount(copy.version, workout.id, exercise.id, 1.5)).toThrow(
+      'between 1 and 20 sets',
+    );
+    expect(() => setWorkoutExerciseSetCount(copy.version, workout.id, exercise.id, 21)).toThrow(
+      'between 1 and 20 sets',
+    );
   });
 });

@@ -11,7 +11,10 @@ import {
   addExerciseToWorkout,
   createCustomExercise,
   createProgramCopy,
+  removeExerciseFromWorkout,
+  reorderWorkoutExercises,
   renameProgram,
+  setWorkoutExerciseSetCount,
 } from '../src/domain/programBuilder';
 import type { Exercise } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
@@ -35,7 +38,7 @@ export default function ProgramBuilderScreen() {
     }),
   );
   const [customName, setCustomName] = useState('');
-  const [customExercise, setCustomExercise] = useState<Exercise | null>(null);
+  const [customExercises, setCustomExercises] = useState<Record<string, Exercise>>({});
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -43,9 +46,21 @@ export default function ProgramBuilderScreen() {
 
   const firstWorkout = draft.version.workouts[0];
   const exerciseNameById = useMemo(
-    () => new Map(foundationalExercises.map((exercise) => [exercise.id, exercise.name])),
-    [],
+    () =>
+      new Map(
+        [...foundationalExercises, ...Object.values(customExercises)].map((exercise) => [
+          exercise.id,
+          exercise.name,
+        ]),
+      ),
+    [customExercises],
   );
+
+  const updateDraftVersion = (update: (version: typeof draft.version) => typeof draft.version) => {
+    setDraft((current) => ({ ...current, version: update(current.version) }));
+    setSaved(false);
+    setError(null);
+  };
 
   const handleAddPlank = () => {
     if (!firstWorkout) return;
@@ -65,22 +80,21 @@ export default function ProgramBuilderScreen() {
     if (!firstWorkout) return;
     try {
       const exercise = createCustomExercise({
-        id: `${copyId}-custom-exercise-1`,
+        id: `${copyId}-custom-exercise-${Object.keys(customExercises).length + 1}`,
         name: customName,
         movementPattern: 'carry',
         primaryMuscles: ['grip', 'core'],
         equipmentIds: ['equipment-bodyweight'],
         trackingType: 'time',
       });
-      setCustomExercise(exercise);
-      setDraft((current) => ({
-        ...current,
-        version: addExerciseToWorkout(current.version, firstWorkout.id, {
+      setCustomExercises((current) => ({ ...current, [exercise.id]: exercise }));
+      updateDraftVersion((version) =>
+        addExerciseToWorkout(version, firstWorkout.id, {
           exerciseId: exercise.id,
           setCount: 2,
           target: { durationSeconds: 30 },
         }),
-      }));
+      );
       setCustomName('');
       setSaved(false);
       setError(null);
@@ -99,13 +113,8 @@ export default function ProgramBuilderScreen() {
     try {
       const program = renameProgram(draft.program, draft.program.title);
       if (database) {
-        if (customExercise) {
-          await saveCustomExercise(
-            database,
-            'guest-user',
-            customExercise,
-            new Date().toISOString(),
-          );
+        for (const exercise of Object.values(customExercises)) {
+          await saveCustomExercise(database, 'guest-user', exercise, new Date().toISOString());
         }
         await saveProgramVersion(database, 'guest-user', program, draft.version);
       }
@@ -133,8 +142,8 @@ export default function ProgramBuilderScreen() {
         startedAt,
       });
       if (database) {
-        if (customExercise) {
-          await saveCustomExercise(database, 'guest-user', customExercise, startedAt);
+        for (const exercise of Object.values(customExercises)) {
+          await saveCustomExercise(database, 'guest-user', exercise, startedAt);
         }
         await saveProgramVersion(database, 'guest-user', program, draft.version);
         await saveTrainingCycle(database, cycle);
@@ -209,21 +218,103 @@ export default function ProgramBuilderScreen() {
               Day {workout.dayOfWeek}
             </Text>
           </View>
-          {workout.exercises.map((exercise) => (
-            <View key={exercise.id} style={styles.exerciseRow}>
-              <View style={styles.exerciseCopy}>
-                <Text variant="smallMedium">
-                  {exerciseNameById.get(exercise.exerciseId) ??
-                    customExercise?.name ??
-                    'Custom movement'}
-                </Text>
-                <Text variant="caption" tone="muted">
-                  {exercise.sets.length} sets · {exercise.section}
-                </Text>
+          {workout.exercises.map((exercise, exerciseIndex) => {
+            const exerciseName = exerciseNameById.get(exercise.exerciseId) ?? 'Custom movement';
+
+            return (
+              <View key={exercise.id} style={styles.exerciseRow}>
+                <View style={styles.exerciseCopy}>
+                  <Text variant="smallMedium">{exerciseName}</Text>
+                  <Text variant="caption" tone="muted">
+                    {exercise.sets.length} sets · {exercise.section}
+                  </Text>
+                </View>
+                <View style={styles.exerciseActions}>
+                  <IconButton
+                    icon={<Ionicons name="chevron-up-outline" size={18} color={colors.ink} />}
+                    label={`Move ${exerciseName} up`}
+                    disabled={exerciseIndex === 0}
+                    onPress={() => {
+                      const orderedIds = workout.exercises.map((candidate) => candidate.id);
+                      [orderedIds[exerciseIndex - 1]!, orderedIds[exerciseIndex]!] = [
+                        orderedIds[exerciseIndex]!,
+                        orderedIds[exerciseIndex - 1]!,
+                      ];
+                      updateDraftVersion((version) =>
+                        reorderWorkoutExercises(version, workout.id, orderedIds),
+                      );
+                    }}
+                    style={styles.iconAction}
+                  />
+                  <IconButton
+                    icon={<Ionicons name="chevron-down-outline" size={18} color={colors.ink} />}
+                    label={`Move ${exerciseName} down`}
+                    disabled={exerciseIndex === workout.exercises.length - 1}
+                    onPress={() => {
+                      const orderedIds = workout.exercises.map((candidate) => candidate.id);
+                      [orderedIds[exerciseIndex]!, orderedIds[exerciseIndex + 1]!] = [
+                        orderedIds[exerciseIndex + 1]!,
+                        orderedIds[exerciseIndex]!,
+                      ];
+                      updateDraftVersion((version) =>
+                        reorderWorkoutExercises(version, workout.id, orderedIds),
+                      );
+                    }}
+                    style={styles.iconAction}
+                  />
+                  <IconButton
+                    icon={<Ionicons name="remove-outline" size={18} color={colors.ink} />}
+                    label={`Decrease sets for ${exerciseName}`}
+                    disabled={exercise.sets.length <= 1}
+                    onPress={() =>
+                      updateDraftVersion((version) =>
+                        setWorkoutExerciseSetCount(
+                          version,
+                          workout.id,
+                          exercise.id,
+                          exercise.sets.length - 1,
+                        ),
+                      )
+                    }
+                    style={styles.iconAction}
+                  />
+                  <Text
+                    variant="caption"
+                    accessibilityLabel={`${exercise.sets.length} sets`}
+                    style={styles.setCount}
+                  >
+                    {exercise.sets.length}
+                  </Text>
+                  <IconButton
+                    icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
+                    label={`Increase sets for ${exerciseName}`}
+                    disabled={exercise.sets.length >= 20}
+                    onPress={() =>
+                      updateDraftVersion((version) =>
+                        setWorkoutExerciseSetCount(
+                          version,
+                          workout.id,
+                          exercise.id,
+                          exercise.sets.length + 1,
+                        ),
+                      )
+                    }
+                    style={styles.iconAction}
+                  />
+                  <IconButton
+                    icon={<Ionicons name="trash-outline" size={17} color={colors.error} />}
+                    label={`Remove ${exerciseName}`}
+                    onPress={() =>
+                      updateDraftVersion((version) =>
+                        removeExerciseFromWorkout(version, workout.id, exercise.id),
+                      )
+                    }
+                    style={styles.iconAction}
+                  />
+                </View>
               </View>
-              <Ionicons name="reorder-three-outline" size={22} color={colors.inkMuted} />
-            </View>
-          ))}
+            );
+          })}
         </Card>
       ))}
 
@@ -350,7 +441,21 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   exerciseCopy: {
+    flex: 1,
+    minWidth: 0,
     gap: spacing.xs,
+  },
+  exerciseActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxs,
+  },
+  iconAction: {
+    backgroundColor: colors.canvas,
+  },
+  setCount: {
+    minWidth: 18,
+    textAlign: 'center',
   },
   addButton: {
     marginTop: spacing.md,

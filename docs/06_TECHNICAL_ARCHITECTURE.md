@@ -262,6 +262,8 @@ The first active-workout increment replaces the preview at `app/workout.tsx` wit
 - the web preview keeps set state in memory and labels that limitation instead of claiming native durability;
 - reps, optional load, duration, distance, RPE, and RIR fields have accessible labels; a timestamp-based rest timer recalculates after app backgrounding;
 - finishing is disabled until all fixture sets are complete and then marks the local session complete before returning Home.
+- the route accepts a typed workout ID for the Barbell 30 version, and the next session derives target overrides from the latest completed local workout without rewriting the program snapshot;
+- Program Detail can open each of the three Barbell 30 workouts through that same route boundary.
 
 This is not yet the full #276 release gate: network reachability detection, background sync execution, crash/restart device proof, correction workflow, substitutions, notes, cardio blocks, and VoiceOver/TalkBack end-to-end review remain outstanding.
 

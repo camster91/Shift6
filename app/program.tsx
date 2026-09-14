@@ -100,6 +100,13 @@ export default function ProgramDetailScreen() {
           <Text variant="small" tone="muted">
             {workout.exercises.length} movements · {workout.equipmentIds.length} equipment types
           </Text>
+          <Button
+            label={`Open ${workout.title}`}
+            variant="ghost"
+            icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
+            onPress={() => router.push({ pathname: '/workout', params: { workoutId: workout.id } })}
+            style={styles.openWorkoutButton}
+          />
         </Card>
       ))}
 
@@ -173,6 +180,11 @@ const styles = StyleSheet.create({
   workoutTitle: {
     marginTop: spacing.sm,
     marginBottom: spacing.xs,
+  },
+  openWorkoutButton: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.sm,
+    paddingHorizontal: 0,
   },
   startButton: {
     marginTop: spacing.xl,

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { AppState, StyleSheet, TextInput, View } from 'react-native';
 
@@ -12,7 +12,13 @@ import {
   Screen,
   Text,
 } from '../src/components/ui';
-import { demoCycle, demoWorkout } from '../src/domain/fixtures/home';
+import {
+  demoCycle,
+  demoProgram,
+  demoProgramVersion,
+  demoWorkout,
+} from '../src/domain/fixtures/home';
+import { buildNextSessionTargets } from '../src/domain/nextSession';
 import type {
   CompletedSet,
   SetTarget,
@@ -25,6 +31,8 @@ import {
   advanceTrainingCycleAfterCompletedWorkout,
   getActiveTrainingCycle,
 } from '../src/db/cycleRepository';
+import { getOnboardingProfile } from '../src/db/profileRepository';
+import { getLatestCompletedWorkoutSets } from '../src/db/progressRepository';
 import {
   completeWorkoutSession,
   getCompletedSets,
@@ -44,9 +52,17 @@ interface SetInputValues {
 
 export default function ActiveWorkoutScreen() {
   const database = useLocalDatabase();
+  const { workoutId } = useLocalSearchParams<{ workoutId?: string }>();
+  const activeWorkout = useMemo(
+    () => demoProgramVersion.workouts.find((workout) => workout.id === workoutId) ?? demoWorkout,
+    [workoutId],
+  );
   const [activeCycle, setActiveCycle] = useState<TrainingCycle>(demoCycle);
   const [startedAt] = useState(() => new Date().toISOString());
-  const [values, setValues] = useState<Record<string, SetInputValues>>(() => buildInitialValues());
+  const [values, setValues] = useState<Record<string, SetInputValues>>(() =>
+    buildInitialValues(activeWorkout),
+  );
+  const [targetOverrides, setTargetOverrides] = useState<Record<string, SetTarget>>({});
   const [completedSetKeys, setCompletedSetKeys] = useState<Set<string>>(() => new Set());
   const [loadingCycle, setLoadingCycle] = useState(database !== null);
   const [loadingSession, setLoadingSession] = useState(database !== null);
@@ -58,17 +74,17 @@ export default function ActiveWorkoutScreen() {
 
   const session = useMemo<WorkoutSession>(
     () => ({
-      id: `session-${activeCycle.id}-week-${activeCycle.currentWeek}-${demoWorkout.id}`,
+      id: `session-${activeCycle.id}-week-${activeCycle.currentWeek}-${activeWorkout.id}`,
       cycleId: activeCycle.id,
       cycleWeek: activeCycle.currentWeek,
-      workoutId: demoWorkout.id,
-      programVersionId: demoWorkout.programVersionId,
-      workoutFocus: demoWorkout.focus,
+      workoutId: activeWorkout.id,
+      programVersionId: activeWorkout.programVersionId,
+      workoutFocus: activeWorkout.focus,
       status: 'in-progress',
       startedAt,
       isOffline: false,
     }),
-    [activeCycle.id, startedAt],
+    [activeCycle.id, activeCycle.currentWeek, activeWorkout, startedAt],
   );
 
   useEffect(() => {
@@ -101,10 +117,35 @@ export default function ActiveWorkoutScreen() {
 
     let active = true;
     void saveWorkoutSession(database, session)
-      .then(() => getCompletedSets(database, session.id))
-      .then((completedSets) => {
+      .then(async () => {
+        const [completedSets, previousSets, profile] = await Promise.all([
+          getCompletedSets(database, session.id),
+          getLatestCompletedWorkoutSets(database, activeCycle.id, activeWorkout.id),
+          getOnboardingProfile(database, 'guest-user'),
+        ]);
+        return {
+          completedSets,
+          previousSets,
+          unitSystem: profile?.user.unitSystem ?? 'imperial',
+        };
+      })
+      .then(({ completedSets, previousSets, unitSystem }) => {
         if (!active) return;
         setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
+        const nextTargets =
+          previousSets.length > 0
+            ? buildNextSessionTargets(
+                activeWorkout,
+                demoProgram.progressionStrategy,
+                previousSets,
+                unitSystem,
+              )
+            : [];
+        const overrides = Object.fromEntries(
+          nextTargets.map((target) => [target.workoutExerciseId, target.decision.nextTarget]),
+        );
+        setTargetOverrides(overrides);
+        setValues((current) => mergeInitialValues(activeWorkout, overrides, current));
       })
       .catch(() => {
         if (active) setError('We could not load this workout from local storage.');
@@ -116,7 +157,7 @@ export default function ActiveWorkoutScreen() {
     return () => {
       active = false;
     };
-  }, [database, loadingCycle, session]);
+  }, [activeCycle.id, activeWorkout, database, loadingCycle, session]);
 
   useEffect(() => {
     if (restEndsAt === null) return;
@@ -142,7 +183,7 @@ export default function ActiveWorkoutScreen() {
     return () => subscription.remove();
   }, [restEndsAt]);
 
-  const totalSets = demoWorkout.exercises.reduce(
+  const totalSets = activeWorkout.exercises.reduce(
     (total, exercise) => total + exercise.sets.length,
     0,
   );
@@ -161,11 +202,13 @@ export default function ActiveWorkoutScreen() {
     const key = setKey(workoutExercise.id, setNumber);
     if (completedSetKeys.has(key) || savingSetKey) return;
 
-    const input = values[key] ?? emptySetInput(workoutExercise.sets[setNumber - 1]?.target);
+    const target =
+      targetOverrides[workoutExercise.id] ?? workoutExercise.sets[setNumber - 1]?.target;
+    const input = values[key] ?? emptySetInput(target);
     const reps = parseNumber(input.reps);
     const durationSeconds = parseNumber(input.duration);
     const distanceMeters = parseNumber(input.distance);
-    if (workoutExercise.sets[setNumber - 1]?.target.reps !== undefined && reps === undefined) {
+    if (target?.reps !== undefined && reps === undefined) {
       setError(`Enter the reps completed for set ${setNumber} before marking it complete.`);
       return;
     }
@@ -256,7 +299,7 @@ export default function ActiveWorkoutScreen() {
       </View>
 
       <Text variant="display" accessibilityRole="header" style={styles.title}>
-        {demoWorkout.title}
+        {activeWorkout.title}
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
         Complete each set when it is done. Your device saves the set before the button changes
@@ -299,7 +342,7 @@ export default function ActiveWorkoutScreen() {
 
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
 
-      {demoWorkout.exercises.map((workoutExercise) => (
+      {activeWorkout.exercises.map((workoutExercise) => (
         <Card key={workoutExercise.id} tone="white" style={styles.exerciseCard}>
           <View style={styles.exerciseHeader}>
             <View style={styles.exerciseNumber}>
@@ -322,7 +365,7 @@ export default function ActiveWorkoutScreen() {
                   <View style={styles.setLabel}>
                     <Text variant="smallMedium">Set {workoutSet.setNumber}</Text>
                     <Text variant="caption" tone="muted">
-                      {targetSummary(workoutSet.target)}
+                      {targetSummary(targetOverrides[workoutExercise.id] ?? workoutSet.target)}
                     </Text>
                   </View>
                   <TextInput
@@ -375,20 +418,54 @@ export default function ActiveWorkoutScreen() {
   );
 }
 
-function buildInitialValues(): Record<string, SetInputValues> {
+function buildInitialValues(
+  workout: typeof demoWorkout,
+  targetOverrides: Record<string, SetTarget> = {},
+): Record<string, SetInputValues> {
   return Object.fromEntries(
-    demoWorkout.exercises.flatMap((exercise) =>
+    workout.exercises.flatMap((exercise) =>
       exercise.sets.map((workoutSet) => [
         setKey(exercise.id, workoutSet.setNumber),
-        emptySetInput(workoutSet.target),
+        emptySetInput(targetOverrides[exercise.id] ?? workoutSet.target),
       ]),
     ),
   );
 }
 
+function mergeInitialValues(
+  workout: typeof demoWorkout,
+  targetOverrides: Record<string, SetTarget>,
+  current: Record<string, SetInputValues>,
+): Record<string, SetInputValues> {
+  const initial = buildInitialValues(workout, targetOverrides);
+  return Object.fromEntries(
+    Object.entries(initial).map(([key, suggested]) => {
+      const existing = current[key];
+      if (!existing) return [key, suggested];
+
+      return [
+        key,
+        {
+          load: existing.load || suggested.load,
+          reps: existing.reps || suggested.reps,
+          duration: existing.duration || suggested.duration,
+          distance: existing.distance || suggested.distance,
+          rpe: existing.rpe || suggested.rpe,
+          rir: existing.rir || suggested.rir,
+        },
+      ];
+    }),
+  );
+}
+
 function emptySetInput(target?: SetTarget): SetInputValues {
   const reps = typeof target?.reps === 'number' ? String(target.reps) : '';
-  return { load: '', reps, duration: '', distance: '', rpe: '', rir: '' };
+  const load = target?.load?.value !== undefined ? String(target.load.value) : '';
+  const duration = target?.durationSeconds !== undefined ? String(target.durationSeconds) : '';
+  const distance = target?.distanceMeters !== undefined ? String(target.distanceMeters) : '';
+  const rpe = target?.rpe !== undefined ? String(target.rpe) : '';
+  const rir = target?.rir !== undefined ? String(target.rir) : '';
+  return { load, reps, duration, distance, rpe, rir };
 }
 
 function parseNumber(value: string): number | undefined {
@@ -415,9 +492,13 @@ function targetSummary(target?: SetTarget): string {
         : undefined;
   const duration = target.durationSeconds ? `${target.durationSeconds}s` : undefined;
   const distance = target.distanceMeters ? `${target.distanceMeters}m` : undefined;
+  const load =
+    target.load?.value !== undefined
+      ? `${target.load.value} ${target.load.unit === 'imperial' ? 'lb' : 'kg'}`
+      : undefined;
   const effort =
     target.rir !== undefined ? `${target.rir} RIR` : target.rpe ? `RPE ${target.rpe}` : undefined;
-  return [reps, duration, distance, effort].filter(Boolean).join(' · ') || 'Open target';
+  return [load, reps, duration, distance, effort].filter(Boolean).join(' · ') || 'Open target';
 }
 
 function formatTimer(totalSeconds: number): string {

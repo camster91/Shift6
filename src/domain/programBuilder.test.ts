@@ -4,6 +4,7 @@ import {
   createCustomExercise,
   createProgramCopy,
   removeExerciseFromWorkout,
+  replaceExerciseInWorkout,
   reorderWorkoutExercises,
   setWorkoutExerciseSetCount,
 } from './programBuilder';
@@ -132,5 +133,31 @@ describe('immutable custom program builder', () => {
     expect(() => setWorkoutExerciseSetCount(copy.version, workout.id, exercise.id, 21)).toThrow(
       'between 1 and 20 sets',
     );
+  });
+
+  it('replaces an exercise in the private copy without changing its set prescription', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-5',
+      newVersionId: 'program-custom-5-version-1',
+      createdAt: '2026-09-14T12:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const exercise = workout.exercises[0]!;
+    const replacement = replaceExerciseInWorkout(
+      copy.version,
+      workout.id,
+      exercise.id,
+      'exercise-goblet-squat',
+    );
+    const replacedExercise = replacement.workouts[0]!.exercises[0]!;
+
+    expect(replacedExercise.exerciseId).toBe('exercise-goblet-squat');
+    expect(replacedExercise.id).toBe(exercise.id);
+    expect(replacedExercise.sets).toEqual(exercise.sets);
+    expect(copy.version.workouts[0]!.exercises[0]!.exerciseId).toBe(exercise.exerciseId);
+    expect(demoProgramVersion.workouts[0]!.exercises[0]!.exerciseId).toBe('exercise-back-squat');
   });
 });

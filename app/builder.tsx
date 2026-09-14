@@ -4,14 +4,16 @@ import { useMemo, useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button, Card, ErrorState, IconButton, Screen, Text } from '../src/components/ui';
+import { findExerciseSubstitutions } from '../src/domain/equipment';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
-import { demoProgram, demoProgramVersion } from '../src/domain/fixtures/home';
+import { demoProgram, demoProgramVersion, demoUser } from '../src/domain/fixtures/home';
 import { createTrainingCycle } from '../src/domain/cycle';
 import {
   addExerciseToWorkout,
   createCustomExercise,
   createProgramCopy,
   removeExerciseFromWorkout,
+  replaceExerciseInWorkout,
   reorderWorkoutExercises,
   renameProgram,
   setWorkoutExerciseSetCount,
@@ -39,6 +41,7 @@ export default function ProgramBuilderScreen() {
   );
   const [customName, setCustomName] = useState('');
   const [customExercises, setCustomExercises] = useState<Record<string, Exercise>>({});
+  const [substitutionExerciseId, setSubstitutionExerciseId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -220,98 +223,151 @@ export default function ProgramBuilderScreen() {
           </View>
           {workout.exercises.map((exercise, exerciseIndex) => {
             const exerciseName = exerciseNameById.get(exercise.exerciseId) ?? 'Custom movement';
+            const sourceExercise = foundationalExercises.find(
+              (candidate) => candidate.id === exercise.exerciseId,
+            );
+            const substitutions = sourceExercise
+              ? findExerciseSubstitutions(
+                  sourceExercise,
+                  foundationalExercises,
+                  demoUser.equipmentIds,
+                  3,
+                )
+              : [];
 
             return (
-              <View key={exercise.id} style={styles.exerciseRow}>
-                <View style={styles.exerciseCopy}>
-                  <Text variant="smallMedium">{exerciseName}</Text>
-                  <Text variant="caption" tone="muted">
-                    {exercise.sets.length} sets · {exercise.section}
-                  </Text>
+              <View key={exercise.id}>
+                <View style={styles.exerciseRow}>
+                  <View style={styles.exerciseCopy}>
+                    <Text variant="smallMedium">{exerciseName}</Text>
+                    <Text variant="caption" tone="muted">
+                      {exercise.sets.length} sets · {exercise.section}
+                    </Text>
+                  </View>
+                  <View style={styles.exerciseActions}>
+                    <IconButton
+                      icon={
+                        <Ionicons name="swap-horizontal-outline" size={18} color={colors.ink} />
+                      }
+                      label={`Choose substitute for ${exerciseName}`}
+                      disabled={substitutions.length === 0}
+                      onPress={() => setSubstitutionExerciseId(exercise.id)}
+                      style={styles.iconAction}
+                    />
+                    <IconButton
+                      icon={<Ionicons name="chevron-up-outline" size={18} color={colors.ink} />}
+                      label={`Move ${exerciseName} up`}
+                      disabled={exerciseIndex === 0}
+                      onPress={() => {
+                        const orderedIds = workout.exercises.map((candidate) => candidate.id);
+                        [orderedIds[exerciseIndex - 1]!, orderedIds[exerciseIndex]!] = [
+                          orderedIds[exerciseIndex]!,
+                          orderedIds[exerciseIndex - 1]!,
+                        ];
+                        updateDraftVersion((version) =>
+                          reorderWorkoutExercises(version, workout.id, orderedIds),
+                        );
+                      }}
+                      style={styles.iconAction}
+                    />
+                    <IconButton
+                      icon={<Ionicons name="chevron-down-outline" size={18} color={colors.ink} />}
+                      label={`Move ${exerciseName} down`}
+                      disabled={exerciseIndex === workout.exercises.length - 1}
+                      onPress={() => {
+                        const orderedIds = workout.exercises.map((candidate) => candidate.id);
+                        [orderedIds[exerciseIndex]!, orderedIds[exerciseIndex + 1]!] = [
+                          orderedIds[exerciseIndex + 1]!,
+                          orderedIds[exerciseIndex]!,
+                        ];
+                        updateDraftVersion((version) =>
+                          reorderWorkoutExercises(version, workout.id, orderedIds),
+                        );
+                      }}
+                      style={styles.iconAction}
+                    />
+                    <IconButton
+                      icon={<Ionicons name="remove-outline" size={18} color={colors.ink} />}
+                      label={`Decrease sets for ${exerciseName}`}
+                      disabled={exercise.sets.length <= 1}
+                      onPress={() =>
+                        updateDraftVersion((version) =>
+                          setWorkoutExerciseSetCount(
+                            version,
+                            workout.id,
+                            exercise.id,
+                            exercise.sets.length - 1,
+                          ),
+                        )
+                      }
+                      style={styles.iconAction}
+                    />
+                    <Text
+                      variant="caption"
+                      accessibilityLabel={`${exercise.sets.length} sets`}
+                      style={styles.setCount}
+                    >
+                      {exercise.sets.length}
+                    </Text>
+                    <IconButton
+                      icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
+                      label={`Increase sets for ${exerciseName}`}
+                      disabled={exercise.sets.length >= 20}
+                      onPress={() =>
+                        updateDraftVersion((version) =>
+                          setWorkoutExerciseSetCount(
+                            version,
+                            workout.id,
+                            exercise.id,
+                            exercise.sets.length + 1,
+                          ),
+                        )
+                      }
+                      style={styles.iconAction}
+                    />
+                    <IconButton
+                      icon={<Ionicons name="trash-outline" size={17} color={colors.error} />}
+                      label={`Remove ${exerciseName}`}
+                      onPress={() =>
+                        updateDraftVersion((version) =>
+                          removeExerciseFromWorkout(version, workout.id, exercise.id),
+                        )
+                      }
+                      style={styles.iconAction}
+                    />
+                  </View>
                 </View>
-                <View style={styles.exerciseActions}>
-                  <IconButton
-                    icon={<Ionicons name="chevron-up-outline" size={18} color={colors.ink} />}
-                    label={`Move ${exerciseName} up`}
-                    disabled={exerciseIndex === 0}
-                    onPress={() => {
-                      const orderedIds = workout.exercises.map((candidate) => candidate.id);
-                      [orderedIds[exerciseIndex - 1]!, orderedIds[exerciseIndex]!] = [
-                        orderedIds[exerciseIndex]!,
-                        orderedIds[exerciseIndex - 1]!,
-                      ];
-                      updateDraftVersion((version) =>
-                        reorderWorkoutExercises(version, workout.id, orderedIds),
-                      );
-                    }}
-                    style={styles.iconAction}
-                  />
-                  <IconButton
-                    icon={<Ionicons name="chevron-down-outline" size={18} color={colors.ink} />}
-                    label={`Move ${exerciseName} down`}
-                    disabled={exerciseIndex === workout.exercises.length - 1}
-                    onPress={() => {
-                      const orderedIds = workout.exercises.map((candidate) => candidate.id);
-                      [orderedIds[exerciseIndex]!, orderedIds[exerciseIndex + 1]!] = [
-                        orderedIds[exerciseIndex + 1]!,
-                        orderedIds[exerciseIndex]!,
-                      ];
-                      updateDraftVersion((version) =>
-                        reorderWorkoutExercises(version, workout.id, orderedIds),
-                      );
-                    }}
-                    style={styles.iconAction}
-                  />
-                  <IconButton
-                    icon={<Ionicons name="remove-outline" size={18} color={colors.ink} />}
-                    label={`Decrease sets for ${exerciseName}`}
-                    disabled={exercise.sets.length <= 1}
-                    onPress={() =>
-                      updateDraftVersion((version) =>
-                        setWorkoutExerciseSetCount(
-                          version,
-                          workout.id,
-                          exercise.id,
-                          exercise.sets.length - 1,
-                        ),
-                      )
-                    }
-                    style={styles.iconAction}
-                  />
-                  <Text
-                    variant="caption"
-                    accessibilityLabel={`${exercise.sets.length} sets`}
-                    style={styles.setCount}
+                {substitutionExerciseId === exercise.id && substitutions.length > 0 ? (
+                  <Card
+                    tone="lavender"
+                    style={styles.substitutionPanel}
+                    accessibilityLabel={`${exerciseName} substitution options`}
                   >
-                    {exercise.sets.length}
-                  </Text>
-                  <IconButton
-                    icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
-                    label={`Increase sets for ${exerciseName}`}
-                    disabled={exercise.sets.length >= 20}
-                    onPress={() =>
-                      updateDraftVersion((version) =>
-                        setWorkoutExerciseSetCount(
-                          version,
-                          workout.id,
-                          exercise.id,
-                          exercise.sets.length + 1,
-                        ),
-                      )
-                    }
-                    style={styles.iconAction}
-                  />
-                  <IconButton
-                    icon={<Ionicons name="trash-outline" size={17} color={colors.error} />}
-                    label={`Remove ${exerciseName}`}
-                    onPress={() =>
-                      updateDraftVersion((version) =>
-                        removeExerciseFromWorkout(version, workout.id, exercise.id),
-                      )
-                    }
-                    style={styles.iconAction}
-                  />
-                </View>
+                    <Text variant="smallMedium">Equipment-compatible options</Text>
+                    <Text variant="caption" tone="muted">
+                      Keep the movement intent while changing the exercise in this private copy.
+                    </Text>
+                    {substitutions.map((candidate) => (
+                      <Button
+                        key={candidate.id}
+                        label={`Use ${candidate.name}`}
+                        variant="ghost"
+                        onPress={() => {
+                          updateDraftVersion((version) =>
+                            replaceExerciseInWorkout(
+                              version,
+                              workout.id,
+                              exercise.id,
+                              candidate.id,
+                            ),
+                          );
+                          setSubstitutionExerciseId(null);
+                        }}
+                        style={styles.substitutionButton}
+                      />
+                    ))}
+                  </Card>
+                ) : null}
               </View>
             );
           })}
@@ -447,7 +503,10 @@ const styles = StyleSheet.create({
   },
   exerciseActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    maxWidth: 180,
     gap: spacing.xxs,
   },
   iconAction: {
@@ -456,6 +515,14 @@ const styles = StyleSheet.create({
   setCount: {
     minWidth: 18,
     textAlign: 'center',
+  },
+  substitutionPanel: {
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  substitutionButton: {
+    alignSelf: 'stretch',
+    marginTop: spacing.xxs,
   },
   addButton: {
     marginTop: spacing.md,

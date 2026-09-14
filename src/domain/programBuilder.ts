@@ -124,6 +124,31 @@ export function removeExerciseFromWorkout(
   }));
 }
 
+export function replaceExerciseInWorkout(
+  version: ProgramVersion,
+  workoutId: string,
+  workoutExerciseId: string,
+  replacementExerciseId: string,
+): ProgramVersion {
+  const replacementId = replacementExerciseId.trim();
+  if (!replacementId) throw new Error('A replacement exercise needs an ID.');
+
+  const workout = version.workouts.find((candidate) => candidate.id === workoutId);
+  if (!workout) throw new Error('Workout not found in this program version.');
+  if (!workout.exercises.some((exercise) => exercise.id === workoutExerciseId)) {
+    throw new Error('Exercise not found in this workout.');
+  }
+
+  return updateWorkout(version, workoutId, (currentWorkout) => ({
+    ...currentWorkout,
+    exercises: currentWorkout.exercises.map((exercise) =>
+      exercise.id === workoutExerciseId
+        ? { ...exercise, exerciseId: replacementId, variantId: undefined }
+        : exercise,
+    ),
+  }));
+}
+
 export function reorderWorkoutExercises(
   version: ProgramVersion,
   workoutId: string,

@@ -394,6 +394,8 @@ The local/cloud handoff now has an explicit provider boundary without introducin
 
 No network call is made by the active workout, and no sync provider or credential is included. Background execution, conflict resolution, auth, and native offline/reconnect proof remain release gates.
 
+`src/services/backend.ts` now provides the #272 transport skeleton: `HttpBackendClient` owns only the authenticated `/v1/sync` request and validates the response shape, while `UnavailableBackendClient` fails explicitly when auth/backend setup is absent. The token is supplied by an injected auth boundary; no credential is read from environment variables or bundled into the app. The adapter is not instantiated by the current guest shell, so local workout completion still makes no network request.
+
 ## Sync coordinator checkpoint — 2026-09-14
 
 `src/services/syncCoordinator.ts` adds the missing orchestration boundary around the outbox:

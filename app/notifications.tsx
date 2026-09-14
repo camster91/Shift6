@@ -21,12 +21,17 @@ import {
   createExpoNotificationProvider,
   type NotificationPermissionStatus,
 } from '../src/services/notifications';
+import {
+  useNotificationRuntime,
+  type NotificationRuntimeSnapshot,
+} from '../src/services/NotificationRuntimeProvider';
 
 const guestUserId = 'guest-user';
 const notificationProvider = createExpoNotificationProvider();
 
 export default function NotificationsSettingsScreen() {
   const database = useLocalDatabase();
+  const notificationRuntime = useNotificationRuntime();
   const [preferences, setPreferences] = useState<NotificationPreference>(() =>
     createDefaultNotificationPreferences(guestUserId, new Date().toISOString()),
   );
@@ -95,7 +100,8 @@ export default function NotificationsSettingsScreen() {
     setSaving(true);
     try {
       await saveNotificationPreferences(database, preferences);
-      setMessage('Notification preferences saved on this device.');
+      const schedule = await notificationRuntime.refreshNow();
+      setMessage(formatSaveMessage(preferences.workoutReminders, schedule));
     } catch {
       setMessage('We could not save notification preferences.');
     } finally {
@@ -109,9 +115,10 @@ export default function NotificationsSettingsScreen() {
     try {
       const status = await notificationProvider.requestPermission();
       setPermissionStatus(status);
+      const refreshed = status === 'granted' ? await notificationRuntime.refreshNow() : null;
       setMessage(
         status === 'granted'
-          ? 'Device notifications are allowed.'
+          ? formatPermissionMessage(refreshed)
           : status === 'denied'
             ? 'Device notifications are denied. You can change this in system settings.'
             : status === 'unavailable'
@@ -270,6 +277,41 @@ function formatPermissionStatus(status: NotificationPermissionStatus | null): st
     default:
       return 'Checking permission';
   }
+}
+
+function formatSaveMessage(
+  workoutRemindersEnabled: boolean,
+  snapshot: NotificationRuntimeSnapshot,
+): string {
+  if (!workoutRemindersEnabled) return 'Notification preferences saved. Workout reminders are off.';
+  switch (snapshot.status) {
+    case 'scheduled':
+      return snapshot.scheduledCount > 0
+        ? `Preferences saved. ${snapshot.scheduledCount} workout reminder${snapshot.scheduledCount === 1 ? '' : 's'} scheduled.`
+        : 'Preferences saved. There are no upcoming workout reminders in this window.';
+    case 'permission-required':
+      return 'Preferences saved. Allow device notifications to schedule workout reminders.';
+    case 'no-active-cycle':
+      return 'Preferences saved. Start a six-week cycle to schedule workout reminders.';
+    case 'unavailable':
+      return 'Preferences saved. Native notification delivery is unavailable in this preview.';
+    case 'failed':
+      return 'Preferences saved, but reminders could not be refreshed.';
+    default:
+      return 'Notification preferences saved on this device.';
+  }
+}
+
+function formatPermissionMessage(snapshot: NotificationRuntimeSnapshot | null): string {
+  if (snapshot?.status === 'scheduled') {
+    return snapshot.scheduledCount > 0
+      ? `Device notifications are allowed. ${snapshot.scheduledCount} workout reminder${snapshot.scheduledCount === 1 ? '' : 's'} scheduled.`
+      : 'Device notifications are allowed.';
+  }
+  if (snapshot?.status === 'no-active-cycle') {
+    return 'Device notifications are allowed. Start a six-week cycle to schedule reminders.';
+  }
+  return 'Device notifications are allowed.';
 }
 
 const styles = StyleSheet.create({

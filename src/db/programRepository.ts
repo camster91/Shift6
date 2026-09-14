@@ -86,6 +86,27 @@ export async function getUserProgramVersion(
   };
 }
 
+export async function getUserExercises(
+  database: SQLiteDatabase,
+  userId: string,
+): Promise<Exercise[]> {
+  const rows = await database.getAllAsync<{ exercise_json: string }>(
+    `SELECT exercise_json
+       FROM user_exercises
+      WHERE user_id = ?
+      ORDER BY updated_at DESC, id ASC;`,
+    userId,
+  );
+
+  return rows.flatMap((row) => {
+    try {
+      return [JSON.parse(row.exercise_json) as Exercise];
+    } catch {
+      return [];
+    }
+  });
+}
+
 export async function saveCustomExercise(
   database: SQLiteDatabase,
   userId: string,

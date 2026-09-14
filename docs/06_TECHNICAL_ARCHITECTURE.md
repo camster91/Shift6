@@ -383,6 +383,8 @@ The catalogue is not yet the 300+ launch set: content review, custom exercises, 
 
 The catalogue surface now links each foundational record to an exercise-detail route with setup, instructions, technique cues, safety notes, visible review status, and deterministic equipment-aware substitution candidates. The detail route is still intentionally read-only until reviewed media and a user-owned substitution action are ready.
 
+The active workout now reads user-owned custom exercise records from SQLite and resolves their tracking type before rendering fields. Unknown legacy IDs fall back from the stored set target to a conservative reps/time/distance shape; custom names and tracking metadata therefore do not require a network request or a second hardcoded catalogue.
+
 `src/domain/contentReadiness.ts` now separates structural cycle readiness from public publication readiness. A complete draft record can support development and local fixture workouts, but draft technique/media status remains a publication warning; missing IDs, invalid six-week phases, empty workouts, retired exercises, and incomplete safety fields are blockers.
 
 ## Program library metadata checkpoint — 2026-09-14

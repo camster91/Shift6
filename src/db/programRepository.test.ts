@@ -2,7 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { demoProgram, demoProgramVersion } from '../domain/fixtures/home';
 import { createCustomExercise } from '../domain/programBuilder';
-import { saveCustomExercise, saveProgramVersion } from './programRepository';
+import { getUserExercises, saveCustomExercise, saveProgramVersion } from './programRepository';
 
 function fakeDatabase() {
   const calls: string[] = [];
@@ -54,5 +54,23 @@ describe('programRepository', () => {
       expect.stringContaining('INSERT INTO sync_outbox'),
       'COMMIT TRANSACTION',
     ]);
+  });
+
+  it('reads user-owned exercises while ignoring malformed local rows', async () => {
+    const exercise = createCustomExercise({
+      id: 'exercise-custom-read',
+      name: 'Tempo squat',
+      movementPattern: 'squat',
+      primaryMuscles: ['quadriceps'],
+      equipmentIds: ['equipment-bodyweight'],
+    });
+    const database = {
+      getAllAsync: async () => [
+        { exercise_json: JSON.stringify(exercise) },
+        { exercise_json: '{malformed' },
+      ],
+    } as unknown as SQLiteDatabase;
+
+    await expect(getUserExercises(database, 'guest-user')).resolves.toEqual([exercise]);
   });
 });

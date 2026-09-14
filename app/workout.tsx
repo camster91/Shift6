@@ -21,8 +21,10 @@ import {
 } from '../src/domain/fixtures/home';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { buildNextSessionTargets } from '../src/domain/nextSession';
+import { resolveTrackingType } from '../src/domain/exerciseTracking';
 import type {
   CompletedSet,
+  Exercise,
   SetTarget,
   TrainingCycle,
   WorkoutDraftSetValues,
@@ -32,7 +34,7 @@ import type {
 import { useLocalDatabase } from '../src/db/context';
 import { getActiveTrainingCycle } from '../src/db/cycleRepository';
 import { getOnboardingProfile } from '../src/db/profileRepository';
-import { getUserProgramVersion } from '../src/db/programRepository';
+import { getUserExercises, getUserProgramVersion } from '../src/db/programRepository';
 import { getLatestCompletedWorkoutSets } from '../src/db/progressRepository';
 import {
   completeWorkoutSessionAndAdvanceCycle,
@@ -57,6 +59,11 @@ export default function ActiveWorkoutScreen() {
   const [activeCycle, setActiveCycle] = useState<TrainingCycle>(demoCycle);
   const [activeProgram, setActiveProgram] = useState(demoProgram);
   const [activeProgramVersion, setActiveProgramVersion] = useState(demoProgramVersion);
+  const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
+  const availableExercises = useMemo(
+    () => [...foundationalExercises, ...customExercises],
+    [customExercises],
+  );
   const activeWorkout = useMemo(
     () =>
       activeProgramVersion.workouts.find((workout) => workout.id === workoutId) ??
@@ -103,6 +110,7 @@ export default function ActiveWorkoutScreen() {
 
   useEffect(() => {
     setResumedSession(null);
+    setCustomExercises([]);
     setValues(buildInitialValues(activeWorkout));
     setTargetOverrides({});
     setCompletedSetKeys(new Set());
@@ -183,21 +191,24 @@ export default function ActiveWorkoutScreen() {
           setResumedSession(existingSession);
         }
         await saveWorkoutSession(database, sessionToUse);
-        const [completedSets, previousSets, profile, draft] = await Promise.all([
+        const [completedSets, previousSets, profile, draft, userExercises] = await Promise.all([
           getCompletedSets(database, sessionToUse.id),
           getLatestCompletedWorkoutSets(database, activeCycle.id, activeWorkout.id),
           getOnboardingProfile(database, 'guest-user'),
           getWorkoutDraft(database, sessionToUse.id),
+          getUserExercises(database, 'guest-user'),
         ]);
         return {
           completedSets,
           previousSets,
           unitSystem: profile?.user.unitSystem ?? 'imperial',
           draft,
+          userExercises,
         };
       })
-      .then(({ completedSets, previousSets, unitSystem, draft }) => {
+      .then(({ completedSets, previousSets, unitSystem, draft, userExercises }) => {
         if (!active) return;
+        setCustomExercises(userExercises);
         setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
         const nextTargets =
           previousSets.length > 0
@@ -298,7 +309,7 @@ export default function ActiveWorkoutScreen() {
     const reps = parseNumber(input.reps);
     const durationSeconds = parseNumber(input.duration);
     const distanceMeters = parseNumber(input.distance);
-    const trackingType = getTrackingType(workoutExercise.exerciseId);
+    const trackingType = getTrackingType(workoutExercise.exerciseId, target, availableExercises);
     if (target?.reps !== undefined && reps === undefined) {
       setError(`Enter the reps completed for set ${setNumber} before marking it complete.`);
       return;
@@ -471,7 +482,9 @@ export default function ActiveWorkoutScreen() {
               <Text variant="smallMedium">{workoutExercise.order}</Text>
             </View>
             <View style={styles.exerciseCopy}>
-              <Text variant="h3">{formatExerciseName(workoutExercise.exerciseId)}</Text>
+              <Text variant="h3">
+                {formatExerciseName(workoutExercise.exerciseId, availableExercises)}
+              </Text>
               <Text variant="small" tone="muted">
                 {workoutExercise.sets.length} sets ·{' '}
                 {targetSummary(workoutExercise.sets[0]?.target)}
@@ -491,9 +504,9 @@ export default function ActiveWorkoutScreen() {
                       {targetSummary(targetOverrides[workoutExercise.id] ?? workoutSet.target)}
                     </Text>
                   </View>
-                  {showsLoad(workoutExercise.exerciseId) ? (
+                  {showsLoad(workoutExercise.exerciseId, workoutSet.target, availableExercises) ? (
                     <TextInput
-                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} load`}
+                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} load`}
                       editable={!completed || editing}
                       keyboardType="decimal-pad"
                       onChangeText={(value) => updateValue(key, 'load', value)}
@@ -503,9 +516,9 @@ export default function ActiveWorkoutScreen() {
                       value={values[key]?.load ?? ''}
                     />
                   ) : null}
-                  {showsReps(workoutExercise.exerciseId, workoutSet.target) ? (
+                  {showsReps(workoutExercise.exerciseId, workoutSet.target, availableExercises) ? (
                     <TextInput
-                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} reps`}
+                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} reps`}
                       editable={!completed || editing}
                       keyboardType="number-pad"
                       onChangeText={(value) => updateValue(key, 'reps', value)}
@@ -515,9 +528,13 @@ export default function ActiveWorkoutScreen() {
                       value={values[key]?.reps ?? ''}
                     />
                   ) : null}
-                  {showsDuration(workoutExercise.exerciseId, workoutSet.target) ? (
+                  {showsDuration(
+                    workoutExercise.exerciseId,
+                    workoutSet.target,
+                    availableExercises,
+                  ) ? (
                     <TextInput
-                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} duration in seconds`}
+                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} duration in seconds`}
                       editable={!completed || editing}
                       keyboardType="number-pad"
                       onChangeText={(value) => updateValue(key, 'duration', value)}
@@ -527,9 +544,13 @@ export default function ActiveWorkoutScreen() {
                       value={values[key]?.duration ?? ''}
                     />
                   ) : null}
-                  {showsDistance(workoutExercise.exerciseId, workoutSet.target) ? (
+                  {showsDistance(
+                    workoutExercise.exerciseId,
+                    workoutSet.target,
+                    availableExercises,
+                  ) ? (
                     <TextInput
-                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} distance in meters`}
+                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} distance in meters`}
                       editable={!completed || editing}
                       keyboardType="decimal-pad"
                       onChangeText={(value) => updateValue(key, 'distance', value)}
@@ -716,7 +737,13 @@ function formatTimer(totalSeconds: number): string {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-function formatExerciseName(exerciseId: string) {
+function formatExerciseName(
+  exerciseId: string,
+  exercises: readonly Exercise[] = foundationalExercises,
+) {
+  const exercise = exercises.find((candidate) => candidate.id === exerciseId);
+  if (exercise) return exercise.name;
+
   return exerciseId
     .replace('exercise-', '')
     .split('-')
@@ -724,23 +751,33 @@ function formatExerciseName(exerciseId: string) {
     .join(' ');
 }
 
-function getTrackingType(exerciseId: string) {
-  return (
-    foundationalExercises.find((exercise) => exercise.id === exerciseId)?.trackingType ?? 'reps'
-  );
+function getTrackingType(
+  exerciseId: string,
+  target: SetTarget | undefined,
+  exercises: readonly Exercise[],
+) {
+  return resolveTrackingType(exerciseId, target, exercises);
 }
 
-function showsLoad(exerciseId: string): boolean {
-  const trackingType = getTrackingType(exerciseId);
+function showsLoad(
+  exerciseId: string,
+  target: SetTarget | undefined,
+  exercises: readonly Exercise[],
+): boolean {
+  const trackingType = getTrackingType(exerciseId, target, exercises);
   return trackingType === 'reps' || trackingType === 'custom';
 }
 
-function showsReps(exerciseId: string, target: SetTarget): boolean {
-  return getTrackingType(exerciseId) === 'reps' || target.reps !== undefined;
+function showsReps(exerciseId: string, target: SetTarget, exercises: readonly Exercise[]): boolean {
+  return getTrackingType(exerciseId, target, exercises) === 'reps' || target.reps !== undefined;
 }
 
-function showsDuration(exerciseId: string, target: SetTarget): boolean {
-  const trackingType = getTrackingType(exerciseId);
+function showsDuration(
+  exerciseId: string,
+  target: SetTarget,
+  exercises: readonly Exercise[],
+): boolean {
+  const trackingType = getTrackingType(exerciseId, target, exercises);
   return (
     trackingType === 'time' ||
     trackingType === 'duration-and-distance' ||
@@ -748,8 +785,12 @@ function showsDuration(exerciseId: string, target: SetTarget): boolean {
   );
 }
 
-function showsDistance(exerciseId: string, target: SetTarget): boolean {
-  const trackingType = getTrackingType(exerciseId);
+function showsDistance(
+  exerciseId: string,
+  target: SetTarget,
+  exercises: readonly Exercise[],
+): boolean {
+  const trackingType = getTrackingType(exerciseId, target, exercises);
   return (
     trackingType === 'distance' ||
     trackingType === 'duration-and-distance' ||

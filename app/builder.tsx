@@ -3,7 +3,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
-import { Button, Card, ErrorState, IconButton, Screen, Text } from '../src/components/ui';
+import {
+  Button,
+  Card,
+  ErrorState,
+  IconButton,
+  LoadingSkeleton,
+  Screen,
+  Text,
+} from '../src/components/ui';
 import { findExerciseSubstitutions } from '../src/domain/equipment';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { demoProgram, demoProgramVersion, demoUser } from '../src/domain/fixtures/home';
@@ -26,13 +34,25 @@ import {
 import type { Exercise, SetTarget, TrackingType, UnitSystem, Workout } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
 import { saveTrainingCycle } from '../src/db/cycleRepository';
-import { saveCustomExercise, saveProgramVersion } from '../src/db/programRepository';
+import { getOnboardingProfile } from '../src/db/profileRepository';
+import {
+  getUserExercises,
+  getUserProgramVersion,
+  saveCustomExercise,
+  saveProgramVersion,
+} from '../src/db/programRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
 
 export default function ProgramBuilderScreen() {
   const database = useLocalDatabase();
-  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const { mode, sourceVersionId } = useLocalSearchParams<{
+    mode?: string;
+    sourceVersionId?: string;
+  }>();
   const isBlankBuilder = mode === 'blank';
+  const shouldLoadSource = Boolean(database && sourceVersionId && !isBlankBuilder);
+  const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>(demoUser.unitSystem);
   const [draft, setDraft] = useState(() => createInitialBuilderDraft(isBlankBuilder));
   const [customName, setCustomName] = useState('');
   const [newWorkoutTitle, setNewWorkoutTitle] = useState('');
@@ -45,6 +65,77 @@ export default function ProgramBuilderScreen() {
   const [starting, setStarting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sourceLoading, setSourceLoading] = useState(shouldLoadSource);
+  const [sourceLoadError, setSourceLoadError] = useState(false);
+  const [sourceRetryKey, setSourceRetryKey] = useState(0);
+
+  useEffect(() => {
+    if (!database) return;
+
+    let active = true;
+    void getOnboardingProfile(database, 'guest-user')
+      .then((profile) => {
+        if (!active || !profile) return;
+        setAvailableEquipmentIds(profile.user.equipmentIds);
+        setUnitSystem(profile.user.unitSystem);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [database]);
+
+  useEffect(() => {
+    if (!database || !sourceVersionId || isBlankBuilder) {
+      setSourceLoading(false);
+      return;
+    }
+
+    let active = true;
+    setSourceLoading(true);
+    setSourceLoadError(false);
+    setError(null);
+    void Promise.all([
+      getUserProgramVersion(database, 'guest-user', sourceVersionId),
+      getUserExercises(database, 'guest-user'),
+    ])
+      .then(([snapshot, userExercises]) => {
+        if (!active) return;
+        if (!snapshot) {
+          setSourceLoadError(true);
+          setError('We could not find the saved program version for this cycle.');
+          return;
+        }
+
+        setDraft(() => createProgramDraftFromSource(snapshot.program, snapshot.version));
+        const referencedExerciseIds = new Set(
+          snapshot.version.workouts.flatMap((workout) =>
+            workout.exercises.map((exercise) => exercise.exerciseId),
+          ),
+        );
+        setCustomExercises(
+          Object.fromEntries(
+            userExercises
+              .filter((exercise) => referencedExerciseIds.has(exercise.id))
+              .map((exercise) => [exercise.id, exercise]),
+          ),
+        );
+      })
+      .catch(() => {
+        if (active) {
+          setSourceLoadError(true);
+          setError('We could not load the saved program for a private adjustment.');
+        }
+      })
+      .finally(() => {
+        if (active) setSourceLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [database, isBlankBuilder, sourceRetryKey, sourceVersionId]);
 
   const firstWorkout = draft.version.workouts[0];
   const exerciseNameById = useMemo(
@@ -130,7 +221,10 @@ export default function ProgramBuilderScreen() {
   };
 
   const handleAddCustomExercise = () => {
-    if (!firstWorkout) return;
+    if (!firstWorkout) {
+      setError('Add a workout before adding a custom movement.');
+      return;
+    }
     try {
       const exercise = createCustomExercise({
         id: `${draft.program.id}-custom-exercise-${Object.keys(customExercises).length + 1}`,
@@ -215,6 +309,32 @@ export default function ProgramBuilderScreen() {
     }
   };
 
+  if (sourceLoading) {
+    return (
+      <Screen>
+        <LoadingSkeleton width={44} height={44} />
+        <LoadingSkeleton width="76%" height={52} style={styles.loadingTitle} />
+        <LoadingSkeleton height={180} style={styles.loadingCard} />
+      </Screen>
+    );
+  }
+
+  if (sourceLoadError) {
+    return (
+      <Screen>
+        <IconButton
+          icon={<Ionicons name="arrow-back" size={22} color={colors.ink} />}
+          label="Back to cycle review"
+          onPress={() => router.back()}
+        />
+        <ErrorState
+          message={error ?? 'The saved program version is unavailable.'}
+          onRetry={() => setSourceRetryKey((current) => current + 1)}
+        />
+      </Screen>
+    );
+  }
+
   return (
     <Screen scrollViewProps={{ keyboardShouldPersistTaps: 'handled' }}>
       <View style={styles.header}>
@@ -235,7 +355,7 @@ export default function ProgramBuilderScreen() {
       <Text variant="body" tone="muted" style={styles.subtitle}>
         {isBlankBuilder
           ? 'Start with an empty six-week plan, add the sessions you need, and keep the whole draft private.'
-          : 'This is a private copy of Barbell 30. Your edits create a user-owned version and leave the public template and completed history unchanged.'}
+          : 'This is a private copy of the selected program. Your edits leave the public template and completed history unchanged.'}
       </Text>
 
       <Text variant="smallMedium" style={styles.fieldLabel}>
@@ -306,7 +426,7 @@ export default function ProgramBuilderScreen() {
                 ? findExerciseSubstitutions(
                     sourceExercise,
                     foundationalExercises,
-                    demoUser.equipmentIds,
+                    availableEquipmentIds,
                     3,
                   )
                 : [];
@@ -418,7 +538,7 @@ export default function ProgramBuilderScreen() {
                     setCount={exercise.sets.length}
                     target={exercise.sets[0]?.target ?? {}}
                     trackingType={trackingType}
-                    unitSystem={demoUser.unitSystem}
+                    unitSystem={unitSystem}
                     onChange={(target) => {
                       updateDraftVersion((version) =>
                         setWorkoutExerciseTarget(version, workout.id, exercise.id, target),
@@ -620,10 +740,17 @@ function createInitialBuilderDraft(isBlankBuilder: boolean) {
     });
   }
 
-  const copyId = `program-custom-barbell-30-guest-${Date.now()}`;
+  return createProgramDraftFromSource(demoProgram, demoProgramVersion);
+}
+
+function createProgramDraftFromSource(
+  sourceProgram: typeof demoProgram,
+  sourceVersion: typeof demoProgramVersion,
+) {
+  const copyId = `program-custom-${sourceProgram.slug}-guest-${Date.now()}`;
   return createProgramCopy({
-    sourceProgram: demoProgram,
-    sourceVersion: demoProgramVersion,
+    sourceProgram,
+    sourceVersion,
     userId: 'guest-user',
     newProgramId: copyId,
     newVersionId: `${copyId}-version-1`,
@@ -861,6 +988,12 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: spacing.xxxl,
+  },
+  loadingTitle: {
+    marginTop: spacing.xl,
+  },
+  loadingCard: {
+    marginTop: spacing.lg,
   },
   subtitle: {
     marginTop: spacing.md,

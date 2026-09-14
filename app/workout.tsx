@@ -71,6 +71,7 @@ export default function ActiveWorkoutScreen() {
   const [activeProgram, setActiveProgram] = useState(demoProgram);
   const [activeProgramVersion, setActiveProgramVersion] = useState(demoProgramVersion);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
+  const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
   const availableExercises = useMemo(
     () => [...foundationalExercises, ...customExercises],
     [customExercises],
@@ -220,13 +221,15 @@ export default function ActiveWorkoutScreen() {
           completedSets,
           previousSets,
           unitSystem: profile?.user.unitSystem ?? 'imperial',
+          equipmentIds: profile?.user.equipmentIds ?? demoUser.equipmentIds,
           draft,
           userExercises,
         };
       })
-      .then(({ completedSets, previousSets, unitSystem, draft, userExercises }) => {
+      .then(({ completedSets, previousSets, unitSystem, equipmentIds, draft, userExercises }) => {
         if (!active) return;
         setCustomExercises(userExercises);
+        setAvailableEquipmentIds(equipmentIds);
         setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
         const nextTargets =
           previousSets.length > 0
@@ -556,7 +559,7 @@ export default function ActiveWorkoutScreen() {
           ? findExerciseSubstitutions(
               sourceExercise,
               foundationalExercises,
-              demoUser.equipmentIds,
+              availableEquipmentIds,
               3,
             )
           : [];

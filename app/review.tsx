@@ -190,7 +190,9 @@ export default function CycleReviewScreen() {
           <Button
             label="Adjust a private copy"
             variant="secondary"
-            onPress={() => router.push('/builder')}
+            onPress={() =>
+              router.push({ pathname: '/builder', params: { sourceVersionId: programVersion.id } })
+            }
             icon={<Ionicons name="create-outline" size={18} color={colors.ink} />}
             style={styles.actionButton}
           />

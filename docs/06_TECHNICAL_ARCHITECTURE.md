@@ -445,6 +445,10 @@ The builder can now search and append a catalogue exercise to any private workou
 
 Programs now exposes a separate blank-builder entry point. It creates an empty private six-week version, treats newly added workouts as required for cycle advancement, and refuses to start until at least one required workout exists. Template-copy editing retains its optional-workout behavior.
 
+Builder and active-workout substitutions, plus builder target labels, now read the persisted onboarding equipment/unit profile on native builds, with the typed demo profile retained only for web preview. The builder therefore shares the same user setup boundary as Programs, Library, exercise detail, Profile, and active workout.
+
+Cycle Review now passes its persisted source version into Builder for private adjustment. Native Builder loads that snapshot before rendering, then creates a new copy/version namespace; a completed custom cycle therefore stays continuous into its next-cycle edit instead of silently reverting to Barbell 30. A missing source snapshot now blocks the editor behind an error state with retry rather than falling back to unrelated demo content.
+
 Each builder mount now allocates a timestamped user-owned program/version namespace. A later builder visit cannot upsert the snapshot referenced by an earlier completed cycle, and custom exercise IDs are scoped to that namespace. This preserves the immutable-history boundary even though the current draft editor is intentionally session-scoped.
 
 Active-workout substitution now follows the same copy-on-write rule. The replacement is written to a new private `ProgramVersion` ID, the active cycle points to that revision, and an unfinished session's version pointer is updated and re-queued. Workout/exercise/set identities are preserved inside the revision, while completed sessions continue resolving against the version they recorded.

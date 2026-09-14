@@ -1,5 +1,5 @@
 import { createCustomExercise } from './programBuilder';
-import { resolveTrackingType } from './exerciseTracking';
+import { defaultTargetForTrackingType, resolveTrackingType } from './exerciseTracking';
 
 describe('exercise tracking resolution', () => {
   it('uses the persisted exercise record when available', () => {
@@ -22,5 +22,15 @@ describe('exercise tracking resolution', () => {
       'duration-and-distance',
     );
     expect(resolveTrackingType('unknown', { reps: 8 }, [])).toBe('reps');
+  });
+
+  it('provides conservative targets for catalogue exercises', () => {
+    expect(defaultTargetForTrackingType('reps')).toEqual({ reps: 8 });
+    expect(defaultTargetForTrackingType('time')).toEqual({ durationSeconds: 30 });
+    expect(defaultTargetForTrackingType('distance')).toEqual({ distanceMeters: 500 });
+    expect(defaultTargetForTrackingType('duration-and-distance')).toEqual({
+      durationSeconds: 300,
+      distanceMeters: 500,
+    });
   });
 });

@@ -8,7 +8,8 @@ import { findExerciseSubstitutions } from '../src/domain/equipment';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { demoProgram, demoProgramVersion, demoUser } from '../src/domain/fixtures/home';
 import { createTrainingCycle } from '../src/domain/cycle';
-import { resolveTrackingType } from '../src/domain/exerciseTracking';
+import { defaultTargetForTrackingType, resolveTrackingType } from '../src/domain/exerciseTracking';
+import { searchExercises } from '../src/domain/exerciseCatalog';
 import {
   addExerciseToWorkout,
   addWorkoutToProgram,
@@ -34,6 +35,8 @@ export default function ProgramBuilderScreen() {
   const [newWorkoutTitle, setNewWorkoutTitle] = useState('');
   const [newWorkoutSequence, setNewWorkoutSequence] = useState(0);
   const [customExercises, setCustomExercises] = useState<Record<string, Exercise>>({});
+  const [exercisePickerWorkoutId, setExercisePickerWorkoutId] = useState<string | null>(null);
+  const [exercisePickerQuery, setExercisePickerQuery] = useState('');
   const [substitutionExerciseId, setSubstitutionExerciseId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -61,6 +64,14 @@ export default function ProgramBuilderScreen() {
       ),
     [customExercises],
   );
+  const pickerExercises = useMemo(
+    () =>
+      searchExercises(foundationalExercises, {
+        query: exercisePickerQuery,
+        limit: 8,
+      }),
+    [exercisePickerQuery],
+  );
 
   const updateDraftVersion = (update: (version: typeof draft.version) => typeof draft.version) => {
     setDraft((current) => ({ ...current, version: update(current.version) }));
@@ -80,6 +91,17 @@ export default function ProgramBuilderScreen() {
     }));
     setSaved(false);
     setError(null);
+  };
+
+  const handleAddCatalogueExercise = (workoutId: string, exercise: Exercise) => {
+    updateDraftVersion((version) =>
+      addExerciseToWorkout(version, workoutId, {
+        exerciseId: exercise.id,
+        target: defaultTargetForTrackingType(exercise.trackingType),
+      }),
+    );
+    setExercisePickerWorkoutId(null);
+    setExercisePickerQuery('');
   };
 
   const handleAddWorkout = () => {
@@ -428,6 +450,61 @@ export default function ProgramBuilderScreen() {
               );
             })
           )}
+          <Button
+            label={
+              exercisePickerWorkoutId === workout.id ? 'Close exercise picker' : 'Add exercise'
+            }
+            variant="ghost"
+            icon={
+              <Ionicons
+                name={exercisePickerWorkoutId === workout.id ? 'close-outline' : 'add-outline'}
+                size={18}
+                color={colors.ink}
+              />
+            }
+            onPress={() => {
+              setExercisePickerWorkoutId((current) => (current === workout.id ? null : workout.id));
+              setExercisePickerQuery('');
+            }}
+            style={styles.addExerciseButton}
+          />
+          {exercisePickerWorkoutId === workout.id ? (
+            <Card
+              tone="lavender"
+              style={styles.exercisePicker}
+              accessibilityLabel={`Choose an exercise for ${workout.title}`}
+            >
+              <Text variant="smallMedium">Choose from the foundational catalogue</Text>
+              <Text variant="caption" tone="muted" style={styles.pickerHint}>
+                Targets start conservatively and can be edited after adding.
+              </Text>
+              <TextInput
+                accessibilityLabel={`Search exercises for ${workout.title}`}
+                autoCapitalize="none"
+                autoCorrect={false}
+                onChangeText={setExercisePickerQuery}
+                placeholder="Search movements"
+                placeholderTextColor={colors.inkMuted}
+                style={styles.pickerInput}
+                value={exercisePickerQuery}
+              />
+              {pickerExercises.length === 0 ? (
+                <Text variant="small" tone="muted" style={styles.pickerEmpty}>
+                  No foundational movement matches that search.
+                </Text>
+              ) : (
+                pickerExercises.map((exercise) => (
+                  <Button
+                    key={exercise.id}
+                    label={`Add ${exercise.name}`}
+                    variant="ghost"
+                    onPress={() => handleAddCatalogueExercise(workout.id, exercise)}
+                    style={styles.pickerButton}
+                  />
+                ))
+              )}
+            </Card>
+          ) : null}
         </Card>
       ))}
 
@@ -872,6 +949,37 @@ const styles = StyleSheet.create({
   },
   addButton: {
     marginTop: spacing.md,
+  },
+  addExerciseButton: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.md,
+    paddingHorizontal: 0,
+  },
+  exercisePicker: {
+    marginTop: spacing.sm,
+    padding: spacing.md,
+  },
+  pickerHint: {
+    marginTop: spacing.xs,
+  },
+  pickerInput: {
+    minHeight: 44,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.ink,
+    fontSize: 16,
+  },
+  pickerEmpty: {
+    marginTop: spacing.md,
+  },
+  pickerButton: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.xs,
+    paddingHorizontal: 0,
   },
   customButton: {
     marginTop: spacing.xs,

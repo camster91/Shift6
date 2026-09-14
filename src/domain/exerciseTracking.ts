@@ -15,3 +15,17 @@ export function resolveTrackingType(
   if (target?.distanceMeters !== undefined) return 'distance';
   return 'reps';
 }
+
+export function defaultTargetForTrackingType(trackingType: TrackingType): SetTarget {
+  switch (trackingType) {
+    case 'time':
+      return { durationSeconds: 30 };
+    case 'distance':
+      return { distanceMeters: 500 };
+    case 'duration-and-distance':
+      return { durationSeconds: 300, distanceMeters: 500 };
+    case 'custom':
+    case 'reps':
+      return { reps: 8 };
+  }
+}

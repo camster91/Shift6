@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { Workout } from '../../domain/types';
 import { colors, radii, spacing } from '../../design/tokens';
 import { Card } from './Card';
+import { Shift6Icon } from './Shift6Icon';
 import { Text } from './Text';
 
 export interface WorkoutCardProps {
@@ -21,7 +21,7 @@ export function WorkoutCard({ workout, onPress, compact = false }: WorkoutCardPr
     >
       <View style={styles.topRow}>
         <View style={styles.categoryMark}>
-          <Ionicons name="flash-outline" size={22} color={colors.ink} />
+          <Shift6Icon name="flash" size={22} color={colors.ink} />
         </View>
         <View style={styles.copy}>
           <Text variant={compact ? 'bodyMedium' : 'h2'}>{workout.title}</Text>
@@ -29,7 +29,7 @@ export function WorkoutCard({ workout, onPress, compact = false }: WorkoutCardPr
             {workout.exercises.length} movements · {workout.estimatedDurationMinutes} min
           </Text>
         </View>
-        {onPress ? <Ionicons name="chevron-forward" size={22} color={colors.inkMuted} /> : null}
+        {onPress ? <Shift6Icon name="chevronForward" size={22} color={colors.inkMuted} /> : null}
       </View>
       {!compact ? (
         <View style={styles.footer}>

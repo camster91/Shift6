@@ -1,7 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 
+import type { Shift6IconName } from '../../design/iconography';
 import { colors, radii, spacing } from '../../design/tokens';
+import { Shift6Icon } from './Shift6Icon';
 import { Text } from './Text';
 
 export type OfflineStatus = 'offline' | 'syncing' | 'sync-failed';
@@ -10,24 +11,21 @@ export interface OfflineBannerProps {
   status: OfflineStatus;
 }
 
-const copy: Record<
-  OfflineStatus,
-  { title: string; message: string; icon: keyof typeof Ionicons.glyphMap }
-> = {
+const copy: Record<OfflineStatus, { title: string; message: string; icon: Shift6IconName }> = {
   offline: {
     title: 'Offline mode',
     message: 'Workout logging is available. We’ll sync when you reconnect.',
-    icon: 'cloud-offline-outline',
+    icon: 'cloudOffline',
   },
   syncing: {
     title: 'Syncing',
     message: 'Your local workout data is being backed up.',
-    icon: 'sync-outline',
+    icon: 'sync',
   },
   'sync-failed': {
     title: 'Sync paused',
     message: 'Your workout is safe on this device. We’ll retry later.',
-    icon: 'warning-outline',
+    icon: 'warning',
   },
 };
 
@@ -40,7 +38,7 @@ export function OfflineBanner({ status }: OfflineBannerProps) {
       accessibilityRole="alert"
       style={styles.banner}
     >
-      <Ionicons name={state.icon} size={20} color={colors.ink} />
+      <Shift6Icon name={state.icon} size={20} color={colors.ink} />
       <View style={styles.copy}>
         <Text variant="smallMedium">{state.title}</Text>
         <Text variant="caption" tone="muted">

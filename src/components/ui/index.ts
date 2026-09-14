@@ -30,6 +30,8 @@ export { ProgressIndicator } from './ProgressIndicator';
 export type { ProgressIndicatorProps } from './ProgressIndicator';
 export { Screen } from './Screen';
 export type { ScreenProps } from './Screen';
+export { Shift6Icon } from './Shift6Icon';
+export type { Shift6IconProps } from './Shift6Icon';
 export { SixWeekIndicator } from './SixWeekIndicator';
 export type { SixWeekIndicatorProps } from './SixWeekIndicator';
 export { Text } from './Text';

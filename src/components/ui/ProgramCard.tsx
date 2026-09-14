@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 
@@ -6,6 +5,7 @@ import type { Program } from '../../domain/types';
 import { colors, radii, spacing } from '../../design/tokens';
 import { Card } from './Card';
 import { Chip } from './Chip';
+import { Shift6Icon } from './Shift6Icon';
 import { Text } from './Text';
 
 export interface ProgramCardProps {
@@ -24,7 +24,7 @@ export function ProgramCard({ program, onPress, statusLabel, style }: ProgramCar
     >
       <View style={styles.header}>
         <View style={styles.icon}>
-          <Ionicons name="barbell-outline" size={22} color={colors.ink} />
+          <Shift6Icon name="barbell" size={22} color={colors.ink} />
         </View>
         <View style={styles.headerCopy}>
           <Text variant="h3">{program.title}</Text>
@@ -45,7 +45,7 @@ export function ProgramCard({ program, onPress, statusLabel, style }: ProgramCar
       {onPress ? (
         <View style={styles.actionRow}>
           <Text variant="smallMedium">View program</Text>
-          <Ionicons name="arrow-forward" size={18} color={colors.ink} />
+          <Shift6Icon name="arrowForward" size={18} color={colors.ink} />
         </View>
       ) : null}
     </Card>

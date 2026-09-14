@@ -1,11 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { Shift6IconName } from '../../design/iconography';
 import { colors, elevation, radii, spacing, touchTargets } from '../../design/tokens';
+import { Shift6Icon } from './Shift6Icon';
 import { Text } from './Text';
 
-export type NavigationIcon = keyof typeof Ionicons.glyphMap;
+export type NavigationIcon = Shift6IconName;
 
 export interface BottomNavigationItem {
   key: string;
@@ -40,7 +41,7 @@ export function BottomNavigation({ items, activeKey, onSelect }: BottomNavigatio
                 pressed && styles.pressed,
               ]}
             >
-              <Ionicons name={item.icon} size={22} color={selected ? colors.ink : colors.white} />
+              <Shift6Icon name={item.icon} size={22} color={selected ? colors.ink : colors.white} />
               {selected ? (
                 <Text variant="caption" style={styles.selectedText}>
                   {item.label}

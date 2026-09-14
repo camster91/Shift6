@@ -5,11 +5,11 @@ import type { BottomNavigationItem } from '../../src/components/ui';
 import { colors } from '../../src/design/tokens';
 
 const navigationItems: readonly BottomNavigationItem[] = [
-  { key: 'index', label: 'Home', icon: 'home-outline' },
-  { key: 'programs', label: 'Programs', icon: 'grid-outline' },
-  { key: 'progress', label: 'Progress', icon: 'analytics-outline' },
-  { key: 'coach', label: 'Coach', icon: 'sparkles-outline' },
-  { key: 'profile', label: 'Profile', icon: 'person-outline' },
+  { key: 'index', label: 'Home', icon: 'home' },
+  { key: 'programs', label: 'Programs', icon: 'programs' },
+  { key: 'progress', label: 'Progress', icon: 'progress' },
+  { key: 'coach', label: 'Coach', icon: 'coach' },
+  { key: 'profile', label: 'Profile', icon: 'profile' },
 ];
 
 export default function TabsLayout() {

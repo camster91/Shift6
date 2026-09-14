@@ -239,6 +239,17 @@ The initial rebuild branch implements this architecture as a small, native-first
 
 This record is an implementation checkpoint, not a release claim. Native boot, signed EAS builds, backend connectivity, SQLite restart durability on device, and full offline workout completion remain later verification gates.
 
+## Brand and icon boundary checkpoint — 2026-09-14
+
+The first #271 asset increment now provides:
+
+- an original S6 mark and app-icon SVG exploration under `assets/brand/`;
+- `assets/asset-manifest.json` as the provenance, naming, and human-review handoff record;
+- a semantic `Shift6Icon` registry so UI code does not depend directly on third-party glyph names;
+- an explicit fallback status: Ionicons remain a temporary renderer until the Figma vector family, selected states, and production platform exports are reviewed.
+
+This does not claim final brand approval, production app-icon raster exports, or approved exercise media. Exercise imagery remains human-technique-review required.
+
 ## Onboarding implementation checkpoint — 2026-09-13
 
 The next #273 increment adds a real multi-step onboarding route at `app/onboarding.tsx` and keeps its decisions in the typed domain layer:

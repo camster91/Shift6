@@ -121,5 +121,7 @@ function createProvider({
     cancelScheduledNotification: async (identifier) => {
       cancelled.push(identifier);
     },
+    subscribeToResponses: async () => ({ remove: () => undefined }),
+    getLastResponse: async () => null,
   };
 }

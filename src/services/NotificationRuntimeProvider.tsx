@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { router } from 'expo-router';
 import { AppState } from 'react-native';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
@@ -8,6 +9,10 @@ import { getNotificationPreferences } from '../db/notificationRepository';
 import { getOnboardingProfile } from '../db/profileRepository';
 import { getUserProgramVersion } from '../db/programRepository';
 import { createExpoNotificationProvider } from './notifications';
+import type {
+  NotificationResponsePayload,
+  NotificationResponseSubscription,
+} from './notifications';
 import {
   refreshWorkoutReminderSchedule,
   type WorkoutReminderScheduleResult,
@@ -75,11 +80,38 @@ export function NotificationRuntimeProvider({ children }: { children: ReactNode 
   useEffect(() => {
     if (!database) return;
 
+    let active = true;
+    let responseSubscription: NotificationResponseSubscription | null = null;
+    const handleResponse = (response: NotificationResponsePayload) => {
+      if (response.data.kind !== 'shift6-workout-reminder') return;
+      const workoutId = response.data.workoutId;
+      if (typeof workoutId !== 'string' || !workoutId.trim()) return;
+      router.push({ pathname: '/workout', params: { workoutId } });
+    };
+
+    void notificationProvider
+      .getLastResponse()
+      .then((response) => {
+        if (active && response) handleResponse(response);
+      })
+      .catch(() => undefined);
+    void notificationProvider
+      .subscribeToResponses(handleResponse)
+      .then((subscription) => {
+        if (active) responseSubscription = subscription;
+        else subscription.remove();
+      })
+      .catch(() => undefined);
+
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') void refreshNow();
     });
     void refreshNow();
-    return () => subscription.remove();
+    return () => {
+      active = false;
+      responseSubscription?.remove();
+      subscription.remove();
+    };
   }, [database, refreshNow]);
 
   const value = useMemo(() => ({ ...snapshot, refreshNow }), [refreshNow, snapshot]);

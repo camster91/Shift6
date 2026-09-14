@@ -16,6 +16,14 @@ export interface LocalNotificationRequest {
   scheduledFor: Date;
 }
 
+export interface NotificationResponsePayload {
+  data: Record<string, unknown>;
+}
+
+export interface NotificationResponseSubscription {
+  remove(): void;
+}
+
 export interface NotificationProvider {
   isAvailable(): Promise<boolean>;
   getPermissionStatus(): Promise<NotificationPermissionStatus>;
@@ -23,6 +31,10 @@ export interface NotificationProvider {
   getScheduledNotifications(): Promise<readonly ScheduledNotification[]>;
   scheduleLocalNotification(request: LocalNotificationRequest): Promise<string>;
   cancelScheduledNotification(identifier: string): Promise<void>;
+  subscribeToResponses(
+    listener: (response: NotificationResponsePayload) => void,
+  ): Promise<NotificationResponseSubscription>;
+  getLastResponse(): Promise<NotificationResponsePayload | null>;
 }
 
 /** Explicit web/unconfigured boundary; settings remain usable without delivery. */
@@ -49,6 +61,16 @@ export class UnavailableNotificationProvider implements NotificationProvider {
 
   async cancelScheduledNotification(_identifier: string): Promise<void> {
     return undefined;
+  }
+
+  async subscribeToResponses(
+    _listener: (response: NotificationResponsePayload) => void,
+  ): Promise<NotificationResponseSubscription> {
+    return { remove: () => undefined };
+  }
+
+  async getLastResponse(): Promise<NotificationResponsePayload | null> {
+    return null;
   }
 }
 
@@ -114,6 +136,24 @@ export class ExpoNotificationProvider implements NotificationProvider {
     if (!(await this.isAvailable())) return;
     const notifications = await loadNotifications();
     await notifications.cancelScheduledNotificationAsync(identifier);
+  }
+
+  async subscribeToResponses(
+    listener: (response: NotificationResponsePayload) => void,
+  ): Promise<NotificationResponseSubscription> {
+    if (!(await this.isAvailable())) return { remove: () => undefined };
+    const notifications = await loadNotifications();
+    const subscription = notifications.addNotificationResponseReceivedListener((response) => {
+      listener({ data: response.notification.request.content.data ?? {} });
+    });
+    return subscription;
+  }
+
+  async getLastResponse(): Promise<NotificationResponsePayload | null> {
+    if (!(await this.isAvailable())) return null;
+    const notifications = await loadNotifications();
+    const response = await notifications.getLastNotificationResponseAsync();
+    return response ? { data: response.notification.request.content.data ?? {} } : null;
   }
 }
 

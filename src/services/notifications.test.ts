@@ -12,5 +12,10 @@ describe('notification provider boundary', () => {
       'unavailable',
     );
     await expect(provider.requestPermission()).resolves.toBe('unavailable');
+    await expect(provider.getScheduledNotifications()).resolves.toEqual([]);
+    await expect(provider.getLastResponse()).resolves.toBeNull();
+    const subscription = await provider.subscribeToResponses(() => undefined);
+    expect(subscription).toEqual({ remove: expect.any(Function) });
+    subscription.remove();
   });
 });

@@ -334,6 +334,8 @@ export interface CoachProposalChange {
     | 'schedule-change'
     | 'program-change';
   exerciseId?: EntityId;
+  workoutId?: EntityId;
+  workoutExerciseId?: EntityId;
   field: string;
   from: string;
   to: string;

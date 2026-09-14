@@ -77,11 +77,16 @@ export function CoachProposalCard({
       ) : null}
 
       <Text variant="caption" tone="muted" style={styles.confirmationNote}>
-        Your decision is recorded locally. This surface never changes a program silently.
+        Approval applies supported changes to a new private plan revision. Nothing changes without
+        your explicit decision.
       </Text>
       <View style={styles.actions}>
         <Button label="Keep current" variant="secondary" onPress={onReject} disabled={busy} />
-        <Button label="Approve proposal" onPress={onApprove} loading={busy} />
+        <Button
+          label={proposal.changes.length > 0 ? 'Approve & apply' : 'Approve proposal'}
+          onPress={onApprove}
+          loading={busy}
+        />
       </View>
     </Card>
   );

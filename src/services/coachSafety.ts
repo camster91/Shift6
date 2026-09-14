@@ -116,6 +116,12 @@ export function validateCoachProposal(proposal: CoachProposal): string[] {
     if (change.type === 'exercise-substitution' && !change.exerciseId?.trim()) {
       errors.push(`${prefix} must identify the affected exercise.`);
     }
+    if (
+      (change.workoutId && !change.workoutExerciseId) ||
+      (!change.workoutId && change.workoutExerciseId)
+    ) {
+      errors.push(`${prefix} must include both workout and movement IDs when scoped.`);
+    }
   });
 
   return errors;

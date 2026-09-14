@@ -11,16 +11,24 @@ import {
   Screen,
   Text,
 } from '../../src/components/ui';
-import { useLocalDatabase } from '../../src/db/context';
+import {
+  acceptCoachProposalWithRevision,
+  getPendingCoachProposals,
+  updateCoachProposalStatus,
+} from '../../src/db/coachRepository';
 import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
-import { getPendingCoachProposals, updateCoachProposalStatus } from '../../src/db/coachRepository';
+import { useLocalDatabase } from '../../src/db/context';
+import { getUserProgramVersion } from '../../src/db/programRepository';
 import { demoCoachProposal } from '../../src/domain/fixtures/home';
-import type { CoachProposal } from '../../src/domain/types';
+import type { CoachProposal, Program, ProgramVersion, TrainingCycle } from '../../src/domain/types';
 import { colors, radii, spacing } from '../../src/design/tokens';
 
 export default function CoachScreen() {
   const database = useLocalDatabase();
   const [proposals, setProposals] = useState<CoachProposal[]>([]);
+  const [activeCycle, setActiveCycle] = useState<TrainingCycle | null>(null);
+  const [activeProgram, setActiveProgram] = useState<Program | null>(null);
+  const [activeProgramVersion, setActiveProgramVersion] = useState<ProgramVersion | null>(null);
   const [loading, setLoading] = useState(database !== null);
   const [busyProposalId, setBusyProposalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,10 +44,18 @@ export default function CoachScreen() {
     void (async () => {
       try {
         const cycle = await getActiveTrainingCycle(database, 'guest-user');
+        const snapshot = cycle
+          ? await getUserProgramVersion(database, 'guest-user', cycle.programVersionId)
+          : null;
         const pending = cycle
           ? await getPendingCoachProposals(database, 'guest-user', cycle.id)
           : [];
-        if (active) setProposals(pending);
+        if (active) {
+          setActiveCycle(cycle);
+          setActiveProgram(snapshot?.program ?? null);
+          setActiveProgramVersion(snapshot?.version ?? null);
+          setProposals(pending);
+        }
       } catch {
         if (active) setError('We could not load Coach proposals from this device.');
       } finally {
@@ -58,10 +74,37 @@ export default function CoachScreen() {
     setBusyProposalId(proposalId);
     setError(null);
     try {
-      await updateCoachProposalStatus(database, proposalId, status, new Date().toISOString());
+      const proposal = proposals.find((candidate) => candidate.id === proposalId);
+      if (!proposal) throw new Error('This Coach proposal is no longer available.');
+      const now = new Date().toISOString();
+      if (status === 'accepted') {
+        if (!activeCycle || !activeProgram || !activeProgramVersion) {
+          throw new Error('The active plan is not available for a safe Coach approval.');
+        }
+        const result = await acceptCoachProposalWithRevision(
+          database,
+          'guest-user',
+          proposal,
+          activeProgram,
+          activeProgramVersion,
+          activeCycle,
+          now,
+        );
+        if (result.status === 'updated') {
+          setActiveProgram(result.program);
+          setActiveProgramVersion(result.version);
+          setActiveCycle(result.cycle);
+        }
+      } else {
+        await updateCoachProposalStatus(database, proposalId, status, now);
+      }
       setProposals((current) => current.filter((proposal) => proposal.id !== proposalId));
-    } catch {
-      setError('We could not save that Coach decision locally.');
+    } catch (decisionError) {
+      setError(
+        decisionError instanceof Error
+          ? decisionError.message
+          : 'We could not save that Coach decision locally.',
+      );
     } finally {
       setBusyProposalId(null);
     }

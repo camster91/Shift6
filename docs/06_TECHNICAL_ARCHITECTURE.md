@@ -532,3 +532,7 @@ Starting the curated Barbell 30 template now creates a uniquely identified priva
 ## Auth and service composition checkpoint — 2026-09-14
 
 The #272 foundation now has an explicit `AuthProvider`/`AuthSession` contract and an `UnavailableAuthProvider` for the guest/unconfigured state. `createAppServices` composes that provider with the vendor-neutral HTTP sync transport and the replaceable Expo connectivity adapter. The backend receives access tokens only through the injected auth boundary; no auth vendor, credential, sign-in UI, or network request was added to the guest shell. This keeps account conversion and backend selection as isolated future adapters while preserving local-first workout behavior.
+
+## Coach approval application checkpoint — 2026-09-14
+
+Coach proposals now have a pure, fail-closed application boundary for precisely scoped target, exercise-substitution, and set-count changes. Applying a proposal requires a validated pending proposal and produces copy-on-write program data; ambiguous movement identity, unsupported schedule/program changes, invalid numeric values, and unsafe effort ranges are rejected without mutating the source. The Coach surface records approval together with a new private program-version revision, active-cycle pointer, and proposal/program/cycle outbox mutations in one SQLite transaction. Rejection remains a local decision with no plan mutation. A provider or account is still not connected.

@@ -1,7 +1,14 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { demoCoachProposal } from '../domain/fixtures/home';
 import {
+  demoCoachProposal,
+  demoCycle,
+  demoProgram,
+  demoProgramVersion,
+} from '../domain/fixtures/home';
+import type { CoachProposal } from '../domain/types';
+import {
+  acceptCoachProposalWithRevision,
   getPendingCoachProposals,
   saveCoachProposal,
   updateCoachProposalStatus,
@@ -100,5 +107,105 @@ describe('updateCoachProposalStatus', () => {
       cycleId: 'cycle-1',
       proposal: { status: 'accepted' },
     });
+  });
+});
+
+describe('acceptCoachProposalWithRevision', () => {
+  it('approves and persists a private revision in one transaction', async () => {
+    const sourceWorkout = demoProgramVersion.workouts[0]!;
+    const sourceExercise = sourceWorkout.exercises[0]!;
+    const proposal: CoachProposal = {
+      ...demoCoachProposal,
+      id: 'coach-proposal-revision',
+      changes: [
+        {
+          id: 'change-reps',
+          type: 'target-change',
+          workoutId: sourceWorkout.id,
+          workoutExerciseId: sourceExercise.id,
+          exerciseId: sourceExercise.exerciseId,
+          field: 'reps',
+          from: '8',
+          to: '9',
+          requiresUserConfirmation: true,
+        },
+      ],
+    };
+    const calls: string[] = [];
+    const database = {
+      runAsync: async (sql: string) => {
+        calls.push(sql);
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      getFirstAsync: async () => ({
+        ...pendingRow,
+        id: proposal.id,
+        changes_json: JSON.stringify(proposal.changes),
+        status: 'accepted',
+        updated_at: '2026-09-14T12:00:00.000Z',
+      }),
+      withTransactionAsync: async (callback: () => Promise<void>) => {
+        calls.push('BEGIN TRANSACTION');
+        await callback();
+        calls.push('COMMIT TRANSACTION');
+      },
+    } as unknown as SQLiteDatabase;
+
+    const result = await acceptCoachProposalWithRevision(
+      database,
+      demoCycle.userId,
+      proposal,
+      demoProgram,
+      demoProgramVersion,
+      demoCycle,
+      '2026-09-14T12:00:00.000Z',
+    );
+
+    expect(result.status).toBe('updated');
+    expect(result.version.id).not.toBe(demoProgramVersion.id);
+    expect(result.cycle.programVersionId).toBe(result.version.id);
+    expect(calls[0]).toBe('BEGIN TRANSACTION');
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('UPDATE coach_proposals'),
+        expect.stringContaining('INSERT INTO user_programs'),
+        expect.stringContaining('INSERT INTO user_program_versions'),
+        expect.stringContaining('INSERT INTO training_cycles'),
+        expect.stringContaining('INSERT INTO sync_outbox'),
+        'COMMIT TRANSACTION',
+      ]),
+    );
+  });
+
+  it('does not write again when the proposal was already decided', async () => {
+    const calls: string[] = [];
+    const database = {
+      runAsync: async (sql: string) => {
+        calls.push(sql);
+        return { changes: 0, lastInsertRowId: 0 };
+      },
+      withTransactionAsync: async (callback: () => Promise<void>) => {
+        calls.push('BEGIN TRANSACTION');
+        await callback();
+        calls.push('COMMIT TRANSACTION');
+      },
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      acceptCoachProposalWithRevision(
+        database,
+        demoCycle.userId,
+        demoCoachProposal,
+        demoProgram,
+        demoProgramVersion,
+        demoCycle,
+        '2026-09-14T12:00:00.000Z',
+      ),
+    ).resolves.toMatchObject({ status: 'unchanged' });
+    expect(calls).toEqual([
+      'BEGIN TRANSACTION',
+      expect.stringContaining('UPDATE coach_proposals'),
+      'COMMIT TRANSACTION',
+    ]);
   });
 });

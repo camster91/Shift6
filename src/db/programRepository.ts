@@ -13,55 +13,64 @@ export async function saveProgramVersion(
   program: Program,
   version: ProgramVersion,
 ): Promise<void> {
-  await database.withTransactionAsync(async () => {
-    await database.runAsync(
-      `INSERT INTO user_programs
-        (id, user_id, source_program_id, program_json, updated_at)
-       VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET
-         user_id = excluded.user_id,
-         source_program_id = excluded.source_program_id,
-         program_json = excluded.program_json,
-         updated_at = excluded.updated_at;`,
-      program.id,
-      userId,
-      program.sourceProgramId ?? null,
-      JSON.stringify(program),
-      version.createdAt,
-    );
-    await database.runAsync(
-      `INSERT INTO user_program_versions
-        (id, program_id, version, status, version_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET
-         program_id = excluded.program_id,
-         version = excluded.version,
-         status = excluded.status,
-         version_json = excluded.version_json,
-         created_at = excluded.created_at;`,
-      version.id,
-      program.id,
-      version.version,
-      version.status,
-      JSON.stringify(version),
-      version.createdAt,
-    );
-    await database.runAsync(
-      `INSERT INTO sync_outbox
-        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(idempotency_key) DO UPDATE SET
-         payload_json = excluded.payload_json,
-         created_at = excluded.created_at,
-         last_error = NULL;`,
-      `outbox-program-version-${version.id}`,
-      `program-version:${version.id}`,
-      'program-version',
-      version.id,
-      JSON.stringify({ userId, program, version }),
-      version.createdAt,
-    );
-  });
+  await database.withTransactionAsync(async () =>
+    saveProgramVersionInTransaction(database, userId, program, version),
+  );
+}
+
+export async function saveProgramVersionInTransaction(
+  database: SQLiteDatabase,
+  userId: string,
+  program: Program,
+  version: ProgramVersion,
+): Promise<void> {
+  await database.runAsync(
+    `INSERT INTO user_programs
+      (id, user_id, source_program_id, program_json, updated_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       user_id = excluded.user_id,
+       source_program_id = excluded.source_program_id,
+       program_json = excluded.program_json,
+       updated_at = excluded.updated_at;`,
+    program.id,
+    userId,
+    program.sourceProgramId ?? null,
+    JSON.stringify(program),
+    version.createdAt,
+  );
+  await database.runAsync(
+    `INSERT INTO user_program_versions
+      (id, program_id, version, status, version_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       program_id = excluded.program_id,
+       version = excluded.version,
+       status = excluded.status,
+       version_json = excluded.version_json,
+       created_at = excluded.created_at;`,
+    version.id,
+    program.id,
+    version.version,
+    version.status,
+    JSON.stringify(version),
+    version.createdAt,
+  );
+  await database.runAsync(
+    `INSERT INTO sync_outbox
+      (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(idempotency_key) DO UPDATE SET
+       payload_json = excluded.payload_json,
+       created_at = excluded.created_at,
+       last_error = NULL;`,
+    `outbox-program-version-${version.id}`,
+    `program-version:${version.id}`,
+    'program-version',
+    version.id,
+    JSON.stringify({ userId, program, version }),
+    version.createdAt,
+  );
 }
 
 export async function getUserProgramVersion(

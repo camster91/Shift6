@@ -17,35 +17,40 @@ export async function saveTrainingCycle(
   database: SQLiteDatabase,
   cycle: TrainingCycle,
 ): Promise<void> {
-  await database.withTransactionAsync(async () => {
-    await database.runAsync(
-      `UPDATE training_cycles
-          SET status = 'paused'
-        WHERE user_id = ? AND status = 'active' AND id != ?;`,
-      cycle.userId,
-      cycle.id,
-    );
-    await database.runAsync(
-      `INSERT INTO training_cycles
-        (id, user_id, program_version_id, status, current_week, started_at, weeks_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET
-         user_id = excluded.user_id,
-         program_version_id = excluded.program_version_id,
-         status = excluded.status,
-         current_week = excluded.current_week,
-         started_at = excluded.started_at,
-         weeks_json = excluded.weeks_json;`,
-      cycle.id,
-      cycle.userId,
-      cycle.programVersionId,
-      cycle.status,
-      cycle.currentWeek,
-      cycle.startedAt,
-      JSON.stringify(cycle.weeks),
-    );
-    await queueCycleSync(database, cycle);
-  });
+  await database.withTransactionAsync(async () => saveTrainingCycleInTransaction(database, cycle));
+}
+
+export async function saveTrainingCycleInTransaction(
+  database: SQLiteDatabase,
+  cycle: TrainingCycle,
+): Promise<void> {
+  await database.runAsync(
+    `UPDATE training_cycles
+        SET status = 'paused'
+      WHERE user_id = ? AND status = 'active' AND id != ?;`,
+    cycle.userId,
+    cycle.id,
+  );
+  await database.runAsync(
+    `INSERT INTO training_cycles
+      (id, user_id, program_version_id, status, current_week, started_at, weeks_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       user_id = excluded.user_id,
+       program_version_id = excluded.program_version_id,
+       status = excluded.status,
+       current_week = excluded.current_week,
+       started_at = excluded.started_at,
+       weeks_json = excluded.weeks_json;`,
+    cycle.id,
+    cycle.userId,
+    cycle.programVersionId,
+    cycle.status,
+    cycle.currentWeek,
+    cycle.startedAt,
+    JSON.stringify(cycle.weeks),
+  );
+  await queueCycleSync(database, cycle);
 }
 
 export async function advanceTrainingCycleAfterCompletedWorkout(

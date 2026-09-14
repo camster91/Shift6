@@ -188,3 +188,16 @@ The engine produces structured facts first:
 - skipped sessions and reasons.
 
 The AI coach receives those facts and turns them into an understandable review. The AI is not allowed to invent measurements that are absent.
+
+## Deterministic implementation checkpoint — 2026-09-13
+
+`src/domain/progression.ts` now provides a provider-independent first engine boundary:
+
+- readiness is reduced to explainable labels and conservative actions;
+- linear load, double progression, rep target, RPE/RIR, volume, density, time, distance, cardio, and skill strategies return typed deterministic decisions;
+- discomfort and poor-form flags hold normal progression for the affected movement;
+- plateau detection requires comparable sessions, adequate adherence, attempted targets, and repeated lack of progress;
+- cycle facts aggregate adherence, volume, cardio, effort, duration, records, regressions, and discomfort without an LLM;
+- Week 6 guidance is derived from the program's declared meaning and never assumes a universal deload.
+
+This checkpoint is unit-tested domain logic, not yet connected to active workout persistence, cycle creation, or the Coach proposal UI.

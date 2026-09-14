@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { Alert, Platform, Share, StyleSheet, View } from 'react-native';
 
 import { Button, Card, Chip, Screen, Text } from '../../src/components/ui';
-import { demoEquipment, demoUser } from '../../src/domain/fixtures/home';
+import { equipmentCatalog } from '../../src/domain/equipment';
+import { demoUser } from '../../src/domain/fixtures/home';
 import { useLocalDatabase } from '../../src/db/context';
 import { deleteLocalUserData, exportLocalUserData } from '../../src/db/privacyRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
@@ -34,7 +35,7 @@ export default function ProfileScreen() {
     };
   }, [database]);
 
-  const selectedEquipment = demoEquipment.filter((equipment) =>
+  const selectedEquipment = equipmentCatalog.filter((equipment) =>
     equipmentIds.includes(equipment.id),
   );
 
@@ -116,7 +117,7 @@ export default function ProfileScreen() {
 
       <Card tone="ink" style={styles.profileCard}>
         <View style={styles.avatar}>
-          <Text variant="h2">C</Text>
+          <Text variant="h2">{getInitials(user.displayName)}</Text>
         </View>
         <Text variant="h2" tone="inverse" style={styles.profileName}>
           {user.displayName}
@@ -134,6 +135,9 @@ export default function ProfileScreen() {
           {selectedEquipment.slice(0, 6).map((equipment) => (
             <Chip key={equipment.id} label={equipment.name} selected />
           ))}
+          {selectedEquipment.length > 6 ? (
+            <Chip label={`+${selectedEquipment.length - 6} more`} selected />
+          ) : null}
         </View>
         <Text variant="small" tone="muted" style={styles.equipmentHint}>
           Equipment availability will filter programs and rank substitutions.
@@ -194,6 +198,18 @@ export default function ProfileScreen() {
       </Card>
     </Screen>
   );
+}
+
+function getInitials(displayName: string): string {
+  const initials = displayName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('');
+
+  return initials.toUpperCase() || 'G';
 }
 
 const styles = StyleSheet.create({

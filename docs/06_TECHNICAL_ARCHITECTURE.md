@@ -399,6 +399,8 @@ Onboarding equipment selection now renders the full 23-item canonical equipment 
 
 The exercise detail route now reads that same saved equipment profile before ranking substitutions. Web preview keeps the local demo profile fallback; native SQLite remains the source for the user's actual setup. This keeps search, detail, builder, and active-workout substitution surfaces on one deterministic equipment boundary.
 
+Profile now renders selected equipment from the full canonical taxonomy rather than the legacy demo subset, with a compact overflow count for larger setups. The avatar also derives accessible identity initials from the saved display name instead of a fixed fixture letter.
+
 `src/domain/contentReadiness.ts` now separates structural cycle readiness from public publication readiness. A complete draft record can support development and local fixture workouts, but draft technique/media status remains a publication warning; missing IDs, invalid six-week phases, empty workouts, retired exercises, and incomplete safety fields are blockers.
 
 ## Program library metadata checkpoint — 2026-09-14

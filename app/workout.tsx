@@ -78,6 +78,12 @@ export default function ActiveWorkoutScreen() {
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
   const [restSecondsRemaining, setRestSecondsRemaining] = useState(0);
 
+  useEffect(() => {
+    setValues(buildInitialValues(activeWorkout));
+    setTargetOverrides({});
+    setCompletedSetKeys(new Set());
+  }, [activeWorkout.id]);
+
   const session = useMemo<WorkoutSession>(
     () => ({
       id: `session-${activeCycle.id}-week-${activeCycle.currentWeek}-${activeWorkout.id}`,

@@ -191,10 +191,38 @@ export default function CycleReviewScreen() {
     }
   };
 
+  const handleProgressCycle = async () => {
+    if (reviewBusy) return;
+    const savedReview = await persistReview('progress');
+    if (savedReview) {
+      router.push({
+        pathname: '/builder',
+        params: { sourceVersionId: programVersion.id, mode: 'progress' },
+      });
+    }
+  };
+
+  const handleChangeExercises = async () => {
+    if (reviewBusy) return;
+    const savedReview = await persistReview('change-exercises');
+    if (savedReview) {
+      router.push({
+        pathname: '/builder',
+        params: { sourceVersionId: programVersion.id, mode: 'change-exercises' },
+      });
+    }
+  };
+
   const handleChooseProgram = async () => {
     if (reviewBusy) return;
     const savedReview = await persistReview('change-program');
     if (savedReview) router.push('/programs');
+  };
+
+  const handleBuildNewProgram = async () => {
+    if (reviewBusy) return;
+    const savedReview = await persistReview('build-new');
+    if (savedReview) router.push({ pathname: '/builder', params: { mode: 'blank' } });
   };
 
   return (
@@ -350,11 +378,35 @@ export default function CycleReviewScreen() {
             style={styles.actionButton}
           />
           <Button
+            label="Build a progression copy"
+            variant="secondary"
+            loading={reviewBusy === 'progress'}
+            onPress={() => void handleProgressCycle()}
+            icon={<Ionicons name="trending-up-outline" size={18} color={colors.ink} />}
+            style={styles.actionButton}
+          />
+          <Button
+            label="Change exercises"
+            variant="secondary"
+            loading={reviewBusy === 'change-exercises'}
+            onPress={() => void handleChangeExercises()}
+            icon={<Ionicons name="swap-horizontal-outline" size={18} color={colors.ink} />}
+            style={styles.actionButton}
+          />
+          <Button
             label="Choose another program"
             variant="ghost"
             loading={reviewBusy === 'change-program'}
             onPress={() => void handleChooseProgram()}
             icon={<Ionicons name="library-outline" size={18} color={colors.ink} />}
+            style={styles.actionButton}
+          />
+          <Button
+            label="Build a new program"
+            variant="ghost"
+            loading={reviewBusy === 'build-new'}
+            onPress={() => void handleBuildNewProgram()}
+            icon={<Ionicons name="add-circle-outline" size={18} color={colors.ink} />}
             style={styles.actionButton}
           />
           <Text variant="caption" tone="muted" style={styles.persistenceNote}>

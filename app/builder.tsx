@@ -64,6 +64,14 @@ export default function ProgramBuilderScreen() {
     sourceVersionId?: string;
   }>();
   const isBlankBuilder = mode === 'blank';
+  const builderTitle =
+    mode === 'progress'
+      ? 'Build the next progression.'
+      : mode === 'change-exercises'
+        ? 'Refresh the movements.'
+        : isBlankBuilder
+          ? 'Build from first principles.'
+          : 'Make it yours.';
   const shouldLoadSource = Boolean(database && sourceVersionId && !isBlankBuilder);
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>(demoUser.unitSystem);
@@ -364,12 +372,16 @@ export default function ProgramBuilderScreen() {
       </View>
 
       <Text variant="display" accessibilityRole="header" style={styles.title}>
-        {isBlankBuilder ? 'Build from first principles.' : 'Make it yours.'}
+        {builderTitle}
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
         {isBlankBuilder
           ? 'Start with an empty six-week plan, add the sessions you need, and keep the whole draft private.'
-          : 'This is a private copy of the selected program. Your edits leave the public template and completed history unchanged.'}
+          : mode === 'progress'
+            ? 'Start from the completed cycle snapshot, then make the next block more demanding only within the program rules.'
+            : mode === 'change-exercises'
+              ? 'Swap movements in a private copy while keeping the completed cycle and its history unchanged.'
+              : 'This is a private copy of the selected program. Your edits leave the public template and completed history unchanged.'}
       </Text>
 
       <Text variant="smallMedium" style={styles.fieldLabel}>

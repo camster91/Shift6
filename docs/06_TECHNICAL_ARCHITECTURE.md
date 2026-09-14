@@ -694,3 +694,13 @@ safe review-required error for retry/inspection. Coordinator/runtime state expos
 Profile renders an accessible “Sync needs review” banner so a future-plan collision is not hidden
 as a successful sync. Conflict resolution UI and server-side version policy remain separate work;
 the mobile client does not auto-merge or auto-overwrite user plans.
+
+## Complete review-choice checkpoint — 2026-09-14
+
+The Review route now exposes all six cycle outcomes already represented by the typed domain model:
+repeat, progress via a private progression copy, adjust, change exercises via a private copy,
+change program, and build a new program from a blank draft. Each non-repeat path persists the
+user's explicit `nextAction` before navigation; the builder receives a source version only for
+copy-based paths and never mutates the completed cycle snapshot. The progress-copy label is
+intentionally honest: automatic cross-cycle load carryover remains a separate deterministic rule
+to design and test.

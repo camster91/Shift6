@@ -184,6 +184,8 @@ The app shell now mounts an authenticated-only sync runtime that retries the loc
 
 The auth boundary now includes Expo SecureStore-backed session persistence with malformed/expired-session cleanup and explicit sign-out. No provider-specific sign-in flow, credential, or backend account conversion is claimed yet.
 
+The local account-conversion seam now supports transactional guest-data adoption into an empty authenticated identity and rewrites queued user payloads without changing workout/session/set IDs. Provider-specific sign-in, destination conflict UX, backend account reconciliation, and remote deletion remain open.
+
 The active workout now carries builder-authored section, superset/circuit, note, and custom-exercise cues into the logging surface without changing completed-set identity.
 
 Active workout drafts now flush on inactive/background app-state transitions as well as during debounced editing, improving pause/reopen durability without adding a network dependency.

@@ -547,6 +547,8 @@ The #272 foundation now has an explicit `AuthProvider`/`AuthSession` contract an
 
 `SecureAuthProvider` now stores the validated session envelope through Expo SecureStore, removes malformed or expired sessions, and exposes sign-out without leaking tokens to domain or analytics code. The default sync runtime uses this secure provider on native builds but remains signed out until a future auth adapter explicitly establishes a session; web preview treats secure storage as unavailable.
 
+`migrateLocalUserToAccount` provides the later account-conversion seam. It adopts guest-owned profile, equipment, program, exercise, cycle, proposal, and queued-mutation ownership in one transaction after validating that the destination is empty; malformed queued payloads and implicit account merges fail closed. Workout/session/set IDs remain unchanged, preserving local history and idempotency.
+
 ## Coach approval application checkpoint — 2026-09-14
 
 Coach proposals now have a pure, fail-closed application boundary for precisely scoped target, exercise-substitution, and set-count changes. Applying a proposal requires a validated pending proposal and produces copy-on-write program data; ambiguous movement identity, unsupported schedule/program changes, invalid numeric values, and unsafe effort ranges are rejected without mutating the source. The Coach surface records approval together with a new private program-version revision, active-cycle pointer, and proposal/program/cycle outbox mutations in one SQLite transaction. Rejection remains a local decision with no plan mutation. A provider or account is still not connected.

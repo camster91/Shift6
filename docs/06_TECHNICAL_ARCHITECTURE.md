@@ -352,6 +352,8 @@ The catalogue is not yet the 300+ launch set: content review, custom exercises, 
 
 The catalogue surface now links each foundational record to an exercise-detail route with setup, instructions, technique cues, safety notes, visible review status, and deterministic equipment-aware substitution candidates. The detail route is still intentionally read-only until reviewed media and a user-owned substitution action are ready.
 
+`src/domain/contentReadiness.ts` now separates structural cycle readiness from public publication readiness. A complete draft record can support development and local fixture workouts, but draft technique/media status remains a publication warning; missing IDs, invalid six-week phases, empty workouts, retired exercises, and incomplete safety fields are blockers.
+
 ## Program library metadata checkpoint — 2026-09-14
 
 The Programs surface now carries metadata for the planned 20-program launch library. Barbell 30 is the only published, startable version in this increment; the other 19 entries are explicitly `metadata-draft` until their workouts, progression rules, substitutions, safety review, and six-week versions are complete. This prevents a catalogue card from implying that a plan is ready when its executable program version does not yet exist.

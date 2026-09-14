@@ -517,4 +517,6 @@ The schedule selector is pure domain logic with deterministic tests. Calendar-dr
 
 The native Home boundary also treats a missing local onboarding profile as a first-run state and routes to onboarding before showing the demo shell. The web provider deliberately has no database and therefore remains a navigable preview surface rather than pretending to implement first-install persistence.
 
+Profile saves now queue the complete user-confirmed onboarding snapshot in the same SQLite transaction as the profile and equipment rows. The mutation uses a stable user-scoped idempotency key and replaces its pending payload on later edits, so offline setup changes remain local-first and retry-safe without creating duplicate profile mutations.
+
 Starting the curated Barbell 30 template now creates a uniquely identified private program/version snapshot (with the public template recorded as `sourceProgramId`) before persisting the cycle. This keeps the public fixture/template separate from user edits and gives later cycle history a stable version reference from the moment the cycle begins.

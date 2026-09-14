@@ -69,6 +69,22 @@ export async function saveOnboardingProfile(
         equipmentId,
       );
     }
+
+    await database.runAsync(
+      `INSERT INTO sync_outbox
+        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(idempotency_key) DO UPDATE SET
+         payload_json = excluded.payload_json,
+         created_at = excluded.created_at,
+         last_error = NULL;`,
+      `outbox-profile-${profile.user.id}`,
+      `profile:${profile.user.id}`,
+      'profile',
+      profile.user.id,
+      JSON.stringify({ userId: profile.user.id, profile }),
+      profile.user.updatedAt,
+    );
   });
 }
 

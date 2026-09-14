@@ -51,6 +51,16 @@ describe('saveOnboardingProfile', () => {
     expect(calls[1]?.params).toContain('not-now');
     expect(calls[2]?.sql).toContain('DELETE FROM user_equipment');
     expect(calls.filter(({ sql }) => sql.includes('INSERT INTO user_equipment'))).toHaveLength(4);
+    expect(calls.at(-2)?.sql).toContain('INSERT INTO sync_outbox');
+    expect(calls.at(-2)?.sql).toContain('ON CONFLICT(idempotency_key) DO UPDATE');
+    expect(calls.at(-2)?.params).toEqual([
+      'outbox-profile-guest-user',
+      'profile:guest-user',
+      'profile',
+      'guest-user',
+      JSON.stringify({ userId: 'guest-user', profile }),
+      profile.user.updatedAt,
+    ]);
     expect(calls.at(-1)?.sql).toBe('COMMIT TRANSACTION');
   });
 });

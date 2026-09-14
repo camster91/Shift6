@@ -408,6 +408,8 @@ No network call is made by the active workout, and no sync provider or credentia
 
 The current app does not yet install a native connectivity listener or background task. Native reconnect, app-background execution, conflict resolution, and device fault testing remain release gates.
 
+`expo-network` now supplies the runtime connectivity adapter. The active workout observes online/offline changes and renders the accessible `OfflineBanner` without blocking local logging; the persisted session records whether it was started offline. A connectivity change still does not imply successful cloud sync: the outbox coordinator and backend/auth boundary remain responsible for that separately.
+
 ## Workout pause and correction checkpoint — 2026-09-14
 
 The local workout boundary now includes migration 8 and a `workout_drafts` table. Active workout input is debounced into the local database, the same session ID is reused when the route is reopened, and completed set values are rehydrated before the screen becomes interactive. A pause/back action flushes the draft before leaving the route. Completed sets can be corrected in place; the stable set ID and idempotency key are retained while the pending outbox payload is replaced.

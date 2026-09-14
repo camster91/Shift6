@@ -9,6 +9,7 @@ import {
   ErrorState,
   IconButton,
   LoadingSkeleton,
+  OfflineBanner,
   Screen,
   Text,
 } from '../src/components/ui';
@@ -46,6 +47,9 @@ import {
   updateCompletedSet,
 } from '../src/db/workoutRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
+import { connectivityStatusFromNetworkState } from '../src/services/connectivity';
+import * as Network from 'expo-network';
+import type { ConnectivityStatus } from '../src/services/syncCoordinator';
 
 type SetInputValues = WorkoutDraftSetValues;
 
@@ -77,6 +81,26 @@ export default function ActiveWorkoutScreen() {
   const [error, setError] = useState<string | null>(null);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
   const [restSecondsRemaining, setRestSecondsRemaining] = useState(0);
+  const [connectivity, setConnectivity] = useState<ConnectivityStatus>('unknown');
+
+  useEffect(() => {
+    let active = true;
+    void Network.getNetworkStateAsync()
+      .then((state) => {
+        if (active) setConnectivity(connectivityStatusFromNetworkState(state));
+      })
+      .catch(() => {
+        if (active) setConnectivity('unknown');
+      });
+    const subscription = Network.addNetworkStateListener((state) => {
+      if (active) setConnectivity(connectivityStatusFromNetworkState(state));
+    });
+
+    return () => {
+      active = false;
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     setValues(buildInitialValues(activeWorkout));
@@ -96,9 +120,9 @@ export default function ActiveWorkoutScreen() {
       workoutFocus: activeWorkout.focus,
       status: 'in-progress',
       startedAt,
-      isOffline: false,
+      isOffline: connectivity === 'offline',
     }),
-    [activeCycle.id, activeCycle.currentWeek, activeWorkout, startedAt],
+    [activeCycle.id, activeCycle.currentWeek, activeWorkout, connectivity, startedAt],
   );
 
   useEffect(() => {
@@ -381,6 +405,8 @@ export default function ActiveWorkoutScreen() {
         Complete each set when it is done. Your device saves the set before the button changes
         state.
       </Text>
+
+      {connectivity === 'offline' ? <OfflineBanner status="offline" /> : null}
 
       <Card tone={database ? 'mint' : 'yellow'} style={styles.localFirstCard}>
         <View style={styles.localFirstHeader}>

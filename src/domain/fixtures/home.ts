@@ -7,16 +7,10 @@ import type {
   TrainingCycle,
   User,
   Workout,
+  WeeklyScheduleEntry,
 } from '../types';
 
-export interface WeeklyScheduleEntry {
-  id: string;
-  day: string;
-  title: string;
-  workoutId?: string;
-  category: 'strength' | 'cardio' | 'recovery' | 'rest';
-  status: 'complete' | 'current' | 'upcoming' | 'rest';
-}
+export type { WeeklyScheduleEntry } from '../types';
 
 const now = '2026-09-13T12:00:00.000Z';
 

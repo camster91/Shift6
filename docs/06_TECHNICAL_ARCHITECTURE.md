@@ -489,3 +489,14 @@ The active workout now offers deterministic catalogue substitutions before the f
 Migration 9 adds a structured, user-scoped `workout_check_ins` record. The completed workout now routes to `app/summary.tsx`, which reads the local session and completed sets, resolves the workout from the session's stored program-version snapshot, presents duration/set/volume facts, captures optional energy/soreness/effort/discomfort values, and queues the check-in through an idempotent outbox mutation. Notes stay local to the workout data boundary and are not accepted by the analytics allowlist. The summary explicitly labels web as preview-only when no durable database is available.
 
 The Review surface now exposes the deterministic cycle record in decision-ready language: completion/adherence, logged sets, volume, progression events, reported effort, cardio minutes, and discomfort flags. A completed cycle offers repeat, private-copy adjustment, or program-library selection; no AI-generated action is applied automatically.
+
+## Home snapshot scheduling checkpoint — 2026-09-14
+
+The Home surface now keeps its presentation tied to the local source of truth when a native profile and active cycle exist:
+
+- the saved onboarding display name is used for the greeting;
+- the active cycle's stored `ProgramVersion` snapshot supplies today's workout and the seven-day schedule;
+- schedule entries reflect completed local workouts and the device's current weekday while preserving recovery/rest fallback labels for days without a workout;
+- the web preview continues to use typed Barbell 30 fixtures because it intentionally has no durable SQLite provider.
+
+The schedule selector is pure domain logic with deterministic tests. Calendar-driven reminders, user-selected training weekdays, and multi-workout-per-day presentation remain later product surfaces.

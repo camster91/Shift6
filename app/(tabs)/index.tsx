@@ -16,8 +16,10 @@ import {
 } from '../../src/components/ui';
 import { useLocalDatabase } from '../../src/db/context';
 import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
+import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { getUserProgramVersion } from '../../src/db/programRepository';
 import { getCompletedWorkoutIds } from '../../src/db/progressRepository';
+import { buildWeeklySchedule, getTodayWorkout } from '../../src/domain/home';
 import {
   demoCycle,
   demoProgram,
@@ -30,10 +32,12 @@ import { colors, radii, spacing } from '../../src/design/tokens';
 
 export default function HomeScreen() {
   const database = useLocalDatabase();
+  const [currentUser, setCurrentUser] = useState(demoUser);
   const [currentCycle, setCurrentCycle] = useState(demoCycle);
   const [currentProgram, setCurrentProgram] = useState(demoProgram);
   const [currentProgramVersion, setCurrentProgramVersion] = useState(demoProgramVersion);
   const [todayWorkout, setTodayWorkout] = useState(demoWorkout);
+  const [schedule, setSchedule] = useState(demoSchedule);
   const [completedWorkoutIds, setCompletedWorkoutIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -43,9 +47,14 @@ export default function HomeScreen() {
       if (!database) return undefined;
 
       let active = true;
-      void getActiveTrainingCycle(database, 'guest-user')
-        .then(async (cycle) => {
-          if (!active || !cycle) return;
+      void Promise.all([
+        getOnboardingProfile(database, 'guest-user'),
+        getActiveTrainingCycle(database, 'guest-user'),
+      ])
+        .then(async ([profile, cycle]) => {
+          if (!active) return;
+          if (profile) setCurrentUser(profile.user);
+          if (!cycle) return;
           const [snapshot, completedIds] = await Promise.all([
             getUserProgramVersion(database, 'guest-user', cycle.programVersionId),
             getCompletedWorkoutIds(database, cycle.id, cycle.currentWeek),
@@ -56,7 +65,11 @@ export default function HomeScreen() {
           if (!snapshot) return;
           setCurrentProgram(snapshot.program);
           setCurrentProgramVersion(snapshot.version);
-          setTodayWorkout(snapshot.version.workouts[0] ?? demoWorkout);
+          const now = new Date();
+          setTodayWorkout(
+            getTodayWorkout(snapshot.version, now) ?? snapshot.version.workouts[0] ?? demoWorkout,
+          );
+          setSchedule(buildWeeklySchedule(snapshot.version, completedIds, now, demoSchedule));
         })
         .catch(() => undefined);
 
@@ -74,7 +87,7 @@ export default function HomeScreen() {
             SHIFT6
           </Text>
           <Text variant="caption" tone="muted">
-            {demoUser.displayName.toUpperCase()}'S TRAINING HOME
+            {currentUser.displayName.toUpperCase()}'S TRAINING HOME
           </Text>
         </View>
         <IconButton
@@ -158,7 +171,7 @@ export default function HomeScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scheduleList}
       >
-        {demoSchedule.map((entry) => {
+        {schedule.map((entry) => {
           const workout = entry.workoutId
             ? currentProgramVersion.workouts.find(
                 (candidate) =>

@@ -174,6 +174,15 @@ export interface Workout {
   exercises: WorkoutExercise[];
 }
 
+export interface WeeklyScheduleEntry {
+  id: string;
+  day: string;
+  title: string;
+  workoutId?: EntityId;
+  category: 'strength' | 'cardio' | 'recovery' | 'rest';
+  status: 'complete' | 'current' | 'upcoming' | 'rest';
+}
+
 export interface CycleModel {
   lengthWeeks: 6;
   weekSixMeaning:

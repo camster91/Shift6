@@ -41,4 +41,29 @@ describe('deterministic next-session targets', () => {
     });
     expect(target?.decision.reason).toContain('not enough completed-set data');
   });
+
+  it('does not carry old exercise performance into a replacement movement', () => {
+    const squat = demoWorkout.exercises[0]!;
+    const [target] = buildNextSessionTargets(
+      demoWorkout,
+      demoProgram.progressionStrategy,
+      [
+        {
+          id: 'completed-old-squat',
+          sessionId: 'session-1',
+          workoutExerciseId: squat.id,
+          exerciseId: 'exercise-old-squat',
+          setNumber: 1,
+          load: 185,
+          reps: 5,
+          completedAt: '2026-09-14T12:05:00.000Z',
+          idempotencyKey: 'session-1:old-squat:1',
+        },
+      ],
+      'imperial',
+    );
+
+    expect(target?.currentTarget.load).toBeUndefined();
+    expect(target?.decision.action).toBe('hold');
+  });
 });

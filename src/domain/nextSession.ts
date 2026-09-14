@@ -25,7 +25,10 @@ export function buildNextSessionTargets(
 ): NextSessionTarget[] {
   return workout.exercises.map((workoutExercise) => {
     const exerciseSets = completedSets.filter(
-      (completedSet) => completedSet.workoutExerciseId === workoutExercise.id,
+      (completedSet) =>
+        completedSet.workoutExerciseId === workoutExercise.id &&
+        (completedSet.exerciseId === undefined ||
+          completedSet.exerciseId === workoutExercise.exerciseId),
     );
     const latestLoad = [...exerciseSets]
       .reverse()

@@ -179,6 +179,30 @@ export async function getWorkoutSession(
   return row ? mapWorkoutSession(row) : null;
 }
 
+export async function getInProgressWorkoutSession(
+  database: SQLiteDatabase,
+  cycleId: string,
+  cycleWeek: number,
+  workoutId: string,
+): Promise<WorkoutSession | null> {
+  const row = await database.getFirstAsync<WorkoutSessionRow>(
+    `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
+            started_at, completed_at, is_offline
+       FROM workout_sessions
+      WHERE cycle_id = ?
+        AND cycle_week = ?
+        AND workout_id = ?
+        AND status = 'in-progress'
+      ORDER BY started_at DESC, id DESC
+      LIMIT 1;`,
+    cycleId,
+    cycleWeek,
+    workoutId,
+  );
+
+  return row ? mapWorkoutSession(row) : null;
+}
+
 export async function saveWorkoutDraft(
   database: SQLiteDatabase,
   sessionId: string,

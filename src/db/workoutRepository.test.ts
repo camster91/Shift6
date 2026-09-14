@@ -6,6 +6,7 @@ import {
   completeWorkoutSession,
   completeWorkoutSessionAndAdvanceCycle,
   getCompletedSets,
+  getInProgressWorkoutSession,
   getWorkoutDraft,
   saveCompletedSet,
   saveWorkoutDraft,
@@ -88,6 +89,32 @@ describe('saveCompletedSet', () => {
     } as unknown as SQLiteDatabase;
 
     await expect(getCompletedSets(database, 'session-1')).resolves.toEqual([completedSet]);
+  });
+
+  it('finds the latest unfinished session for a planned workout', async () => {
+    const database = {
+      getFirstAsync: async () => ({
+        id: 'session-resume',
+        cycle_id: 'cycle-1',
+        cycle_week: 2,
+        workout_id: 'workout-1',
+        program_version_id: 'program-version-1',
+        workout_focus: 'strength',
+        status: 'in-progress',
+        started_at: '2026-09-14T12:00:00.000Z',
+        completed_at: null,
+        is_offline: 1,
+      }),
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      getInProgressWorkoutSession(database, 'cycle-1', 2, 'workout-1'),
+    ).resolves.toMatchObject({
+      id: 'session-resume',
+      cycleWeek: 2,
+      status: 'in-progress',
+      isOffline: true,
+    });
   });
 
   it('only completes an in-progress session', async () => {

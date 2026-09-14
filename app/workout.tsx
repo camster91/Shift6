@@ -37,6 +37,7 @@ import { getLatestCompletedWorkoutSets } from '../src/db/progressRepository';
 import {
   completeWorkoutSessionAndAdvanceCycle,
   getCompletedSets,
+  getInProgressWorkoutSession,
   getWorkoutDraft,
   saveCompletedSet,
   saveWorkoutDraft,
@@ -64,6 +65,7 @@ export default function ActiveWorkoutScreen() {
     [activeProgramVersion, workoutId],
   );
   const [startedAt] = useState(() => new Date().toISOString());
+  const [resumedSession, setResumedSession] = useState<WorkoutSession | null>(null);
   const [values, setValues] = useState<Record<string, SetInputValues>>(() =>
     buildInitialValues(activeWorkout),
   );
@@ -100,16 +102,23 @@ export default function ActiveWorkoutScreen() {
   }, []);
 
   useEffect(() => {
+    setResumedSession(null);
     setValues(buildInitialValues(activeWorkout));
     setTargetOverrides({});
     setCompletedSetKeys(new Set());
     setEditingSetKey(null);
+    setLoadingSession(database !== null);
     setDraftReady(database === null);
   }, [activeWorkout.id, database]);
 
-  const session = useMemo<WorkoutSession>(
+  const proposedSession = useMemo<WorkoutSession>(
     () => ({
-      id: `session-${activeCycle.id}-week-${activeCycle.currentWeek}-${activeWorkout.id}`,
+      id: buildWorkoutSessionId(
+        activeCycle.id,
+        activeCycle.currentWeek,
+        activeWorkout.id,
+        startedAt,
+      ),
       cycleId: activeCycle.id,
       cycleWeek: activeCycle.currentWeek,
       workoutId: activeWorkout.id,
@@ -121,6 +130,7 @@ export default function ActiveWorkoutScreen() {
     }),
     [activeCycle.id, activeCycle.currentWeek, activeWorkout, connectivity, startedAt],
   );
+  const session = resumedSession ?? proposedSession;
 
   useEffect(() => {
     if (!database) {
@@ -161,13 +171,23 @@ export default function ActiveWorkoutScreen() {
     }
 
     let active = true;
-    void saveWorkoutSession(database, session)
-      .then(async () => {
+    void getInProgressWorkoutSession(
+      database,
+      activeCycle.id,
+      activeCycle.currentWeek,
+      activeWorkout.id,
+    )
+      .then(async (existingSession) => {
+        const sessionToUse = existingSession ?? session;
+        if (existingSession && existingSession.id !== session.id) {
+          setResumedSession(existingSession);
+        }
+        await saveWorkoutSession(database, sessionToUse);
         const [completedSets, previousSets, profile, draft] = await Promise.all([
-          getCompletedSets(database, session.id),
+          getCompletedSets(database, sessionToUse.id),
           getLatestCompletedWorkoutSets(database, activeCycle.id, activeWorkout.id),
           getOnboardingProfile(database, 'guest-user'),
-          getWorkoutDraft(database, session.id),
+          getWorkoutDraft(database, sessionToUse.id),
         ]);
         return {
           completedSets,
@@ -213,7 +233,7 @@ export default function ActiveWorkoutScreen() {
     return () => {
       active = false;
     };
-  }, [activeCycle.id, activeWorkout, database, loadingCycle, session]);
+  }, [activeCycle.currentWeek, activeCycle.id, activeWorkout, database, loadingCycle, session]);
 
   useEffect(() => {
     if (!database || !draftReady) return;
@@ -655,6 +675,16 @@ function parseNumber(value: string): number | undefined {
 
 function setKey(workoutExerciseId: string, setNumber: number): string {
   return `${workoutExerciseId}:${setNumber}`;
+}
+
+function buildWorkoutSessionId(
+  cycleId: string,
+  cycleWeek: number,
+  workoutId: string,
+  startedAt: string,
+): string {
+  const attempt = startedAt.replace(/[^0-9]/g, '');
+  return `session-${cycleId}-week-${cycleWeek}-${workoutId}-${attempt}`;
 }
 
 function completedSetKey(completedSet: CompletedSet): string {

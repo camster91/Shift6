@@ -442,9 +442,13 @@ The current app does not yet install a native connectivity listener or backgroun
 
 ## Workout pause and correction checkpoint — 2026-09-14
 
-The local workout boundary now includes migration 8 and a `workout_drafts` table. Active workout input is debounced into the local database, the same session ID is reused when the route is reopened, and completed set values are rehydrated before the screen becomes interactive. A pause/back action flushes the draft before leaving the route. Completed sets can be corrected in place; the stable set ID and idempotency key are retained while the pending outbox payload is replaced.
+The local workout boundary now includes migration 8 and a `workout_drafts` table. Active workout input is debounced into the local database, the latest in-progress session for the cycle/week/workout is reused when the route is reopened, and a new attempt receives a new stable session ID after a previous attempt is complete. Completed set values are rehydrated before the screen becomes interactive. A pause/back action flushes the draft before leaving the route. Completed sets can be corrected in place; the stable set ID and idempotency key are retained while the pending outbox payload is replaced.
 
 The database migration and repository tests cover the draft upsert, correction outbox update, and privacy deletion path. Native kill-and-reopen proof remains a device QA gate, and the web target continues to be a non-persistent preview.
+
+## Workout session identity checkpoint — 2026-09-14
+
+`getInProgressWorkoutSession` now resolves the latest unfinished session by cycle, week, and workout before the active route creates a new attempt. This preserves pause/reopen recovery across app restarts while allowing a completed workout to be repeated as a distinct session. The lookup and timestamp-derived attempt ID remain local-only; completed-set idempotency keys continue to be scoped to the resolved session, preventing duplicate set writes during retries.
 
 ## Post-workout summary checkpoint — 2026-09-14
 

@@ -161,6 +161,18 @@ export const MIGRATIONS: readonly Migration[] = [
         ON coach_proposals(user_id, cycle_id, status, created_at DESC);`,
     ],
   },
+  {
+    version: 8,
+    name: 'durable-workout-drafts',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS workout_drafts (
+        session_id TEXT PRIMARY KEY NOT NULL,
+        values_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (session_id) REFERENCES workout_sessions(id) ON DELETE CASCADE
+      );`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

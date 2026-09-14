@@ -23,6 +23,7 @@ import type {
   CompletedSet,
   SetTarget,
   TrainingCycle,
+  WorkoutDraftSetValues,
   WorkoutExercise,
   WorkoutSession,
 } from '../src/domain/types';
@@ -36,20 +37,17 @@ import { getUserProgramVersion } from '../src/db/programRepository';
 import { getLatestCompletedWorkoutSets } from '../src/db/progressRepository';
 import {
   completeWorkoutSession,
+  deleteWorkoutDraft,
   getCompletedSets,
+  getWorkoutDraft,
   saveCompletedSet,
+  saveWorkoutDraft,
   saveWorkoutSession,
+  updateCompletedSet,
 } from '../src/db/workoutRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
 
-interface SetInputValues {
-  load: string;
-  reps: string;
-  duration: string;
-  distance: string;
-  rpe: string;
-  rir: string;
-}
+type SetInputValues = WorkoutDraftSetValues;
 
 export default function ActiveWorkoutScreen() {
   const database = useLocalDatabase();
@@ -70,8 +68,10 @@ export default function ActiveWorkoutScreen() {
   );
   const [targetOverrides, setTargetOverrides] = useState<Record<string, SetTarget>>({});
   const [completedSetKeys, setCompletedSetKeys] = useState<Set<string>>(() => new Set());
+  const [editingSetKey, setEditingSetKey] = useState<string | null>(null);
   const [loadingCycle, setLoadingCycle] = useState(database !== null);
   const [loadingSession, setLoadingSession] = useState(database !== null);
+  const [draftReady, setDraftReady] = useState(database === null);
   const [savingSetKey, setSavingSetKey] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +82,9 @@ export default function ActiveWorkoutScreen() {
     setValues(buildInitialValues(activeWorkout));
     setTargetOverrides({});
     setCompletedSetKeys(new Set());
-  }, [activeWorkout.id]);
+    setEditingSetKey(null);
+    setDraftReady(database === null);
+  }, [activeWorkout.id, database]);
 
   const session = useMemo<WorkoutSession>(
     () => ({
@@ -133,24 +135,27 @@ export default function ActiveWorkoutScreen() {
     if (loadingCycle) return;
     if (!database) {
       setLoadingSession(false);
+      setDraftReady(true);
       return;
     }
 
     let active = true;
     void saveWorkoutSession(database, session)
       .then(async () => {
-        const [completedSets, previousSets, profile] = await Promise.all([
+        const [completedSets, previousSets, profile, draft] = await Promise.all([
           getCompletedSets(database, session.id),
           getLatestCompletedWorkoutSets(database, activeCycle.id, activeWorkout.id),
           getOnboardingProfile(database, 'guest-user'),
+          getWorkoutDraft(database, session.id),
         ]);
         return {
           completedSets,
           previousSets,
           unitSystem: profile?.user.unitSystem ?? 'imperial',
+          draft,
         };
       })
-      .then(({ completedSets, previousSets, unitSystem }) => {
+      .then(({ completedSets, previousSets, unitSystem, draft }) => {
         if (!active) return;
         setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
         const nextTargets =
@@ -166,7 +171,16 @@ export default function ActiveWorkoutScreen() {
           nextTargets.map((target) => [target.workoutExerciseId, target.decision.nextTarget]),
         );
         setTargetOverrides(overrides);
-        setValues((current) => mergeInitialValues(activeWorkout, overrides, current));
+        setValues((current) =>
+          mergeDraftValues(
+            mergeCompletedSetValues(
+              mergeInitialValues(activeWorkout, overrides, current),
+              completedSets,
+            ),
+            draft,
+          ),
+        );
+        setDraftReady(true);
       })
       .catch(() => {
         if (active) setError('We could not load this workout from local storage.');
@@ -179,6 +193,18 @@ export default function ActiveWorkoutScreen() {
       active = false;
     };
   }, [activeCycle.id, activeWorkout, database, loadingCycle, session]);
+
+  useEffect(() => {
+    if (!database || !draftReady) return;
+
+    const timeout = setTimeout(() => {
+      void saveWorkoutDraft(database, session.id, values, new Date().toISOString()).catch(() => {
+        setError('We could not save the unfinished workout locally.');
+      });
+    }, 150);
+
+    return () => clearTimeout(timeout);
+  }, [database, draftReady, session.id, values]);
 
   useEffect(() => {
     if (restEndsAt === null) return;
@@ -221,7 +247,9 @@ export default function ActiveWorkoutScreen() {
 
   const handleCompleteSet = async (workoutExercise: WorkoutExercise, setNumber: number) => {
     const key = setKey(workoutExercise.id, setNumber);
-    if (completedSetKeys.has(key) || savingSetKey) return;
+    const alreadyCompleted = completedSetKeys.has(key);
+    const editing = editingSetKey === key;
+    if ((alreadyCompleted && !editing) || savingSetKey) return;
 
     const target =
       targetOverrides[workoutExercise.id] ?? workoutExercise.sets[setNumber - 1]?.target;
@@ -252,10 +280,21 @@ export default function ActiveWorkoutScreen() {
     setSavingSetKey(key);
     setError(null);
     try {
-      if (database) await saveCompletedSet(database, completedSet);
+      if (database) {
+        const result = alreadyCompleted
+          ? await updateCompletedSet(database, completedSet)
+          : await saveCompletedSet(database, completedSet);
+        if (alreadyCompleted && result === 'missing') {
+          throw new Error('This completed set is no longer available locally.');
+        }
+      }
       setCompletedSetKeys((current) => new Set(current).add(key));
-      const restSeconds = workoutExercise.sets[setNumber - 1]?.restSeconds ?? 90;
-      setRestEndsAt(Date.now() + restSeconds * 1000);
+      if (editing) {
+        setEditingSetKey(null);
+      } else {
+        const restSeconds = workoutExercise.sets[setNumber - 1]?.restSeconds ?? 90;
+        setRestEndsAt(Date.now() + restSeconds * 1000);
+      }
     } catch (saveError) {
       setError(
         saveError instanceof Error ? saveError.message : 'We could not save this set locally.',
@@ -263,6 +302,18 @@ export default function ActiveWorkoutScreen() {
     } finally {
       setSavingSetKey(null);
     }
+  };
+
+  const handlePauseWorkout = async () => {
+    if (database) {
+      try {
+        await saveWorkoutDraft(database, session.id, values, new Date().toISOString());
+      } catch {
+        setError('We could not save the unfinished workout locally.');
+        return;
+      }
+    }
+    router.back();
   };
 
   const handleFinishWorkout = async () => {
@@ -278,6 +329,7 @@ export default function ActiveWorkoutScreen() {
           session.cycleId,
           session.cycleWeek,
         );
+        await deleteWorkoutDraft(database, session.id);
       }
       router.replace('/');
     } catch (finishError) {
@@ -306,7 +358,7 @@ export default function ActiveWorkoutScreen() {
         <IconButton
           icon={<Ionicons name="arrow-back" size={22} color={colors.ink} />}
           label="Back to Home"
-          onPress={() => router.back()}
+          onPress={() => void handlePauseWorkout()}
         />
         <View style={styles.headerCopy}>
           <Text variant="caption" tone="muted">
@@ -316,7 +368,7 @@ export default function ActiveWorkoutScreen() {
             {completedCount} of {totalSets} sets
           </Text>
         </View>
-        <View style={styles.headerSpacer} />
+        <Button label="Pause" variant="ghost" onPress={() => void handlePauseWorkout()} />
       </View>
 
       <Text variant="display" accessibilityRole="header" style={styles.title}>
@@ -381,6 +433,7 @@ export default function ActiveWorkoutScreen() {
             {workoutExercise.sets.map((workoutSet) => {
               const key = setKey(workoutExercise.id, workoutSet.setNumber);
               const completed = completedSetKeys.has(key);
+              const editing = editingSetKey === key;
               return (
                 <View key={workoutSet.id} style={styles.setRow}>
                   <View style={styles.setLabel}>
@@ -391,7 +444,7 @@ export default function ActiveWorkoutScreen() {
                   </View>
                   <TextInput
                     accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} load`}
-                    editable={!completed}
+                    editable={!completed || editing}
                     keyboardType="decimal-pad"
                     onChangeText={(value) => updateValue(key, 'load', value)}
                     placeholder="Load"
@@ -401,7 +454,7 @@ export default function ActiveWorkoutScreen() {
                   />
                   <TextInput
                     accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} reps`}
-                    editable={!completed}
+                    editable={!completed || editing}
                     keyboardType="number-pad"
                     onChangeText={(value) => updateValue(key, 'reps', value)}
                     placeholder="Reps"
@@ -410,11 +463,15 @@ export default function ActiveWorkoutScreen() {
                     value={values[key]?.reps ?? ''}
                   />
                   <Button
-                    label={completed ? 'Done' : 'Complete'}
-                    variant={completed ? 'secondary' : 'primary'}
-                    disabled={completed}
+                    label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
+                    variant={completed && !editing ? 'secondary' : 'primary'}
+                    disabled={completed && !editing}
                     loading={savingSetKey === key}
-                    onPress={() => handleCompleteSet(workoutExercise, workoutSet.setNumber)}
+                    onPress={
+                      completed && !editing
+                        ? () => setEditingSetKey(key)
+                        : () => handleCompleteSet(workoutExercise, workoutSet.setNumber)
+                    }
                     style={styles.completeButton}
                   />
                 </View>
@@ -477,6 +534,50 @@ function mergeInitialValues(
       ];
     }),
   );
+}
+
+function mergeCompletedSetValues(
+  initial: Record<string, SetInputValues>,
+  completedSets: readonly CompletedSet[],
+): Record<string, SetInputValues> {
+  const completedByKey = new Map(
+    completedSets.map((completedSet) => [completedSetKey(completedSet), completedSet]),
+  );
+
+  return Object.fromEntries(
+    Object.entries(initial).map(([key, values]) => {
+      const completedSet = completedByKey.get(key);
+      if (!completedSet) return [key, values];
+
+      return [
+        key,
+        {
+          ...values,
+          load: valueOrEmpty(completedSet.load),
+          reps: valueOrEmpty(completedSet.reps),
+          duration: valueOrEmpty(completedSet.durationSeconds),
+          distance: valueOrEmpty(completedSet.distanceMeters),
+          rpe: valueOrEmpty(completedSet.rpe),
+          rir: valueOrEmpty(completedSet.rir),
+        },
+      ];
+    }),
+  );
+}
+
+function mergeDraftValues(
+  initial: Record<string, SetInputValues>,
+  draft: Record<string, SetInputValues> | null,
+): Record<string, SetInputValues> {
+  if (!draft) return initial;
+
+  return Object.fromEntries(
+    Object.entries(initial).map(([key, values]) => [key, { ...values, ...(draft[key] ?? {}) }]),
+  );
+}
+
+function valueOrEmpty(value: number | undefined): string {
+  return value === undefined ? '' : String(value);
 }
 
 function emptySetInput(target?: SetTarget): SetInputValues {

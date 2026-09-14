@@ -141,6 +141,16 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
       userId,
     );
     await database.runAsync(
+      `DELETE FROM workout_drafts
+        WHERE session_id IN (
+          SELECT workout_sessions.id
+            FROM workout_sessions
+            INNER JOIN training_cycles ON training_cycles.id = workout_sessions.cycle_id
+           WHERE training_cycles.user_id = ?
+        );`,
+      userId,
+    );
+    await database.runAsync(
       `DELETE FROM workout_sessions
         WHERE cycle_id IN (SELECT id FROM training_cycles WHERE user_id = ?);`,
       userId,

@@ -54,10 +54,11 @@ describe('deleteLocalUserData', () => {
 
     await expect(deleteLocalUserData(database, 'guest-user')).resolves.toBeUndefined();
 
-    expect(calls).toHaveLength(10);
+    expect(calls).toHaveLength(11);
     expect(calls[0]?.sql).toContain('DELETE FROM sync_outbox');
     expect(calls[0]?.params.every((param) => param === 'guest-user')).toBe(true);
     expect(calls[1]?.sql).toContain('DELETE FROM completed_sets');
+    expect(calls[2]?.sql).toContain('DELETE FROM workout_drafts');
     expect(calls.at(-1)?.sql).toContain('DELETE FROM user_profiles');
   });
 });

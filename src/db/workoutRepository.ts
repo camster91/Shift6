@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { CompletedSet, WorkoutSession } from '../domain/types';
+import type { CompletedSet, WorkoutDraftValues, WorkoutSession } from '../domain/types';
 
 interface WorkoutSessionRow {
   id: string;
@@ -141,6 +141,99 @@ export async function getCompletedSets(
     completedAt: row.completed_at,
     idempotencyKey: row.idempotency_key,
   }));
+}
+
+export async function saveWorkoutDraft(
+  database: SQLiteDatabase,
+  sessionId: string,
+  values: WorkoutDraftValues,
+  updatedAt: string,
+): Promise<void> {
+  await database.runAsync(
+    `INSERT INTO workout_drafts (session_id, values_json, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(session_id) DO UPDATE SET
+       values_json = excluded.values_json,
+       updated_at = excluded.updated_at;`,
+    sessionId,
+    JSON.stringify(values),
+    updatedAt,
+  );
+}
+
+export async function getWorkoutDraft(
+  database: SQLiteDatabase,
+  sessionId: string,
+): Promise<WorkoutDraftValues | null> {
+  const row = await database.getFirstAsync<{ values_json: string }>(
+    `SELECT values_json
+       FROM workout_drafts
+      WHERE session_id = ?
+      LIMIT 1;`,
+    sessionId,
+  );
+  if (!row) return null;
+
+  try {
+    return JSON.parse(row.values_json) as WorkoutDraftValues;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteWorkoutDraft(
+  database: SQLiteDatabase,
+  sessionId: string,
+): Promise<void> {
+  await database.runAsync('DELETE FROM workout_drafts WHERE session_id = ?;', sessionId);
+}
+
+/**
+ * Corrects a previously completed set without changing its stable identity.
+ * The replacement payload overwrites the pending outbox mutation, so a retry
+ * cannot create a second set record on the server.
+ */
+export async function updateCompletedSet(
+  database: SQLiteDatabase,
+  completedSet: CompletedSet,
+): Promise<'updated' | 'missing'> {
+  let updated = false;
+
+  await database.withTransactionAsync(async () => {
+    const result = await database.runAsync(
+      `UPDATE completed_sets
+          SET load = ?, reps = ?, duration_seconds = ?, distance_meters = ?,
+              rpe = ?, rir = ?, completed_at = ?
+        WHERE id = ?;`,
+      completedSet.load ?? null,
+      completedSet.reps ?? null,
+      completedSet.durationSeconds ?? null,
+      completedSet.distanceMeters ?? null,
+      completedSet.rpe ?? null,
+      completedSet.rir ?? null,
+      completedSet.completedAt,
+      completedSet.id,
+    );
+    if (result.changes === 0) return;
+
+    updated = true;
+    await database.runAsync(
+      `INSERT INTO sync_outbox
+        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(idempotency_key) DO UPDATE SET
+         payload_json = excluded.payload_json,
+         last_error = NULL;`,
+      `outbox-${completedSet.idempotencyKey}`,
+      completedSet.idempotencyKey,
+      'completed-set',
+      completedSet.id,
+      JSON.stringify(completedSet),
+      completedSet.completedAt,
+    );
+  });
+
+  return updated ? 'updated' : 'missing';
 }
 
 export async function completeWorkoutSession(

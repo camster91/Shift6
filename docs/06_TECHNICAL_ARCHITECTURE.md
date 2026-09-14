@@ -405,3 +405,9 @@ No network call is made by the active workout, and no sync provider or credentia
 - connectivity, backend, and future background scheduling remain injectable rather than embedded in workout/domain logic.
 
 The current app does not yet install a native connectivity listener or background task. Native reconnect, app-background execution, conflict resolution, and device fault testing remain release gates.
+
+## Workout pause and correction checkpoint — 2026-09-14
+
+The local workout boundary now includes migration 8 and a `workout_drafts` table. Active workout input is debounced into the local database, the same session ID is reused when the route is reopened, and completed set values are rehydrated before the screen becomes interactive. A pause/back action flushes the draft before leaving the route. Completed sets can be corrected in place; the stable set ID and idempotency key are retained while the pending outbox payload is replaced.
+
+The database migration and repository tests cover the draft upsert, correction outbox update, and privacy deletion path. Native kill-and-reopen proof remains a device QA gate, and the web target continues to be a non-persistent preview.

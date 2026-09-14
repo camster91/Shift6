@@ -257,6 +257,17 @@ export interface CompletedSet {
   idempotencyKey: string;
 }
 
+export interface WorkoutDraftSetValues {
+  load: string;
+  reps: string;
+  duration: string;
+  distance: string;
+  rpe: string;
+  rir: string;
+}
+
+export type WorkoutDraftValues = Record<string, WorkoutDraftSetValues>;
+
 export interface ProgressionRule {
   id: EntityId;
   strategy: ProgressionStrategy;

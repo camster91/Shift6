@@ -4,8 +4,11 @@ import type { CompletedSet } from '../domain/types';
 import {
   completeWorkoutSession,
   getCompletedSets,
+  getWorkoutDraft,
   saveCompletedSet,
+  saveWorkoutDraft,
   saveWorkoutSession,
+  updateCompletedSet,
 } from './workoutRepository';
 
 const completedSet: CompletedSet = {
@@ -175,5 +178,60 @@ describe('saveWorkoutSession', () => {
     expect(calls[1]).toContain('INSERT OR IGNORE INTO workout_sessions');
     expect(calls[2]).toContain('INSERT OR IGNORE INTO sync_outbox');
     expect(calls[3]).toBe('COMMIT TRANSACTION');
+  });
+});
+
+describe('workout drafts and corrections', () => {
+  it('round-trips unfinished input through the local draft table', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const database = {
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      getFirstAsync: async () => ({
+        values_json: JSON.stringify({ 'exercise:1': { load: '95' } }),
+      }),
+    } as unknown as SQLiteDatabase;
+
+    await saveWorkoutDraft(
+      database,
+      'session-1',
+      {
+        'exercise:1': { load: '95', reps: '5', duration: '', distance: '', rpe: '', rir: '' },
+      },
+      '2026-09-14T12:00:00.000Z',
+    );
+
+    await expect(getWorkoutDraft(database, 'session-1')).resolves.toEqual({
+      'exercise:1': { load: '95' },
+    });
+    expect(calls[0]?.sql).toContain('ON CONFLICT(session_id) DO UPDATE');
+  });
+
+  it('updates a completed set and replaces its pending outbox payload', async () => {
+    const calls: string[] = [];
+    const database = {
+      runAsync: async (sql: string) => {
+        calls.push(sql);
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      updateCompletedSet(database, {
+        id: 'set-1',
+        sessionId: 'session-1',
+        workoutExerciseId: 'workout-exercise-1',
+        setNumber: 1,
+        load: 100,
+        reps: 5,
+        completedAt: '2026-09-14T12:00:00.000Z',
+        idempotencyKey: 'session-1:workout-exercise-1:1',
+      }),
+    ).resolves.toBe('updated');
+    expect(calls[0]).toContain('UPDATE completed_sets');
+    expect(calls[1]).toContain('ON CONFLICT(idempotency_key) DO UPDATE');
   });
 });

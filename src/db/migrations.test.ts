@@ -65,4 +65,11 @@ describe('local database migrations', () => {
     expect(statements).toContain('cycle_id TEXT NOT NULL');
     expect(statements).toContain('CREATE INDEX IF NOT EXISTS coach_proposals_user_cycle_status');
   });
+
+  it('stores unfinished workout input locally for pause and resume', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS workout_drafts');
+    expect(statements).toContain('FOREIGN KEY (session_id) REFERENCES workout_sessions(id)');
+  });
 });

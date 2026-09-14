@@ -92,6 +92,33 @@ describe('immutable custom program builder', () => {
     expect(demoProgramVersion.workouts[0]!.exercises).toHaveLength(strengthA.exercises.length);
   });
 
+  it('does not reuse an existing workout-exercise ID after removing a middle exercise', () => {
+    const copied = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-copy-id-safety',
+      newVersionId: 'program-copy-version-id-safety',
+      createdAt: '2026-09-14T15:00:00.000Z',
+    });
+    const workout = copied.version.workouts[0]!;
+    const afterRemoval = removeExerciseFromWorkout(
+      copied.version,
+      workout.id,
+      workout.exercises[1]!.id,
+    );
+    const afterAdd = addExerciseToWorkout(afterRemoval, workout.id, {
+      exerciseId: 'exercise-plank',
+      setCount: 2,
+      target: { durationSeconds: 30 },
+    });
+    const ids = afterAdd.workouts
+      .find((candidate) => candidate.id === workout.id)!
+      .exercises.map((exercise) => exercise.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('adds an optional empty workout without changing required cycle semantics', () => {
     const copy = createProgramCopy({
       sourceProgram: demoProgram,

@@ -172,7 +172,7 @@ export function addExerciseToWorkout(
   if (!workout) throw new Error('Workout not found in this program version.');
 
   const order = workout.exercises.length + 1;
-  const workoutExerciseId = `${workoutId}-exercise-${order}`;
+  const workoutExerciseId = createNextWorkoutExerciseId(workout, workoutId);
   const workoutExercise: WorkoutExercise = {
     id: workoutExerciseId,
     exerciseId,
@@ -397,6 +397,17 @@ function cloneProgramVersion(
     })),
     createdAt,
   };
+}
+
+function createNextWorkoutExerciseId(workout: Workout, workoutId: string): string {
+  const existingIds = new Set(workout.exercises.map((exercise) => exercise.id));
+  let suffix = workout.exercises.length + 1;
+  let candidate = `${workoutId}-exercise-${suffix}`;
+  while (existingIds.has(candidate)) {
+    suffix += 1;
+    candidate = `${workoutId}-exercise-${suffix}`;
+  }
+  return candidate;
 }
 
 function updateWorkout(

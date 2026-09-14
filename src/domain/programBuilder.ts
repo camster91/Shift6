@@ -215,6 +215,33 @@ export function setWorkoutExerciseSetCount(
   }));
 }
 
+export function setWorkoutExerciseTarget(
+  version: ProgramVersion,
+  workoutId: string,
+  workoutExerciseId: string,
+  target: SetTarget,
+): ProgramVersion {
+  assertTarget(target);
+
+  const workout = version.workouts.find((candidate) => candidate.id === workoutId);
+  if (!workout) throw new Error('Workout not found in this program version.');
+  if (!workout.exercises.some((exercise) => exercise.id === workoutExerciseId)) {
+    throw new Error('Exercise not found in this workout.');
+  }
+
+  return updateWorkout(version, workoutId, (currentWorkout) => ({
+    ...currentWorkout,
+    exercises: currentWorkout.exercises.map((exercise) =>
+      exercise.id === workoutExerciseId
+        ? {
+            ...exercise,
+            sets: exercise.sets.map((set) => ({ ...set, target: cloneTarget(target) })),
+          }
+        : exercise,
+    ),
+  }));
+}
+
 export function createCustomExercise({
   id,
   name,
@@ -309,5 +336,11 @@ function cloneTarget(target: SetTarget): SetTarget {
 function assertSetCount(setCount: number): void {
   if (!Number.isInteger(setCount) || setCount < 1 || setCount > 20) {
     throw new Error('A workout exercise needs between 1 and 20 sets.');
+  }
+}
+
+function assertTarget(target: SetTarget): void {
+  if (Object.keys(target).length === 0) {
+    throw new Error('A workout exercise needs at least one target value.');
   }
 }

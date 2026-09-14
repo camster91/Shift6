@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button, Card, ErrorState, IconButton, Screen, Text } from '../src/components/ui';
@@ -8,6 +8,7 @@ import { findExerciseSubstitutions } from '../src/domain/equipment';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { demoProgram, demoProgramVersion, demoUser } from '../src/domain/fixtures/home';
 import { createTrainingCycle } from '../src/domain/cycle';
+import { resolveTrackingType } from '../src/domain/exerciseTracking';
 import {
   addExerciseToWorkout,
   createCustomExercise,
@@ -17,8 +18,9 @@ import {
   reorderWorkoutExercises,
   renameProgram,
   setWorkoutExerciseSetCount,
+  setWorkoutExerciseTarget,
 } from '../src/domain/programBuilder';
-import type { Exercise } from '../src/domain/types';
+import type { Exercise, SetTarget, TrackingType, UnitSystem } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
 import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { saveCustomExercise, saveProgramVersion } from '../src/db/programRepository';
@@ -54,6 +56,16 @@ export default function ProgramBuilderScreen() {
         [...foundationalExercises, ...Object.values(customExercises)].map((exercise) => [
           exercise.id,
           exercise.name,
+        ]),
+      ),
+    [customExercises],
+  );
+  const exerciseById = useMemo(
+    () =>
+      new Map(
+        [...foundationalExercises, ...Object.values(customExercises)].map((exercise) => [
+          exercise.id,
+          exercise,
         ]),
       ),
     [customExercises],
@@ -223,6 +235,11 @@ export default function ProgramBuilderScreen() {
           </View>
           {workout.exercises.map((exercise, exerciseIndex) => {
             const exerciseName = exerciseNameById.get(exercise.exerciseId) ?? 'Custom movement';
+            const trackingType = resolveTrackingType(
+              exercise.exerciseId,
+              exercise.sets[0]?.target,
+              [...exerciseById.values()],
+            );
             const sourceExercise = foundationalExercises.find(
               (candidate) => candidate.id === exercise.exerciseId,
             );
@@ -337,6 +354,18 @@ export default function ProgramBuilderScreen() {
                     />
                   </View>
                 </View>
+                <TargetEditor
+                  exerciseName={exerciseName}
+                  setCount={exercise.sets.length}
+                  target={exercise.sets[0]?.target ?? {}}
+                  trackingType={trackingType}
+                  unitSystem={demoUser.unitSystem}
+                  onChange={(target) => {
+                    updateDraftVersion((version) =>
+                      setWorkoutExerciseTarget(version, workout.id, exercise.id, target),
+                    );
+                  }}
+                />
                 {substitutionExerciseId === exercise.id && substitutions.length > 0 ? (
                   <Card
                     tone="lavender"
@@ -438,6 +467,220 @@ export default function ProgramBuilderScreen() {
   );
 }
 
+interface TargetEditorProps {
+  exerciseName: string;
+  setCount: number;
+  target: SetTarget;
+  trackingType: TrackingType;
+  unitSystem: UnitSystem;
+  onChange: (target: SetTarget) => void;
+}
+
+function TargetEditor({
+  exerciseName,
+  setCount,
+  target,
+  trackingType,
+  unitSystem,
+  onChange,
+}: TargetEditorProps) {
+  const commit = (field: NumericTargetField, rawValue: string): boolean => {
+    const nextTarget = updateNumericTarget(target, field, rawValue, unitSystem);
+    if (!hasTargetValue(nextTarget)) return false;
+    onChange(nextTarget);
+    return true;
+  };
+  const showsReps = trackingType === 'reps' || trackingType === 'custom';
+  const showsLoad = trackingType === 'reps' || trackingType === 'custom';
+  const showsTime = trackingType === 'time' || trackingType === 'duration-and-distance';
+  const showsDistance = trackingType === 'distance' || trackingType === 'duration-and-distance';
+  const showsEffort = trackingType === 'reps' || trackingType === 'custom';
+
+  return (
+    <View accessibilityLabel={`Target editor for ${exerciseName}`} style={styles.targetEditor}>
+      <Text variant="caption" tone="muted">
+        TARGET FOR ALL {setCount} SETS
+      </Text>
+      <Text variant="small" tone="muted" style={styles.targetHint}>
+        Editing this prescription applies it to every set in this exercise.
+      </Text>
+      <View style={styles.targetFields}>
+        {showsReps ? (
+          <TargetField
+            label="Reps"
+            accessibilityLabel={`Reps target for ${exerciseName}`}
+            value={formatRepsTarget(target.reps)}
+            placeholder="8"
+            onCommit={(value) => commit('reps', value)}
+          />
+        ) : null}
+        {showsLoad ? (
+          <TargetField
+            label={`Load (${unitSystem === 'metric' ? 'kg' : 'lb'})`}
+            accessibilityLabel={`Load target for ${exerciseName}`}
+            value={target.load?.value === undefined ? '' : String(target.load.value)}
+            placeholder="Optional"
+            onCommit={(value) => commit('load', value)}
+          />
+        ) : null}
+        {showsTime ? (
+          <TargetField
+            label="Time (sec)"
+            accessibilityLabel={`Time target for ${exerciseName}`}
+            value={target.durationSeconds === undefined ? '' : String(target.durationSeconds)}
+            placeholder="30"
+            onCommit={(value) => commit('durationSeconds', value)}
+          />
+        ) : null}
+        {showsDistance ? (
+          <TargetField
+            label="Distance (m)"
+            accessibilityLabel={`Distance target for ${exerciseName}`}
+            value={target.distanceMeters === undefined ? '' : String(target.distanceMeters)}
+            placeholder="500"
+            onCommit={(value) => commit('distanceMeters', value)}
+          />
+        ) : null}
+        {showsEffort ? (
+          <>
+            <TargetField
+              label="RPE"
+              accessibilityLabel={`RPE target for ${exerciseName}`}
+              value={target.rpe === undefined ? '' : String(target.rpe)}
+              placeholder="Optional"
+              onCommit={(value) => commit('rpe', value)}
+            />
+            <TargetField
+              label="RIR"
+              accessibilityLabel={`RIR target for ${exerciseName}`}
+              value={target.rir === undefined ? '' : String(target.rir)}
+              placeholder="Optional"
+              onCommit={(value) => commit('rir', value)}
+            />
+          </>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+interface TargetFieldProps {
+  label: string;
+  accessibilityLabel: string;
+  value: string;
+  placeholder: string;
+  onCommit: (value: string) => boolean;
+}
+
+function TargetField({
+  label,
+  accessibilityLabel,
+  value,
+  placeholder,
+  onCommit,
+}: TargetFieldProps) {
+  const [draftValue, setDraftValue] = useState(value);
+
+  useEffect(() => {
+    setDraftValue(value);
+  }, [value]);
+
+  return (
+    <View style={styles.targetField}>
+      <Text variant="caption" tone="muted">
+        {label}
+      </Text>
+      <TextInput
+        accessibilityLabel={accessibilityLabel}
+        keyboardType="decimal-pad"
+        onBlur={() => {
+          if (!onCommit(draftValue)) setDraftValue(value);
+        }}
+        onChangeText={setDraftValue}
+        placeholder={placeholder}
+        placeholderTextColor={colors.inkMuted}
+        selectTextOnFocus
+        style={styles.targetInput}
+        value={draftValue}
+      />
+    </View>
+  );
+}
+
+type NumericTargetField = 'reps' | 'load' | 'durationSeconds' | 'distanceMeters' | 'rpe' | 'rir';
+
+function updateNumericTarget(
+  target: SetTarget,
+  field: NumericTargetField,
+  rawValue: string,
+  unitSystem: UnitSystem,
+): SetTarget {
+  const nextTarget: SetTarget = {
+    ...target,
+    reps: typeof target.reps === 'object' ? { ...target.reps } : target.reps,
+    load: target.load ? { ...target.load } : undefined,
+  };
+  const trimmedValue = rawValue.trim();
+
+  if (!trimmedValue) {
+    if (field === 'load') {
+      nextTarget.load = undefined;
+    } else {
+      delete nextTarget[field];
+    }
+    return nextTarget;
+  }
+
+  const parsedValue = Number(trimmedValue);
+  if (!Number.isFinite(parsedValue)) return target;
+
+  switch (field) {
+    case 'reps':
+      nextTarget.reps = Math.max(1, Math.round(parsedValue));
+      break;
+    case 'load':
+      nextTarget.load = {
+        ...nextTarget.load,
+        value: Math.max(0, parsedValue),
+        unit: nextTarget.load?.unit ?? unitSystem,
+      };
+      break;
+    case 'durationSeconds':
+      nextTarget.durationSeconds = Math.max(0, Math.round(parsedValue));
+      break;
+    case 'distanceMeters':
+      nextTarget.distanceMeters = Math.max(0, parsedValue);
+      break;
+    case 'rpe':
+      nextTarget.rpe = Math.min(10, Math.max(0, parsedValue));
+      break;
+    case 'rir':
+      nextTarget.rir = Math.min(10, Math.max(0, parsedValue));
+      break;
+  }
+
+  return nextTarget;
+}
+
+function formatRepsTarget(reps: SetTarget['reps']): string {
+  if (reps === undefined) return '';
+  if (typeof reps === 'number') return String(reps);
+  return `${reps.min}-${reps.max}`;
+}
+
+function hasTargetValue(target: SetTarget): boolean {
+  return Boolean(
+    target.reps !== undefined ||
+    target.durationSeconds !== undefined ||
+    target.distanceMeters !== undefined ||
+    target.load?.value !== undefined ||
+    target.load?.percentOfEstimatedOneRepMax !== undefined ||
+    target.rpe !== undefined ||
+    target.rir !== undefined ||
+    target.tempo,
+  );
+}
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -495,6 +738,35 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  targetEditor: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  targetHint: {
+    marginTop: spacing.xxs,
+  },
+  targetFields: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  targetField: {
+    width: 86,
+    gap: spacing.xxs,
+  },
+  targetInput: {
+    minHeight: 42,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.canvas,
+    color: colors.ink,
+    fontSize: 15,
   },
   exerciseCopy: {
     flex: 1,

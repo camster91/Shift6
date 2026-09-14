@@ -421,6 +421,10 @@ Drag-and-drop, supersets/circuits, target editing, and warm-up/cooldown/cardio b
 
 The builder now also exposes deterministic substitution choices for catalogue-backed exercises. Candidates are ranked from the equipment-aware domain service and applying one changes only the draft's exercise reference while preserving the workout-exercise identity and set prescription. Active-workout substitution remains a separate boundary until one-time versus future-session history semantics are explicit.
 
+## Builder target configuration checkpoint — 2026-09-14
+
+The builder now exposes a tracking-aware target editor for each exercise. Reps, load, RPE, and RIR are available for rep-based movements; time and distance fields are shown for timed/cardio movements. The immutable `setWorkoutExerciseTarget` operation applies a cloned prescription to all sets in that exercise while preserving set IDs and the source version. This is an intentionally compact first target boundary: per-set overrides, rest editing, sections, supersets/circuits, warm-ups, cooldowns, and blank-workout creation remain separate increments.
+
 ## Sync outbox implementation checkpoint — 2026-09-13
 
 The local/cloud handoff now has an explicit provider boundary without introducing a backend vendor:

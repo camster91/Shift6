@@ -7,6 +7,7 @@ import {
   replaceExerciseInWorkout,
   reorderWorkoutExercises,
   setWorkoutExerciseSetCount,
+  setWorkoutExerciseTarget,
 } from './programBuilder';
 
 describe('immutable custom program builder', () => {
@@ -132,6 +133,50 @@ describe('immutable custom program builder', () => {
     );
     expect(() => setWorkoutExerciseSetCount(copy.version, workout.id, exercise.id, 21)).toThrow(
       'between 1 and 20 sets',
+    );
+  });
+
+  it('applies a cloned target to every set without changing set identity', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-targets',
+      newVersionId: 'program-custom-targets-version-1',
+      createdAt: '2026-09-14T12:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const exercise = workout.exercises[0]!;
+    const originalSetIds = exercise.sets.map((set) => set.id);
+    const target = {
+      reps: { min: 6, max: 8 },
+      load: { value: 95, unit: 'imperial' as const },
+      rir: 1,
+    };
+
+    const updated = setWorkoutExerciseTarget(copy.version, workout.id, exercise.id, target);
+    const updatedExercise = updated.workouts[0]!.exercises[0]!;
+
+    expect(updatedExercise.sets.map((set) => set.id)).toEqual(originalSetIds);
+    expect(updatedExercise.sets.map((set) => set.target)).toEqual(exercise.sets.map(() => target));
+    expect(updatedExercise.sets[0]?.target).not.toBe(target);
+    expect(copy.version.workouts[0]!.exercises[0]!.sets[0]?.target).toEqual({ reps: 5, rir: 2 });
+  });
+
+  it('rejects an empty target update', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-targets-empty',
+      newVersionId: 'program-custom-targets-empty-version-1',
+      createdAt: '2026-09-14T12:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const exercise = workout.exercises[0]!;
+
+    expect(() => setWorkoutExerciseTarget(copy.version, workout.id, exercise.id, {})).toThrow(
+      'at least one target value',
     );
   });
 

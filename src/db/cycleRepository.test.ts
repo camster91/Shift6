@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { demoCycle } from '../domain/fixtures/home';
-import { saveTrainingCycle } from './cycleRepository';
+import { advanceTrainingCycleAfterCompletedWorkout, saveTrainingCycle } from './cycleRepository';
 
 function fakeDatabase() {
   const calls: Array<{ sql: string; params: unknown[] }> = [];
@@ -31,5 +31,42 @@ describe('saveTrainingCycle', () => {
     expect(calls[2]?.sql).toContain('INSERT INTO training_cycles');
     expect(calls[2]?.params).toContain(JSON.stringify(demoCycle.weeks));
     expect(calls.at(-1)?.sql).toBe('COMMIT TRANSACTION');
+  });
+});
+
+describe('advanceTrainingCycleAfterCompletedWorkout', () => {
+  it('uses persisted completed-session count to advance one cycle week', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const database = {
+      getFirstAsync: async (sql: string) => {
+        if (sql.includes('FROM training_cycles')) {
+          return {
+            id: demoCycle.id,
+            user_id: demoCycle.userId,
+            program_version_id: demoCycle.programVersionId,
+            status: demoCycle.status,
+            current_week: demoCycle.currentWeek,
+            started_at: demoCycle.startedAt,
+            weeks_json: JSON.stringify(demoCycle.weeks),
+          };
+        }
+        return { count: 3 };
+      },
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      withTransactionAsync: async (callback: () => Promise<void>) => {
+        await callback();
+      },
+    } as unknown as SQLiteDatabase;
+
+    const updated = await advanceTrainingCycleAfterCompletedWorkout(database, demoCycle.id, 1);
+
+    expect(updated?.currentWeek).toBe(2);
+    expect(updated?.weeks[0]).toMatchObject({ status: 'completed', completedWorkoutCount: 3 });
+    expect(updated?.weeks[1]).toMatchObject({ status: 'current', completedWorkoutCount: 0 });
+    expect(calls[0]?.sql).toContain('UPDATE training_cycles');
+    expect(calls[1]?.sql).toContain('INSERT INTO sync_outbox');
   });
 });

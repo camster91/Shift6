@@ -21,7 +21,10 @@ import type {
   WorkoutSession,
 } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
-import { getActiveTrainingCycle } from '../src/db/cycleRepository';
+import {
+  advanceTrainingCycleAfterCompletedWorkout,
+  getActiveTrainingCycle,
+} from '../src/db/cycleRepository';
 import {
   completeWorkoutSession,
   getCompletedSets,
@@ -55,8 +58,9 @@ export default function ActiveWorkoutScreen() {
 
   const session = useMemo<WorkoutSession>(
     () => ({
-      id: `session-${activeCycle.id}-${demoWorkout.id}`,
+      id: `session-${activeCycle.id}-week-${activeCycle.currentWeek}-${demoWorkout.id}`,
       cycleId: activeCycle.id,
+      cycleWeek: activeCycle.currentWeek,
       workoutId: demoWorkout.id,
       programVersionId: demoWorkout.programVersionId,
       workoutFocus: demoWorkout.focus,
@@ -204,6 +208,13 @@ export default function ActiveWorkoutScreen() {
     setError(null);
     try {
       if (database) await completeWorkoutSession(database, session.id, new Date().toISOString());
+      if (database) {
+        await advanceTrainingCycleAfterCompletedWorkout(
+          database,
+          session.cycleId,
+          session.cycleWeek,
+        );
+      }
       router.replace('/');
     } catch (finishError) {
       setError(

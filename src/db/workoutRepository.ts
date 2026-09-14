@@ -2,6 +2,19 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { CompletedSet, WorkoutSession } from '../domain/types';
 
+interface WorkoutSessionRow {
+  id: string;
+  cycle_id: string;
+  cycle_week: number;
+  workout_id: string;
+  program_version_id: string;
+  workout_focus: WorkoutSession['workoutFocus'];
+  status: WorkoutSession['status'];
+  started_at: string;
+  completed_at: string | null;
+  is_offline: number;
+}
+
 interface CompletedSetRow {
   id: string;
   session_id: string;
@@ -24,11 +37,12 @@ export async function saveWorkoutSession(
   await database.withTransactionAsync(async () => {
     await database.runAsync(
       `INSERT OR IGNORE INTO workout_sessions
-        (id, cycle_id, workout_id, program_version_id, workout_focus, status, started_at,
-         completed_at, is_offline)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        (id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
+         started_at, completed_at, is_offline)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       session.id,
       session.cycleId,
+      session.cycleWeek,
       session.workoutId,
       session.programVersionId,
       session.workoutFocus,
@@ -134,11 +148,61 @@ export async function completeWorkoutSession(
   sessionId: string,
   completedAt: string,
 ): Promise<void> {
+  await database.withTransactionAsync(async () => {
+    const result = await database.runAsync(
+      `UPDATE workout_sessions
+          SET status = 'complete', completed_at = ?
+        WHERE id = ? AND status = 'in-progress';`,
+      completedAt,
+      sessionId,
+    );
+    if (result.changes === 0) return;
+
+    const row = await database.getFirstAsync<WorkoutSessionRow>(
+      `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
+              started_at, completed_at, is_offline
+         FROM workout_sessions
+        WHERE id = ?
+        LIMIT 1;`,
+      sessionId,
+    );
+    if (!row) return;
+
+    await queueCompletedWorkoutSessionSync(database, mapWorkoutSession(row));
+  });
+}
+
+function mapWorkoutSession(row: WorkoutSessionRow): WorkoutSession {
+  return {
+    id: row.id,
+    cycleId: row.cycle_id,
+    cycleWeek: row.cycle_week,
+    workoutId: row.workout_id,
+    programVersionId: row.program_version_id,
+    workoutFocus: row.workout_focus,
+    status: row.status,
+    startedAt: row.started_at,
+    completedAt: row.completed_at ?? undefined,
+    isOffline: row.is_offline === 1,
+  };
+}
+
+async function queueCompletedWorkoutSessionSync(
+  database: SQLiteDatabase,
+  session: WorkoutSession,
+): Promise<void> {
   await database.runAsync(
-    `UPDATE workout_sessions
-        SET status = 'complete', completed_at = ?
-      WHERE id = ? AND status = 'in-progress';`,
-    completedAt,
-    sessionId,
+    `INSERT INTO sync_outbox
+      (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(idempotency_key) DO UPDATE SET
+       payload_json = excluded.payload_json,
+       last_error = NULL;`,
+    `outbox-workout-session-${session.id}`,
+    `workout-session:${session.id}`,
+    'workout-session',
+    session.id,
+    JSON.stringify(session),
+    session.startedAt,
   );
 }

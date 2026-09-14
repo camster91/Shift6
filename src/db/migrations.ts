@@ -132,6 +132,14 @@ export const MIGRATIONS: readonly Migration[] = [
       );`,
     ],
   },
+  {
+    version: 6,
+    name: 'workout-session-cycle-week',
+    statements: [
+      `ALTER TABLE workout_sessions
+        ADD COLUMN cycle_week INTEGER NOT NULL DEFAULT 1;`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

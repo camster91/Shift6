@@ -50,4 +50,10 @@ describe('local database migrations', () => {
     expect(statements).toContain('UNIQUE(program_id, version)');
     expect(statements).toContain('CREATE TABLE IF NOT EXISTS user_exercises');
   });
+
+  it('snapshots the cycle week on each workout session', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('ADD COLUMN cycle_week INTEGER NOT NULL DEFAULT 1');
+  });
 });

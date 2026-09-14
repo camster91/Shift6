@@ -36,3 +36,49 @@ export function createTrainingCycle({
     weeks,
   };
 }
+
+export function advanceCycleAfterCompletedWorkout(
+  cycle: TrainingCycle,
+  completedWorkoutCountForCurrentWeek: number,
+): TrainingCycle {
+  if (cycle.status !== 'active') return cycle;
+
+  const currentIndex = cycle.currentWeek - 1;
+  const currentWeek = cycle.weeks[currentIndex];
+  if (!currentWeek) return cycle;
+
+  const completedWorkoutCount = Math.min(
+    currentWeek.plannedWorkoutCount,
+    Math.max(0, completedWorkoutCountForCurrentWeek),
+  );
+  const currentCompleted = completedWorkoutCount >= currentWeek.plannedWorkoutCount;
+  const weeks = cycle.weeks.map((week, index) => {
+    if (index === currentIndex) {
+      return {
+        ...week,
+        completedWorkoutCount,
+        status: currentCompleted ? ('completed' as const) : ('current' as const),
+      };
+    }
+    return week;
+  });
+
+  if (!currentCompleted || currentIndex >= weeks.length - 1) {
+    return {
+      ...cycle,
+      status: currentCompleted ? 'complete' : cycle.status,
+      weeks,
+    };
+  }
+
+  weeks[currentIndex + 1] = {
+    ...weeks[currentIndex + 1]!,
+    status: 'current',
+  };
+
+  return {
+    ...cycle,
+    currentWeek: cycle.currentWeek + 1,
+    weeks,
+  };
+}

@@ -287,9 +287,22 @@ The first progress read boundary now derives the scorecard from the same local r
 - `buildNextSessionTargets` uses the latest completed set values plus the selected program strategy to produce per-exercise next targets; missing performance data holds the target rather than inventing a progression event;
 - the Progress tab resolves the active persisted cycle and renders local facts, while the web target continues to show an explicitly non-persistent preview.
 
-This checkpoint does not yet calculate personal records, advance cycle weeks, reconcile sync outbox rows, or produce the full six-week review. Those require additional domain events and later vertical-slice increments.
+This checkpoint does not yet calculate the full personal-record set, reconcile sync outbox rows in the background, or provide the complete review narrative and next-cycle decision matrix. Those require additional domain events and later vertical-slice increments.
 
 The next-session target surface is now covered for the Barbell 30 fixture. It is still a native-data path until a device-level workout completion and reload test can run.
+
+## Cycle transition and review implementation checkpoint — 2026-09-14
+
+The next #276/#277 vertical-slice increment closes the first deterministic cycle-lifecycle boundary:
+
+- migration 6 snapshots `cycle_week` on each workout session so a later plan change cannot reclassify historical work into another week;
+- completing the active Barbell 30 workout advances the persisted cycle only after the local database counts the completed sessions planned for the current week;
+- the transition is idempotent at the cycle-week boundary, so a repeated finish action cannot advance the same cycle twice;
+- Week 6 uses the program's declared `weekSixMeaning` and completes the cycle without imposing a universal deload or mandatory max test;
+- the Review route derives its facts from local records and exposes explicit repeat/adjust paths; repeating creates a new local cycle snapshot while the completed cycle remains unchanged;
+- Progress reads the latest cycle so a completed cycle can surface its review entry point, while the web target remains an honest non-persistent preview.
+
+The two SQLite transactions currently separate workout completion from cycle advancement. A future reliability increment should combine those writes behind one repository operation before native crash/restart verification is considered complete. The full review still needs personal-record detail, cardio/mobility trend views, user feedback, change-program/build-new-cycle options, and native device verification.
 
 ## Exercise catalogue implementation checkpoint — 2026-09-14
 

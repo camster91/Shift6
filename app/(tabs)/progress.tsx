@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import {
+  Button,
   Card,
   ErrorState,
   LoadingSkeleton,
@@ -16,7 +18,7 @@ import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { buildNextSessionTargets, type NextSessionTarget } from '../../src/domain/nextSession';
 import { buildCycleProgressSummary, type CycleProgressSummary } from '../../src/domain/progression';
 import { useLocalDatabase } from '../../src/db/context';
-import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
+import { getLatestTrainingCycle } from '../../src/db/cycleRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import {
   getCycleProgressSummary,
@@ -48,7 +50,7 @@ export default function ProgressScreen() {
 
     void (async () => {
       try {
-        const storedCycle = await getActiveTrainingCycle(database, 'guest-user');
+        const storedCycle = await getLatestTrainingCycle(database, 'guest-user');
         const cycle = storedCycle ?? demoCycle;
         const nextSummary = await getCycleProgressSummary(
           database,
@@ -195,6 +197,16 @@ export default function ProgressScreen() {
         </Card>
       ) : null}
 
+      {currentCycle.status === 'complete' ? (
+        <Button
+          label="Open six-week review"
+          variant="secondary"
+          onPress={() => router.push('/review')}
+          icon={<Ionicons name="document-text-outline" size={18} color={colors.ink} />}
+          style={styles.reviewButton}
+        />
+      ) : null}
+
       {error ? (
         <ErrorState
           message={error}
@@ -233,7 +245,10 @@ function formatTarget(target: SetTarget): string {
       : target.reps !== undefined
         ? `${target.reps} reps`
         : null;
-  const load = target.load?.value !== undefined ? `${target.load.value} ${target.load.unit}` : null;
+  const loadUnit =
+    target.load?.unit === 'imperial' ? 'lb' : target.load?.unit === 'metric' ? 'kg' : null;
+  const load =
+    target.load?.value !== undefined && loadUnit ? `${target.load.value} ${loadUnit}` : null;
   const duration = target.durationSeconds !== undefined ? `${target.durationSeconds}s` : null;
   return [load, reps, duration].filter(Boolean).join(' · ') || 'Keep current target';
 }
@@ -338,5 +353,8 @@ const styles = StyleSheet.create({
   nextTargetsNote: {
     marginTop: spacing.xl,
     opacity: 0.76,
+  },
+  reviewButton: {
+    marginTop: spacing.xl,
   },
 });

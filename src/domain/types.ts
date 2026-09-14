@@ -232,6 +232,7 @@ export interface TrainingCycle {
 export interface WorkoutSession {
   id: EntityId;
   cycleId: EntityId;
+  cycleWeek: number;
   workoutId: EntityId;
   programVersionId: EntityId;
   workoutFocus: Workout['focus'];

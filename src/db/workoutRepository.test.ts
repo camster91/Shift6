@@ -86,18 +86,61 @@ describe('saveCompletedSet', () => {
   });
 
   it('only completes an in-progress session', async () => {
-    const calls: unknown[][] = [];
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
     const database = {
-      runAsync: async (_sql: string, ...params: unknown[]) => {
-        calls.push(params);
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
         return { changes: 1, lastInsertRowId: 1 };
+      },
+      getFirstAsync: async () => ({
+        id: 'session-1',
+        cycle_id: 'cycle-1',
+        cycle_week: 1,
+        workout_id: 'workout-1',
+        program_version_id: 'program-version-1',
+        workout_focus: 'strength',
+        status: 'complete',
+        started_at: '2026-09-13T12:00:00.000Z',
+        completed_at: '2026-09-13T12:30:00.000Z',
+        is_offline: 1,
+      }),
+      withTransactionAsync: async (callback: () => Promise<void>) => {
+        await callback();
       },
     } as unknown as SQLiteDatabase;
 
     await expect(
       completeWorkoutSession(database, 'session-1', '2026-09-13T12:30:00.000Z'),
     ).resolves.toBeUndefined();
-    expect(calls).toEqual([['2026-09-13T12:30:00.000Z', 'session-1']]);
+    expect(calls[0]).toMatchObject({
+      params: ['2026-09-13T12:30:00.000Z', 'session-1'],
+    });
+    expect(calls[1]?.sql).toContain('INSERT INTO sync_outbox');
+    expect(JSON.parse(String(calls[1]?.params[4]))).toMatchObject({
+      id: 'session-1',
+      status: 'complete',
+      completedAt: '2026-09-13T12:30:00.000Z',
+    });
+  });
+
+  it('does not rewrite a completed session or enqueue a duplicate completion', async () => {
+    const calls: string[] = [];
+    const database = {
+      runAsync: async (sql: string) => {
+        calls.push(sql);
+        return { changes: 0, lastInsertRowId: 0 };
+      },
+      getFirstAsync: async () => {
+        throw new Error('should not read a session when no row changed');
+      },
+      withTransactionAsync: async (callback: () => Promise<void>) => {
+        await callback();
+      },
+    } as unknown as SQLiteDatabase;
+
+    await completeWorkoutSession(database, 'session-1', '2026-09-13T12:30:00.000Z');
+
+    expect(calls).toHaveLength(1);
   });
 });
 
@@ -119,6 +162,7 @@ describe('saveWorkoutSession', () => {
     await saveWorkoutSession(database, {
       id: 'session-1',
       cycleId: 'cycle-1',
+      cycleWeek: 1,
       workoutId: 'workout-1',
       programVersionId: 'program-version-1',
       workoutFocus: 'strength',

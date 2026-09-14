@@ -143,6 +143,22 @@ export async function getCompletedSets(
   }));
 }
 
+export async function getWorkoutSession(
+  database: SQLiteDatabase,
+  sessionId: string,
+): Promise<WorkoutSession | null> {
+  const row = await database.getFirstAsync<WorkoutSessionRow>(
+    `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
+            started_at, completed_at, is_offline
+       FROM workout_sessions
+      WHERE id = ?
+      LIMIT 1;`,
+    sessionId,
+  );
+
+  return row ? mapWorkoutSession(row) : null;
+}
+
 export async function saveWorkoutDraft(
   database: SQLiteDatabase,
   sessionId: string,

@@ -413,3 +413,7 @@ The current app does not yet install a native connectivity listener or backgroun
 The local workout boundary now includes migration 8 and a `workout_drafts` table. Active workout input is debounced into the local database, the same session ID is reused when the route is reopened, and completed set values are rehydrated before the screen becomes interactive. A pause/back action flushes the draft before leaving the route. Completed sets can be corrected in place; the stable set ID and idempotency key are retained while the pending outbox payload is replaced.
 
 The database migration and repository tests cover the draft upsert, correction outbox update, and privacy deletion path. Native kill-and-reopen proof remains a device QA gate, and the web target continues to be a non-persistent preview.
+
+## Post-workout summary checkpoint — 2026-09-14
+
+Migration 9 adds a structured, user-scoped `workout_check_ins` record. The completed workout now routes to `app/summary.tsx`, which reads the local session and completed sets, presents duration/set/volume facts, captures optional energy/soreness/effort/discomfort values, and queues the check-in through an idempotent outbox mutation. Notes stay local to the workout data boundary and are not accepted by the analytics allowlist. The summary explicitly labels web as preview-only when no durable database is available.

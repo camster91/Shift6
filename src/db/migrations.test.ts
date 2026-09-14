@@ -72,4 +72,11 @@ describe('local database migrations', () => {
     expect(statements).toContain('CREATE TABLE IF NOT EXISTS workout_drafts');
     expect(statements).toContain('FOREIGN KEY (session_id) REFERENCES workout_sessions(id)');
   });
+
+  it('stores structured post-workout check-ins without requiring a network', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS workout_check_ins');
+    expect(statements).toContain('discomfort_reported INTEGER NOT NULL');
+  });
 });

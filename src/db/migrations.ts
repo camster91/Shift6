@@ -173,6 +173,23 @@ export const MIGRATIONS: readonly Migration[] = [
       );`,
     ],
   },
+  {
+    version: 9,
+    name: 'workout-check-ins',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS workout_check_ins (
+        session_id TEXT PRIMARY KEY NOT NULL,
+        energy INTEGER,
+        soreness INTEGER,
+        perceived_exertion INTEGER,
+        discomfort_reported INTEGER NOT NULL DEFAULT 0,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (session_id) REFERENCES workout_sessions(id) ON DELETE CASCADE
+      );`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

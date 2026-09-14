@@ -242,6 +242,19 @@ export interface WorkoutSession {
   isOffline: boolean;
 }
 
+export type CheckInRating = 1 | 2 | 3 | 4 | 5;
+
+export interface WorkoutCheckIn {
+  sessionId: EntityId;
+  energy?: CheckInRating;
+  soreness?: CheckInRating;
+  perceivedExertion?: CheckInRating;
+  discomfortReported: boolean;
+  note?: string;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
 export interface CompletedSet {
   id: EntityId;
   sessionId: EntityId;

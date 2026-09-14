@@ -331,7 +331,10 @@ export default function ActiveWorkoutScreen() {
         );
         await deleteWorkoutDraft(database, session.id);
       }
-      router.replace('/');
+      router.replace({
+        pathname: '/summary',
+        params: { sessionId: session.id, workoutId: activeWorkout.id },
+      });
     } catch (finishError) {
       setError(
         finishError instanceof Error ? finishError.message : 'We could not finish this workout.',

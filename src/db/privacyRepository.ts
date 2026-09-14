@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export interface LocalDataExport {
-  schemaVersion: 1;
+  schemaVersion: 2;
   exportedAt: string;
   userId: string;
   userProfiles: Record<string, unknown>[];
@@ -9,6 +9,8 @@ export interface LocalDataExport {
   trainingCycles: Record<string, unknown>[];
   workoutSessions: Record<string, unknown>[];
   completedSets: Record<string, unknown>[];
+  workoutDrafts: Record<string, unknown>[];
+  workoutCheckIns: Record<string, unknown>[];
   userPrograms: Record<string, unknown>[];
   userProgramVersions: Record<string, unknown>[];
   userExercises: Record<string, unknown>[];
@@ -49,6 +51,24 @@ export async function exportLocalUserData(
       ORDER BY completed_at ASC, id ASC;`,
     userId,
   );
+  const workoutDrafts = await database.getAllAsync<Record<string, unknown>>(
+    `SELECT workout_drafts.*
+       FROM workout_drafts
+       INNER JOIN workout_sessions ON workout_sessions.id = workout_drafts.session_id
+       INNER JOIN training_cycles ON training_cycles.id = workout_sessions.cycle_id
+      WHERE training_cycles.user_id = ?
+      ORDER BY workout_drafts.updated_at ASC, workout_drafts.session_id ASC;`,
+    userId,
+  );
+  const workoutCheckIns = await database.getAllAsync<Record<string, unknown>>(
+    `SELECT workout_check_ins.*
+       FROM workout_check_ins
+       INNER JOIN workout_sessions ON workout_sessions.id = workout_check_ins.session_id
+       INNER JOIN training_cycles ON training_cycles.id = workout_sessions.cycle_id
+      WHERE training_cycles.user_id = ?
+      ORDER BY workout_check_ins.updated_at ASC, workout_check_ins.session_id ASC;`,
+    userId,
+  );
   const userPrograms = await database.getAllAsync<Record<string, unknown>>(
     'SELECT * FROM user_programs WHERE user_id = ? ORDER BY id ASC;',
     userId,
@@ -69,7 +89,7 @@ export async function exportLocalUserData(
   );
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     exportedAt,
     userId,
     userProfiles,
@@ -77,6 +97,8 @@ export async function exportLocalUserData(
     trainingCycles,
     workoutSessions,
     completedSets,
+    workoutDrafts,
+    workoutCheckIns,
     userPrograms,
     userProgramVersions,
     userExercises,
@@ -121,7 +143,15 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
               ))
            OR (entity_type = 'coach-proposal' AND entity_id IN (
                 SELECT id FROM coach_proposals WHERE user_id = ?
+              ))
+           OR (entity_type = 'workout-check-in' AND entity_id IN (
+                SELECT workout_check_ins.session_id
+                  FROM workout_check_ins
+                  INNER JOIN workout_sessions ON workout_sessions.id = workout_check_ins.session_id
+                  INNER JOIN training_cycles ON training_cycles.id = workout_sessions.cycle_id
+                 WHERE training_cycles.user_id = ?
               ));`,
+      userId,
       userId,
       userId,
       userId,
@@ -142,6 +172,16 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
     );
     await database.runAsync(
       `DELETE FROM workout_drafts
+        WHERE session_id IN (
+          SELECT workout_sessions.id
+            FROM workout_sessions
+            INNER JOIN training_cycles ON training_cycles.id = workout_sessions.cycle_id
+           WHERE training_cycles.user_id = ?
+        );`,
+      userId,
+    );
+    await database.runAsync(
+      `DELETE FROM workout_check_ins
         WHERE session_id IN (
           SELECT workout_sessions.id
             FROM workout_sessions

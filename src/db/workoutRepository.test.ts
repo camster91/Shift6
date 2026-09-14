@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { demoProgramVersion } from '../domain/fixtures/home';
 import type { CompletedSet } from '../domain/types';
 import {
   completeWorkoutSession,
@@ -191,6 +192,15 @@ describe('completeWorkoutSessionAndAdvanceCycle', () => {
         return { changes: 1, lastInsertRowId: 1 };
       },
       getFirstAsync: async (sql: string) => {
+        if (sql.includes('FROM user_program_versions')) {
+          return {
+            version_json: JSON.stringify({
+              ...demoProgramVersion,
+              id: 'program-version-1',
+              workouts: [{ ...demoProgramVersion.workouts[0]!, id: 'workout-1' }],
+            }),
+          };
+        }
         if (sql.includes('COUNT(*)')) return { count: 1 };
         if (sql.includes('FROM workout_sessions')) {
           return {

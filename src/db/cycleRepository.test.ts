@@ -1,7 +1,11 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { demoCycle } from '../domain/fixtures/home';
-import { advanceTrainingCycleAfterCompletedWorkout, saveTrainingCycle } from './cycleRepository';
+import { demoCycle, demoProgramVersion } from '../domain/fixtures/home';
+import {
+  advanceTrainingCycleAfterCompletedWorkout,
+  getCompletedRequiredWorkoutCount,
+  saveTrainingCycle,
+} from './cycleRepository';
 
 function fakeDatabase() {
   const calls: Array<{ sql: string; params: unknown[] }> = [];
@@ -39,6 +43,9 @@ describe('advanceTrainingCycleAfterCompletedWorkout', () => {
     const calls: Array<{ sql: string; params: unknown[] }> = [];
     const database = {
       getFirstAsync: async (sql: string) => {
+        if (sql.includes('FROM user_program_versions')) {
+          return { version_json: JSON.stringify(demoProgramVersion) };
+        }
         if (sql.includes('FROM training_cycles')) {
           return {
             id: demoCycle.id,
@@ -68,5 +75,32 @@ describe('advanceTrainingCycleAfterCompletedWorkout', () => {
     expect(updated?.weeks[1]).toMatchObject({ status: 'current', completedWorkoutCount: 0 });
     expect(calls[0]?.sql).toContain('UPDATE training_cycles');
     expect(calls[1]?.sql).toContain('INSERT INTO sync_outbox');
+  });
+
+  it('excludes optional workouts from the persisted cycle count', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const version = {
+      ...demoProgramVersion,
+      workouts: [
+        { ...demoProgramVersion.workouts[0]!, id: 'required-workout' },
+        { ...demoProgramVersion.workouts[1]!, id: 'optional-cardio', isOptional: true },
+      ],
+    };
+    const database = {
+      getFirstAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        if (sql.includes('FROM user_program_versions')) {
+          return { version_json: JSON.stringify(version) };
+        }
+        return { count: 1 };
+      },
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      getCompletedRequiredWorkoutCount(database, 'cycle-1', 1, version.id),
+    ).resolves.toBe(1);
+
+    expect(calls[1]?.sql).toContain('workout_id IN (?)');
+    expect(calls[1]?.params).toEqual(['cycle-1', 1, 'required-workout']);
   });
 });

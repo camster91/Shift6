@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { advanceCycleAfterCompletedWorkout } from '../domain/cycle';
-import type { TrainingCycle } from '../domain/types';
+import type { ProgramVersion, TrainingCycle } from '../domain/types';
 
 interface TrainingCycleRow {
   id: string;
@@ -71,14 +71,13 @@ export async function advanceTrainingCycleAfterCompletedWorkout(
       return;
     }
 
-    const countRow = await database.getFirstAsync<{ count: number }>(
-      `SELECT COUNT(*) AS count
-         FROM workout_sessions
-        WHERE cycle_id = ? AND cycle_week = ? AND status = 'complete';`,
+    const completedWorkoutCount = await getCompletedRequiredWorkoutCount(
+      database,
       cycleId,
       cycleWeek,
+      cycle.programVersionId,
     );
-    updatedCycle = advanceCycleAfterCompletedWorkout(cycle, countRow?.count ?? 0);
+    updatedCycle = advanceCycleAfterCompletedWorkout(cycle, completedWorkoutCount);
 
     await database.runAsync(
       `UPDATE training_cycles
@@ -93,6 +92,49 @@ export async function advanceTrainingCycleAfterCompletedWorkout(
   });
 
   return updatedCycle;
+}
+
+export async function getCompletedRequiredWorkoutCount(
+  database: SQLiteDatabase,
+  cycleId: string,
+  cycleWeek: number,
+  programVersionId: string,
+): Promise<number> {
+  const versionRow = await database.getFirstAsync<{ version_json: string }>(
+    `SELECT version_json
+       FROM user_program_versions
+      WHERE id = ?
+      LIMIT 1;`,
+    programVersionId,
+  );
+  if (!versionRow) return 0;
+
+  let programVersion: ProgramVersion;
+  try {
+    programVersion = JSON.parse(versionRow.version_json) as ProgramVersion;
+  } catch {
+    return 0;
+  }
+
+  const requiredWorkoutIds = programVersion.workouts
+    .filter((workout) => !workout.isOptional)
+    .map((workout) => workout.id);
+  if (requiredWorkoutIds.length === 0) return 0;
+
+  const placeholders = requiredWorkoutIds.map(() => '?').join(', ');
+  const countRow = await database.getFirstAsync<{ count: number }>(
+    `SELECT COUNT(*) AS count
+       FROM workout_sessions
+      WHERE cycle_id = ?
+        AND cycle_week = ?
+        AND status = 'complete'
+        AND workout_id IN (${placeholders});`,
+    cycleId,
+    cycleWeek,
+    ...requiredWorkoutIds,
+  );
+
+  return countRow?.count ?? 0;
 }
 
 export async function getActiveTrainingCycle(

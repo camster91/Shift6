@@ -7,6 +7,7 @@ import type {
   WorkoutDraftValues,
   WorkoutSession,
 } from '../domain/types';
+import { getCompletedRequiredWorkoutCount } from './cycleRepository';
 
 interface WorkoutSessionRow {
   id: string;
@@ -347,14 +348,13 @@ export async function completeWorkoutSessionAndAdvanceCycle(
     if (cycleRow) {
       const cycle = mapTrainingCycle(cycleRow);
       if (cycle.currentWeek === session.cycleWeek) {
-        const countRow = await database.getFirstAsync<{ count: number }>(
-          `SELECT COUNT(*) AS count
-             FROM workout_sessions
-            WHERE cycle_id = ? AND cycle_week = ? AND status = 'complete';`,
+        const completedWorkoutCount = await getCompletedRequiredWorkoutCount(
+          database,
           session.cycleId,
           session.cycleWeek,
+          cycle.programVersionId,
         );
-        updatedCycle = advanceCycleAfterCompletedWorkout(cycle, countRow?.count ?? 0);
+        updatedCycle = advanceCycleAfterCompletedWorkout(cycle, completedWorkoutCount);
         await database.runAsync(
           `UPDATE training_cycles
               SET status = ?, current_week = ?, weeks_json = ?

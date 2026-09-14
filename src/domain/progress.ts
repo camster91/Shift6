@@ -1,5 +1,5 @@
 import type { CycleProgressSummary } from './progression';
-import type { EntityId, PersonalRecord, ProgressPoint, TrainingCycle } from './types';
+import type { EntityId, Exercise, PersonalRecord, ProgressPoint, TrainingCycle } from './types';
 
 export interface ProgressSetInput {
   sessionId: EntityId;
@@ -15,6 +15,21 @@ export interface ExerciseProgress {
   exerciseId: EntityId;
   points: ProgressPoint[];
   personalRecords: PersonalRecord[];
+}
+
+export interface VolumeBucket {
+  key: string;
+  label: string;
+  completedSetCount: number;
+  loadVolume: number;
+}
+
+export interface TrainingVolumeBreakdown {
+  totalCompletedSetCount: number;
+  totalLoadVolume: number;
+  byMuscle: VolumeBucket[];
+  byMovementPattern: VolumeBucket[];
+  byExercise: VolumeBucket[];
 }
 
 export interface ProgressMetricComparison {
@@ -65,6 +80,43 @@ export function compareCycleProgress(
   };
 }
 
+/**
+ * Build a transparent volume view from completed sets. Muscle counts are an
+ * approximation: each completed set is credited to every primary muscle on
+ * the exercise, so category totals can overlap. Load volume is only counted
+ * when both load and reps are available and is kept separate from set counts.
+ */
+export function buildTrainingVolumeBreakdown(
+  sets: readonly ProgressSetInput[],
+  exercises: readonly Pick<Exercise, 'id' | 'name' | 'movementPattern' | 'primaryMuscles'>[],
+): TrainingVolumeBreakdown {
+  const exerciseById = new Map(exercises.map((exercise) => [exercise.id, exercise]));
+  const muscleBuckets = new Map<string, VolumeBucket>();
+  const movementBuckets = new Map<string, VolumeBucket>();
+  const exerciseBuckets = new Map<string, VolumeBucket>();
+
+  for (const set of sets) {
+    const exercise = exerciseById.get(set.exerciseId);
+    const exerciseKey = set.exerciseId;
+    const exerciseLabel = exercise?.name ?? formatKey(set.exerciseId);
+    addToBucket(exerciseBuckets, exerciseKey, exerciseLabel, set);
+
+    const movementKey = exercise?.movementPattern ?? 'other';
+    addToBucket(movementBuckets, movementKey, formatKey(movementKey), set);
+
+    const muscles = exercise?.primaryMuscles.length ? exercise.primaryMuscles : ['other'];
+    for (const muscle of muscles) addToBucket(muscleBuckets, muscle, formatKey(muscle), set);
+  }
+
+  return {
+    totalCompletedSetCount: sets.length,
+    totalLoadVolume: sets.reduce((total, set) => total + loadVolume(set), 0),
+    byMuscle: sortBuckets(muscleBuckets),
+    byMovementPattern: sortBuckets(movementBuckets),
+    byExercise: sortBuckets(exerciseBuckets),
+  };
+}
+
 export function buildExerciseProgress(
   exerciseId: EntityId,
   sets: readonly ProgressSetInput[],
@@ -89,6 +141,38 @@ export function buildExerciseProgress(
     points,
     personalRecords: buildPersonalRecords(exerciseId, points),
   };
+}
+
+function addToBucket(
+  buckets: Map<string, VolumeBucket>,
+  key: string,
+  label: string,
+  set: ProgressSetInput,
+): void {
+  const current = buckets.get(key) ?? { key, label, completedSetCount: 0, loadVolume: 0 };
+  current.completedSetCount += 1;
+  current.loadVolume += loadVolume(set);
+  buckets.set(key, current);
+}
+
+function sortBuckets(buckets: Map<string, VolumeBucket>): VolumeBucket[] {
+  return [...buckets.values()].sort(
+    (left, right) =>
+      right.completedSetCount - left.completedSetCount || left.label.localeCompare(right.label),
+  );
+}
+
+function loadVolume(set: ProgressSetInput): number {
+  return set.load !== undefined && set.reps !== undefined && set.load > 0 && set.reps > 0
+    ? set.load * set.reps
+    : 0;
+}
+
+function formatKey(value: string): string {
+  return value
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
 export function estimateOneRepMax(

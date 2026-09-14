@@ -741,3 +741,17 @@ mutation payloads. The Profile conflict banner now links to `app/sync-review.tsx
 that local plan data remains safe and offers an explicit retry. The route deliberately has no
 keep-local/keep-server default: a real resolution action still requires a backend version policy
 and a user-visible diff, so the client cannot silently merge or discard a future plan.
+
+## Training-volume breakdown checkpoint — 2026-09-14
+
+The Progress surface now derives a local-first `TrainingVolumeBreakdown` from complete workout
+sessions in the active cycle. `getCycleCompletedSetRecords` reads durable set values and resolves
+legacy null exercise IDs through the immutable program-version snapshot before handing records to
+the pure domain function. The domain groups completed sets by exercise, movement pattern, and
+primary muscle, and reports load volume only when positive load and reps are both present.
+
+Muscle totals are intentionally described as approximate: a completed set is credited to every
+primary muscle on the exercise, so categories can overlap. This is a training-orientation view,
+not a medical measurement or a claim of physiological stimulus. The UI keeps an empty state for a
+new cycle, exposes an accessible text summary, and renders only the top categories; the complete
+breakdown remains available in the typed domain result for later chart/detail surfaces.

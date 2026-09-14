@@ -283,4 +283,11 @@ equipment rows and profile snapshot atomically, remain local-first, and feed the
 recommendation and substitution boundaries. Exact equipment-location metadata and custom equipment
 creation remain later #273/#274 work.
 
+Progress now includes the first transparent training-volume view for #279: complete local sets are
+grouped deterministically by exercise, movement pattern, and primary muscle, with load volume kept
+separate from set counts. The UI labels the primary-muscle totals as approximate because categories
+can overlap, shows an honest empty state before the first completed session, and does not infer load
+volume when load or reps are missing. Detailed trend/charts and broader recovery correlations
+remain later work.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

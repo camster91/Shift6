@@ -2,6 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import {
   getCompletedWorkoutIds,
+  getCycleCompletedSetRecords,
   getCycleProgressSummary,
   getExerciseProgress,
   getLatestCompletedWorkoutSets,
@@ -93,6 +94,44 @@ describe('getCycleProgressSummary', () => {
       },
       loggedSetCount: 2,
     });
+  });
+
+  it('returns complete-cycle set records with legacy exercise IDs resolved', async () => {
+    const database = {
+      getAllAsync: async () => [
+        {
+          session_id: 'session-1',
+          exercise_id: null,
+          workout_exercise_id: 'workout-exercise-squat',
+          completed_at: '2026-09-14T12:05:00.000Z',
+          load: 185,
+          reps: 5,
+          duration_seconds: null,
+          distance_meters: null,
+          workout_id: 'workout-1',
+          version_json: JSON.stringify({
+            workouts: [
+              {
+                id: 'workout-1',
+                exercises: [{ id: 'workout-exercise-squat', exerciseId: 'exercise-squat' }],
+              },
+            ],
+          }),
+        },
+      ],
+    } as unknown as SQLiteDatabase;
+
+    await expect(getCycleCompletedSetRecords(database, 'cycle-1')).resolves.toEqual([
+      {
+        sessionId: 'session-1',
+        exerciseId: 'exercise-squat',
+        completedAt: '2026-09-14T12:05:00.000Z',
+        load: 185,
+        reps: 5,
+        durationSeconds: undefined,
+        distanceMeters: undefined,
+      },
+    ]);
   });
 
   it('finds the latest completed workout before deriving next targets', async () => {

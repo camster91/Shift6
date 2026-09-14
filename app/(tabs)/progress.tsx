@@ -24,8 +24,11 @@ import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { buildNextSessionTargets, type NextSessionTarget } from '../../src/domain/nextSession';
 import {
   compareCycleProgress,
+  buildTrainingVolumeBreakdown,
   type CycleProgressComparison,
   type ExerciseProgress,
+  type TrainingVolumeBreakdown,
+  type VolumeBucket,
 } from '../../src/domain/progress';
 import { buildCycleProgressSummary, type CycleProgressSummary } from '../../src/domain/progression';
 import { useLocalDatabase } from '../../src/db/context';
@@ -34,6 +37,7 @@ import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { getUserExercises, getUserProgramVersion } from '../../src/db/programRepository';
 import {
   getCycleProgressSummary,
+  getCycleCompletedSetRecords,
   getExerciseProgress,
   getLatestCompletedWorkoutSets,
 } from '../../src/db/progressRepository';
@@ -43,7 +47,7 @@ import type {
   SetTarget,
   TrackingType,
 } from '../../src/domain/types';
-import { colors, spacing } from '../../src/design/tokens';
+import { colors, radii, spacing } from '../../src/design/tokens';
 
 export default function ProgressScreen() {
   const database = useLocalDatabase();
@@ -61,6 +65,9 @@ export default function ProgressScreen() {
   );
   const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress | null>(null);
   const [cycleComparison, setCycleComparison] = useState<CycleProgressComparison | null>(null);
+  const [volumeBreakdown, setVolumeBreakdown] = useState<TrainingVolumeBreakdown>(() =>
+    buildTrainingVolumeBreakdown([], foundationalExercises),
+  );
   const [exerciseProgressLoading, setExerciseProgressLoading] = useState(false);
   const [loading, setLoading] = useState(database !== null);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +94,7 @@ export default function ProgressScreen() {
         const programVersion = snapshot?.version ?? demoProgramVersion;
         const workout = programVersion.workouts[0] ?? demoWorkout;
         const previousCycle = await getPreviousTrainingCycle(database, 'guest-user', cycle);
-        const [nextSummary, latestSets, profile, userExercises, previousSummary] =
+        const [nextSummary, latestSets, profile, userExercises, previousSummary, completedSets] =
           await Promise.all([
             getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
             getLatestCompletedWorkoutSets(database, cycle.id, workout.id, programVersion.id),
@@ -100,7 +107,10 @@ export default function ProgressScreen() {
                   getPlannedWorkoutCount(previousCycle),
                 )
               : Promise.resolve(null),
+            getCycleCompletedSetRecords(database, cycle.id),
           ]);
+        const volumeExercises = [...foundationalExercises, ...userExercises];
+        const nextVolumeBreakdown = buildTrainingVolumeBreakdown(completedSets, volumeExercises);
         const nextCycleComparison =
           previousCycle && previousSummary
             ? compareCycleProgress(cycle, nextSummary, previousCycle, previousSummary)
@@ -132,6 +142,7 @@ export default function ProgressScreen() {
         setSelectedExerciseId(nextSelectedExerciseId);
         setExerciseProgress(selectedExerciseProgress);
         setCycleComparison(nextCycleComparison);
+        setVolumeBreakdown(nextVolumeBreakdown);
       } catch {
         if (active) setError('We could not load local cycle progress.');
       } finally {
@@ -257,6 +268,8 @@ export default function ProgressScreen() {
       </View>
 
       {cycleComparison ? <CycleComparisonCard comparison={cycleComparison} /> : null}
+
+      <TrainingVolumeCard breakdown={volumeBreakdown} />
 
       {exerciseChoices.length > 0 ? (
         <View style={styles.exerciseSelector} accessibilityLabel="Movement trend selector">
@@ -505,6 +518,110 @@ function ProgressHistoryCard({
         </>
       ) : null}
     </Card>
+  );
+}
+
+function TrainingVolumeCard({ breakdown }: { breakdown: TrainingVolumeBreakdown }) {
+  const muscleBuckets = breakdown.byMuscle.slice(0, 5);
+  const movementBuckets = breakdown.byMovementPattern.slice(0, 4);
+  const maximumMuscleSets = Math.max(...muscleBuckets.map((bucket) => bucket.completedSetCount), 1);
+  const summary =
+    breakdown.totalCompletedSetCount === 0
+      ? 'No completed sets yet.'
+      : `${breakdown.totalCompletedSetCount} completed sets. ${muscleBuckets
+          .slice(0, 3)
+          .map((bucket) => `${bucket.label} ${bucket.completedSetCount}`)
+          .join(', ')}.`;
+
+  return (
+    <Card
+      tone="white"
+      style={styles.volumeCard}
+      accessibilityLabel={`Training volume. ${summary} This is an approximate primary-muscle set count.`}
+    >
+      <Text variant="caption" tone="muted">
+        TRAINING VOLUME
+      </Text>
+      <Text variant="h3" style={styles.volumeTitle}>
+        What you trained.
+      </Text>
+      <Text variant="small" tone="muted" style={styles.volumeCopy}>
+        Each completed set is credited to the exercise's primary muscles. Categories can overlap;
+        this is a useful training view, not a medical measurement.
+      </Text>
+
+      {breakdown.totalCompletedSetCount === 0 ? (
+        <Text variant="small" tone="muted" style={styles.volumeEmpty}>
+          Complete a session to see muscle and movement-pattern coverage.
+        </Text>
+      ) : (
+        <>
+          <VolumeSection
+            label="Primary muscle sets"
+            buckets={muscleBuckets}
+            maximum={maximumMuscleSets}
+          />
+          <View style={styles.volumeSection}>
+            <Text variant="caption" tone="muted">
+              MOVEMENT PATTERNS
+            </Text>
+            <View style={styles.patternList}>
+              {movementBuckets.map((bucket) => (
+                <View key={bucket.key} style={styles.patternRow}>
+                  <Text variant="smallMedium">{bucket.label}</Text>
+                  <Text variant="small" tone="muted">
+                    {bucket.completedSetCount} set{bucket.completedSetCount === 1 ? '' : 's'}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          {breakdown.totalLoadVolume > 0 ? (
+            <Text variant="caption" tone="muted" style={styles.loadVolume}>
+              Load volume: {formatVolume(breakdown.totalLoadVolume)} load × reps
+            </Text>
+          ) : null}
+        </>
+      )}
+    </Card>
+  );
+}
+
+function VolumeSection({
+  label,
+  buckets,
+  maximum,
+}: {
+  label: string;
+  buckets: readonly VolumeBucket[];
+  maximum: number;
+}) {
+  return (
+    <View style={styles.volumeSection}>
+      <Text variant="caption" tone="muted">
+        {label.toUpperCase()}
+      </Text>
+      <View style={styles.volumeList}>
+        {buckets.map((bucket) => (
+          <View key={bucket.key} style={styles.volumeRow}>
+            <View style={styles.volumeRowHeader}>
+              <Text variant="smallMedium">{bucket.label}</Text>
+              <Text variant="small" tone="muted">
+                {bucket.completedSetCount} set{bucket.completedSetCount === 1 ? '' : 's'}
+              </Text>
+            </View>
+            <View style={styles.volumeTrack} accessible={false}>
+              <View
+                style={[
+                  styles.volumeFill,
+                  { width: `${Math.max(8, (bucket.completedSetCount / maximum) * 100)}%` },
+                ]}
+              />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -790,6 +907,59 @@ const styles = StyleSheet.create({
     opacity: 0.76,
   },
   historyCard: {
+    marginTop: spacing.xl,
+  },
+  volumeCard: {
+    marginTop: spacing.xl,
+  },
+  volumeTitle: {
+    marginTop: spacing.sm,
+  },
+  volumeCopy: {
+    marginTop: spacing.xs,
+  },
+  volumeEmpty: {
+    marginTop: spacing.xl,
+  },
+  volumeSection: {
+    marginTop: spacing.xl,
+  },
+  volumeList: {
+    marginTop: spacing.md,
+    gap: spacing.md,
+  },
+  volumeRow: {
+    gap: spacing.xs,
+  },
+  volumeRowHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  volumeTrack: {
+    height: 8,
+    borderRadius: radii.pill,
+    backgroundColor: colors.lavenderBackground,
+    overflow: 'hidden',
+  },
+  volumeFill: {
+    height: '100%',
+    borderRadius: radii.pill,
+    backgroundColor: colors.lavender,
+  },
+  patternList: {
+    marginTop: spacing.md,
+    gap: spacing.xs,
+  },
+  patternRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  loadVolume: {
     marginTop: spacing.xl,
   },
   comparisonCard: {

@@ -1,6 +1,10 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { buildExerciseProgress, type ExerciseProgress } from '../domain/progress';
+import {
+  buildExerciseProgress,
+  type ExerciseProgress,
+  type ProgressSetInput,
+} from '../domain/progress';
 import type { ProgramVersion } from '../domain/types';
 import {
   buildCycleProgressSummary,
@@ -63,6 +67,45 @@ export async function getCycleProgressSummary(
 ): Promise<CycleProgressSummary> {
   const sessions = await getCycleReviewSessions(database, cycleId);
   return buildCycleProgressSummary(plannedWorkoutCount, sessions);
+}
+
+export async function getCycleCompletedSetRecords(
+  database: SQLiteDatabase,
+  cycleId: string,
+): Promise<ProgressSetInput[]> {
+  const rows = await database.getAllAsync<ExerciseProgressRow>(
+    `SELECT completed_sets.session_id, completed_sets.exercise_id,
+            completed_sets.workout_exercise_id, completed_sets.completed_at,
+            completed_sets.load, completed_sets.reps, completed_sets.duration_seconds,
+            completed_sets.distance_meters, workout_sessions.workout_id,
+            user_program_versions.version_json
+       FROM completed_sets
+       INNER JOIN workout_sessions
+         ON workout_sessions.id = completed_sets.session_id
+       LEFT JOIN user_program_versions
+         ON user_program_versions.id = workout_sessions.program_version_id
+      WHERE workout_sessions.cycle_id = ?
+        AND workout_sessions.status = 'complete'
+      ORDER BY completed_sets.completed_at ASC, completed_sets.id ASC;`,
+    cycleId,
+  );
+
+  return rows.flatMap((row) => {
+    const exerciseId = row.exercise_id ?? resolveLegacyExerciseId(row);
+    if (!exerciseId) return [];
+
+    return [
+      {
+        sessionId: row.session_id,
+        exerciseId,
+        completedAt: row.completed_at,
+        load: row.load ?? undefined,
+        reps: row.reps ?? undefined,
+        durationSeconds: row.duration_seconds ?? undefined,
+        distanceMeters: row.distance_meters ?? undefined,
+      },
+    ];
+  });
 }
 
 export async function getLatestCompletedWorkoutSets(

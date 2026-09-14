@@ -1,4 +1,9 @@
-import { buildExerciseProgress, compareCycleProgress, estimateOneRepMax } from './progress';
+import {
+  buildExerciseProgress,
+  buildTrainingVolumeBreakdown,
+  compareCycleProgress,
+  estimateOneRepMax,
+} from './progress';
 import { buildCycleProgressSummary } from './progression';
 
 describe('deterministic progress history', () => {
@@ -109,5 +114,60 @@ describe('deterministic progress history', () => {
       'duration',
       'distance',
     ]);
+  });
+
+  it('builds transparent set-based volume by primary muscle and movement', () => {
+    const breakdown = buildTrainingVolumeBreakdown(
+      [
+        {
+          sessionId: 'session-1',
+          exerciseId: 'exercise-squat',
+          completedAt: '2026-09-14T12:00:00.000Z',
+          load: 100,
+          reps: 5,
+        },
+        {
+          sessionId: 'session-1',
+          exerciseId: 'exercise-squat',
+          completedAt: '2026-09-14T12:01:00.000Z',
+          load: 100,
+          reps: 5,
+        },
+        {
+          sessionId: 'session-1',
+          exerciseId: 'exercise-plank',
+          completedAt: '2026-09-14T12:02:00.000Z',
+          durationSeconds: 30,
+        },
+      ],
+      [
+        {
+          id: 'exercise-squat',
+          name: 'Squat',
+          movementPattern: 'squat',
+          primaryMuscles: ['quadriceps', 'glutes'],
+        },
+        {
+          id: 'exercise-plank',
+          name: 'Plank',
+          movementPattern: 'anti-extension',
+          primaryMuscles: ['core'],
+        },
+      ],
+    );
+
+    expect(breakdown).toMatchObject({
+      totalCompletedSetCount: 3,
+      totalLoadVolume: 1000,
+      byMuscle: [
+        { key: 'glutes', completedSetCount: 2, loadVolume: 1000 },
+        { key: 'quadriceps', completedSetCount: 2, loadVolume: 1000 },
+        { key: 'core', completedSetCount: 1, loadVolume: 0 },
+      ],
+      byMovementPattern: [
+        { key: 'squat', completedSetCount: 2, loadVolume: 1000 },
+        { key: 'anti-extension', completedSetCount: 1, loadVolume: 0 },
+      ],
+    });
   });
 });

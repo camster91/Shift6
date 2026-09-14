@@ -327,6 +327,14 @@ The first #279/#280 health increment defines `HealthProvider` and typed permissi
 
 Native permission flows, least-privilege read adapters, local sample deduplication, user-facing disclosure, and device verification remain release-gated work.
 
+## Local privacy boundary checkpoint — 2026-09-14
+
+`src/db/privacyRepository.ts` now provides two user-scoped local operations:
+
+- `exportLocalUserData` returns a versioned JSON-ready envelope covering profiles, equipment, cycles, sessions, sets, user program snapshots, custom exercises, and Coach proposals;
+- `deleteLocalUserData` removes pending sync mutations first, then dependent sets/sessions/cycles and user-owned program/exercise/proposal/profile records inside one transaction;
+- the repository does not claim remote account deletion, request permissions, or upload an export; those actions require explicit account/backend and native file-sharing surfaces later.
+
 ## Exercise catalogue implementation checkpoint — 2026-09-14
 
 The first #274 content increment establishes catalogue behavior without importing the archived application or unreviewed imagery:

@@ -1,9 +1,16 @@
-import type { Difficulty, Exercise, MovementPattern, TrackingType } from '../types';
+import type {
+  Difficulty,
+  Exercise,
+  ExerciseClassification,
+  MovementPattern,
+  TrackingType,
+} from '../types';
 
 interface ExerciseSeed {
   id: string;
   name: string;
   movementPattern: MovementPattern;
+  classification?: ExerciseClassification;
   primaryMuscles: string[];
   equipmentIds: string[];
   difficulty?: Difficulty;
@@ -453,6 +460,7 @@ function seed({
   id,
   name,
   movementPattern,
+  classification,
   primaryMuscles,
   equipmentIds,
   difficulty = 'beginner',
@@ -465,6 +473,7 @@ function seed({
     name,
     aliases: [],
     movementPattern,
+    classification: classification ?? inferClassification(primaryMuscles),
     primaryMuscles,
     secondaryMuscles: [],
     equipmentIds,
@@ -491,4 +500,8 @@ function seed({
     isCustom: false,
     contentStatus: 'draft',
   };
+}
+
+function inferClassification(primaryMuscles: readonly string[]): ExerciseClassification {
+  return primaryMuscles.length > 1 ? 'compound' : 'isolation';
 }

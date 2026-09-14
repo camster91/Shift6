@@ -14,6 +14,7 @@ export type Goal =
   | 'consistent-training';
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+export type ExerciseClassification = 'compound' | 'isolation';
 export type EquipmentCategory =
   'free-weight' | 'machine' | 'cardio' | 'bodyweight' | 'accessory' | 'mobility' | 'custom';
 export type MovementPattern =
@@ -112,10 +113,12 @@ export interface Exercise {
   name: string;
   aliases: string[];
   movementPattern: MovementPattern;
+  classification?: ExerciseClassification;
   primaryMuscles: string[];
   secondaryMuscles: string[];
   equipmentIds: EntityId[];
   setup: string;
+  notes?: string;
   difficulty: Difficulty;
   instructions: string[];
   techniqueCues: string[];

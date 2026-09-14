@@ -8,15 +8,21 @@ import { getOnboardingProfile } from '../src/db/profileRepository';
 import { getUserExercises } from '../src/db/programRepository';
 import { useLocalDatabase } from '../src/db/context';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
-import { searchExercises } from '../src/domain/exerciseCatalog';
+import { searchExercises, type ExerciseCategoryFilter } from '../src/domain/exerciseCatalog';
 import { demoUser } from '../src/domain/fixtures/home';
-import type { Exercise } from '../src/domain/types';
+import type { Difficulty, Exercise, ExerciseClassification } from '../src/domain/types';
 import { colors, radii, spacing } from '../src/design/tokens';
 
 export default function ExerciseLibraryScreen() {
   const database = useLocalDatabase();
   const [query, setQuery] = useState('');
   const [compatibleOnly, setCompatibleOnly] = useState(true);
+  const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | undefined>();
+  const [categoryFilter, setCategoryFilter] = useState<ExerciseCategoryFilter | undefined>();
+  const [classificationFilter, setClassificationFilter] = useState<
+    ExerciseClassification | undefined
+  >();
+  const [unilateralFilter, setUnilateralFilter] = useState<boolean | undefined>();
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
 
@@ -56,9 +62,39 @@ export default function ExerciseLibraryScreen() {
         query,
         availableEquipmentIds,
         compatibleOnly,
+        difficulty: difficultyFilter,
+        category: categoryFilter,
+        classification: classificationFilter,
+        unilateral: unilateralFilter,
       }),
-    [availableEquipmentIds, availableExercises, compatibleOnly, query],
+    [
+      availableEquipmentIds,
+      availableExercises,
+      categoryFilter,
+      classificationFilter,
+      compatibleOnly,
+      difficultyFilter,
+      query,
+      unilateralFilter,
+    ],
   );
+  const hasActiveFilters = Boolean(
+    query.trim() ||
+    compatibleOnly ||
+    difficultyFilter ||
+    categoryFilter ||
+    classificationFilter ||
+    unilateralFilter !== undefined,
+  );
+
+  const clearFilters = () => {
+    setQuery('');
+    setCompatibleOnly(false);
+    setDifficultyFilter(undefined);
+    setCategoryFilter(undefined);
+    setClassificationFilter(undefined);
+    setUnilateralFilter(undefined);
+  };
 
   return (
     <Screen scrollViewProps={{ keyboardShouldPersistTaps: 'handled' }}>
@@ -104,6 +140,70 @@ export default function ExerciseLibraryScreen() {
         />
       </View>
 
+      <View style={styles.filterGroup}>
+        <Text variant="caption" tone="muted">
+          DIFFICULTY
+        </Text>
+        <View style={styles.filterRow}>
+          {difficultyFilters.map((filter) => (
+            <Chip
+              key={filter.value ?? 'any-difficulty'}
+              label={filter.label}
+              selected={difficultyFilter === filter.value}
+              onPress={() => setDifficultyFilter(filter.value)}
+            />
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.filterGroup}>
+        <Text variant="caption" tone="muted">
+          TRAINING FOCUS
+        </Text>
+        <View style={styles.filterRow}>
+          {categoryFilters.map((filter) => (
+            <Chip
+              key={filter.value ?? 'all-focus'}
+              label={filter.label}
+              selected={categoryFilter === filter.value}
+              onPress={() => setCategoryFilter(filter.value)}
+            />
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.filterGroup}>
+        <Text variant="caption" tone="muted">
+          MOVEMENT TYPE
+        </Text>
+        <View style={styles.filterRow}>
+          {classificationFilters.map((filter) => (
+            <Chip
+              key={filter.value ?? 'all-movement-types'}
+              label={filter.label}
+              selected={classificationFilter === filter.value}
+              onPress={() => setClassificationFilter(filter.value)}
+            />
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.filterGroup}>
+        <Text variant="caption" tone="muted">
+          STANCE
+        </Text>
+        <View style={styles.filterRow}>
+          {stanceFilters.map((filter) => (
+            <Chip
+              key={filter.label}
+              label={filter.label}
+              selected={unilateralFilter === filter.value}
+              onPress={() => setUnilateralFilter(filter.value)}
+            />
+          ))}
+        </View>
+      </View>
+
       <View style={styles.resultHeader}>
         <Text variant="h2">{visibleExercises.length} movements</Text>
         <Text variant="small" tone="muted">
@@ -115,11 +215,8 @@ export default function ExerciseLibraryScreen() {
         <EmptyState
           title="No movement found"
           message="Try a different search or browse the full foundational catalogue."
-          actionLabel="Browse all"
-          onAction={() => {
-            setQuery('');
-            setCompatibleOnly(false);
-          }}
+          actionLabel={hasActiveFilters ? 'Clear filters' : 'Browse all'}
+          onAction={clearFilters}
           icon={<Ionicons name="search-outline" size={28} color={colors.ink} />}
         />
       ) : (
@@ -175,6 +272,38 @@ function formatLabel(value: string): string {
     .join(' ');
 }
 
+const difficultyFilters: readonly { label: string; value: Difficulty | undefined }[] = [
+  { label: 'Any level', value: undefined },
+  { label: 'Beginner', value: 'beginner' },
+  { label: 'Intermediate', value: 'intermediate' },
+  { label: 'Advanced', value: 'advanced' },
+];
+
+const categoryFilters: readonly {
+  label: string;
+  value: ExerciseCategoryFilter | undefined;
+}[] = [
+  { label: 'All focus', value: undefined },
+  { label: 'Mobility', value: 'mobility' },
+  { label: 'Power', value: 'power' },
+  { label: 'Cardio', value: 'cardio' },
+];
+
+const classificationFilters: readonly {
+  label: string;
+  value: ExerciseClassification | undefined;
+}[] = [
+  { label: 'All types', value: undefined },
+  { label: 'Compound', value: 'compound' },
+  { label: 'Isolation', value: 'isolation' },
+];
+
+const stanceFilters: readonly { label: string; value: boolean | undefined }[] = [
+  { label: 'Both', value: undefined },
+  { label: 'Unilateral', value: true },
+  { label: 'Bilateral', value: false },
+];
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -206,6 +335,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.xs,
     marginTop: spacing.md,
+  },
+  filterGroup: {
+    marginTop: spacing.lg,
+    gap: spacing.xs,
   },
   resultHeader: {
     marginTop: spacing.xxxl,

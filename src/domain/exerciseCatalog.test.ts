@@ -28,4 +28,32 @@ describe('exercise catalogue search', () => {
       ]),
     );
   });
+
+  it('filters by difficulty, stance, classification, and training category', () => {
+    expect(
+      searchExercises(foundationalExercises, {
+        difficulty: 'intermediate',
+        classification: 'compound',
+        category: 'power',
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'exercise-kettlebell-swing' }),
+        expect.objectContaining({ id: 'exercise-box-jump' }),
+      ]),
+    );
+    expect(
+      searchExercises(foundationalExercises, {
+        unilateral: true,
+        category: 'mobility',
+      }),
+    ).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'exercise-thoracic-rotation' })]),
+    );
+    expect(
+      searchExercises(foundationalExercises, {
+        classification: 'isolation',
+      }),
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'exercise-lateral-raise' })]));
+  });
 });

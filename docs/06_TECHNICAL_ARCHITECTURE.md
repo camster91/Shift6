@@ -772,3 +772,11 @@ provider request, and sends the question separately from the minimized structure
 default guest gateway remains unavailable, so the Coach tab falls back to a local task inference
 for common questions without adding a network dependency or a plan mutation path. A real chat
 history store and connected provider remain open #278 work.
+
+## Exercise catalogue filtering checkpoint — 2026-09-14
+
+`searchExercises` now keeps catalogue filtering in the typed domain layer. It combines the
+equipment-compatibility filter with difficulty, stance, movement classification, and
+mobility/power/cardio category predicates, and includes classification in text search. The
+Exercise Library renders the filters as token-driven accessible chips; no query requires a
+network request or changes user data.

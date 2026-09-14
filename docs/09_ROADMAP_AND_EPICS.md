@@ -303,3 +303,8 @@ of analytics, safety-sensitive prompts are routed deterministically before provi
 the offline fallback maps common questions to structured local explanations. Provider-backed
 conversation, durable chat history, and proposal generation remain gated by the server contract and
 explicit user approval.
+
+The #274 catalogue increment now exposes the planned difficulty, unilateral/bilateral,
+compound/isolation, and mobility/power/cardio filters in the typed search boundary and Exercise
+Library UI. The 50 foundational records remain explicitly draft pending technique/media review;
+the 300+ reviewed-content target is still open.

@@ -4,6 +4,7 @@ import {
   addWorkoutToProgram,
   createBlankProgram,
   createCustomExercise,
+  createNextCycleCopy,
   createProgramCopy,
   createProgramVersionRevision,
   clearWorkoutExerciseGroup,
@@ -61,6 +62,45 @@ describe('immutable custom program builder', () => {
       demoProgramVersion.workouts[0]?.exercises[0]?.sets[0],
     );
     expect(demoProgram.title).toBe('Barbell 30');
+  });
+
+  it('creates a new private namespace when repeating a completed cycle', () => {
+    const repeated = createNextCycleCopy({
+      sourceProgram: {
+        ...demoProgram,
+        id: 'program-barbell-30-guest-user-1',
+        slug: 'barbell-30',
+        title: 'Barbell 30',
+        sourceProgramId: demoProgram.id,
+        isTemplate: false,
+        ownerId: 'guest-user',
+      },
+      sourceVersion: {
+        ...demoProgramVersion,
+        id: 'program-barbell-30-guest-user-1-version-1',
+        programId: 'program-barbell-30-guest-user-1',
+      },
+      userId: 'guest-user',
+      newProgramId: 'program-barbell-30-guest-user-2',
+      newVersionId: 'program-barbell-30-guest-user-2-version-1',
+      createdAt: '2026-09-14T18:00:00.000Z',
+    });
+
+    expect(repeated.program).toMatchObject({
+      id: 'program-barbell-30-guest-user-2',
+      title: 'Barbell 30',
+      slug: 'barbell-30',
+      sourceProgramId: demoProgram.id,
+      isTemplate: false,
+    });
+    expect(repeated.version).toMatchObject({
+      id: 'program-barbell-30-guest-user-2-version-1',
+      programId: repeated.program.id,
+      status: 'draft',
+    });
+    expect(repeated.version.workouts[0]?.id).not.toBe(
+      'program-barbell-30-guest-user-1-version-1-workout-1',
+    );
   });
 
   it('creates a new version namespace while preserving planned identities', () => {

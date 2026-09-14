@@ -23,6 +23,7 @@ import { demoCycle, demoProgramVersion } from '../src/domain/fixtures/home';
 import { demoProgram } from '../src/domain/fixtures/home';
 import { buildCycleProgressSummary, getWeekSixGuidance } from '../src/domain/progression';
 import { createTrainingCycle } from '../src/domain/cycle';
+import { createNextCycleCopy } from '../src/domain/programBuilder';
 import type { CycleProgressSummary } from '../src/domain/progression';
 import type {
   CheckInRating,
@@ -159,19 +160,29 @@ export default function CycleReviewScreen() {
       if (!savedReview) return;
 
       setReviewBusy('repeat');
+      const startedAt = new Date().toISOString();
+      const nextProgramId = `program-${program.slug}-guest-user-${Date.now()}`;
+      const copy = createNextCycleCopy({
+        sourceProgram: program,
+        sourceVersion: programVersion,
+        userId: 'guest-user',
+        newProgramId: nextProgramId,
+        newVersionId: `${nextProgramId}-version-1`,
+        createdAt: startedAt,
+      });
       const nextCycle = createTrainingCycle({
         id: `cycle-guest-user-${cycle.id}-${Date.now()}`,
         userId: 'guest-user',
-        programVersion,
-        startedAt: new Date().toISOString(),
+        programVersion: copy.version,
+        startedAt,
       });
       if (database) {
-        await saveProgramVersion(database, 'guest-user', program, programVersion);
+        await saveProgramVersion(database, 'guest-user', copy.program, copy.version);
         await saveTrainingCycle(database, nextCycle);
       }
       trackAnalyticsEvent(analytics, 'next_cycle_started', {
         cycleId: nextCycle.id,
-        programId: program.sourceProgramId ?? program.id,
+        programId: copy.program.sourceProgramId ?? copy.program.id,
       });
       router.replace('/');
     } catch (repeatError) {

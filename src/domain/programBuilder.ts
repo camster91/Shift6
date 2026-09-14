@@ -94,6 +94,27 @@ export function createProgramCopy({
   };
 }
 
+/**
+ * Create the immutable private snapshot used when a completed cycle is
+ * repeated. The visible program identity stays familiar, while the stored
+ * program/version/workout namespace is new so later edits cannot rewrite the
+ * completed cycle's historical snapshot.
+ */
+export function createNextCycleCopy(input: CreateProgramCopyInput): ProgramCopy {
+  const copy = createProgramCopy(input);
+
+  return {
+    program: {
+      ...copy.program,
+      title: input.sourceProgram.title,
+      slug: input.sourceProgram.slug,
+      description: input.sourceProgram.description,
+      sourceProgramId: input.sourceProgram.sourceProgramId ?? input.sourceProgram.id,
+    },
+    version: copy.version,
+  };
+}
+
 export function createProgramVersionRevision(
   sourceVersion: ProgramVersion,
   newVersionId: string,

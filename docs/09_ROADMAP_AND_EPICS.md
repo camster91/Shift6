@@ -253,11 +253,12 @@ ownership, and validation conflicts remain queued, are never auto-merged, and su
 runtime `conflict` state and an accessible Profile banner. Conflict-resolution UX, server-side
 version policy, authenticated backend behavior, and native reconnect proof remain open #272 work.
 
-Cycle Review now exposes all six typed next-block choices. Repeat starts a new snapshot from the
-same version; progress and adjust open a private source copy; change exercises opens the same copy
-with explicit context; change program returns to the catalogue; and build new opens a blank private
-builder. The selected action is saved before navigation, while automatic cross-cycle progression
-carryover remains open until its deterministic rules are defined.
+Cycle Review now exposes all six typed next-block choices. Repeat creates a new private
+program/version namespace from the completed cycle's snapshot; progress and adjust open a private
+source copy; change exercises opens the same copy with explicit context; change program returns to
+the catalogue; and build new opens a blank private builder. The selected action is saved before
+navigation, while automatic cross-cycle progression carryover remains open until its deterministic
+rules are defined.
 
 The cycle engine now has a regression test for the full six-week transition sequence, in addition
 to isolated partial, next-week, and Week 6 completion cases.

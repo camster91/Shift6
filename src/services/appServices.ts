@@ -1,4 +1,5 @@
-import type { AuthProvider, BackendClient, CoachGateway } from './contracts';
+import type { AuthProvider, AnalyticsClient, BackendClient, CoachGateway } from './contracts';
+import { createNoopAnalyticsClient } from './analytics';
 import { UnavailableBackendClient, HttpBackendClient } from './backend';
 import { HttpCoachGateway, UnavailableCoachGateway } from './coach';
 import { ExpoConnectivityProvider } from './connectivity';
@@ -7,6 +8,7 @@ import type { ConnectivityProvider } from './syncCoordinator';
 
 export interface AppServices {
   auth: AuthProvider;
+  analytics: AnalyticsClient;
   backend: BackendClient;
   coach: CoachGateway;
   connectivity: ConnectivityProvider;
@@ -15,6 +17,7 @@ export interface AppServices {
 
 export interface AppServicesOptions {
   auth: AuthProvider;
+  analytics?: AnalyticsClient;
   apiBaseUrl?: string | null;
   fetcher?: typeof fetch;
   connectivity?: ConnectivityProvider;
@@ -28,6 +31,7 @@ export interface AppServicesOptions {
  */
 export function createAppServices({
   auth,
+  analytics: configuredAnalytics,
   apiBaseUrl,
   fetcher,
   connectivity = new ExpoConnectivityProvider(),
@@ -51,6 +55,7 @@ export function createAppServices({
         })
       : new UnavailableCoachGateway());
   const health = configuredHealth ?? createPlatformHealthProvider();
+  const analytics = configuredAnalytics ?? createNoopAnalyticsClient();
 
-  return { auth, backend, coach, connectivity, health };
+  return { auth, analytics, backend, coach, connectivity, health };
 }

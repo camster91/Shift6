@@ -13,13 +13,14 @@ import { getOnboardingProfile } from '../src/db/profileRepository';
 import { colors, spacing } from '../src/design/tokens';
 import { healthTypesForPreference } from '../src/services/health';
 import { useAppServices } from '../src/services/AppServicesProvider';
+import { trackAnalyticsEvent } from '../src/services/analytics';
 import { syncHealthSummaries, type HealthSyncStatus } from '../src/services/healthSync';
 
 type HealthSyncUiState = 'idle' | 'syncing' | HealthSyncStatus;
 
 export default function HealthSettingsScreen() {
   const database = useLocalDatabase();
-  const { health } = useAppServices();
+  const { analytics, health } = useAppServices();
   const [preference, setPreference] = useState<HealthConnectionPreference>('not-now');
   const [available, setAvailable] = useState<boolean | null>(null);
   const [healthTrends, setHealthTrends] = useState<HealthTrendPoint[]>([]);
@@ -107,6 +108,11 @@ export default function HealthSettingsScreen() {
     setHealthSyncState(result.status);
     setImportedCount(result.importedCount);
     if (result.status !== 'synced') return;
+
+    trackAnalyticsEvent(analytics, 'health_connected', {
+      provider: preference,
+      grantedTypeCount: result.grantedTypes.length,
+    });
 
     setHealthTrendsLoading(true);
     setHealthTrendsError(false);

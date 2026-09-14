@@ -1,4 +1,8 @@
-import { PrivacySafeAnalyticsClient, sanitizeAnalyticsEvent } from './analytics';
+import {
+  PrivacySafeAnalyticsClient,
+  sanitizeAnalyticsEvent,
+  trackAnalyticsEvent,
+} from './analytics';
 
 describe('privacy-safe analytics', () => {
   it('keeps allowlisted aggregate properties and drops free-text or unknown fields', () => {
@@ -47,5 +51,46 @@ describe('privacy-safe analytics', () => {
         properties: { proposalId: 'proposal-1', changeCount: 1 },
       },
     ]);
+  });
+
+  it('supports the documented six-week funnel events without allowing free text', () => {
+    expect(
+      sanitizeAnalyticsEvent({
+        name: 'next_cycle_started',
+        occurredAt: '2026-09-14T12:00:00.000Z',
+        properties: {
+          cycleId: 'cycle-2',
+          programId: 'barbell-30',
+          note: 'private reflection',
+        },
+      }),
+    ).toEqual({
+      name: 'next_cycle_started',
+      occurredAt: '2026-09-14T12:00:00.000Z',
+      properties: { cycleId: 'cycle-2', programId: 'barbell-30' },
+    });
+  });
+
+  it('drops non-finite numeric properties', () => {
+    expect(
+      sanitizeAnalyticsEvent({
+        name: 'week_2_reached',
+        occurredAt: '2026-09-14T12:00:00.000Z',
+        properties: { cycleId: 'cycle-1', completionRate: Number.NaN },
+      }),
+    ).toEqual({
+      name: 'week_2_reached',
+      occurredAt: '2026-09-14T12:00:00.000Z',
+      properties: { cycleId: 'cycle-1' },
+    });
+  });
+
+  it('creates timestamped events through the instrumentation helper', () => {
+    const received: string[] = [];
+    const client = new PrivacySafeAnalyticsClient((event) => received.push(event.name));
+
+    trackAnalyticsEvent(client, 'onboarding_started');
+
+    expect(received).toEqual(['onboarding_started']);
   });
 });

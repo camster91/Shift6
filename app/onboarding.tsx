@@ -33,16 +33,23 @@ import { equipmentCatalog } from '../src/domain/equipment';
 import { useLocalDatabase } from '../src/db/context';
 import { getOnboardingProfile, saveOnboardingProfile } from '../src/db/profileRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
+import { useAppServices } from '../src/services/AppServicesProvider';
+import { trackAnalyticsEvent } from '../src/services/analytics';
 
 const stepCount = 9;
 
 export default function OnboardingScreen() {
   const database = useLocalDatabase();
+  const { analytics } = useAppServices();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState(() => createOnboardingDraft());
   const [loadingProfile, setLoadingProfile] = useState(database !== null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    trackAnalyticsEvent(analytics, 'onboarding_started');
+  }, [analytics]);
 
   useEffect(() => {
     if (!database) {
@@ -113,6 +120,12 @@ export default function OnboardingScreen() {
     try {
       const profile = toOnboardingProfile(draft, new Date().toISOString());
       if (database) await saveOnboardingProfile(database, profile);
+      trackAnalyticsEvent(analytics, 'onboarding_completed', {
+        goalCount: draft.goals.length,
+        equipmentCount: draft.equipmentIds.length,
+        trainingDays: draft.trainingDaysPerWeek ?? 0,
+        healthConnectionSelected: draft.healthConnection !== 'not-now',
+      });
       router.replace('/programs');
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'We could not save your setup.');

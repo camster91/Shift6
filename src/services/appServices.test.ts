@@ -1,4 +1,4 @@
-import type { AuthProvider } from './contracts';
+import type { AnalyticsClient, AuthProvider } from './contracts';
 import { UnavailableBackendClient, HttpBackendClient } from './backend';
 import { createAppServices } from './appServices';
 
@@ -36,5 +36,23 @@ describe('app service composition', () => {
     expect(services.backend).toBeInstanceOf(HttpBackendClient);
     await services.backend.sync([]);
     expect(requestedToken).toBe('token-from-provider');
+  });
+
+  it('uses a no-op analytics client by default and preserves an injected client', () => {
+    const defaultServices = createAppServices({ auth });
+    const received: string[] = [];
+    const analytics: AnalyticsClient = {
+      track: (event) => received.push(event.name),
+    };
+
+    const configuredServices = createAppServices({ auth, analytics });
+
+    expect(defaultServices.analytics).toBeDefined();
+    expect(configuredServices.analytics).toBe(analytics);
+    configuredServices.analytics.track({
+      name: 'onboarding_started',
+      occurredAt: '2026-09-14T12:00:00.000Z',
+    });
+    expect(received).toEqual(['onboarding_started']);
   });
 });

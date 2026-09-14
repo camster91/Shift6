@@ -240,4 +240,11 @@ The first native health adapter increment is now implemented for iOS HealthKit a
 
 The cycle-review increment now persists optional user reflection locally (overall rating, next-block focus, note, and explicit repeat/adjust/change-program choice) with a replaceable `cycle-review` outbox mutation. Export, delete, and guest-account adoption cover the record. It does not change deterministic progression or apply a Coach proposal; native migration/restart proof and the remaining progress/change-next-cycle matrix remain open.
 
+The analytics increment now exposes an injected no-op-by-default client and instruments the
+documented six-week funnel at onboarding, program start, workout start/completion, Week 2, cycle
+completion, and next-cycle start. It also records health connection and exercise substitution
+events through a privacy-safe allowlist; free-text, coach conversation, raw health samples, email,
+and location remain excluded. A production analytics/crash provider, retention controls, and
+device-level observability verification remain open #272/#280/#281 work.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

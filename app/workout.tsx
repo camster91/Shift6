@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, StyleSheet, TextInput, View } from 'react-native';
 
 import {
@@ -66,6 +66,8 @@ import { colors, radii, spacing } from '../src/design/tokens';
 import { connectivityStatusFromNetworkState } from '../src/services/connectivity';
 import { createExpoNotificationProvider } from '../src/services/notifications';
 import { cancelRestTimerCue, refreshRestTimerCue } from '../src/services/notificationScheduler';
+import { useAppServices } from '../src/services/AppServicesProvider';
+import { trackAnalyticsEvent } from '../src/services/analytics';
 import * as Network from 'expo-network';
 import type { ConnectivityStatus } from '../src/services/syncCoordinator';
 
@@ -75,6 +77,7 @@ const notificationProvider = createExpoNotificationProvider();
 
 export default function ActiveWorkoutScreen() {
   const database = useLocalDatabase();
+  const { analytics } = useAppServices();
   const { workoutId } = useLocalSearchParams<{ workoutId?: string }>();
   const [activeCycle, setActiveCycle] = useState<TrainingCycle>(demoCycle);
   const [activeProgram, setActiveProgram] = useState(demoProgram);
@@ -113,6 +116,7 @@ export default function ActiveWorkoutScreen() {
   const [readiness, setReadiness] = useState<WorkoutReadiness | null>(null);
   const [readinessSaving, setReadinessSaving] = useState(false);
   const [restTimerEnabled, setRestTimerEnabled] = useState(false);
+  const trackedWorkoutSessionId = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -167,6 +171,17 @@ export default function ActiveWorkoutScreen() {
     [activeCycle.id, activeCycle.currentWeek, activeWorkout, connectivity, readiness, startedAt],
   );
   const session = resumedSession ?? proposedSession;
+
+  useEffect(() => {
+    if (loadingCycle || loadingSession || trackedWorkoutSessionId.current === session.id) return;
+
+    trackedWorkoutSessionId.current = session.id;
+    trackAnalyticsEvent(analytics, 'workout_started', {
+      workoutId: session.workoutId,
+      cycleWeek: session.cycleWeek,
+      offline: session.isOffline,
+    });
+  }, [analytics, loadingCycle, loadingSession, session]);
 
   useEffect(() => {
     return () => {
@@ -544,6 +559,10 @@ export default function ActiveWorkoutScreen() {
       setActiveProgramVersion(nextVersion);
       setActiveCycle(nextCycle);
       setSubstitutionFor(null);
+      trackAnalyticsEvent(analytics, 'exercise_substituted', {
+        sourceExerciseId: workoutExercise.exerciseId,
+        replacementExerciseId,
+      });
     } catch (substitutionError) {
       setError(
         substitutionError instanceof Error
@@ -559,8 +578,36 @@ export default function ActiveWorkoutScreen() {
     setFinishing(true);
     setError(null);
     try {
-      if (database)
-        await completeWorkoutSessionAndAdvanceCycle(database, session.id, new Date().toISOString());
+      const updatedCycle = database
+        ? await completeWorkoutSessionAndAdvanceCycle(
+            database,
+            session.id,
+            new Date().toISOString(),
+          )
+        : null;
+      trackAnalyticsEvent(analytics, 'workout_completed', {
+        workoutId: session.workoutId,
+        cycleWeek: session.cycleWeek,
+        offline: session.isOffline,
+      });
+      if (updatedCycle?.currentWeek === 2) {
+        trackAnalyticsEvent(analytics, 'week_2_reached', { cycleId: updatedCycle.id });
+      }
+      if (updatedCycle?.status === 'complete') {
+        const plannedWorkoutCount = updatedCycle.weeks.reduce(
+          (total, week) => total + week.plannedWorkoutCount,
+          0,
+        );
+        const completedWorkoutCount = updatedCycle.weeks.reduce(
+          (total, week) => total + week.completedWorkoutCount,
+          0,
+        );
+        trackAnalyticsEvent(analytics, 'cycle_completed', {
+          cycleId: updatedCycle.id,
+          completedWorkoutCount,
+          completionRate: plannedWorkoutCount > 0 ? completedWorkoutCount / plannedWorkoutCount : 0,
+        });
+      }
       router.replace({
         pathname: '/summary',
         params: { sessionId: session.id, workoutId: activeWorkout.id },

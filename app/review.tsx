@@ -32,9 +32,12 @@ import type {
   TrainingCycle,
 } from '../src/domain/types';
 import { colors, spacing } from '../src/design/tokens';
+import { useAppServices } from '../src/services/AppServicesProvider';
+import { trackAnalyticsEvent } from '../src/services/analytics';
 
 export default function CycleReviewScreen() {
   const database = useLocalDatabase();
+  const { analytics } = useAppServices();
   const [cycle, setCycle] = useState<TrainingCycle>(demoCycle);
   const [program, setProgram] = useState(demoProgram);
   const [programVersion, setProgramVersion] = useState(demoProgramVersion);
@@ -166,6 +169,10 @@ export default function CycleReviewScreen() {
         await saveProgramVersion(database, 'guest-user', program, programVersion);
         await saveTrainingCycle(database, nextCycle);
       }
+      trackAnalyticsEvent(analytics, 'next_cycle_started', {
+        cycleId: nextCycle.id,
+        programId: program.sourceProgramId ?? program.id,
+      });
       router.replace('/');
     } catch (repeatError) {
       setError(

@@ -8,7 +8,9 @@ const allowedProperties: Record<AnalyticsEventName, readonly string[]> = {
   program_started: ['programId', 'daysPerWeek', 'sessionLengthMinutes'],
   workout_started: ['workoutId', 'cycleWeek', 'offline'],
   workout_completed: ['workoutId', 'cycleWeek', 'offline'],
+  week_2_reached: ['cycleId'],
   cycle_completed: ['cycleId', 'completedWorkoutCount', 'completionRate'],
+  next_cycle_started: ['cycleId', 'programId'],
   coach_proposal_shown: ['proposalId', 'changeCount', 'confidence'],
   coach_proposal_accepted: ['proposalId', 'changeCount'],
   custom_program_created: ['programId', 'workoutCount'],
@@ -40,6 +42,27 @@ export class PrivacySafeAnalyticsClient implements AnalyticsClient {
   }
 }
 
+/** Default guest-shell client. It keeps instrumentation callable without a vendor or network. */
+export function createNoopAnalyticsClient(): AnalyticsClient {
+  return new PrivacySafeAnalyticsClient(() => undefined);
+}
+
+export function trackAnalyticsEvent(
+  client: AnalyticsClient,
+  name: AnalyticsEventName,
+  properties?: Record<string, AnalyticsProperty>,
+): void {
+  client.track({
+    name,
+    occurredAt: new Date().toISOString(),
+    ...(properties ? { properties } : {}),
+  });
+}
+
 function isAnalyticsProperty(value: unknown): value is AnalyticsProperty {
-  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
+  return (
+    typeof value === 'string' ||
+    typeof value === 'boolean' ||
+    (typeof value === 'number' && Number.isFinite(value))
+  );
 }

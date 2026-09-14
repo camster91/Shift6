@@ -22,9 +22,12 @@ import { createProgramCopy } from '../src/domain/programBuilder';
 import { getProgramCatalogueStatusLabel, programLibrary } from '../src/domain/programLibrary';
 import { saveProgramVersion } from '../src/db/programRepository';
 import { colors, spacing } from '../src/design/tokens';
+import { useAppServices } from '../src/services/AppServicesProvider';
+import { trackAnalyticsEvent } from '../src/services/analytics';
 
 export default function ProgramDetailScreen() {
   const database = useLocalDatabase();
+  const { analytics } = useAppServices();
   const { programId } = useLocalSearchParams<{ programId?: string }>();
   const catalogueEntry =
     programLibrary.find((entry) => entry.program.id === programId) ?? programLibrary[0]!;
@@ -66,6 +69,11 @@ export default function ProgramDetailScreen() {
         await saveProgramVersion(database, 'guest-user', program, copy.version);
         await saveTrainingCycle(database, cycle);
       }
+      trackAnalyticsEvent(analytics, 'program_started', {
+        programId: selectedProgram.id,
+        daysPerWeek: selectedProgram.daysPerWeek,
+        sessionLengthMinutes: selectedProgram.sessionLengthMinutes,
+      });
       router.replace('/');
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : 'We could not start this cycle.');

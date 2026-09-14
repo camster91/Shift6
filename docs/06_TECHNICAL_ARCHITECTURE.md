@@ -671,3 +671,16 @@ The end-of-cycle review now has a small persisted feedback boundary:
 - privacy export/delete and guest-to-account adoption include the new row and its queued mutation.
 
 Reflection data is local-first and remains optional. Native migration execution and end-of-cycle device QA remain open verification gates.
+
+## Privacy-safe analytics checkpoint — 2026-09-14
+
+The app-service composition now exposes an injected `AnalyticsClient` with a no-op default, so
+instrumentation does not add a vendor, credential, network dependency, or guest-shell side effect.
+`PrivacySafeAnalyticsClient` sanitizes every event at the transport boundary using a typed event
+name/property allowlist and rejects non-finite numbers. The initial routes emit the documented
+six-week funnel milestones (`onboarding_started`, `onboarding_completed`, `program_started`,
+`workout_started`, `workout_completed`, `week_2_reached`, `cycle_completed`, and
+`next_cycle_started`) plus health-connection and exercise-substitution events. Free-text notes,
+coach text, raw health samples, email, and location are not accepted by the allowlist. A concrete
+crash/analytics provider, retention policy implementation, and production observability backend
+remain release-gated work.

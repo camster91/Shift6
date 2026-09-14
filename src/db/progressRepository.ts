@@ -9,6 +9,7 @@ import {
   type SetPerformance,
 } from '../domain/progression';
 import type { CompletedSet } from '../domain/types';
+import type { WorkoutReadiness } from '../domain/types';
 import { getCompletedSets } from './workoutRepository';
 
 interface WorkoutSessionProgressRow {
@@ -17,6 +18,7 @@ interface WorkoutSessionProgressRow {
   started_at: string;
   completed_at: string | null;
   workout_focus: 'strength' | 'cardio' | 'mobility' | 'conditioning' | 'recovery' | 'mixed';
+  readiness: WorkoutReadiness | null;
 }
 
 interface CompletedSetProgressRow {
@@ -163,7 +165,7 @@ async function getCycleReviewSessions(
   cycleId: string,
 ): Promise<CycleReviewSession[]> {
   const sessionRows = await database.getAllAsync<WorkoutSessionProgressRow>(
-    `SELECT id, status, started_at, completed_at, workout_focus
+    `SELECT id, status, started_at, completed_at, workout_focus, readiness
        FROM workout_sessions
       WHERE cycle_id = ?
       ORDER BY started_at ASC;`,
@@ -230,6 +232,7 @@ async function getCycleReviewSessions(
       cardioMinutes,
       effort: asReportedEffort(checkIn?.perceived_exertion),
       discomfortFlag: checkIn?.discomfort_reported === 1,
+      readiness: row.readiness ?? undefined,
       personalRecordIds: personalRecordsBySession.get(row.id) ?? [],
       sets,
     };

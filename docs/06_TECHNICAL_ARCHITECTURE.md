@@ -572,6 +572,10 @@ Workout preflight now records optional readiness context (`ready`, `limited`, or
 
 Starting the curated Barbell 30 template now creates a uniquely identified private program/version snapshot (with the public template recorded as `sourceProgramId`) before persisting the cycle. This keeps the public fixture/template separate from user edits and gives later cycle history a stable version reference from the moment the cycle begins.
 
+## Recovery-context review checkpoint — 2026-09-14
+
+The cycle review read model now carries the optional pre-workout readiness label (`ready`, `limited`, or `rest`) from persisted workout sessions into deterministic cycle facts. The review surface presents counts as training context, not as a medical or composite readiness score. Sessions without a selection remain unclassified, and the existing conservative next-target rules remain the only progression authority.
+
 ## Auth and service composition checkpoint — 2026-09-14
 
 The #272 foundation now has an explicit `AuthProvider`/`AuthSession` contract and an `UnavailableAuthProvider` for the guest/unconfigured state. `createAppServices` composes that provider with the vendor-neutral HTTP sync transport and the replaceable Expo connectivity adapter. The backend receives access tokens only through the injected auth boundary; no auth vendor, credential, sign-in UI, or network request was added to the guest shell. This keeps account conversion and backend selection as isolated future adapters while preserving local-first workout behavior.

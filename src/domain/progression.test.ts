@@ -186,6 +186,7 @@ describe('SHIFT6 deterministic progression', () => {
         progressionEvents: 1,
         personalRecordIds: ['record-squat'],
         effort: 7,
+        readiness: 'ready',
         sets: [{ completed: true, load: 100, reps: 5 }],
       },
       {
@@ -195,6 +196,7 @@ describe('SHIFT6 deterministic progression', () => {
         progressionEvents: 0,
         personalRecordIds: ['record-squat'],
         effort: 8,
+        readiness: 'limited',
         sets: [{ completed: true, load: 105, reps: 5 }],
       },
     ]);
@@ -208,6 +210,7 @@ describe('SHIFT6 deterministic progression', () => {
       cardioMinutes: 30,
       averageReportedEffort: 7.5,
       discomfortFlags: 0,
+      readinessCounts: { ready: 1, limited: 1, rest: 0 },
     });
     expect(facts.personalRecordIds).toEqual(['record-squat']);
     expect(getWeekSixGuidance('consolidation').isReducedVolume).toBe(false);

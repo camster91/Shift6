@@ -198,6 +198,8 @@ Progress movement history now includes deterministic duration and distance point
 
 Progress history now surfaces the three most recent typed personal-record events alongside the chart, keeping the Records surface grounded in the existing deterministic domain output.
 
+The cycle review now carries persisted workout readiness labels into deterministic facts and presents their counts as transparent training context. It does not calculate a medical readiness score or let those labels bypass the existing progression rules.
+
 The health boundary now validates and normalizes provider summaries in the domain layer, deduplicates by source plus stable sample ID, and exposes explicit UTC-day trend aggregation rules for additive, average, and latest-value metrics. Native permission adapters, local health persistence, disclosure UI, and device verification remain later #279/#280 gates.
 
 Normalized health summaries now have a local SQLite repository with user-scoped upserts, filtered reads, local export/delete coverage, and guest-account ownership transfer. They remain outside the sync outbox until a least-privilege remote health policy is approved.

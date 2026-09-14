@@ -169,6 +169,22 @@ export default function CycleReviewScreen() {
         </Text>
       </Card>
 
+      <Card
+        tone="white"
+        style={styles.readinessCard}
+        accessibilityLabel={formatReadinessAccessibilityLabel(summary)}
+      >
+        <Text variant="caption" tone="muted">
+          READINESS CONTEXT
+        </Text>
+        <Text variant="h3" style={styles.readinessTitle}>
+          Training context, not a score.
+        </Text>
+        <Text variant="small" tone="muted" style={styles.readinessCopy}>
+          {formatReadinessSummary(summary)}
+        </Text>
+      </Card>
+
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
 
       {isComplete ? (
@@ -253,6 +269,25 @@ function formatReviewSignals(summary: CycleProgressSummary): string {
   return `${facts.progressionEvents} progression events, ${effort}, ${cardio}, and ${discomfort}.`;
 }
 
+function formatReadinessSummary(summary: CycleProgressSummary): string {
+  const { readinessCounts } = summary.facts;
+  const logged = readinessCounts.ready + readinessCounts.limited + readinessCounts.rest;
+  if (logged === 0) {
+    return 'No readiness context has been logged yet. You can choose a simple pre-workout context without changing your plan automatically.';
+  }
+
+  const parts = [
+    `${readinessCounts.ready} ready`,
+    `${readinessCounts.limited} limited`,
+    `${readinessCounts.rest} rest`,
+  ];
+  return `${logged} session${logged === 1 ? '' : 's'} reported context: ${parts.join(', ')}. These labels inform conservative targets; they are not a medical assessment.`;
+}
+
+function formatReadinessAccessibilityLabel(summary: CycleProgressSummary): string {
+  return `Readiness context. ${formatReadinessSummary(summary)}`;
+}
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -295,6 +330,15 @@ const styles = StyleSheet.create({
   },
   signalCopy: {
     marginTop: spacing.sm,
+  },
+  readinessCard: {
+    marginTop: spacing.md,
+  },
+  readinessTitle: {
+    marginTop: spacing.sm,
+  },
+  readinessCopy: {
+    marginTop: spacing.xs,
   },
   fact: {
     flexGrow: 1,

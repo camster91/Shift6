@@ -56,6 +56,7 @@ describe('getCycleProgressSummary', () => {
             started_at: '2026-09-13T12:00:00.000Z',
             completed_at: '2026-09-13T12:30:00.000Z',
             workout_focus: 'strength',
+            readiness: 'ready',
           },
           {
             id: 'session-2',
@@ -63,6 +64,7 @@ describe('getCycleProgressSummary', () => {
             started_at: '2026-09-14T12:00:00.000Z',
             completed_at: '2026-09-14T12:15:00.000Z',
             workout_focus: 'cardio',
+            readiness: 'limited',
           },
         ];
       },
@@ -78,6 +80,7 @@ describe('getCycleProgressSummary', () => {
         averageSessionDurationMinutes: 22.5,
         averageReportedEffort: 3.5,
         discomfortFlags: 1,
+        readinessCounts: { ready: 1, limited: 1, rest: 0 },
         personalRecordIds: [
           'record-exercise-back-squat-load-session-1',
           'record-exercise-back-squat-reps-session-1',

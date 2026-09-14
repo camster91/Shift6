@@ -1,4 +1,4 @@
-import type { CycleModel, ProgressionStrategy, SetTarget } from './types';
+import type { CycleModel, ProgressionStrategy, SetTarget, WorkoutReadiness } from './types';
 
 export interface ReadinessInput {
   energy: 1 | 2 | 3 | 4 | 5;
@@ -90,6 +90,13 @@ export interface CycleReviewSession {
   sets?: readonly SetPerformance[];
   effort?: number;
   discomfortFlag?: boolean;
+  readiness?: WorkoutReadiness;
+}
+
+export interface ReadinessCounts {
+  ready: number;
+  limited: number;
+  rest: number;
 }
 
 export interface CycleReviewFacts {
@@ -104,6 +111,7 @@ export interface CycleReviewFacts {
   averageReportedEffort?: number;
   averageSessionDurationMinutes?: number;
   discomfortFlags: number;
+  readinessCounts: ReadinessCounts;
 }
 
 export interface CycleProgressSummary {
@@ -283,6 +291,13 @@ export function buildCycleReviewFacts(
   const personalRecordIds = [
     ...new Set(completedSessions.flatMap((session) => session.personalRecordIds ?? [])),
   ];
+  const readinessCounts = sessions.reduce<ReadinessCounts>(
+    (counts, session) => {
+      if (session.readiness) counts[session.readiness] += 1;
+      return counts;
+    },
+    { ready: 0, limited: 0, rest: 0 },
+  );
   const totalTrainingVolume = completedSessions.reduce(
     (total, session) =>
       total +
@@ -314,6 +329,7 @@ export function buildCycleReviewFacts(
     averageReportedEffort: average(efforts),
     averageSessionDurationMinutes: average(durations),
     discomfortFlags: sessions.filter((session) => session.discomfortFlag).length,
+    readinessCounts,
   };
 }
 

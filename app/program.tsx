@@ -103,6 +103,7 @@ export default function ProgramDetailScreen() {
           </Text>
           <Text variant="small" tone="muted">
             {workout.exercises.length} movements · {workout.equipmentIds.length} equipment types
+            {workout.isOptional ? ' · optional' : ''}
           </Text>
           <Button
             label={`Open ${workout.title}`}
@@ -140,7 +141,7 @@ const demoWeeks = Array.from({ length: 6 }, (_, index) => ({
   phase: demoProgramVersion.cycleModel.phases[index + 1] ?? 'Training',
   status: index === 0 ? ('current' as const) : ('upcoming' as const),
   completedWorkoutCount: 0,
-  plannedWorkoutCount: demoProgramVersion.workouts.length,
+  plannedWorkoutCount: demoProgramVersion.workouts.filter((workout) => !workout.isOptional).length,
 }));
 
 const styles = StyleSheet.create({

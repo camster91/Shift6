@@ -1,0 +1,166 @@
+# SHIFT6 — Roadmap & Engineering Epics
+
+## Delivery philosophy
+
+Build the smallest complete vertical slice first: onboarding → program → workout → progress → cycle review. Do not build 300 exercise media assets before the logging engine works.
+
+## Phase 0 — Foundation
+
+Epic 1: Product/design system
+- Figma token system
+- logo/app icon
+- navigation
+- core components
+- accessibility baselines
+
+Epic 2: Repository/app bootstrap
+- Expo TypeScript app
+- environments
+- lint/typecheck/tests
+- CI
+- routing
+- local database
+- backend skeleton
+
+Epic 3: Auth/profile
+- guest mode
+- account conversion
+- Apple/Google/email auth
+- units/goals/equipment/schedule
+
+Exit gate: app boots on representative iOS/Android devices, CI green, design tokens implemented.
+
+## Phase 1 — Workout core
+
+Epic 4: Exercise catalogue
+- schema
+- search/filter
+- seed 50 foundational exercises first
+- detail screen
+- media placeholders
+
+Epic 5: Program model
+- templates
+- custom program builder
+- workout builder
+- versioning
+
+Epic 6: Active workout
+- offline set logging
+- timer
+- notes
+- substitutions
+- pause/resume
+- summary
+
+Exit gate: complete Barbell 30 entirely offline and retain data after app restart.
+
+## Phase 2 — SHIFT6 differentiation
+
+Epic 7: Six-week engine
+- cycle creation
+- progression strategies
+- cycle dashboard
+- week transitions
+- review facts
+
+Epic 8: Progress
+- strength charts
+- records
+- consistency
+- cardio minutes
+- cycle comparison
+
+Epic 9: AI coach
+- provider-agnostic gateway
+- structured context
+- chat
+- weekly review
+- proposal diff/approval
+- safety evaluation suite
+
+Exit gate: user can complete a full simulated six-week cycle and approve/reject coach changes.
+
+## Phase 3 — Breadth
+
+Epic 10: 20 curated programs
+- content review
+- equipment filters
+- recommendation logic
+
+Epic 11: 300+ exercise catalogue
+- exercise QA
+- substitution graph
+- media production
+
+Epic 12: Cardio/mobility/power/balance
+- session types
+- interval builder
+- mobility routines
+
+Epic 13: Health integrations
+- Apple Health
+- Health Connect
+- permissions
+- import/dedup
+- health trend UI
+
+## Phase 4 — Public-release hardening
+
+Epic 14: Notifications
+Epic 15: Data export/delete/privacy
+Epic 16: Analytics/crash/performance
+Epic 17: Accessibility audit
+Epic 18: Security review
+Epic 19: Store assets/privacy disclosures
+Epic 20: Release pipeline and staged rollout
+
+## Post-launch
+
+- Apple Watch
+- Wear OS
+- localization
+- trainer/client tools
+- richer nutrition/protein/hydration
+- voice coach
+- additional device integrations
+- community only after privacy/abuse design
+
+## Issue-writing rule
+
+Every implementation issue should include:
+- objective;
+- user value;
+- source doc links;
+- in scope;
+- out of scope;
+- technical notes;
+- data changes;
+- analytics events;
+- accessibility requirements;
+- acceptance criteria;
+- mobile QA (small iPhone, large iPhone, representative Android small/large, tablet if affected);
+- offline behaviour;
+- error states;
+- security/privacy notes;
+- rollback/migration considerations;
+- screenshots/Figma links once available.
+
+## Recommended build order
+
+1. Design tokens + component primitives
+2. Local DB + domain models
+3. Onboarding/equipment
+4. Exercise catalogue 50-core seed
+5. Program templates
+6. Active workout offline
+7. Barbell 30
+8. Program builder
+9. Cycle engine
+10. Progress
+11. Coach
+12. More programs/exercises
+13. Health integrations
+14. release hardening
+
+Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

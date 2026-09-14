@@ -1,126 +1,71 @@
-# Armor
+# SHIFT6
 
-**A 6-week periodized fitness PWA for professionals whose schedule doesn't respect their workout.**
+SHIFT6 is a free-first mobile fitness platform for iOS and Android built around one core idea: **progress is easier to understand and sustain when training is organized into focused 6-week cycles.**
 
-Armor is the rebrand of the former "Shift6" app. It is a local-first Capacitor (React + Vite) PWA that delivers a 5-day split (Heavy Squats / VO2 Max / Heavy Bench / VO2 Max / Heavy Deads) on a 6-week periodization, plus an optional cloud sync for multi-device use.
+The app combines structured workout programming, hundreds of exercises, equipment-aware program building, health and recovery context, and a provider-agnostic AI personal-training coach that helps users plan, execute, review, and adapt their training.
 
-Live at [getshift6.com](https://getshift6.com).
+## Product promise
 
-## Why Armor
+**Train with a plan. Review every 6 weeks. Keep moving forward.**
 
-Built for the user who:
-- Has 20 minutes between meetings, a brutal weekend behind them, or a hotel gym in a city they can't pronounce.
-- Wants a coach, not a content library.
-- Tracks 1RMs and wants the math to be correct, every time.
-- Doesn't want to sign in to log a set.
+SHIFT6 is intended to become a long-term fitness operating system rather than a single workout app. Users can:
 
-## Features
+- follow curated programs;
+- choose from at least 20 launch programs;
+- build their own programs and workouts;
+- add, remove, reorder, substitute, or edit exercises;
+- search hundreds of exercises by movement, muscle, equipment, goal, difficulty, or accessibility needs;
+- track strength, conditioning, mobility, cardio, body metrics, consistency, and health signals;
+- progress through 6-week training cycles;
+- work with an AI PT coach that reviews performance and proposes safe, explainable changes;
+- connect Apple Health / Health Connect where supported;
+- train offline and sync later;
+- keep core functionality free at launch on the App Store and Google Play.
 
-### Training
-- **5-day split, 6-week periodization** — Base / Volume / Transition / Heavy / Peak / Deload.
-- **Two equipment tracks** — Full Gym (barbell) and Home Gym (dumbbell / kettlebell). Both 1RMs are tracked independently so you can switch mid-week.
-- **Norwegian 4x4 VO2 Max** — Embedded as Day 2 and Day 4. 4-minute work, 3-minute rest, 4 rounds. The single best predictor of all-cause mortality, lowest time cost.
-- **Plate math** — Per-track rounding, kg/lbs switchable, PlateVisualizer for the bar setup.
-- **Contingency modifiers** — MVD (Minimum Viable Day), CNS fatigue, heavy meal, travel mode, time crunch. The app reshapes the workout to the day.
+## Current repository status
 
-### Tracking
-- **Estimated 1RMs** — per exercise, per track. Auto-progresses +5 lbs upper / +10 lbs lower on cycle rollover.
-- **Daily habits** — Single-leg stands, lunch walk, post-dinner walk, evening floor work. Pillar-aligned reminders.
-- **Streaks with freezes** — One streak-freeze per cycle, for the week the user got sick.
-- **Personal records** — Detected automatically on the final set of the primary lift.
+This repository was intentionally reset on 2026-09-13 to become the canonical SHIFT6 rebuild. The previous implementation is preserved on:
 
-### Platform
-- **Local-first by default** — All workout data lives in your device's localStorage. No account required. No data leaves the device.
-- **Opt-in cloud sync** — Sign in from the Account tab to back up your data and access it from multiple devices. See `Privacy Policy` for details.
-- **Offline PWA** — Install on iOS, Android, or any modern browser. The service worker caches every asset and the PWA functions without internet.
-- **Native builds** — Capacitor 8 wraps the PWA for App Store and Google Play submission. No native code.
+`archive/pre-shift6-rebuild-2026-09-13`
 
-## Tech Stack
+The default branch now contains planning only. Do not restore old application code into `main` without an explicit migration decision.
 
-| Category | Technology |
-|----------|------------|
-| Frontend | React 18 + Vite 5 |
-| Styling | Tailwind CSS 3 |
-| State | React Context (`ArmorDataContext`) + localStorage |
-| Charts | (planned) Recharts |
-| Mobile | Capacitor 8 (iOS + Android) |
-| PWA | vite-plugin-pwa, Workbox |
-| Tests | Vitest + jsdom |
-| Lint | ESLint 9 (flat config) |
+## Canonical planning docs
 
-There is **no backend in this repository.** The optional cloud sync is a sibling repo (`armor-sync-api`, not yet public) that this client expects at `https://sync.getshift6.com`. When that backend is not deployed, the Account tab is hidden — the app is fully functional without it.
+1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition
+2. `docs/01_BRAND_AND_DESIGN_SYSTEM.md` — SHIFT6 identity and Figma-first design direction
+3. `docs/02_SCREEN_BY_SCREEN_SPEC.md` — end-to-end mobile information architecture and screen requirements
+4. `docs/03_SHIFT6_PROGRESSION_ENGINE.md` — six-week progression model and adaptation rules
+5. `docs/04_AI_PT_COACH.md` — AI coach architecture, behaviour, guardrails, and prompt strategy
+6. `docs/05_PROGRAMS_EXERCISES_EQUIPMENT.md` — program builder, 20 seed programs, exercise/equipment catalogue
+7. `docs/06_TECHNICAL_ARCHITECTURE.md` — proposed mobile/backend/offline/integration architecture
+8. `docs/07_ASSET_AND_ICON_PROMPTS.md` — prompts and production plan for custom imagery and icons
+9. `docs/08_PRIVACY_ACCESSIBILITY_SAFETY.md` — health-data privacy, accessibility, safety, and AI boundaries
+10. `docs/09_ROADMAP_AND_EPICS.md` — build phases, issue structure, acceptance gates
+11. `docs/10_QA_RELEASE_ANALYTICS.md` — QA matrix, analytics, App Store/Play Store, release and rollback
+12. `docs/11_MASTER_BUILD_PROMPT.md` — implementation handoff prompt for coding agents/harnesses
 
-## Quick start
+## Design reference
 
-```bash
-git clone https://github.com/camster91/Shift6.git
-cd Shift6
-npm install
-npm run dev      # local dev server
-npm run build    # production build → dist/
-npm run test     # vitest watch
-npm run lint     # eslint (no warnings allowed)
-```
+Primary visual direction supplied for this rebuild:
 
-## Native mobile
+https://dribbble.com/shots/23040815-Fitness-App-Design-Concept
 
-```bash
-npm run cap:android   # build + open Android Studio
-npm run cap:ios       # build + open Xcode
-```
+The goal is **not to clone the reference**. SHIFT6 should reinterpret its light premium aesthetic, large typography, soft lavender background, white surfaces, black pill navigation, playful pastel category cards, 3D object accents, generous spacing, and rounded geometry into a distinct brand and accessible product system.
 
-Build artifacts (AAB, IPA) live in `store-assets/`. The release signing key is `android/shift6-release.keystore`; the keystore password is read from `RELEASE_STORE_PASSWORD` at build time (see `android/app/build.gradle`).
+## Initial product architecture recommendation
 
-## Environment variables
+- React Native + Expo + TypeScript
+- Expo Router
+- token-driven component library built from Figma variables
+- local-first workout logging with SQLite and an explicit sync/outbox layer
+- PostgreSQL backend with strict row-level access control
+- provider-agnostic AI gateway on the server
+- Apple Health / HealthKit and Android Health Connect integration through native adapters
+- GitHub Actions + EAS build/release pipeline
 
-| Var | Used for |
-|-----|----------|
-| `VITE_SYNC_ENABLED` | Set to `1` to show the Account (cloud sync) tab. Default: hidden. |
-| `VITE_GA_MEASUREMENT_ID` | GA4 ID for analytics. Default: empty (analytics off). |
+The architecture remains replaceable behind interfaces where possible. Product behaviour and data models are more important than any single vendor.
 
-Build-time env vars for the Android release key:
+## Definition of success
 
-```
-RELEASE_STORE_FILE=shift6-release.keystore
-RELEASE_STORE_PASSWORD=...
-RELEASE_KEY_ALIAS=...
-RELEASE_KEY_PASSWORD=...
-```
-
-## Project structure
-
-```
-src/
-├── ArmorApp.jsx                 # App shell, tab nav, migration
-├── main.jsx                     # React root, ArmorDataProvider + ErrorBoundary
-├── context/
-│   └── ArmorDataContext.jsx     # Single provider: workout, prefs, modifiers, habits, sync
-├── pages/                       # Today / Workout / Progress / Account / Settings / Onboarding
-├── components/                  # PlateVisualizer, FirstRunTour, ErrorBoundary, UI library
-├── data/
-│   ├── armorEngine.js           # Pure functions: periodization, plate math, modifiers
-│   └── armorEngine.test.js      # 47-test coverage of the math
-├── lib/
-│   └── syncClient.js            # Optional cloud sync (Fastify/Postgres)
-├── landing/                     # Marketing site (separate Vite build)
-├── utils/                       # analytics, date, notifications
-└── test/setup.js                # vitest jsdom setup
-```
-
-## Permissions (mobile)
-
-- **Vibration / Haptics** — Optional. Used for set-complete confirmation.
-- **Notifications** — Optional. User-initiated habit reminders.
-- **Status Bar / Splash Screen** — Cosmetic. Dark theme.
-
-## Privacy
-
-See [`store-assets/PRIVACY_POLICY.md`](./store-assets/PRIVACY_POLICY.md) or the live `/legal/` page. Short version: local-first by default, opt-in cloud sync, no third-party tracking, no ads, no selling of data.
-
-## License
-
-Private repo. Not for redistribution.
-
-## Migration from Shift6 (v1 → v3)
-
-The app detects old `shift6_*` localStorage keys on first launch and migrates them to `armor_*`. The migration is idempotent and sets a marker key (`armor_migrated_from_shift6`) so it runs only once. No data is sent off-device during migration.
+A first public release is successful when a new user can install SHIFT6, onboard in a few minutes, choose or build a program, complete workouts offline, see progress across a six-week cycle, receive useful coach feedback, safely edit their plan, and understand exactly what to do next without encountering a paywall for core training functionality.

@@ -843,6 +843,17 @@ The web provider intentionally remains non-persistent; native SQLite and reconne
 remain release-gated. Multi-workout date planning, drag interactions, server conflict resolution,
 and calendar notifications that honor overrides remain follow-up work.
 
+## Workout history checkpoint — 2026-09-14
+
+`src/db/historyRepository.ts` now provides a user-scoped read model over immutable workout sessions
+and completed sets. It joins the cycle and program-version snapshot, aggregates completed-set count,
+load volume, cardio duration, and distance without rewriting history, and keeps partial/skipped/
+in-progress states explicit. Malformed snapshots fall back to a stable workout ID label.
+
+`/history` exposes that read model with status filters and an accessible summary for each session.
+The route uses the same local database boundary as Progress and remains usable without a network;
+the web preview uses typed demo records because its provider is intentionally non-persistent.
+
 ## Plate calculator checkpoint — 2026-09-14
 
 The optional barbell utility is implemented as a pure domain calculation in

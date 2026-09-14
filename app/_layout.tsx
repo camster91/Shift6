@@ -31,6 +31,7 @@ export default function RootLayout() {
               <Stack.Screen name="cycle" options={{ presentation: 'card' }} />
               <Stack.Screen name="calendar" options={{ presentation: 'card' }} />
               <Stack.Screen name="plate-calculator" options={{ presentation: 'card' }} />
+              <Stack.Screen name="history" options={{ presentation: 'card' }} />
               <Stack.Screen name="notifications" options={{ presentation: 'card' }} />
               <Stack.Screen name="equipment" options={{ presentation: 'card' }} />
               <Stack.Screen name="sync-review" options={{ presentation: 'card' }} />

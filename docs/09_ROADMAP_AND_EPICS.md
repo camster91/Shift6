@@ -347,6 +347,10 @@ pure domain algorithm loads only symmetric plate pairs, never overshoots a targe
 underloaded result explicit when the local inventory cannot match exactly. It does not change
 workout targets or persisted history.
 
+The first workout-history surface now reads immutable local sessions and completed-set aggregates,
+keeps partial/skipped/offline context visible, and links from Home into a filterable history route.
+It does not introduce a second source of truth for Progress or alter completed records.
+
 The #277/#275 Review → progression-copy path now applies ordinary deterministic target changes from
 the completed cycle to a new private version. Matching uses canonical exercise plus immediate
 source-workout identity; safety/readiness flags and confirmation-requiring strategies hold the

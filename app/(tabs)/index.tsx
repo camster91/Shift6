@@ -169,6 +169,13 @@ export default function HomeScreen() {
         onPress={() => router.push('/calendar')}
         style={styles.calendarAction}
       />
+      <Button
+        label="View workout history"
+        variant="ghost"
+        icon={<Ionicons name="book-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/history')}
+        style={styles.historyAction}
+      />
 
       <View style={styles.sectionHeader}>
         <View>
@@ -346,6 +353,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   calendarAction: {
+    alignSelf: 'flex-start',
+  },
+  historyAction: {
     alignSelf: 'flex-start',
   },
   scheduleList: {

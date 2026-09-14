@@ -13,7 +13,7 @@ import {
   SixWeekIndicator,
   Text,
 } from '../src/components/ui';
-import { buildWeeklySchedule } from '../src/domain/home';
+import { buildCurrentCycleWeekSchedule } from '../src/domain/calendar';
 import {
   demoCycle,
   demoCycleWeeks,
@@ -28,6 +28,10 @@ import type {
   WeeklyScheduleEntry,
 } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
+import {
+  getWorkoutScheduleOverrides,
+  getWorkoutScheduleSessions,
+} from '../src/db/calendarRepository';
 import { getActiveTrainingCycle } from '../src/db/cycleRepository';
 import { getUserProgramVersion } from '../src/db/programRepository';
 import { getCompletedWorkoutIds } from '../src/db/progressRepository';
@@ -61,11 +65,11 @@ export default function CycleDashboardScreen() {
             'guest-user',
             activeCycle.programVersionId,
           );
-          const completedIds = await getCompletedWorkoutIds(
-            database,
-            activeCycle.id,
-            activeCycle.currentWeek,
-          );
+          const [completedIds, scheduleOverrides, scheduleSessions] = await Promise.all([
+            getCompletedWorkoutIds(database, activeCycle.id, activeCycle.currentWeek),
+            getWorkoutScheduleOverrides(database, 'guest-user', activeCycle.id),
+            getWorkoutScheduleSessions(database, activeCycle.id),
+          ]);
           if (!active) return;
           setCycle(activeCycle);
           setCompletedWorkoutIds(completedIds);
@@ -73,7 +77,13 @@ export default function CycleDashboardScreen() {
           setProgram(snapshot.program);
           setVersion(snapshot.version);
           setSchedule(
-            buildWeeklySchedule(snapshot.version, completedIds, new Date(), demoSchedule),
+            buildCurrentCycleWeekSchedule(
+              activeCycle,
+              snapshot.version,
+              scheduleOverrides,
+              scheduleSessions,
+              new Date(),
+            ),
           );
         })
         .catch(() => undefined)
@@ -150,6 +160,13 @@ export default function CycleDashboardScreen() {
             : `Week 6 is ${formatWeekSixMeaning(version.cycleModel.weekSixMeaning)}.`}
         </Text>
       </Card>
+      <Button
+        label="Open calendar"
+        variant="ghost"
+        icon={<Ionicons name="calendar-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/calendar')}
+        style={styles.calendarAction}
+      />
 
       <View style={styles.sectionHeader}>
         <View>
@@ -287,6 +304,10 @@ const styles = StyleSheet.create({
   },
   cycleCard: {
     marginTop: spacing.xl,
+  },
+  calendarAction: {
+    marginTop: spacing.xs,
+    alignSelf: 'flex-start',
   },
   cycleHeader: {
     flexDirection: 'row',

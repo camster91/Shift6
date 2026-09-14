@@ -230,7 +230,7 @@ Cycle advancement now uses distinct required workout identities from persisted c
 
 CI now runs on feature-branch pushes in addition to pull requests, so the foundation gate is available before a branch is opened for review.
 
-The dedicated cycle dashboard now makes the six-week signature visible as a real route, using the persisted active cycle/version snapshot, current-week completion, schedule categories, and program-defined Week 6 meaning. It links back into workout, progress, and review flows without duplicating progression calculations. Calendar rescheduling and multi-workout date planning remain later surfaces.
+The dedicated cycle dashboard now makes the six-week signature visible as a real route, using the persisted active cycle/version snapshot, current-week completion, schedule categories, and program-defined Week 6 meaning. It links back into workout, progress, and review flows without duplicating progression calculations. A first calendar/rescheduling surface now adds cycle-scoped local date overrides and feeds the current-week schedule back into Home and the cycle dashboard; multi-workout date planning and drag interactions remain later surfaces.
 
 The #271 asset handoff now has a CI-enforced manifest validator for review metadata, safe paths, implementation references, and basic SVG integrity. This protects the Figma-first boundary without presenting exploratory or fallback assets as approved production exports.
 

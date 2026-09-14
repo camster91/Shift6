@@ -29,7 +29,8 @@ export interface SyncMutation {
     | 'coach-proposal'
     | 'workout-check-in'
     | 'cycle-review'
-    | 'notification-preference';
+    | 'notification-preference'
+    | 'workout-schedule-override';
   entityId: EntityId;
   payload: Record<string, unknown>;
   createdAt: ISODateString;

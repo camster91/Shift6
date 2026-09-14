@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export interface LocalDataExport {
-  schemaVersion: 5;
+  schemaVersion: 6;
   exportedAt: string;
   userId: string;
   userProfiles: Record<string, unknown>[];
@@ -18,6 +18,7 @@ export interface LocalDataExport {
   healthSummaries: Record<string, unknown>[];
   notificationPreferences: Record<string, unknown>[];
   cycleReviews: Record<string, unknown>[];
+  workoutScheduleOverrides: Record<string, unknown>[];
 }
 
 export async function exportLocalUserData(
@@ -107,9 +108,15 @@ export async function exportLocalUserData(
       ORDER BY updated_at ASC, id ASC;`,
     userId,
   );
+  const workoutScheduleOverrides = await database.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM workout_schedule_overrides
+      WHERE user_id = ?
+      ORDER BY cycle_id ASC, cycle_week ASC, scheduled_date ASC, workout_id ASC;`,
+    userId,
+  );
 
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     exportedAt,
     userId,
     userProfiles,
@@ -126,6 +133,7 @@ export async function exportLocalUserData(
     healthSummaries,
     notificationPreferences,
     cycleReviews,
+    workoutScheduleOverrides,
   };
 }
 
@@ -177,7 +185,11 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
                   INNER JOIN workout_sessions ON workout_sessions.id = workout_check_ins.session_id
                   INNER JOIN training_cycles ON training_cycles.id = workout_sessions.cycle_id
                  WHERE training_cycles.user_id = ?
+              ))
+           OR (entity_type = 'workout-schedule-override' AND entity_id IN (
+                SELECT id FROM workout_schedule_overrides WHERE user_id = ?
               ));`,
+      userId,
       userId,
       userId,
       userId,
@@ -192,6 +204,7 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
     await database.runAsync('DELETE FROM notification_preferences WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM health_summaries WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM cycle_reviews WHERE user_id = ?;', userId);
+    await database.runAsync('DELETE FROM workout_schedule_overrides WHERE user_id = ?;', userId);
     await database.runAsync(
       `DELETE FROM completed_sets
         WHERE session_id IN (

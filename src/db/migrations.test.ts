@@ -135,4 +135,12 @@ describe('local database migrations', () => {
 
     expect(statements).toContain('ADD COLUMN completion_reason TEXT');
   });
+
+  it('stores cycle-scoped schedule overrides with a stable occurrence key', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS workout_schedule_overrides');
+    expect(statements).toContain('UNIQUE(cycle_id, cycle_week, workout_id)');
+    expect(statements).toContain('workout_schedule_overrides_cycle_date');
+  });
 });

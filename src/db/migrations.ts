@@ -279,6 +279,28 @@ export const MIGRATIONS: readonly Migration[] = [
         ADD COLUMN completion_reason TEXT;`,
     ],
   },
+  {
+    version: 17,
+    name: 'cycle-workout-schedule-overrides',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS workout_schedule_overrides (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL,
+        cycle_id TEXT NOT NULL,
+        cycle_week INTEGER NOT NULL,
+        workout_id TEXT NOT NULL,
+        original_date TEXT NOT NULL,
+        scheduled_date TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(cycle_id, cycle_week, workout_id),
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE,
+        FOREIGN KEY (cycle_id) REFERENCES training_cycles(id) ON DELETE CASCADE
+      );`,
+      `CREATE INDEX IF NOT EXISTS workout_schedule_overrides_cycle_date
+        ON workout_schedule_overrides(cycle_id, scheduled_date, cycle_week);`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

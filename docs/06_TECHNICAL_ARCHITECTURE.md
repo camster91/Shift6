@@ -823,3 +823,22 @@ the builder renders the resulting changes as editable starting targets. Copy ver
 immediate `sourceWorkoutId` so repeated program namespaces resolve history without conflating
 duplicated exercises. No cross-cycle change is applied for missing evidence, limited/rest
 readiness, discomfort, or strategies that require confirmation.
+
+## Calendar and rescheduling checkpoint — 2026-09-14
+
+The first calendar surface uses a cycle-scoped `workout_schedule_overrides` table rather than
+mutating the versioned program snapshot. Each occurrence is identified by cycle, week, and workout
+ID, and stores its original local date plus the user-selected scheduled date. The local write and
+its stable sync mutation are atomic and retry-safe.
+
+`src/domain/calendar.ts` is the source of truth for date arithmetic and status projection. It uses
+device-local `YYYY-MM-DD` keys to avoid UTC midnight shifts, derives the six-week schedule from the
+cycle start date, and projects complete/partial/skipped/in-progress/missed/current/upcoming states
+from local session history. Home and the cycle dashboard use the current-week projection; the
+calendar route exposes the full six-week plan and allows bounded one-day moves without changing
+cycle-week identity or completed history.
+
+Schedule overrides are included in local export/delete and guest-to-account adoption boundaries.
+The web provider intentionally remains non-persistent; native SQLite and reconnect/device proof
+remain release-gated. Multi-workout date planning, drag interactions, server conflict resolution,
+and calendar notifications that honor overrides remain follow-up work.

@@ -15,11 +15,16 @@ import {
   WorkoutCard,
 } from '../../src/components/ui';
 import { useLocalDatabase } from '../../src/db/context';
+import {
+  getWorkoutScheduleOverrides,
+  getWorkoutScheduleSessions,
+} from '../../src/db/calendarRepository';
 import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { getUserProgramVersion } from '../../src/db/programRepository';
 import { getCompletedWorkoutIds } from '../../src/db/progressRepository';
-import { buildWeeklySchedule, getTodayWorkout } from '../../src/domain/home';
+import { buildCurrentCycleWeekSchedule, formatDateKey } from '../../src/domain/calendar';
+import { getTodayWorkout } from '../../src/domain/home';
 import {
   demoCycle,
   demoProgram,
@@ -59,9 +64,11 @@ export default function HomeScreen() {
           }
           setCurrentUser(profile.user);
           if (!cycle) return;
-          const [snapshot, completedIds] = await Promise.all([
+          const [snapshot, completedIds, scheduleOverrides, scheduleSessions] = await Promise.all([
             getUserProgramVersion(database, 'guest-user', cycle.programVersionId),
             getCompletedWorkoutIds(database, cycle.id, cycle.currentWeek),
+            getWorkoutScheduleOverrides(database, 'guest-user', cycle.id),
+            getWorkoutScheduleSessions(database, cycle.id),
           ]);
           if (!active) return;
           setCurrentCycle(cycle);
@@ -70,10 +77,23 @@ export default function HomeScreen() {
           setCurrentProgram(snapshot.program);
           setCurrentProgramVersion(snapshot.version);
           const now = new Date();
-          setTodayWorkout(
-            getTodayWorkout(snapshot.version, now) ?? snapshot.version.workouts[0] ?? demoWorkout,
+          const cycleSchedule = buildCurrentCycleWeekSchedule(
+            cycle,
+            snapshot.version,
+            scheduleOverrides,
+            scheduleSessions,
+            now,
           );
-          setSchedule(buildWeeklySchedule(snapshot.version, completedIds, now, demoSchedule));
+          const scheduledToday = cycleSchedule.find(
+            (entry) => entry.date === formatDateKey(now) && entry.workoutId,
+          );
+          setTodayWorkout(
+            snapshot.version.workouts.find((workout) => workout.id === scheduledToday?.workoutId) ??
+              getTodayWorkout(snapshot.version, now) ??
+              snapshot.version.workouts[0] ??
+              demoWorkout,
+          );
+          setSchedule(cycleSchedule.length > 0 ? cycleSchedule : demoSchedule);
         })
         .catch(() => undefined);
 
@@ -141,6 +161,13 @@ export default function HomeScreen() {
         icon={<Ionicons name="analytics-outline" size={18} color={colors.ink} />}
         onPress={() => router.push('/cycle')}
         style={styles.cycleAction}
+      />
+      <Button
+        label="Open calendar"
+        variant="ghost"
+        icon={<Ionicons name="calendar-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/calendar')}
+        style={styles.calendarAction}
       />
 
       <View style={styles.sectionHeader}>
@@ -316,6 +343,9 @@ const styles = StyleSheet.create({
   },
   cycleAction: {
     marginTop: spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  calendarAction: {
     alignSelf: 'flex-start',
   },
   scheduleList: {

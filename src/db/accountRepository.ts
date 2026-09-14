@@ -74,10 +74,13 @@ export async function migrateLocalUserToAccount(
        UNION ALL
        SELECT 1 FROM cycle_reviews WHERE user_id = ?
        UNION ALL
+       SELECT 1 FROM workout_schedule_overrides WHERE user_id = ?
+       UNION ALL
        SELECT 1 FROM notification_preferences WHERE user_id = ?
        UNION ALL
        SELECT 1 FROM sync_outbox WHERE idempotency_key = ?
         LIMIT 1;`,
+      destinationUserId,
       destinationUserId,
       destinationUserId,
       destinationUserId,
@@ -144,7 +147,11 @@ export async function migrateLocalUserToAccount(
            OR (entity_type = 'cycle-review' AND entity_id IN (
                 SELECT id FROM cycle_reviews WHERE user_id = ?
               ))
+           OR (entity_type = 'workout-schedule-override' AND entity_id IN (
+                SELECT id FROM workout_schedule_overrides WHERE user_id = ?
+              ))
         ORDER BY created_at ASC, id ASC;`,
+      sourceUserId,
       sourceUserId,
       sourceUserId,
       sourceUserId,
@@ -231,6 +238,11 @@ export async function migrateLocalUserToAccount(
     );
     await database.runAsync(
       'UPDATE cycle_reviews SET user_id = ? WHERE user_id = ?;',
+      destinationUserId,
+      sourceUserId,
+    );
+    await database.runAsync(
+      'UPDATE workout_schedule_overrides SET user_id = ? WHERE user_id = ?;',
       destinationUserId,
       sourceUserId,
     );

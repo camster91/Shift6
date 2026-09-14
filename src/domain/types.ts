@@ -50,6 +50,8 @@ export type CycleStatus = 'planned' | 'active' | 'complete' | 'paused' | 'cancel
 export type CycleWeekStatus = 'completed' | 'current' | 'upcoming' | 'missed' | 'partial';
 export type WorkoutSessionStatus =
   'planned' | 'in-progress' | 'complete' | 'partial' | 'skipped' | 'abandoned';
+export type WorkoutScheduleStatus =
+  'complete' | 'partial' | 'skipped' | 'in-progress' | 'missed' | 'current' | 'upcoming';
 export type WorkoutSessionCompletionReason =
   'all-targets' | 'time-limited' | 'readiness' | 'discomfort' | 'equipment' | 'other';
 export type WorkoutGroupType = 'superset' | 'circuit';
@@ -201,6 +203,7 @@ export interface Workout {
 export interface WeeklyScheduleEntry {
   id: string;
   day: string;
+  date?: string;
   title: string;
   workoutId?: EntityId;
   category: 'strength' | 'cardio' | 'recovery' | 'rest';
@@ -276,6 +279,25 @@ export interface WorkoutSession {
   completionReason?: WorkoutSessionCompletionReason;
   isOffline: boolean;
   readiness?: WorkoutReadiness;
+}
+
+export interface WorkoutScheduleOverride {
+  id: EntityId;
+  userId: EntityId;
+  cycleId: EntityId;
+  cycleWeek: number;
+  workoutId: EntityId;
+  originalDate: string;
+  scheduledDate: string;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface WorkoutScheduleSession {
+  cycleWeek: number;
+  workoutId: EntityId;
+  status: WorkoutSessionStatus;
+  completedAt?: ISODateString;
 }
 
 export type CheckInRating = 1 | 2 | 3 | 4 | 5;

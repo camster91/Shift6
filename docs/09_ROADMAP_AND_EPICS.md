@@ -234,4 +234,6 @@ The dedicated cycle dashboard now makes the six-week signature visible as a real
 
 The #271 asset handoff now has a CI-enforced manifest validator for review metadata, safe paths, implementation references, and basic SVG integrity. This protects the Figma-first boundary without presenting exploratory or fallback assets as approved production exports.
 
+The provider-backed Coach boundary now has a tested HTTP adapter with bounded structured context, injected authentication, response validation, deterministic safety rerouting, and local fallback when no backend/provider is available. It does not claim a connected model provider, backend deployment, account UI, or autonomous plan changes.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

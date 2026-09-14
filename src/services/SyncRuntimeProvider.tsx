@@ -3,9 +3,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { AppState } from 'react-native';
 
 import { useLocalDatabase } from '../db/context';
-import { runtimeConfig } from '../config/env';
-import { createAppServices, type AppServices } from './appServices';
-import { createExpoSecureAuthProvider } from './auth';
+import type { AppServices } from './appServices';
+import { useOptionalAppServices } from './AppServicesProvider';
 import { subscribeToConnectivity } from './connectivity';
 import {
   runAuthenticatedSync,
@@ -25,11 +24,6 @@ export interface SyncRuntimeContextValue extends SyncRuntimeSnapshot {
   flushNow: () => Promise<void>;
 }
 
-const defaultServices = createAppServices({
-  auth: createExpoSecureAuthProvider(),
-  apiBaseUrl: runtimeConfig.apiBaseUrl,
-});
-
 const SyncRuntimeContext = createContext<SyncRuntimeContextValue | null>(null);
 
 interface SyncRuntimeProviderProps {
@@ -37,10 +31,12 @@ interface SyncRuntimeProviderProps {
   services?: AppServices;
 }
 
-export function SyncRuntimeProvider({
-  children,
-  services = defaultServices,
-}: SyncRuntimeProviderProps) {
+export function SyncRuntimeProvider({ children, services }: SyncRuntimeProviderProps) {
+  const inheritedServices = useOptionalAppServices();
+  const activeServices = services ?? inheritedServices;
+  if (!activeServices) {
+    throw new Error('SyncRuntimeProvider needs AppServicesProvider or an explicit services prop.');
+  }
   const database = useLocalDatabase();
   const [snapshot, setSnapshot] = useState<SyncRuntimeSnapshot>({
     state: 'idle',
@@ -52,7 +48,7 @@ export function SyncRuntimeProvider({
 
     setSnapshot((current) => ({ ...current, state: 'syncing' }));
     try {
-      const attempt = await runAuthenticatedSync(database, services);
+      const attempt = await runAuthenticatedSync(database, activeServices);
       setSnapshot((current) => ({
         ...current,
         state: syncRuntimeStateFromResult(attempt.result),
@@ -62,13 +58,13 @@ export function SyncRuntimeProvider({
     } catch {
       setSnapshot((current) => ({ ...current, state: 'failed' }));
     }
-  }, [database, services]);
+  }, [activeServices, database]);
   const flushNow = useMemo(() => createSingleFlight(performFlush), [performFlush]);
 
   useEffect(() => {
     if (!database) return;
 
-    void services.connectivity
+    void activeServices.connectivity
       .getStatus()
       .then((connectivity) => setSnapshot((current) => ({ ...current, connectivity })))
       .catch(() => undefined);
@@ -81,8 +77,8 @@ export function SyncRuntimeProvider({
       }));
       if (connectivity === 'online') void flushNow();
     };
-    const connectivitySubscription = services.connectivity.subscribe
-      ? services.connectivity.subscribe(handleConnectivity)
+    const connectivitySubscription = activeServices.connectivity.subscribe
+      ? activeServices.connectivity.subscribe(handleConnectivity)
       : subscribeToConnectivity(handleConnectivity);
     const appStateSubscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') void flushNow();
@@ -93,7 +89,7 @@ export function SyncRuntimeProvider({
       connectivitySubscription.remove();
       appStateSubscription.remove();
     };
-  }, [database, flushNow, services.connectivity]);
+  }, [activeServices.connectivity, database, flushNow]);
 
   const value = useMemo(() => ({ ...snapshot, flushNow }), [flushNow, snapshot]);
   return <SyncRuntimeContext.Provider value={value}>{children}</SyncRuntimeContext.Provider>;

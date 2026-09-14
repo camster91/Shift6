@@ -33,9 +33,11 @@ import type {
   User,
 } from '../../src/domain/types';
 import { colors, radii, spacing } from '../../src/design/tokens';
+import { useAppServices } from '../../src/services/AppServicesProvider';
 import { buildLocalCoachMessage } from '../../src/services/localCoach';
 
 export default function CoachScreen() {
+  const { coach } = useAppServices();
   const database = useLocalDatabase();
   const [proposals, setProposals] = useState<CoachProposal[]>([]);
   const [activeCycle, setActiveCycle] = useState<TrainingCycle | null>(null);
@@ -52,6 +54,8 @@ export default function CoachScreen() {
   const [coachMessage, setCoachMessage] = useState<CoachMessageResult | null>(null);
   const [loading, setLoading] = useState(database !== null);
   const [busyProposalId, setBusyProposalId] = useState<string | null>(null);
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [coachSource, setCoachSource] = useState<'local' | 'remote'>('local');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -144,7 +148,23 @@ export default function CoachScreen() {
   };
 
   const coachNote = buildLocalCoachMessage(coachContext, 'explain-workout');
-  const askCoach = (task: CoachTask) => {
+  const askCoach = async (task: CoachTask) => {
+    if (coachLoading) return;
+    setCoachLoading(true);
+    try {
+      const result = await coach.generateMessage(coachContext, task);
+      if (result.kind !== 'unavailable') {
+        setCoachSource('remote');
+        setCoachMessage(result);
+        return;
+      }
+    } catch {
+      // The local explanation remains available when the provider or network is unavailable.
+    } finally {
+      setCoachLoading(false);
+    }
+
+    setCoachSource('local');
     setCoachMessage(buildLocalCoachMessage(coachContext, task));
   };
 
@@ -180,7 +200,7 @@ export default function CoachScreen() {
         </Text>
       </Card>
 
-      <Card tone="white" style={styles.askCard} accessibilityLabel="Ask offline Coach">
+      <Card tone="white" style={styles.askCard} accessibilityLabel="Ask Coach">
         <Text variant="caption" tone="muted">
           ASK COACH
         </Text>
@@ -188,10 +208,13 @@ export default function CoachScreen() {
           Make the next step clear.
         </Text>
         <View style={styles.askChips}>
-          <Chip label="Explain today's workout" onPress={() => askCoach('explain-workout')} />
-          <Chip label="Review my progress" onPress={() => askCoach('weekly-review')} />
-          <Chip label="Shorten this session" onPress={() => askCoach('shorten-workout')} />
-          <Chip label="Find a substitution" onPress={() => askCoach('substitution')} />
+          <Chip
+            label={coachLoading ? 'Coach is thinking…' : "Explain today's workout"}
+            onPress={() => void askCoach('explain-workout')}
+          />
+          <Chip label="Review my progress" onPress={() => void askCoach('weekly-review')} />
+          <Chip label="Shorten this session" onPress={() => void askCoach('shorten-workout')} />
+          <Chip label="Find a substitution" onPress={() => void askCoach('substitution')} />
         </View>
       </Card>
 
@@ -208,7 +231,11 @@ export default function CoachScreen() {
               color={colors.ink}
             />
             <Text variant="caption" tone="muted">
-              {coachMessage.kind === 'safety-route' ? 'SAFETY ROUTE' : 'LOCAL COACH NOTE'}
+              {coachMessage.kind === 'safety-route'
+                ? 'SAFETY ROUTE'
+                : coachSource === 'remote'
+                  ? 'COACH RESPONSE'
+                  : 'LOCAL COACH NOTE'}
             </Text>
           </View>
           <Text variant="body" style={styles.messageBody}>

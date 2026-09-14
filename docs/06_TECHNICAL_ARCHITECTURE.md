@@ -413,6 +413,8 @@ The next #275 increment turns the exercise list into an editable, accessible sur
 
 Drag-and-drop, supersets/circuits, target editing, and warm-up/cooldown/cardio block authoring remain separate builder increments.
 
+The builder now also exposes deterministic substitution choices for catalogue-backed exercises. Candidates are ranked from the equipment-aware domain service and applying one changes only the draft's exercise reference while preserving the workout-exercise identity and set prescription. Active-workout substitution remains a separate boundary until one-time versus future-session history semantics are explicit.
+
 ## Sync outbox implementation checkpoint — 2026-09-13
 
 The local/cloud handoff now has an explicit provider boundary without introducing a backend vendor:

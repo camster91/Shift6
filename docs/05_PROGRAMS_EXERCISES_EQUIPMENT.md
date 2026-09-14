@@ -215,3 +215,11 @@ search boundary: difficulty, unilateral/bilateral stance, compound/isolation cla
 mobility/power/cardio focus. Classification is stored on new seeded records with a conservative
 primary-muscle fallback for older JSON. The current 50-record tranche remains draft and media-free;
 this increment does not claim the 300+ reviewed launch catalogue.
+
+## Custom exercise authoring checkpoint — 2026-09-14
+
+The private builder now captures the documented custom-exercise inputs: name, movement category,
+tracking type, difficulty, equipment options, primary muscles, instructions, and private notes.
+The domain factory trims list values, rejects missing muscles or equipment, derives a conservative
+compound/isolation classification, and keeps the record draft/private. Optional media and
+technique review remain separate content-production work.

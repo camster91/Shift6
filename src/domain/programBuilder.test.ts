@@ -416,6 +416,9 @@ describe('immutable custom program builder', () => {
       primaryMuscles: ['grip', 'core'],
       equipmentIds: ['equipment-dumbbells'],
       trackingType: 'distance',
+      difficulty: 'intermediate',
+      notes: 'Keep the path controlled.',
+      instructions: ['Walk with an even pace.', 'Set the weight down safely.'],
     });
 
     expect(exercise).toMatchObject({
@@ -423,7 +426,32 @@ describe('immutable custom program builder', () => {
       isCustom: true,
       contentStatus: 'draft',
       trackingType: 'distance',
+      classification: 'compound',
+      difficulty: 'intermediate',
+      notes: 'Keep the path controlled.',
+      instructions: ['Walk with an even pace.', 'Set the weight down safely.'],
     });
+  });
+
+  it('requires primary muscles and equipment for a custom exercise', () => {
+    expect(() =>
+      createCustomExercise({
+        id: 'exercise-custom-no-muscle',
+        name: 'Unspecified movement',
+        movementPattern: 'mobility',
+        primaryMuscles: [],
+        equipmentIds: ['equipment-bodyweight'],
+      }),
+    ).toThrow('at least one primary muscle');
+    expect(() =>
+      createCustomExercise({
+        id: 'exercise-custom-no-equipment',
+        name: 'Unspecified setup',
+        movementPattern: 'mobility',
+        primaryMuscles: ['hips'],
+        equipmentIds: [],
+      }),
+    ).toThrow('at least one equipment option');
   });
 
   it('changes set count immutably while preserving existing targets and IDs', () => {

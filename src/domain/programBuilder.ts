@@ -1,6 +1,7 @@
 import type {
   Difficulty,
   Exercise,
+  ExerciseClassification,
   MovementPattern,
   Program,
   ProgramVersion,
@@ -64,9 +65,11 @@ export interface CreateCustomExerciseInput {
   equipmentIds: string[];
   trackingType?: TrackingType;
   difficulty?: Difficulty;
+  classification?: ExerciseClassification;
   instructions?: string[];
   techniqueCues?: string[];
   safetyNotes?: string[];
+  notes?: string;
 }
 
 export function createProgramCopy({
@@ -598,34 +601,50 @@ export function createCustomExercise({
   equipmentIds,
   trackingType = 'reps',
   difficulty = 'beginner',
+  classification = primaryMuscles.length > 1 ? 'compound' : 'isolation',
   instructions = ['Use a stable setup and move through a controlled range of motion.'],
   techniqueCues = ['Breathe steadily and stop if sharp pain occurs.'],
   safetyNotes = ['Choose a variation and load you can control.'],
+  notes,
 }: CreateCustomExerciseInput): Exercise {
   const trimmedName = name.trim();
   if (!trimmedName) throw new Error('A custom exercise needs a name.');
+  const normalizedMuscles = normalizeStringList(primaryMuscles);
+  if (normalizedMuscles.length === 0) {
+    throw new Error('A custom exercise needs at least one primary muscle.');
+  }
+  const normalizedEquipment = normalizeStringList(equipmentIds);
+  if (normalizedEquipment.length === 0) {
+    throw new Error('A custom exercise needs at least one equipment option.');
+  }
 
   return {
     id,
     name: trimmedName,
     aliases: [],
     movementPattern,
-    primaryMuscles,
+    classification,
+    primaryMuscles: normalizedMuscles,
     secondaryMuscles: [],
-    equipmentIds,
+    equipmentIds: normalizedEquipment,
     setup: 'User-defined setup. Review the movement before adding it to a live plan.',
+    notes: notes?.trim() || undefined,
     difficulty,
-    instructions,
-    techniqueCues,
+    instructions: normalizeStringList(instructions),
+    techniqueCues: normalizeStringList(techniqueCues),
     commonMistakes: [],
-    safetyNotes,
+    safetyNotes: normalizeStringList(safetyNotes),
     unilateral: false,
     trackingType,
-    tags: ['custom', movementPattern],
+    tags: ['custom', movementPattern, classification],
     media: [],
     isCustom: true,
     contentStatus: 'draft',
   };
+}
+
+function normalizeStringList(values: readonly string[]): string[] {
+  return values.map((value) => value.trim()).filter(Boolean);
 }
 
 function cloneProgramVersion(

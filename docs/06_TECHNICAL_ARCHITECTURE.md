@@ -780,3 +780,11 @@ equipment-compatibility filter with difficulty, stance, movement classification,
 mobility/power/cardio category predicates, and includes classification in text search. The
 Exercise Library renders the filters as token-driven accessible chips; no query requires a
 network request or changes user data.
+
+## Custom exercise authoring checkpoint — 2026-09-14
+
+The builder uses the typed `createCustomExercise` factory for user-owned movements. It normalizes
+list fields, requires a name, primary muscle, and equipment option, stores optional instructions
+and private notes in the JSON snapshot, and derives the initial workout target from tracking type.
+Custom data remains draft/private and is covered by the existing local repository, outbox, export,
+delete, and account-adoption boundaries.

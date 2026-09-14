@@ -308,3 +308,7 @@ The #274 catalogue increment now exposes the planned difficulty, unilateral/bila
 compound/isolation, and mobility/power/cardio filters in the typed search boundary and Exercise
 Library UI. The 50 foundational records remain explicitly draft pending technique/media review;
 the 300+ reviewed-content target is still open.
+
+The #275/#274 builder increment now captures complete private custom-movement metadata and derives
+tracking-aware starter targets. Custom records remain draft and user-owned; optional media capture,
+technique review, and public sharing are still later gates.

@@ -144,6 +144,15 @@ export default function ExerciseDetailScreen() {
         </View>
       </Card>
 
+      {exercise.notes ? (
+        <Card tone="blue" style={styles.notesCard} accessibilityLabel="Private exercise notes">
+          <Text variant="h3">Private notes</Text>
+          <Text variant="body" tone="muted" style={styles.bodyCopy}>
+            {exercise.notes}
+          </Text>
+        </Card>
+      ) : null}
+
       <Card tone="yellow" style={styles.safetyCard} accessibilityLabel="Safety notes">
         <Text variant="h3">Safety notes</Text>
         <View style={styles.list}>
@@ -228,6 +237,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   safetyCard: {
+    marginTop: spacing.xl,
+  },
+  notesCard: {
     marginTop: spacing.xl,
   },
   substitutionCard: {

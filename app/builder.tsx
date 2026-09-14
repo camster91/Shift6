@@ -13,7 +13,7 @@ import {
   Screen,
   Text,
 } from '../src/components/ui';
-import { findExerciseSubstitutions } from '../src/domain/equipment';
+import { equipmentCatalog, findExerciseSubstitutions } from '../src/domain/equipment';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { demoProgram, demoProgramVersion, demoUser } from '../src/domain/fixtures/home';
 import { createTrainingCycle } from '../src/domain/cycle';
@@ -40,6 +40,8 @@ import {
 } from '../src/domain/programBuilder';
 import type {
   Exercise,
+  Difficulty,
+  MovementPattern,
   SetTarget,
   TrackingType,
   UnitSystem,
@@ -80,6 +82,13 @@ export default function ProgramBuilderScreen() {
   const [unitSystem, setUnitSystem] = useState<UnitSystem>(demoUser.unitSystem);
   const [draft, setDraft] = useState(() => createInitialBuilderDraft(isBlankBuilder));
   const [customName, setCustomName] = useState('');
+  const [customMovementPattern, setCustomMovementPattern] = useState<MovementPattern>('carry');
+  const [customTrackingType, setCustomTrackingType] = useState<TrackingType>('time');
+  const [customDifficulty, setCustomDifficulty] = useState<Difficulty>('beginner');
+  const [customPrimaryMuscles, setCustomPrimaryMuscles] = useState('core');
+  const [customEquipmentIds, setCustomEquipmentIds] = useState<string[]>(['equipment-bodyweight']);
+  const [customInstructions, setCustomInstructions] = useState('');
+  const [customNotes, setCustomNotes] = useState('');
   const [newWorkoutTitle, setNewWorkoutTitle] = useState('');
   const [newWorkoutSequence, setNewWorkoutSequence] = useState(0);
   const [customExercises, setCustomExercises] = useState<Record<string, Exercise>>({});
@@ -193,6 +202,14 @@ export default function ProgramBuilderScreen() {
       ),
     [customExercises],
   );
+  const customEquipmentOptions = useMemo(
+    () =>
+      equipmentCatalog.filter(
+        (equipment) =>
+          equipment.id === 'equipment-bodyweight' || availableEquipmentIds.includes(equipment.id),
+      ),
+    [availableEquipmentIds],
+  );
   const pickerExercises = useMemo(
     () =>
       searchExercises(foundationalExercises, {
@@ -261,20 +278,24 @@ export default function ProgramBuilderScreen() {
       return;
     }
     try {
+      const primaryMuscles = parseListInput(customPrimaryMuscles);
+      const instructions = parseListInput(customInstructions);
       const exercise = createCustomExercise({
         id: `${draft.program.id}-custom-exercise-${Object.keys(customExercises).length + 1}`,
         name: customName,
-        movementPattern: 'carry',
-        primaryMuscles: ['grip', 'core'],
-        equipmentIds: ['equipment-bodyweight'],
-        trackingType: 'time',
+        movementPattern: customMovementPattern,
+        primaryMuscles,
+        equipmentIds: customEquipmentIds,
+        trackingType: customTrackingType,
+        difficulty: customDifficulty,
+        instructions: instructions.length > 0 ? instructions : undefined,
+        notes: customNotes.trim() || undefined,
       });
       setCustomExercises((current) => ({ ...current, [exercise.id]: exercise }));
       updateDraftVersion((version) =>
         addExerciseToWorkout(version, firstWorkout.id, {
           exerciseId: exercise.id,
-          setCount: 2,
-          target: { durationSeconds: 30 },
+          target: defaultTargetForTrackingType(exercise.trackingType),
         }),
       );
       setCustomName('');
@@ -807,6 +828,10 @@ export default function ProgramBuilderScreen() {
       <Text variant="smallMedium" style={styles.fieldLabel}>
         Add a custom movement
       </Text>
+      <Text variant="small" tone="muted" style={styles.customHint}>
+        Private to you and marked for review. Choose the fields that describe how you actually train
+        it.
+      </Text>
       <TextInput
         accessibilityLabel="Custom exercise name"
         onChangeText={setCustomName}
@@ -814,6 +839,104 @@ export default function ProgramBuilderScreen() {
         placeholderTextColor={colors.inkMuted}
         style={styles.input}
         value={customName}
+      />
+      <Text variant="caption" tone="muted" style={styles.subfieldLabel}>
+        MOVEMENT CATEGORY
+      </Text>
+      <View style={styles.focusOptions} accessibilityRole="radiogroup">
+        {customMovementPatterns.map((movementPattern) => (
+          <Chip
+            key={movementPattern}
+            label={formatMovementPattern(movementPattern)}
+            selected={customMovementPattern === movementPattern}
+            onPress={() => setCustomMovementPattern(movementPattern)}
+          />
+        ))}
+      </View>
+      <Text variant="caption" tone="muted" style={styles.subfieldLabel}>
+        TRACKING TYPE
+      </Text>
+      <View style={styles.focusOptions} accessibilityRole="radiogroup">
+        {customTrackingTypes.map((trackingType) => (
+          <Chip
+            key={trackingType}
+            label={formatTrackingType(trackingType)}
+            selected={customTrackingType === trackingType}
+            onPress={() => setCustomTrackingType(trackingType)}
+          />
+        ))}
+      </View>
+      <Text variant="caption" tone="muted" style={styles.subfieldLabel}>
+        DIFFICULTY
+      </Text>
+      <View style={styles.focusOptions} accessibilityRole="radiogroup">
+        {customDifficultyOptions.map((difficulty) => (
+          <Chip
+            key={difficulty}
+            label={formatDifficultyLabel(difficulty)}
+            selected={customDifficulty === difficulty}
+            onPress={() => setCustomDifficulty(difficulty)}
+          />
+        ))}
+      </View>
+      <Text variant="caption" tone="muted" style={styles.subfieldLabel}>
+        EQUIPMENT OPTIONS
+      </Text>
+      <View style={styles.focusOptions} accessibilityLabel="Custom exercise equipment options">
+        {customEquipmentOptions.map((equipment) => (
+          <Chip
+            key={equipment.id}
+            label={equipment.name}
+            selected={customEquipmentIds.includes(equipment.id)}
+            onPress={() =>
+              setCustomEquipmentIds((current) => {
+                if (!current.includes(equipment.id)) return [...current, equipment.id];
+                if (current.length === 1) return current;
+                return current.filter((equipmentId) => equipmentId !== equipment.id);
+              })
+            }
+          />
+        ))}
+      </View>
+      <Text variant="caption" tone="muted" style={styles.subfieldLabel}>
+        PRIMARY MUSCLES
+      </Text>
+      <TextInput
+        accessibilityLabel="Primary muscles for custom exercise"
+        autoCapitalize="sentences"
+        onChangeText={setCustomPrimaryMuscles}
+        placeholder="Primary muscles, separated by commas"
+        placeholderTextColor={colors.inkMuted}
+        style={styles.input}
+        value={customPrimaryMuscles}
+      />
+      <Text variant="caption" tone="muted" style={styles.subfieldLabel}>
+        INSTRUCTIONS
+      </Text>
+      <TextInput
+        accessibilityLabel="Instructions for custom exercise"
+        maxLength={1000}
+        multiline
+        onChangeText={setCustomInstructions}
+        placeholder="Instructions, one step per line (optional)"
+        placeholderTextColor={colors.inkMuted}
+        style={styles.customTextArea}
+        textAlignVertical="top"
+        value={customInstructions}
+      />
+      <Text variant="caption" tone="muted" style={styles.subfieldLabel}>
+        PRIVATE NOTES
+      </Text>
+      <TextInput
+        accessibilityLabel="Notes for custom exercise"
+        maxLength={500}
+        multiline
+        onChangeText={setCustomNotes}
+        placeholder="Private notes (optional)"
+        placeholderTextColor={colors.inkMuted}
+        style={styles.customTextArea}
+        textAlignVertical="top"
+        value={customNotes}
       />
       <Button
         label="Add custom movement"
@@ -1311,6 +1434,58 @@ function formatSectionLabel(section: WorkoutExercise['section']): string {
     .join(' ');
 }
 
+function formatMovementPattern(movementPattern: MovementPattern): string {
+  return movementPattern
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function formatTrackingType(trackingType: TrackingType): string {
+  switch (trackingType) {
+    case 'duration-and-distance':
+      return 'Time + distance';
+    case 'distance':
+      return 'Distance';
+    case 'time':
+      return 'Time';
+    case 'custom':
+      return 'Custom';
+    case 'reps':
+      return 'Reps';
+  }
+}
+
+function formatDifficultyLabel(difficulty: Difficulty): string {
+  return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+}
+
+function parseListInput(value: string): string[] {
+  return value
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+const customMovementPatterns: readonly MovementPattern[] = [
+  'squat',
+  'hinge',
+  'horizontal-push',
+  'horizontal-pull',
+  'carry',
+  'cyclical-cardio',
+  'mobility',
+];
+
+const customTrackingTypes: readonly TrackingType[] = [
+  'reps',
+  'time',
+  'distance',
+  'duration-and-distance',
+];
+
+const customDifficultyOptions: readonly Difficulty[] = ['beginner', 'intermediate', 'advanced'];
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -1336,6 +1511,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     marginBottom: spacing.sm,
   },
+  customHint: {
+    marginTop: -spacing.xs,
+  },
+  subfieldLabel: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
+  },
   input: {
     minHeight: 52,
     paddingHorizontal: spacing.lg,
@@ -1345,6 +1527,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     color: colors.ink,
     fontSize: 16,
+  },
+  customTextArea: {
+    minHeight: 76,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    color: colors.ink,
+    fontSize: 16,
+    lineHeight: 24,
   },
   versionCard: {
     marginTop: spacing.xl,

@@ -576,6 +576,8 @@ Starting the curated Barbell 30 template now creates a uniquely identified priva
 
 The cycle review read model now carries the optional pre-workout readiness label (`ready`, `limited`, or `rest`) from persisted workout sessions into deterministic cycle facts. The review surface presents counts as training context, not as a medical or composite readiness score. Sessions without a selection remain unclassified, and the existing conservative next-target rules remain the only progression authority.
 
+The Health Connections route now reads the same normalized local summaries through `getDailyHealthTrends` and presents the latest seven persisted daily points when a future native connector has stored them. Empty, unavailable, and web-preview states remain explicit; this UI does not request permissions, fabricate samples, or send health data to sync or analytics.
+
 ## Auth and service composition checkpoint — 2026-09-14
 
 The #272 foundation now has an explicit `AuthProvider`/`AuthSession` contract and an `UnavailableAuthProvider` for the guest/unconfigured state. `createAppServices` composes that provider with the vendor-neutral HTTP sync transport and the replaceable Expo connectivity adapter. The backend receives access tokens only through the injected auth boundary; no auth vendor, credential, sign-in UI, or network request was added to the guest shell. This keeps account conversion and backend selection as isolated future adapters while preserving local-first workout behavior.

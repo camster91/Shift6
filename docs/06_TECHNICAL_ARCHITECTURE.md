@@ -330,6 +330,8 @@ The next #279 progress increment adds a deterministic exercise-history read boun
 
 This is a first strength-history slice, not the complete Progress surface. Cardio, mobility, consistency comparisons, cycle-over-cycle trends, richer charting, and native device verification remain later work.
 
+The Progress tab now derives a movement selector from the active program-version snapshot and local user exercise records. Rep/custom-tracked movements can be selected without changing the underlying deterministic history calculation; cardio-specific, mobility, and cycle-over-cycle trend models remain later boundaries.
+
 Cycle-review aggregation now also joins local structured check-ins and canonical exercise history. Completed-session facts include reported effort, discomfort flags, and deterministic load/rep/estimated-1RM record IDs; malformed or missing legacy identity data is ignored rather than guessed. This keeps the Review route explainable and leaves richer cardio/mobility comparisons for a later increment.
 
 ## Cycle transition and review implementation checkpoint — 2026-09-14

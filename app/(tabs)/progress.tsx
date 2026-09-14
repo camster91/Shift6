@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import {
   Button,
   Card,
+  Chip,
   ErrorState,
   LoadingSkeleton,
   ProgressIndicator,
@@ -13,7 +14,12 @@ import {
   SixWeekIndicator,
   Text,
 } from '../../src/components/ui';
-import { demoCycle, demoProgram, demoWorkout } from '../../src/domain/fixtures/home';
+import {
+  demoCycle,
+  demoProgram,
+  demoProgramVersion,
+  demoWorkout,
+} from '../../src/domain/fixtures/home';
 import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { buildNextSessionTargets, type NextSessionTarget } from '../../src/domain/nextSession';
 import type { ExerciseProgress } from '../../src/domain/progress';
@@ -21,7 +27,7 @@ import { buildCycleProgressSummary, type CycleProgressSummary } from '../../src/
 import { useLocalDatabase } from '../../src/db/context';
 import { getLatestTrainingCycle } from '../../src/db/cycleRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
-import { getUserProgramVersion } from '../../src/db/programRepository';
+import { getUserExercises, getUserProgramVersion } from '../../src/db/programRepository';
 import {
   getCycleProgressSummary,
   getExerciseProgress,
@@ -38,7 +44,14 @@ export default function ProgressScreen() {
     buildCycleProgressSummary(getPlannedWorkoutCount(demoCycle), []),
   );
   const [nextTargets, setNextTargets] = useState<NextSessionTarget[]>([]);
+  const [exerciseChoices, setExerciseChoices] = useState<ProgressExerciseChoice[]>(() =>
+    getProgressExerciseChoices(demoProgramVersion),
+  );
+  const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(
+    demoWorkout.exercises[0]?.exerciseId ?? null,
+  );
   const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress | null>(null);
+  const [exerciseProgressLoading, setExerciseProgressLoading] = useState(false);
   const [loading, setLoading] = useState(database !== null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -61,15 +74,23 @@ export default function ProgressScreen() {
           ? await getUserProgramVersion(database, 'guest-user', cycle.programVersionId)
           : null;
         const program = snapshot?.program ?? demoProgram;
-        const workout = snapshot?.version.workouts[0] ?? demoWorkout;
-        const [nextSummary, latestSets, profile, selectedExerciseProgress] = await Promise.all([
+        const programVersion = snapshot?.version ?? demoProgramVersion;
+        const workout = programVersion.workouts[0] ?? demoWorkout;
+        const [nextSummary, latestSets, profile, userExercises] = await Promise.all([
           getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
           getLatestCompletedWorkoutSets(database, cycle.id, workout.id),
           getOnboardingProfile(database, 'guest-user'),
-          workout.exercises[0]
-            ? getExerciseProgress(database, cycle.id, workout.exercises[0].exerciseId)
-            : Promise.resolve(null),
+          getUserExercises(database, 'guest-user'),
         ]);
+        const nextExerciseChoices = getProgressExerciseChoices(programVersion, userExercises);
+        const nextSelectedExerciseId = nextExerciseChoices.some(
+          (choice) => choice.exerciseId === selectedExerciseId,
+        )
+          ? selectedExerciseId
+          : (nextExerciseChoices[0]?.exerciseId ?? null);
+        const selectedExerciseProgress = nextSelectedExerciseId
+          ? await getExerciseProgress(database, cycle.id, nextSelectedExerciseId)
+          : null;
         const nextSessionTargets = buildNextSessionTargets(
           workout,
           program.progressionStrategy,
@@ -82,6 +103,8 @@ export default function ProgressScreen() {
         setCurrentProgram(program);
         setSummary(nextSummary);
         setNextTargets(latestSets.length > 0 ? nextSessionTargets : []);
+        setExerciseChoices(nextExerciseChoices);
+        setSelectedExerciseId(nextSelectedExerciseId);
         setExerciseProgress(selectedExerciseProgress);
       } catch {
         if (active) setError('We could not load local cycle progress.');
@@ -106,6 +129,25 @@ export default function ProgressScreen() {
   }
 
   const { facts } = summary;
+
+  const handleSelectExercise = async (exerciseId: string) => {
+    setSelectedExerciseId(exerciseId);
+    if (!database) {
+      setExerciseProgress(null);
+      return;
+    }
+
+    setExerciseProgressLoading(true);
+    setError(null);
+    try {
+      const nextProgress = await getExerciseProgress(database, currentCycle.id, exerciseId);
+      setExerciseProgress(nextProgress);
+    } catch {
+      setError('We could not load this movement trend.');
+    } finally {
+      setExerciseProgressLoading(false);
+    }
+  };
 
   return (
     <Screen>
@@ -178,6 +220,26 @@ export default function ProgressScreen() {
         />
       </View>
 
+      {exerciseChoices.length > 0 ? (
+        <View style={styles.exerciseSelector} accessibilityLabel="Movement trend selector">
+          <Text variant="h3">Movement trends</Text>
+          <Text variant="small" tone="muted" style={styles.selectorCopy}>
+            Compare rep-based movements from the active program. Values come from completed local
+            sets.
+          </Text>
+          <View style={styles.selectorChips}>
+            {exerciseChoices.map((choice) => (
+              <Chip
+                key={choice.exerciseId}
+                label={choice.label}
+                selected={choice.exerciseId === selectedExerciseId}
+                onPress={() => void handleSelectExercise(choice.exerciseId)}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       {nextTargets.length > 0 ? (
         <Card tone="ink" style={styles.nextTargetsCard}>
           <Text variant="caption" tone="inverse">
@@ -210,7 +272,11 @@ export default function ProgressScreen() {
         </Card>
       ) : null}
 
-      {exerciseProgress ? <ProgressHistoryCard progress={exerciseProgress} /> : null}
+      {exerciseProgressLoading ? (
+        <LoadingSkeleton height={180} style={styles.historyLoading} />
+      ) : exerciseProgress ? (
+        <ProgressHistoryCard progress={exerciseProgress} />
+      ) : null}
 
       {currentCycle.status === 'complete' ? (
         <Button
@@ -251,6 +317,46 @@ function formatExerciseName(exerciseId: string): string {
     .split('-')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+interface ProgressExerciseChoice {
+  exerciseId: string;
+  label: string;
+}
+
+function getProgressExerciseChoices(
+  version: typeof demoProgramVersion,
+  userExercises: readonly ExerciseLike[] = [],
+): ProgressExerciseChoice[] {
+  const exerciseNames = new Map<string, { name: string; trackingType: string }>([
+    ...foundationalExercises.map((exercise) => [exercise.id, exercise] as const),
+    ...userExercises.map((exercise) => [exercise.id, exercise] as const),
+  ]);
+  const seen = new Set<string>();
+
+  return version.workouts.flatMap((workout) =>
+    workout.exercises.flatMap((workoutExercise) => {
+      if (seen.has(workoutExercise.exerciseId)) return [];
+      seen.add(workoutExercise.exerciseId);
+      const exercise = exerciseNames.get(workoutExercise.exerciseId);
+      if (exercise && exercise.trackingType !== 'reps' && exercise.trackingType !== 'custom') {
+        return [];
+      }
+
+      return [
+        {
+          exerciseId: workoutExercise.exerciseId,
+          label: exercise?.name ?? formatExerciseName(workoutExercise.exerciseId),
+        },
+      ];
+    }),
+  );
+}
+
+interface ExerciseLike {
+  id: string;
+  name: string;
+  trackingType: string;
 }
 
 function formatTarget(target: SetTarget): string {
@@ -295,7 +401,7 @@ function ProgressHistoryCard({ progress }: { progress: ExerciseProgress }) {
       accessibilityLabel={`${label} strength trend. ${chartSummary || 'No completed sessions yet.'}`}
     >
       <Text variant="caption" tone="muted">
-        STRENGTH TREND
+        MOVEMENT TREND
       </Text>
       <View style={styles.historyHeader}>
         <View style={styles.historyCopy}>
@@ -439,6 +545,21 @@ const styles = StyleSheet.create({
     opacity: 0.76,
   },
   historyCard: {
+    marginTop: spacing.xl,
+  },
+  exerciseSelector: {
+    marginTop: spacing.xl,
+  },
+  selectorCopy: {
+    marginTop: spacing.xs,
+  },
+  selectorChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+  },
+  historyLoading: {
     marginTop: spacing.xl,
   },
   historyHeader: {

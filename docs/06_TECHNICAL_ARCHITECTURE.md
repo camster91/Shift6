@@ -788,3 +788,7 @@ list fields, requires a name, primary muscle, and equipment option, stores optio
 and private notes in the JSON snapshot, and derives the initial workout target from tracking type.
 Custom data remains draft/private and is covered by the existing local repository, outbox, export,
 delete, and account-adoption boundaries.
+
+The builder loads persisted user-owned exercises into its picker in addition to foundational
+records. The merge is additive and user-scoped, so a private movement can be reused in a later
+workout without mutating a public exercise or a completed-cycle snapshot.

@@ -117,11 +117,20 @@ export default function ProgramBuilderScreen() {
     if (!database) return;
 
     let active = true;
-    void getOnboardingProfile(database, 'guest-user')
-      .then((profile) => {
-        if (!active || !profile) return;
-        setAvailableEquipmentIds(profile.user.equipmentIds);
-        setUnitSystem(profile.user.unitSystem);
+    void Promise.all([
+      getOnboardingProfile(database, 'guest-user'),
+      getUserExercises(database, 'guest-user'),
+    ])
+      .then(([profile, userExercises]) => {
+        if (!active) return;
+        if (profile) {
+          setAvailableEquipmentIds(profile.user.equipmentIds);
+          setUnitSystem(profile.user.unitSystem);
+        }
+        setCustomExercises((current) => ({
+          ...Object.fromEntries(userExercises.map((exercise) => [exercise.id, exercise])),
+          ...current,
+        }));
       })
       .catch(() => undefined);
 
@@ -158,13 +167,14 @@ export default function ProgramBuilderScreen() {
             workout.exercises.map((exercise) => exercise.exerciseId),
           ),
         );
-        setCustomExercises(
-          Object.fromEntries(
+        setCustomExercises((current) => ({
+          ...Object.fromEntries(
             userExercises
               .filter((exercise) => referencedExerciseIds.has(exercise.id))
               .map((exercise) => [exercise.id, exercise]),
           ),
-        );
+          ...current,
+        }));
       })
       .catch(() => {
         if (active) {
@@ -212,11 +222,11 @@ export default function ProgramBuilderScreen() {
   );
   const pickerExercises = useMemo(
     () =>
-      searchExercises(foundationalExercises, {
+      searchExercises([...foundationalExercises, ...Object.values(customExercises)], {
         query: exercisePickerQuery,
         limit: 8,
       }),
-    [exercisePickerQuery],
+    [customExercises, exercisePickerQuery],
   );
 
   const updateDraftVersion = (update: (version: typeof draft.version) => typeof draft.version) => {
@@ -756,9 +766,10 @@ export default function ProgramBuilderScreen() {
               style={styles.exercisePicker}
               accessibilityLabel={`Choose an exercise for ${workout.title}`}
             >
-              <Text variant="smallMedium">Choose from the foundational catalogue</Text>
+              <Text variant="smallMedium">Choose from your exercise library</Text>
               <Text variant="caption" tone="muted" style={styles.pickerHint}>
-                Targets start conservatively and can be edited after adding.
+                Includes foundational and private movements. Targets start conservatively and can be
+                edited after adding.
               </Text>
               <TextInput
                 accessibilityLabel={`Search exercises for ${workout.title}`}
@@ -772,7 +783,7 @@ export default function ProgramBuilderScreen() {
               />
               {pickerExercises.length === 0 ? (
                 <Text variant="small" tone="muted" style={styles.pickerEmpty}>
-                  No foundational movement matches that search.
+                  No movement matches that search.
                 </Text>
               ) : (
                 pickerExercises.map((exercise) => (

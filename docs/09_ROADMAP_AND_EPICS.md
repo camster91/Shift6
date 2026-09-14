@@ -312,3 +312,7 @@ the 300+ reviewed-content target is still open.
 The #275/#274 builder increment now captures complete private custom-movement metadata and derives
 tracking-aware starter targets. Custom records remain draft and user-owned; optional media capture,
 technique review, and public sharing are still later gates.
+
+The builder now reloads user-owned custom exercises and searches them alongside foundational
+movements, completing the private reuse path without opening public sharing or catalogue
+publication.

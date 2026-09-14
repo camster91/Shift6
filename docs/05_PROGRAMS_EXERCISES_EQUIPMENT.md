@@ -223,3 +223,7 @@ tracking type, difficulty, equipment options, primary muscles, instructions, and
 The domain factory trims list values, rejects missing muscles or equipment, derives a conservative
 compound/isolation classification, and keeps the record draft/private. Optional media and
 technique review remain separate content-production work.
+
+Private exercises are loaded into subsequent builder visits and the exercise picker searches them
+alongside foundational movements. This keeps reuse user-scoped while leaving public catalogue
+publication and sharing outside the current boundary.

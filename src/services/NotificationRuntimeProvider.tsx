@@ -14,6 +14,8 @@ import type {
   NotificationResponseSubscription,
 } from './notifications';
 import {
+  managedRestTimerKind,
+  managedWorkoutReminderKind,
   refreshWorkoutReminderSchedule,
   type WorkoutReminderScheduleResult,
 } from './notificationScheduler';
@@ -83,7 +85,11 @@ export function NotificationRuntimeProvider({ children }: { children: ReactNode 
     let active = true;
     let responseSubscription: NotificationResponseSubscription | null = null;
     const handleResponse = (response: NotificationResponsePayload) => {
-      if (response.data.kind !== 'shift6-workout-reminder') return;
+      if (
+        response.data.kind !== managedWorkoutReminderKind &&
+        response.data.kind !== managedRestTimerKind
+      )
+        return;
       const workoutId = response.data.workoutId;
       if (typeof workoutId !== 'string' || !workoutId.trim()) return;
       router.push({ pathname: '/workout', params: { workoutId } });

@@ -42,6 +42,7 @@ import type {
 } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
 import { getActiveTrainingCycle, saveTrainingCycle } from '../src/db/cycleRepository';
+import { getNotificationPreferences } from '../src/db/notificationRepository';
 import { getOnboardingProfile } from '../src/db/profileRepository';
 import {
   getUserExercises,
@@ -63,10 +64,14 @@ import {
 } from '../src/db/workoutRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
 import { connectivityStatusFromNetworkState } from '../src/services/connectivity';
+import { createExpoNotificationProvider } from '../src/services/notifications';
+import { cancelRestTimerCue, refreshRestTimerCue } from '../src/services/notificationScheduler';
 import * as Network from 'expo-network';
 import type { ConnectivityStatus } from '../src/services/syncCoordinator';
 
 type SetInputValues = WorkoutDraftSetValues;
+
+const notificationProvider = createExpoNotificationProvider();
 
 export default function ActiveWorkoutScreen() {
   const database = useLocalDatabase();
@@ -107,6 +112,7 @@ export default function ActiveWorkoutScreen() {
   const [connectivity, setConnectivity] = useState<ConnectivityStatus>('unknown');
   const [readiness, setReadiness] = useState<WorkoutReadiness | null>(null);
   const [readinessSaving, setReadinessSaving] = useState(false);
+  const [restTimerEnabled, setRestTimerEnabled] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -163,6 +169,12 @@ export default function ActiveWorkoutScreen() {
   const session = resumedSession ?? proposedSession;
 
   useEffect(() => {
+    return () => {
+      void cancelRestTimerCue(notificationProvider, session.id);
+    };
+  }, [session.id]);
+
+  useEffect(() => {
     if (!database) {
       setLoadingCycle(false);
       return;
@@ -213,18 +225,20 @@ export default function ActiveWorkoutScreen() {
           setResumedSession(existingSession);
         }
         await saveWorkoutSession(database, sessionToUse);
-        const [completedSets, previousSets, profile, draft, userExercises] = await Promise.all([
-          getCompletedSets(database, sessionToUse.id),
-          getLatestCompletedWorkoutSets(
-            database,
-            activeCycle.id,
-            activeWorkout.id,
-            activeProgramVersion.id,
-          ),
-          getOnboardingProfile(database, 'guest-user'),
-          getWorkoutDraft(database, sessionToUse.id),
-          getUserExercises(database, 'guest-user'),
-        ]);
+        const [completedSets, previousSets, profile, draft, userExercises, preferences] =
+          await Promise.all([
+            getCompletedSets(database, sessionToUse.id),
+            getLatestCompletedWorkoutSets(
+              database,
+              activeCycle.id,
+              activeWorkout.id,
+              activeProgramVersion.id,
+            ),
+            getOnboardingProfile(database, 'guest-user'),
+            getWorkoutDraft(database, sessionToUse.id),
+            getUserExercises(database, 'guest-user'),
+            getNotificationPreferences(database, 'guest-user'),
+          ]);
         return {
           completedSets,
           previousSets,
@@ -233,6 +247,7 @@ export default function ActiveWorkoutScreen() {
           readiness: sessionToUse.readiness,
           draft,
           userExercises,
+          restTimerEnabled: preferences.restTimer,
         };
       })
       .then(
@@ -244,10 +259,12 @@ export default function ActiveWorkoutScreen() {
           readiness,
           draft,
           userExercises,
+          restTimerEnabled,
         }) => {
           if (!active) return;
           setCustomExercises(userExercises);
           setAvailableEquipmentIds(equipmentIds);
+          setRestTimerEnabled(restTimerEnabled);
           setReadiness(readiness ?? null);
           setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
           const nextTargets =
@@ -423,6 +440,13 @@ export default function ActiveWorkoutScreen() {
       } else {
         const restSeconds = workoutExercise.sets[setNumber - 1]?.restSeconds ?? 90;
         setRestEndsAt(Date.now() + restSeconds * 1000);
+        void refreshRestTimerCue(notificationProvider, {
+          enabled: restTimerEnabled,
+          sessionId: session.id,
+          workoutId: activeWorkout.id,
+          restSeconds,
+          now: new Date(),
+        }).catch(() => undefined);
       }
     } catch (saveError) {
       setError(
@@ -442,6 +466,7 @@ export default function ActiveWorkoutScreen() {
         return;
       }
     }
+    void cancelRestTimerCue(notificationProvider, session.id);
     router.back();
   };
 

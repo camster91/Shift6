@@ -11,6 +11,7 @@ import type {
 import type { NotificationProvider, ScheduledNotification } from './notifications';
 
 export const managedWorkoutReminderKind = 'shift6-workout-reminder';
+export const managedRestTimerKind = 'shift6-rest-timer';
 
 export interface RefreshWorkoutReminderScheduleInput {
   userId: string;
@@ -28,6 +29,20 @@ export type WorkoutReminderScheduleOutcome =
 export interface WorkoutReminderScheduleResult {
   outcome: WorkoutReminderScheduleOutcome;
   scheduledCount: number;
+}
+
+export interface RefreshRestTimerCueInput {
+  enabled: boolean;
+  sessionId: string;
+  workoutId: string;
+  restSeconds: number;
+  now: Date;
+}
+
+export type RestTimerCueOutcome = 'scheduled' | 'disabled' | 'permission-required' | 'unavailable';
+
+export interface RestTimerCueResult {
+  outcome: RestTimerCueOutcome;
 }
 
 /**
@@ -87,11 +102,64 @@ export async function refreshWorkoutReminderSchedule(
   return { outcome: 'scheduled', scheduledCount: schedules.length };
 }
 
+/**
+ * Maintains one local rest cue for the active session. Set completion is
+ * persisted by the workout repository before this best-effort side effect is
+ * attempted, so notification availability can never block workout logging.
+ */
+export async function refreshRestTimerCue(
+  provider: NotificationProvider,
+  input: RefreshRestTimerCueInput,
+): Promise<RestTimerCueResult> {
+  if (!(await provider.isAvailable())) return { outcome: 'unavailable' };
+
+  const identifier = restTimerIdentifier(input.sessionId);
+  await provider.cancelScheduledNotification(identifier);
+  if (!input.enabled) return { outcome: 'disabled' };
+  if (!Number.isInteger(input.restSeconds) || input.restSeconds < 1) {
+    throw new Error('Rest timer must be a positive whole number of seconds.');
+  }
+  if (Number.isNaN(input.now.getTime())) {
+    throw new Error('A valid date is required for a rest cue.');
+  }
+
+  const permission = await provider.getPermissionStatus();
+  if (permission !== 'granted') return { outcome: 'permission-required' };
+
+  await provider.scheduleLocalNotification({
+    identifier,
+    title: 'Rest complete',
+    body: 'Time for the next set.',
+    data: {
+      source: 'shift6',
+      kind: managedRestTimerKind,
+      sessionId: input.sessionId,
+      workoutId: input.workoutId,
+      route: `/workout?workoutId=${encodeURIComponent(input.workoutId)}`,
+    },
+    scheduledFor: new Date(input.now.getTime() + input.restSeconds * 1000),
+  });
+
+  return { outcome: 'scheduled' };
+}
+
+export async function cancelRestTimerCue(
+  provider: NotificationProvider,
+  sessionId: string,
+): Promise<void> {
+  if (!(await provider.isAvailable())) return;
+  await provider.cancelScheduledNotification(restTimerIdentifier(sessionId));
+}
+
 function isManagedWorkoutReminder(notification: ScheduledNotification): boolean {
   return (
     notification.identifier.startsWith('shift6:workout-reminder:') ||
     notification.data.kind === managedWorkoutReminderKind
   );
+}
+
+function restTimerIdentifier(sessionId: string): string {
+  return `shift6:rest-timer:${sessionId}`;
 }
 
 function toNotificationRequest(schedule: WorkoutReminderSchedule) {

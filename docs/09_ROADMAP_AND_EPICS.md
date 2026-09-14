@@ -214,6 +214,8 @@ Onboarding now stores a coarse preferred training window (morning, afternoon, or
 
 Local workout reminders now reconcile a bounded seven-day one-shot schedule from the active program snapshot and preferred training window after explicit device permission. Stable SHIFT6-owned identifiers are cancelled before replacement, notification payloads carry a validated workout deep-link, and cold-start or foreground taps route back to the workout surface without mutating plan data. Remote push, review/rest-timer scheduling, exact alarm editing, background delivery guarantees, and native device verification remain open #280/#281 work.
 
+Rest-timer cues now use the same permission-gated local adapter after a set is durably persisted. The active session replaces one stable cue as the user progresses and cancels it on pause/unmount, so notification delivery remains optional and cannot block offline workout logging. Review/cycle delivery, remote push, exact alarm editing, background guarantees, and native verification remain open.
+
 The health boundary now validates and normalizes provider summaries in the domain layer, deduplicates by source plus stable sample ID, and exposes explicit UTC-day trend aggregation rules for additive, average, and latest-value metrics. Native permission adapters, local health persistence, disclosure UI, and device verification remain later #279/#280 gates.
 
 Normalized health summaries now have a local SQLite repository with user-scoped upserts, filtered reads, local export/delete coverage, and guest-account ownership transfer. They remain outside the sync outbox until a least-privilege remote health policy is approved.

@@ -1,6 +1,8 @@
 import type { LocalNotificationRequest, NotificationProvider } from './notifications';
 import {
   managedWorkoutReminderKind,
+  managedRestTimerKind,
+  refreshRestTimerCue,
   refreshWorkoutReminderSchedule,
 } from './notificationScheduler';
 import { demoCycle, demoProgramVersion } from '../domain/fixtures/home';
@@ -90,6 +92,46 @@ describe('notification scheduler', () => {
     );
     expect(scheduled).toHaveLength(1);
     expect(cancelled).toHaveLength(1);
+  });
+
+  it('replaces the current session rest cue only after permission is granted', async () => {
+    const scheduled: LocalNotificationRequest[] = [];
+    const cancelled: string[] = [];
+    const provider = createProvider({ scheduled, cancelled });
+
+    await expect(
+      refreshRestTimerCue(provider, {
+        enabled: true,
+        sessionId: 'session-1',
+        workoutId: 'workout-1',
+        restSeconds: 90,
+        now: new Date('2026-09-14T12:00:00.000Z'),
+      }),
+    ).resolves.toEqual({ outcome: 'scheduled' });
+
+    expect(cancelled).toEqual(['shift6:rest-timer:session-1']);
+    expect(scheduled[0]).toMatchObject({
+      identifier: 'shift6:rest-timer:session-1',
+      title: 'Rest complete',
+      data: { kind: managedRestTimerKind, workoutId: 'workout-1' },
+    });
+    expect(scheduled[0]?.scheduledFor).toEqual(new Date('2026-09-14T12:01:30.000Z'));
+
+    const permissionCancelled: string[] = [];
+    const permissionRequired = createProvider({
+      permission: 'denied',
+      cancelled: permissionCancelled,
+    });
+    await expect(
+      refreshRestTimerCue(permissionRequired, {
+        enabled: true,
+        sessionId: 'session-1',
+        workoutId: 'workout-1',
+        restSeconds: 90,
+        now: new Date('2026-09-14T12:00:00.000Z'),
+      }),
+    ).resolves.toEqual({ outcome: 'permission-required' });
+    expect(permissionCancelled).toEqual(['shift6:rest-timer:session-1']);
   });
 });
 

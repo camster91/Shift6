@@ -8,6 +8,7 @@ const allowedProperties: Record<AnalyticsEventName, readonly string[]> = {
   program_started: ['programId', 'daysPerWeek', 'sessionLengthMinutes'],
   workout_started: ['workoutId', 'cycleWeek', 'offline'],
   workout_completed: ['workoutId', 'cycleWeek', 'offline'],
+  workout_partial: ['workoutId', 'cycleWeek', 'reason', 'offline'],
   week_2_reached: ['cycleId'],
   cycle_completed: ['cycleId', 'completedWorkoutCount', 'completionRate'],
   next_cycle_started: ['cycleId', 'programId'],

@@ -145,6 +145,56 @@ describe('getCycleProgressSummary', () => {
     });
   });
 
+  it('keeps partial sessions out of adherence while retaining their logged sets', async () => {
+    const database = {
+      getAllAsync: async (sql: string) => {
+        if (sql.includes('workout_check_ins')) return [];
+        if (sql.includes('completed_sets.session_id')) {
+          return [
+            {
+              session_id: 'session-partial',
+              exercise_id: 'exercise-squat',
+              workout_exercise_id: 'workout-exercise-squat',
+              workout_id: 'workout-strength',
+              version_json: null,
+              completed_at: '2026-09-14T12:10:00.000Z',
+              load: 185,
+              reps: 5,
+              duration_seconds: null,
+              distance_meters: null,
+              rpe: null,
+              rir: 2,
+            },
+          ];
+        }
+        return [
+          {
+            id: 'session-partial',
+            workout_id: 'workout-strength',
+            program_version_id: 'version-1',
+            version_json: JSON.stringify({
+              workouts: [{ id: 'workout-strength', isOptional: false }],
+            }),
+            cycle_week: 1,
+            status: 'partial',
+            started_at: '2026-09-14T12:00:00.000Z',
+            completed_at: '2026-09-14T12:10:00.000Z',
+            workout_focus: 'strength',
+            readiness: null,
+          },
+        ];
+      },
+    } as unknown as SQLiteDatabase;
+
+    await expect(getCycleProgressSummary(database, 'cycle-1', 3)).resolves.toMatchObject({
+      facts: {
+        completedWorkoutCount: 0,
+        completionRate: 0,
+      },
+      loggedSetCount: 1,
+    });
+  });
+
   it('returns complete-cycle set records with legacy exercise IDs resolved', async () => {
     const database = {
       getAllAsync: async () => [

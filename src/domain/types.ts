@@ -48,7 +48,10 @@ export type ProgressionStrategy =
   | 'skill';
 export type CycleStatus = 'planned' | 'active' | 'complete' | 'paused' | 'cancelled';
 export type CycleWeekStatus = 'completed' | 'current' | 'upcoming' | 'missed' | 'partial';
-export type WorkoutSessionStatus = 'planned' | 'in-progress' | 'complete' | 'skipped' | 'abandoned';
+export type WorkoutSessionStatus =
+  'planned' | 'in-progress' | 'complete' | 'partial' | 'skipped' | 'abandoned';
+export type WorkoutSessionCompletionReason =
+  'all-targets' | 'time-limited' | 'readiness' | 'discomfort' | 'equipment' | 'other';
 export type WorkoutGroupType = 'superset' | 'circuit';
 export type WorkoutReadiness = 'ready' | 'limited' | 'rest';
 export type CoachProposalStatus =
@@ -269,6 +272,7 @@ export interface WorkoutSession {
   status: WorkoutSessionStatus;
   startedAt: ISODateString;
   completedAt?: ISODateString;
+  completionReason?: WorkoutSessionCompletionReason;
   isOffline: boolean;
   readiness?: WorkoutReadiness;
 }

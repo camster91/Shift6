@@ -93,6 +93,7 @@ export type AnalyticsEventName =
   | 'program_started'
   | 'workout_started'
   | 'workout_completed'
+  | 'workout_partial'
   | 'week_2_reached'
   | 'cycle_completed'
   | 'next_cycle_started'

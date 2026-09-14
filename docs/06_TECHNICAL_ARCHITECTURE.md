@@ -792,3 +792,19 @@ delete, and account-adoption boundaries.
 The builder loads persisted user-owned exercises into its picker in addition to foundational
 records. The merge is additive and user-scoped, so a private movement can be reused in a later
 workout without mutating a public exercise or a completed-cycle snapshot.
+
+## Partial workout checkpoint — 2026-09-14
+
+The local workout boundary now supports an explicit early-stop path for the canonical “shorten a
+session” requirement. After at least one set is persisted, the user can choose a bounded reason:
+time-limited, readiness, discomfort, equipment, or other. Migration 16 adds the nullable
+`completion_reason` column to `workout_sessions`; `finishWorkoutSessionPartially` updates only an
+in-progress row, queues the updated session through the existing idempotent outbox, and removes the
+draft in one transaction.
+
+Partial sessions are intentionally not treated as complete: they do not count toward required
+workout adherence, do not advance the active cycle week, and do not create a completed-session
+progression baseline. The summary preserves the reason and logged-set count and tells the user
+that the cycle remains on the current week. Existing completed history is untouched. Web preview
+uses validated route parameters to display the same state because its documented no-persistence
+provider cannot reload a native session.

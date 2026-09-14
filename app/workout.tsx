@@ -52,6 +52,7 @@ import {
 import { getLatestCompletedWorkoutSets } from '../src/db/progressRepository';
 import {
   completeWorkoutSessionAndAdvanceCycle,
+  finishWorkoutSessionPartially,
   getCompletedSets,
   getInProgressWorkoutSession,
   getWorkoutDraft,
@@ -72,6 +73,18 @@ import * as Network from 'expo-network';
 import type { ConnectivityStatus } from '../src/services/syncCoordinator';
 
 type SetInputValues = WorkoutDraftSetValues;
+type PartialWorkoutReason = Exclude<NonNullable<WorkoutSession['completionReason']>, 'all-targets'>;
+
+const partialWorkoutReasonOptions: readonly {
+  reason: PartialWorkoutReason;
+  label: string;
+}[] = [
+  { reason: 'time-limited', label: 'I ran out of time' },
+  { reason: 'readiness', label: 'I was not ready today' },
+  { reason: 'discomfort', label: 'I felt discomfort' },
+  { reason: 'equipment', label: 'Equipment changed' },
+  { reason: 'other', label: 'Something else' },
+];
 
 const notificationProvider = createExpoNotificationProvider();
 
@@ -109,6 +122,8 @@ export default function ActiveWorkoutScreen() {
   const [draftReady, setDraftReady] = useState(database === null);
   const [savingSetKey, setSavingSetKey] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
+  const [partialFinishing, setPartialFinishing] = useState(false);
+  const [partialReasonOpen, setPartialReasonOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
   const [restSecondsRemaining, setRestSecondsRemaining] = useState(0);
@@ -622,6 +637,50 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
+  const handleFinishPartially = async (reason: PartialWorkoutReason) => {
+    if (completedCount === 0 || finishing || partialFinishing) return;
+
+    setPartialFinishing(true);
+    setError(null);
+    try {
+      if (database) {
+        const finishedSession = await finishWorkoutSessionPartially(
+          database,
+          session.id,
+          new Date().toISOString(),
+          reason,
+        );
+        if (!finishedSession) {
+          throw new Error('This workout session is no longer active locally.');
+        }
+      }
+      trackAnalyticsEvent(analytics, 'workout_partial', {
+        workoutId: session.workoutId,
+        cycleWeek: session.cycleWeek,
+        reason,
+        offline: session.isOffline,
+      });
+      router.replace({
+        pathname: '/summary',
+        params: {
+          sessionId: session.id,
+          workoutId: activeWorkout.id,
+          completionStatus: 'partial',
+          completionReason: reason,
+          completedSetCount: String(completedCount),
+        },
+      });
+    } catch (partialError) {
+      setError(
+        partialError instanceof Error
+          ? partialError.message
+          : 'We could not save this partial workout locally.',
+      );
+    } finally {
+      setPartialFinishing(false);
+    }
+  };
+
   if (loadingCycle || loadingSession) {
     return (
       <Screen contentContainerStyle={styles.loadingContent}>
@@ -907,6 +966,37 @@ export default function ActiveWorkoutScreen() {
           </Card>
         );
       })}
+
+      {completedCount > 0 && !allSetsComplete ? (
+        <Card tone="yellow" style={styles.partialCard} accessibilityLabel="Save a partial workout">
+          <Text variant="smallMedium">Need to stop early?</Text>
+          <Text variant="small" tone="muted" style={styles.partialCopy}>
+            Save the sets you completed with a reason. This keeps your record honest and does not
+            advance the six-week cycle.
+          </Text>
+          <Button
+            label={partialReasonOpen ? 'Hide reasons' : 'Save partial workout'}
+            variant="secondary"
+            onPress={() => setPartialReasonOpen((current) => !current)}
+            style={styles.partialToggle}
+          />
+          {partialReasonOpen ? (
+            <View style={styles.partialOptions}>
+              {partialWorkoutReasonOptions.map((option) => (
+                <Button
+                  key={option.reason}
+                  label={option.label}
+                  variant="ghost"
+                  loading={partialFinishing}
+                  onPress={() => void handleFinishPartially(option.reason)}
+                  accessibilityHint="Ends this session without advancing the current cycle week"
+                  style={styles.partialOption}
+                />
+              ))}
+            </View>
+          ) : null}
+        </Card>
+      ) : null}
 
       <Button
         label="Finish workout"
@@ -1416,6 +1506,25 @@ const styles = StyleSheet.create({
   },
   completeButton: {
     minWidth: 88,
+    paddingHorizontal: spacing.sm,
+  },
+  partialCard: {
+    marginTop: spacing.xl,
+  },
+  partialCopy: {
+    marginTop: spacing.xs,
+  },
+  partialToggle: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.md,
+  },
+  partialOptions: {
+    marginTop: spacing.xs,
+    gap: spacing.xxs,
+  },
+  partialOption: {
+    justifyContent: 'flex-start',
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
   },
   finishButton: {

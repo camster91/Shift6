@@ -316,3 +316,9 @@ technique review, and public sharing are still later gates.
 The builder now reloads user-owned custom exercises and searches them alongside foundational
 movements, completing the private reuse path without opening public sharing or catalogue
 publication.
+
+The #276 active-workout increment now supports explicit session shortening after a user logs at
+least one set. A bounded reason is persisted with the local `partial` session, queued for later
+sync, and shown in the summary; partial sessions remain out of required adherence and cycle
+advancement while preserving the logged-set record. The focused repository/migration tests and
+web accessibility smoke path pass. Native restart/offline/device proof remains a release gate.

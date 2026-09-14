@@ -13,8 +13,7 @@ import {
   type CycleReviewSession,
   type SetPerformance,
 } from '../domain/progression';
-import type { CompletedSet } from '../domain/types';
-import type { WorkoutReadiness } from '../domain/types';
+import type { CompletedSet, WorkoutReadiness, WorkoutSession } from '../domain/types';
 import { getCompletedSets } from './workoutRepository';
 
 interface WorkoutSessionProgressRow {
@@ -23,7 +22,7 @@ interface WorkoutSessionProgressRow {
   program_version_id?: string;
   version_json?: string | null;
   cycle_week: number;
-  status: 'planned' | 'in-progress' | 'complete' | 'skipped' | 'abandoned';
+  status: WorkoutSession['status'];
   started_at: string;
   completed_at: string | null;
   workout_focus: 'strength' | 'cardio' | 'mobility' | 'conditioning' | 'recovery' | 'mixed';

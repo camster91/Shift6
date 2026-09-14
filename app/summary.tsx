@@ -29,10 +29,14 @@ import { colors, radii, spacing } from '../src/design/tokens';
 
 export default function WorkoutSummaryScreen() {
   const database = useLocalDatabase();
-  const { sessionId, workoutId } = useLocalSearchParams<{
-    sessionId?: string;
-    workoutId?: string;
-  }>();
+  const { sessionId, workoutId, completionStatus, completionReason, completedSetCount } =
+    useLocalSearchParams<{
+      sessionId?: string;
+      workoutId?: string;
+      completionStatus?: string;
+      completionReason?: string;
+      completedSetCount?: string;
+    }>();
   const [session, setSession] = useState<WorkoutSession | null>(null);
   const [sets, setSets] = useState<CompletedSet[]>([]);
   const [existingCheckIn, setExistingCheckIn] = useState<WorkoutCheckIn | null>(null);
@@ -51,11 +55,32 @@ export default function WorkoutSummaryScreen() {
       demoProgramVersion.workouts.find((candidate) => candidate.id === workoutId) ?? demoWorkout,
     [workoutId],
   );
+
+  const previewSession = useMemo<WorkoutSession | null>(() => {
+    const reason = parseCompletionReason(completionReason);
+    if (completionStatus !== 'partial' || !sessionId || !reason) return null;
+
+    const now = new Date().toISOString();
+    return {
+      id: sessionId,
+      cycleId: 'preview-cycle',
+      cycleWeek: 1,
+      workoutId: workoutId ?? demoWorkout.id,
+      programVersionId: demoProgramVersion.id,
+      workoutFocus: previewWorkout.focus,
+      status: 'partial',
+      startedAt: now,
+      completedAt: now,
+      completionReason: reason,
+      isOffline: false,
+    };
+  }, [completionReason, completionStatus, previewWorkout.focus, sessionId, workoutId]);
   const [workout, setWorkout] = useState<Workout>(previewWorkout);
 
   useEffect(() => {
     if (!database || !sessionId) {
       setWorkout(previewWorkout);
+      setSession(previewSession);
       setLoading(false);
       return;
     }
@@ -97,9 +122,14 @@ export default function WorkoutSummaryScreen() {
     return () => {
       active = false;
     };
-  }, [database, previewWorkout, sessionId]);
+  }, [database, previewSession, previewWorkout, sessionId]);
 
   const facts = useMemo(() => buildSummaryFacts(session, sets, workout), [session, sets, workout]);
+  const isPartial = session?.status === 'partial';
+  const displayedSetCount =
+    database || !isPartial
+      ? facts.setCount
+      : (parsePreviewSetCount(completedSetCount) ?? facts.setCount);
 
   const saveCheckIn = async () => {
     if (saving) return;
@@ -154,14 +184,19 @@ export default function WorkoutSummaryScreen() {
       </View>
 
       <Text variant="display" accessibilityRole="header" style={styles.title}>
-        Workout complete.
+        {isPartial ? 'Workout saved partially.' : 'Workout complete.'}
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
-        {workout.title} is recorded locally. Take a moment to capture how the session felt before
-        you move on.
+        {isPartial
+          ? `${workout.title} is recorded locally as a partial session${session?.completionReason ? ` because ${formatCompletionReason(session.completionReason).toLowerCase()}` : ''}. The cycle stays on this week.`
+          : `${workout.title} is recorded locally. Take a moment to capture how the session felt before you move on.`}
       </Text>
 
-      <Card tone="mint" style={styles.completeCard} accessibilityLabel="Workout complete">
+      <Card
+        tone={isPartial ? 'yellow' : 'mint'}
+        style={styles.completeCard}
+        accessibilityLabel={isPartial ? 'Partial workout saved' : 'Workout complete'}
+      >
         <View style={styles.completeHeader}>
           <View style={styles.completeIcon}>
             <Shift6Icon name="checkmark" size={24} color={colors.ink} />
@@ -169,16 +204,29 @@ export default function WorkoutSummaryScreen() {
           <View style={styles.completeCopy}>
             <Text variant="h2">{workout.title}</Text>
             <Text variant="small" tone="muted">
-              {facts.setCount} sets logged · {facts.durationLabel}
+              {displayedSetCount} sets logged · {facts.durationLabel}
             </Text>
           </View>
         </View>
         <View style={styles.factsRow}>
           <SummaryFact label="Volume" value={facts.volumeLabel} />
           <SummaryFact label="Cardio" value={facts.cardioLabel} />
-          <SummaryFact label="Status" value={database ? 'Saved' : 'Preview'} />
+          <SummaryFact
+            label="Status"
+            value={database ? (isPartial ? 'Saved partial' : 'Saved') : 'Preview'}
+          />
         </View>
       </Card>
+
+      {isPartial ? (
+        <Card tone="lavender" style={styles.partialNote} accessibilityLabel="Partial workout note">
+          <Text variant="smallMedium">Your cycle was not advanced.</Text>
+          <Text variant="small" tone="muted" style={styles.partialNoteCopy}>
+            The completed sets remain available for your history. Resume the planned workout later
+            or continue with the next scheduled session.
+          </Text>
+        </Card>
+      ) : null}
 
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
 
@@ -329,6 +377,44 @@ function buildSummaryFacts(
   };
 }
 
+function formatCompletionReason(reason: NonNullable<WorkoutSession['completionReason']>): string {
+  switch (reason) {
+    case 'time-limited':
+      return 'you ran out of time';
+    case 'readiness':
+      return 'you were not ready today';
+    case 'discomfort':
+      return 'you felt discomfort';
+    case 'equipment':
+      return 'equipment changed';
+    case 'other':
+      return 'you chose to stop early';
+    case 'all-targets':
+      return 'all targets were completed';
+  }
+}
+
+function parseCompletionReason(
+  value: string | undefined,
+): Exclude<NonNullable<WorkoutSession['completionReason']>, 'all-targets'> | undefined {
+  switch (value) {
+    case 'time-limited':
+    case 'readiness':
+    case 'discomfort':
+    case 'equipment':
+    case 'other':
+      return value;
+    default:
+      return undefined;
+  }
+}
+
+function parsePreviewSetCount(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
 const styles = StyleSheet.create({
   loadingTitle: {
     marginTop: spacing.xl,
@@ -352,6 +438,12 @@ const styles = StyleSheet.create({
   },
   completeCard: {
     marginTop: spacing.xl,
+  },
+  partialNote: {
+    marginTop: spacing.md,
+  },
+  partialNoteCopy: {
+    marginTop: spacing.xs,
   },
   completeHeader: {
     flexDirection: 'row',

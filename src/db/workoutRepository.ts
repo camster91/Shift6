@@ -19,6 +19,7 @@ interface WorkoutSessionRow {
   status: WorkoutSession['status'];
   started_at: string;
   completed_at: string | null;
+  completion_reason: WorkoutSession['completionReason'] | null;
   is_offline: number;
   readiness: WorkoutSession['readiness'] | null;
 }
@@ -57,8 +58,8 @@ export async function saveWorkoutSession(
     await database.runAsync(
       `INSERT OR IGNORE INTO workout_sessions
         (id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-         started_at, completed_at, is_offline, readiness)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+         started_at, completed_at, completion_reason, is_offline, readiness)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       session.id,
       session.cycleId,
       session.cycleWeek,
@@ -68,6 +69,7 @@ export async function saveWorkoutSession(
       session.status,
       session.startedAt,
       session.completedAt ?? null,
+      session.completionReason ?? null,
       session.isOffline ? 1 : 0,
       session.readiness ?? null,
     );
@@ -171,7 +173,7 @@ export async function getWorkoutSession(
 ): Promise<WorkoutSession | null> {
   const row = await database.getFirstAsync<WorkoutSessionRow>(
     `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-            started_at, completed_at, is_offline, readiness
+            started_at, completed_at, completion_reason, is_offline, readiness
        FROM workout_sessions
       WHERE id = ?
       LIMIT 1;`,
@@ -189,7 +191,7 @@ export async function getInProgressWorkoutSession(
 ): Promise<WorkoutSession | null> {
   const row = await database.getFirstAsync<WorkoutSessionRow>(
     `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-            started_at, completed_at, is_offline, readiness
+            started_at, completed_at, completion_reason, is_offline, readiness
        FROM workout_sessions
       WHERE cycle_id = ?
         AND cycle_week = ?
@@ -224,7 +226,7 @@ export async function updateWorkoutSessionProgramVersion(
 
     const row = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, is_offline, readiness
+              started_at, completed_at, completion_reason, is_offline, readiness
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -258,7 +260,7 @@ export async function updateWorkoutSessionReadiness(
 
     const row = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, is_offline, readiness
+              started_at, completed_at, completion_reason, is_offline, readiness
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -384,7 +386,7 @@ export async function completeWorkoutSession(
 
     const row = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, is_offline, readiness
+              started_at, completed_at, completion_reason, is_offline, readiness
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -394,6 +396,48 @@ export async function completeWorkoutSession(
 
     await queueCompletedWorkoutSessionSync(database, mapWorkoutSession(row));
   });
+}
+
+/**
+ * Ends an in-progress workout after the user has explicitly chosen to stop
+ * early. Partial sessions remain in the local record and sync outbox, but do
+ * not count as completed workouts and never advance the active cycle week.
+ */
+export async function finishWorkoutSessionPartially(
+  database: SQLiteDatabase,
+  sessionId: string,
+  completedAt: string,
+  completionReason: Exclude<NonNullable<WorkoutSession['completionReason']>, 'all-targets'>,
+): Promise<WorkoutSession | null> {
+  let finishedSession: WorkoutSession | null = null;
+
+  await database.withTransactionAsync(async () => {
+    const result = await database.runAsync(
+      `UPDATE workout_sessions
+          SET status = 'partial', completed_at = ?, completion_reason = ?
+        WHERE id = ? AND status = 'in-progress';`,
+      completedAt,
+      completionReason,
+      sessionId,
+    );
+    if (result.changes === 0) return;
+
+    const row = await database.getFirstAsync<WorkoutSessionRow>(
+      `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
+              started_at, completed_at, completion_reason, is_offline, readiness
+         FROM workout_sessions
+        WHERE id = ?
+        LIMIT 1;`,
+      sessionId,
+    );
+    if (!row) throw new Error('Partially saved workout could not be reloaded locally.');
+
+    finishedSession = mapWorkoutSession(row);
+    await queueWorkoutSessionSync(database, finishedSession);
+    await database.runAsync('DELETE FROM workout_drafts WHERE session_id = ?;', sessionId);
+  });
+
+  return finishedSession;
 }
 
 /**
@@ -421,7 +465,7 @@ export async function completeWorkoutSessionAndAdvanceCycle(
 
     const sessionRow = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, is_offline, readiness
+              started_at, completed_at, completion_reason, is_offline, readiness
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -481,6 +525,7 @@ function mapWorkoutSession(row: WorkoutSessionRow): WorkoutSession {
     status: row.status,
     startedAt: row.started_at,
     completedAt: row.completed_at ?? undefined,
+    completionReason: row.completion_reason ?? undefined,
     isOffline: row.is_offline === 1,
     readiness: row.readiness ?? undefined,
   };

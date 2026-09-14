@@ -271,6 +271,14 @@ export const MIGRATIONS: readonly Migration[] = [
         ON cycle_reviews(user_id, updated_at DESC);`,
     ],
   },
+  {
+    version: 16,
+    name: 'partial-workout-completion-reason',
+    statements: [
+      `ALTER TABLE workout_sessions
+        ADD COLUMN completion_reason TEXT;`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

@@ -129,4 +129,10 @@ describe('local database migrations', () => {
     expect(statements).toContain('next_action TEXT');
     expect(statements).toContain('FOREIGN KEY (cycle_id) REFERENCES training_cycles(id)');
   });
+
+  it('stores an explicit reason when a workout ends before all targets', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('ADD COLUMN completion_reason TEXT');
+  });
 });

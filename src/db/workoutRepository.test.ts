@@ -5,6 +5,7 @@ import type { CompletedSet } from '../domain/types';
 import {
   completeWorkoutSession,
   completeWorkoutSessionAndAdvanceCycle,
+  finishWorkoutSessionPartially,
   getCompletedSets,
   getInProgressWorkoutSession,
   getWorkoutDraft,
@@ -354,6 +355,72 @@ describe('completeWorkoutSessionAndAdvanceCycle', () => {
     expect(calls.some((call) => call.sql.includes('UPDATE training_cycles'))).toBe(true);
     expect(calls.some((call) => call.sql.includes('DELETE FROM workout_drafts'))).toBe(true);
     expect(calls.at(-1)?.sql).toBe('COMMIT TRANSACTION');
+  });
+});
+
+describe('finishWorkoutSessionPartially', () => {
+  it('persists the partial status and reason without advancing a cycle', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const database = {
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      getFirstAsync: async () => ({
+        id: 'session-1',
+        cycle_id: 'cycle-1',
+        cycle_week: 2,
+        workout_id: 'workout-1',
+        program_version_id: 'program-version-1',
+        workout_focus: 'strength',
+        status: 'partial',
+        started_at: '2026-09-14T12:00:00.000Z',
+        completed_at: '2026-09-14T12:12:00.000Z',
+        completion_reason: 'time-limited',
+        is_offline: 1,
+        readiness: 'limited',
+      }),
+      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      finishWorkoutSessionPartially(
+        database,
+        'session-1',
+        '2026-09-14T12:12:00.000Z',
+        'time-limited',
+      ),
+    ).resolves.toMatchObject({
+      id: 'session-1',
+      status: 'partial',
+      completionReason: 'time-limited',
+      cycleWeek: 2,
+    });
+    expect(calls[0]).toMatchObject({
+      params: ['2026-09-14T12:12:00.000Z', 'time-limited', 'session-1'],
+    });
+    expect(calls[1]?.sql).toContain('INSERT INTO sync_outbox');
+    expect(JSON.parse(String(calls[1]?.params[4]))).toMatchObject({
+      id: 'session-1',
+      status: 'partial',
+      completionReason: 'time-limited',
+    });
+    expect(calls.at(-1)?.sql).toContain('DELETE FROM workout_drafts');
+    expect(calls.some((call) => call.sql.includes('training_cycles'))).toBe(false);
+  });
+
+  it('does not finalize an already-ended session', async () => {
+    const database = {
+      runAsync: async () => ({ changes: 0, lastInsertRowId: 0 }),
+      getFirstAsync: async () => {
+        throw new Error('should not reload an unchanged session');
+      },
+      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      finishWorkoutSessionPartially(database, 'session-1', '2026-09-14T12:12:00.000Z', 'other'),
+    ).resolves.toBeNull();
   });
 });
 

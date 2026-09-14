@@ -11,6 +11,7 @@ import {
   reorderWorkoutExercises,
   setWorkoutExerciseNotes,
   setWorkoutExerciseRestSeconds,
+  setWorkoutExerciseSection,
   setWorkoutExerciseSetCount,
   setWorkoutExerciseTarget,
   updateWorkoutMetadata,
@@ -276,6 +277,26 @@ describe('immutable custom program builder', () => {
     expect(() =>
       setWorkoutExerciseNotes(copy.version, workout.id, exercise.id, 'x'.repeat(501)),
     ).toThrow('500 characters or fewer');
+  });
+
+  it('assigns a section without changing exercise identity or prescription', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-sections',
+      newVersionId: 'program-custom-sections-version-1',
+      createdAt: '2026-09-14T15:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const exercise = workout.exercises[0]!;
+    const updated = setWorkoutExerciseSection(copy.version, workout.id, exercise.id, 'warm-up');
+    const updatedExercise = updated.workouts[0]!.exercises[0]!;
+
+    expect(updatedExercise.section).toBe('warm-up');
+    expect(updatedExercise.id).toBe(exercise.id);
+    expect(updatedExercise.sets).toEqual(exercise.sets);
+    expect(copy.version.workouts[0]!.exercises[0]!.section).toBe('working');
   });
 
   it('creates a reviewable custom exercise rather than silently treating it as curated', () => {

@@ -521,4 +521,6 @@ Profile saves now queue the complete user-confirmed onboarding snapshot in the s
 
 The private builder now exposes immutable workout metadata edits (name, weekday, focus, duration), shared rest-period configuration, and bounded exercise notes. These fields stay inside the user-owned `ProgramVersion` snapshot; the public template and completed session history remain unchanged.
 
+Workout exercises can also be assigned to the typed warm-up, working, cooldown, cardio, or mobility sections. Section changes preserve the exercise/set identities and remain private to the edited version; they do not infer or rewrite completed history.
+
 Starting the curated Barbell 30 template now creates a uniquely identified private program/version snapshot (with the public template recorded as `sourceProgramId`) before persisting the cycle. This keeps the public fixture/template separate from user edits and gives later cycle history a stable version reference from the moment the cycle begins.

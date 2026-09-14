@@ -485,6 +485,35 @@ export function setWorkoutExerciseNotes(
   }));
 }
 
+export function setWorkoutExerciseSection(
+  version: ProgramVersion,
+  workoutId: string,
+  workoutExerciseId: string,
+  section: WorkoutExercise['section'],
+): ProgramVersion {
+  const sections: readonly WorkoutExercise['section'][] = [
+    'warm-up',
+    'working',
+    'cooldown',
+    'cardio',
+    'mobility',
+  ];
+  if (!sections.includes(section)) throw new Error('This workout section is not supported.');
+
+  const workout = version.workouts.find((candidate) => candidate.id === workoutId);
+  if (!workout) throw new Error('Workout not found in this program version.');
+  if (!workout.exercises.some((exercise) => exercise.id === workoutExerciseId)) {
+    throw new Error('Exercise not found in this workout.');
+  }
+
+  return updateWorkout(version, workoutId, (currentWorkout) => ({
+    ...currentWorkout,
+    exercises: currentWorkout.exercises.map((exercise) =>
+      exercise.id === workoutExerciseId ? { ...exercise, section } : exercise,
+    ),
+  }));
+}
+
 export function createCustomExercise({
   id,
   name,

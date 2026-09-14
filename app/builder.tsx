@@ -33,9 +33,17 @@ import {
   setWorkoutExerciseTarget,
   setWorkoutExerciseNotes,
   setWorkoutExerciseRestSeconds,
+  setWorkoutExerciseSection,
   updateWorkoutMetadata,
 } from '../src/domain/programBuilder';
-import type { Exercise, SetTarget, TrackingType, UnitSystem, Workout } from '../src/domain/types';
+import type {
+  Exercise,
+  SetTarget,
+  TrackingType,
+  UnitSystem,
+  Workout,
+  WorkoutExercise,
+} from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
 import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { getOnboardingProfile } from '../src/db/profileRepository';
@@ -549,6 +557,7 @@ export default function ProgramBuilderScreen() {
                     target={exercise.sets[0]?.target ?? {}}
                     restSeconds={exercise.sets[0]?.restSeconds}
                     notes={exercise.notes}
+                    section={exercise.section}
                     trackingType={trackingType}
                     unitSystem={unitSystem}
                     onChange={(target) => {
@@ -569,6 +578,11 @@ export default function ProgramBuilderScreen() {
                     onNotesChange={(notes) => {
                       updateDraftVersion((version) =>
                         setWorkoutExerciseNotes(version, workout.id, exercise.id, notes),
+                      );
+                    }}
+                    onSectionChange={(section) => {
+                      updateDraftVersion((version) =>
+                        setWorkoutExerciseSection(version, workout.id, exercise.id, section),
                       );
                     }}
                   />
@@ -922,11 +936,13 @@ interface TargetEditorProps {
   target: SetTarget;
   restSeconds?: number;
   notes?: string;
+  section: WorkoutExercise['section'];
   trackingType: TrackingType;
   unitSystem: UnitSystem;
   onChange: (target: SetTarget) => void;
   onRestChange: (restSeconds: number | undefined) => void;
   onNotesChange: (notes: string) => void;
+  onSectionChange: (section: WorkoutExercise['section']) => void;
 }
 
 function TargetEditor({
@@ -935,11 +951,13 @@ function TargetEditor({
   target,
   restSeconds,
   notes,
+  section,
   trackingType,
   unitSystem,
   onChange,
   onRestChange,
   onNotesChange,
+  onSectionChange,
 }: TargetEditorProps) {
   const commit = (field: NumericTargetField, rawValue: string): boolean => {
     const nextTarget = updateNumericTarget(target, field, rawValue, unitSystem);
@@ -1050,6 +1068,19 @@ function TargetEditor({
         textAlignVertical="top"
         value={notes ?? ''}
       />
+      <Text variant="caption" tone="muted" style={styles.notesLabel}>
+        SECTION
+      </Text>
+      <View style={styles.focusOptions} accessibilityRole="radiogroup">
+        {sectionOptions.map((option) => (
+          <Chip
+            key={option}
+            label={formatSectionLabel(option)}
+            selected={section === option}
+            onPress={() => onSectionChange(option)}
+          />
+        ))}
+      </View>
     </View>
   );
 }
@@ -1098,6 +1129,14 @@ function TargetField({
 }
 
 type NumericTargetField = 'reps' | 'load' | 'durationSeconds' | 'distanceMeters' | 'rpe' | 'rir';
+
+const sectionOptions: readonly WorkoutExercise['section'][] = [
+  'warm-up',
+  'working',
+  'cooldown',
+  'cardio',
+  'mobility',
+];
 
 function updateNumericTarget(
   target: SetTarget,
@@ -1173,6 +1212,13 @@ function hasTargetValue(target: SetTarget): boolean {
 
 function formatFocusLabel(focus: Workout['focus']): string {
   return focus.charAt(0).toUpperCase() + focus.slice(1);
+}
+
+function formatSectionLabel(section: WorkoutExercise['section']): string {
+  return section
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 const styles = StyleSheet.create({

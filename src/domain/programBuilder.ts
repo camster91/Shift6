@@ -7,6 +7,7 @@ import type {
   SetTarget,
   TrackingType,
   WorkoutExercise,
+  Workout,
 } from './types';
 
 export interface ProgramCopy {
@@ -27,6 +28,16 @@ export interface AddExerciseInput {
   exerciseId: string;
   setCount?: number;
   target?: SetTarget;
+}
+
+export interface AddWorkoutInput {
+  id: string;
+  title: string;
+  dayOfWeek: number;
+  focus: Workout['focus'];
+  estimatedDurationMinutes: number;
+  equipmentIds?: string[];
+  isOptional?: boolean;
 }
 
 export interface CreateCustomExerciseInput {
@@ -72,6 +83,50 @@ export function renameProgram(program: Program, title: string): Program {
   if (!trimmedTitle) throw new Error('A custom program needs a name.');
 
   return { ...program, title: trimmedTitle };
+}
+
+export function addWorkoutToProgram(
+  version: ProgramVersion,
+  {
+    id,
+    title,
+    dayOfWeek,
+    focus,
+    estimatedDurationMinutes,
+    equipmentIds = [],
+    isOptional = true,
+  }: AddWorkoutInput,
+): ProgramVersion {
+  const workoutId = id.trim();
+  const workoutTitle = title.trim();
+  if (!workoutId) throw new Error('A workout needs a stable ID.');
+  if (!workoutTitle) throw new Error('A workout needs a name.');
+  if (version.workouts.some((workout) => workout.id === workoutId)) {
+    throw new Error('A workout with this ID already exists.');
+  }
+  if (!Number.isInteger(dayOfWeek) || dayOfWeek < 1 || dayOfWeek > 7) {
+    throw new Error('A workout day must be between 1 and 7.');
+  }
+  if (!Number.isInteger(estimatedDurationMinutes) || estimatedDurationMinutes < 1) {
+    throw new Error('A workout needs a positive duration.');
+  }
+
+  const workout: Workout = {
+    id: workoutId,
+    programVersionId: version.id,
+    title: workoutTitle,
+    dayOfWeek,
+    focus,
+    estimatedDurationMinutes,
+    isOptional,
+    equipmentIds: [...equipmentIds],
+    exercises: [],
+  };
+
+  return {
+    ...version,
+    workouts: [...version.workouts, workout],
+  };
 }
 
 export function addExerciseToWorkout(

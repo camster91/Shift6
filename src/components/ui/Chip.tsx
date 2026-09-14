@@ -7,9 +7,10 @@ export interface ChipProps {
   label: string;
   selected?: boolean;
   onPress?: () => void;
+  disabled?: boolean;
 }
 
-export function Chip({ label, selected = false, onPress }: ChipProps) {
+export function Chip({ label, selected = false, onPress, disabled = false }: ChipProps) {
   const content = (
     <>
       <View style={[styles.dot, selected && styles.selectedDot]} />
@@ -27,9 +28,15 @@ export function Chip({ label, selected = false, onPress }: ChipProps) {
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
+      accessibilityState={{ disabled, selected }}
+      disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.base, selected && styles.selected, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.base,
+        selected && styles.selected,
+        pressed && !disabled && styles.pressed,
+        disabled && styles.disabled,
+      ]}
     >
       {content}
     </Pressable>
@@ -63,5 +70,8 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.76,
+  },
+  disabled: {
+    opacity: 0.45,
   },
 });

@@ -62,6 +62,9 @@ export type CoachTask =
   | 'cycle-review'
   | 'freeform';
 
+/** Maximum free-text payload accepted by a provider-backed Coach request. */
+export const MAX_COACH_PROMPT_LENGTH = 500;
+
 export interface CoachContext {
   user: Pick<User, 'id' | 'unitSystem' | 'goals' | 'experience'>;
   cycle: Pick<TrainingCycle, 'id' | 'programVersionId' | 'currentWeek' | 'status'>;
@@ -76,7 +79,11 @@ export interface CoachMessageResult {
 
 /** AI boundary. Provider and model adapters must remain behind this interface. */
 export interface CoachGateway {
-  generateMessage(context: CoachContext, task: CoachTask): Promise<CoachMessageResult>;
+  generateMessage(
+    context: CoachContext,
+    task: CoachTask,
+    prompt?: string,
+  ): Promise<CoachMessageResult>;
   generateProposal(context: CoachContext, task: CoachTask): Promise<CoachProposal>;
 }
 

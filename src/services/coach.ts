@@ -1,4 +1,10 @@
-import type { CoachContext, CoachGateway, CoachMessageResult, CoachTask } from './contracts';
+import {
+  MAX_COACH_PROMPT_LENGTH,
+  type CoachContext,
+  type CoachGateway,
+  type CoachMessageResult,
+  type CoachTask,
+} from './contracts';
 import { classifyCoachSafety, validateCoachProposal } from './coachSafety';
 import type { CoachProposal, CoachProposalChange } from '../domain/types';
 
@@ -49,7 +55,11 @@ export class CoachGatewayProtocolError extends Error {
 
 /** Explicit local-only adapter used until a backend and provider are configured. */
 export class UnavailableCoachGateway implements CoachGateway {
-  async generateMessage(_context: CoachContext, _task: CoachTask): Promise<CoachMessageResult> {
+  async generateMessage(
+    _context: CoachContext,
+    _task: CoachTask,
+    _prompt?: string,
+  ): Promise<CoachMessageResult> {
     return {
       kind: 'unavailable',
       text: 'Provider-backed Coach is not configured. SHIFT6 can still explain the local record.',
@@ -86,9 +96,25 @@ export class HttpCoachGateway implements CoachGateway {
     this.fetcher = fetcher;
   }
 
-  async generateMessage(context: CoachContext, task: CoachTask): Promise<CoachMessageResult> {
+  async generateMessage(
+    context: CoachContext,
+    task: CoachTask,
+    prompt?: string,
+  ): Promise<CoachMessageResult> {
+    const rawPrompt = prompt?.trim() ?? '';
+    const safety = classifyCoachSafety(rawPrompt);
+    if (safety.route !== 'standard') {
+      return {
+        kind: 'safety-route',
+        text: safety.response,
+        factsUsed: ['deterministic safety classifier'],
+      };
+    }
+    const normalizedPrompt = normalizeCoachPrompt(rawPrompt);
+
     const value = await this.post('/v1/coach/message', {
       task,
+      ...(normalizedPrompt ? { prompt: normalizedPrompt } : {}),
       context: minimizeCoachContext(context),
     });
     return parseCoachMessageResult(value);
@@ -135,6 +161,18 @@ export class HttpCoachGateway implements CoachGateway {
       throw new CoachGatewayProtocolError('The Coach service returned invalid JSON.', error);
     }
   }
+}
+
+export function normalizeCoachPrompt(prompt?: string): string | undefined {
+  if (prompt === undefined) return undefined;
+  const normalized = prompt.trim();
+  if (!normalized) return undefined;
+  if (normalized.length > MAX_COACH_PROMPT_LENGTH) {
+    throw new CoachGatewayProtocolError(
+      `The Coach question exceeds ${MAX_COACH_PROMPT_LENGTH} characters.`,
+    );
+  }
+  return normalized;
 }
 
 /**

@@ -63,4 +63,11 @@ describe('offline Coach explainer', () => {
     expect(result.text).toContain('private plan snapshot');
     expect(result.text).not.toContain('accepted');
   });
+
+  it('maps a freeform progress question to a useful offline explanation', () => {
+    const result = buildLocalCoachMessage(context, 'freeform', 'How am I progressing this cycle?');
+
+    expect(result.text).toContain('3 of 6 workouts');
+    expect(result.factsUsed).toContain('completion rate');
+  });
 });

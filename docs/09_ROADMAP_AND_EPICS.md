@@ -297,3 +297,9 @@ optional distance, and an honest empty state. Health-provider data remains outsi
 workout progress aggregation, and pace/zones remain later work.
 
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.
+
+The Coach increment now adds a bounded free-form question surface for #278. Questions are kept out
+of analytics, safety-sensitive prompts are routed deterministically before provider transport, and
+the offline fallback maps common questions to structured local explanations. Provider-backed
+conversation, durable chat history, and proposal generation remain gated by the server contract and
+explicit user approval.

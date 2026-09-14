@@ -763,3 +763,12 @@ breakdown remains available in the typed domain result for later chart/detail su
 weekly minutes. The Progress surface presents total time, deduplicated session count, optional
 distance, and the most recent four active weeks. Missing duration/distance values remain absent;
 the card does not infer cardio from HealthKit, Health Connect, or strength volume.
+
+## Free-form Coach question checkpoint — 2026-09-14
+
+`CoachGateway.generateMessage` accepts an optional bounded question in addition to the typed task.
+`HttpCoachGateway` trims and validates the question, runs deterministic safety routing before any
+provider request, and sends the question separately from the minimized structured context. The
+default guest gateway remains unavailable, so the Coach tab falls back to a local task inference
+for common questions without adding a network dependency or a plan mutation path. A real chat
+history store and connected provider remain open #278 work.

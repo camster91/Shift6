@@ -57,12 +57,35 @@ export function buildLocalCoachMessage(
         `Use the movement's substitution options to find an equipment-compatible choice with a similar pattern. The selected replacement applies to the private plan snapshot; completed history stays attached to the original movement.`,
         ['exercise movement pattern', 'saved equipment profile', 'private program snapshot'],
       );
-    case 'freeform':
+    case 'freeform': {
+      const inferredTask = inferFreeformTask(prompt);
+      if (inferredTask) return buildLocalCoachMessage(context, inferredTask);
       return message(
         'The offline Coach can explain the current workout and local progress. Provider-backed answers and plan proposals will only use approved structured context and will always require your confirmation.',
         ['active cycle snapshot', 'local progress facts'],
       );
+    }
   }
+}
+
+function inferFreeformTask(prompt: string): Exclude<CoachTask, 'freeform'> | undefined {
+  const normalizedPrompt = prompt.trim().toLowerCase();
+  if (!normalizedPrompt) return undefined;
+  if (/(substitut|instead|equipment|machine|dumbbell|barbell)/.test(normalizedPrompt)) {
+    return 'substitution';
+  }
+  if (
+    /(progress|history|adherence|consistent|cycle review|how am i doing)/.test(normalizedPrompt)
+  ) {
+    return 'weekly-review';
+  }
+  if (/(short|quick|busy|less time|time limit|time-limited)/.test(normalizedPrompt)) {
+    return 'shorten-workout';
+  }
+  if (/(workout|session|exercise|today|training)/.test(normalizedPrompt)) {
+    return 'explain-workout';
+  }
+  return undefined;
 }
 
 function message(text: string, factsUsed: string[]): CoachMessageResult {

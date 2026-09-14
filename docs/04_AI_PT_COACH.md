@@ -146,6 +146,15 @@ Create deterministic red-flag classifiers before coach generation for messages i
 
 When triggered, the coach switches to the appropriate safety response and does not attempt a workout adaptation as the primary answer.
 
+## Implementation checkpoint — 2026-09-14
+
+The Coach tab now exposes a bounded free-form question field in addition to typed quick actions.
+The mobile boundary trims and caps provider-bound questions at 500 characters, keeps question text
+out of analytics, and sends it separately from the allowlisted structured context. A deterministic
+safety classifier runs before provider transport for safety-sensitive questions. When the provider
+is unavailable, the local explainer maps common questions about progress, substitutions, time, and
+today's workout to grounded responses from local facts; it cannot create or mutate a plan.
+
 ## Coach QA
 
 Maintain a versioned evaluation set covering:

@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import {
+  Button,
   Card,
   CoachProposalCard,
   Chip,
@@ -57,6 +58,7 @@ export default function CoachScreen() {
   const [busyProposalId, setBusyProposalId] = useState<string | null>(null);
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachSource, setCoachSource] = useState<'local' | 'remote'>('local');
+  const [question, setQuestion] = useState('');
   const [error, setError] = useState<string | null>(null);
   const trackedProposalIds = useRef(new Set<string>());
 
@@ -168,11 +170,11 @@ export default function CoachScreen() {
   };
 
   const coachNote = buildLocalCoachMessage(coachContext, 'explain-workout');
-  const askCoach = async (task: CoachTask) => {
+  const askCoach = async (task: CoachTask, prompt = '') => {
     if (coachLoading) return;
     setCoachLoading(true);
     try {
-      const result = await coach.generateMessage(coachContext, task);
+      const result = await coach.generateMessage(coachContext, task, prompt);
       if (result.kind !== 'unavailable') {
         setCoachSource('remote');
         setCoachMessage(result);
@@ -185,11 +187,18 @@ export default function CoachScreen() {
     }
 
     setCoachSource('local');
-    setCoachMessage(buildLocalCoachMessage(coachContext, task));
+    setCoachMessage(buildLocalCoachMessage(coachContext, task, prompt));
+  };
+
+  const submitQuestion = () => {
+    const normalizedQuestion = question.trim();
+    if (!normalizedQuestion || coachLoading) return;
+    setQuestion('');
+    void askCoach('freeform', normalizedQuestion);
   };
 
   return (
-    <Screen>
+    <Screen scrollViewProps={{ keyboardShouldPersistTaps: 'handled' }}>
       <Text variant="caption" tone="muted">
         SHIFT6 COACH
       </Text>
@@ -227,14 +236,60 @@ export default function CoachScreen() {
         <Text variant="h3" style={styles.askTitle}>
           Make the next step clear.
         </Text>
+        <TextInput
+          accessibilityHint="Ask about your workout, progress, or equipment."
+          accessibilityLabel="Ask Coach a question"
+          autoCapitalize="sentences"
+          autoCorrect
+          maxLength={500}
+          multiline
+          onChangeText={setQuestion}
+          onSubmitEditing={submitQuestion}
+          placeholder="What should I focus on today?"
+          placeholderTextColor={colors.inkMuted}
+          returnKeyType="send"
+          style={styles.questionInput}
+          value={question}
+        />
+        <View style={styles.questionFooter}>
+          <Text
+            variant="caption"
+            tone="muted"
+            accessibilityLabel={`${question.length} of 500 characters`}
+          >
+            {question.length}/500
+          </Text>
+          <Button
+            accessibilityHint="Sends a bounded question to Coach or uses the offline explainer."
+            disabled={!question.trim()}
+            icon={<Ionicons name="arrow-up" size={18} color={colors.white} />}
+            label="Ask Coach"
+            loading={coachLoading}
+            onPress={submitQuestion}
+            style={styles.askButton}
+          />
+        </View>
         <View style={styles.askChips}>
           <Chip
+            disabled={coachLoading}
             label={coachLoading ? 'Coach is thinking…' : "Explain today's workout"}
             onPress={() => void askCoach('explain-workout')}
           />
-          <Chip label="Review my progress" onPress={() => void askCoach('weekly-review')} />
-          <Chip label="Shorten this session" onPress={() => void askCoach('shorten-workout')} />
-          <Chip label="Find a substitution" onPress={() => void askCoach('substitution')} />
+          <Chip
+            disabled={coachLoading}
+            label="Review my progress"
+            onPress={() => void askCoach('weekly-review')}
+          />
+          <Chip
+            disabled={coachLoading}
+            label="Shorten this session"
+            onPress={() => void askCoach('shorten-workout')}
+          />
+          <Chip
+            disabled={coachLoading}
+            label="Find a substitution"
+            onPress={() => void askCoach('substitution')}
+          />
         </View>
       </Card>
 
@@ -367,6 +422,31 @@ const styles = StyleSheet.create({
   },
   askTitle: {
     marginTop: spacing.sm,
+  },
+  questionInput: {
+    minHeight: 96,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.canvas,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.ink,
+    fontSize: 16,
+    lineHeight: 24,
+    textAlignVertical: 'top',
+  },
+  questionFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  askButton: {
+    flex: 1,
   },
   askChips: {
     flexDirection: 'row',

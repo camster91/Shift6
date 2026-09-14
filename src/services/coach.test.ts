@@ -103,6 +103,53 @@ describe('Coach gateway boundary', () => {
     });
   });
 
+  it('sends a trimmed bounded question separately from structured context', async () => {
+    let requestBody = '';
+    const gateway = new HttpCoachGateway({
+      baseUrl: 'https://api.example.test',
+      getAccessToken: async () => 'test-token',
+      fetcher: async (_input, init) => {
+        requestBody = String(init?.body);
+        return new Response(
+          JSON.stringify({
+            kind: 'message',
+            text: 'Keep the next session repeatable.',
+            factsUsed: ['current cycle week'],
+          }),
+          { status: 200 },
+        );
+      },
+    });
+
+    await gateway.generateMessage(context, 'freeform', '  How should I approach today?  ');
+
+    expect(JSON.parse(requestBody).prompt).toBe('How should I approach today?');
+    expect(JSON.parse(requestBody).context.structuredFacts).toEqual({
+      workoutTitle: 'Strength A',
+      currentWeek: 2,
+    });
+  });
+
+  it('routes a safety-sensitive question before making a provider request', async () => {
+    let requestMade = false;
+    const gateway = new HttpCoachGateway({
+      baseUrl: 'https://api.example.test',
+      getAccessToken: async () => 'test-token',
+      fetcher: async () => {
+        requestMade = true;
+        return new Response('{}', { status: 200 });
+      },
+    });
+
+    await expect(
+      gateway.generateMessage(context, 'freeform', 'I have chest pain'),
+    ).resolves.toMatchObject({
+      kind: 'safety-route',
+      factsUsed: ['deterministic safety classifier'],
+    });
+    expect(requestMade).toBe(false);
+  });
+
   it('reroutes unsafe provider text through the deterministic safety classifier', async () => {
     const gateway = new HttpCoachGateway({
       baseUrl: 'https://api.example.test',

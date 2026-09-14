@@ -226,6 +226,22 @@ export const MIGRATIONS: readonly Migration[] = [
         ON health_summaries(user_id, health_type, start_at ASC);`,
     ],
   },
+  {
+    version: 13,
+    name: 'notification-preferences',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS notification_preferences (
+        user_id TEXT PRIMARY KEY NOT NULL,
+        workout_reminders INTEGER NOT NULL DEFAULT 0,
+        rest_timer INTEGER NOT NULL DEFAULT 0,
+        weekly_review INTEGER NOT NULL DEFAULT 0,
+        cycle_review INTEGER NOT NULL DEFAULT 0,
+        coach_messages INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE
+      );`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

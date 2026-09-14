@@ -100,4 +100,15 @@ describe('local database migrations', () => {
     expect(statements).toContain('CREATE INDEX IF NOT EXISTS health_summaries_user_type_start');
     expect(statements).toContain('ON DELETE CASCADE');
   });
+
+  it('stores granular notification preferences with opt-in-safe defaults', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS notification_preferences');
+    expect(statements).toContain('workout_reminders INTEGER NOT NULL DEFAULT 0');
+    expect(statements).toContain('coach_messages INTEGER NOT NULL DEFAULT 0');
+    expect(statements).toContain(
+      'FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE',
+    );
+  });
 });

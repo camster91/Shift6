@@ -619,3 +619,7 @@ The active workout now renders the private snapshot's section label, superset/ci
 Cycle facts now also include completed training days and the number of active cycle weeks represented by completed sessions. Progress and Review surface these as consistency context without calculating a punitive streak or inferring missed-workout intent.
 
 Active workout effort capture now renders RPE/RIR fields when the saved target requests them. Values are optional but validated locally (RPE 1–10, RIR 0–10) before a completed set is written, so the RPE/RIR progression strategy can consume actual user input without weakening the local-first write boundary.
+
+## Notification preferences checkpoint — 2026-09-14
+
+The notification boundary now includes a user-scoped SQLite preference row for workout reminders, rest-timer cues, weekly review, cycle review, and Coach messages. Preferences default to off, save atomically with a replaceable `notification-preference` outbox mutation, appear in local export/delete, and transfer with the guest identity adoption path. The settings route uses `expo-notifications` only for native permission status/request handling; web preview explicitly reports delivery as unavailable. Scheduling policy, training-time selection, notification deep links, remote push credentials, and background delivery remain separate #280/#281 work and are not implied by these settings.

@@ -183,6 +183,14 @@ export default function ProfileScreen() {
         style={styles.healthButton}
       />
 
+      <Button
+        label="Manage notifications"
+        variant="secondary"
+        icon={<Ionicons name="notifications-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/notifications')}
+        style={styles.notificationsButton}
+      />
+
       <Text variant="h2" style={styles.sectionTitle}>
         Data & privacy
       </Text>
@@ -281,6 +289,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   healthButton: {
+    marginTop: spacing.md,
+  },
+  notificationsButton: {
     marginTop: spacing.md,
   },
   settingsTitle: {

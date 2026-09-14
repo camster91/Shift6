@@ -55,6 +55,8 @@ export type CoachProposalStatus =
 export type CoachTone = 'concise' | 'supportive' | 'technical';
 export type CoachIntervention = 'conservative' | 'balanced' | 'proactive';
 export type HealthConnectionPreference = 'not-now' | 'apple-health' | 'health-connect';
+export type NotificationPreferenceKey =
+  'workoutReminders' | 'restTimer' | 'weeklyReview' | 'cycleReview' | 'coachMessages';
 
 export interface User {
   id: EntityId;
@@ -75,6 +77,16 @@ export interface OnboardingProfile {
   coachIntervention: CoachIntervention;
   healthConnection: HealthConnectionPreference;
   completedAt: ISODateString;
+}
+
+export interface NotificationPreference {
+  userId: EntityId;
+  workoutReminders: boolean;
+  restTimer: boolean;
+  weeklyReview: boolean;
+  cycleReview: boolean;
+  coachMessages: boolean;
+  updatedAt: ISODateString;
 }
 
 export interface Equipment {

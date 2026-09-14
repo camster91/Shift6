@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export interface LocalDataExport {
-  schemaVersion: 3;
+  schemaVersion: 4;
   exportedAt: string;
   userId: string;
   userProfiles: Record<string, unknown>[];
@@ -16,6 +16,7 @@ export interface LocalDataExport {
   userExercises: Record<string, unknown>[];
   coachProposals: Record<string, unknown>[];
   healthSummaries: Record<string, unknown>[];
+  notificationPreferences: Record<string, unknown>[];
 }
 
 export async function exportLocalUserData(
@@ -94,9 +95,14 @@ export async function exportLocalUserData(
       ORDER BY start_at ASC, end_at ASC, source ASC, id ASC;`,
     userId,
   );
+  const notificationPreferences = await database.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM notification_preferences
+      WHERE user_id = ?;`,
+    userId,
+  );
 
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     exportedAt,
     userId,
     userProfiles,
@@ -111,6 +117,7 @@ export async function exportLocalUserData(
     userExercises,
     coachProposals,
     healthSummaries,
+    notificationPreferences,
   };
 }
 
@@ -124,6 +131,7 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
     await database.runAsync(
       `DELETE FROM sync_outbox
         WHERE (entity_type = 'profile' AND entity_id = ?)
+           OR (entity_type = 'notification-preference' AND entity_id = ?)
            OR (entity_type = 'training-cycle' AND entity_id IN (
                 SELECT id FROM training_cycles WHERE user_id = ?
               ))
@@ -167,7 +175,9 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
       userId,
       userId,
       userId,
+      userId,
     );
+    await database.runAsync('DELETE FROM notification_preferences WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM health_summaries WHERE user_id = ?;', userId);
     await database.runAsync(
       `DELETE FROM completed_sets

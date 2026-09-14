@@ -71,8 +71,11 @@ export async function migrateLocalUserToAccount(
        UNION ALL
        SELECT 1 FROM health_summaries WHERE user_id = ?
        UNION ALL
+       SELECT 1 FROM notification_preferences WHERE user_id = ?
+       UNION ALL
        SELECT 1 FROM sync_outbox WHERE idempotency_key = ?
         LIMIT 1;`,
+      destinationUserId,
       destinationUserId,
       destinationUserId,
       destinationUserId,
@@ -98,6 +101,7 @@ export async function migrateLocalUserToAccount(
       `SELECT id, idempotency_key, entity_type, entity_id, payload_json
          FROM sync_outbox
         WHERE (entity_type = 'profile' AND entity_id = ?)
+           OR (entity_type = 'notification-preference' AND entity_id = ?)
            OR (entity_type = 'training-cycle' AND entity_id IN (
                 SELECT id FROM training_cycles WHERE user_id = ?
               ))
@@ -134,6 +138,7 @@ export async function migrateLocalUserToAccount(
                  WHERE training_cycles.user_id = ?
               ))
         ORDER BY created_at ASC, id ASC;`,
+      sourceUserId,
       sourceUserId,
       sourceUserId,
       sourceUserId,
@@ -212,6 +217,11 @@ export async function migrateLocalUserToAccount(
     );
     await database.runAsync(
       'UPDATE health_summaries SET user_id = ? WHERE user_id = ?;',
+      destinationUserId,
+      sourceUserId,
+    );
+    await database.runAsync(
+      'UPDATE notification_preferences SET user_id = ? WHERE user_id = ?;',
       destinationUserId,
       sourceUserId,
     );

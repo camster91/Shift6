@@ -206,6 +206,8 @@ Coach now has an offline deterministic explainer for workout, progress, cycle, s
 
 Progress and Review now show deterministic completed training days and active cycle weeks from local session timestamps as consistency context. No punitive streak score is introduced.
 
+Active workout set rows now expose target-driven RPE/RIR inputs and reject out-of-range values locally before persistence. This keeps effort-aware progression grounded in the user's recorded set rather than an omitted or unvalidated field.
+
 The health boundary now validates and normalizes provider summaries in the domain layer, deduplicates by source plus stable sample ID, and exposes explicit UTC-day trend aggregation rules for additive, average, and latest-value metrics. Native permission adapters, local health persistence, disclosure UI, and device verification remain later #279/#280 gates.
 
 Normalized health summaries now have a local SQLite repository with user-scoped upserts, filtered reads, local export/delete coverage, and guest-account ownership transfer. They remain outside the sync outbox until a least-privilege remote health policy is approved.

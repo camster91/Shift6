@@ -366,6 +366,8 @@ export default function ActiveWorkoutScreen() {
     const reps = parseNumber(input.reps);
     const durationSeconds = parseNumber(input.duration);
     const distanceMeters = parseNumber(input.distance);
+    const rpe = parseNumber(input.rpe);
+    const rir = parseNumber(input.rir);
     const trackingType = getTrackingType(workoutExercise.exerciseId, target, availableExercises);
     if (target?.reps !== undefined && reps === undefined) {
       setError(`Enter the reps completed for set ${setNumber} before marking it complete.`);
@@ -379,6 +381,14 @@ export default function ActiveWorkoutScreen() {
       setError(`Enter the distance completed for set ${setNumber} before marking it complete.`);
       return;
     }
+    if (rpe !== undefined && (rpe < 1 || rpe > 10)) {
+      setError('RPE must be between 1 and 10.');
+      return;
+    }
+    if (rir !== undefined && (rir < 0 || rir > 10)) {
+      setError('RIR must be between 0 and 10.');
+      return;
+    }
 
     const completedSet: CompletedSet = {
       id: `completed-${session.id}-${key}`,
@@ -390,8 +400,8 @@ export default function ActiveWorkoutScreen() {
       reps,
       durationSeconds,
       distanceMeters,
-      rpe: parseNumber(input.rpe),
-      rir: parseNumber(input.rir),
+      rpe,
+      rir,
       completedAt: new Date().toISOString(),
       idempotencyKey: `${session.id}:${workoutExercise.id}:${setNumber}`,
     };
@@ -781,6 +791,30 @@ export default function ActiveWorkoutScreen() {
                         value={values[key]?.distance ?? ''}
                       />
                     ) : null}
+                    {showsRpe(workoutSet.target) ? (
+                      <TextInput
+                        accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
+                        editable={!completed || editing}
+                        keyboardType="decimal-pad"
+                        onChangeText={(value) => updateValue(key, 'rpe', value)}
+                        placeholder="RPE"
+                        placeholderTextColor={colors.inkMuted}
+                        style={styles.effortInput}
+                        value={values[key]?.rpe ?? ''}
+                      />
+                    ) : null}
+                    {showsRir(workoutSet.target) ? (
+                      <TextInput
+                        accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
+                        editable={!completed || editing}
+                        keyboardType="number-pad"
+                        onChangeText={(value) => updateValue(key, 'rir', value)}
+                        placeholder="RIR"
+                        placeholderTextColor={colors.inkMuted}
+                        style={styles.effortInput}
+                        value={values[key]?.rir ?? ''}
+                      />
+                    ) : null}
                     <Button
                       label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
                       variant={completed && !editing ? 'secondary' : 'primary'}
@@ -1112,6 +1146,14 @@ function showsDistance(
   );
 }
 
+function showsRpe(target: SetTarget): boolean {
+  return target.rpe !== undefined;
+}
+
+function showsRir(target: SetTarget): boolean {
+  return target.rir !== undefined;
+}
+
 function requiresDuration(
   trackingType: ReturnType<typeof getTrackingType>,
   target: SetTarget | undefined,
@@ -1284,6 +1326,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.canvas,
     color: colors.ink,
     paddingHorizontal: spacing.sm,
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  effortInput: {
+    width: 68,
+    height: 44,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    backgroundColor: colors.canvas,
+    color: colors.ink,
+    paddingHorizontal: spacing.xs,
     textAlign: 'center',
     fontSize: 14,
   },

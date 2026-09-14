@@ -22,7 +22,9 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
+    "@kingstinct/react-native-healthkit": "^15.1.0",
     "expo": "~57.0.22",
+    "expo-build-properties": "~57.0.17",
     "expo-constants": "~57.0.18",
     "expo-font": "~57.0.4",
     "expo-linking": "~57.0.10",
@@ -37,6 +39,8 @@
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~2.32.0",
+    "react-native-health-connect": "^4.1.3",
+    "react-native-nitro-modules": "^0.37.1",
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",

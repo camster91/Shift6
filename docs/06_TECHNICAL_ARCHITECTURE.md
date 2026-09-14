@@ -394,7 +394,8 @@ Migration 12 adds a user-scoped `health_summaries` table and `src/db/healthRepos
 - local export schema version 3 includes health summaries, and local deletion removes them transactionally;
 - guest account adoption transfers health-summary ownership with the rest of the local profile, while destination conflicts still fail closed.
 
-Native adapters, permission disclosure, remote health policy, and device verification remain open.
+Native device permission verification, remote health policy, disconnect controls, and platform
+release declarations remain open.
 
 The new `/health` settings route now makes the optional choice and proposed data types visible,
 loads the saved preference locally on native builds, and explicitly reports that the current
@@ -576,7 +577,7 @@ Starting the curated Barbell 30 template now creates a uniquely identified priva
 
 The cycle review read model now carries the optional pre-workout readiness label (`ready`, `limited`, or `rest`) from persisted workout sessions into deterministic cycle facts. The review surface presents counts as training context, not as a medical or composite readiness score. Sessions without a selection remain unclassified, and the existing conservative next-target rules remain the only progression authority.
 
-The Health Connections route now reads the same normalized local summaries through `getDailyHealthTrends` and presents the latest seven persisted daily points when a future native connector has stored them. Empty, unavailable, and web-preview states remain explicit; this UI does not request permissions, fabricate samples, or send health data to sync or analytics.
+The Health Connections route now reads the same normalized local summaries through `getDailyHealthTrends` and presents the latest seven persisted daily points after an explicit import. Empty, unavailable, and web-preview states remain explicit; this UI does not fabricate samples or send health data to sync or analytics.
 
 ## Auth and service composition checkpoint — 2026-09-14
 
@@ -641,6 +642,20 @@ The active workout now treats rest-timer delivery as a best-effort local side ef
 `app/cycle.tsx` is the first dedicated signature-cycle surface. It reads the active `TrainingCycle` and immutable `ProgramVersion` snapshot from local SQLite on native builds, derives the current week's required-workout completion and seven-day schedule from local history, and presents all six week states through the shared `SixWeekIndicator`. Workout links route to the same active logging surface, while the week-six meaning is read from the program's deterministic cycle model. The web target remains a typed fixture preview; calendar rescheduling and multi-workout date planning remain separate work.
 
 The #271 asset boundary now has a dependency-free `npm run validate:assets` check. It validates manifest schema/source-of-truth, unique family IDs, explicit review gates, safe repository-relative paths, referenced implementation files, and basic SVG roots/viewBoxes before CI proceeds. It does not mark an asset approved; Figma review, provenance, accessibility, technique review, and store-size validation remain human gates.
+
+## Native health adapter checkpoint — 2026-09-14
+
+The first native #279/#280 connector increment now implements the existing `HealthProvider` contract
+without leaking platform types into the domain:
+
+- `src/services/platformHealthProvider.ios.ts` reads HealthKit steps, workouts, heart rate, resting heart rate, sleep duration, and body mass after an explicit permission request;
+- `src/services/platformHealthProvider.android.ts` reads the corresponding Health Connect records and maps them into the same normalized `HealthSummary` shape;
+- `src/services/healthSync.ts` requests access, reads only the granted types, normalizes/deduplicates summaries, and persists them through the user-scoped local repository in that order;
+- HealthKit is configured with a share-only usage description, no update permission, and no background-delivery entitlement; Android declares only the six corresponding read permissions and uses the documented Health Connect SDK levels;
+- the `/health` route provides an explicit Connect and import action, keeps the workout experience independent, and reports unavailable, denied, failed, and imported states accessibly;
+- Jest maps the native modules to minimal test doubles because this checkout does not contain a native binary; web continues to resolve the unavailable provider.
+
+This is a source/configuration increment, not native device proof. A rebuilt iOS custom development client, an Android build with Health Connect available, real permission-denial/revocation tests, privacy review, and App Store/Google Play health declarations remain release gates. Imported health summaries remain local-only and are not added to the sync outbox.
 
 ## Provider-backed Coach boundary checkpoint — 2026-09-14
 

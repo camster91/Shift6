@@ -5,10 +5,12 @@ import {
   type HealthDateRange,
   type HealthSummary,
 } from '../domain/health';
+import { createPlatformHealthProvider as createPlatformHealthProviderImpl } from './platformHealthProvider';
 
 export type { HealthDataType, HealthDateRange, HealthSummary } from '../domain/health';
 
-export type HealthPermissionStatus = 'granted' | 'denied' | 'not-determined' | 'unavailable';
+export type HealthPermissionStatus =
+  'granted' | 'partial' | 'denied' | 'not-determined' | 'unavailable';
 
 export interface HealthPermissionResult {
   status: HealthPermissionStatus;
@@ -21,6 +23,15 @@ export interface HealthProvider {
   isAvailable(): Promise<boolean>;
   requestPermissions(types: readonly HealthDataType[]): Promise<HealthPermissionResult>;
   readSummaries(types: readonly HealthDataType[], range: HealthDateRange): Promise<HealthSummary[]>;
+}
+
+/**
+ * Resolves to the platform adapter selected by Metro. The web/base
+ * implementation is intentionally unavailable until a native surface is
+ * running.
+ */
+export function createPlatformHealthProvider(): HealthProvider {
+  return createPlatformHealthProviderImpl();
 }
 
 export class UnavailableHealthProvider implements HealthProvider {

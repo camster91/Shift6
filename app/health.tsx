@@ -11,21 +11,26 @@ import { useLocalDatabase } from '../src/db/context';
 import { getDailyHealthTrends } from '../src/db/healthRepository';
 import { getOnboardingProfile } from '../src/db/profileRepository';
 import { colors, spacing } from '../src/design/tokens';
-import { UnavailableHealthProvider, healthTypesForPreference } from '../src/services/health';
+import { healthTypesForPreference } from '../src/services/health';
+import { useAppServices } from '../src/services/AppServicesProvider';
+import { syncHealthSummaries, type HealthSyncStatus } from '../src/services/healthSync';
 
-const unavailableProvider = new UnavailableHealthProvider();
+type HealthSyncUiState = 'idle' | 'syncing' | HealthSyncStatus;
 
 export default function HealthSettingsScreen() {
   const database = useLocalDatabase();
+  const { health } = useAppServices();
   const [preference, setPreference] = useState<HealthConnectionPreference>('not-now');
   const [available, setAvailable] = useState<boolean | null>(null);
   const [healthTrends, setHealthTrends] = useState<HealthTrendPoint[]>([]);
   const [healthTrendsLoading, setHealthTrendsLoading] = useState(database !== null);
   const [healthTrendsError, setHealthTrendsError] = useState(false);
+  const [healthSyncState, setHealthSyncState] = useState<HealthSyncUiState>('idle');
+  const [importedCount, setImportedCount] = useState(0);
 
   useEffect(() => {
     let active = true;
-    void unavailableProvider.isAvailable().then((value) => {
+    void health.isAvailable().then((value) => {
       if (active) setAvailable(value);
     });
 
@@ -44,7 +49,7 @@ export default function HealthSettingsScreen() {
     return () => {
       active = false;
     };
-  }, [database]);
+  }, [database, health]);
 
   const requestedTypes = useMemo(() => healthTypesForPreference(preference), [preference]);
   const statusLabel =
@@ -84,6 +89,41 @@ export default function HealthSettingsScreen() {
     };
   }, [database, requestedTypes]);
 
+  async function handleHealthSync() {
+    if (!database || requestedTypes.length === 0 || available !== true) return;
+
+    setHealthSyncState('syncing');
+    setImportedCount(0);
+    const endAt = new Date();
+    const startAt = new Date(endAt.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const result = await syncHealthSummaries({
+      database,
+      userId: 'guest-user',
+      provider: health,
+      types: requestedTypes,
+      range: { startAt: startAt.toISOString(), endAt: endAt.toISOString() },
+    });
+
+    setHealthSyncState(result.status);
+    setImportedCount(result.importedCount);
+    if (result.status !== 'synced') return;
+
+    setHealthTrendsLoading(true);
+    setHealthTrendsError(false);
+    try {
+      const trends = await getDailyHealthTrends(database, 'guest-user', {
+        types: requestedTypes,
+      });
+      setHealthTrends(trends.slice(-7));
+    } catch {
+      setHealthTrendsError(true);
+    } finally {
+      setHealthTrendsLoading(false);
+    }
+  }
+
+  const syncFeedback = healthSyncFeedback(healthSyncState, importedCount);
+
   return (
     <Screen>
       <View style={styles.header}>
@@ -120,7 +160,7 @@ export default function HealthSettingsScreen() {
         <Text variant="small" tone="muted" style={styles.cardCopy}>
           {preference === 'not-now'
             ? 'You can keep the full training experience without connecting a health provider.'
-            : 'Before any native connection is enabled, SHIFT6 will explain each data type and ask separately.'}
+            : 'SHIFT6 will explain the selected summaries and ask for read-only access only when you choose to connect.'}
         </Text>
       </Card>
 
@@ -130,8 +170,8 @@ export default function HealthSettingsScreen() {
             Potential data types
           </Text>
           <Text variant="small" tone="muted" style={styles.sectionCopy}>
-            These are the summaries associated with your preference. This preview does not request
-            access or import any health data.
+            These are the summaries associated with your preference. You decide whether to connect
+            and import them; workout logging never depends on this access.
           </Text>
           {requestedTypes.map((type) => {
             const detail = healthDataTypeDetails[type];
@@ -163,6 +203,34 @@ export default function HealthSettingsScreen() {
         />
       ) : null}
 
+      {requestedTypes.length > 0 ? (
+        <>
+          <Button
+            label={
+              healthSyncState === 'syncing'
+                ? 'Importing summaries…'
+                : 'Connect and import summaries'
+            }
+            loading={healthSyncState === 'syncing'}
+            disabled={database === null || available !== true}
+            icon={<Ionicons name="heart-circle-outline" size={18} color={colors.ink} />}
+            onPress={() => void handleHealthSync()}
+            style={styles.syncAction}
+            accessibilityHint="Ask the selected health platform for read-only summaries and save them on this device."
+          />
+          {syncFeedback ? (
+            <Text
+              variant="caption"
+              tone={healthSyncState === 'failed' ? 'error' : 'muted'}
+              accessibilityLiveRegion="polite"
+              style={styles.syncFeedback}
+            >
+              {syncFeedback}
+            </Text>
+          ) : null}
+        </>
+      ) : null}
+
       <Button
         label="Change health preference"
         variant="secondary"
@@ -177,6 +245,23 @@ export default function HealthSettingsScreen() {
       </Text>
     </Screen>
   );
+}
+
+function healthSyncFeedback(state: HealthSyncUiState, importedCount: number): string | null {
+  switch (state) {
+    case 'synced':
+      return `${importedCount} health summar${importedCount === 1 ? 'y was' : 'ies were'} saved on this device.`;
+    case 'unavailable':
+      return 'The native health connector is unavailable on this device.';
+    case 'permission-denied':
+      return 'No health data was imported. You can change access in the platform health settings.';
+    case 'failed':
+      return 'Health import did not finish. Your workout data is unaffected.';
+    case 'syncing':
+      return 'Reading only the summaries you selected…';
+    default:
+      return null;
+  }
 }
 
 function HealthTrendCard({
@@ -337,6 +422,13 @@ const styles = StyleSheet.create({
   },
   action: {
     marginTop: spacing.xl,
+  },
+  syncAction: {
+    marginTop: spacing.xl,
+  },
+  syncFeedback: {
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
   previewNote: {
     marginTop: spacing.md,

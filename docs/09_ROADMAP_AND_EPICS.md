@@ -200,7 +200,7 @@ Progress history now surfaces the three most recent typed personal-record events
 
 The cycle review now carries persisted workout readiness labels into deterministic facts and presents their counts as transparent training context. It does not calculate a medical readiness score or let those labels bypass the existing progression rules.
 
-Health Connections now has a local trend read surface for the latest persisted daily summaries, with explicit empty, unavailable, and web-preview states. Native permissions and provider adapters remain release-gated.
+Health Connections now has a local trend read surface for the latest persisted daily summaries, with explicit empty, unavailable, and web-preview states. Native provider adapters and an explicit local import action now exist behind `HealthProvider`; native device verification, revocation behavior, and release declarations remain gated.
 
 Coach now has an offline deterministic explainer for workout, progress, cycle, shortening, and substitution prompts. It uses bounded structured facts and the existing safety classifier; it does not call a model or mutate plan data. Provider-backed Coach responses and proposal generation remain open #278 work.
 
@@ -216,11 +216,11 @@ Local workout reminders now reconcile a bounded seven-day one-shot schedule from
 
 Rest-timer cues now use the same permission-gated local adapter after a set is durably persisted. The active session replaces one stable cue as the user progresses and cancels it on pause/unmount, so notification delivery remains optional and cannot block offline workout logging. Review/cycle delivery, remote push, exact alarm editing, background guarantees, and native verification remain open.
 
-The health boundary now validates and normalizes provider summaries in the domain layer, deduplicates by source plus stable sample ID, and exposes explicit UTC-day trend aggregation rules for additive, average, and latest-value metrics. Native permission adapters, local health persistence, disclosure UI, and device verification remain later #279/#280 gates.
+The health boundary now validates and normalizes provider summaries in the domain layer, deduplicates by source plus stable sample ID, and exposes explicit UTC-day trend aggregation rules for additive, average, and latest-value metrics. Native permission adapters, local health persistence, and disclosure UI now sit behind the provider/repository boundaries; device verification, revocation behavior, remote policy, and release declarations remain later #279/#280 gates.
 
 Normalized health summaries now have a local SQLite repository with user-scoped upserts, filtered reads, local export/delete coverage, and guest-account ownership transfer. They remain outside the sync outbox until a least-privilege remote health policy is approved.
 
-Profile now links to a health-settings route that discloses the optional data types and current unavailable connector state without requesting permissions. Native adapters and last-sync/disconnect controls remain release-gated.
+Profile now links to a health-settings route that discloses the optional data types and exposes an explicit read-only import action. Native adapters remain unavailable in web preview, while last-sync/disconnect controls, revocation behavior, and device verification remain release-gated.
 
 Authenticated sync triggers now use a single-flight runtime guard so foreground, reconnect, and manual attempts cannot overlap; retries remain available after the active attempt settles.
 
@@ -235,5 +235,7 @@ The dedicated cycle dashboard now makes the six-week signature visible as a real
 The #271 asset handoff now has a CI-enforced manifest validator for review metadata, safe paths, implementation references, and basic SVG integrity. This protects the Figma-first boundary without presenting exploratory or fallback assets as approved production exports.
 
 The provider-backed Coach boundary now has a tested HTTP adapter with bounded structured context, injected authentication, response validation, deterministic safety rerouting, and local fallback when no backend/provider is available. It does not claim a connected model provider, backend deployment, account UI, or autonomous plan changes.
+
+The first native health adapter increment is now implemented for iOS HealthKit and Android Health Connect behind the same provider contract. The import service reads only granted types, writes normalized summaries to local SQLite, never adds health records to the workout sync outbox, and keeps web/unavailable states explicit. Configuration is read-only and opt-in: HealthKit update/background access is disabled and Android declares only the six matching read permissions. A custom native development build, device permission/revocation verification, health privacy review, and store health-data declarations are still required before release claims.
 
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

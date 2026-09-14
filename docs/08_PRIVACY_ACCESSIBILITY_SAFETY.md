@@ -37,6 +37,13 @@ Ask contextually. Never request every permission during onboarding without expla
 Example:
 “You can connect steps so SHIFT6 can show your weekly movement next to training. This is optional and does not affect workout logging.”
 
+The initial native connector configuration follows least privilege: HealthKit is read-only with no
+background-delivery entitlement, and Android Health Connect declares only the read permissions for
+the six supported summary types. The app imports only after an explicit user action, stores
+normalized summaries in the user-scoped local database, and does not place health payloads in the
+workout sync outbox. Device-level permission/revocation behavior and platform health-data
+declarations remain release gates.
+
 ## AI privacy
 
 - disclose that coach responses may be processed by an AI model provider;

@@ -2,6 +2,7 @@ import type { AuthProvider, BackendClient, CoachGateway } from './contracts';
 import { UnavailableBackendClient, HttpBackendClient } from './backend';
 import { HttpCoachGateway, UnavailableCoachGateway } from './coach';
 import { ExpoConnectivityProvider } from './connectivity';
+import { createPlatformHealthProvider, type HealthProvider } from './health';
 import type { ConnectivityProvider } from './syncCoordinator';
 
 export interface AppServices {
@@ -9,6 +10,7 @@ export interface AppServices {
   backend: BackendClient;
   coach: CoachGateway;
   connectivity: ConnectivityProvider;
+  health: HealthProvider;
 }
 
 export interface AppServicesOptions {
@@ -17,6 +19,7 @@ export interface AppServicesOptions {
   fetcher?: typeof fetch;
   connectivity?: ConnectivityProvider;
   coach?: CoachGateway;
+  health?: HealthProvider;
 }
 
 /**
@@ -29,6 +32,7 @@ export function createAppServices({
   fetcher,
   connectivity = new ExpoConnectivityProvider(),
   coach: configuredCoach,
+  health: configuredHealth,
 }: AppServicesOptions): AppServices {
   const backend = apiBaseUrl?.trim()
     ? new HttpBackendClient({
@@ -46,6 +50,7 @@ export function createAppServices({
           fetcher,
         })
       : new UnavailableCoachGateway());
+  const health = configuredHealth ?? createPlatformHealthProvider();
 
-  return { auth, backend, coach, connectivity };
+  return { auth, backend, coach, connectivity, health };
 }

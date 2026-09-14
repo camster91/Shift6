@@ -230,6 +230,7 @@ export interface WorkoutSession {
   cycleId: EntityId;
   workoutId: EntityId;
   programVersionId: EntityId;
+  workoutFocus: Workout['focus'];
   status: WorkoutSessionStatus;
   startedAt: ISODateString;
   completedAt?: ISODateString;

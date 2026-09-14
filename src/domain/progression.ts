@@ -106,6 +106,11 @@ export interface CycleReviewFacts {
   discomfortFlags: number;
 }
 
+export interface CycleProgressSummary {
+  facts: CycleReviewFacts;
+  loggedSetCount: number;
+}
+
 export interface WeekSixGuidance {
   label: string;
   description: string;
@@ -309,6 +314,16 @@ export function buildCycleReviewFacts(
     averageReportedEffort: average(efforts),
     averageSessionDurationMinutes: average(durations),
     discomfortFlags: sessions.filter((session) => session.discomfortFlag).length,
+  };
+}
+
+export function buildCycleProgressSummary(
+  plannedWorkoutCount: number,
+  sessions: readonly CycleReviewSession[],
+): CycleProgressSummary {
+  return {
+    facts: buildCycleReviewFacts(plannedWorkoutCount, sessions),
+    loggedSetCount: sessions.reduce((total, session) => total + (session.sets?.length ?? 0), 0),
   };
 }
 

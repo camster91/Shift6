@@ -94,6 +94,14 @@ export const MIGRATIONS: readonly Migration[] = [
         ON training_cycles(user_id, status, started_at DESC);`,
     ],
   },
+  {
+    version: 4,
+    name: 'workout-session-focus',
+    statements: [
+      `ALTER TABLE workout_sessions
+        ADD COLUMN workout_focus TEXT NOT NULL DEFAULT 'mixed';`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

@@ -23,12 +23,14 @@ export async function saveWorkoutSession(
 ): Promise<void> {
   await database.runAsync(
     `INSERT OR IGNORE INTO workout_sessions
-      (id, cycle_id, workout_id, program_version_id, status, started_at, completed_at, is_offline)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+      (id, cycle_id, workout_id, program_version_id, workout_focus, status, started_at,
+       completed_at, is_offline)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     session.id,
     session.cycleId,
     session.workoutId,
     session.programVersionId,
+    session.workoutFocus,
     session.status,
     session.startedAt,
     session.completedAt ?? null,

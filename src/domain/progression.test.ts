@@ -1,4 +1,5 @@
 import {
+  buildCycleProgressSummary,
   buildCycleReviewFacts,
   calculateNextTarget,
   detectPlateau,
@@ -212,5 +213,26 @@ describe('SHIFT6 deterministic progression', () => {
     expect(getWeekSixGuidance('consolidation').isReducedVolume).toBe(false);
     expect(getWeekSixGuidance('reduced-volume').isReducedVolume).toBe(true);
     expect(getWeekSixGuidance('evaluation').description).not.toContain('1RM');
+  });
+
+  it('summarizes logged sets separately from completed-workout adherence', () => {
+    const summary = buildCycleProgressSummary(6, [
+      {
+        completed: false,
+        sets: [{ completed: true, load: 100, reps: 5 }],
+      },
+      {
+        completed: true,
+        sets: [
+          { completed: true, load: 105, reps: 5 },
+          { completed: true, load: 105, reps: 5 },
+        ],
+      },
+    ]);
+
+    expect(summary).toMatchObject({
+      facts: { completedWorkoutCount: 1, completionRate: 1 / 6, totalTrainingVolume: 1050 },
+      loggedSetCount: 3,
+    });
   });
 });

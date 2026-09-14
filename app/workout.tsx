@@ -59,6 +59,7 @@ export default function ActiveWorkoutScreen() {
       cycleId: activeCycle.id,
       workoutId: demoWorkout.id,
       programVersionId: demoWorkout.programVersionId,
+      workoutFocus: demoWorkout.focus,
       status: 'in-progress',
       startedAt,
       isOffline: false,

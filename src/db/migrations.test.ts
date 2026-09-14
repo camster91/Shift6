@@ -35,4 +35,10 @@ describe('local database migrations', () => {
     expect(statements).toContain('weeks_json TEXT NOT NULL');
     expect(statements).toContain('training_cycles_user_status_started');
   });
+
+  it('preserves workout focus for trustworthy progress aggregation', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('ADD COLUMN workout_focus TEXT NOT NULL DEFAULT');
+  });
 });

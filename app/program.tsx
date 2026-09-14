@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
@@ -16,13 +16,21 @@ import {
 import { useLocalDatabase } from '../src/db/context';
 import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { createTrainingCycle } from '../src/domain/cycle';
+import { equipmentCatalog } from '../src/domain/equipment';
 import { demoProgram, demoProgramVersion } from '../src/domain/fixtures/home';
 import { createProgramCopy } from '../src/domain/programBuilder';
+import { getProgramCatalogueStatusLabel, programLibrary } from '../src/domain/programLibrary';
 import { saveProgramVersion } from '../src/db/programRepository';
 import { colors, spacing } from '../src/design/tokens';
 
 export default function ProgramDetailScreen() {
   const database = useLocalDatabase();
+  const { programId } = useLocalSearchParams<{ programId?: string }>();
+  const catalogueEntry =
+    programLibrary.find((entry) => entry.program.id === programId) ?? programLibrary[0]!;
+  const selectedProgram = catalogueEntry.program;
+  const isStartable =
+    catalogueEntry.status === 'published' && selectedProgram.id === demoProgram.id;
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,74 +89,142 @@ export default function ProgramDetailScreen() {
       </View>
 
       <Text variant="display" accessibilityRole="header" style={styles.title}>
-        Barbell 30
+        {selectedProgram.title}
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
-        Strength + conditioning for life. Efficient gym sessions organized into a six-week block.
+        {selectedProgram.description}
       </Text>
 
-      <ProgramCard program={demoProgram} />
+      <ProgramCard
+        program={selectedProgram}
+        statusLabel={getProgramCatalogueStatusLabel(catalogueEntry.status)}
+      />
 
-      <Card tone="lavender" style={styles.cycleCard}>
-        <View style={styles.cardHeader}>
-          <Text variant="h3">Six-week shape</Text>
-          <Text variant="smallMedium">30 min</Text>
-        </View>
-        <SixWeekIndicator
-          weeks={demoProgramVersion.cycleModel.lengthWeeks === 6 ? demoWeeks : []}
-        />
-        <Text variant="small" tone="muted" style={styles.cardText}>
-          Establish → repeat → build → challenge → consolidate and review. Week 6 is not a forced
-          deload.
+      {isStartable ? (
+        <Card tone="lavender" style={styles.cycleCard}>
+          <View style={styles.cardHeader}>
+            <Text variant="h3">Six-week shape</Text>
+            <Text variant="smallMedium">{selectedProgram.sessionLengthMinutes} min</Text>
+          </View>
+          <SixWeekIndicator
+            weeks={demoProgramVersion.cycleModel.lengthWeeks === 6 ? demoWeeks : []}
+          />
+          <Text variant="small" tone="muted" style={styles.cardText}>
+            Establish → repeat → build → challenge → consolidate and review. Week 6 is not a forced
+            deload.
+          </Text>
+        </Card>
+      ) : (
+        <Card tone="yellow" style={styles.cycleCard} accessibilityLabel="Program content in build">
+          <Text variant="caption" tone="muted">
+            CONTENT IN BUILD
+          </Text>
+          <Text variant="h3" style={styles.buildTitle}>
+            This program is being reviewed.
+          </Text>
+          <Text variant="small" tone="muted" style={styles.cardText}>
+            The six-week version, exercise substitutions, progression rules, and safety content must
+            pass review before it can start a cycle.
+          </Text>
+        </Card>
+      )}
+
+      <Card tone="white" style={styles.equipmentCard}>
+        <Text variant="caption" tone="muted">
+          EQUIPMENT
+        </Text>
+        <Text variant="smallMedium" style={styles.equipmentTitle}>
+          Required
+        </Text>
+        <Text variant="small" tone="muted">
+          {formatEquipment(selectedProgram.requiredEquipmentIds)}
+        </Text>
+        <Text variant="smallMedium" style={styles.equipmentTitle}>
+          Optional
+        </Text>
+        <Text variant="small" tone="muted">
+          {formatEquipment(selectedProgram.optionalEquipmentIds)}
         </Text>
       </Card>
 
       <Text variant="h2" style={styles.sectionTitle}>
         Weekly structure
       </Text>
-      {demoProgramVersion.workouts.map((workout) => (
-        <Card key={workout.id} tone="white" style={styles.workoutCard}>
-          <View style={styles.workoutHeader}>
-            <Text variant="smallMedium">Day {workout.dayOfWeek}</Text>
-            <Text variant="small" tone="muted">
-              {workout.estimatedDurationMinutes} min
+      {isStartable ? (
+        demoProgramVersion.workouts.map((workout) => (
+          <Card key={workout.id} tone="white" style={styles.workoutCard}>
+            <View style={styles.workoutHeader}>
+              <Text variant="smallMedium">Day {workout.dayOfWeek}</Text>
+              <Text variant="small" tone="muted">
+                {workout.estimatedDurationMinutes} min
+              </Text>
+            </View>
+            <Text variant="h3" style={styles.workoutTitle}>
+              {workout.title}
             </Text>
-          </View>
-          <Text variant="h3" style={styles.workoutTitle}>
-            {workout.title}
+            <Text variant="small" tone="muted">
+              {workout.exercises.length} movements · {workout.equipmentIds.length} equipment types
+              {workout.isOptional ? ' · optional' : ''}
+            </Text>
+            <Button
+              label={`Open ${workout.title}`}
+              variant="ghost"
+              icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
+              onPress={() =>
+                router.push({ pathname: '/workout', params: { workoutId: workout.id } })
+              }
+              style={styles.openWorkoutButton}
+            />
+          </Card>
+        ))
+      ) : (
+        <Card tone="white" style={styles.workoutCard}>
+          <Text variant="smallMedium">
+            {selectedProgram.daysPerWeek} sessions · {selectedProgram.sessionLengthMinutes} min
           </Text>
-          <Text variant="small" tone="muted">
-            {workout.exercises.length} movements · {workout.equipmentIds.length} equipment types
-            {workout.isOptional ? ' · optional' : ''}
+          <Text variant="small" tone="muted" style={styles.cardText}>
+            Session details will appear here after the executable version is reviewed and published.
           </Text>
-          <Button
-            label={`Open ${workout.title}`}
-            variant="ghost"
-            icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
-            onPress={() => router.push({ pathname: '/workout', params: { workoutId: workout.id } })}
-            style={styles.openWorkoutButton}
-          />
         </Card>
-      ))}
+      )}
 
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
 
-      <Button
-        label="Start six-week cycle"
-        onPress={handleStartCycle}
-        loading={starting}
-        icon={<Ionicons name="arrow-forward" size={18} color={colors.white} />}
-        style={styles.startButton}
-      />
+      {isStartable ? (
+        <Button
+          label="Start six-week cycle"
+          onPress={handleStartCycle}
+          loading={starting}
+          icon={<Ionicons name="arrow-forward" size={18} color={colors.white} />}
+          style={styles.startButton}
+        />
+      ) : (
+        <Button
+          label="Back to program library"
+          variant="secondary"
+          onPress={() => router.replace('/programs')}
+          icon={<Ionicons name="library-outline" size={18} color={colors.ink} />}
+          style={styles.startButton}
+        />
+      )}
       <Text variant="caption" tone="muted" style={styles.persistenceNote}>
         {database
-          ? 'Your selected program version will be snapshotted on this device.'
+          ? isStartable
+            ? 'Your selected program version will be snapshotted on this device.'
+            : 'This catalogue entry is not startable until its executable version is reviewed.'
           : Platform.OS === 'web'
             ? 'Web preview: cycle persistence is not active in this surface.'
             : 'This program version will be snapshotted locally before future sync.'}
       </Text>
     </Screen>
   );
+}
+
+function formatEquipment(ids: readonly string[]): string {
+  const names = ids
+    .map((id) => equipmentCatalog.find((equipment) => equipment.id === id)?.name)
+    .filter((name): name is string => Boolean(name));
+  return names.length > 0 ? names.join(' · ') : 'None listed';
 }
 
 const demoWeeks = Array.from({ length: 6 }, (_, index) => ({
@@ -177,6 +253,15 @@ const styles = StyleSheet.create({
   },
   cycleCard: {
     marginTop: spacing.xl,
+  },
+  buildTitle: {
+    marginTop: spacing.sm,
+  },
+  equipmentCard: {
+    marginTop: spacing.md,
+  },
+  equipmentTitle: {
+    marginTop: spacing.md,
   },
   cardHeader: {
     flexDirection: 'row',

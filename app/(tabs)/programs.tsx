@@ -182,7 +182,12 @@ export default function ProgramsScreen() {
               <ProgramCard
                 program={recommendation.program}
                 statusLabel={entryStatus ? getProgramCatalogueStatusLabel(entryStatus) : undefined}
-                onPress={entryStatus === 'published' ? () => router.push('/program') : undefined}
+                onPress={() =>
+                  router.push({
+                    pathname: '/program',
+                    params: { programId: recommendation.program.id },
+                  })
+                }
               />
               <Text
                 variant="small"
@@ -243,6 +248,12 @@ export default function ProgramsScreen() {
             key={recommendation.program.id}
             program={recommendation.program}
             statusLabel={entryStatus ? getProgramCatalogueStatusLabel(entryStatus) : undefined}
+            onPress={() =>
+              router.push({
+                pathname: '/program',
+                params: { programId: recommendation.program.id },
+              })
+            }
             style={styles.catalogueCard}
           />
         );

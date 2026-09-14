@@ -273,4 +273,9 @@ It reads issue metadata without sending or displaying mutation payloads, explain
 boundary, and provides an explicit retry. Resolution choices remain blocked until server-side
 version policy and a diff contract exist.
 
+Program Detail now consumes an optional executable version from each catalogue entry and uses the
+same copy-on-write cycle-start path for whichever reviewed entry is selected. Barbell 30 remains the
+only startable launch program; the other 19 entries remain metadata-only until their full content
+and safety review are complete.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

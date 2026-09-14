@@ -719,6 +719,13 @@ defaults, while the selected strategy and all safety/readiness gates remain owne
 `progression.ts`. This keeps progression calculations independent of AI and makes future program
 versions able to change rules without rewriting completed history.
 
+## Executable program catalogue checkpoint — 2026-09-14
+
+`ProgramCatalogueEntry` now optionally carries an executable `ProgramVersion`. The Program Detail
+route resolves and snapshots that version through the same copy-on-write path, rather than checking
+for the Barbell 30 ID in the screen. The catalogue still exposes only Barbell 30 as startable; this
+boundary makes future reviewed versions additive and keeps metadata-only entries honest.
+
 ## Sync review surface checkpoint — 2026-09-14
 
 `getPendingSyncIssues` exposes only local outbox metadata and sanitized issue classification, not

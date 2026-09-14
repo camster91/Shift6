@@ -1,10 +1,12 @@
-import type { ExperienceLevel, Goal, Program, ProgressionStrategy } from './types';
+import type { ExperienceLevel, Goal, Program, ProgramVersion, ProgressionStrategy } from './types';
+import { demoProgramVersion } from './fixtures/home';
 
 export type ProgramCatalogueStatus = 'published' | 'metadata-draft';
 
 export interface ProgramCatalogueEntry {
   program: Program;
   status: ProgramCatalogueStatus;
+  version?: ProgramVersion;
 }
 
 const metadata: readonly Omit<Program, 'currentVersionId' | 'isTemplate'>[] = [
@@ -297,6 +299,7 @@ export const programLibrary: readonly ProgramCatalogueEntry[] = metadata.map((en
     isTemplate: true,
   },
   status: index === 0 ? 'published' : 'metadata-draft',
+  ...(index === 0 ? { version: demoProgramVersion } : {}),
 }));
 
 export const programLibraryPrograms = programLibrary.map((entry) => entry.program);

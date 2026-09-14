@@ -8,6 +8,7 @@ describe('program library metadata', () => {
     expect(programLibrary[0]).toMatchObject({
       status: 'published',
       program: { id: 'program-barbell-30', currentVersionId: 'program-barbell-30-version-1' },
+      version: { id: 'program-version-barbell-30-v1', programId: 'program-barbell-30' },
     });
     expect(programLibrary.slice(1).every((entry) => entry.status === 'metadata-draft')).toBe(true);
     expect(

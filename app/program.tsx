@@ -17,7 +17,6 @@ import { useLocalDatabase } from '../src/db/context';
 import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { createTrainingCycle } from '../src/domain/cycle';
 import { equipmentCatalog } from '../src/domain/equipment';
-import { demoProgram, demoProgramVersion } from '../src/domain/fixtures/home';
 import { createProgramCopy } from '../src/domain/programBuilder';
 import { getProgramCatalogueStatusLabel, programLibrary } from '../src/domain/programLibrary';
 import { saveProgramVersion } from '../src/db/programRepository';
@@ -32,8 +31,8 @@ export default function ProgramDetailScreen() {
   const catalogueEntry =
     programLibrary.find((entry) => entry.program.id === programId) ?? programLibrary[0]!;
   const selectedProgram = catalogueEntry.program;
-  const isStartable =
-    catalogueEntry.status === 'published' && selectedProgram.id === demoProgram.id;
+  const selectedVersion = catalogueEntry.version;
+  const isStartable = catalogueEntry.status === 'published' && selectedVersion !== undefined;
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,10 +43,12 @@ export default function ProgramDetailScreen() {
     setError(null);
     try {
       const startedAt = new Date().toISOString();
-      const programId = `program-${demoProgram.slug}-guest-user-${Date.now()}`;
+      const programId = `program-${selectedProgram.slug}-guest-user-${Date.now()}`;
+      if (!selectedVersion)
+        throw new Error('This program does not have an executable version yet.');
       const copy = createProgramCopy({
-        sourceProgram: demoProgram,
-        sourceVersion: demoProgramVersion,
+        sourceProgram: selectedProgram,
+        sourceVersion: selectedVersion,
         userId: 'guest-user',
         newProgramId: programId,
         newVersionId: `${programId}-version-1`,
@@ -55,9 +56,9 @@ export default function ProgramDetailScreen() {
       });
       const program = {
         ...copy.program,
-        title: demoProgram.title,
-        slug: demoProgram.slug,
-        description: demoProgram.description,
+        title: selectedProgram.title,
+        slug: selectedProgram.slug,
+        description: selectedProgram.description,
       };
       const cycle = createTrainingCycle({
         id: `cycle-guest-user-${program.id}-${Date.now()}`,
@@ -115,7 +116,7 @@ export default function ProgramDetailScreen() {
             <Text variant="smallMedium">{selectedProgram.sessionLengthMinutes} min</Text>
           </View>
           <SixWeekIndicator
-            weeks={demoProgramVersion.cycleModel.lengthWeeks === 6 ? demoWeeks : []}
+            weeks={selectedVersion?.cycleModel.lengthWeeks === 6 ? buildWeeks(selectedVersion) : []}
           />
           <Text variant="small" tone="muted" style={styles.cardText}>
             Establish → repeat → build → challenge → consolidate and review. Week 6 is not a forced
@@ -159,7 +160,7 @@ export default function ProgramDetailScreen() {
         Weekly structure
       </Text>
       {isStartable ? (
-        demoProgramVersion.workouts.map((workout) => (
+        selectedVersion?.workouts.map((workout) => (
           <Card key={workout.id} tone="white" style={styles.workoutCard}>
             <View style={styles.workoutHeader}>
               <Text variant="smallMedium">Day {workout.dayOfWeek}</Text>
@@ -235,14 +236,16 @@ function formatEquipment(ids: readonly string[]): string {
   return names.length > 0 ? names.join(' · ') : 'None listed';
 }
 
-const demoWeeks = Array.from({ length: 6 }, (_, index) => ({
-  weekNumber: index + 1,
-  label: `Week ${index + 1}`,
-  phase: demoProgramVersion.cycleModel.phases[index + 1] ?? 'Training',
-  status: index === 0 ? ('current' as const) : ('upcoming' as const),
-  completedWorkoutCount: 0,
-  plannedWorkoutCount: demoProgramVersion.workouts.filter((workout) => !workout.isOptional).length,
-}));
+function buildWeeks(version: NonNullable<(typeof programLibrary)[number]['version']>) {
+  return Array.from({ length: 6 }, (_, index) => ({
+    weekNumber: index + 1,
+    label: `Week ${index + 1}`,
+    phase: version.cycleModel.phases[index + 1] ?? 'Training',
+    status: index === 0 ? ('current' as const) : ('upcoming' as const),
+    completedWorkoutCount: 0,
+    plannedWorkoutCount: version.workouts.filter((workout) => !workout.isOptional).length,
+  }));
+}
 
 const styles = StyleSheet.create({
   header: {

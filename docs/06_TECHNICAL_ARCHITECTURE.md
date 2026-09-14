@@ -338,6 +338,8 @@ Native permission flows, least-privilege read adapters, local sample deduplicati
 - Profile exposes native share-sheet export and a destructive-confirmation local-delete action, while web labels both controls as preview-only;
 - the repository does not claim remote account deletion, request permissions, or upload an export; those actions require explicit account/backend and native file-sharing surfaces later.
 
+`src/services/analytics.ts` now wraps future transports with an event/property allowlist. It preserves aggregate identifiers and counts needed for product health, but drops unknown fields and free-text workout/health notes before any event leaves the app.
+
 ## Exercise catalogue implementation checkpoint — 2026-09-14
 
 The first #274 content increment establishes catalogue behavior without importing the archived application or unreviewed imagery:

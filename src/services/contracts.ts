@@ -61,7 +61,10 @@ export type AnalyticsEventName =
   | 'workout_completed'
   | 'cycle_completed'
   | 'coach_proposal_shown'
-  | 'coach_proposal_accepted';
+  | 'coach_proposal_accepted'
+  | 'custom_program_created'
+  | 'exercise_substituted'
+  | 'health_connected';
 
 export interface AnalyticsEvent {
   name: AnalyticsEventName;

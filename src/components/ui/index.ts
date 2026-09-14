@@ -10,6 +10,8 @@ export { Card } from './Card';
 export type { CardProps, CardTone } from './Card';
 export { Chip } from './Chip';
 export type { ChipProps } from './Chip';
+export { CoachProposalCard } from './CoachProposalCard';
+export type { CoachProposalCardProps } from './CoachProposalCard';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 export { ErrorState } from './ErrorState';

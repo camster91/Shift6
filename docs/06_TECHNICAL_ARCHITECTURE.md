@@ -314,7 +314,7 @@ The first #278 increment adds `src/services/coachSafety.ts` without selecting a 
 - the safety classifier returns matched signals and an explainable response so the eventual UI can distinguish facts, safety routing, and ordinary training guidance;
 - no credentials, network calls, health data, or program mutation were added; the existing `CoachGateway` remains the replaceable provider boundary.
 
-The Coach tab is still a presentation placeholder. Provider adapters, structured context minimization, approval/application workflows, and the versioned evaluation set remain later #278 increments.
+The Coach tab now reads pending proposals for the active local cycle and records explicit decisions through `CoachProposalCard`. Provider adapters, structured context minimization, proposal application to a new program version, and the versioned evaluation set remain later #278 increments.
 
 ## Health integration boundary checkpoint — 2026-09-14
 

@@ -1,11 +1,72 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Card, EmptyState, Screen, Text } from '../../src/components/ui';
+import {
+  Card,
+  CoachProposalCard,
+  EmptyState,
+  ErrorState,
+  LoadingSkeleton,
+  Screen,
+  Text,
+} from '../../src/components/ui';
+import { useLocalDatabase } from '../../src/db/context';
+import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
+import { getPendingCoachProposals, updateCoachProposalStatus } from '../../src/db/coachRepository';
 import { demoCoachProposal } from '../../src/domain/fixtures/home';
+import type { CoachProposal } from '../../src/domain/types';
 import { colors, radii, spacing } from '../../src/design/tokens';
 
 export default function CoachScreen() {
+  const database = useLocalDatabase();
+  const [proposals, setProposals] = useState<CoachProposal[]>([]);
+  const [loading, setLoading] = useState(database !== null);
+  const [busyProposalId, setBusyProposalId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!database) {
+      setLoading(false);
+      return;
+    }
+
+    let active = true;
+    setLoading(true);
+    void (async () => {
+      try {
+        const cycle = await getActiveTrainingCycle(database, 'guest-user');
+        const pending = cycle
+          ? await getPendingCoachProposals(database, 'guest-user', cycle.id)
+          : [];
+        if (active) setProposals(pending);
+      } catch {
+        if (active) setError('We could not load Coach proposals from this device.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [database]);
+
+  const decide = async (proposalId: string, status: 'accepted' | 'rejected') => {
+    if (!database || busyProposalId) return;
+
+    setBusyProposalId(proposalId);
+    setError(null);
+    try {
+      await updateCoachProposalStatus(database, proposalId, status, new Date().toISOString());
+      setProposals((current) => current.filter((proposal) => proposal.id !== proposalId));
+    } catch {
+      setError('We could not save that Coach decision locally.');
+    } finally {
+      setBusyProposalId(null);
+    }
+  };
+
   return (
     <Screen>
       <Text variant="caption" tone="muted">
@@ -41,11 +102,26 @@ export default function CoachScreen() {
       <Text variant="h2" style={styles.sectionTitle}>
         Proposals
       </Text>
-      <EmptyState
-        icon={<Ionicons name="checkmark-circle-outline" size={32} color={colors.success} />}
-        title="No plan changes yet"
-        message="When the data supports a meaningful adjustment, you’ll see the current plan, proposed change, and reason here."
-      />
+      {loading ? <LoadingSkeleton height={220} /> : null}
+      {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
+      {!loading && proposals.length > 0
+        ? proposals.map((proposal) => (
+            <CoachProposalCard
+              key={proposal.id}
+              proposal={proposal}
+              busy={busyProposalId === proposal.id}
+              onApprove={() => void decide(proposal.id, 'accepted')}
+              onReject={() => void decide(proposal.id, 'rejected')}
+            />
+          ))
+        : null}
+      {!loading && proposals.length === 0 ? (
+        <EmptyState
+          icon={<Ionicons name="checkmark-circle-outline" size={32} color={colors.success} />}
+          title="No plan changes yet"
+          message="When the data supports a meaningful adjustment, you’ll see the current plan, proposed change, and reason here."
+        />
+      ) : null}
     </Screen>
   );
 }

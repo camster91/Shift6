@@ -32,6 +32,30 @@ export interface TrainingVolumeBreakdown {
   byExercise: VolumeBucket[];
 }
 
+export interface CardioProgressInput {
+  sessionId: EntityId;
+  cycleWeek: number;
+  completedAt: string;
+  durationSeconds?: number;
+  distanceMeters?: number;
+}
+
+export interface CardioWeekSummary {
+  cycleWeek: number;
+  sessionCount: number;
+  durationSeconds: number;
+  distanceMeters: number;
+}
+
+export interface CardioProgressSummary {
+  sessionCount: number;
+  activeWeeks: number;
+  totalDurationSeconds: number;
+  totalDistanceMeters: number;
+  averageDurationSecondsPerSession: number;
+  byWeek: CardioWeekSummary[];
+}
+
 export interface ProgressMetricComparison {
   current: number;
   previous: number;
@@ -117,6 +141,65 @@ export function buildTrainingVolumeBreakdown(
   };
 }
 
+/**
+ * Aggregate cardio set measurements into session and week totals. A cardio
+ * session may contain multiple interval/set rows, so the returned session
+ * count is deduplicated by session ID. Missing duration or distance stays
+ * missing rather than being inferred from another health source.
+ */
+export function buildCardioProgress(
+  records: readonly CardioProgressInput[],
+): CardioProgressSummary {
+  const sessions = new Map<
+    EntityId,
+    { cycleWeek: number; completedAt: string; durationSeconds: number; distanceMeters: number }
+  >();
+
+  for (const record of records) {
+    if (!record.sessionId.trim()) continue;
+    const current = sessions.get(record.sessionId) ?? {
+      cycleWeek: record.cycleWeek,
+      completedAt: record.completedAt,
+      durationSeconds: 0,
+      distanceMeters: 0,
+    };
+    current.durationSeconds += positiveNumber(record.durationSeconds);
+    current.distanceMeters += positiveNumber(record.distanceMeters);
+    if (Date.parse(record.completedAt) > Date.parse(current.completedAt)) {
+      current.completedAt = record.completedAt;
+    }
+    sessions.set(record.sessionId, current);
+  }
+
+  const byWeek = new Map<number, CardioWeekSummary>();
+  let totalDurationSeconds = 0;
+  let totalDistanceMeters = 0;
+  for (const session of sessions.values()) {
+    const week = byWeek.get(session.cycleWeek) ?? {
+      cycleWeek: session.cycleWeek,
+      sessionCount: 0,
+      durationSeconds: 0,
+      distanceMeters: 0,
+    };
+    week.sessionCount += 1;
+    week.durationSeconds += session.durationSeconds;
+    week.distanceMeters += session.distanceMeters;
+    byWeek.set(session.cycleWeek, week);
+    totalDurationSeconds += session.durationSeconds;
+    totalDistanceMeters += session.distanceMeters;
+  }
+
+  const sessionCount = sessions.size;
+  return {
+    sessionCount,
+    activeWeeks: byWeek.size,
+    totalDurationSeconds,
+    totalDistanceMeters,
+    averageDurationSecondsPerSession: sessionCount === 0 ? 0 : totalDurationSeconds / sessionCount,
+    byWeek: [...byWeek.values()].sort((left, right) => left.cycleWeek - right.cycleWeek),
+  };
+}
+
 export function buildExerciseProgress(
   exerciseId: EntityId,
   sets: readonly ProgressSetInput[],
@@ -166,6 +249,10 @@ function loadVolume(set: ProgressSetInput): number {
   return set.load !== undefined && set.reps !== undefined && set.load > 0 && set.reps > 0
     ? set.load * set.reps
     : 0;
+}
+
+function positiveNumber(value: number | undefined): number {
+  return value !== undefined && Number.isFinite(value) && value > 0 ? value : 0;
 }
 
 function formatKey(value: string): string {

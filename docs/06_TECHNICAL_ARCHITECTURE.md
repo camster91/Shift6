@@ -755,3 +755,11 @@ primary muscle on the exercise, so categories can overlap. This is a training-or
 not a medical measurement or a claim of physiological stimulus. The UI keeps an empty state for a
 new cycle, exposes an accessible text summary, and renders only the top categories; the complete
 breakdown remains available in the typed domain result for later chart/detail surfaces.
+
+## Cardio progress checkpoint — 2026-09-14
+
+`getCycleCardioRecords` reads complete cardio-session set measurements from the local cycle and
+`buildCardioProgress` groups interval rows by stable session ID before producing cycle totals and
+weekly minutes. The Progress surface presents total time, deduplicated session count, optional
+distance, and the most recent four active weeks. Missing duration/distance values remain absent;
+the card does not infer cardio from HealthKit, Health Connect, or strength volume.

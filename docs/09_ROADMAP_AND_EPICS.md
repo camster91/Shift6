@@ -291,4 +291,9 @@ can overlap, shows an honest empty state before the first completed session, and
 volume when load or reps are missing. Detailed trend/charts and broader recovery correlations
 remain later work.
 
+The Progress increment now also covers the first cycle-level cardio view for #279: completed cardio
+session rows are deduplicated by session, summed by cycle week, and rendered with total time,
+optional distance, and an honest empty state. Health-provider data remains outside this manual
+workout progress aggregation, and pace/zones remain later work.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

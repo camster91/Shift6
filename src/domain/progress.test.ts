@@ -1,5 +1,6 @@
 import {
   buildExerciseProgress,
+  buildCardioProgress,
   buildTrainingVolumeBreakdown,
   compareCycleProgress,
   estimateOneRepMax,
@@ -167,6 +168,43 @@ describe('deterministic progress history', () => {
       byMovementPattern: [
         { key: 'squat', completedSetCount: 2, loadVolume: 1000 },
         { key: 'anti-extension', completedSetCount: 1, loadVolume: 0 },
+      ],
+    });
+  });
+
+  it('deduplicates cardio sessions while preserving interval totals by week', () => {
+    const summary = buildCardioProgress([
+      {
+        sessionId: 'cardio-session-1',
+        cycleWeek: 1,
+        completedAt: '2026-09-14T12:30:00.000Z',
+        durationSeconds: 900,
+        distanceMeters: 3_000,
+      },
+      {
+        sessionId: 'cardio-session-1',
+        cycleWeek: 1,
+        completedAt: '2026-09-14T12:30:00.000Z',
+        durationSeconds: 600,
+        distanceMeters: 2_000,
+      },
+      {
+        sessionId: 'cardio-session-2',
+        cycleWeek: 3,
+        completedAt: '2026-09-28T12:30:00.000Z',
+        distanceMeters: 5_000,
+      },
+    ]);
+
+    expect(summary).toEqual({
+      sessionCount: 2,
+      activeWeeks: 2,
+      totalDurationSeconds: 1_500,
+      totalDistanceMeters: 10_000,
+      averageDurationSecondsPerSession: 750,
+      byWeek: [
+        { cycleWeek: 1, sessionCount: 1, durationSeconds: 1_500, distanceMeters: 5_000 },
+        { cycleWeek: 3, sessionCount: 1, durationSeconds: 0, distanceMeters: 5_000 },
       ],
     });
   });

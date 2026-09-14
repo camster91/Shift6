@@ -2,6 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import {
   getCompletedWorkoutIds,
+  getCycleCardioRecords,
   getCycleCompletedSetRecords,
   getCycleProgressSummary,
   getExerciseProgress,
@@ -130,6 +131,30 @@ describe('getCycleProgressSummary', () => {
         reps: 5,
         durationSeconds: undefined,
         distanceMeters: undefined,
+      },
+    ]);
+  });
+
+  it('reads complete cardio set measurements from the local cycle', async () => {
+    const database = {
+      getAllAsync: async () => [
+        {
+          session_id: 'cardio-session-1',
+          cycle_week: 2,
+          completed_at: '2026-09-20T12:30:00.000Z',
+          duration_seconds: 1_200,
+          distance_meters: 4_000,
+        },
+      ],
+    } as unknown as SQLiteDatabase;
+
+    await expect(getCycleCardioRecords(database, 'cycle-1')).resolves.toEqual([
+      {
+        sessionId: 'cardio-session-1',
+        cycleWeek: 2,
+        completedAt: '2026-09-20T12:30:00.000Z',
+        durationSeconds: 1_200,
+        distanceMeters: 4_000,
       },
     ]);
   });

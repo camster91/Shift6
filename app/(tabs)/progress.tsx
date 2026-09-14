@@ -23,8 +23,10 @@ import {
 import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { buildNextSessionTargets, type NextSessionTarget } from '../../src/domain/nextSession';
 import {
+  buildCardioProgress,
   compareCycleProgress,
   buildTrainingVolumeBreakdown,
+  type CardioProgressSummary,
   type CycleProgressComparison,
   type ExerciseProgress,
   type TrainingVolumeBreakdown,
@@ -37,6 +39,7 @@ import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { getUserExercises, getUserProgramVersion } from '../../src/db/programRepository';
 import {
   getCycleProgressSummary,
+  getCycleCardioRecords,
   getCycleCompletedSetRecords,
   getExerciseProgress,
   getLatestCompletedWorkoutSets,
@@ -68,6 +71,9 @@ export default function ProgressScreen() {
   const [volumeBreakdown, setVolumeBreakdown] = useState<TrainingVolumeBreakdown>(() =>
     buildTrainingVolumeBreakdown([], foundationalExercises),
   );
+  const [cardioProgress, setCardioProgress] = useState<CardioProgressSummary>(() =>
+    buildCardioProgress([]),
+  );
   const [exerciseProgressLoading, setExerciseProgressLoading] = useState(false);
   const [loading, setLoading] = useState(database !== null);
   const [error, setError] = useState<string | null>(null);
@@ -94,23 +100,32 @@ export default function ProgressScreen() {
         const programVersion = snapshot?.version ?? demoProgramVersion;
         const workout = programVersion.workouts[0] ?? demoWorkout;
         const previousCycle = await getPreviousTrainingCycle(database, 'guest-user', cycle);
-        const [nextSummary, latestSets, profile, userExercises, previousSummary, completedSets] =
-          await Promise.all([
-            getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
-            getLatestCompletedWorkoutSets(database, cycle.id, workout.id, programVersion.id),
-            getOnboardingProfile(database, 'guest-user'),
-            getUserExercises(database, 'guest-user'),
-            previousCycle
-              ? getCycleProgressSummary(
-                  database,
-                  previousCycle.id,
-                  getPlannedWorkoutCount(previousCycle),
-                )
-              : Promise.resolve(null),
-            getCycleCompletedSetRecords(database, cycle.id),
-          ]);
+        const [
+          nextSummary,
+          latestSets,
+          profile,
+          userExercises,
+          previousSummary,
+          completedSets,
+          cardioRecords,
+        ] = await Promise.all([
+          getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
+          getLatestCompletedWorkoutSets(database, cycle.id, workout.id, programVersion.id),
+          getOnboardingProfile(database, 'guest-user'),
+          getUserExercises(database, 'guest-user'),
+          previousCycle
+            ? getCycleProgressSummary(
+                database,
+                previousCycle.id,
+                getPlannedWorkoutCount(previousCycle),
+              )
+            : Promise.resolve(null),
+          getCycleCompletedSetRecords(database, cycle.id),
+          getCycleCardioRecords(database, cycle.id),
+        ]);
         const volumeExercises = [...foundationalExercises, ...userExercises];
         const nextVolumeBreakdown = buildTrainingVolumeBreakdown(completedSets, volumeExercises);
+        const nextCardioProgress = buildCardioProgress(cardioRecords);
         const nextCycleComparison =
           previousCycle && previousSummary
             ? compareCycleProgress(cycle, nextSummary, previousCycle, previousSummary)
@@ -143,6 +158,7 @@ export default function ProgressScreen() {
         setExerciseProgress(selectedExerciseProgress);
         setCycleComparison(nextCycleComparison);
         setVolumeBreakdown(nextVolumeBreakdown);
+        setCardioProgress(nextCardioProgress);
       } catch {
         if (active) setError('We could not load local cycle progress.');
       } finally {
@@ -270,6 +286,8 @@ export default function ProgressScreen() {
       {cycleComparison ? <CycleComparisonCard comparison={cycleComparison} /> : null}
 
       <TrainingVolumeCard breakdown={volumeBreakdown} />
+
+      <CardioProgressCard summary={cardioProgress} />
 
       {exerciseChoices.length > 0 ? (
         <View style={styles.exerciseSelector} accessibilityLabel="Movement trend selector">
@@ -517,6 +535,94 @@ function ProgressHistoryCard({
           ) : null}
         </>
       ) : null}
+    </Card>
+  );
+}
+
+function CardioProgressCard({ summary }: { summary: CardioProgressSummary }) {
+  const weekly = summary.byWeek.slice(-4);
+  const maximumWeeklyMinutes = Math.max(...weekly.map((week) => week.durationSeconds / 60), 1);
+  const distanceCopy =
+    summary.totalDistanceMeters > 0
+      ? ` ${formatDistance(summary.totalDistanceMeters)} recorded.`
+      : '';
+  const accessibilitySummary =
+    summary.sessionCount === 0
+      ? 'No completed cardio sessions yet.'
+      : `${formatDuration(summary.totalDurationSeconds)} across ${summary.sessionCount} session${summary.sessionCount === 1 ? '' : 's'}.${distanceCopy}`;
+
+  return (
+    <Card
+      tone="blue"
+      style={styles.cardioCard}
+      accessibilityLabel={`Cardio progress. ${accessibilitySummary} Weekly minutes are based on completed cardio sessions.`}
+    >
+      <Text variant="caption" tone="muted">
+        CARDIO PROGRESS
+      </Text>
+      <Text variant="h3" style={styles.cardioTitle}>
+        Keep your engine moving.
+      </Text>
+      <Text variant="small" tone="muted" style={styles.cardioCopy}>
+        Completed cardio sessions stay separate from health imports and strength volume.
+      </Text>
+      {summary.sessionCount === 0 ? (
+        <Text variant="small" tone="muted" style={styles.cardioEmpty}>
+          Finish a cardio session to see weekly minutes here.
+        </Text>
+      ) : (
+        <>
+          <View style={styles.cardioTotals}>
+            <View>
+              <Text variant="caption" tone="muted">
+                TOTAL TIME
+              </Text>
+              <Text variant="h2">{formatDuration(summary.totalDurationSeconds)}</Text>
+            </View>
+            <View>
+              <Text variant="caption" tone="muted">
+                SESSIONS
+              </Text>
+              <Text variant="h2">{summary.sessionCount}</Text>
+            </View>
+            {summary.totalDistanceMeters > 0 ? (
+              <View>
+                <Text variant="caption" tone="muted">
+                  DISTANCE
+                </Text>
+                <Text variant="h2">{formatDistance(summary.totalDistanceMeters)}</Text>
+              </View>
+            ) : null}
+          </View>
+          <View style={styles.cardioWeeks} accessibilityLabel="Cardio minutes by cycle week">
+            <Text variant="caption" tone="muted">
+              WEEKLY MINUTES
+            </Text>
+            {weekly.map((week) => {
+              const minutes = week.durationSeconds / 60;
+              return (
+                <View key={week.cycleWeek} style={styles.cardioWeekRow}>
+                  <View style={styles.cardioWeekHeader}>
+                    <Text variant="smallMedium">Week {week.cycleWeek}</Text>
+                    <Text variant="small" tone="muted">
+                      {formatWhole(minutes)} min · {week.sessionCount} session
+                      {week.sessionCount === 1 ? '' : 's'}
+                    </Text>
+                  </View>
+                  <View style={styles.cardioTrack} accessible={false}>
+                    <View
+                      style={[
+                        styles.cardioFill,
+                        { width: `${Math.max(8, (minutes / maximumWeeklyMinutes) * 100)}%` },
+                      ]}
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </>
+      )}
     </Card>
   );
 }
@@ -911,6 +1017,48 @@ const styles = StyleSheet.create({
   },
   volumeCard: {
     marginTop: spacing.xl,
+  },
+  cardioCard: {
+    marginTop: spacing.xl,
+  },
+  cardioTitle: {
+    marginTop: spacing.sm,
+  },
+  cardioCopy: {
+    marginTop: spacing.xs,
+  },
+  cardioEmpty: {
+    marginTop: spacing.xl,
+  },
+  cardioTotals: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xl,
+    marginTop: spacing.xl,
+  },
+  cardioWeeks: {
+    marginTop: spacing.xl,
+    gap: spacing.md,
+  },
+  cardioWeekRow: {
+    gap: spacing.xs,
+  },
+  cardioWeekHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  cardioTrack: {
+    height: 8,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(13, 16, 27, 0.12)',
+    overflow: 'hidden',
+  },
+  cardioFill: {
+    height: '100%',
+    borderRadius: radii.pill,
+    backgroundColor: colors.ink,
   },
   volumeTitle: {
     marginTop: spacing.sm,

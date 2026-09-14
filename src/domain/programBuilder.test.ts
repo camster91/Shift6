@@ -1,6 +1,7 @@
 import { demoProgram, demoProgramVersion } from './fixtures/home';
 import {
   addExerciseToWorkout,
+  addWorkoutToProgram,
   createCustomExercise,
   createProgramCopy,
   removeExerciseFromWorkout,
@@ -44,7 +45,7 @@ describe('immutable custom program builder', () => {
     });
     const strengthA = copy.version.workouts[0]!;
     const withAdded = addExerciseToWorkout(copy.version, strengthA.id, {
-      exerciseId: 'exercise-front-plank',
+      exerciseId: 'exercise-plank',
       setCount: 2,
       target: { durationSeconds: 30 },
     });
@@ -60,6 +61,64 @@ describe('immutable custom program builder', () => {
     expect(reordered.workouts[0]!.exercises[0]?.id).toBe(added.id);
     expect(removed.workouts[0]!.exercises).toHaveLength(strengthA.exercises.length);
     expect(demoProgramVersion.workouts[0]!.exercises).toHaveLength(strengthA.exercises.length);
+  });
+
+  it('adds an optional empty workout without changing required cycle semantics', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-workout',
+      newVersionId: 'program-custom-workout-version-1',
+      createdAt: '2026-09-14T12:00:00.000Z',
+    });
+
+    const updated = addWorkoutToProgram(copy.version, {
+      id: 'program-custom-workout-version-1-workout-extra',
+      title: 'Saturday mobility',
+      dayOfWeek: 6,
+      focus: 'mobility',
+      estimatedDurationMinutes: 20,
+      equipmentIds: ['equipment-bodyweight'],
+    });
+
+    expect(updated.workouts).toHaveLength(copy.version.workouts.length + 1);
+    expect(updated.workouts.at(-1)).toMatchObject({
+      title: 'Saturday mobility',
+      isOptional: true,
+      exercises: [],
+    });
+    expect(copy.version.workouts).toHaveLength(demoProgramVersion.workouts.length);
+  });
+
+  it('rejects duplicate IDs and invalid workout metadata', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-workout-invalid',
+      newVersionId: 'program-custom-workout-invalid-version-1',
+      createdAt: '2026-09-14T12:00:00.000Z',
+    });
+
+    expect(() =>
+      addWorkoutToProgram(copy.version, {
+        id: copy.version.workouts[0]!.id,
+        title: 'Duplicate',
+        dayOfWeek: 6,
+        focus: 'mixed',
+        estimatedDurationMinutes: 20,
+      }),
+    ).toThrow('already exists');
+    expect(() =>
+      addWorkoutToProgram(copy.version, {
+        id: 'new-workout',
+        title: 'Invalid day',
+        dayOfWeek: 8,
+        focus: 'mixed',
+        estimatedDurationMinutes: 20,
+      }),
+    ).toThrow('between 1 and 7');
   });
 
   it('creates a reviewable custom exercise rather than silently treating it as curated', () => {

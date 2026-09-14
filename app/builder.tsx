@@ -11,6 +11,7 @@ import { createTrainingCycle } from '../src/domain/cycle';
 import { resolveTrackingType } from '../src/domain/exerciseTracking';
 import {
   addExerciseToWorkout,
+  addWorkoutToProgram,
   createCustomExercise,
   createProgramCopy,
   removeExerciseFromWorkout,
@@ -20,7 +21,7 @@ import {
   setWorkoutExerciseSetCount,
   setWorkoutExerciseTarget,
 } from '../src/domain/programBuilder';
-import type { Exercise, SetTarget, TrackingType, UnitSystem } from '../src/domain/types';
+import type { Exercise, SetTarget, TrackingType, UnitSystem, Workout } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
 import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { saveCustomExercise, saveProgramVersion } from '../src/db/programRepository';
@@ -42,6 +43,8 @@ export default function ProgramBuilderScreen() {
     }),
   );
   const [customName, setCustomName] = useState('');
+  const [newWorkoutTitle, setNewWorkoutTitle] = useState('');
+  const [newWorkoutSequence, setNewWorkoutSequence] = useState(0);
   const [customExercises, setCustomExercises] = useState<Record<string, Exercise>>({});
   const [substitutionExerciseId, setSubstitutionExerciseId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -77,18 +80,40 @@ export default function ProgramBuilderScreen() {
     setError(null);
   };
 
-  const handleAddPlank = () => {
-    if (!firstWorkout) return;
+  const handleAddPlank = (workoutId: string | undefined = firstWorkout?.id) => {
+    if (!workoutId) return;
     setDraft((current) => ({
       ...current,
-      version: addExerciseToWorkout(current.version, firstWorkout.id, {
-        exerciseId: 'exercise-front-plank',
+      version: addExerciseToWorkout(current.version, workoutId, {
+        exerciseId: 'exercise-plank',
         setCount: 2,
         target: { durationSeconds: 30 },
       }),
     }));
     setSaved(false);
     setError(null);
+  };
+
+  const handleAddWorkout = () => {
+    const nextSequence = newWorkoutSequence + 1;
+    try {
+      const version = addWorkoutToProgram(draft.version, {
+        id: `${draft.version.id}-workout-extra-${nextSequence}`,
+        title: newWorkoutTitle,
+        dayOfWeek: getNextAvailableWorkoutDay(draft.version.workouts),
+        focus: 'mixed',
+        estimatedDurationMinutes: 20,
+        equipmentIds: ['equipment-bodyweight'],
+        isOptional: true,
+      });
+      setDraft((current) => ({ ...current, version }));
+      setNewWorkoutSequence(nextSequence);
+      setNewWorkoutTitle('');
+      setSaved(false);
+      setError(null);
+    } catch (creationError) {
+      setError(creationError instanceof Error ? creationError.message : 'Name your workout first.');
+    }
   };
 
   const handleAddCustomExercise = () => {
@@ -233,183 +258,220 @@ export default function ProgramBuilderScreen() {
               Day {workout.dayOfWeek}
             </Text>
           </View>
-          {workout.exercises.map((exercise, exerciseIndex) => {
-            const exerciseName = exerciseNameById.get(exercise.exerciseId) ?? 'Custom movement';
-            const trackingType = resolveTrackingType(
-              exercise.exerciseId,
-              exercise.sets[0]?.target,
-              [...exerciseById.values()],
-            );
-            const sourceExercise = foundationalExercises.find(
-              (candidate) => candidate.id === exercise.exerciseId,
-            );
-            const substitutions = sourceExercise
-              ? findExerciseSubstitutions(
-                  sourceExercise,
-                  foundationalExercises,
-                  demoUser.equipmentIds,
-                  3,
-                )
-              : [];
+          {workout.exercises.length === 0 ? (
+            <View style={styles.emptyWorkout}>
+              <Text variant="small" tone="muted">
+                No exercises yet. Add a starter movement, then configure its target below.
+              </Text>
+              <Button
+                label="Add starter plank"
+                variant="ghost"
+                icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
+                onPress={() => handleAddPlank(workout.id)}
+                style={styles.emptyWorkoutButton}
+              />
+            </View>
+          ) : (
+            workout.exercises.map((exercise, exerciseIndex) => {
+              const exerciseName = exerciseNameById.get(exercise.exerciseId) ?? 'Custom movement';
+              const trackingType = resolveTrackingType(
+                exercise.exerciseId,
+                exercise.sets[0]?.target,
+                [...exerciseById.values()],
+              );
+              const sourceExercise = foundationalExercises.find(
+                (candidate) => candidate.id === exercise.exerciseId,
+              );
+              const substitutions = sourceExercise
+                ? findExerciseSubstitutions(
+                    sourceExercise,
+                    foundationalExercises,
+                    demoUser.equipmentIds,
+                    3,
+                  )
+                : [];
 
-            return (
-              <View key={exercise.id}>
-                <View style={styles.exerciseRow}>
-                  <View style={styles.exerciseCopy}>
-                    <Text variant="smallMedium">{exerciseName}</Text>
-                    <Text variant="caption" tone="muted">
-                      {exercise.sets.length} sets · {exercise.section}
-                    </Text>
-                  </View>
-                  <View style={styles.exerciseActions}>
-                    <IconButton
-                      icon={
-                        <Ionicons name="swap-horizontal-outline" size={18} color={colors.ink} />
-                      }
-                      label={`Choose substitute for ${exerciseName}`}
-                      disabled={substitutions.length === 0}
-                      onPress={() => setSubstitutionExerciseId(exercise.id)}
-                      style={styles.iconAction}
-                    />
-                    <IconButton
-                      icon={<Ionicons name="chevron-up-outline" size={18} color={colors.ink} />}
-                      label={`Move ${exerciseName} up`}
-                      disabled={exerciseIndex === 0}
-                      onPress={() => {
-                        const orderedIds = workout.exercises.map((candidate) => candidate.id);
-                        [orderedIds[exerciseIndex - 1]!, orderedIds[exerciseIndex]!] = [
-                          orderedIds[exerciseIndex]!,
-                          orderedIds[exerciseIndex - 1]!,
-                        ];
-                        updateDraftVersion((version) =>
-                          reorderWorkoutExercises(version, workout.id, orderedIds),
-                        );
-                      }}
-                      style={styles.iconAction}
-                    />
-                    <IconButton
-                      icon={<Ionicons name="chevron-down-outline" size={18} color={colors.ink} />}
-                      label={`Move ${exerciseName} down`}
-                      disabled={exerciseIndex === workout.exercises.length - 1}
-                      onPress={() => {
-                        const orderedIds = workout.exercises.map((candidate) => candidate.id);
-                        [orderedIds[exerciseIndex]!, orderedIds[exerciseIndex + 1]!] = [
-                          orderedIds[exerciseIndex + 1]!,
-                          orderedIds[exerciseIndex]!,
-                        ];
-                        updateDraftVersion((version) =>
-                          reorderWorkoutExercises(version, workout.id, orderedIds),
-                        );
-                      }}
-                      style={styles.iconAction}
-                    />
-                    <IconButton
-                      icon={<Ionicons name="remove-outline" size={18} color={colors.ink} />}
-                      label={`Decrease sets for ${exerciseName}`}
-                      disabled={exercise.sets.length <= 1}
-                      onPress={() =>
-                        updateDraftVersion((version) =>
-                          setWorkoutExerciseSetCount(
-                            version,
-                            workout.id,
-                            exercise.id,
-                            exercise.sets.length - 1,
-                          ),
-                        )
-                      }
-                      style={styles.iconAction}
-                    />
-                    <Text
-                      variant="caption"
-                      accessibilityLabel={`${exercise.sets.length} sets`}
-                      style={styles.setCount}
-                    >
-                      {exercise.sets.length}
-                    </Text>
-                    <IconButton
-                      icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
-                      label={`Increase sets for ${exerciseName}`}
-                      disabled={exercise.sets.length >= 20}
-                      onPress={() =>
-                        updateDraftVersion((version) =>
-                          setWorkoutExerciseSetCount(
-                            version,
-                            workout.id,
-                            exercise.id,
-                            exercise.sets.length + 1,
-                          ),
-                        )
-                      }
-                      style={styles.iconAction}
-                    />
-                    <IconButton
-                      icon={<Ionicons name="trash-outline" size={17} color={colors.error} />}
-                      label={`Remove ${exerciseName}`}
-                      onPress={() =>
-                        updateDraftVersion((version) =>
-                          removeExerciseFromWorkout(version, workout.id, exercise.id),
-                        )
-                      }
-                      style={styles.iconAction}
-                    />
-                  </View>
-                </View>
-                <TargetEditor
-                  exerciseName={exerciseName}
-                  setCount={exercise.sets.length}
-                  target={exercise.sets[0]?.target ?? {}}
-                  trackingType={trackingType}
-                  unitSystem={demoUser.unitSystem}
-                  onChange={(target) => {
-                    updateDraftVersion((version) =>
-                      setWorkoutExerciseTarget(version, workout.id, exercise.id, target),
-                    );
-                  }}
-                />
-                {substitutionExerciseId === exercise.id && substitutions.length > 0 ? (
-                  <Card
-                    tone="lavender"
-                    style={styles.substitutionPanel}
-                    accessibilityLabel={`${exerciseName} substitution options`}
-                  >
-                    <Text variant="smallMedium">Equipment-compatible options</Text>
-                    <Text variant="caption" tone="muted">
-                      Keep the movement intent while changing the exercise in this private copy.
-                    </Text>
-                    {substitutions.map((candidate) => (
-                      <Button
-                        key={candidate.id}
-                        label={`Use ${candidate.name}`}
-                        variant="ghost"
+              return (
+                <View key={exercise.id}>
+                  <View style={styles.exerciseRow}>
+                    <View style={styles.exerciseCopy}>
+                      <Text variant="smallMedium">{exerciseName}</Text>
+                      <Text variant="caption" tone="muted">
+                        {exercise.sets.length} sets · {exercise.section}
+                      </Text>
+                    </View>
+                    <View style={styles.exerciseActions}>
+                      <IconButton
+                        icon={
+                          <Ionicons name="swap-horizontal-outline" size={18} color={colors.ink} />
+                        }
+                        label={`Choose substitute for ${exerciseName}`}
+                        disabled={substitutions.length === 0}
+                        onPress={() => setSubstitutionExerciseId(exercise.id)}
+                        style={styles.iconAction}
+                      />
+                      <IconButton
+                        icon={<Ionicons name="chevron-up-outline" size={18} color={colors.ink} />}
+                        label={`Move ${exerciseName} up`}
+                        disabled={exerciseIndex === 0}
                         onPress={() => {
+                          const orderedIds = workout.exercises.map((candidate) => candidate.id);
+                          [orderedIds[exerciseIndex - 1]!, orderedIds[exerciseIndex]!] = [
+                            orderedIds[exerciseIndex]!,
+                            orderedIds[exerciseIndex - 1]!,
+                          ];
                           updateDraftVersion((version) =>
-                            replaceExerciseInWorkout(
+                            reorderWorkoutExercises(version, workout.id, orderedIds),
+                          );
+                        }}
+                        style={styles.iconAction}
+                      />
+                      <IconButton
+                        icon={<Ionicons name="chevron-down-outline" size={18} color={colors.ink} />}
+                        label={`Move ${exerciseName} down`}
+                        disabled={exerciseIndex === workout.exercises.length - 1}
+                        onPress={() => {
+                          const orderedIds = workout.exercises.map((candidate) => candidate.id);
+                          [orderedIds[exerciseIndex]!, orderedIds[exerciseIndex + 1]!] = [
+                            orderedIds[exerciseIndex + 1]!,
+                            orderedIds[exerciseIndex]!,
+                          ];
+                          updateDraftVersion((version) =>
+                            reorderWorkoutExercises(version, workout.id, orderedIds),
+                          );
+                        }}
+                        style={styles.iconAction}
+                      />
+                      <IconButton
+                        icon={<Ionicons name="remove-outline" size={18} color={colors.ink} />}
+                        label={`Decrease sets for ${exerciseName}`}
+                        disabled={exercise.sets.length <= 1}
+                        onPress={() =>
+                          updateDraftVersion((version) =>
+                            setWorkoutExerciseSetCount(
                               version,
                               workout.id,
                               exercise.id,
-                              candidate.id,
+                              exercise.sets.length - 1,
                             ),
-                          );
-                          setSubstitutionExerciseId(null);
-                        }}
-                        style={styles.substitutionButton}
+                          )
+                        }
+                        style={styles.iconAction}
                       />
-                    ))}
-                  </Card>
-                ) : null}
-              </View>
-            );
-          })}
+                      <Text
+                        variant="caption"
+                        accessibilityLabel={`${exercise.sets.length} sets`}
+                        style={styles.setCount}
+                      >
+                        {exercise.sets.length}
+                      </Text>
+                      <IconButton
+                        icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
+                        label={`Increase sets for ${exerciseName}`}
+                        disabled={exercise.sets.length >= 20}
+                        onPress={() =>
+                          updateDraftVersion((version) =>
+                            setWorkoutExerciseSetCount(
+                              version,
+                              workout.id,
+                              exercise.id,
+                              exercise.sets.length + 1,
+                            ),
+                          )
+                        }
+                        style={styles.iconAction}
+                      />
+                      <IconButton
+                        icon={<Ionicons name="trash-outline" size={17} color={colors.error} />}
+                        label={`Remove ${exerciseName}`}
+                        onPress={() =>
+                          updateDraftVersion((version) =>
+                            removeExerciseFromWorkout(version, workout.id, exercise.id),
+                          )
+                        }
+                        style={styles.iconAction}
+                      />
+                    </View>
+                  </View>
+                  <TargetEditor
+                    exerciseName={exerciseName}
+                    setCount={exercise.sets.length}
+                    target={exercise.sets[0]?.target ?? {}}
+                    trackingType={trackingType}
+                    unitSystem={demoUser.unitSystem}
+                    onChange={(target) => {
+                      updateDraftVersion((version) =>
+                        setWorkoutExerciseTarget(version, workout.id, exercise.id, target),
+                      );
+                    }}
+                  />
+                  {substitutionExerciseId === exercise.id && substitutions.length > 0 ? (
+                    <Card
+                      tone="lavender"
+                      style={styles.substitutionPanel}
+                      accessibilityLabel={`${exerciseName} substitution options`}
+                    >
+                      <Text variant="smallMedium">Equipment-compatible options</Text>
+                      <Text variant="caption" tone="muted">
+                        Keep the movement intent while changing the exercise in this private copy.
+                      </Text>
+                      {substitutions.map((candidate) => (
+                        <Button
+                          key={candidate.id}
+                          label={`Use ${candidate.name}`}
+                          variant="ghost"
+                          onPress={() => {
+                            updateDraftVersion((version) =>
+                              replaceExerciseInWorkout(
+                                version,
+                                workout.id,
+                                exercise.id,
+                                candidate.id,
+                              ),
+                            );
+                            setSubstitutionExerciseId(null);
+                          }}
+                          style={styles.substitutionButton}
+                        />
+                      ))}
+                    </Card>
+                  ) : null}
+                </View>
+              );
+            })
+          )}
         </Card>
       ))}
 
       <Button
-        label="Add plank accessory"
+        label="Add plank to Strength A"
         variant="secondary"
         icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
         onPress={handleAddPlank}
         style={styles.addButton}
       />
+
+      <Text variant="smallMedium" style={styles.fieldLabel}>
+        Add an optional workout
+      </Text>
+      <TextInput
+        accessibilityLabel="Optional workout name"
+        onChangeText={setNewWorkoutTitle}
+        placeholder="e.g. Saturday mobility"
+        placeholderTextColor={colors.inkMuted}
+        style={styles.input}
+        value={newWorkoutTitle}
+      />
+      <Button
+        label="Add optional workout"
+        variant="ghost"
+        icon={<Ionicons name="calendar-outline" size={18} color={colors.ink} />}
+        onPress={handleAddWorkout}
+        style={styles.customButton}
+      />
+      <Text variant="caption" tone="muted" style={styles.optionalWorkoutNote}>
+        Optional sessions add flexibility without changing the required weekly completion count.
+      </Text>
 
       <Text variant="smallMedium" style={styles.fieldLabel}>
         Add a custom movement
@@ -465,6 +527,11 @@ export default function ProgramBuilderScreen() {
       </Text>
     </Screen>
   );
+}
+
+function getNextAvailableWorkoutDay(workouts: readonly Workout[]): number {
+  const usedDays = new Set(workouts.map((workout) => workout.dayOfWeek));
+  return Array.from({ length: 7 }, (_, index) => index + 1).find((day) => !usedDays.has(day)) ?? 7;
 }
 
 interface TargetEditorProps {
@@ -726,6 +793,13 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
+  emptyWorkout: {
+    gap: spacing.sm,
+    paddingTop: spacing.md,
+  },
+  emptyWorkoutButton: {
+    alignSelf: 'flex-start',
+  },
   workoutHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -800,6 +874,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   customButton: {
+    marginTop: spacing.xs,
+  },
+  optionalWorkoutNote: {
     marginTop: spacing.xs,
   },
   savedCard: {

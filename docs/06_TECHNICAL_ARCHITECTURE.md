@@ -423,6 +423,8 @@ The first #275 editing surface now supports a safe user-owned draft path:
 
 The builder does not yet publish versions or support full drag-and-drop/superset/circuit editing. Those are intentionally separate increments. Active workout routing now resolves the stored user-owned snapshot when one exists; the editing surface still needs broader workout block controls.
 
+The builder can now append a user-named optional workout with a stable ID, selected day, mixed focus, and an empty exercise list. Empty sessions expose a starter Front plank action, so the new workout is immediately editable without changing the required `daysPerWeek` or cycle-advancement count. Required-day creation remains gated behind an explicit program-frequency update.
+
 ## Custom builder controls checkpoint — 2026-09-14
 
 The next #275 increment turns the exercise list into an editable, accessible surface:

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -17,6 +17,7 @@ import {
 import { useLocalDatabase } from '../../src/db/context';
 import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
 import { getUserProgramVersion } from '../../src/db/programRepository';
+import { getCompletedWorkoutIds } from '../../src/db/progressRepository';
 import {
   demoCycle,
   demoProgram,
@@ -33,31 +34,37 @@ export default function HomeScreen() {
   const [currentProgram, setCurrentProgram] = useState(demoProgram);
   const [currentProgramVersion, setCurrentProgramVersion] = useState(demoProgramVersion);
   const [todayWorkout, setTodayWorkout] = useState(demoWorkout);
+  const [completedWorkoutIds, setCompletedWorkoutIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
 
-  useEffect(() => {
-    if (!database) return;
+  useFocusEffect(
+    useCallback(() => {
+      if (!database) return undefined;
 
-    let active = true;
-    void getActiveTrainingCycle(database, 'guest-user')
-      .then(async (cycle) => {
-        if (!active || !cycle) return;
-        setCurrentCycle(cycle);
-        const snapshot = await getUserProgramVersion(
-          database,
-          'guest-user',
-          cycle.programVersionId,
-        );
-        if (!active || !snapshot) return;
-        setCurrentProgram(snapshot.program);
-        setCurrentProgramVersion(snapshot.version);
-        setTodayWorkout(snapshot.version.workouts[0] ?? demoWorkout);
-      })
-      .catch(() => undefined);
+      let active = true;
+      void getActiveTrainingCycle(database, 'guest-user')
+        .then(async (cycle) => {
+          if (!active || !cycle) return;
+          const [snapshot, completedIds] = await Promise.all([
+            getUserProgramVersion(database, 'guest-user', cycle.programVersionId),
+            getCompletedWorkoutIds(database, cycle.id, cycle.currentWeek),
+          ]);
+          if (!active) return;
+          setCurrentCycle(cycle);
+          setCompletedWorkoutIds(completedIds);
+          if (!snapshot) return;
+          setCurrentProgram(snapshot.program);
+          setCurrentProgramVersion(snapshot.version);
+          setTodayWorkout(snapshot.version.workouts[0] ?? demoWorkout);
+        })
+        .catch(() => undefined);
 
-    return () => {
-      active = false;
-    };
-  }, [database]);
+      return () => {
+        active = false;
+      };
+    }, [database]),
+  );
 
   return (
     <Screen>
@@ -158,37 +165,48 @@ export default function HomeScreen() {
                   candidate.id === entry.workoutId || candidate.dayOfWeek === dayNumber(entry.day),
               )
             : null;
+          const completed = workout ? completedWorkoutIds.has(workout.id) : false;
           const card = (
             <Card
               tone={
-                entry.status === 'current'
-                  ? 'ink'
-                  : entry.category === 'cardio'
-                    ? 'blue'
-                    : entry.category === 'rest'
-                      ? 'rest'
-                      : 'white'
+                completed
+                  ? 'mint'
+                  : entry.status === 'current'
+                    ? 'ink'
+                    : entry.category === 'cardio'
+                      ? 'blue'
+                      : entry.category === 'rest'
+                        ? 'rest'
+                        : 'white'
               }
               style={styles.scheduleCard}
             >
-              <Text variant="caption" tone={entry.status === 'current' ? 'inverse' : 'muted'}>
+              <Text
+                variant="caption"
+                tone={completed || entry.status !== 'current' ? 'muted' : 'inverse'}
+              >
                 {entry.day}
               </Text>
               <View style={styles.scheduleIcon}>
                 <Ionicons
                   name={
-                    entry.category === 'cardio'
-                      ? 'heart-outline'
-                      : entry.category === 'rest'
-                        ? 'moon-outline'
-                        : 'barbell-outline'
+                    completed
+                      ? 'checkmark'
+                      : entry.category === 'cardio'
+                        ? 'heart-outline'
+                        : entry.category === 'rest'
+                          ? 'moon-outline'
+                          : 'barbell-outline'
                   }
                   size={20}
-                  color={entry.status === 'current' ? colors.white : colors.ink}
+                  color={completed || entry.status !== 'current' ? colors.ink : colors.white}
                 />
               </View>
-              <Text variant="smallMedium" tone={entry.status === 'current' ? 'inverse' : 'default'}>
-                {entry.title}
+              <Text
+                variant="smallMedium"
+                tone={completed || entry.status !== 'current' ? 'default' : 'inverse'}
+              >
+                {completed ? `${entry.title} complete` : entry.title}
               </Text>
             </Card>
           );
@@ -197,7 +215,7 @@ export default function HomeScreen() {
             <Pressable
               key={entry.id}
               accessibilityRole="button"
-              accessibilityLabel={`${entry.day}, ${entry.title}. Open workout.`}
+              accessibilityLabel={`${entry.day}, ${entry.title}${completed ? ', complete' : ''}. Open workout.`}
               onPress={() =>
                 router.push({ pathname: '/workout', params: { workoutId: workout.id } })
               }

@@ -77,6 +77,23 @@ export async function getLatestCompletedWorkoutSets(
   return row ? getCompletedSets(database, row.id) : [];
 }
 
+export async function getCompletedWorkoutIds(
+  database: SQLiteDatabase,
+  cycleId: string,
+  cycleWeek: number,
+): Promise<ReadonlySet<string>> {
+  const rows = await database.getAllAsync<{ workout_id: string }>(
+    `SELECT workout_id
+       FROM workout_sessions
+      WHERE cycle_id = ? AND cycle_week = ? AND status = 'complete'
+      ORDER BY completed_at ASC, id ASC;`,
+    cycleId,
+    cycleWeek,
+  );
+
+  return new Set(rows.map((row) => row.workout_id));
+}
+
 export async function getExerciseProgress(
   database: SQLiteDatabase,
   cycleId: string,

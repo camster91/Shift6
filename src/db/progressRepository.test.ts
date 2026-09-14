@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import {
+  getCompletedWorkoutIds,
   getCycleProgressSummary,
   getExerciseProgress,
   getLatestCompletedWorkoutSets,
@@ -174,5 +175,21 @@ describe('getCycleProgressSummary', () => {
     ).resolves.toMatchObject({
       points: [{ sessionId: 'session-legacy', bestLoad: 185 }],
     });
+  });
+});
+
+describe('getCompletedWorkoutIds', () => {
+  it('returns unique completed workouts for one persisted cycle week', async () => {
+    const database = {
+      getAllAsync: async () => [
+        { workout_id: 'workout-strength-a' },
+        { workout_id: 'workout-strength-a' },
+        { workout_id: 'workout-strength-b' },
+      ],
+    } as unknown as SQLiteDatabase;
+
+    await expect(getCompletedWorkoutIds(database, 'cycle-1', 1)).resolves.toEqual(
+      new Set(['workout-strength-a', 'workout-strength-b']),
+    );
   });
 });

@@ -306,6 +306,8 @@ The next-session target surface is now covered for the Barbell 30 fixture. It is
 
 Barbell 30's fixture now includes two optional cardio sessions with explicit time/distance tracking. Cycle weeks still count only the three required strength workouts, so cardio can enrich progress and be completed offline without making the core strength cycle impossible to finish when a user skips an optional session.
 
+Home now refreshes its persisted cycle state on focus and marks completed workout IDs for the active week. Required strength and optional cardio schedule cards route to the matching snapshot workout; custom program copies are resolved by day when their cloned IDs differ from the template fixture.
+
 ## Exercise progress history checkpoint — 2026-09-14
 
 The next #279 progress increment adds a deterministic exercise-history read boundary:

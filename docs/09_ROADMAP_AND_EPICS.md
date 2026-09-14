@@ -208,11 +208,11 @@ Progress and Review now show deterministic completed training days and active cy
 
 Active workout set rows now expose target-driven RPE/RIR inputs and reject out-of-range values locally before persistence. This keeps effort-aware progression grounded in the user's recorded set rather than an omitted or unvalidated field.
 
-Notification settings now have a user-scoped local preference row with opt-in-safe defaults, granular controls, privacy export/delete coverage, and guest-account ownership transfer. A native `expo-notifications` permission adapter is wired behind a provider boundary; the web preview stays explicit about unavailable delivery. Reminder scheduling, deep links, remote push credentials, and background delivery remain open #280/#281 work.
+Notification settings now have a user-scoped local preference row with opt-in-safe defaults, granular controls, privacy export/delete coverage, and guest-account ownership transfer. A native `expo-notifications` permission adapter is wired behind a provider boundary; the web preview stays explicit about unavailable delivery. Remote push credentials and background delivery remain open #280/#281 work.
 
 Onboarding now stores a coarse preferred training window (morning, afternoon, or evening) in the local profile and sync payload, with existing profiles migrating to a morning default. Profile surfaces the choice for transparency. Exact reminder scheduling still requires an explicit schedule and native delivery verification.
 
-Local workout reminders now reconcile a bounded seven-day one-shot schedule from the active program snapshot and preferred training window after explicit device permission. Stable SHIFT6-owned identifiers are cancelled before replacement, notification payloads carry a validated workout deep-link, and cold-start or foreground taps route back to the workout surface without mutating plan data. Remote push, review/rest-timer scheduling, exact alarm editing, background delivery guarantees, and native device verification remain open #280/#281 work.
+Local workout reminders now reconcile a bounded seven-day one-shot schedule from the active program snapshot and preferred training window after explicit device permission. Stable SHIFT6-owned identifiers are cancelled before replacement, notification payloads carry a validated workout deep-link, and cold-start or foreground taps route back to the workout surface without mutating plan data. Remote push, review scheduling, exact alarm editing, background delivery guarantees, and native device verification remain open #280/#281 work.
 
 Rest-timer cues now use the same permission-gated local adapter after a set is durably persisted. The active session replaces one stable cue as the user progresses and cancels it on pause/unmount, so notification delivery remains optional and cannot block offline workout logging. Review/cycle delivery, remote push, exact alarm editing, background guarantees, and native verification remain open.
 
@@ -229,5 +229,7 @@ Coach approval now revalidates the persisted active-cycle/program-version pointe
 Cycle advancement now uses distinct required workout identities from persisted complete sessions, so duplicate attempts cannot advance a week before its required schedule is represented.
 
 CI now runs on feature-branch pushes in addition to pull requests, so the foundation gate is available before a branch is opened for review.
+
+The dedicated cycle dashboard now makes the six-week signature visible as a real route, using the persisted active cycle/version snapshot, current-week completion, schedule categories, and program-defined Week 6 meaning. It links back into workout, progress, and review flows without duplicating progression calculations. Calendar rescheduling and multi-workout date planning remain later surfaces.
 
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

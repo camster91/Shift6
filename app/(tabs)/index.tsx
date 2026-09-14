@@ -135,6 +135,13 @@ export default function HomeScreen() {
         </View>
         <ProgressIndicator label="Cycle progress" value={currentCycle.currentWeek / 6} />
       </Card>
+      <Button
+        label="View cycle dashboard"
+        variant="ghost"
+        icon={<Ionicons name="analytics-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/cycle')}
+        style={styles.cycleAction}
+      />
 
       <View style={styles.sectionHeader}>
         <View>
@@ -306,6 +313,10 @@ const styles = StyleSheet.create({
   },
   primaryAction: {
     marginTop: spacing.md,
+  },
+  cycleAction: {
+    marginTop: spacing.xs,
+    alignSelf: 'flex-start',
   },
   scheduleList: {
     gap: spacing.sm,

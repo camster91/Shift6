@@ -500,6 +500,8 @@ The database migration and repository tests cover the draft upsert, correction o
 
 The active workout now offers deterministic catalogue substitutions before the first set of a movement is completed. A selected replacement updates the user-owned program snapshot (and queues that version when native SQLite is available), while completed-set history remains untouched. Once a set exists for that movement, the action is blocked with an explanatory message; one-time versus future-session replacement semantics are therefore explicit rather than silently reclassifying history.
 
+The active workout also flushes its current draft to SQLite when the app becomes inactive or enters the background, in addition to the short debounce used during editing. This narrows the suspension-loss window while keeping set completion and final workout completion on their existing atomic repository paths.
+
 ## Workout session identity checkpoint — 2026-09-14
 
 `getInProgressWorkoutSession` now resolves the latest unfinished session by cycle, week, and workout before the active route creates a new attempt. This preserves pause/reopen recovery across app restarts while allowing a completed workout to be repeated as a distinct session. The lookup and timestamp-derived attempt ID remain local-only; completed-set idempotency keys continue to be scoped to the resolved session, preventing duplicate set writes during retries.

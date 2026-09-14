@@ -300,6 +300,21 @@ export default function ActiveWorkoutScreen() {
   }, [database, draftReady, session.id, values]);
 
   useEffect(() => {
+    if (!database || !draftReady) return;
+
+    const flushDraft = () => {
+      void saveWorkoutDraft(database, session.id, values, new Date().toISOString()).catch(() => {
+        setError('We could not save the unfinished workout locally.');
+      });
+    };
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'inactive' || nextState === 'background') flushDraft();
+    });
+
+    return () => subscription.remove();
+  }, [database, draftReady, session.id, values]);
+
+  useEffect(() => {
     if (restEndsAt === null) return;
 
     const updateTimer = () => {

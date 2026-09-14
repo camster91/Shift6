@@ -301,7 +301,7 @@ describe('completeWorkoutSessionAndAdvanceCycle', () => {
             }),
           };
         }
-        if (sql.includes('COUNT(*)')) return { count: 1 };
+        if (sql.includes('COUNT(DISTINCT workout_id)')) return { count: 1 };
         if (sql.includes('FROM workout_sessions')) {
           return {
             id: 'session-1',

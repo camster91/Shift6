@@ -184,6 +184,8 @@ The app shell now mounts an authenticated-only sync runtime that retries the loc
 
 The active workout now carries builder-authored section, superset/circuit, note, and custom-exercise cues into the logging surface without changing completed-set identity.
 
+Active workout drafts now flush on inactive/background app-state transitions as well as during debounced editing, improving pause/reopen durability without adding a network dependency.
+
 Progress movement history now includes deterministic duration and distance points and personal records, with the Progress selector and accessible chart presenting cardio/timed metrics alongside strength history. The underlying values remain local-first and version-scoped; no estimated strength value is generated for a timed or distance movement.
 
 Cycle advancement now uses distinct required workout identities from persisted complete sessions, so duplicate attempts cannot advance a week before its required schedule is represented.

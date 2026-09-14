@@ -236,3 +236,17 @@ The initial rebuild branch implements this architecture as a small, native-first
 - `src/config/env.ts` reads only `EXPO_PUBLIC_*` values. `.env.example` documents public configuration; secrets are not accepted by the mobile bundle.
 
 This record is an implementation checkpoint, not a release claim. Native boot, signed EAS builds, backend connectivity, SQLite restart durability on device, and full offline workout completion remain later verification gates.
+
+## Onboarding implementation checkpoint — 2026-09-13
+
+The next #273 increment adds a real multi-step onboarding route at `app/onboarding.tsx` and keeps its decisions in the typed domain layer:
+
+- goals, experience, equipment, schedule, session length, units, optional health preference, and Coach preferences are represented as an `OnboardingDraft`;
+- `recommendPrograms` deterministically ranks compatible programs and explains goal, experience, schedule, duration, and equipment fit without AI or network access;
+- native SQLite migration 2 persists a guest profile and replaceable equipment rows atomically; `getOnboardingProfile` reloads answers when the user edits setup;
+- web remains an explicit preview surface and does not claim persistence or health permission support;
+- the flow currently saves setup and returns to Programs. Cycle start, account conversion, real health permission requests, and program-backed recommendations remain later vertical-slice increments.
+
+This is an implementation checkpoint, not a release claim. Native migration execution, restart persistence, and small/large iOS/Android accessibility verification still require device runtimes.
+
+The foundation quality gate currently passes lint, strict typecheck, formatting, Jest, Expo Doctor, high-severity production-dependency audit, and web export. `npm audit --omit=dev` still reports 14 moderate transitive advisories whose forced remediation would introduce breaking Expo changes; this is a release-hardening risk to revisit during dependency maintenance, not a reason to apply an unreviewed forced upgrade now.

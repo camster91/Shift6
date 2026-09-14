@@ -18,6 +18,8 @@ export { IconButton } from './IconButton';
 export type { IconButtonProps } from './IconButton';
 export { LoadingSkeleton } from './LoadingSkeleton';
 export type { LoadingSkeletonProps } from './LoadingSkeleton';
+export { OptionCard } from './OptionCard';
+export type { OptionCardProps } from './OptionCard';
 export { OfflineBanner } from './OfflineBanner';
 export type { OfflineBannerProps, OfflineStatus } from './OfflineBanner';
 export { ProgramCard } from './ProgramCard';

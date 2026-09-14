@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { LocalDatabaseContext } from './context';
+
 interface LocalDatabaseProviderProps {
   children: ReactNode;
 }
@@ -9,5 +11,5 @@ interface LocalDatabaseProviderProps {
  * Native builds use Expo SQLite; web does not claim durable local persistence.
  */
 export function LocalDatabaseProvider({ children }: LocalDatabaseProviderProps) {
-  return children;
+  return <LocalDatabaseContext.Provider value={null}>{children}</LocalDatabaseContext.Provider>;
 }

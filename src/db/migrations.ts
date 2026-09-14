@@ -50,6 +50,33 @@ export const MIGRATIONS: readonly Migration[] = [
       );`,
     ],
   },
+  {
+    version: 2,
+    name: 'onboarding-profile-and-equipment',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS user_profiles (
+        id TEXT PRIMARY KEY NOT NULL,
+        display_name TEXT NOT NULL,
+        unit_system TEXT NOT NULL,
+        goals_json TEXT NOT NULL,
+        experience TEXT NOT NULL,
+        training_days_per_week INTEGER NOT NULL,
+        preferred_session_minutes INTEGER NOT NULL,
+        coach_tone TEXT NOT NULL,
+        coach_intervention TEXT NOT NULL,
+        health_connection TEXT NOT NULL,
+        completed_at TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );`,
+      `CREATE TABLE IF NOT EXISTS user_equipment (
+        user_id TEXT NOT NULL,
+        equipment_id TEXT NOT NULL,
+        PRIMARY KEY (user_id, equipment_id),
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE
+      );`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

@@ -50,6 +50,9 @@ export type CycleWeekStatus = 'completed' | 'current' | 'upcoming' | 'missed' | 
 export type WorkoutSessionStatus = 'planned' | 'in-progress' | 'complete' | 'skipped' | 'abandoned';
 export type CoachProposalStatus =
   'pending' | 'accepted' | 'partially-accepted' | 'rejected' | 'expired';
+export type CoachTone = 'concise' | 'supportive' | 'technical';
+export type CoachIntervention = 'conservative' | 'balanced' | 'proactive';
+export type HealthConnectionPreference = 'not-now' | 'apple-health' | 'health-connect';
 
 export interface User {
   id: EntityId;
@@ -62,6 +65,14 @@ export interface User {
   preferredSessionMinutes: number;
   createdAt: ISODateString;
   updatedAt: ISODateString;
+}
+
+export interface OnboardingProfile {
+  user: User;
+  coachTone: CoachTone;
+  coachIntervention: CoachIntervention;
+  healthConnection: HealthConnectionPreference;
+  completedAt: ISODateString;
 }
 
 export interface Equipment {

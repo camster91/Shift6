@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { SQLiteProvider } from 'expo-sqlite';
+import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 
 import { migrateDatabase } from './migrations';
+import { LocalDatabaseContext } from './context';
 
 interface LocalDatabaseProviderProps {
   children: ReactNode;
@@ -10,7 +11,13 @@ interface LocalDatabaseProviderProps {
 export function LocalDatabaseProvider({ children }: LocalDatabaseProviderProps) {
   return (
     <SQLiteProvider databaseName="shift6.db" onInit={migrateDatabase}>
-      {children}
+      <DatabaseContextBridge>{children}</DatabaseContextBridge>
     </SQLiteProvider>
   );
+}
+
+function DatabaseContextBridge({ children }: LocalDatabaseProviderProps) {
+  const database = useSQLiteContext();
+
+  return <LocalDatabaseContext.Provider value={database}>{children}</LocalDatabaseContext.Provider>;
 }

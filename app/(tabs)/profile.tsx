@@ -1,11 +1,40 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Card, Chip, Screen, Text } from '../../src/components/ui';
+import { Button, Card, Chip, Screen, Text } from '../../src/components/ui';
 import { demoEquipment, demoUser } from '../../src/domain/fixtures/home';
+import { useLocalDatabase } from '../../src/db/context';
+import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { colors, radii, spacing } from '../../src/design/tokens';
 
 export default function ProfileScreen() {
+  const database = useLocalDatabase();
+  const [user, setUser] = useState(demoUser);
+  const [equipmentIds, setEquipmentIds] = useState(demoUser.equipmentIds);
+
+  useEffect(() => {
+    if (!database) return;
+
+    let active = true;
+    void getOnboardingProfile(database, 'guest-user')
+      .then((profile) => {
+        if (!active || !profile) return;
+        setUser(profile.user);
+        setEquipmentIds(profile.user.equipmentIds);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [database]);
+
+  const selectedEquipment = demoEquipment.filter((equipment) =>
+    equipmentIds.includes(equipment.id),
+  );
+
   return (
     <Screen>
       <Text variant="caption" tone="muted">
@@ -23,10 +52,10 @@ export default function ProfileScreen() {
           <Text variant="h2">C</Text>
         </View>
         <Text variant="h2" tone="inverse" style={styles.profileName}>
-          {demoUser.displayName}
+          {user.displayName}
         </Text>
         <Text variant="small" style={styles.profileMeta}>
-          Intermediate · {demoUser.preferredSessionMinutes}-minute sessions · Imperial
+          {user.experience} · {user.preferredSessionMinutes}-minute sessions · {user.unitSystem}
         </Text>
       </Card>
 
@@ -35,7 +64,7 @@ export default function ProfileScreen() {
       </Text>
       <Card tone="white" style={styles.equipmentCard}>
         <View style={styles.chips}>
-          {demoEquipment.slice(0, 5).map((equipment) => (
+          {selectedEquipment.slice(0, 6).map((equipment) => (
             <Chip key={equipment.id} label={equipment.name} selected />
           ))}
         </View>
@@ -43,6 +72,14 @@ export default function ProfileScreen() {
           Equipment availability will filter programs and rank substitutions.
         </Text>
       </Card>
+
+      <Button
+        label="Edit setup"
+        variant="secondary"
+        icon={<Ionicons name="options-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/onboarding')}
+        style={styles.editSetupButton}
+      />
 
       <Card tone="blue" style={styles.settingsCard}>
         <Ionicons name="shield-checkmark-outline" size={24} color={colors.ink} />
@@ -101,6 +138,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   settingsCard: {
+    marginTop: spacing.xl,
+  },
+  editSetupButton: {
     marginTop: spacing.xl,
   },
   settingsTitle: {

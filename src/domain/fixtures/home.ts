@@ -31,6 +31,12 @@ export const demoEquipment: Equipment[] = [
     aliases: ['chin-up bar'],
   },
   { id: 'equipment-bike', name: 'Stationary bike', category: 'cardio', aliases: ['bike'] },
+  {
+    id: 'equipment-bodyweight',
+    name: 'Bodyweight',
+    category: 'bodyweight',
+    aliases: ['no equipment'],
+  },
 ];
 
 export const demoUser: User = {

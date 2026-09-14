@@ -18,4 +18,13 @@ describe('local database migrations', () => {
     );
     expect(statements).toContain('CREATE TABLE IF NOT EXISTS sync_outbox');
   });
+
+  it('adds a durable onboarding profile and equipment boundary', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS user_profiles');
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS user_equipment');
+    expect(statements).toContain('FOREIGN KEY (user_id) REFERENCES user_profiles(id)');
+    expect(statements).toContain('health_connection TEXT NOT NULL');
+  });
 });

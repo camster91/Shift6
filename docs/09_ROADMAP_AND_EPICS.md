@@ -174,6 +174,8 @@ The reset repository has no application code, so the first two epics are deliver
 5. **Navigation and real fixture surfaces (#271/#272):** Home, Programs, Coach, Progress, and Profile tabs; a six-week cycle motif; a typed Barbell 30 Home card; and an honest workout-preview route that makes the next vertical-slice boundary visible.
 6. **Verification gate:** lint, format, typecheck, unit/component tests, Expo doctor, web bundle and accessibility smoke tests; then native simulator/device boot, signed preview build, and native SQLite restart/offline tests before calling the foundation device-verified.
 
-Current branch status: steps 1–5 are implemented; step 6 is partially verified on the web/tooling surface. Native device verification and the signed preview build still require the corresponding local runtimes/EAS credentials and must not be inferred from a web export.
+Current branch status: steps 1–5 are implemented; the first #273 onboarding increment is implemented with deterministic recommendations and a native profile/equipment persistence boundary; step 6 is partially verified on the web/tooling surface. Native device verification and the signed preview build still require the corresponding local runtimes/EAS credentials and must not be inferred from a web export.
+
+The onboarding increment intentionally stops at saving preferences and returning to the Programs surface. It does not claim account conversion, health permission requests, cycle creation, or a fully populated program library; those remain the next vertical-slice boundaries.
 
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { Card, Chip, ProgramCard, Screen, Text } from '../../src/components/ui';
+import { Button, Card, Chip, ProgramCard, Screen, Text } from '../../src/components/ui';
 import { demoProgram } from '../../src/domain/fixtures/home';
 import { colors, spacing } from '../../src/design/tokens';
 
@@ -28,6 +29,14 @@ export default function ProgramsScreen() {
         For your equipment
       </Text>
       <ProgramCard program={demoProgram} />
+
+      <Button
+        label="Personalize recommendations"
+        variant="secondary"
+        icon={<Ionicons name="options-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/onboarding')}
+        style={styles.personalizeButton}
+      />
 
       <Card tone="mint" style={styles.foundationCard}>
         <Ionicons name="construct-outline" size={24} color={colors.ink} />
@@ -62,6 +71,9 @@ const styles = StyleSheet.create({
   foundationCard: {
     marginTop: spacing.xl,
     gap: spacing.sm,
+  },
+  personalizeButton: {
+    marginTop: spacing.md,
   },
   cardTitle: {
     marginTop: spacing.xs,

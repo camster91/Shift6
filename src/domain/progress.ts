@@ -1,4 +1,5 @@
-import type { EntityId, PersonalRecord, ProgressPoint } from './types';
+import type { CycleProgressSummary } from './progression';
+import type { EntityId, PersonalRecord, ProgressPoint, TrainingCycle } from './types';
 
 export interface ProgressSetInput {
   sessionId: EntityId;
@@ -12,6 +13,54 @@ export interface ExerciseProgress {
   exerciseId: EntityId;
   points: ProgressPoint[];
   personalRecords: PersonalRecord[];
+}
+
+export interface ProgressMetricComparison {
+  current: number;
+  previous: number;
+  delta: number;
+  direction: 'up' | 'down' | 'unchanged';
+}
+
+export interface CycleProgressComparison {
+  previousCycleId: EntityId;
+  sameProgramVersion: boolean;
+  completedWorkouts: ProgressMetricComparison;
+  completionRate: ProgressMetricComparison;
+  loggedSets: ProgressMetricComparison;
+  totalTrainingVolume: ProgressMetricComparison;
+  cardioMinutes: ProgressMetricComparison;
+  personalRecords: ProgressMetricComparison;
+}
+
+export function compareCycleProgress(
+  currentCycle: Pick<TrainingCycle, 'programVersionId'>,
+  currentSummary: CycleProgressSummary,
+  previousCycle: Pick<TrainingCycle, 'id' | 'programVersionId'>,
+  previousSummary: CycleProgressSummary,
+): CycleProgressComparison {
+  return {
+    previousCycleId: previousCycle.id,
+    sameProgramVersion: currentCycle.programVersionId === previousCycle.programVersionId,
+    completedWorkouts: compare(
+      currentSummary.facts.completedWorkoutCount,
+      previousSummary.facts.completedWorkoutCount,
+    ),
+    completionRate: compare(
+      currentSummary.facts.completionRate,
+      previousSummary.facts.completionRate,
+    ),
+    loggedSets: compare(currentSummary.loggedSetCount, previousSummary.loggedSetCount),
+    totalTrainingVolume: compare(
+      currentSummary.facts.totalTrainingVolume,
+      previousSummary.facts.totalTrainingVolume,
+    ),
+    cardioMinutes: compare(currentSummary.facts.cardioMinutes, previousSummary.facts.cardioMinutes),
+    personalRecords: compare(
+      currentSummary.facts.personalRecordIds.length,
+      previousSummary.facts.personalRecordIds.length,
+    ),
+  };
 }
 
 export function buildExerciseProgress(
@@ -105,4 +154,14 @@ function buildPersonalRecords(
 function max(values: readonly (number | undefined)[]): number | undefined {
   const present = values.filter((value): value is number => value !== undefined);
   return present.length === 0 ? undefined : Math.max(...present);
+}
+
+function compare(current: number, previous: number): ProgressMetricComparison {
+  const delta = current - previous;
+  return {
+    current,
+    previous,
+    delta,
+    direction: delta === 0 ? 'unchanged' : delta > 0 ? 'up' : 'down',
+  };
 }

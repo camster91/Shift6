@@ -174,6 +174,26 @@ export async function getLatestTrainingCycle(
   return row ? mapTrainingCycle(row) : null;
 }
 
+export async function getPreviousTrainingCycle(
+  database: SQLiteDatabase,
+  userId: string,
+  currentCycle: Pick<TrainingCycle, 'id' | 'startedAt'>,
+): Promise<TrainingCycle | null> {
+  const row = await database.getFirstAsync<TrainingCycleRow>(
+    `SELECT id, user_id, program_version_id, status, current_week, started_at, weeks_json
+       FROM training_cycles
+      WHERE user_id = ?
+        AND (started_at < ? OR (started_at = ? AND id < ?))
+      ORDER BY started_at DESC, id DESC
+      LIMIT 1;`,
+    userId,
+    currentCycle.startedAt,
+    currentCycle.startedAt,
+    currentCycle.id,
+  );
+  return row ? mapTrainingCycle(row) : null;
+}
+
 function mapTrainingCycle(row: TrainingCycleRow): TrainingCycle {
   return {
     id: row.id,

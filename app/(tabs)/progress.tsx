@@ -22,10 +22,14 @@ import {
 } from '../../src/domain/fixtures/home';
 import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { buildNextSessionTargets, type NextSessionTarget } from '../../src/domain/nextSession';
-import type { ExerciseProgress } from '../../src/domain/progress';
+import {
+  compareCycleProgress,
+  type CycleProgressComparison,
+  type ExerciseProgress,
+} from '../../src/domain/progress';
 import { buildCycleProgressSummary, type CycleProgressSummary } from '../../src/domain/progression';
 import { useLocalDatabase } from '../../src/db/context';
-import { getLatestTrainingCycle } from '../../src/db/cycleRepository';
+import { getLatestTrainingCycle, getPreviousTrainingCycle } from '../../src/db/cycleRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { getUserExercises, getUserProgramVersion } from '../../src/db/programRepository';
 import {
@@ -51,6 +55,7 @@ export default function ProgressScreen() {
     demoWorkout.exercises[0]?.exerciseId ?? null,
   );
   const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress | null>(null);
+  const [cycleComparison, setCycleComparison] = useState<CycleProgressComparison | null>(null);
   const [exerciseProgressLoading, setExerciseProgressLoading] = useState(false);
   const [loading, setLoading] = useState(database !== null);
   const [error, setError] = useState<string | null>(null);
@@ -76,12 +81,25 @@ export default function ProgressScreen() {
         const program = snapshot?.program ?? demoProgram;
         const programVersion = snapshot?.version ?? demoProgramVersion;
         const workout = programVersion.workouts[0] ?? demoWorkout;
-        const [nextSummary, latestSets, profile, userExercises] = await Promise.all([
-          getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
-          getLatestCompletedWorkoutSets(database, cycle.id, workout.id, programVersion.id),
-          getOnboardingProfile(database, 'guest-user'),
-          getUserExercises(database, 'guest-user'),
-        ]);
+        const previousCycle = await getPreviousTrainingCycle(database, 'guest-user', cycle);
+        const [nextSummary, latestSets, profile, userExercises, previousSummary] =
+          await Promise.all([
+            getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
+            getLatestCompletedWorkoutSets(database, cycle.id, workout.id, programVersion.id),
+            getOnboardingProfile(database, 'guest-user'),
+            getUserExercises(database, 'guest-user'),
+            previousCycle
+              ? getCycleProgressSummary(
+                  database,
+                  previousCycle.id,
+                  getPlannedWorkoutCount(previousCycle),
+                )
+              : Promise.resolve(null),
+          ]);
+        const nextCycleComparison =
+          previousCycle && previousSummary
+            ? compareCycleProgress(cycle, nextSummary, previousCycle, previousSummary)
+            : null;
         const nextExerciseChoices = getProgressExerciseChoices(programVersion, userExercises);
         const nextSelectedExerciseId = nextExerciseChoices.some(
           (choice) => choice.exerciseId === selectedExerciseId,
@@ -106,6 +124,7 @@ export default function ProgressScreen() {
         setExerciseChoices(nextExerciseChoices);
         setSelectedExerciseId(nextSelectedExerciseId);
         setExerciseProgress(selectedExerciseProgress);
+        setCycleComparison(nextCycleComparison);
       } catch {
         if (active) setError('We could not load local cycle progress.');
       } finally {
@@ -219,6 +238,8 @@ export default function ProgressScreen() {
           tone="coral"
         />
       </View>
+
+      {cycleComparison ? <CycleComparisonCard comparison={cycleComparison} /> : null}
 
       {exerciseChoices.length > 0 ? (
         <View style={styles.exerciseSelector} accessibilityLabel="Movement trend selector">
@@ -447,6 +468,94 @@ function ProgressHistoryCard({ progress }: { progress: ExerciseProgress }) {
   );
 }
 
+function CycleComparisonCard({ comparison }: { comparison: CycleProgressComparison }) {
+  return (
+    <Card
+      tone="white"
+      style={styles.comparisonCard}
+      accessibilityLabel={formatComparisonAccessibilityLabel(comparison)}
+    >
+      <Text variant="caption" tone="muted">
+        CYCLE COMPARISON
+      </Text>
+      <Text variant="h3" style={styles.comparisonTitle}>
+        This block against the last one.
+      </Text>
+      <Text variant="small" tone="muted" style={styles.comparisonNote}>
+        {comparison.sameProgramVersion
+          ? 'Both cycles use the same saved program version.'
+          : 'Plan version changed. Use this for aggregate context; movement trends stay version-scoped.'}
+      </Text>
+      <View style={styles.comparisonRows}>
+        <ComparisonRow
+          label="Completed workouts"
+          metric={comparison.completedWorkouts}
+          format={formatWhole}
+        />
+        <ComparisonRow
+          label="Adherence"
+          metric={comparison.completionRate}
+          format={formatPercent}
+        />
+        <ComparisonRow label="Logged sets" metric={comparison.loggedSets} format={formatWhole} />
+        <ComparisonRow
+          label="Training volume"
+          metric={comparison.totalTrainingVolume}
+          format={formatWhole}
+        />
+        <ComparisonRow
+          label="Cardio minutes"
+          metric={comparison.cardioMinutes}
+          format={formatWhole}
+        />
+        <ComparisonRow
+          label="Personal records"
+          metric={comparison.personalRecords}
+          format={formatWhole}
+        />
+      </View>
+    </Card>
+  );
+}
+
+function ComparisonRow({
+  label,
+  metric,
+  format,
+}: {
+  label: string;
+  metric: CycleProgressComparison['completedWorkouts'];
+  format: (value: number) => string;
+}) {
+  const sign = metric.delta > 0 ? '+' : '';
+  return (
+    <View style={styles.comparisonRow}>
+      <View style={styles.comparisonRowCopy}>
+        <Text variant="smallMedium">{label}</Text>
+        <Text variant="caption" tone="muted">
+          Previous {format(metric.previous)}
+        </Text>
+      </View>
+      <Text variant="smallMedium" style={styles.comparisonDelta}>
+        {sign}
+        {format(metric.delta)}
+      </Text>
+    </View>
+  );
+}
+
+function formatWhole(value: number): string {
+  return Math.round(value).toLocaleString();
+}
+
+function formatPercent(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatComparisonAccessibilityLabel(comparison: CycleProgressComparison): string {
+  return `Cycle comparison. Completed workouts changed by ${formatWhole(comparison.completedWorkouts.delta)}, adherence changed by ${formatPercent(comparison.completionRate.delta)}, logged sets changed by ${formatWhole(comparison.loggedSets.delta)}, training volume changed by ${formatWhole(comparison.totalTrainingVolume.delta)}, cardio changed by ${formatWhole(comparison.cardioMinutes.delta)} minutes, and personal records changed by ${formatWhole(comparison.personalRecords.delta)}.`;
+}
+
 interface MetricCardProps {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -546,6 +655,36 @@ const styles = StyleSheet.create({
   },
   historyCard: {
     marginTop: spacing.xl,
+  },
+  comparisonCard: {
+    marginTop: spacing.xl,
+  },
+  comparisonTitle: {
+    marginTop: spacing.sm,
+  },
+  comparisonNote: {
+    marginTop: spacing.xs,
+  },
+  comparisonRows: {
+    marginTop: spacing.lg,
+    gap: spacing.md,
+  },
+  comparisonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  comparisonRowCopy: {
+    flex: 1,
+    gap: spacing.xxs,
+  },
+  comparisonDelta: {
+    minWidth: 56,
+    textAlign: 'right',
   },
   exerciseSelector: {
     marginTop: spacing.xl,

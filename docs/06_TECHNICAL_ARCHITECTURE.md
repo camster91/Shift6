@@ -536,3 +536,7 @@ The #272 foundation now has an explicit `AuthProvider`/`AuthSession` contract an
 ## Coach approval application checkpoint — 2026-09-14
 
 Coach proposals now have a pure, fail-closed application boundary for precisely scoped target, exercise-substitution, and set-count changes. Applying a proposal requires a validated pending proposal and produces copy-on-write program data; ambiguous movement identity, unsupported schedule/program changes, invalid numeric values, and unsafe effort ranges are rejected without mutating the source. The Coach surface records approval together with a new private program-version revision, active-cycle pointer, and proposal/program/cycle outbox mutations in one SQLite transaction. Rejection remains a local decision with no plan mutation. A provider or account is still not connected.
+
+## Cycle comparison checkpoint — 2026-09-14
+
+Progress now resolves the immediately prior local cycle by timestamp and stable ID, derives its summary with the same deterministic fact builder, and presents cycle-over-cycle deltas for completed workouts, adherence, logged sets, training volume, cardio minutes, and personal records. The UI labels when the saved program version changed so aggregate comparisons are not presented as movement-equivalent evidence; movement history remains scoped to canonical exercise identities within the selected cycle.

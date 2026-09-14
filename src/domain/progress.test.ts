@@ -1,4 +1,5 @@
-import { buildExerciseProgress, estimateOneRepMax } from './progress';
+import { buildExerciseProgress, compareCycleProgress, estimateOneRepMax } from './progress';
+import { buildCycleProgressSummary } from './progression';
 
 describe('deterministic progress history', () => {
   it('uses a bounded Epley estimate and refuses unsupported inputs', () => {
@@ -54,5 +55,29 @@ describe('deterministic progress history', () => {
       'load',
       'estimated-one-rep-max',
     ]);
+  });
+
+  it('compares cycle facts deterministically and labels version changes', () => {
+    const previous = buildCycleProgressSummary(3, [
+      { completed: true, sets: [{ completed: true }], cardioMinutes: 10 },
+    ]);
+    const current = buildCycleProgressSummary(3, [
+      { completed: true, sets: [{ completed: true }, { completed: true }], cardioMinutes: 20 },
+      { completed: true, sets: [{ completed: true }], cardioMinutes: 5 },
+    ]);
+
+    const comparison = compareCycleProgress(
+      { programVersionId: 'version-current' },
+      current,
+      { id: 'cycle-previous', programVersionId: 'version-previous' },
+      previous,
+    );
+
+    expect(comparison.previousCycleId).toBe('cycle-previous');
+    expect(comparison.sameProgramVersion).toBe(false);
+    expect(comparison.completedWorkouts).toMatchObject({ current: 2, previous: 1, delta: 1 });
+    expect(comparison.completionRate).toMatchObject({ current: 2 / 3, previous: 1 / 3 });
+    expect(comparison.loggedSets).toMatchObject({ current: 3, previous: 1, delta: 2 });
+    expect(comparison.cardioMinutes).toMatchObject({ current: 25, previous: 10, delta: 15 });
   });
 });

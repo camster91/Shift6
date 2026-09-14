@@ -4,6 +4,7 @@ import { demoCycle, demoProgramVersion } from '../domain/fixtures/home';
 import {
   advanceTrainingCycleAfterCompletedWorkout,
   getCompletedRequiredWorkoutCount,
+  getPreviousTrainingCycle,
   saveTrainingCycle,
 } from './cycleRepository';
 
@@ -102,5 +103,34 @@ describe('advanceTrainingCycleAfterCompletedWorkout', () => {
 
     expect(calls[1]?.sql).toContain('workout_id IN (?)');
     expect(calls[1]?.params).toEqual(['cycle-1', 1, 'required-workout']);
+  });
+});
+
+describe('getPreviousTrainingCycle', () => {
+  it('resolves the immediately prior cycle by timestamp and stable ID', async () => {
+    const database = {
+      getFirstAsync: async (sql: string, ...params: unknown[]) => {
+        expect(sql).toContain('started_at < ? OR (started_at = ? AND id < ?)');
+        expect(params).toEqual([
+          demoCycle.userId,
+          demoCycle.startedAt,
+          demoCycle.startedAt,
+          demoCycle.id,
+        ]);
+        return {
+          id: 'cycle-previous',
+          user_id: demoCycle.userId,
+          program_version_id: 'version-previous',
+          status: 'complete',
+          current_week: 6,
+          started_at: '2026-08-01T12:00:00.000Z',
+          weeks_json: JSON.stringify(demoCycle.weeks),
+        };
+      },
+    } as unknown as SQLiteDatabase;
+
+    await expect(getPreviousTrainingCycle(database, demoCycle.userId, demoCycle)).resolves.toEqual(
+      expect.objectContaining({ id: 'cycle-previous', status: 'complete' }),
+    );
   });
 });

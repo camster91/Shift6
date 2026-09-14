@@ -21,21 +21,34 @@ export async function saveWorkoutSession(
   database: SQLiteDatabase,
   session: WorkoutSession,
 ): Promise<void> {
-  await database.runAsync(
-    `INSERT OR IGNORE INTO workout_sessions
-      (id, cycle_id, workout_id, program_version_id, workout_focus, status, started_at,
-       completed_at, is_offline)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-    session.id,
-    session.cycleId,
-    session.workoutId,
-    session.programVersionId,
-    session.workoutFocus,
-    session.status,
-    session.startedAt,
-    session.completedAt ?? null,
-    session.isOffline ? 1 : 0,
-  );
+  await database.withTransactionAsync(async () => {
+    await database.runAsync(
+      `INSERT OR IGNORE INTO workout_sessions
+        (id, cycle_id, workout_id, program_version_id, workout_focus, status, started_at,
+         completed_at, is_offline)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      session.id,
+      session.cycleId,
+      session.workoutId,
+      session.programVersionId,
+      session.workoutFocus,
+      session.status,
+      session.startedAt,
+      session.completedAt ?? null,
+      session.isOffline ? 1 : 0,
+    );
+    await database.runAsync(
+      `INSERT OR IGNORE INTO sync_outbox
+        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?);`,
+      `outbox-workout-session-${session.id}`,
+      `workout-session:${session.id}`,
+      'workout-session',
+      session.id,
+      JSON.stringify(session),
+      session.startedAt,
+    );
+  });
 }
 
 /**

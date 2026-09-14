@@ -1,7 +1,12 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { CompletedSet } from '../domain/types';
-import { completeWorkoutSession, getCompletedSets, saveCompletedSet } from './workoutRepository';
+import {
+  completeWorkoutSession,
+  getCompletedSets,
+  saveCompletedSet,
+  saveWorkoutSession,
+} from './workoutRepository';
 
 const completedSet: CompletedSet = {
   id: 'set-1',
@@ -93,5 +98,38 @@ describe('saveCompletedSet', () => {
       completeWorkoutSession(database, 'session-1', '2026-09-13T12:30:00.000Z'),
     ).resolves.toBeUndefined();
     expect(calls).toEqual([['2026-09-13T12:30:00.000Z', 'session-1']]);
+  });
+});
+
+describe('saveWorkoutSession', () => {
+  it('persists the session and its sync mutation atomically', async () => {
+    const calls: string[] = [];
+    const database = {
+      runAsync: async (sql: string) => {
+        calls.push(sql);
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      withTransactionAsync: async (callback: () => Promise<void>) => {
+        calls.push('BEGIN TRANSACTION');
+        await callback();
+        calls.push('COMMIT TRANSACTION');
+      },
+    } as unknown as SQLiteDatabase;
+
+    await saveWorkoutSession(database, {
+      id: 'session-1',
+      cycleId: 'cycle-1',
+      workoutId: 'workout-1',
+      programVersionId: 'program-version-1',
+      workoutFocus: 'strength',
+      status: 'in-progress',
+      startedAt: '2026-09-13T12:00:00.000Z',
+      isOffline: true,
+    });
+
+    expect(calls[0]).toBe('BEGIN TRANSACTION');
+    expect(calls[1]).toContain('INSERT OR IGNORE INTO workout_sessions');
+    expect(calls[2]).toContain('INSERT OR IGNORE INTO sync_outbox');
+    expect(calls[3]).toBe('COMMIT TRANSACTION');
   });
 });

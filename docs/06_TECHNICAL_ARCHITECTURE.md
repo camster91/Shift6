@@ -229,7 +229,7 @@ The initial rebuild branch implements this architecture as a small, native-first
 - Expo SDK 57, React Native 0.86, React 19, TypeScript, Expo Router, and the New Architecture-compatible dependency set are the current mobile baseline.
 - `src/design/tokens.ts` is the first implementation token source. It mirrors the documented colour, type, spacing, radius, motion, icon-size, touch-target, elevation, and semantic-state vocabulary. Elevation uses React Native's cross-platform `boxShadow` form. A system sans fallback is used until the Figma font decision and licensed font asset are approved.
 - `src/components/ui/` contains the first internal component layer. `BottomNavigation` implements the planned black floating capsule; temporary Ionicons provide semantic fallbacks while the original SHIFT6 icon family and provenance pipeline are produced under #271.
-- Native builds mount `SQLiteProvider` through `src/db/LocalDatabaseProvider.tsx`. `src/db/migrations.ts` owns versioned schema changes, and `src/db/workoutRepository.ts` persists a completed set and its idempotent sync-outbox mutation in one transaction. The success UI must be downstream of that transaction when the active workout is implemented. Workout sessions also snapshot focus so later progress aggregation can distinguish cardio from strength without consulting mutable program data.
+- Native builds mount `SQLiteProvider` through `src/db/LocalDatabaseProvider.tsx`. `src/db/migrations.ts` owns versioned schema changes, and `src/db/workoutRepository.ts` persists a workout session or completed set with its idempotent sync-outbox mutation in one transaction. The success UI must be downstream of that transaction when the active workout is implemented. Workout sessions also snapshot focus so later progress aggregation can distinguish cardio from strength without consulting mutable program data.
 - `LocalDatabaseProvider.web.tsx` intentionally makes web a non-persistent preview surface. It prevents the current SDK 57 SQLite WASM worker packaging gap from blocking UI smoke tests and must not be treated as workout durability evidence.
 - `src/domain/types.ts` uses stable string IDs, ISO timestamps, explicit program versions, cycle snapshots, immutable completed-session records, and a program-specific `CycleModel.weekSixMeaning`.
 - `src/services/contracts.ts` exposes replaceable `BackendClient`, `CoachGateway`, and privacy-safe analytics contracts. No backend endpoint, AI provider, credential, or cloud mutation is included in this foundation increment.
@@ -285,3 +285,14 @@ The first progress read boundary now derives the scorecard from the same local r
 - the Progress tab resolves the active persisted cycle and renders local facts, while the web target continues to show an explicitly non-persistent preview.
 
 This checkpoint does not yet calculate personal records, advance cycle weeks, reconcile sync outbox rows, or produce the full six-week review. Those require additional domain events and later vertical-slice increments.
+
+## Sync outbox implementation checkpoint — 2026-09-13
+
+The local/cloud handoff now has an explicit provider boundary without introducing a backend vendor:
+
+- `saveWorkoutSession` and `saveCompletedSet` each enqueue an idempotency-keyed mutation in the same SQLite transaction as the local write;
+- `getPendingSyncMutations` exposes stable creation order and parses the stored payload only at the sync boundary;
+- `flushSyncOutbox` deletes only explicitly acknowledged rows, records rejected or unresolved rows for retry, and retains every mutation when the backend is unavailable;
+- `BackendClient` remains the replaceable service contract, so network reachability, authentication, background scheduling, and a concrete backend can be added without changing domain calculations or workout logging.
+
+No network call is made by the active workout, and no sync provider or credential is included. Background execution, conflict resolution, auth, and native offline/reconnect proof remain release gates.

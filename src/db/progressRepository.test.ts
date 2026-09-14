@@ -9,44 +9,62 @@ import {
 describe('getCycleProgressSummary', () => {
   it('maps local sessions and completed sets into deterministic cycle facts', async () => {
     const database = {
-      getAllAsync: async (sql: string) =>
-        !sql.includes('completed_sets.session_id')
-          ? [
-              {
-                id: 'session-1',
-                status: 'complete',
-                started_at: '2026-09-13T12:00:00.000Z',
-                completed_at: '2026-09-13T12:30:00.000Z',
-                workout_focus: 'strength',
-              },
-              {
-                id: 'session-2',
-                status: 'complete',
-                started_at: '2026-09-14T12:00:00.000Z',
-                completed_at: '2026-09-14T12:15:00.000Z',
-                workout_focus: 'cardio',
-              },
-            ]
-          : [
-              {
-                session_id: 'session-1',
-                load: 185,
-                reps: 5,
-                duration_seconds: null,
-                distance_meters: null,
-                rpe: null,
-                rir: 2,
-              },
-              {
-                session_id: 'session-2',
-                load: null,
-                reps: null,
-                duration_seconds: 900,
-                distance_meters: 3000,
-                rpe: 7,
-                rir: null,
-              },
-            ],
+      getAllAsync: async (sql: string) => {
+        if (sql.includes('workout_check_ins')) {
+          return [
+            { session_id: 'session-1', perceived_exertion: 4, discomfort_reported: 1 },
+            { session_id: 'session-2', perceived_exertion: 3, discomfort_reported: 0 },
+          ];
+        }
+        if (sql.includes('completed_sets.session_id')) {
+          return [
+            {
+              session_id: 'session-1',
+              exercise_id: 'exercise-back-squat',
+              workout_exercise_id: 'workout-exercise-squat',
+              workout_id: 'workout-1',
+              version_json: null,
+              completed_at: '2026-09-13T12:05:00.000Z',
+              load: 185,
+              reps: 5,
+              duration_seconds: null,
+              distance_meters: null,
+              rpe: null,
+              rir: 2,
+            },
+            {
+              session_id: 'session-2',
+              exercise_id: null,
+              workout_exercise_id: 'workout-exercise-bike',
+              workout_id: 'workout-2',
+              version_json: null,
+              completed_at: '2026-09-14T12:05:00.000Z',
+              load: null,
+              reps: null,
+              duration_seconds: 900,
+              distance_meters: 3000,
+              rpe: 7,
+              rir: null,
+            },
+          ];
+        }
+        return [
+          {
+            id: 'session-1',
+            status: 'complete',
+            started_at: '2026-09-13T12:00:00.000Z',
+            completed_at: '2026-09-13T12:30:00.000Z',
+            workout_focus: 'strength',
+          },
+          {
+            id: 'session-2',
+            status: 'complete',
+            started_at: '2026-09-14T12:00:00.000Z',
+            completed_at: '2026-09-14T12:15:00.000Z',
+            workout_focus: 'cardio',
+          },
+        ];
+      },
     } as unknown as SQLiteDatabase;
 
     await expect(getCycleProgressSummary(database, 'cycle-1', 18)).resolves.toMatchObject({
@@ -57,6 +75,13 @@ describe('getCycleProgressSummary', () => {
         totalTrainingVolume: 925,
         cardioMinutes: 15,
         averageSessionDurationMinutes: 22.5,
+        averageReportedEffort: 3.5,
+        discomfortFlags: 1,
+        personalRecordIds: [
+          'record-exercise-back-squat-load-session-1',
+          'record-exercise-back-squat-reps-session-1',
+          'record-exercise-back-squat-estimated-one-rep-max-session-1',
+        ],
       },
       loggedSetCount: 2,
     });

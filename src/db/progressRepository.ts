@@ -21,12 +21,23 @@ interface WorkoutSessionProgressRow {
 
 interface CompletedSetProgressRow {
   session_id: string;
+  exercise_id: string | null;
+  workout_exercise_id: string;
+  workout_id: string;
+  version_json: string | null;
+  completed_at: string;
   load: number | null;
   reps: number | null;
   duration_seconds: number | null;
   distance_meters: number | null;
   rpe: number | null;
   rir: number | null;
+}
+
+interface WorkoutCheckInProgressRow {
+  session_id: string;
+  perceived_exertion: number | null;
+  discomfort_reported: number;
 }
 
 interface ExerciseProgressRow {
@@ -131,14 +142,28 @@ async function getCycleReviewSessions(
     cycleId,
   );
   const setRows = await database.getAllAsync<CompletedSetProgressRow>(
-    `SELECT completed_sets.session_id, completed_sets.load, completed_sets.reps,
+    `SELECT completed_sets.session_id, completed_sets.exercise_id,
+            completed_sets.workout_exercise_id, completed_sets.load, completed_sets.reps,
             completed_sets.duration_seconds, completed_sets.distance_meters,
-            completed_sets.rpe, completed_sets.rir
+            completed_sets.rpe, completed_sets.rir, completed_sets.completed_at,
+            workout_sessions.workout_id,
+            user_program_versions.version_json
        FROM completed_sets
        INNER JOIN workout_sessions
          ON workout_sessions.id = completed_sets.session_id
+       LEFT JOIN user_program_versions
+         ON user_program_versions.id = workout_sessions.program_version_id
       WHERE workout_sessions.cycle_id = ?
       ORDER BY completed_sets.session_id, completed_sets.set_number;`,
+    cycleId,
+  );
+  const checkInRows = await database.getAllAsync<WorkoutCheckInProgressRow>(
+    `SELECT workout_check_ins.session_id, workout_check_ins.perceived_exertion,
+            workout_check_ins.discomfort_reported
+       FROM workout_check_ins
+       INNER JOIN workout_sessions
+         ON workout_sessions.id = workout_check_ins.session_id
+      WHERE workout_sessions.cycle_id = ?;`,
     cycleId,
   );
 
@@ -157,8 +182,15 @@ async function getCycleReviewSessions(
     setsBySession.set(row.session_id, sessionSets);
   }
 
+  const checkInsBySession = new Map(checkInRows.map((row) => [row.session_id, row]));
+  const personalRecordsBySession = buildCyclePersonalRecords(
+    setRows,
+    new Set(sessionRows.filter((row) => row.status === 'complete').map((row) => row.id)),
+  );
+
   return sessionRows.map((row) => {
     const sets = setsBySession.get(row.id) ?? [];
+    const checkIn = checkInsBySession.get(row.id);
     const cardioMinutes =
       row.workout_focus === 'cardio'
         ? sets.reduce((total, set) => total + (set.durationSeconds ?? 0), 0) / 60
@@ -168,9 +200,56 @@ async function getCycleReviewSessions(
       completed: row.status === 'complete',
       durationMinutes: getDurationMinutes(row.started_at, row.completed_at),
       cardioMinutes,
+      effort: asReportedEffort(checkIn?.perceived_exertion),
+      discomfortFlag: checkIn?.discomfort_reported === 1,
+      personalRecordIds: personalRecordsBySession.get(row.id) ?? [],
       sets,
     };
   });
+}
+
+function buildCyclePersonalRecords(
+  rows: readonly CompletedSetProgressRow[],
+  completedSessionIds: ReadonlySet<string>,
+): Map<string, string[]> {
+  const setsByExercise = new Map<
+    string,
+    Array<{
+      sessionId: string;
+      exerciseId: string;
+      completedAt: string;
+      load?: number;
+      reps?: number;
+    }>
+  >();
+
+  for (const row of rows) {
+    if (!completedSessionIds.has(row.session_id)) continue;
+    const exerciseId = row.exercise_id ?? resolveLegacyExerciseId(row);
+    if (!exerciseId) continue;
+
+    const exerciseSets = setsByExercise.get(exerciseId) ?? [];
+    exerciseSets.push({
+      sessionId: row.session_id,
+      exerciseId,
+      completedAt: row.completed_at ?? new Date(0).toISOString(),
+      load: row.load ?? undefined,
+      reps: row.reps ?? undefined,
+    });
+    setsByExercise.set(exerciseId, exerciseSets);
+  }
+
+  const recordsBySession = new Map<string, string[]>();
+  for (const [exerciseId, sets] of setsByExercise) {
+    const records = buildExerciseProgress(exerciseId, sets).personalRecords;
+    for (const record of records) {
+      const sessionRecords = recordsBySession.get(record.sessionId) ?? [];
+      sessionRecords.push(record.id);
+      recordsBySession.set(record.sessionId, sessionRecords);
+    }
+  }
+
+  return recordsBySession;
 }
 
 function getDurationMinutes(startedAt: string, completedAt: string | null): number | undefined {
@@ -180,4 +259,8 @@ function getDurationMinutes(startedAt: string, completedAt: string | null): numb
   return Number.isFinite(durationMilliseconds) && durationMilliseconds >= 0
     ? durationMilliseconds / 60_000
     : undefined;
+}
+
+function asReportedEffort(value: number | null | undefined): number | undefined {
+  return value !== null && value !== undefined && value >= 1 && value <= 5 ? value : undefined;
 }

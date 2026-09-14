@@ -59,7 +59,8 @@ export function assessProgramVersion(
       blockers.push(`Week ${week} needs a named cycle phase.`);
     }
   }
-  if (version.workouts.length !== program.daysPerWeek) {
+  const requiredWorkoutCount = version.workouts.filter((workout) => !workout.isOptional).length;
+  if (requiredWorkoutCount !== program.daysPerWeek) {
     blockers.push('Workout count must match the program weekly schedule.');
   }
   if (version.workouts.length === 0) blockers.push('A program version needs at least one workout.');

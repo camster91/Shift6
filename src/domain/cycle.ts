@@ -13,7 +13,9 @@ export function createTrainingCycle({
   programVersion,
   startedAt,
 }: CreateTrainingCycleInput): TrainingCycle {
-  const plannedWorkoutCount = programVersion.workouts.length;
+  const plannedWorkoutCount = programVersion.workouts.filter(
+    (workout) => !workout.isOptional,
+  ).length;
   const weeks = Array.from({ length: programVersion.cycleModel.lengthWeeks }, (_, index) => {
     const weekNumber = index + 1;
     return {

@@ -7,6 +7,8 @@ describe('SHIFT6 foundation fixtures', () => {
     expect(demoProgram.currentVersionId).toBe(demoProgramVersion.id);
     expect(demoProgramVersion.cycleModel.lengthWeeks).toBe(6);
     expect(demoProgramVersion.cycleModel.weekSixMeaning).toBe('consolidation');
+    expect(demoProgramVersion.workouts.filter((workout) => !workout.isOptional)).toHaveLength(3);
+    expect(demoProgramVersion.workouts.filter((workout) => workout.isOptional)).toHaveLength(2);
   });
 
   it('keeps the cycle and home schedule typed around real domain data', () => {

@@ -304,6 +304,8 @@ This checkpoint does not yet calculate the full personal-record set, reconcile s
 
 The next-session target surface is now covered for the Barbell 30 fixture. It is still a native-data path until a device-level workout completion and reload test can run.
 
+Barbell 30's fixture now includes two optional cardio sessions with explicit time/distance tracking. Cycle weeks still count only the three required strength workouts, so cardio can enrich progress and be completed offline without making the core strength cycle impossible to finish when a user skips an optional session.
+
 ## Exercise progress history checkpoint — 2026-09-14
 
 The next #279 progress increment adds a deterministic exercise-history read boundary:

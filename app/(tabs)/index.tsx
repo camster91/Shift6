@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   Button,
@@ -20,6 +20,7 @@ import { getUserProgramVersion } from '../../src/db/programRepository';
 import {
   demoCycle,
   demoProgram,
+  demoProgramVersion,
   demoSchedule,
   demoUser,
   demoWorkout,
@@ -30,6 +31,7 @@ export default function HomeScreen() {
   const database = useLocalDatabase();
   const [currentCycle, setCurrentCycle] = useState(demoCycle);
   const [currentProgram, setCurrentProgram] = useState(demoProgram);
+  const [currentProgramVersion, setCurrentProgramVersion] = useState(demoProgramVersion);
   const [todayWorkout, setTodayWorkout] = useState(demoWorkout);
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export default function HomeScreen() {
         );
         if (!active || !snapshot) return;
         setCurrentProgram(snapshot.program);
+        setCurrentProgramVersion(snapshot.version);
         setTodayWorkout(snapshot.version.workouts[0] ?? demoWorkout);
       })
       .catch(() => undefined);
@@ -148,42 +151,64 @@ export default function HomeScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scheduleList}
       >
-        {demoSchedule.map((entry) => (
-          <Card
-            key={entry.id}
-            tone={
-              entry.status === 'current'
-                ? 'ink'
-                : entry.category === 'cardio'
-                  ? 'blue'
-                  : entry.category === 'rest'
-                    ? 'rest'
-                    : 'white'
-            }
-            style={styles.scheduleCard}
-            accessibilityLabel={`${entry.day}, ${entry.title}, ${entry.status}`}
-          >
-            <Text variant="caption" tone={entry.status === 'current' ? 'inverse' : 'muted'}>
-              {entry.day}
-            </Text>
-            <View style={styles.scheduleIcon}>
-              <Ionicons
-                name={
-                  entry.category === 'cardio'
-                    ? 'heart-outline'
+        {demoSchedule.map((entry) => {
+          const workout = entry.workoutId
+            ? currentProgramVersion.workouts.find(
+                (candidate) =>
+                  candidate.id === entry.workoutId || candidate.dayOfWeek === dayNumber(entry.day),
+              )
+            : null;
+          const card = (
+            <Card
+              tone={
+                entry.status === 'current'
+                  ? 'ink'
+                  : entry.category === 'cardio'
+                    ? 'blue'
                     : entry.category === 'rest'
-                      ? 'moon-outline'
-                      : 'barbell-outline'
-                }
-                size={20}
-                color={entry.status === 'current' ? colors.white : colors.ink}
-              />
-            </View>
-            <Text variant="smallMedium" tone={entry.status === 'current' ? 'inverse' : 'default'}>
-              {entry.title}
-            </Text>
-          </Card>
-        ))}
+                      ? 'rest'
+                      : 'white'
+              }
+              style={styles.scheduleCard}
+            >
+              <Text variant="caption" tone={entry.status === 'current' ? 'inverse' : 'muted'}>
+                {entry.day}
+              </Text>
+              <View style={styles.scheduleIcon}>
+                <Ionicons
+                  name={
+                    entry.category === 'cardio'
+                      ? 'heart-outline'
+                      : entry.category === 'rest'
+                        ? 'moon-outline'
+                        : 'barbell-outline'
+                  }
+                  size={20}
+                  color={entry.status === 'current' ? colors.white : colors.ink}
+                />
+              </View>
+              <Text variant="smallMedium" tone={entry.status === 'current' ? 'inverse' : 'default'}>
+                {entry.title}
+              </Text>
+            </Card>
+          );
+
+          return workout ? (
+            <Pressable
+              key={entry.id}
+              accessibilityRole="button"
+              accessibilityLabel={`${entry.day}, ${entry.title}. Open workout.`}
+              onPress={() =>
+                router.push({ pathname: '/workout', params: { workoutId: workout.id } })
+              }
+              style={({ pressed }) => [pressed && styles.schedulePressed]}
+            >
+              {card}
+            </Pressable>
+          ) : (
+            <View key={entry.id}>{card}</View>
+          );
+        })}
       </ScrollView>
 
       <Card tone="white" style={styles.attentionCard}>
@@ -258,6 +283,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     justifyContent: 'space-between',
   },
+  schedulePressed: {
+    opacity: 0.82,
+  },
   scheduleIcon: {
     width: 40,
     height: 40,
@@ -285,3 +313,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
 });
+
+function dayNumber(day: string): number {
+  return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(day) + 1;
+}

@@ -19,6 +19,7 @@ import {
   demoProgramVersion,
   demoWorkout,
 } from '../src/domain/fixtures/home';
+import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { buildNextSessionTargets } from '../src/domain/nextSession';
 import type {
   CompletedSet,
@@ -277,8 +278,17 @@ export default function ActiveWorkoutScreen() {
     const reps = parseNumber(input.reps);
     const durationSeconds = parseNumber(input.duration);
     const distanceMeters = parseNumber(input.distance);
+    const trackingType = getTrackingType(workoutExercise.exerciseId);
     if (target?.reps !== undefined && reps === undefined) {
       setError(`Enter the reps completed for set ${setNumber} before marking it complete.`);
+      return;
+    }
+    if (requiresDuration(trackingType, target) && durationSeconds === undefined) {
+      setError(`Enter the time completed for set ${setNumber} before marking it complete.`);
+      return;
+    }
+    if (requiresDistance(trackingType, target) && distanceMeters === undefined) {
+      setError(`Enter the distance completed for set ${setNumber} before marking it complete.`);
       return;
     }
 
@@ -461,26 +471,54 @@ export default function ActiveWorkoutScreen() {
                       {targetSummary(targetOverrides[workoutExercise.id] ?? workoutSet.target)}
                     </Text>
                   </View>
-                  <TextInput
-                    accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} load`}
-                    editable={!completed || editing}
-                    keyboardType="decimal-pad"
-                    onChangeText={(value) => updateValue(key, 'load', value)}
-                    placeholder="Load"
-                    placeholderTextColor={colors.inkMuted}
-                    style={styles.valueInput}
-                    value={values[key]?.load ?? ''}
-                  />
-                  <TextInput
-                    accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} reps`}
-                    editable={!completed || editing}
-                    keyboardType="number-pad"
-                    onChangeText={(value) => updateValue(key, 'reps', value)}
-                    placeholder="Reps"
-                    placeholderTextColor={colors.inkMuted}
-                    style={styles.valueInput}
-                    value={values[key]?.reps ?? ''}
-                  />
+                  {showsLoad(workoutExercise.exerciseId) ? (
+                    <TextInput
+                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} load`}
+                      editable={!completed || editing}
+                      keyboardType="decimal-pad"
+                      onChangeText={(value) => updateValue(key, 'load', value)}
+                      placeholder="Load"
+                      placeholderTextColor={colors.inkMuted}
+                      style={styles.valueInput}
+                      value={values[key]?.load ?? ''}
+                    />
+                  ) : null}
+                  {showsReps(workoutExercise.exerciseId, workoutSet.target) ? (
+                    <TextInput
+                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} reps`}
+                      editable={!completed || editing}
+                      keyboardType="number-pad"
+                      onChangeText={(value) => updateValue(key, 'reps', value)}
+                      placeholder="Reps"
+                      placeholderTextColor={colors.inkMuted}
+                      style={styles.valueInput}
+                      value={values[key]?.reps ?? ''}
+                    />
+                  ) : null}
+                  {showsDuration(workoutExercise.exerciseId, workoutSet.target) ? (
+                    <TextInput
+                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} duration in seconds`}
+                      editable={!completed || editing}
+                      keyboardType="number-pad"
+                      onChangeText={(value) => updateValue(key, 'duration', value)}
+                      placeholder="Seconds"
+                      placeholderTextColor={colors.inkMuted}
+                      style={styles.valueInput}
+                      value={values[key]?.duration ?? ''}
+                    />
+                  ) : null}
+                  {showsDistance(workoutExercise.exerciseId, workoutSet.target) ? (
+                    <TextInput
+                      accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId)} set ${workoutSet.setNumber} distance in meters`}
+                      editable={!completed || editing}
+                      keyboardType="decimal-pad"
+                      onChangeText={(value) => updateValue(key, 'distance', value)}
+                      placeholder="Meters"
+                      placeholderTextColor={colors.inkMuted}
+                      style={styles.valueInput}
+                      value={values[key]?.distance ?? ''}
+                    />
+                  ) : null}
                   <Button
                     label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
                     variant={completed && !editing ? 'secondary' : 'primary'}
@@ -654,6 +692,61 @@ function formatExerciseName(exerciseId: string) {
     .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
+}
+
+function getTrackingType(exerciseId: string) {
+  return (
+    foundationalExercises.find((exercise) => exercise.id === exerciseId)?.trackingType ?? 'reps'
+  );
+}
+
+function showsLoad(exerciseId: string): boolean {
+  const trackingType = getTrackingType(exerciseId);
+  return trackingType === 'reps' || trackingType === 'custom';
+}
+
+function showsReps(exerciseId: string, target: SetTarget): boolean {
+  return getTrackingType(exerciseId) === 'reps' || target.reps !== undefined;
+}
+
+function showsDuration(exerciseId: string, target: SetTarget): boolean {
+  const trackingType = getTrackingType(exerciseId);
+  return (
+    trackingType === 'time' ||
+    trackingType === 'duration-and-distance' ||
+    target.durationSeconds !== undefined
+  );
+}
+
+function showsDistance(exerciseId: string, target: SetTarget): boolean {
+  const trackingType = getTrackingType(exerciseId);
+  return (
+    trackingType === 'distance' ||
+    trackingType === 'duration-and-distance' ||
+    target.distanceMeters !== undefined
+  );
+}
+
+function requiresDuration(
+  trackingType: ReturnType<typeof getTrackingType>,
+  target: SetTarget | undefined,
+): boolean {
+  return (
+    trackingType === 'time' ||
+    trackingType === 'duration-and-distance' ||
+    target?.durationSeconds !== undefined
+  );
+}
+
+function requiresDistance(
+  trackingType: ReturnType<typeof getTrackingType>,
+  target: SetTarget | undefined,
+): boolean {
+  return (
+    trackingType === 'distance' ||
+    trackingType === 'duration-and-distance' ||
+    target?.distanceMeters !== undefined
+  );
 }
 
 const styles = StyleSheet.create({

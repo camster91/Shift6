@@ -169,6 +169,7 @@ export interface Workout {
   dayOfWeek: number;
   focus: 'strength' | 'cardio' | 'mobility' | 'conditioning' | 'recovery' | 'mixed';
   estimatedDurationMinutes: number;
+  isOptional?: boolean;
   equipmentIds: EntityId[];
   exercises: WorkoutExercise[];
 }

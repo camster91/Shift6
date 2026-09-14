@@ -13,6 +13,7 @@ export interface WeeklyScheduleEntry {
   id: string;
   day: string;
   title: string;
+  workoutId?: string;
   category: 'strength' | 'cardio' | 'recovery' | 'rest';
   status: 'complete' | 'current' | 'upcoming' | 'rest';
 }
@@ -58,6 +59,14 @@ const workingSets = (prefix: string, reps: number | { min: number; max: number }
     setNumber: index + 1,
     target: { reps, rir: 2 },
     restSeconds: 120,
+  }));
+
+const timedSets = (prefix: string, durationSeconds: number, count = 1) =>
+  Array.from({ length: count }, (_, index) => ({
+    id: `${prefix}-set-${index + 1}`,
+    setNumber: index + 1,
+    target: { durationSeconds },
+    restSeconds: 30,
   }));
 
 const strengthA: Workout = {
@@ -166,6 +175,46 @@ const strengthC: Workout = {
   ],
 };
 
+const cardioA: Workout = {
+  id: 'workout-barbell-30-cardio-a',
+  programVersionId: 'program-version-barbell-30-v1',
+  title: 'Cardio A',
+  dayOfWeek: 2,
+  focus: 'cardio',
+  estimatedDurationMinutes: 30,
+  isOptional: true,
+  equipmentIds: ['equipment-bike'],
+  exercises: [
+    {
+      id: 'workout-exercise-cardio-a-bike',
+      exerciseId: 'exercise-stationary-bike',
+      order: 1,
+      section: 'cardio',
+      sets: timedSets('cardio-a-bike', 1800),
+    },
+  ],
+};
+
+const cardioB: Workout = {
+  id: 'workout-barbell-30-cardio-b',
+  programVersionId: 'program-version-barbell-30-v1',
+  title: 'Cardio B',
+  dayOfWeek: 4,
+  focus: 'cardio',
+  estimatedDurationMinutes: 30,
+  isOptional: true,
+  equipmentIds: ['equipment-bike'],
+  exercises: [
+    {
+      id: 'workout-exercise-cardio-b-bike',
+      exerciseId: 'exercise-stationary-bike',
+      order: 1,
+      section: 'cardio',
+      sets: timedSets('cardio-b-bike', 1800),
+    },
+  ],
+};
+
 export const demoProgram: Program = {
   id: 'program-barbell-30',
   slug: 'barbell-30',
@@ -200,7 +249,7 @@ export const demoProgramVersion: ProgramVersion = {
       6: 'Consolidate and review',
     },
   },
-  workouts: [strengthA, strengthB, strengthC],
+  workouts: [strengthA, cardioA, strengthB, cardioB, strengthC],
   progressionRuleIds: ['rule-barbell-30-double-progression'],
   createdAt: now,
 };
@@ -230,11 +279,46 @@ export const demoCycle: TrainingCycle = {
 export const demoWorkout = strengthA;
 
 export const demoSchedule: WeeklyScheduleEntry[] = [
-  { id: 'schedule-mon', day: 'Mon', title: 'Strength A', category: 'strength', status: 'current' },
-  { id: 'schedule-tue', day: 'Tue', title: 'Cardio', category: 'cardio', status: 'upcoming' },
-  { id: 'schedule-wed', day: 'Wed', title: 'Strength B', category: 'strength', status: 'upcoming' },
-  { id: 'schedule-thu', day: 'Thu', title: 'Cardio', category: 'cardio', status: 'upcoming' },
-  { id: 'schedule-fri', day: 'Fri', title: 'Strength C', category: 'strength', status: 'upcoming' },
+  {
+    id: 'schedule-mon',
+    day: 'Mon',
+    title: 'Strength A',
+    workoutId: 'workout-barbell-30-strength-a',
+    category: 'strength',
+    status: 'current',
+  },
+  {
+    id: 'schedule-tue',
+    day: 'Tue',
+    title: 'Cardio',
+    workoutId: 'workout-barbell-30-cardio-a',
+    category: 'cardio',
+    status: 'upcoming',
+  },
+  {
+    id: 'schedule-wed',
+    day: 'Wed',
+    title: 'Strength B',
+    workoutId: 'workout-barbell-30-strength-b',
+    category: 'strength',
+    status: 'upcoming',
+  },
+  {
+    id: 'schedule-thu',
+    day: 'Thu',
+    title: 'Cardio',
+    workoutId: 'workout-barbell-30-cardio-b',
+    category: 'cardio',
+    status: 'upcoming',
+  },
+  {
+    id: 'schedule-fri',
+    day: 'Fri',
+    title: 'Strength C',
+    workoutId: 'workout-barbell-30-strength-c',
+    category: 'strength',
+    status: 'upcoming',
+  },
   { id: 'schedule-sat', day: 'Sat', title: 'Active', category: 'recovery', status: 'upcoming' },
   { id: 'schedule-sun', day: 'Sun', title: 'Rest', category: 'rest', status: 'rest' },
 ];

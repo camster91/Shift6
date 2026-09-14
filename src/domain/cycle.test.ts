@@ -27,6 +27,7 @@ describe('training cycle creation', () => {
       phase: 'Consolidate and review',
       status: 'upcoming',
     });
+    expect(cycle.weeks[0]?.plannedWorkoutCount).toBe(3);
   });
 
   it('advances to the next week only when the current week is complete', () => {

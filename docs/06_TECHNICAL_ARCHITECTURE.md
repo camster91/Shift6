@@ -385,6 +385,8 @@ The catalogue surface now links each foundational record to an exercise-detail r
 
 The active workout now reads user-owned custom exercise records from SQLite and resolves their tracking type before rendering fields. Unknown legacy IDs fall back from the stored set target to a conservative reps/time/distance shape; custom names and tracking metadata therefore do not require a network request or a second hardcoded catalogue.
 
+Onboarding equipment selection now renders the full 23-item canonical equipment taxonomy instead of a demo-only subset. The saved profile still stores stable equipment IDs, so recommendation and substitution logic consume the same records as the catalogue and active workout surfaces.
+
 `src/domain/contentReadiness.ts` now separates structural cycle readiness from public publication readiness. A complete draft record can support development and local fixture workouts, but draft technique/media status remains a publication warning; missing IDs, invalid six-week phases, empty workouts, retired exercises, and incomplete safety fields are blockers.
 
 ## Program library metadata checkpoint — 2026-09-14

@@ -27,7 +27,8 @@ import {
   toOnboardingProfile,
   unitOptions,
 } from '../src/domain/onboarding';
-import { demoEquipment, demoProgram } from '../src/domain/fixtures/home';
+import { demoProgram } from '../src/domain/fixtures/home';
+import { equipmentCatalog } from '../src/domain/equipment';
 import { useLocalDatabase } from '../src/db/context';
 import { getOnboardingProfile, saveOnboardingProfile } from '../src/db/profileRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
@@ -295,7 +296,7 @@ function renderStep(
           title="What can you train with?"
           subtitle="Select everything you can access. Equipment drives program fit and substitutions."
         >
-          {demoEquipment.map((equipment) => (
+          {equipmentCatalog.map((equipment) => (
             <OptionCard
               key={equipment.id}
               label={equipment.name}

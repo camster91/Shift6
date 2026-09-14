@@ -182,6 +182,13 @@ export default function ProfileScreen() {
         onPress={() => router.push('/onboarding')}
         style={styles.editSetupButton}
       />
+      <Button
+        label="Manage equipment"
+        variant="secondary"
+        icon={<Ionicons name="fitness-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/equipment')}
+        style={styles.manageEquipmentButton}
+      />
 
       <Card tone="blue" style={styles.settingsCard}>
         <Ionicons name="shield-checkmark-outline" size={24} color={colors.ink} />
@@ -315,6 +322,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   healthButton: {
+    marginTop: spacing.md,
+  },
+  manageEquipmentButton: {
     marginTop: spacing.md,
   },
   notificationsButton: {

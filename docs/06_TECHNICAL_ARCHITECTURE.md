@@ -726,6 +726,14 @@ route resolves and snapshots that version through the same copy-on-write path, r
 for the Barbell 30 ID in the screen. The catalogue still exposes only Barbell 30 as startable; this
 boundary makes future reviewed versions additive and keeps metadata-only entries honest.
 
+## Equipment manager checkpoint — 2026-09-14
+
+`app/equipment.tsx` provides a searchable, accessible equipment inventory editor from Profile. It
+loads the persisted profile, updates only the user-owned equipment IDs, and saves through the
+existing atomic profile/equipment/outbox repository. Web remains an explicit non-persistent
+preview. Programs and substitution ranking continue to consume the same profile boundary rather
+than maintaining a second equipment state.
+
 ## Sync review surface checkpoint — 2026-09-14
 
 `getPendingSyncIssues` exposes only local outbox metadata and sanitized issue classification, not

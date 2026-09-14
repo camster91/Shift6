@@ -278,4 +278,9 @@ same copy-on-write cycle-start path for whichever reviewed entry is selected. Ba
 only startable launch program; the other 19 entries remain metadata-only until their full content
 and safety review are complete.
 
+Profile now provides a dedicated searchable equipment manager. Changes replace the user-scoped
+equipment rows and profile snapshot atomically, remain local-first, and feed the existing program
+recommendation and substitution boundaries. Exact equipment-location metadata and custom equipment
+creation remain later #273/#274 work.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

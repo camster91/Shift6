@@ -393,6 +393,8 @@ Onboarding equipment selection now renders the full 23-item canonical equipment 
 
 The Programs surface now carries metadata for the planned 20-program launch library. Barbell 30 is the only published, startable version in this increment; the other 19 entries are explicitly `metadata-draft` until their workouts, progression rules, substitutions, safety review, and six-week versions are complete. This prevents a catalogue card from implying that a plan is ready when its executable program version does not yet exist.
 
+The Programs tab now consumes the persisted onboarding profile when native SQLite is available and falls back to the local demo profile on the web preview. It uses the deterministic `recommendPrograms` domain function to rank compatible metadata, exposes real day/session-length filters, and keeps non-published entries visibly non-startable. Recommendation copy is derived from the same goals, experience, schedule, and equipment inputs used by the domain ranking; no network or AI call is involved.
+
 ## Custom builder implementation checkpoint — 2026-09-14
 
 The first #275 editing surface now supports a safe user-owned draft path:

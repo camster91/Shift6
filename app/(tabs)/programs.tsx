@@ -1,12 +1,128 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Button, Card, Chip, ProgramCard, Screen, Text } from '../../src/components/ui';
-import { getProgramCatalogueStatusLabel, programLibrary } from '../../src/domain/programLibrary';
+import { Button, Card, Chip, EmptyState, ProgramCard, Screen, Text } from '../../src/components/ui';
+import { getOnboardingProfile } from '../../src/db/profileRepository';
+import { useLocalDatabase } from '../../src/db/context';
+import { demoUser } from '../../src/domain/fixtures/home';
+import { recommendPrograms } from '../../src/domain/onboarding';
+import {
+  getProgramCatalogueStatusLabel,
+  programLibrary,
+  programLibraryPrograms,
+} from '../../src/domain/programLibrary';
 import { colors, spacing } from '../../src/design/tokens';
 
 export default function ProgramsScreen() {
+  const database = useLocalDatabase();
+  const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
+  const [profilePreferences, setProfilePreferences] = useState({
+    goals: demoUser.goals,
+    experience: demoUser.experience,
+    equipmentIds: demoUser.equipmentIds,
+    trainingDaysPerWeek: demoUser.trainingDaysPerWeek,
+    preferredSessionMinutes: demoUser.preferredSessionMinutes,
+  });
+  const [recommendedOnly, setRecommendedOnly] = useState(true);
+  const [daysOnly, setDaysOnly] = useState(false);
+  const [minutesOnly, setMinutesOnly] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!database) {
+        setProfileDisplayName(null);
+        setProfilePreferences({
+          goals: demoUser.goals,
+          experience: demoUser.experience,
+          equipmentIds: demoUser.equipmentIds,
+          trainingDaysPerWeek: demoUser.trainingDaysPerWeek,
+          preferredSessionMinutes: demoUser.preferredSessionMinutes,
+        });
+        return undefined;
+      }
+
+      let active = true;
+      void getOnboardingProfile(database, 'guest-user')
+        .then((profile) => {
+          if (!active) return;
+          if (!profile) {
+            setProfileDisplayName(null);
+            setProfilePreferences({
+              goals: demoUser.goals,
+              experience: demoUser.experience,
+              equipmentIds: demoUser.equipmentIds,
+              trainingDaysPerWeek: demoUser.trainingDaysPerWeek,
+              preferredSessionMinutes: demoUser.preferredSessionMinutes,
+            });
+            return;
+          }
+
+          setProfileDisplayName(profile.user.displayName);
+          setProfilePreferences({
+            goals: profile.user.goals,
+            experience: profile.user.experience,
+            equipmentIds: profile.user.equipmentIds,
+            trainingDaysPerWeek: profile.user.trainingDaysPerWeek,
+            preferredSessionMinutes: profile.user.preferredSessionMinutes,
+          });
+        })
+        .catch(() => undefined);
+
+      return () => {
+        active = false;
+      };
+    }, [database]),
+  );
+
+  const recommendations = useMemo(
+    () => recommendPrograms(programLibraryPrograms, profilePreferences),
+    [profilePreferences],
+  );
+
+  const filteredRecommendations = useMemo(() => {
+    const filtered = recommendations.filter(({ program }) => {
+      if (daysOnly && program.daysPerWeek !== profilePreferences.trainingDaysPerWeek) {
+        return false;
+      }
+      if (
+        minutesOnly &&
+        program.sessionLengthMinutes !== profilePreferences.preferredSessionMinutes
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    if (!recommendedOnly) {
+      return [...filtered].sort((left, right) =>
+        left.program.title.localeCompare(right.program.title),
+      );
+    }
+
+    return filtered;
+  }, [daysOnly, minutesOnly, profilePreferences, recommendedOnly, recommendations]);
+
+  const featuredRecommendations = useMemo(() => {
+    if (!recommendedOnly) return filteredRecommendations.slice(0, 3);
+
+    const compatible = filteredRecommendations.filter(
+      (recommendation) => recommendation.compatible,
+    );
+    return (compatible.length > 0 ? compatible : filteredRecommendations).slice(0, 3);
+  }, [filteredRecommendations, recommendedOnly]);
+
+  const featuredIds = new Set(featuredRecommendations.map(({ program }) => program.id));
+  const additionalRecommendations = filteredRecommendations.filter(
+    ({ program }) => !featuredIds.has(program.id),
+  );
+
+  const catalogueStatusByProgramId = useMemo(
+    () => new Map(programLibrary.map((entry) => [entry.program.id, entry.status])),
+    [],
+  );
+
   return (
     <Screen>
       <Text variant="caption" tone="muted">
@@ -20,22 +136,67 @@ export default function ProgramsScreen() {
       </Text>
 
       <View style={styles.filterRow}>
-        <Chip label="Recommended" selected />
-        <Chip label="3 days" />
-        <Chip label="30 min" />
+        <Chip
+          label="Recommended"
+          selected={recommendedOnly}
+          onPress={() => setRecommendedOnly((value) => !value)}
+        />
+        <Chip
+          label={`${profilePreferences.trainingDaysPerWeek} days`}
+          selected={daysOnly}
+          onPress={() => setDaysOnly((value) => !value)}
+        />
+        <Chip
+          label={`${profilePreferences.preferredSessionMinutes} min`}
+          selected={minutesOnly}
+          onPress={() => setMinutesOnly((value) => !value)}
+        />
       </View>
+
+      <Text variant="small" tone="muted" style={styles.recommendationNote}>
+        {profileDisplayName
+          ? `Recommendations use ${profileDisplayName}'s goals, experience, schedule, and equipment.`
+          : 'Recommendations use the local demo profile until onboarding is completed.'}
+      </Text>
 
       <Text variant="h2" style={styles.sectionTitle}>
         For your equipment
       </Text>
-      {programLibrary.slice(0, 1).map((entry) => (
-        <ProgramCard
-          key={entry.program.id}
-          program={entry.program}
-          statusLabel={getProgramCatalogueStatusLabel(entry.status)}
-          onPress={() => router.push('/program')}
+      {featuredRecommendations.length === 0 ? (
+        <EmptyState
+          title="No programs match these filters"
+          message="Clear a filter to see the full launch catalogue and its equipment requirements."
+          actionLabel="Show all programs"
+          onAction={() => {
+            setRecommendedOnly(false);
+            setDaysOnly(false);
+            setMinutesOnly(false);
+          }}
+          icon={<Ionicons name="options-outline" size={28} color={colors.ink} />}
         />
-      ))}
+      ) : (
+        featuredRecommendations.map((recommendation) => {
+          const entryStatus = catalogueStatusByProgramId.get(recommendation.program.id);
+          return (
+            <View key={recommendation.program.id} style={styles.recommendationItem}>
+              <ProgramCard
+                program={recommendation.program}
+                statusLabel={entryStatus ? getProgramCatalogueStatusLabel(entryStatus) : undefined}
+                onPress={entryStatus === 'published' ? () => router.push('/program') : undefined}
+              />
+              <Text
+                variant="small"
+                tone={recommendation.compatible ? 'success' : 'warning'}
+                style={styles.recommendationReason}
+              >
+                {recommendation.compatible
+                  ? recommendation.reasons[0]
+                  : recommendation.reasons[recommendation.reasons.length - 1]}
+              </Text>
+            </View>
+          );
+        })
+      )}
 
       <Button
         label="Personalize recommendations"
@@ -65,17 +226,19 @@ export default function ProgramsScreen() {
         More ways to train
       </Text>
       <Text variant="small" tone="muted" style={styles.libraryNote}>
-        {programLibrary.length} planned launch programs. Additional versions are being built and
-        reviewed before they can start a cycle.
+        {`${additionalRecommendations.length} more matching launch program${additionalRecommendations.length === 1 ? '' : 's'}. Additional versions are being built and reviewed before they can start a cycle.`}
       </Text>
-      {programLibrary.slice(1).map((entry) => (
-        <ProgramCard
-          key={entry.program.id}
-          program={entry.program}
-          statusLabel={getProgramCatalogueStatusLabel(entry.status)}
-          style={styles.catalogueCard}
-        />
-      ))}
+      {additionalRecommendations.map((recommendation) => {
+        const entryStatus = catalogueStatusByProgramId.get(recommendation.program.id);
+        return (
+          <ProgramCard
+            key={recommendation.program.id}
+            program={recommendation.program}
+            statusLabel={entryStatus ? getProgramCatalogueStatusLabel(entryStatus) : undefined}
+            style={styles.catalogueCard}
+          />
+        );
+      })}
 
       <Card tone="mint" style={styles.foundationCard}>
         <Ionicons name="construct-outline" size={24} color={colors.ink} />
@@ -97,6 +260,9 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: spacing.md,
   },
+  recommendationNote: {
+    marginTop: spacing.md,
+  },
   filterRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -106,6 +272,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginTop: spacing.xxxl,
     marginBottom: spacing.md,
+  },
+  recommendationItem: {
+    marginBottom: spacing.md,
+  },
+  recommendationReason: {
+    marginTop: spacing.xs,
+    marginHorizontal: spacing.xs,
   },
   foundationCard: {
     marginTop: spacing.xl,

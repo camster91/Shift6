@@ -3,16 +3,18 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Platform, Share, StyleSheet, View } from 'react-native';
 
-import { Button, Card, Chip, Screen, Text } from '../../src/components/ui';
+import { Button, Card, Chip, OfflineBanner, Screen, Text } from '../../src/components/ui';
 import { equipmentCatalog } from '../../src/domain/equipment';
 import { demoUser } from '../../src/domain/fixtures/home';
 import { useLocalDatabase } from '../../src/db/context';
 import { deleteLocalUserData, exportLocalUserData } from '../../src/db/privacyRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { colors, radii, spacing } from '../../src/design/tokens';
+import { useSyncRuntime } from '../../src/services/SyncRuntimeProvider';
 
 export default function ProfileScreen() {
   const database = useLocalDatabase();
+  const syncRuntime = useSyncRuntime();
   const [user, setUser] = useState(demoUser);
   const [equipmentIds, setEquipmentIds] = useState(demoUser.equipmentIds);
   const [privacyBusy, setPrivacyBusy] = useState<'export' | 'delete' | null>(null);
@@ -38,6 +40,14 @@ export default function ProfileScreen() {
   const selectedEquipment = equipmentCatalog.filter((equipment) =>
     equipmentIds.includes(equipment.id),
   );
+  const syncStatus =
+    syncRuntime.connectivity === 'offline'
+      ? ('offline' as const)
+      : syncRuntime.state === 'syncing'
+        ? ('syncing' as const)
+        : syncRuntime.state === 'failed' || syncRuntime.state === 'partial'
+          ? ('sync-failed' as const)
+          : null;
 
   const handleExport = async () => {
     if (!database) {
@@ -114,6 +124,8 @@ export default function ProfileScreen() {
       <Text variant="body" tone="muted" style={styles.subtitle}>
         Your goals, equipment, schedule, and preferences shape the plan.
       </Text>
+
+      {syncStatus ? <OfflineBanner status={syncStatus} /> : null}
 
       <Card tone="ink" style={styles.profileCard}>
         <View style={styles.avatar}>

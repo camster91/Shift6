@@ -704,3 +704,7 @@ user's explicit `nextAction` before navigation; the builder receives a source ve
 copy-based paths and never mutates the completed cycle snapshot. The progress-copy label is
 intentionally honest: automatic cross-cycle load carryover remains a separate deterministic rule
 to design and test.
+
+The deterministic cycle suite now also walks a complete six-week Barbell 30 sequence, asserting
+that each week completes exactly once, the next current week is selected in order, and Week 6
+finishes the cycle without a universal deload or max-test assumption.

@@ -73,4 +73,27 @@ describe('training cycle creation', () => {
       completedWorkoutCount: 3,
     });
   });
+
+  it('can progress a complete six-week sequence without skipping or rewriting weeks', () => {
+    let cycle = createTrainingCycle({
+      id: 'cycle-six-week-sequence-test',
+      userId: 'guest-user',
+      programVersion: demoProgramVersion,
+      startedAt: '2026-09-14T12:00:00.000Z',
+    });
+
+    for (let week = 1; week <= 6; week += 1) {
+      cycle = advanceCycleAfterCompletedWorkout(cycle, 3);
+      expect(cycle.weeks[week - 1]).toMatchObject({
+        weekNumber: week,
+        status: 'completed',
+        completedWorkoutCount: 3,
+      });
+      if (week < 6) expect(cycle.currentWeek).toBe(week + 1);
+    }
+
+    expect(cycle.status).toBe('complete');
+    expect(cycle.currentWeek).toBe(6);
+    expect(cycle.weeks.every((week) => week.status === 'completed')).toBe(true);
+  });
 });

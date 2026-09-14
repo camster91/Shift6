@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Card, Chip, EmptyState, IconButton, Screen, Text } from '../src/components/ui';
 import { getOnboardingProfile } from '../src/db/profileRepository';
+import { getUserExercises } from '../src/db/programRepository';
 import { useLocalDatabase } from '../src/db/context';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { searchExercises } from '../src/domain/exerciseCatalog';
 import { demoUser } from '../src/domain/fixtures/home';
+import type { Exercise } from '../src/domain/types';
 import { colors, radii, spacing } from '../src/design/tokens';
 
 export default function ExerciseLibraryScreen() {
@@ -16,30 +18,46 @@ export default function ExerciseLibraryScreen() {
   const [query, setQuery] = useState('');
   const [compatibleOnly, setCompatibleOnly] = useState(true);
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
+  const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
 
-  useEffect(() => {
-    if (!database) return;
+  useFocusEffect(
+    useCallback(() => {
+      if (!database) {
+        setCustomExercises([]);
+        return undefined;
+      }
 
-    let active = true;
-    void getOnboardingProfile(database, 'guest-user')
-      .then((profile) => {
-        if (active && profile) setAvailableEquipmentIds(profile.user.equipmentIds);
-      })
-      .catch(() => undefined);
+      let active = true;
+      void Promise.all([
+        getOnboardingProfile(database, 'guest-user'),
+        getUserExercises(database, 'guest-user'),
+      ])
+        .then(([profile, exercises]) => {
+          if (!active) return;
+          if (profile) setAvailableEquipmentIds(profile.user.equipmentIds);
+          setCustomExercises(exercises);
+        })
+        .catch(() => undefined);
 
-    return () => {
-      active = false;
-    };
-  }, [database]);
+      return () => {
+        active = false;
+      };
+    }, [database]),
+  );
+
+  const availableExercises = useMemo(
+    () => [...foundationalExercises, ...customExercises],
+    [customExercises],
+  );
 
   const visibleExercises = useMemo(
     () =>
-      searchExercises(foundationalExercises, {
+      searchExercises(availableExercises, {
         query,
         availableEquipmentIds,
         compatibleOnly,
       }),
-    [availableEquipmentIds, compatibleOnly, query],
+    [availableEquipmentIds, availableExercises, compatibleOnly, query],
   );
 
   return (
@@ -81,7 +99,9 @@ export default function ExerciseLibraryScreen() {
           selected={compatibleOnly}
           onPress={() => setCompatibleOnly((value) => !value)}
         />
-        <Chip label="50 foundational records" />
+        <Chip
+          label={`${foundationalExercises.length} foundational${customExercises.length > 0 ? ` + ${customExercises.length} private` : ''}`}
+        />
       </View>
 
       <View style={styles.resultHeader}>
@@ -104,7 +124,7 @@ export default function ExerciseLibraryScreen() {
         />
       ) : (
         visibleExercises.map((exercise) => {
-          const accessibilityLabel = `${exercise.name}. ${exercise.movementPattern}. ${exercise.contentStatus === 'draft' ? 'Technique review pending.' : 'Reviewed.'}`;
+          const accessibilityLabel = `${exercise.name}. ${exercise.movementPattern}. ${exercise.isCustom ? 'Private custom movement.' : exercise.contentStatus === 'draft' ? 'Technique review pending.' : 'Reviewed.'}`;
           return (
             <Pressable
               key={exercise.id}
@@ -128,10 +148,16 @@ export default function ExerciseLibraryScreen() {
                 <Text variant="small" tone="muted" style={styles.exerciseMeta}>
                   {formatLabel(exercise.movementPattern)} · {exercise.primaryMuscles.join(', ')}
                 </Text>
-                <Text variant="caption" tone="warning" style={styles.reviewStatus}>
-                  {exercise.contentStatus === 'draft'
-                    ? 'Technique and media review pending'
-                    : 'Reviewed catalogue record'}
+                <Text
+                  variant="caption"
+                  tone={exercise.isCustom ? 'muted' : 'warning'}
+                  style={styles.reviewStatus}
+                >
+                  {exercise.isCustom
+                    ? 'Private custom movement'
+                    : exercise.contentStatus === 'draft'
+                      ? 'Technique and media review pending'
+                      : 'Reviewed catalogue record'}
                 </Text>
               </Card>
             </Pressable>

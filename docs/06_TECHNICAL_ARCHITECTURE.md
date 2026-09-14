@@ -540,3 +540,7 @@ Coach proposals now have a pure, fail-closed application boundary for precisely 
 ## Cycle comparison checkpoint — 2026-09-14
 
 Progress now resolves the immediately prior local cycle by timestamp and stable ID, derives its summary with the same deterministic fact builder, and presents cycle-over-cycle deltas for completed workouts, adherence, logged sets, training volume, cardio minutes, and personal records. The UI labels when the saved program version changed so aggregate comparisons are not presented as movement-equivalent evidence; movement history remains scoped to canonical exercise identities within the selected cycle.
+
+## User exercise catalogue checkpoint — 2026-09-14
+
+The Exercise Library and detail route now merge the foundational catalogue with user-owned custom exercise records loaded from SQLite. The library refreshes on focus so a custom movement created in the builder becomes discoverable, searchable, and equipment-filterable without duplicating catalogue logic. Custom records are labelled private and remain distinct from public technique/media review status; substitutions can use the merged local set while never implying that draft content has passed human review.

@@ -1,29 +1,41 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Card, Chip, EmptyState, IconButton, Screen, Text } from '../../src/components/ui';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
+import { getUserExercises } from '../../src/db/programRepository';
 import { useLocalDatabase } from '../../src/db/context';
 import { equipmentCatalog, findExerciseSubstitutions } from '../../src/domain/equipment';
 import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { demoUser } from '../../src/domain/fixtures/home';
+import type { Exercise } from '../../src/domain/types';
 import { colors, spacing } from '../../src/design/tokens';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const database = useLocalDatabase();
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
-  const exercise = foundationalExercises.find((candidate) => candidate.id === id);
+  const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
+  const availableExercises = useMemo(
+    () => [...foundationalExercises, ...customExercises],
+    [customExercises],
+  );
+  const exercise = availableExercises.find((candidate) => candidate.id === id);
 
   useEffect(() => {
     if (!database) return;
 
     let active = true;
-    void getOnboardingProfile(database, 'guest-user')
-      .then((profile) => {
-        if (active && profile) setAvailableEquipmentIds(profile.user.equipmentIds);
+    void Promise.all([
+      getOnboardingProfile(database, 'guest-user'),
+      getUserExercises(database, 'guest-user'),
+    ])
+      .then(([profile, exercises]) => {
+        if (!active) return;
+        if (profile) setAvailableEquipmentIds(profile.user.equipmentIds);
+        setCustomExercises(exercises);
       })
       .catch(() => undefined);
 
@@ -50,7 +62,7 @@ export default function ExerciseDetailScreen() {
 
   const substitutions = findExerciseSubstitutions(
     exercise,
-    foundationalExercises,
+    availableExercises,
     availableEquipmentIds,
     4,
   );

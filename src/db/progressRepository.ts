@@ -64,15 +64,21 @@ export async function getLatestCompletedWorkoutSets(
   database: SQLiteDatabase,
   cycleId: string,
   workoutId: string,
+  programVersionId?: string,
 ): Promise<CompletedSet[]> {
   const row = await database.getFirstAsync<{ id: string }>(
     `SELECT id
        FROM workout_sessions
-      WHERE cycle_id = ? AND workout_id = ? AND status = 'complete'
+      WHERE cycle_id = ?
+        AND workout_id = ?
+        AND status = 'complete'
+        AND (? IS NULL OR program_version_id = ?)
       ORDER BY completed_at DESC, id DESC
       LIMIT 1;`,
     cycleId,
     workoutId,
+    programVersionId ?? null,
+    programVersionId ?? null,
   );
   return row ? getCompletedSets(database, row.id) : [];
 }

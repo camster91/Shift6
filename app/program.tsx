@@ -17,6 +17,7 @@ import { useLocalDatabase } from '../src/db/context';
 import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { createTrainingCycle } from '../src/domain/cycle';
 import { demoProgram, demoProgramVersion } from '../src/domain/fixtures/home';
+import { createProgramCopy } from '../src/domain/programBuilder';
 import { saveProgramVersion } from '../src/db/programRepository';
 import { colors, spacing } from '../src/design/tokens';
 
@@ -32,14 +33,29 @@ export default function ProgramDetailScreen() {
     setError(null);
     try {
       const startedAt = new Date().toISOString();
-      const cycle = createTrainingCycle({
-        id: `cycle-guest-user-${demoProgram.id}-${Date.now()}`,
+      const programId = `program-${demoProgram.slug}-guest-user-${Date.now()}`;
+      const copy = createProgramCopy({
+        sourceProgram: demoProgram,
+        sourceVersion: demoProgramVersion,
         userId: 'guest-user',
-        programVersion: demoProgramVersion,
+        newProgramId: programId,
+        newVersionId: `${programId}-version-1`,
+        createdAt: startedAt,
+      });
+      const program = {
+        ...copy.program,
+        title: demoProgram.title,
+        slug: demoProgram.slug,
+        description: demoProgram.description,
+      };
+      const cycle = createTrainingCycle({
+        id: `cycle-guest-user-${program.id}-${Date.now()}`,
+        userId: 'guest-user',
+        programVersion: copy.version,
         startedAt,
       });
       if (database) {
-        await saveProgramVersion(database, 'guest-user', demoProgram, demoProgramVersion);
+        await saveProgramVersion(database, 'guest-user', program, copy.version);
         await saveTrainingCycle(database, cycle);
       }
       router.replace('/');

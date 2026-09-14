@@ -114,6 +114,21 @@ describe('getCycleProgressSummary', () => {
     ).resolves.toMatchObject([{ id: 'set-latest', load: 185, reps: 5 }]);
   });
 
+  it('can scope latest-set lookup to the active immutable program version', async () => {
+    const params: unknown[][] = [];
+    const database = {
+      getFirstAsync: async (_sql: string, ...values: unknown[]) => {
+        params.push(values);
+        return null;
+      },
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      getLatestCompletedWorkoutSets(database, 'cycle-1', 'workout-1', 'program-version-2'),
+    ).resolves.toEqual([]);
+    expect(params[0]).toEqual(['cycle-1', 'workout-1', 'program-version-2', 'program-version-2']);
+  });
+
   it('loads only the selected exercise history for deterministic progress points', async () => {
     const database = {
       getAllAsync: async () => [

@@ -78,7 +78,7 @@ export default function ProgressScreen() {
         const workout = programVersion.workouts[0] ?? demoWorkout;
         const [nextSummary, latestSets, profile, userExercises] = await Promise.all([
           getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
-          getLatestCompletedWorkoutSets(database, cycle.id, workout.id),
+          getLatestCompletedWorkoutSets(database, cycle.id, workout.id, programVersion.id),
           getOnboardingProfile(database, 'guest-user'),
           getUserExercises(database, 'guest-user'),
         ]);

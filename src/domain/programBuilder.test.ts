@@ -4,6 +4,7 @@ import {
   addWorkoutToProgram,
   createCustomExercise,
   createProgramCopy,
+  createProgramVersionRevision,
   removeExerciseFromWorkout,
   replaceExerciseInWorkout,
   reorderWorkoutExercises,
@@ -32,6 +33,34 @@ describe('immutable custom program builder', () => {
       demoProgramVersion.workouts[0]?.exercises[0]?.sets[0],
     );
     expect(demoProgram.title).toBe('Barbell 30');
+  });
+
+  it('creates a new version namespace while preserving planned identities', () => {
+    const revision = createProgramVersionRevision(
+      demoProgramVersion,
+      'program-version-barbell-30-v2',
+      '2026-09-14T15:00:00.000Z',
+    );
+
+    expect(revision).toMatchObject({
+      id: 'program-version-barbell-30-v2',
+      version: 2,
+      status: 'draft',
+      programId: demoProgramVersion.programId,
+    });
+    expect(revision.workouts[0]).toMatchObject({
+      id: demoProgramVersion.workouts[0]?.id,
+      programVersionId: revision.id,
+    });
+    expect(revision.workouts[0]?.exercises[0]?.sets[0]?.id).toBe(
+      demoProgramVersion.workouts[0]?.exercises[0]?.sets[0]?.id,
+    );
+    expect(revision.workouts[0]?.exercises[0]?.sets[0]?.target).not.toBe(
+      demoProgramVersion.workouts[0]?.exercises[0]?.sets[0]?.target,
+    );
+    expect(() =>
+      createProgramVersionRevision(demoProgramVersion, demoProgramVersion.id, 'now'),
+    ).toThrow('new ID');
   });
 
   it('adds, reorders, and removes exercises while preserving the source snapshot', () => {

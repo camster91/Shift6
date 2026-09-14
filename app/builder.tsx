@@ -27,21 +27,9 @@ import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { saveCustomExercise, saveProgramVersion } from '../src/db/programRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
 
-const copyId = 'program-custom-barbell-30-guest';
-const copyVersionId = `${copyId}-version-1`;
-
 export default function ProgramBuilderScreen() {
   const database = useLocalDatabase();
-  const [draft, setDraft] = useState(() =>
-    createProgramCopy({
-      sourceProgram: demoProgram,
-      sourceVersion: demoProgramVersion,
-      userId: 'guest-user',
-      newProgramId: copyId,
-      newVersionId: copyVersionId,
-      createdAt: new Date().toISOString(),
-    }),
-  );
+  const [draft, setDraft] = useState(() => createInitialBuilderDraft());
   const [customName, setCustomName] = useState('');
   const [newWorkoutTitle, setNewWorkoutTitle] = useState('');
   const [newWorkoutSequence, setNewWorkoutSequence] = useState(0);
@@ -120,7 +108,7 @@ export default function ProgramBuilderScreen() {
     if (!firstWorkout) return;
     try {
       const exercise = createCustomExercise({
-        id: `${copyId}-custom-exercise-${Object.keys(customExercises).length + 1}`,
+        id: `${draft.program.id}-custom-exercise-${Object.keys(customExercises).length + 1}`,
         name: customName,
         movementPattern: 'carry',
         primaryMuscles: ['grip', 'core'],
@@ -527,6 +515,18 @@ export default function ProgramBuilderScreen() {
       </Text>
     </Screen>
   );
+}
+
+function createInitialBuilderDraft() {
+  const copyId = `program-custom-barbell-30-guest-${Date.now()}`;
+  return createProgramCopy({
+    sourceProgram: demoProgram,
+    sourceVersion: demoProgramVersion,
+    userId: 'guest-user',
+    newProgramId: copyId,
+    newVersionId: `${copyId}-version-1`,
+    createdAt: new Date().toISOString(),
+  });
 }
 
 function getNextAvailableWorkoutDay(workouts: readonly Workout[]): number {

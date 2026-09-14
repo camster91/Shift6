@@ -441,6 +441,12 @@ Drag-and-drop, supersets/circuits, target editing, and warm-up/cooldown/cardio b
 
 The builder now also exposes deterministic substitution choices for catalogue-backed exercises. Candidates are ranked from the equipment-aware domain service and applying one changes only the draft's exercise reference while preserving the workout-exercise identity and set prescription. Active-workout substitution remains a separate boundary until one-time versus future-session history semantics are explicit.
 
+Each builder mount now allocates a timestamped user-owned program/version namespace. A later builder visit cannot upsert the snapshot referenced by an earlier completed cycle, and custom exercise IDs are scoped to that namespace. This preserves the immutable-history boundary even though the current draft editor is intentionally session-scoped.
+
+Active-workout substitution now follows the same copy-on-write rule. The replacement is written to a new private `ProgramVersion` ID, the active cycle points to that revision, and an unfinished session's version pointer is updated and re-queued. Workout/exercise/set identities are preserved inside the revision, while completed sessions continue resolving against the version they recorded.
+
+Next-session target lookup is scoped to the active program-version ID. A revision therefore starts with a conservative prescription when there is no same-version evidence; it cannot carry a previous version's completed set across a changed movement through a legacy or missing exercise identity.
+
 ## Builder target configuration checkpoint — 2026-09-14
 
 The builder now exposes a tracking-aware target editor for each exercise. Reps, load, RPE, and RIR are available for rep-based movements; time and distance fields are shown for timed/cardio movements. The immutable `setWorkoutExerciseTarget` operation applies a cloned prescription to all sets in that exercise while preserving set IDs and the source version. This is an intentionally compact first target boundary: per-set overrides, rest editing, sections, supersets/circuits, warm-ups, cooldowns, and blank-workout creation remain separate increments.
@@ -502,3 +508,5 @@ The Home surface now keeps its presentation tied to the local source of truth wh
 The schedule selector is pure domain logic with deterministic tests. Calendar-driven reminders, user-selected training weekdays, and multi-workout-per-day presentation remain later product surfaces.
 
 The native Home boundary also treats a missing local onboarding profile as a first-run state and routes to onboarding before showing the demo shell. The web provider deliberately has no database and therefore remains a navigable preview surface rather than pretending to implement first-install persistence.
+
+Starting the curated Barbell 30 template now creates a uniquely identified private program/version snapshot (with the public template recorded as `sourceProgramId`) before persisting the cycle. This keeps the public fixture/template separate from user edits and gives later cycle history a stable version reference from the moment the cycle begins.

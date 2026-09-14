@@ -11,6 +11,7 @@ import {
   saveCompletedSet,
   saveWorkoutDraft,
   saveWorkoutSession,
+  updateWorkoutSessionProgramVersion,
   updateCompletedSet,
 } from './workoutRepository';
 
@@ -114,6 +115,41 @@ describe('saveCompletedSet', () => {
       cycleWeek: 2,
       status: 'in-progress',
       isOffline: true,
+    });
+  });
+
+  it('updates only an unfinished session and refreshes its sync payload', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const database = {
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      getFirstAsync: async () => ({
+        id: 'session-1',
+        cycle_id: 'cycle-1',
+        cycle_week: 1,
+        workout_id: 'workout-1',
+        program_version_id: 'program-version-2',
+        workout_focus: 'strength',
+        status: 'in-progress',
+        started_at: '2026-09-14T12:00:00.000Z',
+        completed_at: null,
+        is_offline: 1,
+      }),
+      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      updateWorkoutSessionProgramVersion(database, 'session-1', 'program-version-2'),
+    ).resolves.toMatchObject({ programVersionId: 'program-version-2' });
+    expect(calls[0]).toMatchObject({
+      params: ['program-version-2', 'session-1'],
+    });
+    expect(calls[1]?.sql).toContain('INSERT INTO sync_outbox');
+    expect(JSON.parse(String(calls[1]?.params[4]))).toMatchObject({
+      id: 'session-1',
+      programVersionId: 'program-version-2',
     });
   });
 

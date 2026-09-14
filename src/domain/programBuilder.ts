@@ -78,6 +78,38 @@ export function createProgramCopy({
   };
 }
 
+export function createProgramVersionRevision(
+  sourceVersion: ProgramVersion,
+  newVersionId: string,
+  createdAt: string,
+): ProgramVersion {
+  const versionId = newVersionId.trim();
+  if (!versionId) throw new Error('A program version revision needs a stable ID.');
+  if (versionId === sourceVersion.id) {
+    throw new Error('A program version revision must have a new ID.');
+  }
+
+  return {
+    ...sourceVersion,
+    id: versionId,
+    version: sourceVersion.version + 1,
+    status: 'draft',
+    createdAt,
+    workouts: sourceVersion.workouts.map((workout) => ({
+      ...workout,
+      programVersionId: versionId,
+      equipmentIds: [...workout.equipmentIds],
+      exercises: workout.exercises.map((exercise) => ({
+        ...exercise,
+        sets: exercise.sets.map((set) => ({
+          ...set,
+          target: cloneTarget(set.target),
+        })),
+      })),
+    })),
+  };
+}
+
 export function renameProgram(program: Program, title: string): Program {
   const trimmedTitle = title.trim();
   if (!trimmedTitle) throw new Error('A custom program needs a name.');

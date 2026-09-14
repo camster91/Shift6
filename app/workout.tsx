@@ -24,7 +24,10 @@ import {
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { buildNextSessionTargets } from '../src/domain/nextSession';
 import { resolveTrackingType } from '../src/domain/exerciseTracking';
-import { replaceExerciseInWorkout } from '../src/domain/programBuilder';
+import {
+  createProgramVersionRevision,
+  replaceExerciseInWorkout,
+} from '../src/domain/programBuilder';
 import type {
   CompletedSet,
   Exercise,
@@ -35,7 +38,7 @@ import type {
   WorkoutSession,
 } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
-import { getActiveTrainingCycle } from '../src/db/cycleRepository';
+import { getActiveTrainingCycle, saveTrainingCycle } from '../src/db/cycleRepository';
 import { getOnboardingProfile } from '../src/db/profileRepository';
 import {
   getUserExercises,
@@ -51,6 +54,7 @@ import {
   saveCompletedSet,
   saveWorkoutDraft,
   saveWorkoutSession,
+  updateWorkoutSessionProgramVersion,
   updateCompletedSet,
 } from '../src/db/workoutRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
@@ -202,7 +206,12 @@ export default function ActiveWorkoutScreen() {
         await saveWorkoutSession(database, sessionToUse);
         const [completedSets, previousSets, profile, draft, userExercises] = await Promise.all([
           getCompletedSets(database, sessionToUse.id),
-          getLatestCompletedWorkoutSets(database, activeCycle.id, activeWorkout.id),
+          getLatestCompletedWorkoutSets(
+            database,
+            activeCycle.id,
+            activeWorkout.id,
+            activeProgramVersion.id,
+          ),
           getOnboardingProfile(database, 'guest-user'),
           getWorkoutDraft(database, sessionToUse.id),
           getUserExercises(database, 'guest-user'),
@@ -404,16 +413,33 @@ export default function ActiveWorkoutScreen() {
 
     setError(null);
     try {
-      const nextVersion = replaceExerciseInWorkout(
+      const replacedVersion = replaceExerciseInWorkout(
         activeProgramVersion,
         activeWorkout.id,
         workoutExercise.id,
         replacementExerciseId,
       );
+      const createdAt = new Date().toISOString();
+      const nextVersion = createProgramVersionRevision(
+        replacedVersion,
+        `${activeProgramVersion.id}-revision-${Date.now()}`,
+        createdAt,
+      );
+      const nextProgram = { ...activeProgram, currentVersionId: nextVersion.id };
+      const nextCycle = { ...activeCycle, programVersionId: nextVersion.id };
       if (database) {
-        await saveProgramVersion(database, 'guest-user', activeProgram, nextVersion);
+        await saveProgramVersion(database, 'guest-user', nextProgram, nextVersion);
+        await saveTrainingCycle(database, nextCycle);
+        const updatedSession = await updateWorkoutSessionProgramVersion(
+          database,
+          session.id,
+          nextVersion.id,
+        );
+        if (updatedSession) setResumedSession(updatedSession);
       }
+      setActiveProgram(nextProgram);
       setActiveProgramVersion(nextVersion);
+      setActiveCycle(nextCycle);
       setSubstitutionFor(null);
     } catch (substitutionError) {
       setError(

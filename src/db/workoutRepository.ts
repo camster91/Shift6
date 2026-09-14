@@ -203,6 +203,40 @@ export async function getInProgressWorkoutSession(
   return row ? mapWorkoutSession(row) : null;
 }
 
+export async function updateWorkoutSessionProgramVersion(
+  database: SQLiteDatabase,
+  sessionId: string,
+  programVersionId: string,
+): Promise<WorkoutSession | null> {
+  let updatedSession: WorkoutSession | null = null;
+
+  await database.withTransactionAsync(async () => {
+    const result = await database.runAsync(
+      `UPDATE workout_sessions
+          SET program_version_id = ?
+        WHERE id = ? AND status = 'in-progress';`,
+      programVersionId,
+      sessionId,
+    );
+    if (result.changes === 0) return;
+
+    const row = await database.getFirstAsync<WorkoutSessionRow>(
+      `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
+              started_at, completed_at, is_offline
+         FROM workout_sessions
+        WHERE id = ?
+        LIMIT 1;`,
+      sessionId,
+    );
+    if (!row) return;
+
+    updatedSession = mapWorkoutSession(row);
+    await queueWorkoutSessionSync(database, updatedSession);
+  });
+
+  return updatedSession;
+}
+
 export async function saveWorkoutDraft(
   database: SQLiteDatabase,
   sessionId: string,
@@ -428,6 +462,13 @@ function mapTrainingCycle(row: TrainingCycleRow): TrainingCycle {
 }
 
 async function queueCompletedWorkoutSessionSync(
+  database: SQLiteDatabase,
+  session: WorkoutSession,
+): Promise<void> {
+  await queueWorkoutSessionSync(database, session);
+}
+
+async function queueWorkoutSessionSync(
   database: SQLiteDatabase,
   session: WorkoutSession,
 ): Promise<void> {

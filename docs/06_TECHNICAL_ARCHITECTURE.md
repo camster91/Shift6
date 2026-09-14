@@ -384,6 +384,18 @@ The provider-independent domain boundary now lives in `src/domain/health.ts`:
 
 This remains a data-contract and deterministic read-layer increment. It does not request permissions, persist imported health samples, install HealthKit/Health Connect adapters, or send raw health data to analytics.
 
+## Local health persistence checkpoint — 2026-09-14
+
+Migration 12 adds a user-scoped `health_summaries` table and `src/db/healthRepository.ts`:
+
+- imported rows are normalized before persistence and keyed by `(user_id, source, id)` for retry-safe upserts;
+- health data is intentionally not written to `sync_outbox` in this increment;
+- reads support type/date filtering and reuse the domain daily-trend aggregator;
+- local export schema version 3 includes health summaries, and local deletion removes them transactionally;
+- guest account adoption transfers health-summary ownership with the rest of the local profile, while destination conflicts still fail closed.
+
+Native adapters, permission disclosure, remote health policy, and device verification remain open.
+
 ## Local privacy boundary checkpoint — 2026-09-14
 
 `src/db/privacyRepository.ts` now provides two user-scoped local operations:

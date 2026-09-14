@@ -69,8 +69,11 @@ export async function migrateLocalUserToAccount(
        UNION ALL
        SELECT 1 FROM coach_proposals WHERE user_id = ?
        UNION ALL
+       SELECT 1 FROM health_summaries WHERE user_id = ?
+       UNION ALL
        SELECT 1 FROM sync_outbox WHERE idempotency_key = ?
         LIMIT 1;`,
+      destinationUserId,
       destinationUserId,
       destinationUserId,
       destinationUserId,
@@ -204,6 +207,11 @@ export async function migrateLocalUserToAccount(
     );
     await database.runAsync(
       'UPDATE coach_proposals SET user_id = ? WHERE user_id = ?;',
+      destinationUserId,
+      sourceUserId,
+    );
+    await database.runAsync(
+      'UPDATE health_summaries SET user_id = ? WHERE user_id = ?;',
       destinationUserId,
       sourceUserId,
     );

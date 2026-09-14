@@ -91,4 +91,13 @@ describe('local database migrations', () => {
 
     expect(statements).toContain('ADD COLUMN readiness TEXT');
   });
+
+  it('stores normalized, user-scoped health summaries locally', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS health_summaries');
+    expect(statements).toContain('PRIMARY KEY (user_id, source, id)');
+    expect(statements).toContain('CREATE INDEX IF NOT EXISTS health_summaries_user_type_start');
+    expect(statements).toContain('ON DELETE CASCADE');
+  });
 });

@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export interface LocalDataExport {
-  schemaVersion: 2;
+  schemaVersion: 3;
   exportedAt: string;
   userId: string;
   userProfiles: Record<string, unknown>[];
@@ -15,6 +15,7 @@ export interface LocalDataExport {
   userProgramVersions: Record<string, unknown>[];
   userExercises: Record<string, unknown>[];
   coachProposals: Record<string, unknown>[];
+  healthSummaries: Record<string, unknown>[];
 }
 
 export async function exportLocalUserData(
@@ -87,9 +88,15 @@ export async function exportLocalUserData(
     'SELECT * FROM coach_proposals WHERE user_id = ? ORDER BY created_at ASC, id ASC;',
     userId,
   );
+  const healthSummaries = await database.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM health_summaries
+      WHERE user_id = ?
+      ORDER BY start_at ASC, end_at ASC, source ASC, id ASC;`,
+    userId,
+  );
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     exportedAt,
     userId,
     userProfiles,
@@ -103,6 +110,7 @@ export async function exportLocalUserData(
     userProgramVersions,
     userExercises,
     coachProposals,
+    healthSummaries,
   };
 }
 
@@ -160,6 +168,7 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
       userId,
       userId,
     );
+    await database.runAsync('DELETE FROM health_summaries WHERE user_id = ?;', userId);
     await database.runAsync(
       `DELETE FROM completed_sets
         WHERE session_id IN (

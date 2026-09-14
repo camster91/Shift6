@@ -206,6 +206,26 @@ export const MIGRATIONS: readonly Migration[] = [
         ADD COLUMN readiness TEXT;`,
     ],
   },
+  {
+    version: 12,
+    name: 'local-health-summaries',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS health_summaries (
+        user_id TEXT NOT NULL,
+        source TEXT NOT NULL,
+        id TEXT NOT NULL,
+        health_type TEXT NOT NULL,
+        value REAL NOT NULL,
+        unit TEXT NOT NULL,
+        start_at TEXT NOT NULL,
+        end_at TEXT NOT NULL,
+        PRIMARY KEY (user_id, source, id),
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE
+      );`,
+      `CREATE INDEX IF NOT EXISTS health_summaries_user_type_start
+        ON health_summaries(user_id, health_type, start_at ASC);`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

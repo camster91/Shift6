@@ -198,6 +198,8 @@ Progress movement history now includes deterministic duration and distance point
 
 The health boundary now validates and normalizes provider summaries in the domain layer, deduplicates by source plus stable sample ID, and exposes explicit UTC-day trend aggregation rules for additive, average, and latest-value metrics. Native permission adapters, local health persistence, disclosure UI, and device verification remain later #279/#280 gates.
 
+Normalized health summaries now have a local SQLite repository with user-scoped upserts, filtered reads, local export/delete coverage, and guest-account ownership transfer. They remain outside the sync outbox until a least-privilege remote health policy is approved.
+
 Cycle advancement now uses distinct required workout identities from persisted complete sessions, so duplicate attempts cannot advance a week before its required schedule is represented.
 
 CI now runs on feature-branch pushes in addition to pull requests, so the foundation gate is available before a branch is opened for review.

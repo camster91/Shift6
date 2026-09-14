@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { buildExerciseProgress, type ExerciseProgress } from '../domain/progress';
+import type { ProgramVersion } from '../domain/types';
 import {
   buildCycleProgressSummary,
   type CycleProgressSummary,
@@ -30,10 +31,13 @@ interface CompletedSetProgressRow {
 
 interface ExerciseProgressRow {
   session_id: string;
-  exercise_id: string;
+  exercise_id: string | null;
+  workout_exercise_id: string;
   completed_at: string;
   load: number | null;
   reps: number | null;
+  workout_id: string;
+  version_json: string | null;
 }
 
 export async function getCycleProgressSummary(
@@ -68,29 +72,51 @@ export async function getExerciseProgress(
   exerciseId: string,
 ): Promise<ExerciseProgress> {
   const rows = await database.getAllAsync<ExerciseProgressRow>(
-    `SELECT completed_sets.session_id, completed_sets.exercise_id, completed_sets.completed_at,
-            completed_sets.load, completed_sets.reps
+    `SELECT completed_sets.session_id, completed_sets.exercise_id,
+            completed_sets.workout_exercise_id, completed_sets.completed_at,
+            completed_sets.load, completed_sets.reps, workout_sessions.workout_id,
+            user_program_versions.version_json
        FROM completed_sets
        INNER JOIN workout_sessions
          ON workout_sessions.id = completed_sets.session_id
+       LEFT JOIN user_program_versions
+         ON user_program_versions.id = workout_sessions.program_version_id
       WHERE workout_sessions.cycle_id = ?
         AND workout_sessions.status = 'complete'
-        AND completed_sets.exercise_id = ?
       ORDER BY completed_sets.completed_at ASC, completed_sets.id ASC;`,
     cycleId,
-    exerciseId,
   );
 
   return buildExerciseProgress(
     exerciseId,
-    rows.map((row) => ({
-      sessionId: row.session_id,
-      exerciseId: row.exercise_id,
-      completedAt: row.completed_at,
-      load: row.load ?? undefined,
-      reps: row.reps ?? undefined,
-    })),
+    rows.flatMap((row) => {
+      const resolvedExerciseId = row.exercise_id ?? resolveLegacyExerciseId(row);
+      if (!resolvedExerciseId) return [];
+
+      return [
+        {
+          sessionId: row.session_id,
+          exerciseId: resolvedExerciseId,
+          completedAt: row.completed_at,
+          load: row.load ?? undefined,
+          reps: row.reps ?? undefined,
+        },
+      ];
+    }),
   );
+}
+
+function resolveLegacyExerciseId(row: ExerciseProgressRow): string | undefined {
+  if (!row.version_json) return undefined;
+
+  try {
+    const version = JSON.parse(row.version_json) as ProgramVersion;
+    const workout = version.workouts.find((candidate) => candidate.id === row.workout_id);
+    return workout?.exercises.find((candidate) => candidate.id === row.workout_exercise_id)
+      ?.exerciseId;
+  } catch {
+    return undefined;
+  }
 }
 
 async function getCycleReviewSessions(

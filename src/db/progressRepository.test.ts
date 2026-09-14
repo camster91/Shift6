@@ -94,6 +94,7 @@ describe('getCycleProgressSummary', () => {
         {
           session_id: 'session-1',
           exercise_id: 'exercise-back-squat',
+          workout_exercise_id: 'workout-exercise-squat',
           completed_at: '2026-09-13T12:05:00.000Z',
           load: 185,
           reps: 5,
@@ -101,6 +102,7 @@ describe('getCycleProgressSummary', () => {
         {
           session_id: 'session-2',
           exercise_id: 'exercise-back-squat',
+          workout_exercise_id: 'workout-exercise-squat',
           completed_at: '2026-09-14T12:05:00.000Z',
           load: 190,
           reps: 5,
@@ -116,6 +118,36 @@ describe('getCycleProgressSummary', () => {
         { sessionId: 'session-1', bestLoad: 185 },
         { sessionId: 'session-2', bestLoad: 190 },
       ],
+    });
+  });
+
+  it('resolves legacy set identity from the immutable program snapshot', async () => {
+    const database = {
+      getAllAsync: async () => [
+        {
+          session_id: 'session-legacy',
+          exercise_id: null,
+          workout_exercise_id: 'workout-exercise-squat',
+          completed_at: '2026-09-13T12:05:00.000Z',
+          load: 185,
+          reps: 5,
+          workout_id: 'workout-1',
+          version_json: JSON.stringify({
+            workouts: [
+              {
+                id: 'workout-1',
+                exercises: [{ id: 'workout-exercise-squat', exerciseId: 'exercise-back-squat' }],
+              },
+            ],
+          }),
+        },
+      ],
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      getExerciseProgress(database, 'cycle-1', 'exercise-back-squat'),
+    ).resolves.toMatchObject({
+      points: [{ sessionId: 'session-legacy', bestLoad: 185 }],
     });
   });
 });

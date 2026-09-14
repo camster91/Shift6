@@ -196,13 +196,6 @@ export const MIGRATIONS: readonly Migration[] = [
     statements: [
       `ALTER TABLE completed_sets
         ADD COLUMN exercise_id TEXT;`,
-      `UPDATE completed_sets
-          SET exercise_id = (
-            SELECT exercise_id
-              FROM workout_exercises
-             WHERE workout_exercises.id = completed_sets.workout_exercise_id
-          )
-        WHERE exercise_id IS NULL;`,
     ],
   },
 ];

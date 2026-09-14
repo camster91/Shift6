@@ -308,7 +308,7 @@ The next-session target surface is now covered for the Barbell 30 fixture. It is
 
 The next #279 progress increment adds a deterministic exercise-history read boundary:
 
-- migration 10 adds canonical `exercise_id` identity to completed sets and backfills it from the immutable workout-exercise row for existing local sessions;
+- migration 10 adds canonical `exercise_id` identity to completed sets; new writes persist it directly, while the progress read boundary resolves legacy null identities from the immutable program-version snapshot;
 - `buildExerciseProgress` groups completed sets by session, calculates best load, best reps, volume, and a bounded Epley estimated 1RM without consulting AI or remote services;
 - personal records are emitted only when a metric exceeds the previous completed session, with stable IDs derived from exercise, metric, and session;
 - `getExerciseProgress` scopes history to the active cycle and selected exercise, while the Progress tab renders an accessible local strength-trend card with a text summary for screen readers;

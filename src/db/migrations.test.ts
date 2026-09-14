@@ -84,6 +84,5 @@ describe('local database migrations', () => {
     const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
 
     expect(statements).toContain('ADD COLUMN exercise_id TEXT');
-    expect(statements).toContain('UPDATE completed_sets');
   });
 });

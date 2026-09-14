@@ -204,6 +204,8 @@ Profile now links to a health-settings route that discloses the optional data ty
 
 Authenticated sync triggers now use a single-flight runtime guard so foreground, reconnect, and manual attempts cannot overlap; retries remain available after the active attempt settles.
 
+Coach approval now revalidates the persisted active-cycle/program-version pointer inside its local transaction, preventing a stale screen from applying a proposal after another plan revision has become active.
+
 Cycle advancement now uses distinct required workout identities from persisted complete sessions, so duplicate attempts cannot advance a week before its required schedule is represented.
 
 CI now runs on feature-branch pushes in addition to pull requests, so the foundation gate is available before a branch is opened for review.

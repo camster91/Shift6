@@ -137,13 +137,20 @@ describe('acceptCoachProposalWithRevision', () => {
         calls.push(sql);
         return { changes: 1, lastInsertRowId: 1 };
       },
-      getFirstAsync: async () => ({
-        ...pendingRow,
-        id: proposal.id,
-        changes_json: JSON.stringify(proposal.changes),
-        status: 'accepted',
-        updated_at: '2026-09-14T12:00:00.000Z',
-      }),
+      getFirstAsync: async (sql: string) =>
+        sql.includes('FROM training_cycles')
+          ? {
+              user_id: demoCycle.userId,
+              program_version_id: demoProgramVersion.id,
+              status: 'active',
+            }
+          : {
+              ...pendingRow,
+              id: proposal.id,
+              changes_json: JSON.stringify(proposal.changes),
+              status: 'accepted',
+              updated_at: '2026-09-14T12:00:00.000Z',
+            },
       withTransactionAsync: async (callback: () => Promise<void>) => {
         calls.push('BEGIN TRANSACTION');
         await callback();
@@ -184,6 +191,11 @@ describe('acceptCoachProposalWithRevision', () => {
         calls.push(sql);
         return { changes: 0, lastInsertRowId: 0 };
       },
+      getFirstAsync: async () => ({
+        user_id: demoCycle.userId,
+        program_version_id: demoProgramVersion.id,
+        status: 'active',
+      }),
       withTransactionAsync: async (callback: () => Promise<void>) => {
         calls.push('BEGIN TRANSACTION');
         await callback();
@@ -207,5 +219,31 @@ describe('acceptCoachProposalWithRevision', () => {
       expect.stringContaining('UPDATE coach_proposals'),
       'COMMIT TRANSACTION',
     ]);
+  });
+
+  it('refuses approval when the persisted cycle points to a newer plan revision', async () => {
+    const runAsync = jest.fn();
+    const database = {
+      runAsync,
+      getFirstAsync: async () => ({
+        user_id: 'guest-user',
+        program_version_id: 'newer-version',
+        status: 'active',
+      }),
+      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      acceptCoachProposalWithRevision(
+        database,
+        demoCycle.userId,
+        demoCoachProposal,
+        demoProgram,
+        demoProgramVersion,
+        demoCycle,
+        '2026-09-14T12:00:00.000Z',
+      ),
+    ).rejects.toThrow('no longer the active local plan');
+    expect(runAsync).not.toHaveBeenCalled();
   });
 });

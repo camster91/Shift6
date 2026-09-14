@@ -22,6 +22,12 @@ interface CoachProposalRow {
   updated_at: string;
 }
 
+interface ActiveCycleRow {
+  user_id: string;
+  program_version_id: string;
+  status: TrainingCycle['status'];
+}
+
 export type CoachProposalDecision = Extract<CoachProposalStatus, 'accepted' | 'rejected'>;
 
 export interface AcceptedCoachProposalResult {
@@ -155,6 +161,22 @@ export async function acceptCoachProposalWithRevision(
 
   let status: AcceptedCoachProposalResult['status'] = 'unchanged';
   await database.withTransactionAsync(async () => {
+    const persistedCycle = await database.getFirstAsync<ActiveCycleRow>(
+      `SELECT user_id, program_version_id, status
+         FROM training_cycles
+        WHERE id = ?
+        LIMIT 1;`,
+      sourceCycle.id,
+    );
+    if (
+      !persistedCycle ||
+      persistedCycle.user_id !== userId ||
+      persistedCycle.status !== 'active' ||
+      persistedCycle.program_version_id !== sourceVersion.id
+    ) {
+      throw new Error('The coach proposal context is no longer the active local plan.');
+    }
+
     const update = await database.runAsync(
       `UPDATE coach_proposals
           SET status = 'accepted', updated_at = ?

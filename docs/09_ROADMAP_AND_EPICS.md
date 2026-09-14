@@ -196,6 +196,8 @@ Readiness selections from workout preflight now feed the deterministic next-sess
 
 Progress movement history now includes deterministic duration and distance points and personal records, with the Progress selector and accessible chart presenting cardio/timed metrics alongside strength history. The underlying values remain local-first and version-scoped; no estimated strength value is generated for a timed or distance movement.
 
+Progress history now surfaces the three most recent typed personal-record events alongside the chart, keeping the Records surface grounded in the existing deterministic domain output.
+
 The health boundary now validates and normalizes provider summaries in the domain layer, deduplicates by source plus stable sample ID, and exposes explicit UTC-day trend aggregation rules for additive, average, and latest-value metrics. Native permission adapters, local health persistence, disclosure UI, and device verification remain later #279/#280 gates.
 
 Normalized health summaries now have a local SQLite repository with user-scoped upserts, filtered reads, local export/delete coverage, and guest-account ownership transfer. They remain outside the sync outbox until a least-privilege remote health policy is approved.

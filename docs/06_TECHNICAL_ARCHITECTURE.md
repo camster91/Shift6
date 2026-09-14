@@ -488,6 +488,8 @@ Next-session target lookup is scoped to the active program-version ID. A revisio
 
 Per-exercise progress history now preserves the completed set's timed and distance values as well as load and reps. The deterministic point builder records best duration and distance values and emits monotonic personal-record events for those metrics; the SQLite repository selects and maps the durable columns while retaining legacy exercise-identity resolution. Progress movement choices now include strength, cardio, timed, and custom movements, and the accessible history card selects a metric from the exercise's typed tracking mode without fabricating a strength estimate. Duration and distance formatting remains presentation-only; progression calculations stay in the domain layer.
 
+The Progress history card now exposes the three most recent personal-record events from that same typed history, using metric-specific labels for load, reps, duration, distance, and estimated 1RM. It does not recalculate or infer records in the screen layer.
+
 Cycle advancement now counts distinct completed required workout IDs within the persisted week. Repeating a single workout cannot satisfy the required schedule by itself, and optional cardio/workout IDs remain excluded from the advancement threshold.
 
 The quality workflow now runs on every branch push as well as pull requests, keeping feature-branch checkpoints covered by formatting, lint, typecheck, Expo Doctor, dependency audit, tests, and web export before review.

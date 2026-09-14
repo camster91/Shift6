@@ -37,7 +37,12 @@ import {
   getExerciseProgress,
   getLatestCompletedWorkoutSets,
 } from '../../src/db/progressRepository';
-import type { ProgressPoint, SetTarget, TrackingType } from '../../src/domain/types';
+import type {
+  PersonalRecord,
+  ProgressPoint,
+  SetTarget,
+  TrackingType,
+} from '../../src/domain/types';
 import { colors, spacing } from '../../src/design/tokens';
 
 export default function ProgressScreen() {
@@ -470,6 +475,24 @@ function ProgressHistoryCard({
           <Text variant="smallMedium" style={styles.historyValue}>
             Latest: {formatHistoryValue(latest, metric)}
           </Text>
+          {progress.personalRecords.length > 0 ? (
+            <View style={styles.recordList} accessibilityLabel={`${label} personal records`}>
+              <Text variant="caption" tone="muted">
+                RECENT RECORDS
+              </Text>
+              {progress.personalRecords
+                .slice(-3)
+                .reverse()
+                .map((record) => (
+                  <View key={record.id} style={styles.recordRow}>
+                    <Text variant="smallMedium">{formatRecordMetric(record.metric)}</Text>
+                    <Text variant="small" tone="muted">
+                      {formatRecordValue(record)}
+                    </Text>
+                  </View>
+                ))}
+            </View>
+          ) : null}
         </>
       ) : null}
     </Card>
@@ -527,6 +550,36 @@ function formatHistoryValue(point: ProgressPoint | undefined, metric: HistoryMet
   if (point?.estimatedOneRepMax !== undefined) return `${Math.round(value)} estimated`;
   if (point?.bestLoad !== undefined) return `${Math.round(value)} load`;
   return `${Math.round(value)} reps`;
+}
+
+function formatRecordMetric(metric: PersonalRecord['metric']): string {
+  switch (metric) {
+    case 'load':
+      return 'Heaviest load';
+    case 'reps':
+      return 'Rep best';
+    case 'duration':
+      return 'Duration best';
+    case 'distance':
+      return 'Distance best';
+    case 'estimated-one-rep-max':
+      return 'Estimated 1RM';
+  }
+}
+
+function formatRecordValue(record: PersonalRecord): string {
+  switch (record.metric) {
+    case 'duration':
+      return formatDuration(record.value);
+    case 'distance':
+      return formatDistance(record.value);
+    case 'reps':
+      return `${Math.round(record.value)} reps`;
+    case 'estimated-one-rep-max':
+      return `${Math.round(record.value)} estimated`;
+    case 'load':
+      return `${Math.round(record.value)} load`;
+  }
 }
 
 function formatDuration(seconds: number): string {
@@ -818,6 +871,19 @@ const styles = StyleSheet.create({
   },
   historyValue: {
     marginTop: spacing.md,
+  },
+  recordList: {
+    marginTop: spacing.xl,
+    gap: spacing.xs,
+  },
+  recordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(13,16,27,0.12)',
   },
   reviewButton: {
     marginTop: spacing.xl,

@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Card, Chip, ProgramCard, Screen, Text } from '../../src/components/ui';
-import { demoProgram } from '../../src/domain/fixtures/home';
+import { getProgramCatalogueStatusLabel, programLibrary } from '../../src/domain/programLibrary';
 import { colors, spacing } from '../../src/design/tokens';
 
 export default function ProgramsScreen() {
@@ -28,7 +28,14 @@ export default function ProgramsScreen() {
       <Text variant="h2" style={styles.sectionTitle}>
         For your equipment
       </Text>
-      <ProgramCard program={demoProgram} onPress={() => router.push('/program')} />
+      {programLibrary.slice(0, 1).map((entry) => (
+        <ProgramCard
+          key={entry.program.id}
+          program={entry.program}
+          statusLabel={getProgramCatalogueStatusLabel(entry.status)}
+          onPress={() => router.push('/program')}
+        />
+      ))}
 
       <Button
         label="Personalize recommendations"
@@ -45,6 +52,22 @@ export default function ProgramsScreen() {
         onPress={() => router.push('/exercises')}
         style={styles.exerciseLibraryButton}
       />
+
+      <Text variant="h2" style={styles.moreProgramsTitle}>
+        More ways to train
+      </Text>
+      <Text variant="small" tone="muted" style={styles.libraryNote}>
+        {programLibrary.length} planned launch programs. Additional versions are being built and
+        reviewed before they can start a cycle.
+      </Text>
+      {programLibrary.slice(1).map((entry) => (
+        <ProgramCard
+          key={entry.program.id}
+          program={entry.program}
+          statusLabel={getProgramCatalogueStatusLabel(entry.status)}
+          style={styles.catalogueCard}
+        />
+      ))}
 
       <Card tone="mint" style={styles.foundationCard}>
         <Ionicons name="construct-outline" size={24} color={colors.ink} />
@@ -85,6 +108,16 @@ const styles = StyleSheet.create({
   },
   exerciseLibraryButton: {
     marginTop: spacing.xs,
+  },
+  moreProgramsTitle: {
+    marginTop: spacing.xxxl,
+  },
+  libraryNote: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  catalogueCard: {
+    marginBottom: spacing.sm,
   },
   cardTitle: {
     marginTop: spacing.xs,

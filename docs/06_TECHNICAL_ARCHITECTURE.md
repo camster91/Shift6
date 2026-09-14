@@ -299,6 +299,10 @@ The first #274 content increment establishes catalogue behavior without importin
 
 The catalogue is not yet the 300+ launch set: content review, custom exercises, exercise detail, substitution selection, media production, and the remaining records are still required.
 
+## Program library metadata checkpoint — 2026-09-14
+
+The Programs surface now carries metadata for the planned 20-program launch library. Barbell 30 is the only published, startable version in this increment; the other 19 entries are explicitly `metadata-draft` until their workouts, progression rules, substitutions, safety review, and six-week versions are complete. This prevents a catalogue card from implying that a plan is ready when its executable program version does not yet exist.
+
 ## Sync outbox implementation checkpoint — 2026-09-13
 
 The local/cloud handoff now has an explicit provider boundary without introducing a backend vendor:

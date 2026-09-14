@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 
 import type { Program } from '../../domain/types';
 import { colors, radii, spacing } from '../../design/tokens';
@@ -10,13 +11,15 @@ import { Text } from './Text';
 export interface ProgramCardProps {
   program: Program;
   onPress?: () => void;
+  statusLabel?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function ProgramCard({ program, onPress }: ProgramCardProps) {
+export function ProgramCard({ program, onPress, statusLabel, style }: ProgramCardProps) {
   const content = (
     <Card
       tone="white"
-      style={styles.card}
+      style={[styles.card, style]}
       accessibilityLabel={`${program.title}. ${program.description}`}
     >
       <View style={styles.header}>
@@ -37,6 +40,7 @@ export function ProgramCard({ program, onPress }: ProgramCardProps) {
         <Chip label={`${program.daysPerWeek} days`} />
         <Chip label={`${program.sessionLengthMinutes} min`} />
         <Chip label="6 weeks" selected />
+        {statusLabel ? <Chip label={statusLabel} /> : null}
       </View>
       {onPress ? (
         <View style={styles.actionRow}>

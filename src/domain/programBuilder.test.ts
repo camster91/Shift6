@@ -6,6 +6,8 @@ import {
   createCustomExercise,
   createProgramCopy,
   createProgramVersionRevision,
+  clearWorkoutExerciseGroup,
+  groupWorkoutExercises,
   removeExerciseFromWorkout,
   replaceExerciseInWorkout,
   reorderWorkoutExercises,
@@ -297,6 +299,73 @@ describe('immutable custom program builder', () => {
     expect(updatedExercise.id).toBe(exercise.id);
     expect(updatedExercise.sets).toEqual(exercise.sets);
     expect(copy.version.workouts[0]!.exercises[0]!.section).toBe('working');
+  });
+
+  it('groups selected exercises as a superset or circuit without changing identity', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-groups',
+      newVersionId: 'program-custom-groups-version-1',
+      createdAt: '2026-09-14T15:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const first = workout.exercises[0]!;
+    const second = workout.exercises[1]!;
+    const grouped = groupWorkoutExercises(
+      copy.version,
+      workout.id,
+      [first.id, second.id],
+      'superset',
+      'group-superset-1',
+    );
+    const groupedExercises = grouped.workouts[0]!.exercises;
+
+    expect(groupedExercises[0]).toMatchObject({
+      id: first.id,
+      supersetGroupId: 'group-superset-1',
+      groupType: 'superset',
+    });
+    expect(groupedExercises[1]).toMatchObject({
+      id: second.id,
+      supersetGroupId: 'group-superset-1',
+      groupType: 'superset',
+    });
+    expect(groupedExercises[0]?.sets).toEqual(first.sets);
+
+    const cleared = clearWorkoutExerciseGroup(grouped, workout.id, first.id);
+    expect(cleared.workouts[0]!.exercises.slice(0, 2)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: first.id, supersetGroupId: undefined, groupType: undefined }),
+        expect.objectContaining({
+          id: second.id,
+          supersetGroupId: undefined,
+          groupType: undefined,
+        }),
+      ]),
+    );
+    expect(copy.version.workouts[0]!.exercises[0]?.supersetGroupId).toBeUndefined();
+  });
+
+  it('rejects invalid workout groups', () => {
+    const copy = createProgramCopy({
+      sourceProgram: demoProgram,
+      sourceVersion: demoProgramVersion,
+      userId: 'guest-user',
+      newProgramId: 'program-custom-groups-invalid',
+      newVersionId: 'program-custom-groups-invalid-version-1',
+      createdAt: '2026-09-14T15:00:00.000Z',
+    });
+    const workout = copy.version.workouts[0]!;
+    const first = workout.exercises[0]!;
+
+    expect(() =>
+      groupWorkoutExercises(copy.version, workout.id, [first.id], 'circuit', 'group-1'),
+    ).toThrow('at least two different exercises');
+    expect(() =>
+      groupWorkoutExercises(copy.version, workout.id, [first.id, 'missing'], 'circuit', 'group-2'),
+    ).toThrow('not found');
   });
 
   it('creates a reviewable custom exercise rather than silently treating it as curated', () => {

@@ -22,12 +22,14 @@ import { searchExercises } from '../src/domain/exerciseCatalog';
 import {
   addExerciseToWorkout,
   addWorkoutToProgram,
+  clearWorkoutExerciseGroup,
   createBlankProgram,
   createCustomExercise,
   createProgramCopy,
   removeExerciseFromWorkout,
   replaceExerciseInWorkout,
   reorderWorkoutExercises,
+  groupWorkoutExercises,
   renameProgram,
   setWorkoutExerciseSetCount,
   setWorkoutExerciseTarget,
@@ -456,6 +458,7 @@ export default function ProgramBuilderScreen() {
                       <Text variant="smallMedium">{exerciseName}</Text>
                       <Text variant="caption" tone="muted">
                         {exercise.sets.length} sets · {exercise.section}
+                        {exercise.groupType ? ` · ${exercise.groupType}` : ''}
                       </Text>
                     </View>
                     <View style={styles.exerciseActions}>
@@ -550,6 +553,66 @@ export default function ProgramBuilderScreen() {
                         style={styles.iconAction}
                       />
                     </View>
+                  </View>
+                  <View style={styles.groupControls}>
+                    {exercise.supersetGroupId ? (
+                      <>
+                        <Text variant="caption" tone="muted">
+                          Grouped as {exercise.groupType ?? 'superset'}
+                        </Text>
+                        <Button
+                          label="Ungroup"
+                          variant="ghost"
+                          onPress={() =>
+                            updateDraftVersion((version) =>
+                              clearWorkoutExerciseGroup(version, workout.id, exercise.id),
+                            )
+                          }
+                          style={styles.groupButton}
+                        />
+                      </>
+                    ) : null}
+                    {!exercise.supersetGroupId && exerciseIndex < workout.exercises.length - 1 ? (
+                      <Button
+                        label={`Superset with ${exerciseNameById.get(workout.exercises[exerciseIndex + 1]!.exerciseId) ?? 'next exercise'}`}
+                        variant="ghost"
+                        disabled={Boolean(workout.exercises[exerciseIndex + 1]?.supersetGroupId)}
+                        onPress={() => {
+                          const nextExercise = workout.exercises[exerciseIndex + 1];
+                          if (!nextExercise) return;
+                          updateDraftVersion((version) =>
+                            groupWorkoutExercises(
+                              version,
+                              workout.id,
+                              [exercise.id, nextExercise.id],
+                              'superset',
+                              `${workout.id}-superset-${exercise.id}-${nextExercise.id}`,
+                            ),
+                          );
+                        }}
+                        style={styles.groupButton}
+                      />
+                    ) : null}
+                    {!exercise.supersetGroupId &&
+                    exerciseIndex === 0 &&
+                    workout.exercises.length > 1 ? (
+                      <Button
+                        label="Make circuit"
+                        variant="ghost"
+                        onPress={() =>
+                          updateDraftVersion((version) =>
+                            groupWorkoutExercises(
+                              version,
+                              workout.id,
+                              workout.exercises.map((candidate) => candidate.id),
+                              'circuit',
+                              `${workout.id}-circuit`,
+                            ),
+                          )
+                        }
+                        style={styles.groupButton}
+                      />
+                    ) : null}
                   </View>
                   <TargetEditor
                     exerciseName={exerciseName}
@@ -1329,6 +1392,16 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  groupControls: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  groupButton: {
+    minHeight: 36,
+    paddingHorizontal: spacing.sm,
   },
   targetEditor: {
     marginTop: spacing.sm,

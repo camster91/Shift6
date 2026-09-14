@@ -7,6 +7,7 @@ import type {
   SetTarget,
   TrackingType,
   WorkoutExercise,
+  WorkoutGroupType,
   Workout,
 } from './types';
 
@@ -510,6 +511,60 @@ export function setWorkoutExerciseSection(
     ...currentWorkout,
     exercises: currentWorkout.exercises.map((exercise) =>
       exercise.id === workoutExerciseId ? { ...exercise, section } : exercise,
+    ),
+  }));
+}
+
+export function groupWorkoutExercises(
+  version: ProgramVersion,
+  workoutId: string,
+  workoutExerciseIds: readonly string[],
+  groupType: WorkoutGroupType,
+  groupId: string,
+): ProgramVersion {
+  const normalizedGroupId = groupId.trim();
+  if (!normalizedGroupId) throw new Error('A workout group needs a stable ID.');
+
+  const workout = version.workouts.find((candidate) => candidate.id === workoutId);
+  if (!workout) throw new Error('Workout not found in this program version.');
+
+  const selectedIds = new Set(workoutExerciseIds);
+  if (selectedIds.size < 2 || selectedIds.size !== workoutExerciseIds.length) {
+    throw new Error('A superset or circuit needs at least two different exercises.');
+  }
+  if (workoutExerciseIds.some((id) => !workout.exercises.some((exercise) => exercise.id === id))) {
+    throw new Error('The selected exercises were not found in this workout.');
+  }
+
+  return updateWorkout(version, workoutId, (currentWorkout) => ({
+    ...currentWorkout,
+    exercises: currentWorkout.exercises.map((exercise) =>
+      selectedIds.has(exercise.id)
+        ? { ...exercise, supersetGroupId: normalizedGroupId, groupType }
+        : exercise,
+    ),
+  }));
+}
+
+export function clearWorkoutExerciseGroup(
+  version: ProgramVersion,
+  workoutId: string,
+  workoutExerciseId: string,
+): ProgramVersion {
+  const workout = version.workouts.find((candidate) => candidate.id === workoutId);
+  if (!workout) throw new Error('Workout not found in this program version.');
+  const selectedExercise = workout.exercises.find((exercise) => exercise.id === workoutExerciseId);
+  if (!selectedExercise) throw new Error('Exercise not found in this workout.');
+
+  const groupId = selectedExercise.supersetGroupId;
+  if (!groupId) return version;
+
+  return updateWorkout(version, workoutId, (currentWorkout) => ({
+    ...currentWorkout,
+    exercises: currentWorkout.exercises.map((exercise) =>
+      exercise.supersetGroupId === groupId
+        ? { ...exercise, supersetGroupId: undefined, groupType: undefined }
+        : exercise,
     ),
   }));
 }

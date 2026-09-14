@@ -48,6 +48,7 @@ export type ProgressionStrategy =
 export type CycleStatus = 'planned' | 'active' | 'complete' | 'paused' | 'cancelled';
 export type CycleWeekStatus = 'completed' | 'current' | 'upcoming' | 'missed' | 'partial';
 export type WorkoutSessionStatus = 'planned' | 'in-progress' | 'complete' | 'skipped' | 'abandoned';
+export type WorkoutGroupType = 'superset' | 'circuit';
 export type CoachProposalStatus =
   'pending' | 'accepted' | 'partially-accepted' | 'rejected' | 'expired';
 export type CoachTone = 'concise' | 'supportive' | 'technical';
@@ -158,6 +159,7 @@ export interface WorkoutExercise {
   order: number;
   section: 'warm-up' | 'working' | 'cooldown' | 'cardio' | 'mobility';
   supersetGroupId?: EntityId;
+  groupType?: WorkoutGroupType;
   notes?: string;
   sets: WorkoutSet[];
 }

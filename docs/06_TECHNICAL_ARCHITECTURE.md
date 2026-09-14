@@ -523,4 +523,6 @@ The private builder now exposes immutable workout metadata edits (name, weekday,
 
 Workout exercises can also be assigned to the typed warm-up, working, cooldown, cardio, or mobility sections. Section changes preserve the exercise/set identities and remain private to the edited version; they do not infer or rewrite completed history.
 
+Superset and circuit grouping now use explicit `groupType` plus a stable `supersetGroupId` on each selected workout exercise. The builder offers pairwise superset grouping, whole-workout circuit grouping, and ungrouping; the domain validates membership and requires at least two exercises before writing a group.
+
 Starting the curated Barbell 30 template now creates a uniquely identified private program/version snapshot (with the public template recorded as `sourceProgramId`) before persisting the cycle. This keeps the public fixture/template separate from user edits and gives later cycle history a stable version reference from the moment the cycle begins.

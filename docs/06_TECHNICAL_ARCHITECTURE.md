@@ -333,6 +333,7 @@ Native permission flows, least-privilege read adapters, local sample deduplicati
 
 - `exportLocalUserData` returns a versioned JSON-ready envelope covering profiles, equipment, cycles, sessions, sets, user program snapshots, custom exercises, and Coach proposals;
 - `deleteLocalUserData` removes pending sync mutations first, then dependent sets/sessions/cycles and user-owned program/exercise/proposal/profile records inside one transaction;
+- Profile exposes native share-sheet export and a destructive-confirmation local-delete action, while web labels both controls as preview-only;
 - the repository does not claim remote account deletion, request permissions, or upload an export; those actions require explicit account/backend and native file-sharing surfaces later.
 
 ## Exercise catalogue implementation checkpoint — 2026-09-14

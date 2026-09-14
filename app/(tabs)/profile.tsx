@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, Platform, Share, StyleSheet, View } from 'react-native';
 
 import { Button, Card, Chip, Screen, Text } from '../../src/components/ui';
 import { demoEquipment, demoUser } from '../../src/domain/fixtures/home';
 import { useLocalDatabase } from '../../src/db/context';
+import { deleteLocalUserData, exportLocalUserData } from '../../src/db/privacyRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { colors, radii, spacing } from '../../src/design/tokens';
 
@@ -13,6 +14,8 @@ export default function ProfileScreen() {
   const database = useLocalDatabase();
   const [user, setUser] = useState(demoUser);
   const [equipmentIds, setEquipmentIds] = useState(demoUser.equipmentIds);
+  const [privacyBusy, setPrivacyBusy] = useState<'export' | 'delete' | null>(null);
+  const [privacyMessage, setPrivacyMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!database) return;
@@ -34,6 +37,70 @@ export default function ProfileScreen() {
   const selectedEquipment = demoEquipment.filter((equipment) =>
     equipmentIds.includes(equipment.id),
   );
+
+  const handleExport = async () => {
+    if (!database) {
+      setPrivacyMessage('Web preview: local data export is available on native builds.');
+      return;
+    }
+
+    setPrivacyBusy('export');
+    setPrivacyMessage(null);
+    try {
+      const data = await exportLocalUserData(database, 'guest-user', new Date().toISOString());
+      await Share.share({
+        title: 'SHIFT6 data export',
+        message: JSON.stringify(data, null, 2),
+      });
+      setPrivacyMessage('Your local export is ready to share.');
+    } catch {
+      setPrivacyMessage('We could not prepare the local export.');
+    } finally {
+      setPrivacyBusy(null);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!database) {
+      setPrivacyMessage('Web preview: local deletion is available on native builds.');
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      setPrivacyMessage('Web preview: local deletion is available on native builds.');
+      return;
+    }
+
+    Alert.alert(
+      'Delete local data?',
+      'This removes the guest profile, equipment, cycles, workout history, proposals, and pending sync data from this device. It cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete local data',
+          style: 'destructive',
+          onPress: () => void performLocalDelete(),
+        },
+      ],
+    );
+  };
+
+  const performLocalDelete = async () => {
+    if (!database) return;
+
+    setPrivacyBusy('delete');
+    setPrivacyMessage(null);
+    try {
+      await deleteLocalUserData(database, 'guest-user');
+      setUser({ ...demoUser, displayName: 'Guest', equipmentIds: [] });
+      setEquipmentIds([]);
+      setPrivacyMessage('Local data was deleted from this device.');
+    } catch {
+      setPrivacyMessage('We could not delete local data.');
+    } finally {
+      setPrivacyBusy(null);
+    }
+  };
 
   return (
     <Screen>
@@ -91,6 +158,40 @@ export default function ProfileScreen() {
           is connected.
         </Text>
       </Card>
+
+      <Text variant="h2" style={styles.sectionTitle}>
+        Data & privacy
+      </Text>
+      <Card tone="white" style={styles.privacyCard}>
+        <Text variant="smallMedium">Your training record stays yours.</Text>
+        <Text variant="small" tone="muted" style={styles.privacyCopy}>
+          Export or remove the local guest data stored on this device. Remote account deletion will
+          be added when account services are connected.
+        </Text>
+        <Button
+          label="Export local data"
+          variant="secondary"
+          loading={privacyBusy === 'export'}
+          disabled={privacyBusy !== null && privacyBusy !== 'export'}
+          icon={<Ionicons name="share-outline" size={18} color={colors.ink} />}
+          onPress={() => void handleExport()}
+          style={styles.privacyButton}
+        />
+        <Button
+          label="Delete local data"
+          variant="ghost"
+          loading={privacyBusy === 'delete'}
+          disabled={privacyBusy !== null && privacyBusy !== 'delete'}
+          icon={<Ionicons name="trash-outline" size={18} color={colors.error} />}
+          onPress={handleDelete}
+          style={styles.deleteButton}
+        />
+        {privacyMessage ? (
+          <Text variant="caption" tone="muted" style={styles.privacyMessage}>
+            {privacyMessage}
+          </Text>
+        ) : null}
+      </Card>
     </Screen>
   );
 }
@@ -146,5 +247,20 @@ const styles = StyleSheet.create({
   settingsTitle: {
     marginTop: spacing.md,
     marginBottom: spacing.xs,
+  },
+  privacyCard: {
+    marginBottom: spacing.xl,
+  },
+  privacyCopy: {
+    marginTop: spacing.xs,
+  },
+  privacyButton: {
+    marginTop: spacing.lg,
+  },
+  deleteButton: {
+    marginTop: spacing.xs,
+  },
+  privacyMessage: {
+    marginTop: spacing.md,
   },
 });

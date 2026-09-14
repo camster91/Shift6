@@ -372,6 +372,18 @@ The first #279/#280 health increment defines `HealthProvider` and typed permissi
 
 Native permission flows, least-privilege read adapters, local sample deduplication, user-facing disclosure, and device verification remain release-gated work.
 
+## Health normalization checkpoint — 2026-09-14
+
+The provider-independent domain boundary now lives in `src/domain/health.ts`:
+
+- `normalizeHealthSummaries` validates finite non-negative values, non-empty source identifiers/units, valid time ranges, and canonical ISO timestamps;
+- duplicate samples are collapsed by provider source plus stable sample ID with deterministic output ordering;
+- `buildDailyHealthTrends` groups by UTC start day and unit without performing implicit unit conversion;
+- aggregation is explicit: steps, workouts, and sleep duration sum; heart-rate metrics average; weight uses the latest sample for the day;
+- the `HealthProvider` contract re-exports these normalized types, so platform adapters cannot introduce provider-specific shapes into domain consumers.
+
+This remains a data-contract and deterministic read-layer increment. It does not request permissions, persist imported health samples, install HealthKit/Health Connect adapters, or send raw health data to analytics.
+
 ## Local privacy boundary checkpoint — 2026-09-14
 
 `src/db/privacyRepository.ts` now provides two user-scoped local operations:

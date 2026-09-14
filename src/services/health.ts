@@ -1,7 +1,12 @@
 import type { HealthConnectionPreference } from '../domain/types';
+import {
+  healthDataTypes,
+  type HealthDataType,
+  type HealthDateRange,
+  type HealthSummary,
+} from '../domain/health';
 
-export type HealthDataType =
-  'steps' | 'workouts' | 'heart-rate' | 'resting-heart-rate' | 'sleep-duration' | 'weight';
+export type { HealthDataType, HealthDateRange, HealthSummary } from '../domain/health';
 
 export type HealthPermissionStatus = 'granted' | 'denied' | 'not-determined' | 'unavailable';
 
@@ -9,21 +14,6 @@ export interface HealthPermissionResult {
   status: HealthPermissionStatus;
   grantedTypes: HealthDataType[];
   deniedTypes: HealthDataType[];
-}
-
-export interface HealthSummary {
-  id: string;
-  type: HealthDataType;
-  value: number;
-  unit: string;
-  startAt: string;
-  endAt: string;
-  source: string;
-}
-
-export interface HealthDateRange {
-  startAt: string;
-  endAt: string;
 }
 
 /** Platform adapters implement this contract for HealthKit or Health Connect. */
@@ -60,7 +50,7 @@ export function healthTypesForPreference(
   switch (preference) {
     case 'apple-health':
     case 'health-connect':
-      return ['steps', 'workouts', 'heart-rate', 'resting-heart-rate', 'sleep-duration', 'weight'];
+      return healthDataTypes;
     case 'not-now':
       return [];
   }

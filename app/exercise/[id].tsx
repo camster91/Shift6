@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Card, Chip, EmptyState, IconButton, Screen, Text } from '../../src/components/ui';
+import { getOnboardingProfile } from '../../src/db/profileRepository';
+import { useLocalDatabase } from '../../src/db/context';
 import { equipmentCatalog, findExerciseSubstitutions } from '../../src/domain/equipment';
 import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { demoUser } from '../../src/domain/fixtures/home';
@@ -10,7 +13,24 @@ import { colors, spacing } from '../../src/design/tokens';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
+  const database = useLocalDatabase();
+  const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
   const exercise = foundationalExercises.find((candidate) => candidate.id === id);
+
+  useEffect(() => {
+    if (!database) return;
+
+    let active = true;
+    void getOnboardingProfile(database, 'guest-user')
+      .then((profile) => {
+        if (active && profile) setAvailableEquipmentIds(profile.user.equipmentIds);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [database]);
 
   if (!exercise) {
     return (
@@ -31,7 +51,7 @@ export default function ExerciseDetailScreen() {
   const substitutions = findExerciseSubstitutions(
     exercise,
     foundationalExercises,
-    demoUser.equipmentIds,
+    availableEquipmentIds,
     4,
   );
   const equipmentNames = exercise.equipmentIds.map(

@@ -29,6 +29,7 @@ Do not adopt a UI framework that makes exact Figma implementation difficult. Pre
 ## Backend
 
 Recommended baseline:
+
 - PostgreSQL;
 - managed auth;
 - object storage for exercise media/user-private media;
@@ -45,6 +46,7 @@ Supabase is a reasonable starting implementation, but domain services must be ab
 Workout execution is local-first.
 
 Local database stores:
+
 - active program snapshot;
 - current cycle;
 - upcoming workouts;
@@ -55,6 +57,7 @@ Local database stores:
 - queued mutations.
 
 Sync uses an outbox:
+
 1. local write succeeds immediately;
 2. mutation queued with idempotency key;
 3. background sync submits;
@@ -74,6 +77,7 @@ Never block set logging on network availability.
 ## Domain entities
 
 Core:
+
 - User
 - UserProfile
 - Equipment
@@ -115,6 +119,7 @@ When a user starts a cycle, snapshot the program version. Future edits create a 
 ## API boundaries
 
 Suggested modules:
+
 - `/auth`
 - `/profile`
 - `/catalog/exercises`
@@ -135,6 +140,7 @@ Use generated typed API contracts.
 Server only.
 
 Interface concepts:
+
 - `generateCoachMessage(context, task)`
 - `generateProposal(context, allowedChanges)`
 - `summarizeCycle(structuredFacts)`
@@ -145,15 +151,18 @@ Provider adapters must return normalized structured responses. API keys never sh
 ## Health integrations
 
 ### iOS
+
 - Apple Health / HealthKit
 - request only data required for enabled features
 - support workout write-back only after separate review
 
 ### Android
+
 - Health Connect
 - same least-permission policy
 
 Initial read targets:
+
 - steps;
 - workouts;
 - heart rate summaries where available;
@@ -180,6 +189,7 @@ Initial read targets:
 ## Analytics
 
 Privacy-conscious event schema. Examples:
+
 - onboarding_completed;
 - program_started;
 - workout_started;
@@ -386,6 +396,8 @@ The catalogue surface now links each foundational record to an exercise-detail r
 The active workout now reads user-owned custom exercise records from SQLite and resolves their tracking type before rendering fields. Unknown legacy IDs fall back from the stored set target to a conservative reps/time/distance shape; custom names and tracking metadata therefore do not require a network request or a second hardcoded catalogue.
 
 Onboarding equipment selection now renders the full 23-item canonical equipment taxonomy instead of a demo-only subset. The saved profile still stores stable equipment IDs, so recommendation and substitution logic consume the same records as the catalogue and active workout surfaces.
+
+The exercise detail route now reads that same saved equipment profile before ranking substitutions. Web preview keeps the local demo profile fallback; native SQLite remains the source for the user's actual setup. This keeps search, detail, builder, and active-workout substitution surfaces on one deterministic equipment boundary.
 
 `src/domain/contentReadiness.ts` now separates structural cycle readiness from public publication readiness. A complete draft record can support development and local fixture workouts, but draft technique/media status remains a publication warning; missing IDs, invalid six-week phases, empty workouts, retired exercises, and incomplete safety fields are blockers.
 

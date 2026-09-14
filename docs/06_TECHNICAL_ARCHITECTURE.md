@@ -611,3 +611,7 @@ Runtime triggers now pass through a single-flight guard in `src/services/syncRun
 ## Active workout presentation checkpoint — 2026-09-14
 
 The active workout now renders the private snapshot's section label, superset/circuit grouping cue, and bounded exercise note next to the same set controls that persist locally. Custom exercises are resolved from the merged user catalogue for both names and substitution ranking. These are read-only workout cues; set identity, correction, rest timing, and copy-on-write history boundaries are unchanged.
+
+## Offline Coach explainer checkpoint — 2026-09-14
+
+`src/services/localCoach.ts` provides a deterministic, provider-free explainer for the guest shell. It answers workout, weekly-review, cycle-review, shortening, and substitution prompts from a bounded `CoachContext`; it reuses the deterministic safety classifier and returns a safety route before training guidance for red-flag prompts. It cannot create or mutate a plan. A provider-backed `CoachGateway`, server-side model routing, conversation persistence, and structured proposal generation remain separate #278 work and are not implied by this offline fallback.

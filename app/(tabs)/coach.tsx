@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import {
   Card,
   CoachProposalCard,
+  Chip,
   EmptyState,
   ErrorState,
   LoadingSkeleton,
@@ -18,10 +19,21 @@ import {
 } from '../../src/db/coachRepository';
 import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
 import { useLocalDatabase } from '../../src/db/context';
+import { getCycleProgressSummary } from '../../src/db/progressRepository';
 import { getUserProgramVersion } from '../../src/db/programRepository';
-import { demoCoachProposal } from '../../src/domain/fixtures/home';
-import type { CoachProposal, Program, ProgramVersion, TrainingCycle } from '../../src/domain/types';
+import { getOnboardingProfile } from '../../src/db/profileRepository';
+import { demoCycle, demoProgramVersion, demoUser } from '../../src/domain/fixtures/home';
+import { buildCycleProgressSummary, type CycleProgressSummary } from '../../src/domain/progression';
+import type { CoachContext, CoachMessageResult, CoachTask } from '../../src/services/contracts';
+import type {
+  CoachProposal,
+  Program,
+  ProgramVersion,
+  TrainingCycle,
+  User,
+} from '../../src/domain/types';
 import { colors, radii, spacing } from '../../src/design/tokens';
+import { buildLocalCoachMessage } from '../../src/services/localCoach';
 
 export default function CoachScreen() {
   const database = useLocalDatabase();
@@ -29,6 +41,15 @@ export default function CoachScreen() {
   const [activeCycle, setActiveCycle] = useState<TrainingCycle | null>(null);
   const [activeProgram, setActiveProgram] = useState<Program | null>(null);
   const [activeProgramVersion, setActiveProgramVersion] = useState<ProgramVersion | null>(null);
+  const [coachContext, setCoachContext] = useState<CoachContext>(() =>
+    createCoachContext(
+      demoUser,
+      demoCycle,
+      demoProgramVersion,
+      buildCycleProgressSummary(getPlannedWorkoutCount(demoCycle), []),
+    ),
+  );
+  const [coachMessage, setCoachMessage] = useState<CoachMessageResult | null>(null);
   const [loading, setLoading] = useState(database !== null);
   const [busyProposalId, setBusyProposalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,11 +71,23 @@ export default function CoachScreen() {
         const pending = cycle
           ? await getPendingCoachProposals(database, 'guest-user', cycle.id)
           : [];
+        const profile = await getOnboardingProfile(database, 'guest-user');
+        const summary = cycle
+          ? await getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle))
+          : buildCycleProgressSummary(getPlannedWorkoutCount(demoCycle), []);
         if (active) {
           setActiveCycle(cycle);
           setActiveProgram(snapshot?.program ?? null);
           setActiveProgramVersion(snapshot?.version ?? null);
           setProposals(pending);
+          setCoachContext(
+            createCoachContext(
+              profile?.user ?? demoUser,
+              cycle ?? demoCycle,
+              snapshot?.version ?? demoProgramVersion,
+              summary,
+            ),
+          );
         }
       } catch {
         if (active) setError('We could not load Coach proposals from this device.');
@@ -110,6 +143,11 @@ export default function CoachScreen() {
     }
   };
 
+  const coachNote = buildLocalCoachMessage(coachContext, 'explain-workout');
+  const askCoach = (task: CoachTask) => {
+    setCoachMessage(buildLocalCoachMessage(coachContext, task));
+  };
+
   return (
     <Screen>
       <Text variant="caption" tone="muted">
@@ -131,16 +169,56 @@ export default function CoachScreen() {
             <Text variant="caption" tone="muted">
               TODAY'S NOTE
             </Text>
-            <Text variant="h3">Week 1: establish.</Text>
+            <Text variant="h3">Week {coachContext.cycle.currentWeek}: stay repeatable.</Text>
           </View>
         </View>
         <Text variant="body" style={styles.noteBody}>
-          {demoCoachProposal.summary}
+          {coachNote.text}
         </Text>
         <Text variant="small" tone="muted">
           Facts first. Suggestions require your approval.
         </Text>
       </Card>
+
+      <Card tone="white" style={styles.askCard} accessibilityLabel="Ask offline Coach">
+        <Text variant="caption" tone="muted">
+          ASK COACH
+        </Text>
+        <Text variant="h3" style={styles.askTitle}>
+          Make the next step clear.
+        </Text>
+        <View style={styles.askChips}>
+          <Chip label="Explain today's workout" onPress={() => askCoach('explain-workout')} />
+          <Chip label="Review my progress" onPress={() => askCoach('weekly-review')} />
+          <Chip label="Shorten this session" onPress={() => askCoach('shorten-workout')} />
+          <Chip label="Find a substitution" onPress={() => askCoach('substitution')} />
+        </View>
+      </Card>
+
+      {coachMessage ? (
+        <Card
+          tone={coachMessage.kind === 'safety-route' ? 'coral' : 'blue'}
+          style={styles.messageCard}
+          accessibilityLabel={`Coach response: ${coachMessage.text}`}
+        >
+          <View style={styles.messageHeader}>
+            <Ionicons
+              name={coachMessage.kind === 'safety-route' ? 'warning-outline' : 'sparkles-outline'}
+              size={22}
+              color={colors.ink}
+            />
+            <Text variant="caption" tone="muted">
+              {coachMessage.kind === 'safety-route' ? 'SAFETY ROUTE' : 'LOCAL COACH NOTE'}
+            </Text>
+          </View>
+          <Text variant="body" style={styles.messageBody}>
+            {coachMessage.text}
+          </Text>
+          <Text variant="caption" tone="muted">
+            Facts used: {coachMessage.factsUsed.join(' · ')}
+          </Text>
+        </Card>
+      ) : null}
 
       <Text variant="h2" style={styles.sectionTitle}>
         Proposals
@@ -167,6 +245,44 @@ export default function CoachScreen() {
       ) : null}
     </Screen>
   );
+}
+
+function getPlannedWorkoutCount(cycle: TrainingCycle): number {
+  return cycle.weeks.reduce((total, week) => total + week.plannedWorkoutCount, 0);
+}
+
+function createCoachContext(
+  user: User,
+  cycle: TrainingCycle,
+  programVersion: ProgramVersion,
+  summary: CycleProgressSummary,
+): CoachContext {
+  const workout = programVersion.workouts[0];
+  return {
+    user: {
+      id: user.id,
+      unitSystem: user.unitSystem,
+      goals: user.goals,
+      experience: user.experience,
+    },
+    cycle: {
+      id: cycle.id,
+      programVersionId: cycle.programVersionId,
+      currentWeek: cycle.currentWeek,
+      status: cycle.status,
+    },
+    structuredFacts: {
+      workoutTitle: workout?.title ?? 'your next workout',
+      workoutFocus: workout?.focus ?? 'training',
+      estimatedDurationMinutes: workout?.estimatedDurationMinutes,
+      currentWeek: cycle.currentWeek,
+      completedWorkoutCount: summary.facts.completedWorkoutCount,
+      plannedWorkoutCount: summary.facts.plannedWorkoutCount,
+      completionRate: summary.facts.completionRate,
+      cardioMinutes: summary.facts.cardioMinutes,
+      personalRecordCount: summary.facts.personalRecordIds.length,
+    },
+  };
 }
 
 const styles = StyleSheet.create({
@@ -198,6 +314,30 @@ const styles = StyleSheet.create({
   noteBody: {
     marginTop: spacing.xl,
     marginBottom: spacing.sm,
+  },
+  askCard: {
+    marginTop: spacing.xl,
+  },
+  askTitle: {
+    marginTop: spacing.sm,
+  },
+  askChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  messageCard: {
+    marginTop: spacing.md,
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  messageBody: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
     marginTop: spacing.xxxl,

@@ -304,6 +304,17 @@ The next #276/#277 vertical-slice increment closes the first deterministic cycle
 
 The two SQLite transactions currently separate workout completion from cycle advancement. A future reliability increment should combine those writes behind one repository operation before native crash/restart verification is considered complete. The full review still needs personal-record detail, cardio/mobility trend views, user feedback, change-program/build-new-cycle options, and native device verification.
 
+## Coach safety boundary checkpoint — 2026-09-14
+
+The first #278 increment adds `src/services/coachSafety.ts` without selecting a model or provider:
+
+- deterministic red-flag routing handles urgent symptoms, professional-evaluation language, and medication/insulin requests before any coach generation;
+- actionable `CoachProposal` changes are runtime-validated against an allowlist of fields and must carry explicit user confirmation;
+- the safety classifier returns matched signals and an explainable response so the eventual UI can distinguish facts, safety routing, and ordinary training guidance;
+- no credentials, network calls, health data, or program mutation were added; the existing `CoachGateway` remains the replaceable provider boundary.
+
+The Coach tab is still a presentation placeholder. Provider adapters, proposal persistence, structured context minimization, approval/application workflows, and the versioned evaluation set remain later #278 increments.
+
 ## Exercise catalogue implementation checkpoint — 2026-09-14
 
 The first #274 content increment establishes catalogue behavior without importing the archived application or unreviewed imagery:

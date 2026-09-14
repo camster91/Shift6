@@ -56,4 +56,13 @@ describe('local database migrations', () => {
 
     expect(statements).toContain('ADD COLUMN cycle_week INTEGER NOT NULL DEFAULT 1');
   });
+
+  it('stores scoped coach proposals for offline review', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS coach_proposals');
+    expect(statements).toContain('user_id TEXT NOT NULL');
+    expect(statements).toContain('cycle_id TEXT NOT NULL');
+    expect(statements).toContain('CREATE INDEX IF NOT EXISTS coach_proposals_user_cycle_status');
+  });
 });

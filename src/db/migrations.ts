@@ -140,6 +140,27 @@ export const MIGRATIONS: readonly Migration[] = [
         ADD COLUMN cycle_week INTEGER NOT NULL DEFAULT 1;`,
     ],
   },
+  {
+    version: 7,
+    name: 'coach-proposals',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS coach_proposals (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL,
+        cycle_id TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        confidence TEXT NOT NULL,
+        evidence_json TEXT NOT NULL,
+        changes_json TEXT NOT NULL,
+        safety_notes_json TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );`,
+      `CREATE INDEX IF NOT EXISTS coach_proposals_user_cycle_status
+        ON coach_proposals(user_id, cycle_id, status, created_at DESC);`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

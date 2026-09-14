@@ -310,6 +310,7 @@ The first #278 increment adds `src/services/coachSafety.ts` without selecting a 
 
 - deterministic red-flag routing handles urgent symptoms, professional-evaluation language, and medication/insulin requests before any coach generation;
 - actionable `CoachProposal` changes are runtime-validated against an allowlist of fields and must carry explicit user confirmation;
+- migration 7 stores pending proposals with user/cycle scope, and accepted/rejected decisions update the local record and enqueue one idempotent `coach-proposal` mutation;
 - the safety classifier returns matched signals and an explainable response so the eventual UI can distinguish facts, safety routing, and ordinary training guidance;
 - no credentials, network calls, health data, or program mutation were added; the existing `CoachGateway` remains the replaceable provider boundary.
 

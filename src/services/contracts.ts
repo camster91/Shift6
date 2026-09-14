@@ -9,7 +9,8 @@ export interface SyncMutation {
     | 'profile'
     | 'program-version'
     | 'exercise'
-    | 'training-cycle';
+    | 'training-cycle'
+    | 'coach-proposal';
   entityId: EntityId;
   payload: Record<string, unknown>;
   createdAt: ISODateString;

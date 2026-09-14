@@ -6,6 +6,8 @@ import {
   type CycleReviewSession,
   type SetPerformance,
 } from '../domain/progression';
+import type { CompletedSet } from '../domain/types';
+import { getCompletedSets } from './workoutRepository';
 
 interface WorkoutSessionProgressRow {
   id: string;
@@ -32,6 +34,23 @@ export async function getCycleProgressSummary(
 ): Promise<CycleProgressSummary> {
   const sessions = await getCycleReviewSessions(database, cycleId);
   return buildCycleProgressSummary(plannedWorkoutCount, sessions);
+}
+
+export async function getLatestCompletedWorkoutSets(
+  database: SQLiteDatabase,
+  cycleId: string,
+  workoutId: string,
+): Promise<CompletedSet[]> {
+  const row = await database.getFirstAsync<{ id: string }>(
+    `SELECT id
+       FROM workout_sessions
+      WHERE cycle_id = ? AND workout_id = ? AND status = 'complete'
+      ORDER BY completed_at DESC, id DESC
+      LIMIT 1;`,
+    cycleId,
+    workoutId,
+  );
+  return row ? getCompletedSets(database, row.id) : [];
 }
 
 async function getCycleReviewSessions(

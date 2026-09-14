@@ -284,9 +284,12 @@ The first progress read boundary now derives the scorecard from the same local r
 - migration 4 snapshots `workout_focus` on each workout session, preserving enough context to classify completed cardio duration without consulting a mutable template;
 - `getCycleProgressSummary` joins local sessions and completed sets by stable IDs, maps only completed sessions into cycle review facts, and keeps logged-set count separate from workout adherence;
 - `buildCycleProgressSummary` remains pure deterministic domain logic and exposes completion rate, training volume, cardio minutes, records, and logged-set count for the Progress surface;
+- `buildNextSessionTargets` uses the latest completed set values plus the selected program strategy to produce per-exercise next targets; missing performance data holds the target rather than inventing a progression event;
 - the Progress tab resolves the active persisted cycle and renders local facts, while the web target continues to show an explicitly non-persistent preview.
 
 This checkpoint does not yet calculate personal records, advance cycle weeks, reconcile sync outbox rows, or produce the full six-week review. Those require additional domain events and later vertical-slice increments.
+
+The next-session target surface is now covered for the Barbell 30 fixture. It is still a native-data path until a device-level workout completion and reload test can run.
 
 ## Exercise catalogue implementation checkpoint — 2026-09-14
 

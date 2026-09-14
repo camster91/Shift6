@@ -11,11 +11,18 @@ import {
   SixWeekIndicator,
   Text,
 } from '../../src/components/ui';
-import { demoCycle, demoProgram } from '../../src/domain/fixtures/home';
+import { demoCycle, demoProgram, demoWorkout } from '../../src/domain/fixtures/home';
+import { foundationalExercises } from '../../src/domain/fixtures/exercises';
+import { buildNextSessionTargets, type NextSessionTarget } from '../../src/domain/nextSession';
 import { buildCycleProgressSummary, type CycleProgressSummary } from '../../src/domain/progression';
 import { useLocalDatabase } from '../../src/db/context';
 import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
-import { getCycleProgressSummary } from '../../src/db/progressRepository';
+import { getOnboardingProfile } from '../../src/db/profileRepository';
+import {
+  getCycleProgressSummary,
+  getLatestCompletedWorkoutSets,
+} from '../../src/db/progressRepository';
+import type { SetTarget } from '../../src/domain/types';
 import { colors, spacing } from '../../src/design/tokens';
 
 export default function ProgressScreen() {
@@ -24,6 +31,7 @@ export default function ProgressScreen() {
   const [summary, setSummary] = useState<CycleProgressSummary>(() =>
     buildCycleProgressSummary(getPlannedWorkoutCount(demoCycle), []),
   );
+  const [nextTargets, setNextTargets] = useState<NextSessionTarget[]>([]);
   const [loading, setLoading] = useState(database !== null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -47,10 +55,19 @@ export default function ProgressScreen() {
           cycle.id,
           getPlannedWorkoutCount(cycle),
         );
+        const latestSets = await getLatestCompletedWorkoutSets(database, cycle.id, demoWorkout.id);
+        const profile = await getOnboardingProfile(database, 'guest-user');
+        const nextSessionTargets = buildNextSessionTargets(
+          demoWorkout,
+          demoProgram.progressionStrategy,
+          latestSets,
+          profile?.user.unitSystem ?? 'imperial',
+        );
 
         if (!active) return;
         setCurrentCycle(cycle);
         setSummary(nextSummary);
+        setNextTargets(latestSets.length > 0 ? nextSessionTargets : []);
       } catch {
         if (active) setError('We could not load local cycle progress.');
       } finally {
@@ -146,6 +163,38 @@ export default function ProgressScreen() {
         />
       </View>
 
+      {nextTargets.length > 0 ? (
+        <Card tone="ink" style={styles.nextTargetsCard}>
+          <Text variant="caption" tone="inverse">
+            NEXT SESSION TARGETS
+          </Text>
+          <Text variant="h3" tone="inverse" style={styles.nextTargetsTitle}>
+            Built from your last completed workout.
+          </Text>
+          <View style={styles.nextTargetList}>
+            {nextTargets.slice(0, 4).map((target) => (
+              <View key={target.workoutExerciseId} style={styles.nextTargetRow}>
+                <View style={styles.nextTargetCopy}>
+                  <Text variant="smallMedium" tone="inverse">
+                    {formatExerciseName(target.exerciseId)}
+                  </Text>
+                  <Text variant="caption" tone="inverse">
+                    {formatTarget(target.decision.nextTarget)}
+                  </Text>
+                </View>
+                <Text variant="caption" tone="inverse" style={styles.nextTargetAction}>
+                  {formatAction(target.decision.action)}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <Text variant="caption" tone="inverse" style={styles.nextTargetsNote}>
+            Targets are deterministic and remain under the program rules. Coach can explain them,
+            but cannot change them silently.
+          </Text>
+        </Card>
+      ) : null}
+
       {error ? (
         <ErrorState
           message={error}
@@ -164,6 +213,33 @@ function getPlannedWorkoutCount(cycle: typeof demoCycle): number {
 
 function formatVolume(value: number): string {
   return Math.round(value).toLocaleString();
+}
+
+function formatExerciseName(exerciseId: string): string {
+  const exercise = foundationalExercises.find((candidate) => candidate.id === exerciseId);
+  if (exercise) return exercise.name;
+
+  return exerciseId
+    .replace(/^exercise-/, '')
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatTarget(target: SetTarget): string {
+  const reps =
+    typeof target.reps === 'object'
+      ? `${target.reps.min}-${target.reps.max} reps`
+      : target.reps !== undefined
+        ? `${target.reps} reps`
+        : null;
+  const load = target.load?.value !== undefined ? `${target.load.value} ${target.load.unit}` : null;
+  const duration = target.durationSeconds !== undefined ? `${target.durationSeconds}s` : null;
+  return [load, reps, duration].filter(Boolean).join(' · ') || 'Keep current target';
+}
+
+function formatAction(action: NextSessionTarget['decision']['action']): string {
+  return action === 'hold' ? 'KEEP' : action.replaceAll('-', ' ').toUpperCase();
 }
 
 interface MetricCardProps {
@@ -232,5 +308,35 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     marginTop: spacing.xs,
+  },
+  nextTargetsCard: {
+    marginTop: spacing.xl,
+  },
+  nextTargetsTitle: {
+    marginTop: spacing.sm,
+  },
+  nextTargetList: {
+    marginTop: spacing.lg,
+    gap: spacing.md,
+  },
+  nextTargetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.18)',
+  },
+  nextTargetCopy: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  nextTargetAction: {
+    textAlign: 'right',
+  },
+  nextTargetsNote: {
+    marginTop: spacing.xl,
+    opacity: 0.76,
   },
 });

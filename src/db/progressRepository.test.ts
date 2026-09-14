@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { getCycleProgressSummary } from './progressRepository';
+import { getCycleProgressSummary, getLatestCompletedWorkoutSets } from './progressRepository';
 
 describe('getCycleProgressSummary', () => {
   it('maps local sessions and completed sets into deterministic cycle facts', async () => {
@@ -56,5 +56,31 @@ describe('getCycleProgressSummary', () => {
       },
       loggedSetCount: 2,
     });
+  });
+
+  it('finds the latest completed workout before deriving next targets', async () => {
+    const database = {
+      getFirstAsync: async () => ({ id: 'session-latest' }),
+      getAllAsync: async () => [
+        {
+          id: 'set-latest',
+          session_id: 'session-latest',
+          workout_exercise_id: 'exercise-1',
+          set_number: 1,
+          load: 185,
+          reps: 5,
+          duration_seconds: null,
+          distance_meters: null,
+          rpe: null,
+          rir: 2,
+          completed_at: '2026-09-14T12:05:00.000Z',
+          idempotency_key: 'session-latest:exercise-1:1',
+        },
+      ],
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      getLatestCompletedWorkoutSets(database, 'cycle-1', 'workout-1'),
+    ).resolves.toMatchObject([{ id: 'set-latest', load: 185, reps: 5 }]);
   });
 });

@@ -1,5 +1,21 @@
 import type { CoachProposal, EntityId, ISODateString, TrainingCycle, User } from '../domain/types';
 
+export type AuthProviderKind = 'apple' | 'google' | 'email';
+
+export interface AuthSession {
+  userId: EntityId;
+  provider: AuthProviderKind;
+  accessToken: string;
+  expiresAt?: ISODateString;
+}
+
+/** Authentication is injected at the app boundary; domain logic never owns tokens. */
+export interface AuthProvider {
+  getSession(): Promise<AuthSession | null>;
+  getAccessToken(): Promise<string | null>;
+  signOut(): Promise<void>;
+}
+
 export interface SyncMutation {
   id: EntityId;
   idempotencyKey: string;

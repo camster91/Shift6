@@ -314,7 +314,18 @@ The first #278 increment adds `src/services/coachSafety.ts` without selecting a 
 - the safety classifier returns matched signals and an explainable response so the eventual UI can distinguish facts, safety routing, and ordinary training guidance;
 - no credentials, network calls, health data, or program mutation were added; the existing `CoachGateway` remains the replaceable provider boundary.
 
-The Coach tab is still a presentation placeholder. Provider adapters, proposal persistence, structured context minimization, approval/application workflows, and the versioned evaluation set remain later #278 increments.
+The Coach tab is still a presentation placeholder. Provider adapters, structured context minimization, approval/application workflows, and the versioned evaluation set remain later #278 increments.
+
+## Health integration boundary checkpoint — 2026-09-14
+
+The first #279/#280 health increment defines `HealthProvider` and typed permission/sample contracts in `src/services/health.ts`:
+
+- HealthKit and Health Connect remain replaceable platform adapters behind the same interface;
+- the onboarding `not-now` choice resolves to no requested data types;
+- the current `UnavailableHealthProvider` returns explicit unavailability and no fabricated samples;
+- no health permission is requested during app startup, and no native health dependency or raw health data is sent to analytics.
+
+Native permission flows, least-privilege read adapters, local sample deduplication, user-facing disclosure, and device verification remain release-gated work.
 
 ## Exercise catalogue implementation checkpoint — 2026-09-14
 

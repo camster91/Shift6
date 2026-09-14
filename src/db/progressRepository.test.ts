@@ -1,6 +1,10 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { getCycleProgressSummary, getLatestCompletedWorkoutSets } from './progressRepository';
+import {
+  getCycleProgressSummary,
+  getExerciseProgress,
+  getLatestCompletedWorkoutSets,
+} from './progressRepository';
 
 describe('getCycleProgressSummary', () => {
   it('maps local sessions and completed sets into deterministic cycle facts', async () => {
@@ -82,5 +86,36 @@ describe('getCycleProgressSummary', () => {
     await expect(
       getLatestCompletedWorkoutSets(database, 'cycle-1', 'workout-1'),
     ).resolves.toMatchObject([{ id: 'set-latest', load: 185, reps: 5 }]);
+  });
+
+  it('loads only the selected exercise history for deterministic progress points', async () => {
+    const database = {
+      getAllAsync: async () => [
+        {
+          session_id: 'session-1',
+          exercise_id: 'exercise-back-squat',
+          completed_at: '2026-09-13T12:05:00.000Z',
+          load: 185,
+          reps: 5,
+        },
+        {
+          session_id: 'session-2',
+          exercise_id: 'exercise-back-squat',
+          completed_at: '2026-09-14T12:05:00.000Z',
+          load: 190,
+          reps: 5,
+        },
+      ],
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      getExerciseProgress(database, 'cycle-1', 'exercise-back-squat'),
+    ).resolves.toMatchObject({
+      exerciseId: 'exercise-back-squat',
+      points: [
+        { sessionId: 'session-1', bestLoad: 185 },
+        { sessionId: 'session-2', bestLoad: 190 },
+      ],
+    });
   });
 });

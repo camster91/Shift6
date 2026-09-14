@@ -16,6 +16,7 @@ import {
 import { demoCycle, demoProgram, demoWorkout } from '../../src/domain/fixtures/home';
 import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { buildNextSessionTargets, type NextSessionTarget } from '../../src/domain/nextSession';
+import type { ExerciseProgress } from '../../src/domain/progress';
 import { buildCycleProgressSummary, type CycleProgressSummary } from '../../src/domain/progression';
 import { useLocalDatabase } from '../../src/db/context';
 import { getLatestTrainingCycle } from '../../src/db/cycleRepository';
@@ -23,6 +24,7 @@ import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { getUserProgramVersion } from '../../src/db/programRepository';
 import {
   getCycleProgressSummary,
+  getExerciseProgress,
   getLatestCompletedWorkoutSets,
 } from '../../src/db/progressRepository';
 import type { SetTarget } from '../../src/domain/types';
@@ -36,6 +38,7 @@ export default function ProgressScreen() {
     buildCycleProgressSummary(getPlannedWorkoutCount(demoCycle), []),
   );
   const [nextTargets, setNextTargets] = useState<NextSessionTarget[]>([]);
+  const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress | null>(null);
   const [loading, setLoading] = useState(database !== null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -59,13 +62,14 @@ export default function ProgressScreen() {
           : null;
         const program = snapshot?.program ?? demoProgram;
         const workout = snapshot?.version.workouts[0] ?? demoWorkout;
-        const nextSummary = await getCycleProgressSummary(
-          database,
-          cycle.id,
-          getPlannedWorkoutCount(cycle),
-        );
-        const latestSets = await getLatestCompletedWorkoutSets(database, cycle.id, workout.id);
-        const profile = await getOnboardingProfile(database, 'guest-user');
+        const [nextSummary, latestSets, profile, selectedExerciseProgress] = await Promise.all([
+          getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
+          getLatestCompletedWorkoutSets(database, cycle.id, workout.id),
+          getOnboardingProfile(database, 'guest-user'),
+          workout.exercises[0]
+            ? getExerciseProgress(database, cycle.id, workout.exercises[0].exerciseId)
+            : Promise.resolve(null),
+        ]);
         const nextSessionTargets = buildNextSessionTargets(
           workout,
           program.progressionStrategy,
@@ -78,6 +82,7 @@ export default function ProgressScreen() {
         setCurrentProgram(program);
         setSummary(nextSummary);
         setNextTargets(latestSets.length > 0 ? nextSessionTargets : []);
+        setExerciseProgress(selectedExerciseProgress);
       } catch {
         if (active) setError('We could not load local cycle progress.');
       } finally {
@@ -205,6 +210,8 @@ export default function ProgressScreen() {
         </Card>
       ) : null}
 
+      {exerciseProgress ? <ProgressHistoryCard progress={exerciseProgress} /> : null}
+
       {currentCycle.status === 'complete' ? (
         <Button
           label="Open six-week review"
@@ -263,6 +270,75 @@ function formatTarget(target: SetTarget): string {
 
 function formatAction(action: NextSessionTarget['decision']['action']): string {
   return action === 'hold' ? 'KEEP' : action.replaceAll('-', ' ').toUpperCase();
+}
+
+function ProgressHistoryCard({ progress }: { progress: ExerciseProgress }) {
+  const exercise = foundationalExercises.find((candidate) => candidate.id === progress.exerciseId);
+  const label = exercise?.name ?? formatExerciseName(progress.exerciseId);
+  const values = progress.points.map(
+    (point) => point.estimatedOneRepMax ?? point.bestLoad ?? point.bestReps ?? 0,
+  );
+  const maximum = Math.max(...values, 1);
+  const latest = progress.points.at(-1);
+  const recordCount = progress.personalRecords.length;
+  const chartSummary = progress.points
+    .map((point, index) => {
+      const value = point.estimatedOneRepMax ?? point.bestLoad ?? point.bestReps;
+      return `Session ${index + 1}: ${value === undefined ? 'not measured' : Math.round(value)}`;
+    })
+    .join('; ');
+
+  return (
+    <Card
+      tone="blue"
+      style={styles.historyCard}
+      accessibilityLabel={`${label} strength trend. ${chartSummary || 'No completed sessions yet.'}`}
+    >
+      <Text variant="caption" tone="muted">
+        STRENGTH TREND
+      </Text>
+      <View style={styles.historyHeader}>
+        <View style={styles.historyCopy}>
+          <Text variant="h3">{label}</Text>
+          <Text variant="small" tone="muted">
+            {progress.points.length > 0
+              ? `${recordCount} recorded best${recordCount === 1 ? '' : 's'} · estimated 1RM where load and reps are available`
+              : 'Complete this movement to start a local trend.'}
+          </Text>
+        </View>
+        <Ionicons name="trending-up-outline" size={24} color={colors.ink} />
+      </View>
+      {progress.points.length > 0 ? (
+        <>
+          <View style={styles.chart} accessible={false}>
+            {progress.points.map((point, index) => {
+              const value = values[index] ?? 0;
+              return (
+                <View key={point.sessionId} style={styles.barColumn}>
+                  <View style={styles.barTrack}>
+                    <View
+                      style={[styles.bar, { height: `${Math.max(10, (value / maximum) * 100)}%` }]}
+                    />
+                  </View>
+                  <Text variant="caption" tone="muted">
+                    {index + 1}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          <Text variant="smallMedium" style={styles.historyValue}>
+            Latest:{' '}
+            {latest?.estimatedOneRepMax
+              ? `${Math.round(latest.estimatedOneRepMax)} estimated`
+              : latest?.bestLoad
+                ? `${latest.bestLoad} load`
+                : 'Rep trend'}
+          </Text>
+        </>
+      ) : null}
+    </Card>
+  );
 }
 
 interface MetricCardProps {
@@ -361,6 +437,53 @@ const styles = StyleSheet.create({
   nextTargetsNote: {
     marginTop: spacing.xl,
     opacity: 0.76,
+  },
+  historyCard: {
+    marginTop: spacing.xl,
+  },
+  historyHeader: {
+    marginTop: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  historyCopy: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  chart: {
+    height: 132,
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-around',
+    gap: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(13,16,27,0.16)',
+  },
+  barColumn: {
+    flex: 1,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: spacing.xs,
+  },
+  barTrack: {
+    width: '70%',
+    height: '86%',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.58)',
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+  bar: {
+    width: '100%',
+    borderRadius: 999,
+    backgroundColor: colors.ink,
+  },
+  historyValue: {
+    marginTop: spacing.md,
   },
   reviewButton: {
     marginTop: spacing.xl,

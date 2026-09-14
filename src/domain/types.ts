@@ -259,6 +259,7 @@ export interface CompletedSet {
   id: EntityId;
   sessionId: EntityId;
   workoutExerciseId: EntityId;
+  exerciseId?: EntityId;
   setNumber: number;
   load?: number;
   reps?: number;
@@ -268,6 +269,27 @@ export interface CompletedSet {
   rir?: number;
   completedAt: ISODateString;
   idempotencyKey: string;
+}
+
+export type PersonalRecordMetric = 'load' | 'reps' | 'estimated-one-rep-max';
+
+export interface ProgressPoint {
+  sessionId: EntityId;
+  exerciseId: EntityId;
+  completedAt: ISODateString;
+  bestLoad?: number;
+  bestReps?: number;
+  estimatedOneRepMax?: number;
+  volume: number;
+}
+
+export interface PersonalRecord {
+  id: EntityId;
+  exerciseId: EntityId;
+  metric: PersonalRecordMetric;
+  value: number;
+  sessionId: EntityId;
+  achievedAt: ISODateString;
 }
 
 export interface WorkoutDraftSetValues {

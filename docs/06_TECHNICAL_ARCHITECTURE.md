@@ -304,6 +304,18 @@ This checkpoint does not yet calculate the full personal-record set, reconcile s
 
 The next-session target surface is now covered for the Barbell 30 fixture. It is still a native-data path until a device-level workout completion and reload test can run.
 
+## Exercise progress history checkpoint — 2026-09-14
+
+The next #279 progress increment adds a deterministic exercise-history read boundary:
+
+- migration 10 adds canonical `exercise_id` identity to completed sets and backfills it from the immutable workout-exercise row for existing local sessions;
+- `buildExerciseProgress` groups completed sets by session, calculates best load, best reps, volume, and a bounded Epley estimated 1RM without consulting AI or remote services;
+- personal records are emitted only when a metric exceeds the previous completed session, with stable IDs derived from exercise, metric, and session;
+- `getExerciseProgress` scopes history to the active cycle and selected exercise, while the Progress tab renders an accessible local strength-trend card with a text summary for screen readers;
+- sessions with unsupported or missing load/repetition values remain valid history points but do not receive a fabricated estimated 1RM.
+
+This is a first strength-history slice, not the complete Progress surface. Cardio, mobility, consistency comparisons, cycle-over-cycle trends, richer charting, and native device verification remain later work.
+
 ## Cycle transition and review implementation checkpoint — 2026-09-14
 
 The next #276/#277 vertical-slice increment closes the first deterministic cycle-lifecycle boundary:

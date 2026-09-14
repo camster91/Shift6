@@ -79,4 +79,11 @@ describe('local database migrations', () => {
     expect(statements).toContain('CREATE TABLE IF NOT EXISTS workout_check_ins');
     expect(statements).toContain('discomfort_reported INTEGER NOT NULL');
   });
+
+  it('keeps the canonical exercise identity on completed sets for progress history', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('ADD COLUMN exercise_id TEXT');
+    expect(statements).toContain('UPDATE completed_sets');
+  });
 });

@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { buildExerciseProgress, type ExerciseProgress } from '../domain/progress';
 import {
   buildCycleProgressSummary,
   type CycleProgressSummary,
@@ -27,6 +28,14 @@ interface CompletedSetProgressRow {
   rir: number | null;
 }
 
+interface ExerciseProgressRow {
+  session_id: string;
+  exercise_id: string;
+  completed_at: string;
+  load: number | null;
+  reps: number | null;
+}
+
 export async function getCycleProgressSummary(
   database: SQLiteDatabase,
   cycleId: string,
@@ -51,6 +60,37 @@ export async function getLatestCompletedWorkoutSets(
     workoutId,
   );
   return row ? getCompletedSets(database, row.id) : [];
+}
+
+export async function getExerciseProgress(
+  database: SQLiteDatabase,
+  cycleId: string,
+  exerciseId: string,
+): Promise<ExerciseProgress> {
+  const rows = await database.getAllAsync<ExerciseProgressRow>(
+    `SELECT completed_sets.session_id, completed_sets.exercise_id, completed_sets.completed_at,
+            completed_sets.load, completed_sets.reps
+       FROM completed_sets
+       INNER JOIN workout_sessions
+         ON workout_sessions.id = completed_sets.session_id
+      WHERE workout_sessions.cycle_id = ?
+        AND workout_sessions.status = 'complete'
+        AND completed_sets.exercise_id = ?
+      ORDER BY completed_sets.completed_at ASC, completed_sets.id ASC;`,
+    cycleId,
+    exerciseId,
+  );
+
+  return buildExerciseProgress(
+    exerciseId,
+    rows.map((row) => ({
+      sessionId: row.session_id,
+      exerciseId: row.exercise_id,
+      completedAt: row.completed_at,
+      load: row.load ?? undefined,
+      reps: row.reps ?? undefined,
+    })),
+  );
 }
 
 async function getCycleReviewSessions(

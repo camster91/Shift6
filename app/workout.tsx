@@ -290,6 +290,7 @@ export default function ActiveWorkoutScreen() {
       id: `completed-${session.id}-${key}`,
       sessionId: session.id,
       workoutExerciseId: workoutExercise.id,
+      exerciseId: workoutExercise.exerciseId,
       setNumber,
       load: parseNumber(input.load),
       reps,

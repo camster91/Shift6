@@ -19,6 +19,7 @@ interface CompletedSetRow {
   id: string;
   session_id: string;
   workout_exercise_id: string;
+  exercise_id: string | null;
   set_number: number;
   load: number | null;
   reps: number | null;
@@ -78,12 +79,13 @@ export async function saveCompletedSet(
   await database.withTransactionAsync(async () => {
     const result = await database.runAsync(
       `INSERT OR IGNORE INTO completed_sets
-        (id, session_id, workout_exercise_id, set_number, load, reps, duration_seconds,
+        (id, session_id, workout_exercise_id, exercise_id, set_number, load, reps, duration_seconds,
          distance_meters, rpe, rir, completed_at, idempotency_key)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       completedSet.id,
       completedSet.sessionId,
       completedSet.workoutExerciseId,
+      completedSet.exerciseId ?? null,
       completedSet.setNumber,
       completedSet.load ?? null,
       completedSet.reps ?? null,
@@ -120,7 +122,7 @@ export async function getCompletedSets(
 ): Promise<CompletedSet[]> {
   const rows = await database.getAllAsync<CompletedSetRow>(
     `SELECT id, session_id, workout_exercise_id, set_number, load, reps, duration_seconds,
-            distance_meters, rpe, rir, completed_at, idempotency_key
+            exercise_id, distance_meters, rpe, rir, completed_at, idempotency_key
        FROM completed_sets
       WHERE session_id = ?
       ORDER BY workout_exercise_id, set_number;`,
@@ -131,6 +133,7 @@ export async function getCompletedSets(
     id: row.id,
     sessionId: row.session_id,
     workoutExerciseId: row.workout_exercise_id,
+    ...(row.exercise_id ? { exerciseId: row.exercise_id } : {}),
     setNumber: row.set_number,
     load: row.load ?? undefined,
     reps: row.reps ?? undefined,
@@ -218,9 +221,10 @@ export async function updateCompletedSet(
   await database.withTransactionAsync(async () => {
     const result = await database.runAsync(
       `UPDATE completed_sets
-          SET load = ?, reps = ?, duration_seconds = ?, distance_meters = ?,
+          SET exercise_id = ?, load = ?, reps = ?, duration_seconds = ?, distance_meters = ?,
               rpe = ?, rir = ?, completed_at = ?
         WHERE id = ?;`,
+      completedSet.exerciseId ?? null,
       completedSet.load ?? null,
       completedSet.reps ?? null,
       completedSet.durationSeconds ?? null,

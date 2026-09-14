@@ -243,9 +243,10 @@ The cycle-review increment now persists optional user reflection locally (overal
 The analytics increment now exposes an injected no-op-by-default client and instruments the
 documented six-week funnel at onboarding, program start, workout start/completion, Week 2, cycle
 completion, and next-cycle start. It also records health connection and exercise substitution
-events through a privacy-safe allowlist; free-text, coach conversation, raw health samples, email,
-and location remain excluded. A production analytics/crash provider, retention controls, and
-device-level observability verification remain open #272/#280/#281 work.
+events, custom-program creation, and Coach proposal display/approval through a privacy-safe
+allowlist; free-text, coach conversation, raw health samples, email, and location remain excluded.
+A production analytics/crash provider, retention controls, and device-level observability
+verification remain open #272/#280/#281 work.
 
 The sync boundary now distinguishes typed backend conflicts from transient failures. Version,
 ownership, and validation conflicts remain queued, are never auto-merged, and surface through a

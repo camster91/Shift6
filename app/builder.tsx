@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import {
@@ -56,9 +56,12 @@ import {
   saveProgramVersion,
 } from '../src/db/programRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
+import { useAppServices } from '../src/services/AppServicesProvider';
+import { trackAnalyticsEvent } from '../src/services/analytics';
 
 export default function ProgramBuilderScreen() {
   const database = useLocalDatabase();
+  const { analytics } = useAppServices();
   const { mode, sourceVersionId } = useLocalSearchParams<{
     mode?: string;
     sourceVersionId?: string;
@@ -90,6 +93,16 @@ export default function ProgramBuilderScreen() {
   const [sourceLoading, setSourceLoading] = useState(shouldLoadSource);
   const [sourceLoadError, setSourceLoadError] = useState(false);
   const [sourceRetryKey, setSourceRetryKey] = useState(0);
+  const trackedProgramCreation = useRef(false);
+
+  const trackProgramCreation = () => {
+    if (trackedProgramCreation.current) return;
+    trackedProgramCreation.current = true;
+    trackAnalyticsEvent(analytics, 'custom_program_created', {
+      programId: draft.program.sourceProgramId ?? draft.program.id,
+      workoutCount: draft.version.workouts.length,
+    });
+  };
 
   useEffect(() => {
     if (!database) return;
@@ -289,6 +302,7 @@ export default function ProgramBuilderScreen() {
       }
       setDraft((current) => ({ ...current, program }));
       setSaved(true);
+      trackProgramCreation();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'We could not save this program.');
     } finally {
@@ -323,6 +337,7 @@ export default function ProgramBuilderScreen() {
         await saveTrainingCycle(database, cycle);
       }
       setDraft((current) => ({ ...current, program }));
+      trackProgramCreation();
       router.replace('/');
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : 'We could not start this cycle.');

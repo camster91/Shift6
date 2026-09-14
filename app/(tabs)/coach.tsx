@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import {
@@ -34,10 +34,11 @@ import type {
 } from '../../src/domain/types';
 import { colors, radii, spacing } from '../../src/design/tokens';
 import { useAppServices } from '../../src/services/AppServicesProvider';
+import { trackAnalyticsEvent } from '../../src/services/analytics';
 import { buildLocalCoachMessage } from '../../src/services/localCoach';
 
 export default function CoachScreen() {
-  const { coach } = useAppServices();
+  const { analytics, coach } = useAppServices();
   const database = useLocalDatabase();
   const [proposals, setProposals] = useState<CoachProposal[]>([]);
   const [activeCycle, setActiveCycle] = useState<TrainingCycle | null>(null);
@@ -57,6 +58,19 @@ export default function CoachScreen() {
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachSource, setCoachSource] = useState<'local' | 'remote'>('local');
   const [error, setError] = useState<string | null>(null);
+  const trackedProposalIds = useRef(new Set<string>());
+
+  useEffect(() => {
+    for (const proposal of proposals) {
+      if (trackedProposalIds.current.has(proposal.id)) continue;
+      trackedProposalIds.current.add(proposal.id);
+      trackAnalyticsEvent(analytics, 'coach_proposal_shown', {
+        proposalId: proposal.id,
+        changeCount: proposal.changes.length,
+        confidence: proposal.confidence,
+      });
+    }
+  }, [analytics, proposals]);
 
   useEffect(() => {
     if (!database) {
@@ -134,6 +148,12 @@ export default function CoachScreen() {
         }
       } else {
         await updateCoachProposalStatus(database, proposalId, status, now);
+      }
+      if (status === 'accepted') {
+        trackAnalyticsEvent(analytics, 'coach_proposal_accepted', {
+          proposalId: proposal.id,
+          changeCount: proposal.changes.length,
+        });
       }
       setProposals((current) => current.filter((proposal) => proposal.id !== proposalId));
     } catch (decisionError) {

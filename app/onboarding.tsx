@@ -28,8 +28,8 @@ import {
   toOnboardingProfile,
   unitOptions,
 } from '../src/domain/onboarding';
-import { demoProgram } from '../src/domain/fixtures/home';
 import { equipmentCatalog } from '../src/domain/equipment';
+import { programLibraryPrograms } from '../src/domain/programLibrary';
 import { useLocalDatabase } from '../src/db/context';
 import { getOnboardingProfile, saveOnboardingProfile } from '../src/db/profileRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
@@ -78,7 +78,7 @@ export default function OnboardingScreen() {
   const recommendations = useMemo(() => {
     if (!isOnboardingComplete(draft)) return [];
 
-    return recommendPrograms([demoProgram], {
+    return recommendPrograms(programLibraryPrograms, {
       goals: draft.goals,
       experience: draft.experience!,
       equipmentIds: draft.equipmentIds,

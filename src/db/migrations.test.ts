@@ -41,4 +41,13 @@ describe('local database migrations', () => {
 
     expect(statements).toContain('ADD COLUMN workout_focus TEXT NOT NULL DEFAULT');
   });
+
+  it('adds versioned user program and custom exercise snapshot tables', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS user_programs');
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS user_program_versions');
+    expect(statements).toContain('UNIQUE(program_id, version)');
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS user_exercises');
+  });
 });

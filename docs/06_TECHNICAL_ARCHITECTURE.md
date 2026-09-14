@@ -233,6 +233,7 @@ The initial rebuild branch implements this architecture as a small, native-first
 - `LocalDatabaseProvider.web.tsx` intentionally makes web a non-persistent preview surface. It prevents the current SDK 57 SQLite WASM worker packaging gap from blocking UI smoke tests and must not be treated as workout durability evidence.
 - `src/domain/types.ts` uses stable string IDs, ISO timestamps, explicit program versions, cycle snapshots, immutable completed-session records, and a program-specific `CycleModel.weekSixMeaning`.
 - `src/domain/equipment.ts` is the first equipment taxonomy and compatibility boundary. `src/domain/fixtures/exercises.ts` seeds 50 schema-complete foundational exercise records with stable IDs, tracking types, muscle/pattern metadata, and explicit `contentStatus: 'draft'`; no draft record is treated as technique-reviewed production media.
+- `src/domain/programBuilder.ts` provides copy-on-write operations for user-owned program versions, exercise add/remove/reorder, and custom exercise creation. Migration 5 stores user program/version and custom-exercise JSON snapshots; `programRepository.ts` queues the latest snapshot through the same outbox boundary.
 - `src/services/contracts.ts` exposes replaceable `BackendClient`, `CoachGateway`, and privacy-safe analytics contracts. No backend endpoint, AI provider, credential, or cloud mutation is included in this foundation increment.
 - `src/config/env.ts` reads only `EXPO_PUBLIC_*` values. `.env.example` documents public configuration; secrets are not accepted by the mobile bundle.
 
@@ -302,6 +303,18 @@ The catalogue is not yet the 300+ launch set: content review, custom exercises, 
 ## Program library metadata checkpoint — 2026-09-14
 
 The Programs surface now carries metadata for the planned 20-program launch library. Barbell 30 is the only published, startable version in this increment; the other 19 entries are explicitly `metadata-draft` until their workouts, progression rules, substitutions, safety review, and six-week versions are complete. This prevents a catalogue card from implying that a plan is ready when its executable program version does not yet exist.
+
+## Custom builder implementation checkpoint — 2026-09-14
+
+The first #275 editing surface now supports a safe user-owned draft path:
+
+- `createProgramCopy` deep-clones a curated program version into new workout, exercise, and set IDs, records `ownerId`/`sourceProgramId`, and marks the copy as non-template draft data;
+- builder operations are immutable and validate set counts and reorder completeness before returning a new version snapshot;
+- `createCustomExercise` creates a draft, user-owned record with the same tracking and safety fields as curated exercises;
+- `app/builder.tsx` exposes a small, reviewable UI for naming a copy, adding an accessory or custom movement, and saving the draft locally;
+- canonical templates and existing completed-session records are never mutated by these operations.
+
+The builder does not yet publish versions, support full drag-and-drop/superset/circuit editing, or start a custom cycle. Those are intentionally separate increments.
 
 ## Sync outbox implementation checkpoint — 2026-09-13
 

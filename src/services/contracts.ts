@@ -3,7 +3,13 @@ import type { CoachProposal, EntityId, ISODateString, TrainingCycle, User } from
 export interface SyncMutation {
   id: EntityId;
   idempotencyKey: string;
-  entityType: 'workout-session' | 'completed-set' | 'profile' | 'program-version';
+  entityType:
+    | 'workout-session'
+    | 'completed-set'
+    | 'profile'
+    | 'program-version'
+    | 'exercise'
+    | 'training-cycle';
   entityId: EntityId;
   payload: Record<string, unknown>;
   createdAt: ISODateString;

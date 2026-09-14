@@ -195,6 +195,8 @@ export interface Program {
   progressionStrategy: ProgressionStrategy;
   currentVersionId: EntityId;
   isTemplate: boolean;
+  ownerId?: EntityId;
+  sourceProgramId?: EntityId;
 }
 
 export interface ProgramVersion {

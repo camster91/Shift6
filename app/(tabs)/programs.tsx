@@ -53,6 +53,14 @@ export default function ProgramsScreen() {
         style={styles.exerciseLibraryButton}
       />
 
+      <Button
+        label="Create a custom copy"
+        variant="ghost"
+        icon={<Ionicons name="create-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/builder')}
+        style={styles.builderButton}
+      />
+
       <Text variant="h2" style={styles.moreProgramsTitle}>
         More ways to train
       </Text>
@@ -107,6 +115,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   exerciseLibraryButton: {
+    marginTop: spacing.xs,
+  },
+  builderButton: {
     marginTop: spacing.xs,
   },
   moreProgramsTitle: {

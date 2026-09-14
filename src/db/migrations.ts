@@ -102,6 +102,36 @@ export const MIGRATIONS: readonly Migration[] = [
         ADD COLUMN workout_focus TEXT NOT NULL DEFAULT 'mixed';`,
     ],
   },
+  {
+    version: 5,
+    name: 'user-program-and-exercise-snapshots',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS user_programs (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL,
+        source_program_id TEXT,
+        program_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );`,
+      `CREATE TABLE IF NOT EXISTS user_program_versions (
+        id TEXT PRIMARY KEY NOT NULL,
+        program_id TEXT NOT NULL,
+        version INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        version_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE(program_id, version),
+        FOREIGN KEY (program_id) REFERENCES user_programs(id) ON DELETE CASCADE
+      );`,
+      `CREATE TABLE IF NOT EXISTS user_exercises (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL,
+        exercise_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

@@ -204,6 +204,8 @@ Health Connections now has a local trend read surface for the latest persisted d
 
 Coach now has an offline deterministic explainer for workout, progress, cycle, shortening, and substitution prompts. It uses bounded structured facts and the existing safety classifier; it does not call a model or mutate plan data. Provider-backed Coach responses and proposal generation remain open #278 work.
 
+Progress and Review now show deterministic completed training days and active cycle weeks from local session timestamps as consistency context. No punitive streak score is introduced.
+
 The health boundary now validates and normalizes provider summaries in the domain layer, deduplicates by source plus stable sample ID, and exposes explicit UTC-day trend aggregation rules for additive, average, and latest-value metrics. Native permission adapters, local health persistence, disclosure UI, and device verification remain later #279/#280 gates.
 
 Normalized health summaries now have a local SQLite repository with user-scoped upserts, filtered reads, local export/delete coverage, and guest-account ownership transfer. They remain outside the sync outbox until a least-privilege remote health policy is approved.

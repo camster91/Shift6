@@ -245,6 +245,13 @@ export default function ProgressScreen() {
           detail="this cycle"
           tone="coral"
         />
+        <MetricCard
+          icon="calendar-outline"
+          label="Training days"
+          value={String(facts.completedTrainingDays)}
+          detail={`${facts.activeWeeks} active week${facts.activeWeeks === 1 ? '' : 's'}`}
+          tone="lavender"
+        />
       </View>
 
       {cycleComparison ? <CycleComparisonCard comparison={cycleComparison} /> : null}

@@ -615,3 +615,5 @@ The active workout now renders the private snapshot's section label, superset/ci
 ## Offline Coach explainer checkpoint — 2026-09-14
 
 `src/services/localCoach.ts` provides a deterministic, provider-free explainer for the guest shell. It answers workout, weekly-review, cycle-review, shortening, and substitution prompts from a bounded `CoachContext`; it reuses the deterministic safety classifier and returns a safety route before training guidance for red-flag prompts. It cannot create or mutate a plan. A provider-backed `CoachGateway`, server-side model routing, conversation persistence, and structured proposal generation remain separate #278 work and are not implied by this offline fallback.
+
+Cycle facts now also include completed training days and the number of active cycle weeks represented by completed sessions. Progress and Review surface these as consistency context without calculating a punitive streak or inferring missed-workout intent.

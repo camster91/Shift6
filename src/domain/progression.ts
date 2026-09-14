@@ -82,6 +82,8 @@ export interface PlateauResult {
 
 export interface CycleReviewSession {
   completed: boolean;
+  completedAt?: string;
+  cycleWeek?: number;
   durationMinutes?: number;
   cardioMinutes?: number;
   progressionEvents?: number;
@@ -112,6 +114,8 @@ export interface CycleReviewFacts {
   averageSessionDurationMinutes?: number;
   discomfortFlags: number;
   readinessCounts: ReadinessCounts;
+  completedTrainingDays: number;
+  activeWeeks: number;
 }
 
 export interface CycleProgressSummary {
@@ -298,6 +302,17 @@ export function buildCycleReviewFacts(
     },
     { ready: 0, limited: 0, rest: 0 },
   );
+  const completedTrainingDays = new Set(
+    completedSessions.flatMap((session) => {
+      const timestamp = session.completedAt ? Date.parse(session.completedAt) : Number.NaN;
+      return Number.isFinite(timestamp) ? [new Date(timestamp).toISOString().slice(0, 10)] : [];
+    }),
+  ).size;
+  const activeWeeks = new Set(
+    completedSessions.flatMap((session) =>
+      session.cycleWeek !== undefined && session.cycleWeek > 0 ? [session.cycleWeek] : [],
+    ),
+  ).size;
   const totalTrainingVolume = completedSessions.reduce(
     (total, session) =>
       total +
@@ -330,6 +345,8 @@ export function buildCycleReviewFacts(
     averageSessionDurationMinutes: average(durations),
     discomfortFlags: sessions.filter((session) => session.discomfortFlag).length,
     readinessCounts,
+    completedTrainingDays,
+    activeWeeks,
   };
 }
 

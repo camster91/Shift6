@@ -181,6 +181,8 @@ describe('SHIFT6 deterministic progression', () => {
     const facts = buildCycleReviewFacts(3, [
       {
         completed: true,
+        completedAt: '2026-09-01T10:00:00.000Z',
+        cycleWeek: 1,
         durationMinutes: 30,
         cardioMinutes: 0,
         progressionEvents: 1,
@@ -191,6 +193,8 @@ describe('SHIFT6 deterministic progression', () => {
       },
       {
         completed: true,
+        completedAt: '2026-09-03T10:00:00.000Z',
+        cycleWeek: 1,
         durationMinutes: 35,
         cardioMinutes: 30,
         progressionEvents: 0,
@@ -211,6 +215,8 @@ describe('SHIFT6 deterministic progression', () => {
       averageReportedEffort: 7.5,
       discomfortFlags: 0,
       readinessCounts: { ready: 1, limited: 1, rest: 0 },
+      completedTrainingDays: 2,
+      activeWeeks: 1,
     });
     expect(facts.personalRecordIds).toEqual(['record-squat']);
     expect(getWeekSixGuidance('consolidation').isReducedVolume).toBe(false);

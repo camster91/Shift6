@@ -52,6 +52,7 @@ describe('getCycleProgressSummary', () => {
         return [
           {
             id: 'session-1',
+            cycle_week: 1,
             status: 'complete',
             started_at: '2026-09-13T12:00:00.000Z',
             completed_at: '2026-09-13T12:30:00.000Z',
@@ -60,6 +61,7 @@ describe('getCycleProgressSummary', () => {
           },
           {
             id: 'session-2',
+            cycle_week: 2,
             status: 'complete',
             started_at: '2026-09-14T12:00:00.000Z',
             completed_at: '2026-09-14T12:15:00.000Z',
@@ -81,6 +83,8 @@ describe('getCycleProgressSummary', () => {
         averageReportedEffort: 3.5,
         discomfortFlags: 1,
         readinessCounts: { ready: 1, limited: 1, rest: 0 },
+        completedTrainingDays: 2,
+        activeWeeks: 2,
         personalRecordIds: [
           'record-exercise-back-squat-load-session-1',
           'record-exercise-back-squat-reps-session-1',

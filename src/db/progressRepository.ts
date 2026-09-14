@@ -14,6 +14,7 @@ import { getCompletedSets } from './workoutRepository';
 
 interface WorkoutSessionProgressRow {
   id: string;
+  cycle_week: number;
   status: 'planned' | 'in-progress' | 'complete' | 'skipped' | 'abandoned';
   started_at: string;
   completed_at: string | null;
@@ -165,7 +166,7 @@ async function getCycleReviewSessions(
   cycleId: string,
 ): Promise<CycleReviewSession[]> {
   const sessionRows = await database.getAllAsync<WorkoutSessionProgressRow>(
-    `SELECT id, status, started_at, completed_at, workout_focus, readiness
+    `SELECT id, cycle_week, status, started_at, completed_at, workout_focus, readiness
        FROM workout_sessions
       WHERE cycle_id = ?
       ORDER BY started_at ASC;`,
@@ -228,6 +229,8 @@ async function getCycleReviewSessions(
 
     return {
       completed: row.status === 'complete',
+      completedAt: row.completed_at ?? undefined,
+      cycleWeek: row.cycle_week,
       durationMinutes: getDurationMinutes(row.started_at, row.completed_at),
       cardioMinutes,
       effort: asReportedEffort(checkIn?.perceived_exertion),

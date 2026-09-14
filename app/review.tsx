@@ -158,6 +158,7 @@ export default function CycleReviewScreen() {
         <Fact label="Adherence" value={`${Math.round(summary.facts.completionRate * 100)}%`} />
         <Fact label="Logged sets" value={String(summary.loggedSetCount)} />
         <Fact label="Volume" value={summary.facts.totalTrainingVolume.toLocaleString()} />
+        <Fact label="Training days" value={String(summary.facts.completedTrainingDays)} />
       </View>
 
       <Card tone="blue" style={styles.signalCard} accessibilityLabel={formatReviewSignals(summary)}>

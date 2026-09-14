@@ -186,4 +186,6 @@ The active workout now carries builder-authored section, superset/circuit, note,
 
 Progress movement history now includes deterministic duration and distance points and personal records, with the Progress selector and accessible chart presenting cardio/timed metrics alongside strength history. The underlying values remain local-first and version-scoped; no estimated strength value is generated for a timed or distance movement.
 
+Cycle advancement now uses distinct required workout identities from persisted complete sessions, so duplicate attempts cannot advance a week before its required schedule is represented.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

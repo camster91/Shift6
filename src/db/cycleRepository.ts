@@ -128,7 +128,7 @@ export async function getCompletedRequiredWorkoutCount(
 
   const placeholders = requiredWorkoutIds.map(() => '?').join(', ');
   const countRow = await database.getFirstAsync<{ count: number }>(
-    `SELECT COUNT(*) AS count
+    `SELECT COUNT(DISTINCT workout_id) AS count
        FROM workout_sessions
       WHERE cycle_id = ?
         AND cycle_week = ?

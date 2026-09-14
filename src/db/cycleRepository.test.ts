@@ -101,6 +101,7 @@ describe('advanceTrainingCycleAfterCompletedWorkout', () => {
       getCompletedRequiredWorkoutCount(database, 'cycle-1', 1, version.id),
     ).resolves.toBe(1);
 
+    expect(calls[1]?.sql).toContain('COUNT(DISTINCT workout_id)');
     expect(calls[1]?.sql).toContain('workout_id IN (?)');
     expect(calls[1]?.params).toEqual(['cycle-1', 1, 'required-workout']);
   });

@@ -459,6 +459,8 @@ Next-session target lookup is scoped to the active program-version ID. A revisio
 
 Per-exercise progress history now preserves the completed set's timed and distance values as well as load and reps. The deterministic point builder records best duration and distance values and emits monotonic personal-record events for those metrics; the SQLite repository selects and maps the durable columns while retaining legacy exercise-identity resolution. Progress movement choices now include strength, cardio, timed, and custom movements, and the accessible history card selects a metric from the exercise's typed tracking mode without fabricating a strength estimate. Duration and distance formatting remains presentation-only; progression calculations stay in the domain layer.
 
+Cycle advancement now counts distinct completed required workout IDs within the persisted week. Repeating a single workout cannot satisfy the required schedule by itself, and optional cardio/workout IDs remain excluded from the advancement threshold.
+
 ## Builder target configuration checkpoint — 2026-09-14
 
 The builder now exposes a tracking-aware target editor for each exercise. Reps, load, RPE, and RIR are available for rep-based movements; time and distance fields are shown for timed/cardio movements. The immutable `setWorkoutExerciseTarget` operation applies a cloned prescription to all sets in that exercise while preserving set IDs and the source version. This is an intentionally compact first target boundary: per-set overrides, rest editing, sections, supersets/circuits, warm-ups, cooldowns, and blank-workout creation remain separate increments.

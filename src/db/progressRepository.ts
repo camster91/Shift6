@@ -19,6 +19,9 @@ import { getCompletedSets } from './workoutRepository';
 
 interface WorkoutSessionProgressRow {
   id: string;
+  workout_id?: string;
+  program_version_id?: string;
+  version_json?: string | null;
   cycle_week: number;
   status: 'planned' | 'in-progress' | 'complete' | 'skipped' | 'abandoned';
   started_at: string;
@@ -245,8 +248,14 @@ async function getCycleReviewSessions(
   cycleId: string,
 ): Promise<CycleReviewSession[]> {
   const sessionRows = await database.getAllAsync<WorkoutSessionProgressRow>(
-    `SELECT id, cycle_week, status, started_at, completed_at, workout_focus, readiness
+    `SELECT workout_sessions.id, workout_sessions.workout_id,
+            workout_sessions.program_version_id, user_program_versions.version_json,
+            workout_sessions.cycle_week, workout_sessions.status,
+            workout_sessions.started_at, workout_sessions.completed_at,
+            workout_sessions.workout_focus, workout_sessions.readiness
        FROM workout_sessions
+       LEFT JOIN user_program_versions
+         ON user_program_versions.id = workout_sessions.program_version_id
       WHERE cycle_id = ?
       ORDER BY started_at ASC;`,
     cycleId,
@@ -308,6 +317,7 @@ async function getCycleReviewSessions(
 
     return {
       completed: row.status === 'complete',
+      countsTowardPlan: isRequiredWorkoutSession(row),
       completedAt: row.completed_at ?? undefined,
       cycleWeek: row.cycle_week,
       durationMinutes: getDurationMinutes(row.started_at, row.completed_at),
@@ -319,6 +329,18 @@ async function getCycleReviewSessions(
       sets,
     };
   });
+}
+
+function isRequiredWorkoutSession(row: WorkoutSessionProgressRow): boolean {
+  if (!row.workout_id || !row.version_json) return true;
+
+  try {
+    const version = JSON.parse(row.version_json) as ProgramVersion;
+    const workout = version.workouts.find((candidate) => candidate.id === row.workout_id);
+    return workout ? workout.isOptional !== true : true;
+  } catch {
+    return true;
+  }
 }
 
 function buildCyclePersonalRecords(

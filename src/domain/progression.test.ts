@@ -244,4 +244,25 @@ describe('SHIFT6 deterministic progression', () => {
       loggedSetCount: 3,
     });
   });
+
+  it('keeps optional completed activity out of required-workout adherence', () => {
+    const summary = buildCycleProgressSummary(3, [
+      { completed: true, countsTowardPlan: true, sets: [{ completed: true, reps: 5 }] },
+      {
+        completed: true,
+        countsTowardPlan: false,
+        cardioMinutes: 30,
+        sets: [{ completed: true, durationSeconds: 1_800 }],
+      },
+    ]);
+
+    expect(summary).toMatchObject({
+      facts: {
+        completedWorkoutCount: 1,
+        completionRate: 1 / 3,
+        cardioMinutes: 30,
+      },
+      loggedSetCount: 2,
+    });
+  });
 });

@@ -82,6 +82,7 @@ export interface PlateauResult {
 
 export interface CycleReviewSession {
   completed: boolean;
+  countsTowardPlan?: boolean;
   completedAt?: string;
   cycleWeek?: number;
   durationMinutes?: number;
@@ -286,6 +287,9 @@ export function buildCycleReviewFacts(
   sessions: readonly CycleReviewSession[],
 ): CycleReviewFacts {
   const completedSessions = sessions.filter((session) => session.completed);
+  const completedPlannedSessions = completedSessions.filter(
+    (session) => session.countsTowardPlan !== false,
+  );
   const efforts = completedSessions
     .map((session) => session.effort)
     .filter((effort): effort is number => effort !== undefined);
@@ -325,8 +329,9 @@ export function buildCycleReviewFacts(
 
   return {
     plannedWorkoutCount,
-    completedWorkoutCount: completedSessions.length,
-    completionRate: plannedWorkoutCount === 0 ? 0 : completedSessions.length / plannedWorkoutCount,
+    completedWorkoutCount: completedPlannedSessions.length,
+    completionRate:
+      plannedWorkoutCount === 0 ? 0 : completedPlannedSessions.length / plannedWorkoutCount,
     progressionEvents: completedSessions.reduce(
       (total, session) => total + (session.progressionEvents ?? 0),
       0,

@@ -54,17 +54,11 @@ export const radii = {
 
 export const elevation = {
   card: {
-    shadowColor: colors.ink,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
+    boxShadow: '0px 8px 16px rgba(13, 16, 27, 0.06)',
     elevation: 3,
   },
   floating: {
-    shadowColor: colors.ink,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14,
-    shadowRadius: 12,
+    boxShadow: '0px 4px 12px rgba(13, 16, 27, 0.14)',
     elevation: 6,
   },
 } as const;

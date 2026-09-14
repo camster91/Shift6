@@ -232,4 +232,6 @@ CI now runs on feature-branch pushes in addition to pull requests, so the founda
 
 The dedicated cycle dashboard now makes the six-week signature visible as a real route, using the persisted active cycle/version snapshot, current-week completion, schedule categories, and program-defined Week 6 meaning. It links back into workout, progress, and review flows without duplicating progression calculations. Calendar rescheduling and multi-workout date planning remain later surfaces.
 
+The #271 asset handoff now has a CI-enforced manifest validator for review metadata, safe paths, implementation references, and basic SVG integrity. This protects the Figma-first boundary without presenting exploratory or fallback assets as approved production exports.
+
 Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.

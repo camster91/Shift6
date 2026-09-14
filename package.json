@@ -10,13 +10,14 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint . --max-warnings 0",
-    "format": "prettier --write \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"*.{json,js,cjs,mjs}\"",
-    "format:check": "prettier --check \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"*.{json,js,cjs,mjs}\"",
+    "format": "prettier --write \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"scripts/**/*.{js,mjs}\" \"*.{json,js,cjs,mjs}\"",
+    "format:check": "prettier --check \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"scripts/**/*.{js,mjs}\" \"*.{json,js,cjs,mjs}\"",
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --runInBand",
     "doctor": "expo-doctor",
+    "validate:assets": "node scripts/validate-assets.mjs",
     "export:web": "expo export --platform web"
   },
   "dependencies": {

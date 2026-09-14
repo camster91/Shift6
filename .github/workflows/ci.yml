@@ -36,6 +36,9 @@ jobs:
       - name: Expo doctor
         run: npm run doctor
 
+      - name: Validate asset manifest
+        run: npm run validate:assets
+
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 

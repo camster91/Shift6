@@ -378,3 +378,14 @@ The local/cloud handoff now has an explicit provider boundary without introducin
 - `BackendClient` remains the replaceable service contract, so network reachability, authentication, background scheduling, and a concrete backend can be added without changing domain calculations or workout logging.
 
 No network call is made by the active workout, and no sync provider or credential is included. Background execution, conflict resolution, auth, and native offline/reconnect proof remain release gates.
+
+## Sync coordinator checkpoint — 2026-09-14
+
+`src/services/syncCoordinator.ts` adds the missing orchestration boundary around the outbox:
+
+- an explicit offline status skips backend work and leaves the local outbox untouched;
+- online or unknown connectivity delegates to the existing idempotent flush contract;
+- callers receive separate `offline`, `empty`, `synced`, `partial`, and `failed` outcomes for UI/retry policy;
+- connectivity, backend, and future background scheduling remain injectable rather than embedded in workout/domain logic.
+
+The current app does not yet install a native connectivity listener or background task. Native reconnect, app-background execution, conflict resolution, and device fault testing remain release gates.

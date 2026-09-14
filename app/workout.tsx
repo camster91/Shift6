@@ -13,8 +13,15 @@ import {
   Text,
 } from '../src/components/ui';
 import { demoCycle, demoWorkout } from '../src/domain/fixtures/home';
-import type { CompletedSet, SetTarget, WorkoutExercise, WorkoutSession } from '../src/domain/types';
+import type {
+  CompletedSet,
+  SetTarget,
+  TrainingCycle,
+  WorkoutExercise,
+  WorkoutSession,
+} from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
+import { getActiveTrainingCycle } from '../src/db/cycleRepository';
 import {
   completeWorkoutSession,
   getCompletedSets,
@@ -32,13 +39,13 @@ interface SetInputValues {
   rir: string;
 }
 
-const sessionId = `session-${demoCycle.id}-${demoWorkout.id}`;
-
 export default function ActiveWorkoutScreen() {
   const database = useLocalDatabase();
+  const [activeCycle, setActiveCycle] = useState<TrainingCycle>(demoCycle);
   const [startedAt] = useState(() => new Date().toISOString());
   const [values, setValues] = useState<Record<string, SetInputValues>>(() => buildInitialValues());
   const [completedSetKeys, setCompletedSetKeys] = useState<Set<string>>(() => new Set());
+  const [loadingCycle, setLoadingCycle] = useState(database !== null);
   const [loadingSession, setLoadingSession] = useState(database !== null);
   const [savingSetKey, setSavingSetKey] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
@@ -48,18 +55,40 @@ export default function ActiveWorkoutScreen() {
 
   const session = useMemo<WorkoutSession>(
     () => ({
-      id: sessionId,
-      cycleId: demoCycle.id,
+      id: `session-${activeCycle.id}-${demoWorkout.id}`,
+      cycleId: activeCycle.id,
       workoutId: demoWorkout.id,
       programVersionId: demoWorkout.programVersionId,
       status: 'in-progress',
       startedAt,
       isOffline: false,
     }),
-    [startedAt],
+    [activeCycle.id, startedAt],
   );
 
   useEffect(() => {
+    if (!database) {
+      setLoadingCycle(false);
+      return;
+    }
+
+    let active = true;
+    void getActiveTrainingCycle(database, 'guest-user')
+      .then((cycle) => {
+        if (active && cycle) setActiveCycle(cycle);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setLoadingCycle(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [database]);
+
+  useEffect(() => {
+    if (loadingCycle) return;
     if (!database) {
       setLoadingSession(false);
       return;
@@ -82,7 +111,7 @@ export default function ActiveWorkoutScreen() {
     return () => {
       active = false;
     };
-  }, [database, session]);
+  }, [database, loadingCycle, session]);
 
   useEffect(() => {
     if (restEndsAt === null) return;
@@ -184,7 +213,7 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
-  if (loadingSession) {
+  if (loadingCycle || loadingSession) {
     return (
       <Screen contentContainerStyle={styles.loadingContent}>
         <LoadingSkeleton width={44} height={44} />

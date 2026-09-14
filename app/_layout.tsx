@@ -16,6 +16,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ presentation: 'card' }} />
+        <Stack.Screen name="program" options={{ presentation: 'card' }} />
         <Stack.Screen name="workout" options={{ presentation: 'modal' }} />
       </Stack>
     </LocalDatabaseProvider>

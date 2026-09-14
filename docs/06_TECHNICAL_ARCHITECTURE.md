@@ -245,7 +245,7 @@ The next #273 increment adds a real multi-step onboarding route at `app/onboardi
 - `recommendPrograms` deterministically ranks compatible programs and explains goal, experience, schedule, duration, and equipment fit without AI or network access;
 - native SQLite migration 2 persists a guest profile and replaceable equipment rows atomically; `getOnboardingProfile` reloads answers when the user edits setup;
 - web remains an explicit preview surface and does not claim persistence or health permission support;
-- the flow currently saves setup and returns to Programs. Cycle start, account conversion, real health permission requests, and program-backed recommendations remain later vertical-slice increments.
+- the flow currently saves setup and returns to Programs. Account conversion, real health permission requests, and a populated program library remain later vertical-slice increments.
 
 This is an implementation checkpoint, not a release claim. Native migration execution, restart persistence, and small/large iOS/Android accessibility verification still require device runtimes.
 
@@ -262,3 +262,15 @@ The first active-workout increment replaces the preview at `app/workout.tsx` wit
 - finishing is disabled until all fixture sets are complete and then marks the local session complete before returning Home.
 
 This is not yet the full #276 release gate: network reachability detection, background sync execution, crash/restart device proof, correction workflow, substitutions, notes, cardio blocks, and VoiceOver/TalkBack end-to-end review remain outstanding.
+
+## Cycle start implementation checkpoint — 2026-09-13
+
+The next vertical-slice increment connects the selected Barbell 30 program to a real six-week cycle boundary:
+
+- `createTrainingCycle` snapshots the selected `ProgramVersion` into six program-specific `CycleWeek` records, preserving the Week 6 meaning defined by that program;
+- native SQLite migration 3 persists cycle status, current week, start time, and the serialized week snapshot;
+- starting a cycle pauses any other active cycle for the guest user inside one transaction, preventing multiple active plans in the local profile;
+- `app/program.tsx` provides a real Barbell 30 detail/start surface, and Home plus the active workout resolve the persisted active cycle rather than always using the demo cycle;
+- the stable cycle and session identifiers establish the boundary needed for later progress aggregation and sync idempotency.
+
+Web remains a preview surface without SQLite persistence. Native cycle migration/restart behavior and the full cross-platform accessibility pass remain device verification work.

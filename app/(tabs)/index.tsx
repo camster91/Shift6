@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -20,9 +21,29 @@ import {
   demoUser,
   demoWorkout,
 } from '../../src/domain/fixtures/home';
+import { useLocalDatabase } from '../../src/db/context';
+import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
 import { colors, radii, spacing } from '../../src/design/tokens';
 
 export default function HomeScreen() {
+  const database = useLocalDatabase();
+  const [currentCycle, setCurrentCycle] = useState(demoCycle);
+
+  useEffect(() => {
+    if (!database) return;
+
+    let active = true;
+    void getActiveTrainingCycle(database, 'guest-user')
+      .then((cycle) => {
+        if (active && cycle) setCurrentCycle(cycle);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [database]);
+
   return (
     <Screen>
       <View style={styles.header}>
@@ -57,10 +78,10 @@ export default function HomeScreen() {
               CURRENT CYCLE
             </Text>
             <Text variant="h2" style={styles.cycleTitle}>
-              Week {demoCycle.currentWeek} of 6
+              Week {currentCycle.currentWeek} of 6
             </Text>
             <Text variant="small" tone="muted">
-              {demoProgram.title} · {demoCycle.weeks[0]?.phase}
+              {demoProgram.title} · {currentCycle.weeks[currentCycle.currentWeek - 1]?.phase}
             </Text>
           </View>
           <View style={styles.cycleBadge}>
@@ -71,9 +92,9 @@ export default function HomeScreen() {
           </View>
         </View>
         <View style={styles.cycleIndicator}>
-          <SixWeekIndicator weeks={demoCycle.weeks} />
+          <SixWeekIndicator weeks={currentCycle.weeks} />
         </View>
-        <ProgressIndicator label="Cycle progress" value={1 / 6} />
+        <ProgressIndicator label="Cycle progress" value={currentCycle.currentWeek / 6} />
       </Card>
 
       <View style={styles.sectionHeader}>

@@ -28,7 +28,7 @@ export default function ProgramsScreen() {
       <Text variant="h2" style={styles.sectionTitle}>
         For your equipment
       </Text>
-      <ProgramCard program={demoProgram} />
+      <ProgramCard program={demoProgram} onPress={() => router.push('/program')} />
 
       <Button
         label="Personalize recommendations"

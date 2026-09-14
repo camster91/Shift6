@@ -27,4 +27,12 @@ describe('local database migrations', () => {
     expect(statements).toContain('FOREIGN KEY (user_id) REFERENCES user_profiles(id)');
     expect(statements).toContain('health_connection TEXT NOT NULL');
   });
+
+  it('adds a versioned training-cycle snapshot table', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS training_cycles');
+    expect(statements).toContain('weeks_json TEXT NOT NULL');
+    expect(statements).toContain('training_cycles_user_status_started');
+  });
 });

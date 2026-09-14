@@ -77,6 +77,23 @@ export const MIGRATIONS: readonly Migration[] = [
       );`,
     ],
   },
+  {
+    version: 3,
+    name: 'versioned-training-cycles',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS training_cycles (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL,
+        program_version_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        current_week INTEGER NOT NULL,
+        started_at TEXT NOT NULL,
+        weeks_json TEXT NOT NULL
+      );`,
+      `CREATE INDEX IF NOT EXISTS training_cycles_user_status_started
+        ON training_cycles(user_id, status, started_at DESC);`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

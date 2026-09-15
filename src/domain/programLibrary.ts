@@ -299,7 +299,7 @@ const metadata: readonly Omit<
 ];
 
 export type ProgramCatalogueStatus = 'published' | 'metadata-draft';
-export type ProgramBuildStatus = 'reviewed' | 'executable-draft' | 'metadata-only';
+export type ProgramBuildStatus = 'canonical' | 'executable-draft' | 'metadata-only';
 
 export interface ProgramCatalogueEntry {
   program: Program;
@@ -321,7 +321,7 @@ export const programLibrary: readonly ProgramCatalogueEntry[] = metadata.map((en
     program,
     status: index === 0 ? 'published' : 'metadata-draft',
     buildStatus:
-      index === 0 ? 'reviewed' : version === undefined ? 'metadata-only' : 'executable-draft',
+      index === 0 ? 'canonical' : version === undefined ? 'metadata-only' : 'executable-draft',
     ...(version ? { version } : {}),
   };
 });

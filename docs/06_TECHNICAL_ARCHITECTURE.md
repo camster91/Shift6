@@ -927,3 +927,8 @@ requiring a force-quit.
 The active route maps the shared sync runtime to the same accessible banner states used by Profile:
 offline, syncing, retry-paused, and conflict. A synced/idle state stays quiet, and the banner never
 blocks local workout controls.
+
+When an unfinished exercise is substituted, the active route clears draft input values and any
+exercise-level next-target override for that stable workout-exercise ID before rendering the new
+movement. The operation remains blocked after a completed set, so stable history IDs are not
+reinterpreted as a different exercise.

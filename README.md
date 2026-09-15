@@ -146,6 +146,10 @@ successfully.
 The active workout also reflects offline, syncing, retry-paused, and conflict states from the
 shared sync runtime while keeping local set completion independent of cloud availability.
 
+Equipment substitutions in an unfinished session now clear the old movement's draft inputs and
+target override before the replacement is displayed. A completed set still blocks substitution so
+history cannot be silently reclassified.
+
 ## Canonical planning docs
 
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition

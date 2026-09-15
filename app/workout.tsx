@@ -643,6 +643,17 @@ export default function ActiveWorkoutScreen() {
       'We could not apply this substitution.',
     );
     if (applied) {
+      setValues((current) => {
+        const next = { ...current };
+        for (const set of workoutExercise.sets)
+          delete next[setKey(workoutExercise.id, set.setNumber)];
+        return next;
+      });
+      setTargetOverrides((current) => {
+        const next = { ...current };
+        delete next[workoutExercise.id];
+        return next;
+      });
       setSubstitutionFor(null);
       trackAnalyticsEvent(analytics, 'exercise_substituted', {
         sourceExerciseId: workoutExercise.exerciseId,

@@ -382,3 +382,7 @@ storage is ready, and raw database details are not exposed in the user-facing er
 
 Active workout now also consumes the shared sync runtime state and shows offline, syncing,
 retry-paused, or conflict feedback without disabling local set logging.
+
+The substitution path now clears unfinished input and target-override state for the replaced
+movement while preserving the stable workout-exercise identity. Completed-set substitution remains
+blocked to protect historical meaning.

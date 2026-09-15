@@ -39,6 +39,9 @@ jobs:
       - name: Validate asset manifest
         run: npm run validate:assets
 
+      - name: Check tracked secrets
+        run: npm run check:secrets
+
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 

@@ -371,3 +371,7 @@ reordering and add-set controls. Changes create a private version revision and u
 cycle/session pointer in one local SQLite transaction without rewriting completed sets or the source
 template. Active-session set removal remains deferred until completed-set-aware semantics are
 defined.
+
+Authenticated active-workout writes now also trigger a non-blocking single-flight sync attempt after
+local persistence. Guest and offline sessions remain fully local-first, with their outbox mutations
+waiting for a later authenticated foreground/reconnect retry.

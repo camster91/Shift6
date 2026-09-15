@@ -135,6 +135,10 @@ Active workouts now expose accessible copy-on-write controls for moving an exerc
 adding a set. Reordering preserves workout-exercise and completed-set IDs; added sets use the
 versioned builder rules and remain local-first. Template data and completed history are not mutated.
 
+When an authenticated backend is configured, active-workout local writes now trigger a non-blocking
+single-flight sync attempt after the local transaction succeeds. Guest mode and offline mode leave
+the outbox untouched for a later authenticated retry.
+
 ## Canonical planning docs
 
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition

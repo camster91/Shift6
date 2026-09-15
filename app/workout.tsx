@@ -70,6 +70,7 @@ import { connectivityStatusFromNetworkState } from '../src/services/connectivity
 import { createExpoNotificationProvider } from '../src/services/notifications';
 import { cancelRestTimerCue, refreshRestTimerCue } from '../src/services/notificationScheduler';
 import { useAppServices } from '../src/services/AppServicesProvider';
+import { useSyncRuntime } from '../src/services/SyncRuntimeProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
 import * as Network from 'expo-network';
 import type { ConnectivityStatus } from '../src/services/syncCoordinator';
@@ -93,6 +94,7 @@ const notificationProvider = createExpoNotificationProvider();
 export default function ActiveWorkoutScreen() {
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
+  const { flushNow } = useSyncRuntime();
   const { workoutId } = useLocalSearchParams<{ workoutId?: string }>();
   const [activeCycle, setActiveCycle] = useState<TrainingCycle>(demoCycle);
   const [activeProgram, setActiveProgram] = useState(demoProgram);
@@ -492,6 +494,7 @@ export default function ActiveWorkoutScreen() {
         if (alreadyCompleted && result === 'missing') {
           throw new Error('This completed set is no longer available locally.');
         }
+        void flushNow();
       }
       setCompletedSetKeys((current) => new Set(current).add(key));
       if (editing) {
@@ -521,6 +524,7 @@ export default function ActiveWorkoutScreen() {
       try {
         await updateWorkoutSessionNote(database, session.id, sessionNote);
         await saveWorkoutDraft(database, session.id, values, new Date().toISOString());
+        void flushNow();
       } catch {
         setError('We could not save the unfinished workout locally.');
         return;
@@ -547,6 +551,7 @@ export default function ActiveWorkoutScreen() {
       );
       if (!updatedSession) throw new Error('This workout session is no longer active locally.');
       setResumedSession(updatedSession);
+      void flushNow();
     } catch (readinessError) {
       setReadiness(previousReadiness);
       setError(
@@ -587,6 +592,7 @@ export default function ActiveWorkoutScreen() {
           session.id,
         );
         if (updatedSession) setResumedSession(updatedSession);
+        void flushNow();
       }
       setActiveProgram(nextProgram);
       setActiveProgramVersion(nextVersion);
@@ -686,6 +692,7 @@ export default function ActiveWorkoutScreen() {
             new Date().toISOString(),
           )
         : null;
+      void flushNow();
       trackAnalyticsEvent(analytics, 'workout_completed', {
         workoutId: session.workoutId,
         cycleWeek: session.cycleWeek,
@@ -752,6 +759,7 @@ export default function ActiveWorkoutScreen() {
         if (!finishedSession) {
           throw new Error('This workout session is no longer active locally.');
         }
+        void flushNow();
       }
       trackAnalyticsEvent(analytics, status === 'partial' ? 'workout_partial' : 'workout_skipped', {
         workoutId: session.workoutId,

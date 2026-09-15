@@ -908,3 +908,8 @@ existing completed-set key cannot be reassigned. The SQLite writes use the exist
 program, cycle, and session outbox boundaries through one `saveActiveWorkoutRevision` transaction.
 Removing sets during an active session remains intentionally deferred until a completed-set-aware
 edit contract exists.
+
+The active route now requests a non-blocking `SyncRuntimeProvider.flushNow()` after a durable set,
+readiness, revision, pause, completion, partial, or skipped-session write. The single-flight
+runtime still checks authentication and connectivity, so the user-facing local transaction never
+waits on the network and guest/offline outbox rows remain available for a later retry.

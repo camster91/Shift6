@@ -2,6 +2,7 @@ import { assessProgramVersion } from './contentReadiness';
 import { foundationalExercises } from './fixtures/exercises';
 import { demoProgramVersion } from './fixtures/home';
 import { programLibrary } from './programLibrary';
+import { progressionRuleCatalogue } from './progressionRules';
 
 describe('program library metadata and executable drafts', () => {
   it('keeps the 20-program launch target with stable IDs and slugs', () => {
@@ -38,6 +39,51 @@ describe('program library metadata and executable drafts', () => {
       expect(report.readyForCycle).toBe(true);
       expect(report.readyForPublication).toBe(false);
     });
+  });
+
+  it('keeps every workout within declared equipment compatibility', () => {
+    programLibrary.forEach((entry) => {
+      expect(entry.version).toBeDefined();
+      if (!entry.version) return;
+
+      const allowedEquipment = new Set([
+        ...entry.program.requiredEquipmentIds,
+        ...entry.program.optionalEquipmentIds,
+        'equipment-bodyweight',
+      ]);
+      const workoutEquipment = entry.version.workouts.flatMap((workout) => workout.equipmentIds);
+
+      workoutEquipment.forEach((equipmentId) => {
+        expect(allowedEquipment.has(equipmentId)).toBe(true);
+      });
+    });
+  });
+
+  it('resolves every version-owned progression rule and keeps identifiers unique', () => {
+    const knownRuleIds = new Set(progressionRuleCatalogue.map((rule) => rule.id));
+    const workoutIds: string[] = [];
+    const workoutExerciseIds: string[] = [];
+    const setIds: string[] = [];
+
+    programLibrary.forEach((entry) => {
+      expect(entry.version).toBeDefined();
+      if (!entry.version) return;
+
+      entry.version.progressionRuleIds.forEach((ruleId) => {
+        expect(knownRuleIds.has(ruleId)).toBe(true);
+      });
+      entry.version.workouts.forEach((workout) => {
+        workoutIds.push(workout.id);
+        workout.exercises.forEach((exercise) => {
+          workoutExerciseIds.push(exercise.id);
+          exercise.sets.forEach((set) => setIds.push(set.id));
+        });
+      });
+    });
+
+    expect(new Set(workoutIds).size).toBe(workoutIds.length);
+    expect(new Set(workoutExerciseIds).size).toBe(workoutExerciseIds.length);
+    expect(new Set(setIds).size).toBe(setIds.length);
   });
 
   it('keeps all non-canonical catalogue entries gated from public startability', () => {

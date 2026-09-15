@@ -1,15 +1,17 @@
-import type { ExperienceLevel, Goal, Program, ProgramVersion, ProgressionStrategy } from './types';
+import type {
+  ExperienceLevel,
+  Goal,
+  Program,
+  ProgramVersion,
+  ProgressionStrategy,
+} from './types';
+import { buildLaunchProgramVersion } from './fixtures/programVersions';
 import { demoProgramVersion } from './fixtures/home';
 
-export type ProgramCatalogueStatus = 'published' | 'metadata-draft';
-
-export interface ProgramCatalogueEntry {
-  program: Program;
-  status: ProgramCatalogueStatus;
-  version?: ProgramVersion;
-}
-
-const metadata: readonly Omit<Program, 'currentVersionId' | 'isTemplate'>[] = [
+const metadata: readonly Omit<
+  Program,
+  'currentVersionId' | 'isTemplate'
+>[] = [
   {
     id: 'program-barbell-30',
     slug: 'barbell-30',
@@ -217,7 +219,11 @@ const metadata: readonly Omit<Program, 'currentVersionId' | 'isTemplate'>[] = [
     daysPerWeek: 4,
     sessionLengthMinutes: 45,
     requiredEquipmentIds: ['equipment-bodyweight'],
-    optionalEquipmentIds: ['equipment-medicine-ball', 'equipment-kettlebell', 'equipment-rower'],
+    optionalEquipmentIds: [
+      'equipment-medicine-ball',
+      'equipment-kettlebell',
+      'equipment-rower',
+    ],
     progressionStrategy: 'density',
   },
   {
@@ -292,15 +298,33 @@ const metadata: readonly Omit<Program, 'currentVersionId' | 'isTemplate'>[] = [
   },
 ];
 
-export const programLibrary: readonly ProgramCatalogueEntry[] = metadata.map((entry, index) => ({
-  program: {
+export type ProgramCatalogueStatus = 'published' | 'metadata-draft';
+export type ProgramBuildStatus = 'reviewed' | 'executable-draft' | 'metadata-only';
+
+export interface ProgramCatalogueEntry {
+  program: Program;
+  status: ProgramCatalogueStatus;
+  buildStatus: ProgramBuildStatus;
+  version?: ProgramVersion;
+}
+
+export const programLibrary: readonly ProgramCatalogueEntry[] = metadata.map((entry, index) => {
+  const currentVersionId = index === 0 ? demoProgramVersion.id : `${entry.id}-version-1`;
+  const program: Program = {
     ...entry,
-    currentVersionId: `${entry.id}-version-1`,
+    currentVersionId,
     isTemplate: true,
-  },
-  status: index === 0 ? 'published' : 'metadata-draft',
-  ...(index === 0 ? { version: demoProgramVersion } : {}),
-}));
+  };
+  const version = index === 0 ? demoProgramVersion : buildLaunchProgramVersion(program);
+
+  return {
+    program,
+    status: index === 0 ? 'published' : 'metadata-draft',
+    buildStatus:
+      index === 0 ? 'reviewed' : version === undefined ? 'metadata-only' : 'executable-draft',
+    ...(version ? { version } : {}),
+  };
+});
 
 export const programLibraryPrograms = programLibrary.map((entry) => entry.program);
 

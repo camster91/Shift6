@@ -4,419 +4,378 @@ import { foundationalExercises } from './exercises';
 type WorkoutPlan = {
   title: string;
   focus: Workout['focus'];
+  dayOfWeek: number;
   exerciseIds: readonly string[];
+  isOptional?: boolean;
 };
 
 const createdAt = '2026-09-15T12:00:00.000Z';
 
 const launchPlans: Readonly<Record<string, readonly WorkoutPlan[]>> = {
-  'beginner-strength': [
-    workout('Full Body A', 'strength', [
+  'shift6-foundations': [
+    workout('Foundations A', 'strength', 1, [
       'exercise-split-squat',
-      'exercise-floor-press',
-      'exercise-farmer-carry',
+      'exercise-push-up',
       'exercise-plank',
-    ]),
-    workout('Full Body B', 'strength', [
-      'exercise-reverse-lunge',
-      'exercise-lateral-raise',
-      'exercise-biceps-curl',
       'exercise-dead-bug',
     ]),
-    workout('Full Body C', 'strength', [
-      'exercise-walking-lunge',
-      'exercise-floor-press',
-      'exercise-farmer-carry',
-      'exercise-plank',
-    ]),
-  ],
-  'full-body-strength': [
-    workout('Full Body A', 'strength', [
-      'exercise-split-squat',
-      'exercise-incline-dumbbell-press',
-      'exercise-one-arm-dumbbell-row',
-      'exercise-plank',
-    ]),
-    workout('Full Body B', 'strength', [
+    workout('Foundations B', 'strength', 3, [
       'exercise-reverse-lunge',
-      'exercise-floor-press',
-      'exercise-one-arm-dumbbell-row',
-      'exercise-farmer-carry',
+      'exercise-push-up',
+      'exercise-single-leg-balance',
+      'exercise-thoracic-rotation',
     ]),
-    workout('Full Body C', 'strength', [
-      'exercise-walking-lunge',
-      'exercise-incline-dumbbell-press',
-      'exercise-one-arm-dumbbell-row',
-      'exercise-dead-bug',
-    ]),
-  ],
-  'strength-conditioning': [
-    workout('Strength + Carry', 'mixed', [
-      'exercise-split-squat',
-      'exercise-floor-press',
-      'exercise-farmer-carry',
-      'exercise-plank',
-    ]),
-    workout('Conditioning', 'conditioning', [
-      'exercise-easy-run',
+    workout('Foundations C', 'mixed', 5, [
       'exercise-walking-lunge',
       'exercise-push-up',
-      'exercise-dead-bug',
-    ]),
-    workout('Strength + Upper', 'mixed', [
-      'exercise-reverse-lunge',
-      'exercise-lateral-raise',
-      'exercise-biceps-curl',
-      'exercise-farmer-carry',
-    ]),
-    workout('Aerobic Builder', 'cardio', [
-      'exercise-easy-run',
       'exercise-plank',
-      'exercise-push-up',
+      'exercise-hip-flexor-stretch',
     ]),
   ],
-  hypertrophy: [
-    workout('Upper A', 'strength', [
-      'exercise-incline-dumbbell-press',
-      'exercise-one-arm-dumbbell-row',
-      'exercise-lateral-raise',
-      'exercise-biceps-curl',
-    ]),
-    workout('Lower A', 'strength', [
-      'exercise-split-squat',
-      'exercise-reverse-lunge',
-      'exercise-standing-calf-raise',
-      'exercise-plank',
-    ]),
-    workout('Upper B', 'strength', [
-      'exercise-floor-press',
-      'exercise-one-arm-dumbbell-row',
-      'exercise-lateral-raise',
-      'exercise-biceps-curl',
-    ]),
-    workout('Lower B', 'strength', [
-      'exercise-walking-lunge',
-      'exercise-split-squat',
-      'exercise-standing-calf-raise',
-      'exercise-dead-bug',
-    ]),
-  ],
-  'upper-lower': [
-    workout('Upper A', 'strength', [
-      'exercise-overhead-press',
-      'exercise-barbell-row',
-      'exercise-landmine-press',
-    ]),
-    workout('Lower A', 'strength', [
+  'strength-3x5': [
+    workout('Strength A', 'strength', 1, [
       'exercise-back-squat',
+      'exercise-bench-press',
+      'exercise-barbell-row',
+    ]),
+    workout('Strength B', 'strength', 3, [
+      'exercise-deadlift',
+      'exercise-overhead-press',
+      'exercise-reverse-lunge',
+    ]),
+    workout('Strength C', 'strength', 5, [
+      'exercise-front-squat',
+      'exercise-bench-press',
       'exercise-romanian-deadlift',
+    ]),
+  ],
+  'beginner-gym-3-day': [
+    workout('Gym A', 'strength', 1, [
+      'exercise-split-squat',
+      'exercise-floor-press',
+      'exercise-farmer-carry',
+      'exercise-plank',
+    ]),
+    workout('Gym B', 'strength', 3, [
+      'exercise-reverse-lunge',
+      'exercise-lateral-raise',
+      'exercise-biceps-curl',
+      'exercise-dead-bug',
+    ]),
+    workout('Gym C', 'strength', 5, [
+      'exercise-walking-lunge',
+      'exercise-floor-press',
+      'exercise-farmer-carry',
       'exercise-standing-calf-raise',
     ]),
-    workout('Upper B', 'strength', [
-      'exercise-overhead-press',
-      'exercise-barbell-row',
-      'exercise-landmine-press',
+  ],
+  'upper-lower-hypertrophy': [
+    workout('Upper A', 'strength', 1, [
+      'exercise-incline-dumbbell-press',
+      'exercise-one-arm-dumbbell-row',
+      'exercise-lateral-raise',
+      'exercise-biceps-curl',
     ]),
-    workout('Lower B', 'strength', [
-      'exercise-front-squat',
-      'exercise-deadlift',
+    workout('Lower A', 'strength', 2, [
       'exercise-split-squat',
+      'exercise-reverse-lunge',
+      'exercise-standing-calf-raise',
+      'exercise-plank',
+    ]),
+    workout('Upper B', 'strength', 4, [
+      'exercise-floor-press',
+      'exercise-one-arm-dumbbell-row',
+      'exercise-lateral-raise',
+      'exercise-biceps-curl',
+    ]),
+    workout('Lower B', 'strength', 5, [
+      'exercise-walking-lunge',
+      'exercise-split-squat',
+      'exercise-standing-calf-raise',
+      'exercise-dead-bug',
     ]),
   ],
   'push-pull-legs': [
-    workout('Push', 'strength', [
+    workout('Push', 'strength', 1, [
       'exercise-floor-press',
       'exercise-lateral-raise',
       'exercise-push-up',
     ]),
-    workout('Pull', 'strength', [
+    workout('Pull', 'strength', 3, [
       'exercise-biceps-curl',
       'exercise-farmer-carry',
       'exercise-dead-bug',
     ]),
-    workout('Legs', 'strength', [
+    workout('Legs', 'strength', 5, [
       'exercise-split-squat',
       'exercise-reverse-lunge',
       'exercise-standing-calf-raise',
     ]),
   ],
   'dumbbell-only': [
-    workout('Dumbbell A', 'strength', [
+    workout('Dumbbell A', 'strength', 1, [
       'exercise-split-squat',
       'exercise-floor-press',
       'exercise-farmer-carry',
       'exercise-plank',
     ]),
-    workout('Dumbbell B', 'strength', [
+    workout('Dumbbell B', 'strength', 3, [
       'exercise-reverse-lunge',
       'exercise-lateral-raise',
       'exercise-biceps-curl',
       'exercise-dead-bug',
     ]),
-    workout('Dumbbell C', 'strength', [
+    workout('Dumbbell C', 'strength', 5, [
       'exercise-walking-lunge',
       'exercise-floor-press',
       'exercise-farmer-carry',
       'exercise-plank',
     ]),
   ],
-  'home-gym': [
-    workout('Home Strength', 'strength', [
+  'minimal-home-gym': [
+    workout('Home A', 'strength', 1, [
       'exercise-split-squat',
       'exercise-floor-press',
+      'exercise-farmer-carry',
+      'exercise-plank',
+    ]),
+    workout('Home B', 'strength', 3, [
+      'exercise-reverse-lunge',
       'exercise-lateral-raise',
-      'exercise-plank',
-    ]),
-    workout('Home Conditioning', 'conditioning', [
-      'exercise-easy-run',
-      'exercise-walking-lunge',
-      'exercise-push-up',
+      'exercise-biceps-curl',
       'exercise-dead-bug',
     ]),
-    workout('Home Strength B', 'strength', [
-      'exercise-reverse-lunge',
-      'exercise-biceps-curl',
-      'exercise-farmer-carry',
-      'exercise-plank',
-    ]),
-    workout('Home Mixed', 'mixed', [
+    workout('Home C', 'mixed', 5, [
       'exercise-walking-lunge',
       'exercise-floor-press',
       'exercise-farmer-carry',
-      'exercise-dead-bug',
-    ]),
-  ],
-  'minimal-equipment': [
-    workout('Bodyweight Strength', 'strength', [
-      'exercise-split-squat',
-      'exercise-push-up',
-      'exercise-plank',
-      'exercise-dead-bug',
-    ]),
-    workout('Movement + Cardio', 'mixed', [
-      'exercise-easy-run',
-      'exercise-walking-lunge',
-      'exercise-push-up',
-    ]),
-    workout('Bodyweight Strength B', 'strength', [
-      'exercise-reverse-lunge',
-      'exercise-push-up',
-      'exercise-single-leg-balance',
-      'exercise-plank',
-    ]),
-  ],
-  'bodyweight-foundations': [
-    workout('Foundations A', 'strength', [
-      'exercise-split-squat',
-      'exercise-push-up',
-      'exercise-plank',
-      'exercise-dead-bug',
-    ]),
-    workout('Foundations B', 'strength', [
-      'exercise-reverse-lunge',
-      'exercise-push-up',
-      'exercise-single-leg-balance',
       'exercise-thoracic-rotation',
-    ]),
-    workout('Foundations C', 'mixed', [
-      'exercise-walking-lunge',
-      'exercise-push-up',
-      'exercise-plank',
-      'exercise-hip-flexor-stretch',
     ]),
   ],
   'resistance-bands': [
-    workout('Bands A', 'strength', [
+    workout('Bands A', 'strength', 1, [
       'exercise-band-squat',
       'exercise-band-bent-over-row',
       'exercise-band-overhead-press',
       'exercise-band-pull-apart',
     ]),
-    workout('Bands B', 'strength', [
+    workout('Bands B', 'strength', 3, [
       'exercise-band-romanian-deadlift',
       'exercise-band-biceps-curl',
       'exercise-band-overhead-triceps-extension',
       'exercise-band-lateral-walk',
     ]),
-    workout('Bands C', 'strength', [
+    workout('Bands C', 'strength', 5, [
       'exercise-band-squat',
       'exercise-band-bent-over-row',
       'exercise-band-overhead-press',
       'exercise-band-romanian-deadlift',
     ]),
   ],
-  'general-fitness': [
-    workout('Strength', 'strength', [
+  'bodyweight-foundations': [
+    workout('Bodyweight A', 'strength', 1, [
       'exercise-split-squat',
       'exercise-push-up',
       'exercise-plank',
       'exercise-dead-bug',
     ]),
-    workout('Cardio', 'cardio', ['exercise-easy-run', 'exercise-thoracic-rotation']),
-    workout('Mixed', 'mixed', [
-      'exercise-walking-lunge',
-      'exercise-push-up',
-      'exercise-single-leg-balance',
-      'exercise-plank',
-    ]),
-    workout('Mobility', 'mobility', [
-      'exercise-hip-flexor-stretch',
-      'exercise-thoracic-rotation',
-      'exercise-childs-pose',
-    ]),
-  ],
-  'strength-for-longevity': [
-    workout('Strength + Balance', 'mixed', [
-      'exercise-split-squat',
-      'exercise-push-up',
-      'exercise-single-leg-balance',
-      'exercise-plank',
-    ]),
-    workout('Aerobic + Mobility', 'mixed', [
-      'exercise-easy-run',
-      'exercise-hip-flexor-stretch',
-      'exercise-thoracic-rotation',
-    ]),
-    workout('Strength + Control', 'mixed', [
+    workout('Bodyweight B', 'strength', 3, [
       'exercise-reverse-lunge',
       'exercise-push-up',
-      'exercise-dead-bug',
       'exercise-single-leg-balance',
+      'exercise-thoracic-rotation',
     ]),
-  ],
-  'athletic-conditioning': [
-    workout('Acceleration Base', 'conditioning', [
-      'exercise-easy-run',
+    workout('Bodyweight C', 'mixed', 5, [
       'exercise-walking-lunge',
       'exercise-push-up',
       'exercise-plank',
+      'exercise-hip-flexor-stretch',
     ]),
-    workout('Power Base', 'conditioning', [
+  ],
+  'calisthenics-strength': [
+    workout('Calisthenics A', 'strength', 1, [
+      'exercise-pull-up',
+      'exercise-push-up',
       'exercise-split-squat',
-      'exercise-push-up',
-      'exercise-dead-bug',
-      'exercise-single-leg-balance',
-    ]),
-    workout('Repeat Effort', 'conditioning', [
-      'exercise-easy-run',
-      'exercise-reverse-lunge',
-      'exercise-push-up',
       'exercise-plank',
     ]),
-    workout('Movement Quality', 'mobility', [
+    workout('Calisthenics B', 'strength', 3, [
+      'exercise-dip',
+      'exercise-pull-up',
+      'exercise-reverse-lunge',
+      'exercise-hanging-knee-raise',
+    ]),
+    workout('Calisthenics C', 'strength', 5, [
+      'exercise-pull-up',
+      'exercise-dip',
+      'exercise-push-up',
+      'exercise-single-leg-balance',
+    ]),
+  ],
+  'strength-conditioning-hybrid': [
+    workout('Strength A', 'strength', 1, [
+      'exercise-split-squat',
+      'exercise-floor-press',
+      'exercise-farmer-carry',
+      'exercise-plank',
+    ]),
+    workout('Conditioning A', 'cardio', 2, ['exercise-easy-run']),
+    workout('Strength B', 'strength', 3, [
+      'exercise-reverse-lunge',
+      'exercise-lateral-raise',
+      'exercise-biceps-curl',
+      'exercise-dead-bug',
+    ]),
+    workout('Conditioning B', 'cardio', 4, ['exercise-easy-run']),
+    workout('Strength C', 'strength', 5, [
+      'exercise-walking-lunge',
+      'exercise-floor-press',
+      'exercise-farmer-carry',
+      'exercise-plank',
+    ]),
+  ],
+  'busy-20': [
+    workout('Busy A', 'mixed', 1, ['exercise-split-squat', 'exercise-push-up', 'exercise-plank']),
+    workout('Busy B', 'mixed', 2, ['exercise-reverse-lunge', 'exercise-push-up', 'exercise-dead-bug']),
+    workout('Busy C', 'mixed', 4, [
+      'exercise-walking-lunge',
+      'exercise-push-up',
+      'exercise-single-leg-balance',
+    ]),
+    workout('Busy D', 'mobility', 6, [
       'exercise-hip-flexor-stretch',
       'exercise-thoracic-rotation',
-      'exercise-single-leg-balance',
       'exercise-childs-pose',
     ]),
   ],
   'mobility-strength': [
-    workout('Strength + Hips', 'mixed', [
+    workout('Strength + Hips', 'mixed', 1, [
       'exercise-split-squat',
       'exercise-push-up',
       'exercise-hip-flexor-stretch',
       'exercise-plank',
     ]),
-    workout('Strength + Spine', 'mixed', [
+    workout('Strength + Spine', 'mixed', 3, [
       'exercise-reverse-lunge',
       'exercise-push-up',
       'exercise-thoracic-rotation',
       'exercise-dead-bug',
     ]),
-    workout('Full Body Mobility', 'mobility', [
+    workout('Mobility + Control', 'mobility', 5, [
       'exercise-walking-lunge',
       'exercise-single-leg-balance',
       'exercise-hip-flexor-stretch',
       'exercise-childs-pose',
     ]),
   ],
-  kettlebell: [
-    workout('Kettlebell A', 'mixed', [
-      'exercise-goblet-squat',
-      'exercise-kettlebell-swing',
-      'exercise-push-up',
-      'exercise-plank',
-    ]),
-    workout('Kettlebell B', 'conditioning', [
-      'exercise-kettlebell-swing',
+  'healthy-ageing': [
+    workout('Strength + Balance', 'mixed', 1, [
       'exercise-split-squat',
       'exercise-push-up',
-      'exercise-dead-bug',
-    ]),
-    workout('Kettlebell C', 'mixed', [
-      'exercise-goblet-squat',
-      'exercise-kettlebell-swing',
       'exercise-single-leg-balance',
       'exercise-plank',
     ]),
+    workout('Aerobic + Mobility', 'mixed', 3, [
+      'exercise-easy-run',
+      'exercise-hip-flexor-stretch',
+      'exercise-thoracic-rotation',
+    ]),
+    workout('Strength + Control', 'mixed', 5, [
+      'exercise-reverse-lunge',
+      'exercise-push-up',
+      'exercise-dead-bug',
+      'exercise-single-leg-balance',
+    ]),
   ],
-  'express-20': [
-    workout('Express A', 'mixed', [
+  'return-to-training': [
+    workout('Return A', 'strength', 1, [
       'exercise-split-squat',
       'exercise-push-up',
       'exercise-plank',
     ]),
-    workout('Express B', 'conditioning', [
+    workout('Return B', 'strength', 3, [
+      'exercise-reverse-lunge',
+      'exercise-push-up',
+      'exercise-dead-bug',
+    ]),
+    workout('Return C', 'mixed', 5, [
+      'exercise-walking-lunge',
+      'exercise-push-up',
+      'exercise-thoracic-rotation',
+    ]),
+  ],
+  'runner-support': [
+    workout('Runner Strength A', 'strength', 2, [
+      'exercise-split-squat',
+      'exercise-push-up',
+      'exercise-standing-calf-raise',
+      'exercise-plank',
+    ]),
+    workout('Easy Run', 'cardio', 4, ['exercise-easy-run'], true),
+    workout('Runner Strength B', 'strength', 5, [
+      'exercise-reverse-lunge',
+      'exercise-push-up',
+      'exercise-dead-bug',
+      'exercise-single-leg-balance',
+    ]),
+    workout('Long Easy Run', 'cardio', 7, ['exercise-easy-run'], true),
+  ],
+  'cyclist-support': [
+    workout('Cyclist Strength A', 'strength', 2, [
+      'exercise-split-squat',
+      'exercise-push-up',
+      'exercise-dead-bug',
+      'exercise-standing-calf-raise',
+    ]),
+    workout('Easy Ride', 'cardio', 4, ['exercise-stationary-bike'], true),
+    workout('Cyclist Strength B', 'strength', 5, [
+      'exercise-reverse-lunge',
+      'exercise-push-up',
+      'exercise-plank',
+      'exercise-thoracic-rotation',
+    ]),
+    workout('Aerobic Ride', 'cardio', 7, ['exercise-stationary-bike'], true),
+  ],
+  'power-athleticism': [
+    workout('Power A', 'conditioning', 1, [
+      'exercise-box-jump',
+      'exercise-split-squat',
+      'exercise-push-up',
+      'exercise-plank',
+    ]),
+    workout('Conditioning', 'conditioning', 2, [
       'exercise-easy-run',
       'exercise-walking-lunge',
-      'exercise-dead-bug',
+      'exercise-push-up',
     ]),
-    workout('Express C', 'mixed', [
+    workout('Power B', 'conditioning', 4, [
+      'exercise-box-jump',
       'exercise-reverse-lunge',
       'exercise-push-up',
-      'exercise-single-leg-balance',
+      'exercise-dead-bug',
     ]),
-    workout('Express D', 'mobility', [
-      'exercise-hip-flexor-stretch',
+    workout('Movement Quality', 'mobility', 6, [
+      'exercise-single-leg-balance',
       'exercise-thoracic-rotation',
+      'exercise-hip-flexor-stretch',
       'exercise-childs-pose',
     ]),
   ],
-  'three-day-gym': [
-    workout('Gym A', 'strength', [
+  'cardio-base-strength': [
+    workout('Full Body A', 'strength', 1, [
       'exercise-split-squat',
-      'exercise-floor-press',
-      'exercise-farmer-carry',
+      'exercise-push-up',
       'exercise-plank',
-    ]),
-    workout('Gym B', 'strength', [
-      'exercise-reverse-lunge',
-      'exercise-lateral-raise',
-      'exercise-biceps-curl',
       'exercise-dead-bug',
     ]),
-    workout('Gym C', 'strength', [
-      'exercise-walking-lunge',
-      'exercise-floor-press',
-      'exercise-farmer-carry',
-      'exercise-plank',
-    ]),
-  ],
-  'four-day-gym': [
-    workout('Upper A', 'strength', [
-      'exercise-incline-dumbbell-press',
-      'exercise-one-arm-dumbbell-row',
-      'exercise-lateral-raise',
-      'exercise-biceps-curl',
-    ]),
-    workout('Lower A', 'strength', [
-      'exercise-split-squat',
+    workout('Aerobic Base A', 'cardio', 2, ['exercise-easy-run']),
+    workout('Full Body B', 'strength', 4, [
       'exercise-reverse-lunge',
-      'exercise-standing-calf-raise',
+      'exercise-push-up',
+      'exercise-single-leg-balance',
       'exercise-plank',
     ]),
-    workout('Upper B', 'strength', [
-      'exercise-floor-press',
-      'exercise-one-arm-dumbbell-row',
-      'exercise-lateral-raise',
-      'exercise-biceps-curl',
-    ]),
-    workout('Lower B', 'strength', [
-      'exercise-walking-lunge',
-      'exercise-split-squat',
-      'exercise-standing-calf-raise',
-      'exercise-dead-bug',
-    ]),
+    workout('Aerobic Base B', 'cardio', 6, ['exercise-easy-run']),
   ],
 };
 
@@ -438,17 +397,19 @@ const timedExerciseIds = new Set([
   'exercise-childs-pose',
 ]);
 
-const scheduleByDays = {
-  3: [1, 3, 5],
-  4: [1, 2, 4, 5],
-} as const;
+const lowerVolumeProgramSlugs = new Set([
+  'healthy-ageing',
+  'return-to-training',
+  'runner-support',
+  'cyclist-support',
+]);
 
 export function buildLaunchProgramVersion(program: Program): ProgramVersion | undefined {
   const plans = launchPlans[program.slug];
   if (!plans) return undefined;
 
-  const schedule = scheduleByDays[program.daysPerWeek as keyof typeof scheduleByDays];
-  if (!schedule || schedule.length !== plans.length) return undefined;
+  const requiredWorkoutCount = plans.filter((plan) => !plan.isOptional).length;
+  if (requiredWorkoutCount !== program.daysPerWeek) return undefined;
 
   const versionId = program.currentVersionId;
   return {
@@ -468,9 +429,7 @@ export function buildLaunchProgramVersion(program: Program): ProgramVersion | un
         6: 'Review and choose the next block',
       },
     },
-    workouts: plans.map((plan, index) =>
-      buildWorkout(program, versionId, plan, schedule[index] ?? index + 1, index),
-    ),
+    workouts: plans.map((plan, index) => buildWorkout(program, versionId, plan, index)),
     progressionRuleIds: [`rule-default-${program.progressionStrategy}`],
     createdAt,
   };
@@ -479,30 +438,32 @@ export function buildLaunchProgramVersion(program: Program): ProgramVersion | un
 function workout(
   title: string,
   focus: Workout['focus'],
+  dayOfWeek: number,
   exerciseIds: readonly string[],
+  isOptional = false,
 ): WorkoutPlan {
-  return { title, focus, exerciseIds };
+  return { title, focus, dayOfWeek, exerciseIds, ...(isOptional ? { isOptional } : {}) };
 }
 
 function buildWorkout(
   program: Program,
   versionId: string,
   plan: WorkoutPlan,
-  dayOfWeek: number,
   workoutIndex: number,
 ): Workout {
   const workoutId = `workout-${program.slug}-${workoutIndex + 1}`;
   const exercises = plan.exerciseIds.map((exerciseId, exerciseIndex) =>
-    buildWorkoutExercise(workoutId, exerciseId, exerciseIndex),
+    buildWorkoutExercise(program.slug, workoutId, exerciseId, exerciseIndex),
   );
 
   return {
     id: workoutId,
     programVersionId: versionId,
     title: plan.title,
-    dayOfWeek,
+    dayOfWeek: plan.dayOfWeek,
     focus: plan.focus,
     estimatedDurationMinutes: program.sessionLengthMinutes,
+    ...(plan.isOptional ? { isOptional: true } : {}),
     equipmentIds: unique(
       exercises.flatMap((exercise) => equipmentByExerciseId.get(exercise.exerciseId) ?? []),
     ),
@@ -511,6 +472,7 @@ function buildWorkout(
 }
 
 function buildWorkoutExercise(
+  programSlug: string,
   workoutId: string,
   exerciseId: string,
   exerciseIndex: number,
@@ -521,21 +483,28 @@ function buildWorkoutExercise(
     exerciseId,
     order: exerciseIndex + 1,
     section:
-      exerciseId === 'exercise-easy-run'
+      exerciseId === 'exercise-easy-run' || exerciseId === 'exercise-stationary-bike'
         ? 'cardio'
         : mobilityExerciseIds.has(exerciseId)
           ? 'mobility'
           : 'working',
-    sets: prescription(id, exerciseId),
+    sets: prescription(programSlug, id, exerciseId),
   };
 }
 
-function prescription(prefix: string, exerciseId: string): WorkoutExercise['sets'] {
-  if (exerciseId === 'exercise-easy-run') {
-    return targetSets(prefix, 1, { durationSeconds: 600 }, 60);
+function prescription(
+  programSlug: string,
+  prefix: string,
+  exerciseId: string,
+): WorkoutExercise['sets'] {
+  if (exerciseId === 'exercise-easy-run' || exerciseId === 'exercise-stationary-bike') {
+    return targetSets(prefix, 1, { durationSeconds: 1200 }, 60);
   }
   if (exerciseId === 'exercise-farmer-carry') {
     return targetSets(prefix, 3, { distanceMeters: 40 }, 60);
+  }
+  if (exerciseId === 'exercise-box-jump') {
+    return targetSets(prefix, 3, { reps: 3 }, 90);
   }
   if (timedExerciseIds.has(exerciseId)) {
     const durationSeconds = exerciseId === 'exercise-childs-pose' ? 60 : 30;
@@ -543,6 +512,15 @@ function prescription(prefix: string, exerciseId: string): WorkoutExercise['sets
   }
   if (mobilityExerciseIds.has(exerciseId) || exerciseId === 'exercise-dead-bug') {
     return targetSets(prefix, 2, { reps: { min: 6, max: 10 } }, 30);
+  }
+  if (programSlug === 'strength-3x5') {
+    return targetSets(prefix, 3, { reps: 5, rir: 2 }, 120);
+  }
+  if (lowerVolumeProgramSlugs.has(programSlug)) {
+    return targetSets(prefix, 2, { reps: { min: 6, max: 10 }, rir: 3 }, 75);
+  }
+  if (programSlug === 'busy-20') {
+    return targetSets(prefix, 2, { reps: { min: 8, max: 12 }, rir: 2 }, 45);
   }
   return targetSets(prefix, 3, { reps: { min: 8, max: 12 }, rir: 2 }, 75);
 }
@@ -581,6 +559,8 @@ function weekSixMeaning(program: Program): ProgramVersion['cycleModel']['weekSix
     case 'cardio':
     case 'density':
       return 'evaluation';
+    case 'rpe-rir':
+      return 'consolidation';
     default:
       return 'consolidation';
   }

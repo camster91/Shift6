@@ -45,18 +45,18 @@ surfaces them as review-required state instead of silently overwriting future pl
 The deterministic next-session seam now resolves the active program version's progression rule IDs
 through a typed rule catalogue. Barbell 30 uses unit-aware load increments (5 lb imperial, 2.5 kg
 metric); drafts and unknown rule references use conservative deterministic defaults. Every supported
-progression strategy now has an explicit deterministic default rule, and AI remains outside target
-calculation.
+progression strategy now has an explicit deterministic default rule, mixed-modality targets route to
+a compatible strategy, and AI remains outside target calculation.
 
 The sync boundary now has a local review surface for pending outbox failures and typed backend
 conflicts. Profile links to it when a conflict is detected; retry is explicit, and no local plan or
 history is merged, discarded, or overwritten automatically.
 
-The launch catalogue contains 20 stable program definitions. Barbell 30 remains the canonical
-startable program, while 18 additional programs now have executable six-week draft versions for
-engineering/content validation. Resistance Bands remains metadata-only until band-specific exercise
-content exists. Draft programs stay behind the existing public startability gate until content and
-exercise review is complete.
+The launch catalogue contains 20 stable program definitions and executable six-week versions for all
+20. Barbell 30 remains the canonical startable fixture; the other 19 versions stay behind the public
+startability gate as content drafts until exercise and program review is complete. The foundational
+exercise catalogue contains 58 draft records, including eight band-native movements used by the
+Resistance Bands draft.
 
 Profile now links to a dedicated equipment manager. It edits the same user-scoped onboarding
 profile transaction and outbox snapshot, so later program recommendations and workout substitutions
@@ -79,7 +79,9 @@ missing; it does not infer cardio from a health provider or from strength volume
 Coach now includes a bounded freeform question surface. Questions stay outside analytics, are
 short-circuited through deterministic safety routing when needed, and use the local structured
 explainer when a provider-backed Coach is unavailable. Provider transport receives the trimmed
-question separately from the allowlisted context and still cannot mutate a plan.
+question separately from the allowlisted context and still cannot mutate a plan. The repository
+also includes an evaluation matrix for provider failure, missed training, plateaus, discomfort,
+limited-time requests, equipment changes, medication boundaries, and urgent symptoms.
 
 The Exercise Library now supports deterministic filters for difficulty, unilateral/bilateral
 stance, compound/isolation classification, and mobility/power/cardio focus. Classification is
@@ -119,9 +121,13 @@ native builds, an idempotent workout-session/completed-set outbox and flush cont
 onboarding/profile setup, a versioned Barbell 30 six-week cycle start flow, local progress aggregation
 from completed workout records with deterministic next-session targets, a persisted cycle-week
 transition and review boundary, a provider-neutral Coach safety classifier and proposal validator,
-a searchable 50-record draft exercise library with equipment-aware filtering, the 20-program launch
-catalogue, a copy-on-write custom builder foundation, and a cycle-aware local calendar with idempotent
+a searchable draft exercise library with equipment-aware filtering, the 20-program launch catalogue,
+a copy-on-write custom builder foundation, and a cycle-aware local calendar with idempotent
 rescheduling.
+
+The app-services layer now also has a provider-neutral error-reporting contract and root render error
+boundary. Reporting defaults to a no-op until a production provider, privacy/retention policy, and
+device-level verification are explicitly configured.
 
 The rebuild deliberately does not restore the archived web application. The archived implementation was inspected and rejected for direct reuse because it is a Vite/Capacitor app built around browser `localStorage`, a single mutable state payload, and fixed progression assumptions that conflict with the new program-version and program-specific Week 6 model. The design layer now also exposes semantic icon names and an original SVG asset handoff boundary; the current Ionicons glyphs are explicitly temporary fallbacks pending Figma review.
 

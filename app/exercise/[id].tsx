@@ -7,7 +7,11 @@ import { Card, Chip, EmptyState, IconButton, Screen, Text } from '../../src/comp
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { getUserExercises } from '../../src/db/programRepository';
 import { useLocalDatabase } from '../../src/db/context';
-import { equipmentCatalog, findExerciseSubstitutions } from '../../src/domain/equipment';
+import {
+  equipmentCatalog,
+  explainExerciseSubstitution,
+  findExerciseSubstitutions,
+} from '../../src/domain/equipment';
 import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { demoUser } from '../../src/domain/fixtures/home';
 import type { Exercise } from '../../src/domain/types';
@@ -172,6 +176,9 @@ export default function ExerciseDetailScreen() {
             <Text variant="smallMedium">{candidate.name}</Text>
             <Text variant="small" tone="muted">
               {formatLabel(candidate.movementPattern)} · {candidate.primaryMuscles.join(', ')}
+            </Text>
+            <Text variant="small" tone="muted">
+              {explainExerciseSubstitution(exercise, candidate)}
             </Text>
           </Card>
         ))

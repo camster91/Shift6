@@ -143,6 +143,9 @@ Native database bootstrap failures now show a bounded retry surface without expo
 details. Workout data is not presented as available until the local database and migrations open
 successfully.
 
+The active workout also reflects offline, syncing, retry-paused, and conflict states from the
+shared sync runtime while keeping local set completion independent of cloud availability.
+
 ## Canonical planning docs
 
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition

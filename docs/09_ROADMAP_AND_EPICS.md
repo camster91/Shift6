@@ -379,3 +379,6 @@ waiting for a later authenticated foreground/reconnect retry.
 The SQLite bootstrap boundary now presents a retryable local-storage error state when opening or
 migrating the database fails. The app does not imply that workout logging is available until local
 storage is ready, and raw database details are not exposed in the user-facing error.
+
+Active workout now also consumes the shared sync runtime state and shows offline, syncing,
+retry-paused, or conflict feedback without disabling local set logging.

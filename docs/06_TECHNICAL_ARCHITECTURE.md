@@ -918,3 +918,7 @@ waits on the network and guest/offline outbox rows remain available for a later 
 screen. It does not expose raw database errors or render the workout shell without a usable local
 database. A retry remounts the provider so a transient initialization failure can recover without
 requiring a force-quit.
+
+The active route maps the shared sync runtime to the same accessible banner states used by Profile:
+offline, syncing, retry-paused, and conflict. A synced/idle state stays quiet, and the banner never
+blocks local workout controls.

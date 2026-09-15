@@ -94,7 +94,7 @@ const notificationProvider = createExpoNotificationProvider();
 export default function ActiveWorkoutScreen() {
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
-  const { flushNow } = useSyncRuntime();
+  const { flushNow, state: syncState } = useSyncRuntime();
   const { workoutId } = useLocalSearchParams<{ workoutId?: string }>();
   const [activeCycle, setActiveCycle] = useState<TrainingCycle>(demoCycle);
   const [activeProgram, setActiveProgram] = useState(demoProgram);
@@ -195,6 +195,16 @@ export default function ActiveWorkoutScreen() {
     [activeCycle.id, activeCycle.currentWeek, activeWorkout, connectivity, readiness, startedAt],
   );
   const session = resumedSession ?? proposedSession;
+  const syncStatus =
+    connectivity === 'offline'
+      ? ('offline' as const)
+      : syncState === 'syncing'
+        ? ('syncing' as const)
+        : syncState === 'conflict'
+          ? ('sync-conflict' as const)
+          : syncState === 'failed' || syncState === 'partial'
+            ? ('sync-failed' as const)
+            : null;
 
   useEffect(() => {
     if (loadingCycle || loadingSession || trackedWorkoutSessionId.current === session.id) return;
@@ -826,7 +836,7 @@ export default function ActiveWorkoutScreen() {
         state.
       </Text>
 
-      {connectivity === 'offline' ? <OfflineBanner status="offline" /> : null}
+      {syncStatus ? <OfflineBanner status={syncStatus} /> : null}
 
       <WorkoutPreflight
         workout={activeWorkout}

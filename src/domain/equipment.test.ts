@@ -15,13 +15,26 @@ describe('equipment-aware exercise catalogue', () => {
     ).toEqual(['equipment-rack']);
   });
 
-  it('ships a first 50-record draft tranche with stable IDs and schema-complete metadata', () => {
-    expect(foundationalExercises).toHaveLength(50);
-    expect(new Set(foundationalExercises.map((exercise) => exercise.id)).size).toBe(50);
+  it('ships a 58-record draft tranche with stable IDs and schema-complete metadata', () => {
+    expect(foundationalExercises).toHaveLength(58);
+    expect(new Set(foundationalExercises.map((exercise) => exercise.id)).size).toBe(58);
     expect(foundationalExercises.every((exercise) => exercise.contentStatus === 'draft')).toBe(
       true,
     );
     expect(foundationalExercises.every((exercise) => exercise.instructions.length > 0)).toBe(true);
+  });
+
+  it('includes band-native movements that are compatible with a bands-only inventory', () => {
+    const bandExercises = foundationalExercises.filter((exercise) =>
+      exercise.equipmentIds.includes('equipment-resistance-bands'),
+    );
+
+    expect(bandExercises).toHaveLength(8);
+    expect(
+      bandExercises.every((exercise) =>
+        isExerciseCompatible(exercise, ['equipment-resistance-bands']),
+      ),
+    ).toBe(true);
   });
 
   it('ranks compatible substitutions by movement pattern and available equipment', () => {

@@ -27,11 +27,14 @@ import { buildNextSessionTargets, readinessInputForWorkout } from '../src/domain
 import { resolveTrackingType } from '../src/domain/exerciseTracking';
 import {
   createProgramVersionRevision,
+  reorderWorkoutExercises,
   replaceExerciseInWorkout,
+  setWorkoutExerciseSetCount,
 } from '../src/domain/programBuilder';
 import type {
   CompletedSet,
   Exercise,
+  ProgramVersion,
   SetTarget,
   TrainingCycle,
   WorkoutDraftSetValues,
@@ -121,6 +124,7 @@ export default function ActiveWorkoutScreen() {
   const [completedSetKeys, setCompletedSetKeys] = useState<Set<string>>(() => new Set());
   const [editingSetKey, setEditingSetKey] = useState<string | null>(null);
   const [substitutionFor, setSubstitutionFor] = useState<string | null>(null);
+  const [revisionSaving, setRevisionSaving] = useState(false);
   const [loadingCycle, setLoadingCycle] = useState(database !== null);
   const [loadingSession, setLoadingSession] = useState(database !== null);
   const [draftReady, setDraftReady] = useState(database === null);
@@ -559,32 +563,19 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
-  const handleSubstituteExercise = async (
-    workoutExercise: WorkoutExercise,
-    replacementExerciseId: string,
-  ) => {
-    if (
-      workoutExercise.sets.some((set) =>
-        completedSetKeys.has(setKey(workoutExercise.id, set.setNumber)),
-      )
-    ) {
-      setError(
-        'Finish or keep this movement before substituting it so completed history stays clear.',
-      );
-      return;
-    }
+  const applyActiveWorkoutRevision = async (
+    revise: (version: ProgramVersion) => ProgramVersion,
+    fallbackMessage: string,
+  ): Promise<boolean> => {
+    if (revisionSaving) return false;
 
+    setRevisionSaving(true);
     setError(null);
     try {
-      const replacedVersion = replaceExerciseInWorkout(
-        activeProgramVersion,
-        activeWorkout.id,
-        workoutExercise.id,
-        replacementExerciseId,
-      );
+      const revisedVersion = revise(activeProgramVersion);
       const createdAt = new Date().toISOString();
       const nextVersion = createProgramVersionRevision(
-        replacedVersion,
+        revisedVersion,
         `${activeProgramVersion.id}-revision-${Date.now()}`,
         createdAt,
       );
@@ -603,18 +594,85 @@ export default function ActiveWorkoutScreen() {
       setActiveProgram(nextProgram);
       setActiveProgramVersion(nextVersion);
       setActiveCycle(nextCycle);
+      return true;
+    } catch (revisionError) {
+      setError(revisionError instanceof Error ? revisionError.message : fallbackMessage);
+      return false;
+    } finally {
+      setRevisionSaving(false);
+    }
+  };
+
+  const handleSubstituteExercise = async (
+    workoutExercise: WorkoutExercise,
+    replacementExerciseId: string,
+  ) => {
+    if (revisionSaving) return;
+    if (
+      workoutExercise.sets.some((set) =>
+        completedSetKeys.has(setKey(workoutExercise.id, set.setNumber)),
+      )
+    ) {
+      setError(
+        'Finish or keep this movement before substituting it so completed history stays clear.',
+      );
+      return;
+    }
+
+    const applied = await applyActiveWorkoutRevision(
+      (version) =>
+        replaceExerciseInWorkout(
+          version,
+          activeWorkout.id,
+          workoutExercise.id,
+          replacementExerciseId,
+        ),
+      'We could not apply this substitution.',
+    );
+    if (applied) {
       setSubstitutionFor(null);
       trackAnalyticsEvent(analytics, 'exercise_substituted', {
         sourceExerciseId: workoutExercise.exerciseId,
         replacementExerciseId,
       });
-    } catch (substitutionError) {
-      setError(
-        substitutionError instanceof Error
-          ? substitutionError.message
-          : 'We could not apply this substitution.',
-      );
     }
+  };
+
+  const handleMoveExercise = (workoutExercise: WorkoutExercise, direction: -1 | 1) => {
+    if (revisionSaving) return;
+
+    const currentIndex = activeWorkout.exercises.findIndex(
+      (candidate) => candidate.id === workoutExercise.id,
+    );
+    const nextIndex = currentIndex + direction;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= activeWorkout.exercises.length) {
+      return;
+    }
+
+    const orderedIds = activeWorkout.exercises.map((candidate) => candidate.id);
+    [orderedIds[currentIndex], orderedIds[nextIndex]] = [
+      orderedIds[nextIndex]!,
+      orderedIds[currentIndex]!,
+    ];
+    void applyActiveWorkoutRevision(
+      (version) => reorderWorkoutExercises(version, activeWorkout.id, orderedIds),
+      'We could not reorder this workout locally.',
+    );
+  };
+
+  const handleAddSet = (workoutExercise: WorkoutExercise) => {
+    if (revisionSaving || workoutExercise.sets.length >= 20) return;
+
+    void applyActiveWorkoutRevision(
+      (version) =>
+        setWorkoutExerciseSetCount(
+          version,
+          activeWorkout.id,
+          workoutExercise.id,
+          workoutExercise.sets.length + 1,
+        ),
+      'We could not add a set to this workout locally.',
+    );
   };
 
   const handleFinishWorkout = async () => {
@@ -890,6 +948,71 @@ export default function ActiveWorkoutScreen() {
               {workoutExercise.groupType ? (
                 <Chip label={formatGroupType(workoutExercise.groupType)} selected />
               ) : null}
+            </View>
+            <View style={styles.exerciseControls}>
+              <Text variant="caption" tone="muted">
+                Adjust this session
+              </Text>
+              <View style={styles.exerciseActionRow}>
+                <IconButton
+                  icon={
+                    <Ionicons
+                      name="chevron-up-outline"
+                      size={18}
+                      color={
+                        revisionSaving || workoutExercise.order === 1 ? colors.inkMuted : colors.ink
+                      }
+                    />
+                  }
+                  label={`Move ${exerciseName} up`}
+                  disabled={revisionSaving || workoutExercise.order === 1}
+                  onPress={() => handleMoveExercise(workoutExercise, -1)}
+                  style={styles.exerciseAction}
+                />
+                <IconButton
+                  icon={
+                    <Ionicons
+                      name="chevron-down-outline"
+                      size={18}
+                      color={
+                        revisionSaving || workoutExercise.order === activeWorkout.exercises.length
+                          ? colors.inkMuted
+                          : colors.ink
+                      }
+                    />
+                  }
+                  label={`Move ${exerciseName} down`}
+                  disabled={
+                    revisionSaving || workoutExercise.order === activeWorkout.exercises.length
+                  }
+                  onPress={() => handleMoveExercise(workoutExercise, 1)}
+                  style={styles.exerciseAction}
+                />
+                <Text
+                  variant="caption"
+                  accessibilityLabel={`${workoutExercise.sets.length} sets for ${exerciseName}`}
+                  style={styles.setCount}
+                >
+                  {workoutExercise.sets.length} sets
+                </Text>
+                <IconButton
+                  icon={
+                    <Ionicons
+                      name="add-outline"
+                      size={18}
+                      color={
+                        revisionSaving || workoutExercise.sets.length >= 20
+                          ? colors.inkMuted
+                          : colors.ink
+                      }
+                    />
+                  }
+                  label={`Add a set to ${exerciseName}`}
+                  disabled={revisionSaving || workoutExercise.sets.length >= 20}
+                  onPress={() => handleAddSet(workoutExercise)}
+                  style={styles.exerciseAction}
+                />
+              </View>
             </View>
             {workoutExercise.notes ? (
               <Card
@@ -1573,6 +1696,24 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.xs,
     marginTop: spacing.md,
+  },
+  exerciseControls: {
+    marginTop: spacing.md,
+    gap: spacing.xs,
+  },
+  exerciseActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  exerciseAction: {
+    backgroundColor: colors.canvas,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  setCount: {
+    paddingHorizontal: spacing.xs,
   },
   exerciseNote: {
     marginTop: spacing.md,

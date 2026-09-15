@@ -891,3 +891,14 @@ fixtures only and are resettable by the user.
 workout persistence path. It is a loading aid rather than a progression authority: target values
 still come from the versioned workout and deterministic progression engine, and the UI includes a
 safe-setup disclaimer. Native device layout and keyboard verification remain release-gated.
+
+## Active workout revision checkpoint — 2026-09-14
+
+The active workout now reuses the pure `reorderWorkoutExercises` and
+`setWorkoutExerciseSetCount` domain operations for accessible move-up, move-down, and add-set
+controls. Every change creates a new private program-version revision and updates the active cycle
+and in-progress session pointer; the canonical template and completed history remain unchanged.
+Reordering retains stable workout-exercise/set IDs, and the active surface only adds sets so an
+existing completed-set key cannot be reassigned. The SQLite writes use the existing idempotent
+program, cycle, and session outbox boundaries. Removing sets during an active session remains
+intentionally deferred until a completed-set-aware edit contract exists.

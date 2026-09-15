@@ -365,3 +365,8 @@ The #277/#275 Review → progression-copy path now applies ordinary deterministi
 the completed cycle to a new private version. Matching uses canonical exercise plus immediate
 source-workout identity; safety/readiness flags and confirmation-requiring strategies hold the
 source target. The builder shows the change list before the user saves or starts the next cycle.
+
+The #276 active-workout increment now reuses the typed builder operations for accessible exercise
+reordering and add-set controls. Changes create a private version revision and update the active
+cycle/session pointer without rewriting completed sets or the source template. Active-session set
+removal remains deferred until completed-set-aware semantics are defined.

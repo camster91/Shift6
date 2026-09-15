@@ -131,6 +131,10 @@ Active workouts also support a bounded session note that is flushed locally acro
 backgrounding, pausing, and completion, then shown in the workout summary. Notes remain outside
 analytics and are covered by the existing local export/delete boundary.
 
+Active workouts now expose accessible copy-on-write controls for moving an exercise up or down and
+adding a set. Reordering preserves workout-exercise and completed-set IDs; added sets use the
+versioned builder rules and remain local-first. Template data and completed history are not mutated.
+
 ## Canonical planning docs
 
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition

@@ -272,7 +272,7 @@ The next #273 increment adds a real multi-step onboarding route at `app/onboardi
 
 This is an implementation checkpoint, not a release claim. Native migration execution, restart persistence, and small/large iOS/Android accessibility verification still require device runtimes.
 
-The foundation quality gate currently passes lint, strict typecheck, formatting, Jest, Expo Doctor, high-severity production-dependency audit, and web export. `npm audit --omit=dev` still reports 14 moderate transitive advisories whose forced remediation would introduce breaking Expo changes; this is a release-hardening risk to revisit during dependency maintenance, not a reason to apply an unreviewed forced upgrade now.
+The local foundation gate passes lint, strict typecheck, formatting, Jest, asset validation, tracked-secret scanning, release-config validation, and web export. On 2026-09-14, `npm run doctor` reached 19/21 checks but its Expo schema and React Native Directory checks failed on DNS/network access (`ENOTFOUND exp.host`); `npm audit --omit=dev --audit-level=high` was likewise blocked by npm registry DNS. The last successful audit snapshot reported 14 moderate transitive advisories; rerun both network-backed checks in CI or a connected environment before release review.
 
 ## Active workout implementation checkpoint — 2026-09-13
 

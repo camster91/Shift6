@@ -25,18 +25,9 @@ describe('program library metadata and executable drafts', () => {
     });
   });
 
-  it('provides structurally runnable draft versions for every launch program except bands', () => {
+  it('provides a structurally runnable version for every launch program', () => {
     const executable = programLibrary.filter((entry) => entry.version !== undefined);
-    expect(executable).toHaveLength(19);
-
-    const resistanceBands = programLibrary.find(
-      (entry) => entry.program.slug === 'resistance-bands',
-    );
-    expect(resistanceBands).toMatchObject({
-      buildStatus: 'metadata-only',
-      status: 'metadata-draft',
-    });
-    expect(resistanceBands?.version).toBeUndefined();
+    expect(executable).toHaveLength(20);
 
     executable.forEach((entry) => {
       expect(entry.version).toBeDefined();
@@ -49,10 +40,11 @@ describe('program library metadata and executable drafts', () => {
     });
   });
 
-  it('keeps draft catalogue entries visibly gated from public startability', () => {
+  it('keeps all non-canonical catalogue entries gated from public startability', () => {
     expect(programLibrary.slice(1).every((entry) => entry.status === 'metadata-draft')).toBe(true);
     expect(
       programLibrary.filter((entry) => entry.buildStatus === 'executable-draft'),
-    ).toHaveLength(18);
+    ).toHaveLength(19);
+    expect(programLibrary.some((entry) => entry.buildStatus === 'metadata-only')).toBe(false);
   });
 });

@@ -24,10 +24,17 @@ The non-canonical executable versions are intentionally still catalogued as `met
 are available for engineering and content validation, but the public UI must not treat them as
 publication-ready until exercise/program review gates are completed.
 
-The repository now also exposes a provider-neutral error-reporting boundary and a root render error
+The exercise-detail substitution surface now explains meaningful movement, muscle, tracking, and
+equipment differences for compatible alternatives instead of presenting a name-only replacement.
+
+The repository also exposes a provider-neutral error-reporting boundary and a root render error
 boundary. Error reporting defaults to a no-op and accepts only allowlisted technical context. A
 production crash-monitoring provider, retention policy, and device verification remain release
 configuration rather than hidden defaults.
+
+The Coach evaluation matrix covers provider failure, missed training, plateau thresholds,
+discomfort/pain, limited time, equipment changes, medication boundaries, and urgent symptoms using
+the deterministic safety/progression/substitution boundaries.
 
 ## Remaining product-content gate
 
@@ -39,6 +46,18 @@ The broader 300+ exercise launch target remains a content-production goal. The c
 deliberately draft content. Technique, instructions, imagery/video, licensing/provenance, and
 publication status require human review. Executable does not mean reviewed or safe for public
 publication.
+
+## Remaining in-repository product-scope gaps
+
+The original screen/epic specifications still include two optional profile/onboarding capabilities
+that are not implemented in the current data model or UI:
+
+- onboarding movement/accessibility considerations (explicit, non-diagnostic user selections; no
+  pregnancy/postpartum path should be added until vetted content exists); and
+- optional manual body-metric tracking in Profile/Progress.
+
+These must remain open under #273/#279 until implemented or explicitly descoped. They are not hidden
+inside the external-verification list, and their absence must not be reported as completed work.
 
 ## Remaining external verification gates
 
@@ -58,13 +77,17 @@ These cannot be truthfully completed from repository-only work:
 
 ## Verification still required for this branch
 
-GitHub Actions did not start for repository writes made through the connected GitHub integration.
-Before merge, run the normal CI workflow or its equivalent and require all repository gates to pass:
-format check, lint, TypeScript, Expo Doctor, asset/secret/release validation, dependency audit, Jest,
-and the web export. Static review in the repository is not a substitute for those commands.
+GitHub Actions did not start for repository writes made through the connected GitHub integration,
+and opening draft PR #282 also produced no CI status. The workflow now supports manual
+`workflow_dispatch`, but the connected GitHub tool cannot dispatch a new run. Before merge, run the
+normal CI workflow or its equivalent and require all repository gates to pass: format check, lint,
+TypeScript, Expo Doctor, asset/secret/release validation, dependency audit, Jest, and the web export.
+Static review in the repository is not a substitute for those commands.
 
 ## Release rule
 
 Do not close the public-release epic or submit to either store until the external verification gates
-above are evidenced. Repository tests, web export, and static configuration checks are necessary but
-are not substitutes for native-device or production-provider verification.
+above are evidenced. Do not close #273/#279 as fully complete while the explicitly listed product
+scope remains open unless that scope is deliberately removed. Repository tests, web export, and
+static configuration checks are necessary but are not substitutes for native-device or
+production-provider verification.

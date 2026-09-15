@@ -20,7 +20,7 @@ interface ExerciseSeed {
 }
 
 /**
- * The first catalogue tranche is deliberately media-free and marked draft.
+ * The initial catalogue is deliberately media-free and marked draft.
  * It establishes stable IDs and searchable metadata; exercise technique and
  * instructional media still require human review before production approval.
  */
@@ -453,6 +453,70 @@ export const foundationalExercises: readonly Exercise[] = [
     equipmentIds: ['equipment-bodyweight'],
     trackingType: 'time',
     tags: ['mobility', 'recovery', 'breathing'],
+  }),
+  seed({
+    id: 'exercise-band-squat',
+    name: 'Resistance-band squat',
+    movementPattern: 'squat',
+    primaryMuscles: ['quadriceps', 'glutes'],
+    equipmentIds: ['equipment-resistance-bands'],
+    tags: ['strength', 'bands', 'lower-body'],
+  }),
+  seed({
+    id: 'exercise-band-romanian-deadlift',
+    name: 'Resistance-band Romanian deadlift',
+    movementPattern: 'hinge',
+    primaryMuscles: ['hamstrings', 'glutes'],
+    equipmentIds: ['equipment-resistance-bands'],
+    tags: ['strength', 'bands', 'posterior-chain'],
+  }),
+  seed({
+    id: 'exercise-band-bent-over-row',
+    name: 'Resistance-band bent-over row',
+    movementPattern: 'horizontal-pull',
+    primaryMuscles: ['back', 'biceps'],
+    equipmentIds: ['equipment-resistance-bands'],
+    tags: ['strength', 'bands', 'upper-body'],
+  }),
+  seed({
+    id: 'exercise-band-overhead-press',
+    name: 'Resistance-band overhead press',
+    movementPattern: 'vertical-push',
+    primaryMuscles: ['shoulders', 'triceps'],
+    equipmentIds: ['equipment-resistance-bands'],
+    tags: ['strength', 'bands', 'upper-body'],
+  }),
+  seed({
+    id: 'exercise-band-pull-apart',
+    name: 'Resistance-band pull-apart',
+    movementPattern: 'horizontal-pull',
+    primaryMuscles: ['shoulders', 'upper-back'],
+    equipmentIds: ['equipment-resistance-bands'],
+    tags: ['strength', 'bands', 'shoulder-health'],
+  }),
+  seed({
+    id: 'exercise-band-biceps-curl',
+    name: 'Resistance-band biceps curl',
+    movementPattern: 'vertical-pull',
+    primaryMuscles: ['biceps'],
+    equipmentIds: ['equipment-resistance-bands'],
+    tags: ['strength', 'bands', 'arms'],
+  }),
+  seed({
+    id: 'exercise-band-overhead-triceps-extension',
+    name: 'Resistance-band overhead triceps extension',
+    movementPattern: 'vertical-push',
+    primaryMuscles: ['triceps'],
+    equipmentIds: ['equipment-resistance-bands'],
+    tags: ['strength', 'bands', 'arms'],
+  }),
+  seed({
+    id: 'exercise-band-lateral-walk',
+    name: 'Resistance-band lateral walk',
+    movementPattern: 'lunge-split-stance',
+    primaryMuscles: ['glutes'],
+    equipmentIds: ['equipment-resistance-bands'],
+    tags: ['strength', 'bands', 'lower-body'],
   }),
 ];
 

@@ -56,4 +56,40 @@ describe('exercise catalogue search', () => {
       }),
     ).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'exercise-lateral-raise' })]));
   });
+
+  it('keeps search semantics stable with more than 500 records', () => {
+    const largeCatalogue = Array.from({ length: 10 }, (_, batch) =>
+      foundationalExercises.map((exercise) => ({
+        ...exercise,
+        id: `${exercise.id}-batch-${batch}`,
+        aliases: [...exercise.aliases],
+        primaryMuscles: [...exercise.primaryMuscles],
+        secondaryMuscles: [...exercise.secondaryMuscles],
+        equipmentIds: [...exercise.equipmentIds],
+        instructions: [...exercise.instructions],
+        techniqueCues: [...exercise.techniqueCues],
+        commonMistakes: [...exercise.commonMistakes],
+        safetyNotes: [...exercise.safetyNotes],
+        tags: [...exercise.tags],
+        media: [...exercise.media],
+      })),
+    ).flat();
+
+    expect(largeCatalogue).toHaveLength(580);
+    const results = searchExercises(largeCatalogue, {
+      query: 'posterior-chain',
+      availableEquipmentIds: ['equipment-barbell', 'equipment-plates', 'equipment-bodyweight'],
+      compatibleOnly: true,
+    });
+
+    expect(results).toHaveLength(50);
+    expect(new Set(results.map((exercise) => exercise.id)).size).toBe(results.length);
+    expect(
+      results.every(
+        (exercise) =>
+          exercise.tags.includes('posterior-chain') &&
+          !exercise.equipmentIds.includes('equipment-rack'),
+      ),
+    ).toBe(true);
+  });
 });

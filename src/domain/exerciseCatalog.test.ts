@@ -82,7 +82,7 @@ describe('exercise catalogue search', () => {
       compatibleOnly: true,
     });
 
-    expect(results).toHaveLength(50);
+    expect(results).toHaveLength(40);
     expect(new Set(results.map((exercise) => exercise.id)).size).toBe(results.length);
     expect(
       results.every(

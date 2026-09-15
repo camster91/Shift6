@@ -375,3 +375,7 @@ defined.
 Authenticated active-workout writes now also trigger a non-blocking single-flight sync attempt after
 local persistence. Guest and offline sessions remain fully local-first, with their outbox mutations
 waiting for a later authenticated foreground/reconnect retry.
+
+The SQLite bootstrap boundary now presents a retryable local-storage error state when opening or
+migrating the database fails. The app does not imply that workout logging is available until local
+storage is ready, and raw database details are not exposed in the user-facing error.

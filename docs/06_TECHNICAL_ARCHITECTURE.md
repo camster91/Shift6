@@ -913,3 +913,8 @@ The active route now requests a non-blocking `SyncRuntimeProvider.flushNow()` af
 readiness, revision, pause, completion, partial, or skipped-session write. The single-flight
 runtime still checks authentication and connectivity, so the user-facing local transaction never
 waits on the network and guest/offline outbox rows remain available for a later retry.
+
+`LocalDatabaseProvider` now handles SQLite open or migration errors with a retryable local-storage
+screen. It does not expose raw database errors or render the workout shell without a usable local
+database. A retry remounts the provider so a transient initialization failure can recover without
+requiring a force-quit.

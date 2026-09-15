@@ -139,6 +139,10 @@ When an authenticated backend is configured, active-workout local writes now tri
 single-flight sync attempt after the local transaction succeeds. Guest mode and offline mode leave
 the outbox untouched for a later authenticated retry.
 
+Native database bootstrap failures now show a bounded retry surface without exposing raw SQLite
+details. Workout data is not presented as available until the local database and migrations open
+successfully.
+
 ## Canonical planning docs
 
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition

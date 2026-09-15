@@ -900,5 +900,6 @@ controls. Every change creates a new private program-version revision and update
 and in-progress session pointer; the canonical template and completed history remain unchanged.
 Reordering retains stable workout-exercise/set IDs, and the active surface only adds sets so an
 existing completed-set key cannot be reassigned. The SQLite writes use the existing idempotent
-program, cycle, and session outbox boundaries. Removing sets during an active session remains
-intentionally deferred until a completed-set-aware edit contract exists.
+program, cycle, and session outbox boundaries through one `saveActiveWorkoutRevision` transaction.
+Removing sets during an active session remains intentionally deferred until a completed-set-aware
+edit contract exists.

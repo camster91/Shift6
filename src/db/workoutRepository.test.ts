@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { demoProgramVersion } from '../domain/fixtures/home';
+import { demoCycle, demoProgram, demoProgramVersion } from '../domain/fixtures/home';
 import type { CompletedSet } from '../domain/types';
 import {
   completeWorkoutSession,
@@ -10,6 +10,7 @@ import {
   getCompletedSets,
   getInProgressWorkoutSession,
   getWorkoutDraft,
+  saveActiveWorkoutRevision,
   saveCompletedSet,
   saveWorkoutDraft,
   saveWorkoutSession,
@@ -333,6 +334,60 @@ describe('updateWorkoutSessionNote', () => {
     await expect(updateWorkoutSessionNote(database, 'session-1', 'x'.repeat(501))).rejects.toThrow(
       '500 characters',
     );
+  });
+});
+
+describe('saveActiveWorkoutRevision', () => {
+  it('commits the version, cycle pointer, session pointer, and outbox rows together', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const database = {
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      getFirstAsync: async () => ({
+        id: 'session-1',
+        cycle_id: 'cycle-1',
+        cycle_week: 1,
+        workout_id: 'workout-1',
+        program_version_id: 'program-version-2',
+        workout_focus: 'strength',
+        status: 'in-progress',
+        started_at: '2026-09-14T12:00:00.000Z',
+        completed_at: null,
+        completion_reason: null,
+        is_offline: 1,
+        readiness: 'ready',
+        note: null,
+      }),
+      withTransactionAsync: async (callback: () => Promise<void>) => {
+        calls.push({ sql: 'BEGIN TRANSACTION', params: [] });
+        await callback();
+        calls.push({ sql: 'COMMIT TRANSACTION', params: [] });
+      },
+    } as unknown as SQLiteDatabase;
+
+    const nextVersion = { ...demoProgramVersion, id: 'program-version-2' };
+    const nextProgram = { ...demoProgram, currentVersionId: nextVersion.id };
+    const nextCycle = { ...demoCycle, programVersionId: nextVersion.id };
+
+    await expect(
+      saveActiveWorkoutRevision(
+        database,
+        'guest-user',
+        nextProgram,
+        nextVersion,
+        nextCycle,
+        'session-1',
+      ),
+    ).resolves.toMatchObject({ programVersionId: 'program-version-2' });
+
+    expect(calls[0]?.sql).toBe('BEGIN TRANSACTION');
+    expect(calls.some((call) => call.sql.includes('INSERT INTO user_program_versions'))).toBe(true);
+    expect(calls.some((call) => call.sql.includes('INSERT INTO training_cycles'))).toBe(true);
+    expect(calls.some((call) => call.sql.includes('UPDATE workout_sessions'))).toBe(true);
+    expect(calls.at(-1)?.sql).toBe('COMMIT TRANSACTION');
+    expect(calls.filter((call) => call.sql === 'BEGIN TRANSACTION')).toHaveLength(1);
   });
 });
 

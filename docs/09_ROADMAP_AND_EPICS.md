@@ -368,5 +368,6 @@ source target. The builder shows the change list before the user saves or starts
 
 The #276 active-workout increment now reuses the typed builder operations for accessible exercise
 reordering and add-set controls. Changes create a private version revision and update the active
-cycle/session pointer without rewriting completed sets or the source template. Active-session set
-removal remains deferred until completed-set-aware semantics are defined.
+cycle/session pointer in one local SQLite transaction without rewriting completed sets or the source
+template. Active-session set removal remains deferred until completed-set-aware semantics are
+defined.

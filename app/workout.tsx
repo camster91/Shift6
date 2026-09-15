@@ -45,14 +45,10 @@ import type {
   UnitSystem,
 } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
-import { getActiveTrainingCycle, saveTrainingCycle } from '../src/db/cycleRepository';
+import { getActiveTrainingCycle } from '../src/db/cycleRepository';
 import { getNotificationPreferences } from '../src/db/notificationRepository';
 import { getOnboardingProfile } from '../src/db/profileRepository';
-import {
-  getUserExercises,
-  getUserProgramVersion,
-  saveProgramVersion,
-} from '../src/db/programRepository';
+import { getUserExercises, getUserProgramVersion } from '../src/db/programRepository';
 import { getLatestCompletedWorkoutSets } from '../src/db/progressRepository';
 import {
   completeWorkoutSessionAndAdvanceCycle,
@@ -62,11 +58,11 @@ import {
   getInProgressWorkoutSession,
   getWorkoutDraft,
   saveCompletedSet,
+  saveActiveWorkoutRevision,
   saveWorkoutDraft,
   saveWorkoutSession,
   updateWorkoutSessionNote,
   updateWorkoutSessionReadiness,
-  updateWorkoutSessionProgramVersion,
   updateCompletedSet,
 } from '../src/db/workoutRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
@@ -582,12 +578,13 @@ export default function ActiveWorkoutScreen() {
       const nextProgram = { ...activeProgram, currentVersionId: nextVersion.id };
       const nextCycle = { ...activeCycle, programVersionId: nextVersion.id };
       if (database) {
-        await saveProgramVersion(database, 'guest-user', nextProgram, nextVersion);
-        await saveTrainingCycle(database, nextCycle);
-        const updatedSession = await updateWorkoutSessionProgramVersion(
+        const updatedSession = await saveActiveWorkoutRevision(
           database,
+          'guest-user',
+          nextProgram,
+          nextVersion,
+          nextCycle,
           session.id,
-          nextVersion.id,
         );
         if (updatedSession) setResumedSession(updatedSession);
       }

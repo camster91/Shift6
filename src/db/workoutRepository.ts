@@ -3,11 +3,17 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { advanceCycleAfterCompletedWorkout } from '../domain/cycle';
 import type {
   CompletedSet,
+  Program,
+  ProgramVersion,
   TrainingCycle,
   WorkoutDraftValues,
   WorkoutSession,
 } from '../domain/types';
-import { getCompletedRequiredWorkoutCount } from './cycleRepository';
+import {
+  getCompletedRequiredWorkoutCount,
+  saveTrainingCycleInTransaction,
+} from './cycleRepository';
+import { saveProgramVersionInTransaction } from './programRepository';
 
 interface WorkoutSessionRow {
   id: string;
@@ -217,27 +223,67 @@ export async function updateWorkoutSessionProgramVersion(
   let updatedSession: WorkoutSession | null = null;
 
   await database.withTransactionAsync(async () => {
-    const result = await database.runAsync(
-      `UPDATE workout_sessions
-          SET program_version_id = ?
-        WHERE id = ? AND status = 'in-progress';`,
+    updatedSession = await updateWorkoutSessionProgramVersionInTransaction(
+      database,
+      sessionId,
       programVersionId,
-      sessionId,
     );
-    if (result.changes === 0) return;
+  });
 
-    const row = await database.getFirstAsync<WorkoutSessionRow>(
-      `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, completion_reason, is_offline, readiness, note
-         FROM workout_sessions
-        WHERE id = ?
-        LIMIT 1;`,
+  return updatedSession;
+}
+
+export async function updateWorkoutSessionProgramVersionInTransaction(
+  database: SQLiteDatabase,
+  sessionId: string,
+  programVersionId: string,
+): Promise<WorkoutSession | null> {
+  const result = await database.runAsync(
+    `UPDATE workout_sessions
+        SET program_version_id = ?
+      WHERE id = ? AND status = 'in-progress';`,
+    programVersionId,
+    sessionId,
+  );
+  if (result.changes === 0) return null;
+
+  const row = await database.getFirstAsync<WorkoutSessionRow>(
+    `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
+            started_at, completed_at, completion_reason, is_offline, readiness, note
+       FROM workout_sessions
+      WHERE id = ?
+      LIMIT 1;`,
+    sessionId,
+  );
+  if (!row) return null;
+
+  const updatedSession = mapWorkoutSession(row);
+  await queueWorkoutSessionSync(database, updatedSession);
+  return updatedSession;
+}
+
+/**
+ * Commits an active-session program revision and all local pointers together.
+ * Completed sets remain keyed to their stable session/exercise/set IDs.
+ */
+export async function saveActiveWorkoutRevision(
+  database: SQLiteDatabase,
+  userId: string,
+  program: Program,
+  version: ProgramVersion,
+  cycle: TrainingCycle,
+  sessionId: string,
+): Promise<WorkoutSession | null> {
+  let updatedSession: WorkoutSession | null = null;
+
+  await database.withTransactionAsync(async () => {
+    await saveProgramVersionInTransaction(database, userId, program, version);
+    await saveTrainingCycleInTransaction(database, cycle);
+    updatedSession = await updateWorkoutSessionProgramVersionInTransaction(
+      database,
       sessionId,
+      version.id,
     );
-    if (!row) return;
-
-    updatedSession = mapWorkoutSession(row);
-    await queueWorkoutSessionSync(database, updatedSession);
   });
 
   return updatedSession;

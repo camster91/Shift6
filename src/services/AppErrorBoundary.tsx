@@ -15,13 +15,13 @@ interface BoundaryState {
 }
 
 class RootErrorBoundary extends Component<BoundaryProps, BoundaryState> {
-  state: BoundaryState = { hasError: false };
+  override state: BoundaryState = { hasError: false };
 
   static getDerivedStateFromError(): BoundaryState {
     return { hasError: true };
   }
 
-  componentDidCatch(error: unknown, _info: ErrorInfo) {
+  override componentDidCatch(error: Error, _info: ErrorInfo) {
     try {
       this.props.reporter.captureException(error, { surface: 'root-render' });
     } catch {
@@ -29,7 +29,7 @@ class RootErrorBoundary extends Component<BoundaryProps, BoundaryState> {
     }
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <View style={styles.container} accessibilityRole="alert">

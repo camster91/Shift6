@@ -10,10 +10,10 @@ describe('program library metadata and executable drafts', () => {
     expect(new Set(programLibrary.map((entry) => entry.program.slug)).size).toBe(20);
   });
 
-  it('keeps Barbell 30 wired to its actual reviewed version identifier', () => {
+  it('keeps Barbell 30 wired to its canonical version identifier', () => {
     expect(programLibrary[0]).toMatchObject({
       status: 'published',
-      buildStatus: 'reviewed',
+      buildStatus: 'canonical',
       program: {
         id: 'program-barbell-30',
         currentVersionId: demoProgramVersion.id,
@@ -39,8 +39,11 @@ describe('program library metadata and executable drafts', () => {
     expect(resistanceBands?.version).toBeUndefined();
 
     executable.forEach((entry) => {
-      expect(entry.program.currentVersionId).toBe(entry.version?.id);
-      const report = assessProgramVersion(entry.program, entry.version!, foundationalExercises);
+      expect(entry.version).toBeDefined();
+      if (!entry.version) return;
+
+      expect(entry.program.currentVersionId).toBe(entry.version.id);
+      const report = assessProgramVersion(entry.program, entry.version, foundationalExercises);
       expect(report.readyForCycle).toBe(true);
       expect(report.readyForPublication).toBe(false);
     });

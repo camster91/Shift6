@@ -46,6 +46,20 @@ Users can duplicate any template into an editable personal program.
 
 Each program requires content review before public release.
 
+### Launch-program implementation checkpoint — 2026-09-15
+
+The typed launch catalogue now uses this exact canonical set rather than a parallel list of generic
+program placeholders. Barbell 30 remains the canonical startable fixture. The other 19 programs
+have executable six-week draft versions with stable program/version/workout/set IDs, declared
+equipment, program-specific schedules, and deterministic progression rule references.
+
+The generated drafts include the program-specific constraints called out above: Strength 3×5 uses
+3×5 working prescriptions; Strength + Conditioning Hybrid has three strength and two conditioning
+days; Busy 20 uses shorter volume/rest defaults; Healthy Ageing and Return to Training use lower
+working volume; Runner Support and Cyclist Support keep two required strength sessions with optional
+sport-specific aerobic sessions; and Cardio Base + Strength includes two strength plus two aerobic
+sessions. These versions remain behind the public startability gate until content review is complete.
+
 ## Exercise catalogue target
 
 Launch target: **300+ high-quality exercise records**, not hundreds of near-duplicate low-quality entries.
@@ -208,13 +222,15 @@ Across the program/cycle include small doses of:
 
 These can be optional blocks so the core 30-minute strength sessions remain realistic.
 
-## Exercise filtering checkpoint — 2026-09-14
+## Exercise filtering checkpoint — 2026-09-15
 
-The Exercise Library implementation now applies the planned catalogue filters in the typed domain
+The Exercise Library implementation applies the planned catalogue filters in the typed domain
 search boundary: difficulty, unilateral/bilateral stance, compound/isolation classification, and
-mobility/power/cardio focus. Classification is stored on new seeded records with a conservative
-primary-muscle fallback for older JSON. The current 50-record tranche remains draft and media-free;
-this increment does not claim the 300+ reviewed launch catalogue.
+mobility/power/cardio focus. Classification is stored on seeded records with a conservative
+primary-muscle fallback for older JSON. The current 58-record tranche remains draft and media-free;
+eight band-native movements were added so Resistance Bands can be exercised without pretending
+bodyweight or dumbbell movements are band-compatible. This does not claim the 300+ reviewed launch
+catalogue.
 
 ## Custom exercise authoring checkpoint — 2026-09-14
 

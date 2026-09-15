@@ -1,5 +1,6 @@
 import {
   equipmentCatalog,
+  explainExerciseSubstitution,
   findExerciseSubstitutions,
   isExerciseCompatible,
   missingEquipment,
@@ -47,5 +48,21 @@ describe('equipment-aware exercise catalogue', () => {
     expect(
       substitutions.every((exercise) => isExerciseCompatible(exercise, ['equipment-kettlebell'])),
     ).toBe(true);
+  });
+
+  it('explains meaningful substitution similarities and differences', () => {
+    const source = foundationalExercises.find((exercise) => exercise.id === 'exercise-back-squat');
+    const candidate = foundationalExercises.find(
+      (exercise) => exercise.id === 'exercise-goblet-squat',
+    );
+
+    expect(source).toBeDefined();
+    expect(candidate).toBeDefined();
+    if (!source || !candidate) return;
+
+    const explanation = explainExerciseSubstitution(source, candidate);
+    expect(explanation).toContain('Squat movement pattern');
+    expect(explanation).toContain('Quadriceps');
+    expect(explanation).toContain('Kettlebell instead of Barbell, Plates, and Rack');
   });
 });

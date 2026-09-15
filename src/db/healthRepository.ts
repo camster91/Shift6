@@ -103,6 +103,25 @@ export async function getDailyHealthTrends(
   return buildDailyHealthTrends(await getHealthSummaries(database, userId, query));
 }
 
+/**
+ * Removes only normalized summaries imported for one local user. This is a
+ * separate explicit action from disconnecting so a preference change does not
+ * unexpectedly erase a user's local health context.
+ */
+export async function deleteHealthSummaries(
+  database: SQLiteDatabase,
+  userId: string,
+): Promise<number> {
+  const normalizedUserId = userId.trim();
+  if (!normalizedUserId) throw new Error('A user ID is required to delete health summaries.');
+
+  const result = await database.runAsync(
+    'DELETE FROM health_summaries WHERE user_id = ?;',
+    normalizedUserId,
+  );
+  return result.changes;
+}
+
 function mapHealthSummary(row: HealthSummaryRow): HealthSummary {
   return {
     id: row.id,

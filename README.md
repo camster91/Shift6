@@ -122,6 +122,11 @@ states from local session history; a move is written to SQLite and the sync outb
 transaction, while the web preview keeps the interaction non-persistent. Home and the cycle
 dashboard consume the same schedule projection, so a moved session remains coherent across routes.
 
+Health settings now provide explicit local disconnect and imported-summary removal controls. The
+disconnect action stops future SHIFT6 imports and updates the replaceable profile snapshot
+atomically; a separate confirmation removes only normalized summaries stored on the device. OS-level
+HealthKit/Health Connect revocation remains a native platform-settings and device-verification gate.
+
 ## Canonical planning docs
 
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition

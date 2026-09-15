@@ -657,6 +657,23 @@ without leaking platform types into the domain:
 
 This is a source/configuration increment, not native device proof. A rebuilt iOS custom development client, an Android build with Health Connect available, real permission-denial/revocation tests, privacy review, and App Store/Google Play health declarations remain release gates. Imported health summaries remain local-only and are not added to the sync outbox.
 
+## Health disconnect and local removal checkpoint — 2026-09-14
+
+The health settings surface now implements the local lifecycle controls required by the screen
+specification:
+
+- `updateHealthConnectionPreference` changes the saved preference and replaces the profile outbox
+  snapshot inside one SQLite transaction, so a later sync cannot restore a stale connected state;
+- Disconnecting stops future SHIFT6 requests/imports but deliberately does not claim to revoke
+  Apple Health or Health Connect permission, which must be verified and controlled through the
+  platform settings surface;
+- `deleteHealthSummaries` is a separate, confirmed local deletion action that removes only the
+  normalized summaries stored by SHIFT6 and leaves the source health platform unchanged;
+- no health payload enters analytics, the workout outbox, or remote storage through this control.
+
+This closes the local disconnect/data-control boundary. Native permission-revocation behavior,
+account-scoped remote deletion, and store privacy declarations remain release gates.
+
 ## Provider-backed Coach boundary checkpoint — 2026-09-14
 
 `src/services/coach.ts` now provides a vendor-neutral HTTP adapter for `/v1/coach/message` and `/v1/coach/proposal`, reusing the injected auth token and a bounded allowlist of structured facts. Message responses are size/type validated and unsafe generated text is rerouted through the deterministic safety classifier. Proposal responses must be pending, actionable, explicitly user-confirmed, and valid under the existing Coach schema before they can reach the local approval repository. The Coach tab falls back to the deterministic offline explainer when the provider, auth session, network, or backend is unavailable; no provider credential or automatic plan mutation was added.

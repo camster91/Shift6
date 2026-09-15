@@ -1,6 +1,11 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { getDailyHealthTrends, getHealthSummaries, saveHealthSummaries } from './healthRepository';
+import {
+  deleteHealthSummaries,
+  getDailyHealthTrends,
+  getHealthSummaries,
+  saveHealthSummaries,
+} from './healthRepository';
 
 const samples = [
   {
@@ -94,5 +99,16 @@ describe('local health summary repository', () => {
 
     await expect(getHealthSummaries(database, 'guest-user', { types: [] })).resolves.toEqual([]);
     expect(database.getAllAsync).not.toHaveBeenCalled();
+  });
+
+  it('deletes only the requested user’s imported summaries', async () => {
+    const runAsync = jest.fn(async () => ({ changes: 3, lastInsertRowId: 0 }));
+    const database = { runAsync } as unknown as SQLiteDatabase;
+
+    await expect(deleteHealthSummaries(database, 'guest-user')).resolves.toBe(3);
+    expect(runAsync).toHaveBeenCalledWith(
+      'DELETE FROM health_summaries WHERE user_id = ?;',
+      'guest-user',
+    );
   });
 });

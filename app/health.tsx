@@ -1,15 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import { Button, Card, Chip, IconButton, Screen, Text } from '../src/components/ui';
 import { healthDataTypeDetails, type HealthTrendPoint } from '../src/domain/health';
 import { demoUser } from '../src/domain/fixtures/home';
 import type { HealthConnectionPreference } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
-import { getDailyHealthTrends } from '../src/db/healthRepository';
-import { getOnboardingProfile } from '../src/db/profileRepository';
+import { deleteHealthSummaries, getDailyHealthTrends } from '../src/db/healthRepository';
+import {
+  getOnboardingProfile,
+  updateHealthConnectionPreference,
+} from '../src/db/profileRepository';
 import { colors, spacing } from '../src/design/tokens';
 import { healthTypesForPreference } from '../src/services/health';
 import { useAppServices } from '../src/services/AppServicesProvider';
@@ -28,6 +31,8 @@ export default function HealthSettingsScreen() {
   const [healthTrendsError, setHealthTrendsError] = useState(false);
   const [healthSyncState, setHealthSyncState] = useState<HealthSyncUiState>('idle');
   const [importedCount, setImportedCount] = useState(0);
+  const [healthActionBusy, setHealthActionBusy] = useState<'disconnect' | 'delete' | null>(null);
+  const [healthActionMessage, setHealthActionMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -125,6 +130,99 @@ export default function HealthSettingsScreen() {
       setHealthTrendsError(true);
     } finally {
       setHealthTrendsLoading(false);
+    }
+  }
+
+  function handleDisconnect() {
+    if (!database || Platform.OS === 'web') {
+      setHealthActionMessage(
+        'Web preview: health connection controls are available on native builds.',
+      );
+      return;
+    }
+    if (preference === 'not-now') return;
+
+    Alert.alert(
+      'Disconnect health data?',
+      'SHIFT6 will stop requesting and importing health summaries. Imported summaries stay on this device until you remove them separately. To revoke platform access, use Apple Health or Health Connect settings.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: () => void performDisconnect(),
+        },
+      ],
+    );
+  }
+
+  async function performDisconnect() {
+    if (!database) return;
+
+    setHealthActionBusy('disconnect');
+    setHealthActionMessage(null);
+    try {
+      await updateHealthConnectionPreference(
+        database,
+        'guest-user',
+        'not-now',
+        new Date().toISOString(),
+      );
+      setPreference('not-now');
+      setHealthSyncState('idle');
+      setImportedCount(0);
+      setHealthActionMessage(
+        'Health imports are disconnected. Existing local summaries were kept on this device.',
+      );
+    } catch {
+      setHealthActionMessage(
+        'We could not disconnect health imports. Your current setting is unchanged.',
+      );
+    } finally {
+      setHealthActionBusy(null);
+    }
+  }
+
+  function handleDeleteImportedSummaries() {
+    if (!database || Platform.OS === 'web') {
+      setHealthActionMessage(
+        'Web preview: local health-summary removal is available on native builds.',
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Remove imported summaries?',
+      'This permanently removes health summaries stored locally by SHIFT6. It does not delete anything from Apple Health or Health Connect.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove summaries',
+          style: 'destructive',
+          onPress: () => void performDeleteImportedSummaries(),
+        },
+      ],
+    );
+  }
+
+  async function performDeleteImportedSummaries() {
+    if (!database) return;
+
+    setHealthActionBusy('delete');
+    setHealthActionMessage(null);
+    try {
+      const deletedCount = await deleteHealthSummaries(database, 'guest-user');
+      setHealthTrends([]);
+      setHealthTrendsError(false);
+      setHealthActionMessage(
+        deletedCount > 0
+          ? `${deletedCount} imported health summar${deletedCount === 1 ? 'y was' : 'ies were'} removed from this device.`
+          : 'No imported health summaries were stored on this device.',
+      );
+    } catch {
+      setHealthActionMessage('We could not remove imported health summaries.');
+    } finally {
+      setHealthActionBusy(null);
     }
   }
 
@@ -236,6 +334,46 @@ export default function HealthSettingsScreen() {
           ) : null}
         </>
       ) : null}
+
+      <Card tone="white" style={styles.controlsCard}>
+        <Text variant="smallMedium">Connection controls</Text>
+        <Text variant="small" tone="muted" style={styles.controlsCopy}>
+          Disconnecting stops future SHIFT6 imports but does not change permissions in Apple Health
+          or Health Connect. Local summaries can be removed separately.
+        </Text>
+        {preference !== 'not-now' ? (
+          <Button
+            label="Disconnect health data"
+            variant="secondary"
+            loading={healthActionBusy === 'disconnect'}
+            disabled={healthActionBusy !== null || healthSyncState === 'syncing'}
+            icon={<Ionicons name="link-outline" size={18} color={colors.ink} />}
+            onPress={handleDisconnect}
+            style={styles.controlButton}
+            accessibilityHint="Stop future health imports without changing the platform permission."
+          />
+        ) : null}
+        <Button
+          label="Remove imported summaries"
+          variant="ghost"
+          loading={healthActionBusy === 'delete'}
+          disabled={healthActionBusy !== null || healthSyncState === 'syncing'}
+          icon={<Ionicons name="trash-outline" size={18} color={colors.error} />}
+          onPress={handleDeleteImportedSummaries}
+          style={styles.controlButton}
+          accessibilityHint="Permanently remove health summaries stored locally by SHIFT6."
+        />
+        {healthActionMessage ? (
+          <Text
+            variant="caption"
+            tone="muted"
+            accessibilityLiveRegion="polite"
+            style={styles.controlMessage}
+          >
+            {healthActionMessage}
+          </Text>
+        ) : null}
+      </Card>
 
       <Button
         label="Change health preference"
@@ -431,6 +569,18 @@ const styles = StyleSheet.create({
   },
   syncAction: {
     marginTop: spacing.xl,
+  },
+  controlsCard: {
+    marginTop: spacing.xl,
+  },
+  controlsCopy: {
+    marginTop: spacing.xs,
+  },
+  controlButton: {
+    marginTop: spacing.md,
+  },
+  controlMessage: {
+    marginTop: spacing.sm,
   },
   syncFeedback: {
     marginTop: spacing.sm,

@@ -254,6 +254,12 @@ The first native health adapter increment is now implemented for iOS HealthKit a
 
 The cycle-review increment now persists optional user reflection locally (overall rating, next-block focus, note, and explicit repeat/adjust/change-program choice) with a replaceable `cycle-review` outbox mutation. Export, delete, and guest-account adoption cover the record. It does not change deterministic progression or apply a Coach proposal; native migration/restart proof and the remaining progress/change-next-cycle matrix remain open.
 
+Health settings now expose explicit local disconnect and imported-summary removal controls. A
+disconnect updates the profile and replaceable outbox snapshot atomically, stops future SHIFT6
+imports, and explains that platform permission revocation still belongs to Apple Health or Health
+Connect settings. Summary removal is separately confirmed and user-scoped; native revocation,
+remote deletion, and store declarations remain open #279/#280 release gates.
+
 The analytics increment now exposes an injected no-op-by-default client and instruments the
 documented six-week funnel at onboarding, program start, workout start/completion, Week 2, cycle
 completion, and next-cycle start. It also records health connection and exercise substitution

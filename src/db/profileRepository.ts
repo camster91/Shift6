@@ -73,21 +73,40 @@ export async function saveOnboardingProfile(
       );
     }
 
-    await database.runAsync(
-      `INSERT INTO sync_outbox
-        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(idempotency_key) DO UPDATE SET
-         payload_json = excluded.payload_json,
-         created_at = excluded.created_at,
-         last_error = NULL;`,
-      `outbox-profile-${profile.user.id}`,
-      `profile:${profile.user.id}`,
-      'profile',
-      profile.user.id,
-      JSON.stringify({ userId: profile.user.id, profile }),
-      profile.user.updatedAt,
+    await enqueueProfileMutation(database, profile);
+  });
+}
+
+/**
+ * Disconnects future health imports without touching the platform permission.
+ * The profile snapshot and replaceable outbox mutation change together so a
+ * later authenticated sync cannot resurrect the previous preference.
+ */
+export async function updateHealthConnectionPreference(
+  database: SQLiteDatabase,
+  userId: string,
+  healthConnection: OnboardingProfile['healthConnection'],
+  updatedAt: string,
+): Promise<void> {
+  const normalizedUserId = userId.trim();
+  if (!normalizedUserId) throw new Error('A user ID is required to update health preference.');
+
+  await database.withTransactionAsync(async () => {
+    const result = await database.runAsync(
+      `UPDATE user_profiles
+          SET health_connection = ?, updated_at = ?
+        WHERE id = ?;`,
+      healthConnection,
+      updatedAt,
+      normalizedUserId,
     );
+    if (result.changes !== 1) {
+      throw new Error('The local profile could not be found.');
+    }
+
+    const profile = await getOnboardingProfile(database, normalizedUserId);
+    if (!profile) throw new Error('The local profile could not be reloaded.');
+    await enqueueProfileMutation(database, profile);
   });
 }
 
@@ -129,4 +148,25 @@ export async function getOnboardingProfile(
     healthConnection: row.health_connection,
     completedAt: row.completed_at,
   };
+}
+
+async function enqueueProfileMutation(
+  database: SQLiteDatabase,
+  profile: OnboardingProfile,
+): Promise<void> {
+  await database.runAsync(
+    `INSERT INTO sync_outbox
+      (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(idempotency_key) DO UPDATE SET
+       payload_json = excluded.payload_json,
+       created_at = excluded.created_at,
+       last_error = NULL;`,
+    `outbox-profile-${profile.user.id}`,
+    `profile:${profile.user.id}`,
+    'profile',
+    profile.user.id,
+    JSON.stringify({ userId: profile.user.id, profile }),
+    profile.user.updatedAt,
+  );
 }

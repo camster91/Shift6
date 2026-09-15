@@ -8,11 +8,6 @@ export interface DeterministicProgressionParameters {
   skillReady?: boolean;
 }
 
-/**
- * The first reviewed rule in the catalogue. Rules are version-owned data: a
- * ProgramVersion references them by ID so a later program revision can change
- * its progression without rewriting completed workout history.
- */
 export const barbell30DoubleProgressionRule: ProgressionRule = {
   id: 'rule-barbell-30-double-progression',
   strategy: 'double-progression',
@@ -25,8 +20,40 @@ export const barbell30DoubleProgressionRule: ProgressionRule = {
   },
 };
 
+const defaultRuleParameters: Readonly<
+  Record<ProgressionStrategy, ProgressionRule['parameters']>
+> = {
+  'linear-load': { loadIncrementImperial: 5, loadIncrementMetric: 2.5 },
+  'double-progression': { loadIncrementImperial: 5, loadIncrementMetric: 2.5 },
+  'rep-target': {
+    loadIncrementImperial: 5,
+    loadIncrementMetric: 2.5,
+    totalRepTarget: 30,
+  },
+  'rpe-rir': { loadIncrementImperial: 5, loadIncrementMetric: 2.5 },
+  volume: {},
+  density: { durationIncrementSeconds: 10 },
+  time: { durationIncrementSeconds: 15 },
+  distance: { distanceIncrementMeters: 250 },
+  cardio: { durationIncrementSeconds: 60, distanceIncrementMeters: 250 },
+  skill: {},
+};
+
+export const defaultProgressionRules: readonly ProgressionRule[] = (
+  Object.entries(defaultRuleParameters) as [
+    ProgressionStrategy,
+    ProgressionRule['parameters'],
+  ][]
+).map(([strategy, parameters]) => ({
+  id: defaultProgressionRuleId(strategy),
+  strategy,
+  scope: 'program',
+  parameters,
+}));
+
 export const progressionRuleCatalogue: readonly ProgressionRule[] = [
   barbell30DoubleProgressionRule,
+  ...defaultProgressionRules,
 ];
 
 const safeDefaults: DeterministicProgressionParameters = {
@@ -35,14 +62,10 @@ const safeDefaults: DeterministicProgressionParameters = {
   distanceIncrementMeters: 250,
 };
 
-/**
- * Resolve the deterministic parameters for a version's rule IDs.
- *
- * Unknown or incomplete rule data never becomes an exception in an active
- * workout. The domain uses conservative, documented defaults until the
- * program author supplies a reviewed rule, while the selected strategy still
- * controls the calculation in progression.ts.
- */
+export function defaultProgressionRuleId(strategy: ProgressionStrategy): string {
+  return `rule-default-${strategy}`;
+}
+
 export function resolveProgressionParameters(
   ruleIds: readonly EntityId[],
   strategy: ProgressionStrategy,

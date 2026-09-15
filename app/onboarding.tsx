@@ -35,12 +35,14 @@ import { getOnboardingProfile, saveOnboardingProfile } from '../src/db/profileRe
 import { colors, radii, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 const stepCount = 9;
 
 export default function OnboardingScreen() {
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
+  const userId = useCurrentUserId();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState(() => createOnboardingDraft());
   const [loadingProfile, setLoadingProfile] = useState(database !== null);
@@ -58,7 +60,7 @@ export default function OnboardingScreen() {
     }
 
     let active = true;
-    void getOnboardingProfile(database, 'guest-user')
+    void getOnboardingProfile(database, userId)
       .then((profile) => {
         if (active && profile) setDraft(fromOnboardingProfile(profile));
       })
@@ -73,7 +75,7 @@ export default function OnboardingScreen() {
     return () => {
       active = false;
     };
-  }, [database]);
+  }, [database, userId]);
 
   const recommendations = useMemo(() => {
     if (!isOnboardingComplete(draft)) return [];

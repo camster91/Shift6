@@ -14,6 +14,7 @@ import {
   updateHealthConnectionPreference,
 } from '../src/db/profileRepository';
 import { colors, spacing } from '../src/design/tokens';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 import { healthTypesForPreference } from '../src/services/health';
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
@@ -24,6 +25,7 @@ type HealthSyncUiState = 'idle' | 'syncing' | HealthSyncStatus;
 export default function HealthSettingsScreen() {
   const database = useLocalDatabase();
   const { analytics, health } = useAppServices();
+  const userId = useCurrentUserId();
   const [preference, setPreference] = useState<HealthConnectionPreference>('not-now');
   const [available, setAvailable] = useState<boolean | null>(null);
   const [healthTrends, setHealthTrends] = useState<HealthTrendPoint[]>([]);
@@ -46,7 +48,7 @@ export default function HealthSettingsScreen() {
       };
     }
 
-    void getOnboardingProfile(database, 'guest-user')
+    void getOnboardingProfile(database, userId)
       .then((profile) => {
         if (active && profile) setPreference(profile.healthConnection);
       })
@@ -55,7 +57,7 @@ export default function HealthSettingsScreen() {
     return () => {
       active = false;
     };
-  }, [database, health]);
+  }, [database, health, userId]);
 
   const requestedTypes = useMemo(() => healthTypesForPreference(preference), [preference]);
   const statusLabel =
@@ -78,7 +80,7 @@ export default function HealthSettingsScreen() {
     let active = true;
     setHealthTrendsLoading(true);
     setHealthTrendsError(false);
-    void getDailyHealthTrends(database, 'guest-user', { types: requestedTypes })
+    void getDailyHealthTrends(database, userId, { types: requestedTypes })
       .then((trends) => {
         if (!active) return;
         setHealthTrends(trends.slice(-7));
@@ -93,7 +95,7 @@ export default function HealthSettingsScreen() {
     return () => {
       active = false;
     };
-  }, [database, requestedTypes]);
+  }, [database, requestedTypes, userId]);
 
   async function handleHealthSync() {
     if (!database || requestedTypes.length === 0 || available !== true) return;
@@ -104,7 +106,7 @@ export default function HealthSettingsScreen() {
     const startAt = new Date(endAt.getTime() - 30 * 24 * 60 * 60 * 1000);
     const result = await syncHealthSummaries({
       database,
-      userId: 'guest-user',
+      userId,
       provider: health,
       types: requestedTypes,
       range: { startAt: startAt.toISOString(), endAt: endAt.toISOString() },
@@ -122,7 +124,7 @@ export default function HealthSettingsScreen() {
     setHealthTrendsLoading(true);
     setHealthTrendsError(false);
     try {
-      const trends = await getDailyHealthTrends(database, 'guest-user', {
+      const trends = await getDailyHealthTrends(database, userId, {
         types: requestedTypes,
       });
       setHealthTrends(trends.slice(-7));
@@ -162,12 +164,7 @@ export default function HealthSettingsScreen() {
     setHealthActionBusy('disconnect');
     setHealthActionMessage(null);
     try {
-      await updateHealthConnectionPreference(
-        database,
-        'guest-user',
-        'not-now',
-        new Date().toISOString(),
-      );
+      await updateHealthConnectionPreference(database, userId, 'not-now', new Date().toISOString());
       setPreference('not-now');
       setHealthSyncState('idle');
       setImportedCount(0);
@@ -211,7 +208,7 @@ export default function HealthSettingsScreen() {
     setHealthActionBusy('delete');
     setHealthActionMessage(null);
     try {
-      const deletedCount = await deleteHealthSummaries(database, 'guest-user');
+      const deletedCount = await deleteHealthSummaries(database, userId);
       setHealthTrends([]);
       setHealthTrendsError(false);
       setHealthActionMessage(

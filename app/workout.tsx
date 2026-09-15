@@ -72,6 +72,7 @@ import { cancelRestTimerCue, refreshRestTimerCue } from '../src/services/notific
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { useSyncRuntime } from '../src/services/SyncRuntimeProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 import * as Network from 'expo-network';
 import type { ConnectivityStatus } from '../src/services/syncCoordinator';
 
@@ -95,6 +96,7 @@ export default function ActiveWorkoutScreen() {
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
   const { flushNow, state: syncState } = useSyncRuntime();
+  const userId = useCurrentUserId();
   const { workoutId } = useLocalSearchParams<{ workoutId?: string }>();
   const [activeCycle, setActiveCycle] = useState<TrainingCycle>(demoCycle);
   const [activeProgram, setActiveProgram] = useState(demoProgram);
@@ -230,15 +232,11 @@ export default function ActiveWorkoutScreen() {
     }
 
     let active = true;
-    void getActiveTrainingCycle(database, 'guest-user')
+    void getActiveTrainingCycle(database, userId)
       .then(async (cycle) => {
         if (!active || !cycle) return;
         setActiveCycle(cycle);
-        const snapshot = await getUserProgramVersion(
-          database,
-          'guest-user',
-          cycle.programVersionId,
-        );
+        const snapshot = await getUserProgramVersion(database, userId, cycle.programVersionId);
         if (!active || !snapshot) return;
         setActiveProgram(snapshot.program);
         setActiveProgramVersion(snapshot.version);
@@ -251,7 +249,7 @@ export default function ActiveWorkoutScreen() {
     return () => {
       active = false;
     };
-  }, [database]);
+  }, [database, userId]);
 
   useEffect(() => {
     if (loadingCycle) return;
@@ -283,10 +281,10 @@ export default function ActiveWorkoutScreen() {
               activeWorkout.id,
               activeProgramVersion.id,
             ),
-            getOnboardingProfile(database, 'guest-user'),
+            getOnboardingProfile(database, userId),
             getWorkoutDraft(database, sessionToUse.id),
-            getUserExercises(database, 'guest-user'),
-            getNotificationPreferences(database, 'guest-user'),
+            getUserExercises(database, userId),
+            getNotificationPreferences(database, userId),
           ]);
         return {
           completedSets,
@@ -595,7 +593,7 @@ export default function ActiveWorkoutScreen() {
       if (database) {
         const updatedSession = await saveActiveWorkoutRevision(
           database,
-          'guest-user',
+          userId,
           nextProgram,
           nextVersion,
           nextCycle,

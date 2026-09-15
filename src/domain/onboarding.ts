@@ -10,6 +10,7 @@ import type {
   Program,
   UnitSystem,
 } from './types';
+import { LOCAL_GUEST_USER_ID } from './userIdentity';
 
 export interface OnboardingDraft {
   displayName: string;
@@ -234,7 +235,7 @@ export function isOnboardingComplete(draft: OnboardingDraft): boolean {
 export function toOnboardingProfile(
   draft: OnboardingDraft,
   now: string,
-  userId = 'guest-user',
+  userId = LOCAL_GUEST_USER_ID,
 ): OnboardingProfile {
   if (!isOnboardingComplete(draft)) {
     throw new Error('Onboarding is incomplete');

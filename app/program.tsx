@@ -23,10 +23,12 @@ import { saveProgramVersion } from '../src/db/programRepository';
 import { colors, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function ProgramDetailScreen() {
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
+  const userId = useCurrentUserId();
   const { programId } = useLocalSearchParams<{ programId?: string }>();
   const catalogueEntry =
     programLibrary.find((entry) => entry.program.id === programId) ?? programLibrary[0]!;
@@ -43,13 +45,13 @@ export default function ProgramDetailScreen() {
     setError(null);
     try {
       const startedAt = new Date().toISOString();
-      const programId = `program-${selectedProgram.slug}-guest-user-${Date.now()}`;
+      const programId = `program-${selectedProgram.slug}-${userId}-${Date.now()}`;
       if (!selectedVersion)
         throw new Error('This program does not have an executable version yet.');
       const copy = createProgramCopy({
         sourceProgram: selectedProgram,
         sourceVersion: selectedVersion,
-        userId: 'guest-user',
+        userId,
         newProgramId: programId,
         newVersionId: `${programId}-version-1`,
         createdAt: startedAt,
@@ -61,13 +63,13 @@ export default function ProgramDetailScreen() {
         description: selectedProgram.description,
       };
       const cycle = createTrainingCycle({
-        id: `cycle-guest-user-${program.id}-${Date.now()}`,
-        userId: 'guest-user',
+        id: `cycle-${userId}-${program.id}-${Date.now()}`,
+        userId,
         programVersion: copy.version,
         startedAt,
       });
       if (database) {
-        await saveProgramVersion(database, 'guest-user', program, copy.version);
+        await saveProgramVersion(database, userId, program, copy.version);
         await saveTrainingCycle(database, cycle);
       }
       trackAnalyticsEvent(analytics, 'program_started', {

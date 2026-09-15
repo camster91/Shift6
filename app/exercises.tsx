@@ -12,9 +12,11 @@ import { searchExercises, type ExerciseCategoryFilter } from '../src/domain/exer
 import { demoUser } from '../src/domain/fixtures/home';
 import type { Difficulty, Exercise, ExerciseClassification } from '../src/domain/types';
 import { colors, radii, spacing } from '../src/design/tokens';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function ExerciseLibraryScreen() {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [query, setQuery] = useState('');
   const [compatibleOnly, setCompatibleOnly] = useState(true);
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | undefined>();
@@ -34,10 +36,7 @@ export default function ExerciseLibraryScreen() {
       }
 
       let active = true;
-      void Promise.all([
-        getOnboardingProfile(database, 'guest-user'),
-        getUserExercises(database, 'guest-user'),
-      ])
+      void Promise.all([getOnboardingProfile(database, userId), getUserExercises(database, userId)])
         .then(([profile, exercises]) => {
           if (!active) return;
           if (profile) setAvailableEquipmentIds(profile.user.equipmentIds);
@@ -48,7 +47,7 @@ export default function ExerciseLibraryScreen() {
       return () => {
         active = false;
       };
-    }, [database]),
+    }, [database, userId]),
   );
 
   const availableExercises = useMemo(

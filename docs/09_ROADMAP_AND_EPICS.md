@@ -386,3 +386,9 @@ retry-paused, or conflict feedback without disabling local set logging.
 The substitution path now clears unfinished input and target-override state for the replaced
 movement while preserving the stable workout-exercise identity. Completed-set substitution remains
 blocked to protect historical meaning.
+
+The #272 identity increment now routes all account-scoped app surfaces through a shared local-owner
+context. The current guest ID remains the default, and an injected account session adopts guest
+records before SyncRuntime or notifications mount. Adoption uses the existing conflict-safe
+transaction and is covered by focused resolver tests; provider-specific sign-in, account conflict
+UX, remote deletion, and native account verification remain release-gated.

@@ -932,3 +932,17 @@ When an unfinished exercise is substituted, the active route clears draft input 
 exercise-level next-target override for that stable workout-exercise ID before rendering the new
 movement. The operation remains blocked after a completed set, so stable history IDs are not
 reinterpreted as a different exercise.
+
+## Local identity boundary checkpoint — 2026-09-14
+
+`UserIdentityProvider` is now the app boundary for local ownership. Route and runtime surfaces use
+`useCurrentUserId()` instead of embedding the guest ID, while the current unconfigured shell still
+resolves to the stable `guest-user` owner. When an injected auth provider returns an account
+session, the provider calls `migrateLocalUserToAccount` before mounting SyncRuntime, notifications,
+or account-scoped routes. This transfers guest-owned records and queued payload identity in one
+transaction and fails closed on destination conflicts or malformed queued data.
+
+The identity provider deliberately does not add sign-in UI, choose an auth vendor, or make a
+network request. Authenticated account conversion, destination-conflict UX, token refresh, remote
+deletion, and native account/device proof remain open #272/#280 work. The local identity resolver
+is unit-tested for guest, successful adoption, and fail-closed conflict paths.

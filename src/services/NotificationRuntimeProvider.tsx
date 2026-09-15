@@ -20,8 +20,8 @@ import {
   type WorkoutReminderScheduleResult,
 } from './notificationScheduler';
 import { createSingleFlight } from './syncRuntime';
+import { useCurrentUserId } from './UserIdentityProvider';
 
-const guestUserId = 'guest-user';
 const notificationProvider = createExpoNotificationProvider();
 
 export type NotificationRuntimeStatus =
@@ -41,6 +41,7 @@ const NotificationRuntimeContext = createContext<NotificationRuntimeContextValue
 
 export function NotificationRuntimeProvider({ children }: { children: ReactNode }) {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [snapshot, setSnapshot] = useState<NotificationRuntimeSnapshot>(defaultSnapshot);
 
   const performRefresh = useCallback(async (): Promise<NotificationRuntimeSnapshot> => {
@@ -48,16 +49,15 @@ export function NotificationRuntimeProvider({ children }: { children: ReactNode 
 
     try {
       const [preferences, profile, cycle] = await Promise.all([
-        getNotificationPreferences(database, guestUserId),
-        getOnboardingProfile(database, guestUserId),
-        getActiveTrainingCycle(database, guestUserId),
+        getNotificationPreferences(database, userId),
+        getOnboardingProfile(database, userId),
+        getActiveTrainingCycle(database, userId),
       ]);
       const programVersion = cycle
-        ? ((await getUserProgramVersion(database, guestUserId, cycle.programVersionId))?.version ??
-          null)
+        ? ((await getUserProgramVersion(database, userId, cycle.programVersionId))?.version ?? null)
         : null;
       const result = await refreshWorkoutReminderSchedule(notificationProvider, {
-        userId: guestUserId,
+        userId,
         preferences,
         cycle,
         programVersion,
@@ -75,7 +75,7 @@ export function NotificationRuntimeProvider({ children }: { children: ReactNode 
       setSnapshot(failedSnapshot);
       return failedSnapshot;
     }
-  }, [database]);
+  }, [database, userId]);
 
   const refreshNow = useMemo(() => createSingleFlight(performRefresh), [performRefresh]);
 

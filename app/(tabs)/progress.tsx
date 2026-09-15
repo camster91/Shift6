@@ -51,9 +51,11 @@ import type {
   TrackingType,
 } from '../../src/domain/types';
 import { colors, radii, spacing } from '../../src/design/tokens';
+import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
 
 export default function ProgressScreen() {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [currentCycle, setCurrentCycle] = useState(demoCycle);
   const [currentProgram, setCurrentProgram] = useState(demoProgram);
   const [summary, setSummary] = useState<CycleProgressSummary>(() =>
@@ -91,15 +93,15 @@ export default function ProgressScreen() {
 
     void (async () => {
       try {
-        const storedCycle = await getLatestTrainingCycle(database, 'guest-user');
+        const storedCycle = await getLatestTrainingCycle(database, userId);
         const cycle = storedCycle ?? demoCycle;
         const snapshot = storedCycle
-          ? await getUserProgramVersion(database, 'guest-user', cycle.programVersionId)
+          ? await getUserProgramVersion(database, userId, cycle.programVersionId)
           : null;
         const program = snapshot?.program ?? demoProgram;
         const programVersion = snapshot?.version ?? demoProgramVersion;
         const workout = programVersion.workouts[0] ?? demoWorkout;
-        const previousCycle = await getPreviousTrainingCycle(database, 'guest-user', cycle);
+        const previousCycle = await getPreviousTrainingCycle(database, userId, cycle);
         const [
           nextSummary,
           latestSets,
@@ -111,8 +113,8 @@ export default function ProgressScreen() {
         ] = await Promise.all([
           getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
           getLatestCompletedWorkoutSets(database, cycle.id, workout.id, programVersion.id),
-          getOnboardingProfile(database, 'guest-user'),
-          getUserExercises(database, 'guest-user'),
+          getOnboardingProfile(database, userId),
+          getUserExercises(database, userId),
           previousCycle
             ? getCycleProgressSummary(
                 database,
@@ -169,7 +171,7 @@ export default function ProgressScreen() {
     return () => {
       active = false;
     };
-  }, [database, reloadKey]);
+  }, [database, reloadKey, userId]);
 
   if (loading) {
     return (

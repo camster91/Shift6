@@ -14,9 +14,11 @@ import {
   programLibraryPrograms,
 } from '../../src/domain/programLibrary';
 import { colors, spacing } from '../../src/design/tokens';
+import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
 
 export default function ProgramsScreen() {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
   const [profilePreferences, setProfilePreferences] = useState({
     goals: demoUser.goals,
@@ -44,7 +46,7 @@ export default function ProgramsScreen() {
       }
 
       let active = true;
-      void getOnboardingProfile(database, 'guest-user')
+      void getOnboardingProfile(database, userId)
         .then((profile) => {
           if (!active) return;
           if (!profile) {
@@ -73,7 +75,7 @@ export default function ProgramsScreen() {
       return () => {
         active = false;
       };
-    }, [database]),
+    }, [database, userId]),
   );
 
   const recommendations = useMemo(

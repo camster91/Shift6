@@ -19,9 +19,11 @@ import type { OnboardingProfile } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
 import { getOnboardingProfile, saveOnboardingProfile } from '../src/db/profileRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function EquipmentScreen() {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [profile, setProfile] = useState<OnboardingProfile | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>(demoUser.equipmentIds);
   const [query, setQuery] = useState('');
@@ -37,7 +39,7 @@ export default function EquipmentScreen() {
     }
 
     let active = true;
-    void getOnboardingProfile(database, 'guest-user')
+    void getOnboardingProfile(database, userId)
       .then((savedProfile) => {
         if (!active || !savedProfile) return;
         setProfile(savedProfile);
@@ -53,7 +55,7 @@ export default function EquipmentScreen() {
     return () => {
       active = false;
     };
-  }, [database]);
+  }, [database, userId]);
 
   const filteredEquipment = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

@@ -25,15 +25,16 @@ import {
   useNotificationRuntime,
   type NotificationRuntimeSnapshot,
 } from '../src/services/NotificationRuntimeProvider';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
-const guestUserId = 'guest-user';
 const notificationProvider = createExpoNotificationProvider();
 
 export default function NotificationsSettingsScreen() {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const notificationRuntime = useNotificationRuntime();
   const [preferences, setPreferences] = useState<NotificationPreference>(() =>
-    createDefaultNotificationPreferences(guestUserId, new Date().toISOString()),
+    createDefaultNotificationPreferences(userId, new Date().toISOString()),
   );
   const [loading, setLoading] = useState(database !== null);
   const [saving, setSaving] = useState(false);
@@ -67,7 +68,7 @@ export default function NotificationsSettingsScreen() {
 
     let active = true;
     setLoading(true);
-    void getNotificationPreferences(database, guestUserId)
+    void getNotificationPreferences(database, userId)
       .then((savedPreferences) => {
         if (active) setPreferences(savedPreferences);
       })
@@ -81,7 +82,7 @@ export default function NotificationsSettingsScreen() {
     return () => {
       active = false;
     };
-  }, [database]);
+  }, [database, userId]);
 
   const updatePreference = (key: NotificationPreferenceKey, value: boolean) => {
     setPreferences((current) =>

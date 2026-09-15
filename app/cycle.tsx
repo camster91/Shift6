@@ -36,9 +36,11 @@ import { getActiveTrainingCycle } from '../src/db/cycleRepository';
 import { getUserProgramVersion } from '../src/db/programRepository';
 import { getCompletedWorkoutIds } from '../src/db/progressRepository';
 import { colors, spacing } from '../src/design/tokens';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function CycleDashboardScreen() {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [cycle, setCycle] = useState<TrainingCycle>(demoCycle);
   const [program, setProgram] = useState<Program>(demoProgram);
   const [version, setVersion] = useState<ProgramVersion>(demoProgramVersion);
@@ -57,17 +59,17 @@ export default function CycleDashboardScreen() {
 
       let active = true;
       setLoading(true);
-      void getActiveTrainingCycle(database, 'guest-user')
+      void getActiveTrainingCycle(database, userId)
         .then(async (activeCycle) => {
           if (!active || !activeCycle) return;
           const snapshot = await getUserProgramVersion(
             database,
-            'guest-user',
+            userId,
             activeCycle.programVersionId,
           );
           const [completedIds, scheduleOverrides, scheduleSessions] = await Promise.all([
             getCompletedWorkoutIds(database, activeCycle.id, activeCycle.currentWeek),
-            getWorkoutScheduleOverrides(database, 'guest-user', activeCycle.id),
+            getWorkoutScheduleOverrides(database, userId, activeCycle.id),
             getWorkoutScheduleSessions(database, activeCycle.id),
           ]);
           if (!active) return;
@@ -94,7 +96,7 @@ export default function CycleDashboardScreen() {
       return () => {
         active = false;
       };
-    }, [database]),
+    }, [database, userId]),
   );
 
   if (loading) {

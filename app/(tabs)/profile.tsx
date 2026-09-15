@@ -12,10 +12,12 @@ import { deleteLocalUserData, exportLocalUserData } from '../../src/db/privacyRe
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { colors, radii, spacing } from '../../src/design/tokens';
 import { useSyncRuntime } from '../../src/services/SyncRuntimeProvider';
+import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
 
 export default function ProfileScreen() {
   const database = useLocalDatabase();
   const syncRuntime = useSyncRuntime();
+  const userId = useCurrentUserId();
   const [user, setUser] = useState(demoUser);
   const [equipmentIds, setEquipmentIds] = useState(demoUser.equipmentIds);
   const [privacyBusy, setPrivacyBusy] = useState<'export' | 'delete' | null>(null);
@@ -25,7 +27,7 @@ export default function ProfileScreen() {
     if (!database) return;
 
     let active = true;
-    void getOnboardingProfile(database, 'guest-user')
+    void getOnboardingProfile(database, userId)
       .then((profile) => {
         if (!active || !profile) return;
         setUser(profile.user);
@@ -36,7 +38,7 @@ export default function ProfileScreen() {
     return () => {
       active = false;
     };
-  }, [database]);
+  }, [database, userId]);
 
   const selectedEquipment = equipmentCatalog.filter((equipment) =>
     equipmentIds.includes(equipment.id),
@@ -64,7 +66,7 @@ export default function ProfileScreen() {
     setPrivacyBusy('export');
     setPrivacyMessage(null);
     try {
-      const data = await exportLocalUserData(database, 'guest-user', new Date().toISOString());
+      const data = await exportLocalUserData(database, userId, new Date().toISOString());
       await Share.share({
         title: 'SHIFT6 data export',
         message: JSON.stringify(data, null, 2),
@@ -108,7 +110,7 @@ export default function ProfileScreen() {
     setPrivacyBusy('delete');
     setPrivacyMessage(null);
     try {
-      await deleteLocalUserData(database, 'guest-user');
+      await deleteLocalUserData(database, userId);
       setUser({ ...demoUser, displayName: 'Guest', equipmentIds: [] });
       setEquipmentIds([]);
       setPrivacyMessage('Local data was deleted from this device.');

@@ -26,9 +26,11 @@ import type {
   WorkoutSession,
 } from '../src/domain/types';
 import { colors, radii, spacing } from '../src/design/tokens';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function WorkoutSummaryScreen() {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const { sessionId, workoutId, completionStatus, completionReason, completedSetCount } =
     useLocalSearchParams<{
       sessionId?: string;
@@ -95,7 +97,7 @@ export default function WorkoutSummaryScreen() {
           getWorkoutCheckIn(database, sessionId),
         ]);
         const snapshot = localSession
-          ? await getUserProgramVersion(database, 'guest-user', localSession.programVersionId)
+          ? await getUserProgramVersion(database, userId, localSession.programVersionId)
           : null;
         const localWorkout =
           snapshot?.version.workouts.find(
@@ -123,7 +125,7 @@ export default function WorkoutSummaryScreen() {
     return () => {
       active = false;
     };
-  }, [database, previewSession, previewWorkout, sessionId]);
+  }, [database, previewSession, previewWorkout, sessionId, userId]);
 
   const facts = useMemo(() => buildSummaryFacts(session, sets, workout), [session, sets, workout]);
   const isPartial = session?.status === 'partial';

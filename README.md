@@ -150,6 +150,11 @@ Equipment substitutions in an unfinished session now clear the old movement's dr
 target override before the replacement is displayed. A completed set still blocks substitution so
 history cannot be silently reclassified.
 
+The app now resolves local ownership through a single identity boundary. The default shell remains
+guest-owned, while an injected authenticated session must adopt guest data transactionally before
+account-scoped routes, notifications, or sync mount. Provider-specific sign-in, account conflict
+UX, remote deletion, and native account verification remain explicitly open.
+
 ## Canonical planning docs
 
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition

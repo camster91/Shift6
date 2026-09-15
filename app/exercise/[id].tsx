@@ -12,10 +12,12 @@ import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { demoUser } from '../../src/domain/fixtures/home';
 import type { Exercise } from '../../src/domain/types';
 import { colors, spacing } from '../../src/design/tokens';
+import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
   const availableExercises = useMemo(
@@ -28,10 +30,7 @@ export default function ExerciseDetailScreen() {
     if (!database) return;
 
     let active = true;
-    void Promise.all([
-      getOnboardingProfile(database, 'guest-user'),
-      getUserExercises(database, 'guest-user'),
-    ])
+    void Promise.all([getOnboardingProfile(database, userId), getUserExercises(database, userId)])
       .then(([profile, exercises]) => {
         if (!active) return;
         if (profile) setAvailableEquipmentIds(profile.user.equipmentIds);
@@ -42,7 +41,7 @@ export default function ExerciseDetailScreen() {
     return () => {
       active = false;
     };
-  }, [database]);
+  }, [database, userId]);
 
   if (!exercise) {
     return (

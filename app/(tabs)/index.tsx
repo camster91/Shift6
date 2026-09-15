@@ -34,9 +34,11 @@ import {
   demoWorkout,
 } from '../../src/domain/fixtures/home';
 import { colors, radii, spacing } from '../../src/design/tokens';
+import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
 
 export default function HomeScreen() {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [currentUser, setCurrentUser] = useState(demoUser);
   const [currentCycle, setCurrentCycle] = useState(demoCycle);
   const [currentProgram, setCurrentProgram] = useState(demoProgram);
@@ -53,8 +55,8 @@ export default function HomeScreen() {
 
       let active = true;
       void Promise.all([
-        getOnboardingProfile(database, 'guest-user'),
-        getActiveTrainingCycle(database, 'guest-user'),
+        getOnboardingProfile(database, userId),
+        getActiveTrainingCycle(database, userId),
       ])
         .then(async ([profile, cycle]) => {
           if (!active) return;
@@ -65,9 +67,9 @@ export default function HomeScreen() {
           setCurrentUser(profile.user);
           if (!cycle) return;
           const [snapshot, completedIds, scheduleOverrides, scheduleSessions] = await Promise.all([
-            getUserProgramVersion(database, 'guest-user', cycle.programVersionId),
+            getUserProgramVersion(database, userId, cycle.programVersionId),
             getCompletedWorkoutIds(database, cycle.id, cycle.currentWeek),
-            getWorkoutScheduleOverrides(database, 'guest-user', cycle.id),
+            getWorkoutScheduleOverrides(database, userId, cycle.id),
             getWorkoutScheduleSessions(database, cycle.id),
           ]);
           if (!active) return;
@@ -100,7 +102,7 @@ export default function HomeScreen() {
       return () => {
         active = false;
       };
-    }, [database]),
+    }, [database, userId]),
   );
 
   return (

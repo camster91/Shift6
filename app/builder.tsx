@@ -65,10 +65,12 @@ import {
 import { colors, radii, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function ProgramBuilderScreen() {
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
+  const userId = useCurrentUserId();
   const { mode, sourceVersionId } = useLocalSearchParams<{
     mode?: string;
     sourceVersionId?: string;
@@ -86,7 +88,7 @@ export default function ProgramBuilderScreen() {
   const shouldLoadSource = Boolean(database && sourceVersionId && !isBlankBuilder);
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>(demoUser.unitSystem);
-  const [draft, setDraft] = useState(() => createInitialBuilderDraft(isBlankBuilder));
+  const [draft, setDraft] = useState(() => createInitialBuilderDraft(isBlankBuilder, userId));
   const [customName, setCustomName] = useState('');
   const [customMovementPattern, setCustomMovementPattern] = useState<MovementPattern>('carry');
   const [customTrackingType, setCustomTrackingType] = useState<TrackingType>('time');
@@ -127,10 +129,7 @@ export default function ProgramBuilderScreen() {
     if (!database) return;
 
     let active = true;
-    void Promise.all([
-      getOnboardingProfile(database, 'guest-user'),
-      getUserExercises(database, 'guest-user'),
-    ])
+    void Promise.all([getOnboardingProfile(database, userId), getUserExercises(database, userId)])
       .then(([profile, userExercises]) => {
         if (!active) return;
         if (profile) {
@@ -147,7 +146,7 @@ export default function ProgramBuilderScreen() {
     return () => {
       active = false;
     };
-  }, [database]);
+  }, [database, userId]);
 
   useEffect(() => {
     if (!database || !sourceVersionId || isBlankBuilder) {
@@ -160,10 +159,10 @@ export default function ProgramBuilderScreen() {
     setSourceLoadError(false);
     setError(null);
     void Promise.all([
-      getUserProgramVersion(database, 'guest-user', sourceVersionId),
-      getUserExercises(database, 'guest-user'),
-      isProgressBuilder ? getLatestTrainingCycle(database, 'guest-user') : Promise.resolve(null),
-      isProgressBuilder ? getOnboardingProfile(database, 'guest-user') : Promise.resolve(null),
+      getUserProgramVersion(database, userId, sourceVersionId),
+      getUserExercises(database, userId),
+      isProgressBuilder ? getLatestTrainingCycle(database, userId) : Promise.resolve(null),
+      isProgressBuilder ? getOnboardingProfile(database, userId) : Promise.resolve(null),
     ])
       .then(async ([snapshot, userExercises, latestCycle, profile]) => {
         if (!active) return;
@@ -173,7 +172,7 @@ export default function ProgramBuilderScreen() {
           return;
         }
 
-        const baseDraft = createProgramDraftFromSource(snapshot.program, snapshot.version);
+        const baseDraft = createProgramDraftFromSource(snapshot.program, snapshot.version, userId);
         let nextDraft = baseDraft;
         setProgressionChanges([]);
         setProgressionPerformanceSetCount(0);
@@ -223,7 +222,7 @@ export default function ProgramBuilderScreen() {
     return () => {
       active = false;
     };
-  }, [database, isBlankBuilder, isProgressBuilder, sourceRetryKey, sourceVersionId]);
+  }, [database, isBlankBuilder, isProgressBuilder, sourceRetryKey, sourceVersionId, userId]);
 
   const firstWorkout = draft.version.workouts[0];
   const exerciseNameById = useMemo(
@@ -361,9 +360,9 @@ export default function ProgramBuilderScreen() {
       const program = renameProgram(draft.program, draft.program.title);
       if (database) {
         for (const exercise of Object.values(customExercises)) {
-          await saveCustomExercise(database, 'guest-user', exercise, new Date().toISOString());
+          await saveCustomExercise(database, userId, exercise, new Date().toISOString());
         }
-        await saveProgramVersion(database, 'guest-user', program, draft.version);
+        await saveProgramVersion(database, userId, program, draft.version);
       }
       setDraft((current) => ({ ...current, program }));
       setSaved(true);
@@ -389,16 +388,16 @@ export default function ProgramBuilderScreen() {
       const program = renameProgram(draft.program, draft.program.title);
       const startedAt = new Date().toISOString();
       const cycle = createTrainingCycle({
-        id: `cycle-guest-user-${draft.program.id}-${Date.now()}`,
-        userId: 'guest-user',
+        id: `cycle-${userId}-${draft.program.id}-${Date.now()}`,
+        userId,
         programVersion: draft.version,
         startedAt,
       });
       if (database) {
         for (const exercise of Object.values(customExercises)) {
-          await saveCustomExercise(database, 'guest-user', exercise, startedAt);
+          await saveCustomExercise(database, userId, exercise, startedAt);
         }
-        await saveProgramVersion(database, 'guest-user', program, draft.version);
+        await saveProgramVersion(database, userId, program, draft.version);
         await saveTrainingCycle(database, cycle);
       }
       setDraft((current) => ({ ...current, program }));
@@ -1064,29 +1063,30 @@ export default function ProgramBuilderScreen() {
   );
 }
 
-function createInitialBuilderDraft(isBlankBuilder: boolean) {
+function createInitialBuilderDraft(isBlankBuilder: boolean, userId: string) {
   if (isBlankBuilder) {
-    const programId = `program-blank-guest-user-${Date.now()}`;
+    const programId = `program-blank-${userId}-${Date.now()}`;
     return createBlankProgram({
-      userId: 'guest-user',
+      userId,
       newProgramId: programId,
       newVersionId: `${programId}-version-1`,
       createdAt: new Date().toISOString(),
     });
   }
 
-  return createProgramDraftFromSource(demoProgram, demoProgramVersion);
+  return createProgramDraftFromSource(demoProgram, demoProgramVersion, userId);
 }
 
 function createProgramDraftFromSource(
   sourceProgram: typeof demoProgram,
   sourceVersion: typeof demoProgramVersion,
+  userId: string,
 ) {
   const copyId = `program-custom-${sourceProgram.slug}-guest-${Date.now()}`;
   return createProgramCopy({
     sourceProgram,
     sourceVersion,
-    userId: 'guest-user',
+    userId,
     newProgramId: copyId,
     newVersionId: `${copyId}-version-1`,
     createdAt: new Date().toISOString(),

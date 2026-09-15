@@ -43,6 +43,7 @@ import {
 import { getActiveTrainingCycle } from '../src/db/cycleRepository';
 import { getUserProgramVersion } from '../src/db/programRepository';
 import { colors, spacing } from '../src/design/tokens';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 const calendarStatusLabels: Record<WorkoutScheduleStatus, string> = {
   complete: 'Complete',
@@ -56,6 +57,7 @@ const calendarStatusLabels: Record<WorkoutScheduleStatus, string> = {
 
 export default function CalendarScreen() {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [cycle, setCycle] = useState<TrainingCycle | null>(database ? null : demoCycle);
   const [program, setProgram] = useState<Program | null>(database ? null : demoProgram);
   const [programVersion, setProgramVersion] = useState<ProgramVersion | null>(
@@ -79,7 +81,7 @@ export default function CalendarScreen() {
       let active = true;
       setLoading(true);
       setError(null);
-      void getActiveTrainingCycle(database, 'guest-user')
+      void getActiveTrainingCycle(database, userId)
         .then(async (activeCycle) => {
           if (!active || !activeCycle) {
             if (active) {
@@ -93,8 +95,8 @@ export default function CalendarScreen() {
           }
 
           const [snapshot, nextOverrides, nextSessions] = await Promise.all([
-            getUserProgramVersion(database, 'guest-user', activeCycle.programVersionId),
-            getWorkoutScheduleOverrides(database, 'guest-user', activeCycle.id),
+            getUserProgramVersion(database, userId, activeCycle.programVersionId),
+            getWorkoutScheduleOverrides(database, userId, activeCycle.id),
             getWorkoutScheduleSessions(database, activeCycle.id),
           ]);
           if (!active) return;
@@ -120,7 +122,7 @@ export default function CalendarScreen() {
       return () => {
         active = false;
       };
-    }, [database, reloadToken]),
+    }, [database, reloadToken, userId]),
   );
 
   const schedule = useMemo(

@@ -35,10 +35,12 @@ import type {
 import { colors, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function CycleReviewScreen() {
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
+  const userId = useCurrentUserId();
   const [cycle, setCycle] = useState<TrainingCycle>(demoCycle);
   const [program, setProgram] = useState(demoProgram);
   const [programVersion, setProgramVersion] = useState(demoProgramVersion);
@@ -63,10 +65,10 @@ export default function CycleReviewScreen() {
     let active = true;
     void (async () => {
       try {
-        const latestCycle = (await getLatestTrainingCycle(database, 'guest-user')) ?? demoCycle;
+        const latestCycle = (await getLatestTrainingCycle(database, userId)) ?? demoCycle;
         const snapshot = await getUserProgramVersion(
           database,
-          'guest-user',
+          userId,
           latestCycle.programVersionId,
         );
         const nextSummary = await getCycleProgressSummary(
@@ -74,7 +76,7 @@ export default function CycleReviewScreen() {
           latestCycle.id,
           getPlannedWorkoutCount(latestCycle),
         );
-        const existingReview = await getCycleReview(database, 'guest-user', latestCycle.id);
+        const existingReview = await getCycleReview(database, userId, latestCycle.id);
         if (!active) return;
         setCycle(latestCycle);
         if (snapshot) {
@@ -97,7 +99,7 @@ export default function CycleReviewScreen() {
     return () => {
       active = false;
     };
-  }, [database]);
+  }, [database, userId]);
 
   if (loading) {
     return (
@@ -118,7 +120,7 @@ export default function CycleReviewScreen() {
     const now = new Date().toISOString();
     const nextReview: CycleReview = {
       id: review?.id ?? `cycle-review-${cycle.id}`,
-      userId: 'guest-user',
+      userId,
       cycleId: cycle.id,
       overallRating: overallRating ?? undefined,
       focus: focus ?? undefined,
@@ -161,23 +163,23 @@ export default function CycleReviewScreen() {
 
       setReviewBusy('repeat');
       const startedAt = new Date().toISOString();
-      const nextProgramId = `program-${program.slug}-guest-user-${Date.now()}`;
+      const nextProgramId = `program-${program.slug}-${userId}-${Date.now()}`;
       const copy = createNextCycleCopy({
         sourceProgram: program,
         sourceVersion: programVersion,
-        userId: 'guest-user',
+        userId,
         newProgramId: nextProgramId,
         newVersionId: `${nextProgramId}-version-1`,
         createdAt: startedAt,
       });
       const nextCycle = createTrainingCycle({
-        id: `cycle-guest-user-${cycle.id}-${Date.now()}`,
-        userId: 'guest-user',
+        id: `cycle-${userId}-${cycle.id}-${Date.now()}`,
+        userId,
         programVersion: copy.version,
         startedAt,
       });
       if (database) {
-        await saveProgramVersion(database, 'guest-user', copy.program, copy.version);
+        await saveProgramVersion(database, userId, copy.program, copy.version);
         await saveTrainingCycle(database, nextCycle);
       }
       trackAnalyticsEvent(analytics, 'next_cycle_started', {

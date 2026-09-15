@@ -37,10 +37,12 @@ import { colors, radii, spacing } from '../../src/design/tokens';
 import { useAppServices } from '../../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../../src/services/analytics';
 import { buildLocalCoachMessage } from '../../src/services/localCoach';
+import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
 
 export default function CoachScreen() {
   const { analytics, coach } = useAppServices();
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [proposals, setProposals] = useState<CoachProposal[]>([]);
   const [activeCycle, setActiveCycle] = useState<TrainingCycle | null>(null);
   const [activeProgram, setActiveProgram] = useState<Program | null>(null);
@@ -84,14 +86,12 @@ export default function CoachScreen() {
     setLoading(true);
     void (async () => {
       try {
-        const cycle = await getActiveTrainingCycle(database, 'guest-user');
+        const cycle = await getActiveTrainingCycle(database, userId);
         const snapshot = cycle
-          ? await getUserProgramVersion(database, 'guest-user', cycle.programVersionId)
+          ? await getUserProgramVersion(database, userId, cycle.programVersionId)
           : null;
-        const pending = cycle
-          ? await getPendingCoachProposals(database, 'guest-user', cycle.id)
-          : [];
-        const profile = await getOnboardingProfile(database, 'guest-user');
+        const pending = cycle ? await getPendingCoachProposals(database, userId, cycle.id) : [];
+        const profile = await getOnboardingProfile(database, userId);
         const summary = cycle
           ? await getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle))
           : buildCycleProgressSummary(getPlannedWorkoutCount(demoCycle), []);
@@ -119,7 +119,7 @@ export default function CoachScreen() {
     return () => {
       active = false;
     };
-  }, [database]);
+  }, [database, userId]);
 
   const decide = async (proposalId: string, status: 'accepted' | 'rejected') => {
     if (!database || busyProposalId) return;
@@ -136,7 +136,7 @@ export default function CoachScreen() {
         }
         const result = await acceptCoachProposalWithRevision(
           database,
-          'guest-user',
+          userId,
           proposal,
           activeProgram,
           activeProgramVersion,

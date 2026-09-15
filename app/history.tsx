@@ -19,6 +19,7 @@ import type { WorkoutHistoryEntry } from '../src/domain/history';
 import { useLocalDatabase } from '../src/db/context';
 import { getWorkoutHistory } from '../src/db/historyRepository';
 import { colors, spacing } from '../src/design/tokens';
+import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 type HistoryFilter = 'all' | 'complete' | 'partial' | 'skipped';
 
@@ -31,6 +32,7 @@ const historyFilters: readonly { value: HistoryFilter; label: string }[] = [
 
 export default function HistoryScreen() {
   const database = useLocalDatabase();
+  const userId = useCurrentUserId();
   const [entries, setEntries] = useState<WorkoutHistoryEntry[]>(database ? [] : demoWorkoutHistory);
   const [filter, setFilter] = useState<HistoryFilter>('all');
   const [loading, setLoading] = useState(database !== null);
@@ -46,7 +48,7 @@ export default function HistoryScreen() {
     let active = true;
     setLoading(true);
     setError(null);
-    void getWorkoutHistory(database, 'guest-user')
+    void getWorkoutHistory(database, userId)
       .then((history) => {
         if (active) setEntries(history);
       })
@@ -60,7 +62,7 @@ export default function HistoryScreen() {
     return () => {
       active = false;
     };
-  }, [database, reloadKey]);
+  }, [database, reloadKey, userId]);
 
   const visibleEntries = useMemo(
     () => entries.filter((entry) => filter === 'all' || entry.status === filter),

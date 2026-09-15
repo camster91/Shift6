@@ -114,3 +114,15 @@ export interface AnalyticsEvent {
 export interface AnalyticsClient {
   track(event: AnalyticsEvent): void;
 }
+
+export type ErrorReportContext = Record<string, string | number | boolean>;
+
+/**
+ * Crash/error boundary. Implementations must receive only allowlisted technical
+ * context; raw health data, workout notes, Coach prompts, tokens, and other user
+ * content must never be attached to error reports.
+ */
+export interface ErrorReporter {
+  captureException(error: unknown, context?: ErrorReportContext): void;
+  captureMessage(message: string, context?: ErrorReportContext): void;
+}

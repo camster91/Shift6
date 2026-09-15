@@ -2,15 +2,23 @@
 
 Updated: 2026-09-15
 
+## Status precedence
+
+This file is the current implementation/readiness checkpoint. Requirement sections in the canonical
+planning documents remain authoritative, but accumulated implementation-status paragraphs in
+`docs/06_TECHNICAL_ARCHITECTURE.md` and `docs/09_ROADMAP_AND_EPICS.md` describe earlier increments
+and may use historical wording such as `metadata-only`. When those historical notes conflict with
+this checkpoint, verify the current code/tests and use this file for present-tense readiness.
+
 ## What this checkpoint proves
 
 The rebuild foundation is implemented on the React Native / Expo architecture and the launch
-catalogue now has executable six-week versions for all 20 planned launch programs. Barbell 30 is
-the canonical startable fixture; the other 19 versions remain explicit content drafts. Those
-versions use the existing local-first workout, cycle, builder, progress, sync, privacy, health,
-notification, and Coach boundaries. Every supported progression strategy has an explicit
-deterministic rule, and mixed-modality targets route to a compatible deterministic strategy instead
-of blindly inheriting an incompatible program-level rule.
+catalogue now has executable six-week versions for all 20 canonical launch programs defined in
+`docs/05_PROGRAMS_EXERCISES_EQUIPMENT.md`. Barbell 30 is the canonical startable fixture; the other
+19 versions remain explicit content drafts. Those versions use the existing local-first workout,
+cycle, builder, progress, sync, privacy, health, notification, and Coach boundaries. Every supported
+progression strategy has an explicit deterministic rule, and mixed-modality targets route to a
+compatible deterministic strategy instead of blindly inheriting an incompatible program-level rule.
 
 The non-canonical executable versions are intentionally still catalogued as `metadata-draft`. They
 are available for engineering and content validation, but the public UI must not treat them as

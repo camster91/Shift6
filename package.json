@@ -18,6 +18,7 @@
     "test:coverage": "jest --coverage --runInBand",
     "doctor": "expo-doctor",
     "validate:assets": "node scripts/validate-assets.mjs",
+    "validate:release-config": "node scripts/validate-release-config.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
     "export:web": "expo export --platform web"
   },

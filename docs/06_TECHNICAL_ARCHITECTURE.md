@@ -500,6 +500,11 @@ high-confidence private-key and provider-token formats, leaving generated output
 out of scope. It is a release hygiene check, not a substitute for secret rotation or a hosted
 repository secret scanner.
 
+`npm run validate:release-config` now checks the stable Expo identifiers, required native plugins,
+static web output, EAS development/preview/production profiles, and public environment keys. It
+does not attempt a signed build or require EAS credentials; native build and store verification
+remain explicit release gates.
+
 ## Builder target configuration checkpoint — 2026-09-14
 
 The builder now exposes a tracking-aware target editor for each exercise. Reps, load, RPE, and RIR are available for rep-based movements; time and distance fields are shown for timed/cardio movements. The immutable `setWorkoutExerciseTarget` operation applies a cloned prescription to all sets in that exercise while preserving set IDs and the source version. This is an intentionally compact first target boundary: per-set overrides, rest editing, sections, supersets/circuits, warm-ups, cooldowns, and blank-workout creation remain separate increments.

@@ -1,4 +1,5 @@
 import type { Program, ProgramVersion, SetTarget, Workout, WorkoutExercise } from '../types';
+import { foundationalExercises } from './exercises';
 
 type WorkoutPlan = {
   title: string;
@@ -224,6 +225,26 @@ const launchPlans: Readonly<Record<string, readonly WorkoutPlan[]>> = {
       'exercise-hip-flexor-stretch',
     ]),
   ],
+  'resistance-bands': [
+    workout('Bands A', 'strength', [
+      'exercise-band-squat',
+      'exercise-band-bent-over-row',
+      'exercise-band-overhead-press',
+      'exercise-band-pull-apart',
+    ]),
+    workout('Bands B', 'strength', [
+      'exercise-band-romanian-deadlift',
+      'exercise-band-biceps-curl',
+      'exercise-band-overhead-triceps-extension',
+      'exercise-band-lateral-walk',
+    ]),
+    workout('Bands C', 'strength', [
+      'exercise-band-squat',
+      'exercise-band-bent-over-row',
+      'exercise-band-overhead-press',
+      'exercise-band-romanian-deadlift',
+    ]),
+  ],
   'general-fitness': [
     workout('Strength', 'strength', [
       'exercise-split-squat',
@@ -399,35 +420,9 @@ const launchPlans: Readonly<Record<string, readonly WorkoutPlan[]>> = {
   ],
 };
 
-const equipmentByExerciseId: Readonly<Record<string, readonly string[]>> = {
-  'exercise-back-squat': ['equipment-barbell', 'equipment-plates', 'equipment-rack'],
-  'exercise-front-squat': ['equipment-barbell', 'equipment-plates', 'equipment-rack'],
-  'exercise-romanian-deadlift': ['equipment-barbell', 'equipment-plates'],
-  'exercise-deadlift': ['equipment-barbell', 'equipment-plates'],
-  'exercise-overhead-press': ['equipment-barbell', 'equipment-plates', 'equipment-rack'],
-  'exercise-barbell-row': ['equipment-barbell', 'equipment-plates'],
-  'exercise-landmine-press': ['equipment-barbell', 'equipment-plates'],
-  'exercise-goblet-squat': ['equipment-kettlebell'],
-  'exercise-kettlebell-swing': ['equipment-kettlebell'],
-  'exercise-incline-dumbbell-press': ['equipment-dumbbells', 'equipment-bench'],
-  'exercise-one-arm-dumbbell-row': ['equipment-dumbbells', 'equipment-bench'],
-  'exercise-floor-press': ['equipment-dumbbells'],
-  'exercise-lateral-raise': ['equipment-dumbbells'],
-  'exercise-biceps-curl': ['equipment-dumbbells'],
-  'exercise-farmer-carry': ['equipment-dumbbells'],
-  'exercise-split-squat': ['equipment-bodyweight'],
-  'exercise-reverse-lunge': ['equipment-bodyweight'],
-  'exercise-walking-lunge': ['equipment-bodyweight'],
-  'exercise-push-up': ['equipment-bodyweight'],
-  'exercise-standing-calf-raise': ['equipment-bodyweight'],
-  'exercise-plank': ['equipment-bodyweight'],
-  'exercise-dead-bug': ['equipment-bodyweight'],
-  'exercise-easy-run': ['equipment-bodyweight'],
-  'exercise-single-leg-balance': ['equipment-bodyweight'],
-  'exercise-thoracic-rotation': ['equipment-bodyweight'],
-  'exercise-hip-flexor-stretch': ['equipment-bodyweight'],
-  'exercise-childs-pose': ['equipment-bodyweight'],
-};
+const equipmentByExerciseId = new Map(
+  foundationalExercises.map((exercise) => [exercise.id, exercise.equipmentIds] as const),
+);
 
 const mobilityExerciseIds = new Set([
   'exercise-single-leg-balance',
@@ -509,7 +504,7 @@ function buildWorkout(
     focus: plan.focus,
     estimatedDurationMinutes: program.sessionLengthMinutes,
     equipmentIds: unique(
-      exercises.flatMap((exercise) => equipmentByExerciseId[exercise.exerciseId] ?? []),
+      exercises.flatMap((exercise) => equipmentByExerciseId.get(exercise.exerciseId) ?? []),
     ),
     exercises,
   };

@@ -13,6 +13,7 @@ import {
   saveCompletedSet,
   saveWorkoutDraft,
   saveWorkoutSession,
+  updateWorkoutSessionNote,
   updateWorkoutSessionReadiness,
   updateWorkoutSessionProgramVersion,
   updateCompletedSet,
@@ -282,6 +283,56 @@ describe('saveWorkoutSession', () => {
     expect(calls[1]).toContain('INSERT OR IGNORE INTO workout_sessions');
     expect(calls[2]).toContain('INSERT OR IGNORE INTO sync_outbox');
     expect(calls[3]).toBe('COMMIT TRANSACTION');
+  });
+});
+
+describe('updateWorkoutSessionNote', () => {
+  it('updates only an unfinished session and replaces its queued payload', async () => {
+    const calls: Array<{ sql: string; params: unknown[] }> = [];
+    const database = {
+      runAsync: async (sql: string, ...params: unknown[]) => {
+        calls.push({ sql, params });
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      getFirstAsync: async () => ({
+        id: 'session-1',
+        cycle_id: 'cycle-1',
+        cycle_week: 1,
+        workout_id: 'workout-1',
+        program_version_id: 'program-version-1',
+        workout_focus: 'strength',
+        status: 'in-progress',
+        started_at: '2026-09-14T12:00:00.000Z',
+        completed_at: null,
+        completion_reason: null,
+        is_offline: 1,
+        readiness: 'ready',
+        note: 'Felt strong on the final set.',
+      }),
+      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      updateWorkoutSessionNote(database, 'session-1', '  Felt strong on the final set.  '),
+    ).resolves.toMatchObject({
+      id: 'session-1',
+      note: 'Felt strong on the final set.',
+    });
+    expect(calls[0]?.sql).toContain('UPDATE workout_sessions');
+    expect(calls[0]?.params).toEqual(['Felt strong on the final set.', 'session-1']);
+    expect(calls[1]?.sql).toContain('INSERT INTO sync_outbox');
+    expect(JSON.parse(String(calls[1]?.params[4]))).toMatchObject({
+      id: 'session-1',
+      note: 'Felt strong on the final set.',
+    });
+  });
+
+  it('rejects notes longer than the local safety bound', async () => {
+    const database = {} as SQLiteDatabase;
+
+    await expect(updateWorkoutSessionNote(database, 'session-1', 'x'.repeat(501))).rejects.toThrow(
+      '500 characters',
+    );
   });
 });
 

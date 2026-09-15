@@ -61,6 +61,7 @@ import {
   saveCompletedSet,
   saveWorkoutDraft,
   saveWorkoutSession,
+  updateWorkoutSessionNote,
   updateWorkoutSessionReadiness,
   updateWorkoutSessionProgramVersion,
   updateCompletedSet,
@@ -132,6 +133,7 @@ export default function ActiveWorkoutScreen() {
   const [restSecondsRemaining, setRestSecondsRemaining] = useState(0);
   const [connectivity, setConnectivity] = useState<ConnectivityStatus>('unknown');
   const [readiness, setReadiness] = useState<WorkoutReadiness | null>(null);
+  const [sessionNote, setSessionNote] = useState('');
   const [readinessSaving, setReadinessSaving] = useState(false);
   const [restTimerEnabled, setRestTimerEnabled] = useState(false);
   const trackedWorkoutSessionId = useRef<string | null>(null);
@@ -165,6 +167,7 @@ export default function ActiveWorkoutScreen() {
     setSubstitutionFor(null);
     setEarlyStopReasonOpen(false);
     setReadiness(null);
+    setSessionNote('');
     setLoadingSession(database !== null);
     setDraftReady(database === null);
   }, [activeWorkout.id, database]);
@@ -279,6 +282,7 @@ export default function ActiveWorkoutScreen() {
           unitSystem: profile?.user.unitSystem ?? 'imperial',
           equipmentIds: profile?.user.equipmentIds ?? demoUser.equipmentIds,
           readiness: sessionToUse.readiness,
+          note: sessionToUse.note ?? '',
           draft,
           userExercises,
           restTimerEnabled: preferences.restTimer,
@@ -291,6 +295,7 @@ export default function ActiveWorkoutScreen() {
           unitSystem,
           equipmentIds,
           readiness,
+          note,
           draft,
           userExercises,
           restTimerEnabled,
@@ -301,6 +306,7 @@ export default function ActiveWorkoutScreen() {
           setUnitSystem(unitSystem);
           setRestTimerEnabled(restTimerEnabled);
           setReadiness(readiness ?? null);
+          setSessionNote(note);
           setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
           const nextTargets =
             previousSets.length > 0
@@ -356,17 +362,34 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     if (!database || !draftReady) return;
 
+    const timeout = setTimeout(() => {
+      void updateWorkoutSessionNote(database, session.id, sessionNote).catch(() => {
+        setError('We could not save the workout note locally.');
+      });
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [database, draftReady, session.id, sessionNote]);
+
+  useEffect(() => {
+    if (!database || !draftReady) return;
+
     const flushDraft = () => {
       void saveWorkoutDraft(database, session.id, values, new Date().toISOString()).catch(() => {
         setError('We could not save the unfinished workout locally.');
       });
     };
     const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'inactive' || nextState === 'background') flushDraft();
+      if (nextState === 'inactive' || nextState === 'background') {
+        flushDraft();
+        void updateWorkoutSessionNote(database, session.id, sessionNote).catch(() => {
+          setError('We could not save the workout note locally.');
+        });
+      }
     });
 
     return () => subscription.remove();
-  }, [database, draftReady, session.id, values]);
+  }, [database, draftReady, session.id, sessionNote, values]);
 
   useEffect(() => {
     if (restEndsAt === null) return;
@@ -496,6 +519,7 @@ export default function ActiveWorkoutScreen() {
   const handlePauseWorkout = async () => {
     if (database) {
       try {
+        await updateWorkoutSessionNote(database, session.id, sessionNote);
         await saveWorkoutDraft(database, session.id, values, new Date().toISOString());
       } catch {
         setError('We could not save the unfinished workout locally.');
@@ -599,6 +623,7 @@ export default function ActiveWorkoutScreen() {
     setFinishing(true);
     setError(null);
     try {
+      if (database) await updateWorkoutSessionNote(database, session.id, sessionNote);
       const updatedCycle = database
         ? await completeWorkoutSessionAndAdvanceCycle(
             database,
@@ -654,6 +679,7 @@ export default function ActiveWorkoutScreen() {
     setError(null);
     try {
       if (database) {
+        await updateWorkoutSessionNote(database, session.id, sessionNote);
         const finishedSession =
           status === 'partial'
             ? await finishWorkoutSessionPartially(
@@ -763,6 +789,27 @@ export default function ActiveWorkoutScreen() {
             : 'Native SQLite is not active in this preview. Set state is kept in memory for this browser session.'}
         </Text>
       </Card>
+
+      <Text variant="h2" style={styles.sessionNoteTitle}>
+        Session note
+      </Text>
+      <Text variant="small" tone="muted" style={styles.sessionNoteCopy}>
+        Capture a cue, how the session felt, or something to remember. This stays with the local
+        workout record and is never sent to analytics.
+      </Text>
+      <TextInput
+        accessibilityLabel="Optional session note"
+        multiline
+        maxLength={500}
+        onChangeText={setSessionNote}
+        placeholder="Optional note for this workout"
+        placeholderTextColor={colors.inkMuted}
+        style={styles.sessionNoteInput}
+        value={sessionNote}
+      />
+      <Text variant="caption" tone="muted" style={styles.sessionNoteMeta}>
+        {sessionNote.length}/500 · Saved locally while you train
+      </Text>
 
       {activeWorkout.equipmentIds.includes('equipment-barbell') ? (
         <Button
@@ -1467,6 +1514,28 @@ const styles = StyleSheet.create({
   },
   localFirstText: {
     marginTop: spacing.sm,
+  },
+  sessionNoteTitle: {
+    marginTop: spacing.xl,
+  },
+  sessionNoteCopy: {
+    marginTop: spacing.xs,
+  },
+  sessionNoteInput: {
+    minHeight: 96,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    backgroundColor: colors.white,
+    color: colors.ink,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: 16,
+    textAlignVertical: 'top',
+  },
+  sessionNoteMeta: {
+    marginTop: spacing.xs,
   },
   plateCalculatorButton: {
     alignSelf: 'flex-start',

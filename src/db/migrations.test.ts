@@ -143,4 +143,10 @@ describe('local database migrations', () => {
     expect(statements).toContain('UNIQUE(cycle_id, cycle_week, workout_id)');
     expect(statements).toContain('workout_schedule_overrides_cycle_date');
   });
+
+  it('stores a bounded note on an unfinished workout session', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('ADD COLUMN note TEXT');
+  });
 });

@@ -301,6 +301,14 @@ export const MIGRATIONS: readonly Migration[] = [
         ON workout_schedule_overrides(cycle_id, scheduled_date, cycle_week);`,
     ],
   },
+  {
+    version: 18,
+    name: 'workout-session-notes',
+    statements: [
+      `ALTER TABLE workout_sessions
+        ADD COLUMN note TEXT;`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

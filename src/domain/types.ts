@@ -279,6 +279,7 @@ export interface WorkoutSession {
   completionReason?: WorkoutSessionCompletionReason;
   isOffline: boolean;
   readiness?: WorkoutReadiness;
+  note?: string;
 }
 
 export interface WorkoutScheduleOverride {

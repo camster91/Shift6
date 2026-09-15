@@ -674,6 +674,14 @@ specification:
 This closes the local disconnect/data-control boundary. Native permission-revocation behavior,
 account-scoped remote deletion, and store privacy declarations remain release gates.
 
+## Active workout notes checkpoint — 2026-09-14
+
+Migration 18 adds an optional, bounded `workout_sessions.note` field. The active workout saves the
+note locally with a debounced update and flushes it on background, pause, and completion, replacing
+the same idempotent workout-session outbox payload. The summary reads the saved note from the
+session record, and notes remain inside the existing local export/delete boundary without entering
+analytics. The web preview exposes the field but correctly labels persistence as unavailable.
+
 ## Provider-backed Coach boundary checkpoint — 2026-09-14
 
 `src/services/coach.ts` now provides a vendor-neutral HTTP adapter for `/v1/coach/message` and `/v1/coach/proposal`, reusing the injected auth token and a bounded allowlist of structured facts. Message responses are size/type validated and unsafe generated text is rerouted through the deterministic safety classifier. Proposal responses must be pending, actionable, explicitly user-confirmed, and valid under the existing Coach schema before they can reach the local approval repository. The Coach tab falls back to the deterministic offline explainer when the provider, auth session, network, or backend is unavailable; no provider credential or automatic plan mutation was added.

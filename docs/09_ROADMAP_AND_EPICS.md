@@ -260,6 +260,10 @@ imports, and explains that platform permission revocation still belongs to Apple
 Connect settings. Summary removal is separately confirmed and user-scoped; native revocation,
 remote deletion, and store declarations remain open #279/#280 release gates.
 
+The active workout now provides a bounded session-note field. Notes are persisted on the local
+session record, flushed across pause, backgrounding, and completion, shown in the summary, and kept
+out of analytics. Native restart proof remains part of the broader #276 verification gate.
+
 The analytics increment now exposes an injected no-op-by-default client and instruments the
 documented six-week funnel at onboarding, program start, workout start/completion, Week 2, cycle
 completion, and next-cycle start. It also records health connection and exercise substitution

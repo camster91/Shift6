@@ -254,6 +254,21 @@ export default function WorkoutSummaryScreen() {
         </Card>
       ) : null}
 
+      {session?.note ? (
+        <Card
+          tone="lavender"
+          style={styles.sessionNoteCard}
+          accessibilityLabel={`Session note: ${session.note}`}
+        >
+          <Text variant="caption" tone="muted">
+            SESSION NOTE
+          </Text>
+          <Text variant="small" style={styles.sessionNoteCopy}>
+            {session.note}
+          </Text>
+        </Card>
+      ) : null}
+
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
 
       <Text variant="h2" style={styles.sectionTitle}>
@@ -475,6 +490,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   partialNoteCopy: {
+    marginTop: spacing.xs,
+  },
+  sessionNoteCard: {
+    marginTop: spacing.xl,
+  },
+  sessionNoteCopy: {
     marginTop: spacing.xs,
   },
   completeHeader: {

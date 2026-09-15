@@ -22,6 +22,7 @@ interface WorkoutSessionRow {
   completion_reason: WorkoutSession['completionReason'] | null;
   is_offline: number;
   readiness: WorkoutSession['readiness'] | null;
+  note: string | null;
 }
 
 interface TrainingCycleRow {
@@ -58,8 +59,8 @@ export async function saveWorkoutSession(
     await database.runAsync(
       `INSERT OR IGNORE INTO workout_sessions
         (id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-         started_at, completed_at, completion_reason, is_offline, readiness)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+         started_at, completed_at, completion_reason, is_offline, readiness, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       session.id,
       session.cycleId,
       session.cycleWeek,
@@ -72,6 +73,7 @@ export async function saveWorkoutSession(
       session.completionReason ?? null,
       session.isOffline ? 1 : 0,
       session.readiness ?? null,
+      session.note ?? null,
     );
     await database.runAsync(
       `INSERT OR IGNORE INTO sync_outbox
@@ -173,7 +175,7 @@ export async function getWorkoutSession(
 ): Promise<WorkoutSession | null> {
   const row = await database.getFirstAsync<WorkoutSessionRow>(
     `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-            started_at, completed_at, completion_reason, is_offline, readiness
+            started_at, completed_at, completion_reason, is_offline, readiness, note
        FROM workout_sessions
       WHERE id = ?
       LIMIT 1;`,
@@ -191,7 +193,7 @@ export async function getInProgressWorkoutSession(
 ): Promise<WorkoutSession | null> {
   const row = await database.getFirstAsync<WorkoutSessionRow>(
     `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-            started_at, completed_at, completion_reason, is_offline, readiness
+            started_at, completed_at, completion_reason, is_offline, readiness, note
        FROM workout_sessions
       WHERE cycle_id = ?
         AND cycle_week = ?
@@ -226,7 +228,7 @@ export async function updateWorkoutSessionProgramVersion(
 
     const row = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, completion_reason, is_offline, readiness
+              started_at, completed_at, completion_reason, is_offline, readiness, note
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -260,7 +262,51 @@ export async function updateWorkoutSessionReadiness(
 
     const row = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, completion_reason, is_offline, readiness
+              started_at, completed_at, completion_reason, is_offline, readiness, note
+         FROM workout_sessions
+        WHERE id = ?
+        LIMIT 1;`,
+      sessionId,
+    );
+    if (!row) return;
+
+    updatedSession = mapWorkoutSession(row);
+    await queueWorkoutSessionSync(database, updatedSession);
+  });
+
+  return updatedSession;
+}
+
+/**
+ * Persists a bounded user note on an unfinished session and replaces its
+ * idempotent sync payload. Notes never enter analytics; they remain part of
+ * the user-owned workout record and local export/delete boundary.
+ */
+export async function updateWorkoutSessionNote(
+  database: SQLiteDatabase,
+  sessionId: string,
+  note: string,
+): Promise<WorkoutSession | null> {
+  const normalizedNote = note.trim();
+  if (normalizedNote.length > 500) {
+    throw new Error('Workout notes must be 500 characters or fewer.');
+  }
+
+  let updatedSession: WorkoutSession | null = null;
+
+  await database.withTransactionAsync(async () => {
+    const result = await database.runAsync(
+      `UPDATE workout_sessions
+          SET note = ?
+        WHERE id = ? AND status = 'in-progress';`,
+      normalizedNote || null,
+      sessionId,
+    );
+    if (result.changes === 0) return;
+
+    const row = await database.getFirstAsync<WorkoutSessionRow>(
+      `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
+              started_at, completed_at, completion_reason, is_offline, readiness, note
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -386,7 +432,7 @@ export async function completeWorkoutSession(
 
     const row = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, completion_reason, is_offline, readiness
+              started_at, completed_at, completion_reason, is_offline, readiness, note
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -449,7 +495,7 @@ async function finishWorkoutSessionEarly(
 
     const row = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, completion_reason, is_offline, readiness
+              started_at, completed_at, completion_reason, is_offline, readiness, note
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -490,7 +536,7 @@ export async function completeWorkoutSessionAndAdvanceCycle(
 
     const sessionRow = await database.getFirstAsync<WorkoutSessionRow>(
       `SELECT id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
-              started_at, completed_at, completion_reason, is_offline, readiness
+              started_at, completed_at, completion_reason, is_offline, readiness, note
          FROM workout_sessions
         WHERE id = ?
         LIMIT 1;`,
@@ -553,6 +599,7 @@ function mapWorkoutSession(row: WorkoutSessionRow): WorkoutSession {
     completionReason: row.completion_reason ?? undefined,
     isOffline: row.is_offline === 1,
     readiness: row.readiness ?? undefined,
+    note: row.note ?? undefined,
   };
 }
 

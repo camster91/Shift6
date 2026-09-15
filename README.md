@@ -127,6 +127,10 @@ disconnect action stops future SHIFT6 imports and updates the replaceable profil
 atomically; a separate confirmation removes only normalized summaries stored on the device. OS-level
 HealthKit/Health Connect revocation remains a native platform-settings and device-verification gate.
 
+Active workouts also support a bounded session note that is flushed locally across editing,
+backgrounding, pausing, and completion, then shown in the workout summary. Notes remain outside
+analytics and are covered by the existing local export/delete boundary.
+
 ## Canonical planning docs
 
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition

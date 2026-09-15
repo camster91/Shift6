@@ -36,6 +36,22 @@ The Coach evaluation matrix covers provider failure, missed training, plateau th
 discomfort/pain, limited time, equipment changes, medication boundaries, and urgent symptoms using
 the deterministic safety/progression/substitution boundaries.
 
+## Current Expo compatibility check
+
+The dependency baseline was checked against Expo's current SDK 57 documentation on 2026-09-15.
+SHIFT6 uses Expo `~57.0.22`, React Native `0.86.3`, React `19.2.3`, and React Native Web `~0.21.0`,
+which matches the SDK 57 compatibility line. Expo's SDK 57 changelog also identifies React Native
+0.86.3 / Expo 57.0.17+ as the fix level for the Hermes regressions that affected apps importing
+Reanimated or Worklets; this repository is above that Expo fix level.
+
+References:
+
+- https://docs.expo.dev/versions/latest/
+- https://expo.dev/changelog/sdk-57
+
+Expo Doctor and native-build verification still remain mandatory release gates; this compatibility
+check does not replace either one.
+
 ## Remaining product-content gate
 
 The foundational exercise catalogue now contains 58 draft records, including eight band-native
@@ -79,10 +95,12 @@ These cannot be truthfully completed from repository-only work:
 
 GitHub Actions did not start for repository writes made through the connected GitHub integration,
 and opening draft PR #282 also produced no CI status. The workflow now supports manual
-`workflow_dispatch`, but the connected GitHub tool cannot dispatch a new run. Before merge, run the
-normal CI workflow or its equivalent and require all repository gates to pass: format check, lint,
-TypeScript, Expo Doctor, asset/secret/release validation, dependency audit, Jest, and the web export.
-Static review in the repository is not a substitute for those commands.
+`workflow_dispatch`, but the connected GitHub tool cannot dispatch a new run. Before merge, run
+`npm run verify` (or the equivalent CI workflow) and require all repository gates to pass: format
+check, lint, TypeScript, Expo Doctor, asset/secret/release validation, dependency audit, Jest, and
+the web export. Static review in the repository is not a substitute for those commands.
+
+The native/device/store evidence sequence is defined in `docs/13_NATIVE_RELEASE_VERIFICATION.md`.
 
 ## Release rule
 

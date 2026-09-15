@@ -1,4 +1,4 @@
-import type { AnalyticsClient, AuthProvider } from './contracts';
+import type { AnalyticsClient, AuthProvider, ErrorReporter } from './contracts';
 import { UnavailableBackendClient, HttpBackendClient } from './backend';
 import { createAppServices } from './appServices';
 
@@ -54,5 +54,23 @@ describe('app service composition', () => {
       occurredAt: '2026-09-14T12:00:00.000Z',
     });
     expect(received).toEqual(['onboarding_started']);
+  });
+
+  it('keeps crash reporting inert by default and preserves an injected reporter', () => {
+    const defaultServices = createAppServices({ auth });
+    const received: string[] = [];
+    const errors: ErrorReporter = {
+      captureException: (_error, context) => received.push(String(context?.surface ?? 'unknown')),
+      captureMessage: (message) => received.push(message),
+    };
+
+    const configuredServices = createAppServices({ auth, errors });
+
+    expect(defaultServices.errors).toBeDefined();
+    expect(() => defaultServices.errors.captureException(new Error('test'))).not.toThrow();
+    expect(configuredServices.errors).toBe(errors);
+    configuredServices.errors.captureException(new Error('boom'), { surface: 'root-render' });
+    configuredServices.errors.captureMessage('manual-signal');
+    expect(received).toEqual(['root-render', 'manual-signal']);
   });
 });

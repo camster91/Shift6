@@ -30,6 +30,131 @@ This repository was intentionally reset on 2026-09-13 to become the canonical SH
 
 The default branch now contains planning only. Do not restore old application code into `main` without an explicit migration decision.
 
+### Foundation implementation checkpoint
+
+The current increment also persists an optional end-of-cycle reflection (rating, next-block focus, and note) as a user-scoped, replaceable local record. It is included in local export/delete/account-adoption boundaries and can be synced later through the existing provider-neutral outbox contract. The reflection is feedback only: it does not alter progression or apply Coach recommendations.
+
+The app-service boundary now also provides a no-op-by-default, privacy-safe analytics client. Initial
+journey instrumentation covers onboarding, program start, workout start/completion, Week 2, cycle
+completion, next-cycle start, health connection, and exercise substitution without accepting free
+text, raw health samples, or other sensitive payloads.
+
+The local-first sync boundary now retains typed version, ownership, and validation conflicts and
+surfaces them as review-required state instead of silently overwriting future plan changes.
+
+The deterministic next-session seam now resolves the active program version's progression rule IDs
+through a typed rule catalogue. Barbell 30 uses unit-aware load increments (5 lb imperial, 2.5 kg
+metric); drafts and unknown rule references use conservative deterministic defaults until a reviewed
+program rule is available. AI remains outside target calculation.
+
+The sync boundary now has a local review surface for pending outbox failures and typed backend
+conflicts. Profile links to it when a conflict is detected; retry is explicit, and no local plan or
+history is merged, discarded, or overwritten automatically.
+
+Program catalogue entries now carry their executable version when one has passed the current
+startability boundary. Program Detail resolves the selected entry's version instead of coupling the
+screen to Barbell 30, while the remaining launch entries stay visibly metadata-only until their
+workouts and content review are complete.
+
+Profile now links to a dedicated equipment manager. It edits the same user-scoped onboarding
+profile transaction and outbox snapshot, so later program recommendations and workout substitutions
+see the user's current equipment without introducing a second preference store.
+
+Progress now also includes a local-first training-volume breakdown derived from completed sets in
+the active cycle. The deterministic domain view groups sets by exercise, movement pattern, and
+primary muscle, and keeps load volume separate from set counts. Primary-muscle totals are explicitly
+approximate because one set may be credited to multiple primary muscles; missing load or reps never
+creates fabricated load volume.
+
+Repeating a completed cycle now creates a new private program/version namespace before the next
+cycle is saved. This keeps future edits copy-on-write and prevents completed-cycle history from
+being rewritten through a reused version ID.
+
+The Progress surface also has a local cycle-level cardio view. It deduplicates completed cardio
+sessions, aggregates manual duration/distance measurements by week, and keeps missing metrics
+missing; it does not infer cardio from a health provider or from strength volume.
+
+Coach now includes a bounded freeform question surface. Questions stay outside analytics, are
+short-circuited through deterministic safety routing when needed, and use the local structured
+explainer when a provider-backed Coach is unavailable. Provider transport receives the trimmed
+question separately from the allowlisted context and still cannot mutate a plan.
+
+The Exercise Library now supports deterministic filters for difficulty, unilateral/bilateral
+stance, compound/isolation classification, and mobility/power/cardio focus. Classification is
+explicit on seeded records with a conservative fallback for legacy JSON; all current catalogue
+records remain draft until technique and media review is complete.
+
+The custom builder now captures private movement metadata instead of assuming a fixed carry: users
+choose movement category, tracking type, difficulty, available equipment, primary muscles,
+instructions, and notes. The created record remains user-owned and draft, and its first workout
+target is derived from the chosen tracking type.
+
+The builder also reloads the user’s private exercise library on later visits, so a saved custom
+movement can be searched and reused across workouts without changing the public catalogue.
+
+The active workout now supports an explicit early-stop path after at least one set is logged. The
+user chooses a bounded reason (time, readiness, discomfort, equipment, or other); native SQLite
+persists the session as `partial`, queues the same idempotent workout-session mutation, deletes the
+draft, and leaves the cycle week unchanged. Partial sessions remain visible in the summary with
+their logged-set count, while adherence and cycle advancement continue to require a complete
+workout. Web preview passes the selected state through the route because native SQLite is
+intentionally unavailable there.
+
+The same boundary supports skipping an untouched session with a bounded reason. Native SQLite
+persists the session as `skipped`, queues it for later sync, deletes the draft, and keeps the session
+out of adherence, cycle advancement, and completed-session progression while retaining the user’s
+decision in the summary.
+
+The Review → progression-copy path now reads completed local set history and applies only ordinary
+deterministic target changes to a new private version. History is scoped by canonical exercise and
+the immediate source workout, while missing data, limited readiness, discomfort, and confirmation-
+requiring strategies keep the source target unchanged.
+
+The first implementation branch is `feat/shift6-rebuild-foundation`. It introduces a clean Expo SDK 57 / React Native 0.86 / TypeScript application shell, Expo Router tabs, token-driven UI primitives, typed domain fixtures, versioned SQLite migrations for native builds, an idempotent workout-session/completed-set outbox and flush contract, persisted guest onboarding/profile setup, a versioned Barbell 30 six-week cycle start flow, local progress aggregation from completed workout records with deterministic next-session targets, a persisted cycle-week transition and review boundary, a provider-neutral Coach safety classifier and proposal validator, a searchable 50-record draft exercise library with equipment-aware filtering, metadata for the planned 20-program library with explicit startability status, a copy-on-write custom builder foundation, and a cycle-aware local calendar with idempotent rescheduling.
+
+The branch deliberately does not restore the archived web application. The archived implementation was inspected and rejected for direct reuse because it is a Vite/Capacitor app built around browser `localStorage`, a single mutable state payload, and fixed progression assumptions that conflict with the new program-version and program-specific Week 6 model. The design layer now also exposes semantic icon names and an original SVG asset handoff boundary; the current Ionicons glyphs are explicitly temporary fallbacks pending Figma review.
+
+The web target is a UI preview only: it uses a platform-specific no-persistence provider because the SDK 57 SQLite web worker requires a WASM asset that is not present in the resolved package. iOS and Android continue to use the real SQLite provider. Native simulator/device boot remains a separate verification gate because this workstation has no usable `simctl` runtime or connected Android device.
+
+The calendar increment stores local `YYYY-MM-DD` schedule overrides against a cycle/week/workout
+occurrence. It projects completed, partial, skipped, in-progress, missed, current, and upcoming
+states from local session history; a move is written to SQLite and the sync outbox in one
+transaction, while the web preview keeps the interaction non-persistent. Home and the cycle
+dashboard consume the same schedule projection, so a moved session remains coherent across routes.
+
+Health settings now provide explicit local disconnect and imported-summary removal controls. The
+disconnect action stops future SHIFT6 imports and updates the replaceable profile snapshot
+atomically; a separate confirmation removes only normalized summaries stored on the device. OS-level
+HealthKit/Health Connect revocation remains a native platform-settings and device-verification gate.
+
+Active workouts also support a bounded session note that is flushed locally across editing,
+backgrounding, pausing, and completion, then shown in the workout summary. Notes remain outside
+analytics and are covered by the existing local export/delete boundary.
+
+Active workouts now expose accessible copy-on-write controls for moving an exercise up or down and
+adding a set. Reordering preserves workout-exercise and completed-set IDs; added sets use the
+versioned builder rules and remain local-first. Template data and completed history are not mutated.
+
+When an authenticated backend is configured, active-workout local writes now trigger a non-blocking
+single-flight sync attempt after the local transaction succeeds. Guest mode and offline mode leave
+the outbox untouched for a later authenticated retry.
+
+Native database bootstrap failures now show a bounded retry surface without exposing raw SQLite
+details. Workout data is not presented as available until the local database and migrations open
+successfully.
+
+The active workout also reflects offline, syncing, retry-paused, and conflict states from the
+shared sync runtime while keeping local set completion independent of cloud availability.
+
+Equipment substitutions in an unfinished session now clear the old movement's draft inputs and
+target override before the replacement is displayed. A completed set still blocks substitution so
+history cannot be silently reclassified.
+
+The app now resolves local ownership through a single identity boundary. The default shell remains
+guest-owned, while an injected authenticated session must adopt guest data transactionally before
+account-scoped routes, notifications, or sync mount. Provider-specific sign-in, account conflict
+UX, remote deletion, and native account verification remain explicitly open.
+
 ## Canonical planning docs
 
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition

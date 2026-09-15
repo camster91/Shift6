@@ -207,3 +207,23 @@ Across the program/cycle include small doses of:
 - regular easy/moderate aerobic work.
 
 These can be optional blocks so the core 30-minute strength sessions remain realistic.
+
+## Exercise filtering checkpoint — 2026-09-14
+
+The Exercise Library implementation now applies the planned catalogue filters in the typed domain
+search boundary: difficulty, unilateral/bilateral stance, compound/isolation classification, and
+mobility/power/cardio focus. Classification is stored on new seeded records with a conservative
+primary-muscle fallback for older JSON. The current 50-record tranche remains draft and media-free;
+this increment does not claim the 300+ reviewed launch catalogue.
+
+## Custom exercise authoring checkpoint — 2026-09-14
+
+The private builder now captures the documented custom-exercise inputs: name, movement category,
+tracking type, difficulty, equipment options, primary muscles, instructions, and private notes.
+The domain factory trims list values, rejects missing muscles or equipment, derives a conservative
+compound/isolation classification, and keeps the record draft/private. Optional media and
+technique review remain separate content-production work.
+
+Private exercises are loaded into subsequent builder visits and the exercise picker searches them
+alongside foundational movements. This keeps reuse user-scoped while leaving public catalogue
+publication and sharing outside the current boundary.

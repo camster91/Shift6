@@ -10,17 +10,28 @@ export interface IconButtonProps {
   onPress?: () => void;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  accessibilityHint?: string;
 }
 
-export function IconButton({ icon, label, onPress, disabled = false, style }: IconButtonProps) {
+export function IconButton({
+  icon,
+  label,
+  onPress,
+  disabled = false,
+  style,
+  accessibilityHint,
+}: IconButtonProps) {
+  const isDisabled = disabled || !onPress;
+
   return (
     <Pressable
+      accessibilityHint={accessibilityHint}
       accessibilityLabel={label}
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled || !onPress}
+      accessibilityState={{ disabled: isDisabled }}
+      disabled={isDisabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.base, pressed && !disabled && styles.pressed, style]}
+      style={({ pressed }) => [styles.base, pressed && !isDisabled && styles.pressed, style]}
     >
       {icon}
     </Pressable>

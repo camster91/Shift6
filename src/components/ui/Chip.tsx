@@ -15,7 +15,7 @@ export function Chip({ label, selected = false, onPress, disabled = false }: Chi
     <>
       <View style={[styles.dot, selected && styles.selectedDot]} />
       <Text variant="caption" tone={selected ? 'inverse' : 'muted'}>
-        {label}
+        {selected ? `✓ ${label}` : label}
       </Text>
     </>
   );

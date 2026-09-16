@@ -1,4 +1,5 @@
 import type {
+  AccountDeletionResult,
   BackendClient,
   SyncConflict,
   SyncConflictCode,
@@ -33,6 +34,10 @@ export class UnavailableBackendClient implements BackendClient {
   async sync(_mutations: readonly SyncMutation[]): Promise<SyncResult> {
     throw new BackendUnavailableError(this.message);
   }
+
+  async deleteAccount(): Promise<AccountDeletionResult> {
+    throw new BackendUnavailableError('Remote account deletion is not configured.');
+  }
 }
 
 export interface HttpBackendClientOptions {
@@ -42,9 +47,9 @@ export interface HttpBackendClientOptions {
 }
 
 /**
- * Vendor-neutral sync transport. Authentication is injected, never read from
- * the app bundle, and the mobile app can replace this adapter without changing
- * repositories or domain logic.
+ * Vendor-neutral backend transport. Authentication is injected, never read
+ * from the app bundle, and the mobile app can replace this adapter without
+ * changing repositories or domain logic.
  */
 export class HttpBackendClient implements BackendClient {
   private readonly baseUrl: string;
@@ -58,14 +63,7 @@ export class HttpBackendClient implements BackendClient {
   }
 
   async sync(mutations: readonly SyncMutation[]): Promise<SyncResult> {
-    if (!this.baseUrl) {
-      throw new BackendUnavailableError();
-    }
-
-    const accessToken = await this.getAccessToken();
-    if (!accessToken) {
-      throw new BackendUnavailableError('Sign in to enable cloud sync.');
-    }
+    const accessToken = await this.requireAccessToken('Sign in to enable cloud sync.');
 
     let response: Response;
     try {
@@ -89,6 +87,56 @@ export class HttpBackendClient implements BackendClient {
 
     return parseSyncResult(await response.json());
   }
+
+  async deleteAccount(): Promise<AccountDeletionResult> {
+    const accessToken = await this.requireAccessToken(
+      'Sign in again before deleting the remote account.',
+    );
+
+    let response: Response;
+    try {
+      response = await this.fetcher(`${this.baseUrl}/v1/account`, {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'The account deletion request failed.';
+      throw new BackendUnavailableError(message);
+    }
+
+    if (!response.ok) {
+      throw new BackendUnavailableError(
+        `The account deletion service returned HTTP ${response.status}.`,
+      );
+    }
+
+    if (response.status === 204) return { deleted: true };
+
+    try {
+      return parseAccountDeletionResult(await response.json());
+    } catch (error) {
+      if (error instanceof BackendProtocolError) throw error;
+      throw new BackendProtocolError('The account deletion service returned invalid JSON.');
+    }
+  }
+
+  private async requireAccessToken(message: string): Promise<string> {
+    if (!this.baseUrl) throw new BackendUnavailableError();
+
+    const accessToken = await this.getAccessToken();
+    if (!accessToken) throw new BackendUnavailableError(message);
+    return accessToken;
+  }
+}
+
+export function parseAccountDeletionResult(value: unknown): AccountDeletionResult {
+  if (!isRecord(value) || value.deleted !== true) {
+    throw new BackendProtocolError('The account deletion service did not confirm deletion.');
+  }
+  return { deleted: true };
 }
 
 export function parseSyncResult(value: unknown): SyncResult {

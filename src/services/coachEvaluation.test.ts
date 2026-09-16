@@ -2,9 +2,10 @@ import { detectPlateau, evaluateReadiness } from '../domain/progression';
 import { findExerciseSubstitutions } from '../domain/equipment';
 import { foundationalExercises } from '../domain/fixtures/exercises';
 import { demoCycle, demoUser } from '../domain/fixtures/home';
+import type { CoachProposal } from '../domain/types';
 import type { CoachContext } from './contracts';
 import { UnavailableCoachGateway } from './coach';
-import { classifyCoachSafety } from './coachSafety';
+import { classifyCoachSafety, validateCoachProposal } from './coachSafety';
 import { buildLocalCoachMessage } from './localCoach';
 
 const evaluationContext: CoachContext = {
@@ -141,14 +142,52 @@ describe('Coach evaluation matrix', () => {
     );
   });
 
-  it('routes unsafe medication and urgent-symptom requests before optimization', () => {
+  it('routes medication, nutrition, injury and urgent requests before optimization', () => {
     expect(classifyCoachSafety('How much insulin should I take before this workout?')).toMatchObject({
       route: 'medication-boundary',
       shouldStopTraining: false,
+    });
+    expect(classifyCoachSafety('What calorie target and macros should I use?')).toMatchObject({
+      route: 'nutrition-boundary',
+      shouldStopTraining: false,
+    });
+    expect(classifyCoachSafety('I have sharp pain and numbness in my arm.')).toMatchObject({
+      route: 'professional-evaluation',
+      shouldStopTraining: true,
     });
     expect(classifyCoachSafety('I have chest pain while training')).toMatchObject({
       route: 'urgent-care',
       shouldStopTraining: true,
     });
+    expect(classifyCoachSafety('I have chest pain. Should I change my insulin dose?')).toMatchObject({
+      route: 'urgent-care',
+      shouldStopTraining: true,
+    });
+  });
+
+  it('rejects unsafe provider plan mutations before they can reach approval storage', () => {
+    const proposal: CoachProposal = {
+      id: 'proposal-adverse-case',
+      summary: 'Increase the target aggressively.',
+      confidence: 'high',
+      evidence: ['Recent performance was strong.'],
+      changes: [
+        {
+          id: 'change-reps',
+          type: 'target-change',
+          field: 'reps',
+          from: '8',
+          to: '12',
+          requiresUserConfirmation: true,
+        },
+      ],
+      safetyNotes: [],
+      status: 'pending',
+      createdAt: '2026-09-16T12:00:00.000Z',
+    };
+
+    expect(validateCoachProposal(proposal)).toContain(
+      'Change 1 increases reps by more than the allowed 25%.',
+    );
   });
 });

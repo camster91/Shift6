@@ -1,7 +1,8 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { AuthProvider, BackendClient } from './contracts';
+import type { AccountDeletionRecoveryStore } from './accountDeletionRecovery';
 import { deleteAuthenticatedAccount } from './accountDeletion';
+import type { AuthProvider, BackendClient } from './contracts';
 
 const database = {} as SQLiteDatabase;
 
@@ -20,10 +21,28 @@ function auth(signOut: AuthProvider['signOut']): AuthProvider {
   };
 }
 
+function recoveryStore() {
+  let value: Awaited<ReturnType<AccountDeletionRecoveryStore['get']>> = null;
+  const calls: string[] = [];
+  const store: AccountDeletionRecoveryStore = {
+    get: async (userId) => (value?.userId === userId ? value : null),
+    set: async (recovery) => {
+      calls.push(`set:${recovery.stage}`);
+      value = recovery;
+    },
+    clear: async (userId) => {
+      calls.push('clear');
+      if (value?.userId === userId) value = null;
+    },
+  };
+  return { store, calls, current: () => value };
+}
+
 describe('account deletion orchestration', () => {
-  it('does not touch local data or auth when remote deletion is not confirmed', async () => {
+  it('does not touch local data, auth, or recovery when remote deletion is not confirmed', async () => {
     const deleteLocalData = jest.fn(async () => undefined);
     const signOut = jest.fn(async () => undefined);
+    const recovery = recoveryStore();
 
     await expect(
       deleteAuthenticatedAccount({
@@ -32,15 +51,18 @@ describe('account deletion orchestration', () => {
         backend: backend(async () => Promise.reject(new Error('remote unavailable'))),
         auth: auth(signOut),
         deleteLocalData,
+        recoveryStore: recovery.store,
       }),
     ).rejects.toThrow('remote unavailable');
 
     expect(deleteLocalData).not.toHaveBeenCalled();
     expect(signOut).not.toHaveBeenCalled();
+    expect(recovery.calls).toEqual([]);
   });
 
-  it('clears local data and signs out after remote deletion succeeds', async () => {
+  it('records cleanup stages, clears local data, signs out, then removes recovery', async () => {
     const order: string[] = [];
+    const recovery = recoveryStore();
     const deleteLocalData = jest.fn(async () => {
       order.push('local-delete');
     });
@@ -58,6 +80,8 @@ describe('account deletion orchestration', () => {
         }),
         auth: auth(signOut),
         deleteLocalData,
+        recoveryStore: recovery.store,
+        now: () => '2026-09-16T11:00:00.000Z',
       }),
     ).resolves.toEqual({
       remoteDeleted: true,
@@ -67,11 +91,14 @@ describe('account deletion orchestration', () => {
     });
 
     expect(order).toEqual(['remote-delete', 'local-delete', 'sign-out']);
+    expect(recovery.calls).toEqual(['set:local-data', 'set:sign-out', 'clear']);
+    expect(recovery.current()).toBeNull();
     expect(deleteLocalData).toHaveBeenCalledWith(database, 'account-user');
   });
 
-  it('keeps auth mounted for a local cleanup retry after remote deletion succeeds', async () => {
+  it('keeps a durable local-cleanup marker when local deletion fails', async () => {
     const signOut = jest.fn(async () => undefined);
+    const recovery = recoveryStore();
 
     const outcome = await deleteAuthenticatedAccount({
       database,
@@ -79,6 +106,8 @@ describe('account deletion orchestration', () => {
       backend: backend(async () => ({ deleted: true })),
       auth: auth(signOut),
       deleteLocalData: async () => Promise.reject(new Error('local delete failed')),
+      recoveryStore: recovery.store,
+      now: () => '2026-09-16T11:00:00.000Z',
     });
 
     expect(outcome).toMatchObject({
@@ -86,17 +115,24 @@ describe('account deletion orchestration', () => {
       localDataDeleted: false,
       signedOut: false,
     });
-    expect(outcome.warnings).toHaveLength(1);
+    expect(recovery.current()).toEqual({
+      userId: 'account-user',
+      stage: 'local-data',
+      remoteDeletedAt: '2026-09-16T11:00:00.000Z',
+    });
     expect(signOut).not.toHaveBeenCalled();
   });
 
-  it('reports a sign-out warning after remote and local deletion succeed', async () => {
+  it('keeps a sign-out recovery marker when local deletion succeeds but sign-out fails', async () => {
+    const recovery = recoveryStore();
     const outcome = await deleteAuthenticatedAccount({
       database,
       userId: 'account-user',
       backend: backend(async () => ({ deleted: true })),
       auth: auth(async () => Promise.reject(new Error('sign-out failed'))),
       deleteLocalData: async () => undefined,
+      recoveryStore: recovery.store,
+      now: () => '2026-09-16T11:00:00.000Z',
     });
 
     expect(outcome).toMatchObject({
@@ -104,6 +140,7 @@ describe('account deletion orchestration', () => {
       localDataDeleted: true,
       signedOut: false,
     });
+    expect(recovery.current()?.stage).toBe('sign-out');
     expect(outcome.warnings).toHaveLength(1);
   });
 });

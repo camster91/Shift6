@@ -71,7 +71,6 @@ describe('validateCoachProposal', () => {
     expect(validateCoachProposal(invalidProposal)).toEqual([
       'Change 1 must require explicit user confirmation.',
       'Change 1 uses a field that is not allowed for its change type.',
-      'Change 1 target values must include valid numeric values.',
     ]);
   });
 

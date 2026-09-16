@@ -52,10 +52,25 @@ const proposalResponse = {
 };
 
 describe('Coach gateway boundary', () => {
-  it('minimizes structured context before a provider can receive it', () => {
+  it('minimizes structured context and removes internal identifiers before provider transport', () => {
     const minimized = minimizeCoachContext(context);
 
-    expect(minimized.structuredFacts).toEqual({ workoutTitle: 'Strength A', currentWeek: 2 });
+    expect(minimized).toEqual({
+      user: {
+        unitSystem: 'imperial',
+        goals: ['strength'],
+        experience: 'beginner',
+      },
+      cycle: {
+        currentWeek: 2,
+        status: 'active',
+      },
+      structuredFacts: { workoutTitle: 'Strength A', currentWeek: 2 },
+    });
+    expect(JSON.stringify(minimized)).not.toContain('guest-user');
+    expect(JSON.stringify(minimized)).not.toContain('cycle-1');
+    expect(JSON.stringify(minimized)).not.toContain('version-1');
+    expect(JSON.stringify(minimized)).not.toContain('privateNote');
   });
 
   it('requires an injected access token and never invents a provider result', async () => {
@@ -69,7 +84,7 @@ describe('Coach gateway boundary', () => {
     );
   });
 
-  it('sends a bounded authenticated request and parses a message response', async () => {
+  it('sends a bounded authenticated request without internal user/cycle identifiers', async () => {
     let requestUrl = '';
     let requestBody = '';
     let authorization = '';
@@ -97,9 +112,17 @@ describe('Coach gateway boundary', () => {
     });
     expect(requestUrl).toBe('https://api.example.test/v1/coach/message');
     expect(authorization).toBe('Bearer test-token');
-    expect(JSON.parse(requestBody).context.structuredFacts).toEqual({
-      workoutTitle: 'Strength A',
-      currentWeek: 2,
+    expect(JSON.parse(requestBody).context).toEqual({
+      user: {
+        unitSystem: 'imperial',
+        goals: ['strength'],
+        experience: 'beginner',
+      },
+      cycle: { currentWeek: 2, status: 'active' },
+      structuredFacts: {
+        workoutTitle: 'Strength A',
+        currentWeek: 2,
+      },
     });
   });
 

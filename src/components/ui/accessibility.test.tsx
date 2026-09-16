@@ -1,9 +1,10 @@
 import { render } from '@testing-library/react-native';
 import { View } from 'react-native';
 
-import type { Program, Workout } from '../../domain/types';
+import type { CoachProposal, Program, Workout } from '../../domain/types';
 import { Button } from './Button';
 import { Chip } from './Chip';
+import { CoachProposalCard } from './CoachProposalCard';
 import { ErrorState } from './ErrorState';
 import { IconButton } from './IconButton';
 import { ProgramCard } from './ProgramCard';
@@ -37,6 +38,26 @@ const workout: Workout = {
   estimatedDurationMinutes: 30,
   equipmentIds: ['barbell'],
   exercises: [],
+};
+
+const coachProposal: CoachProposal = {
+  id: 'proposal-1',
+  summary: 'Keep the same exercises and add one rep next time.',
+  confidence: 'high',
+  evidence: ['All working sets were completed.'],
+  changes: [
+    {
+      id: 'change-1',
+      type: 'target-change',
+      field: 'reps',
+      from: '8',
+      to: '9',
+      requiresUserConfirmation: true,
+    },
+  ],
+  safetyNotes: [],
+  status: 'pending',
+  createdAt: '2026-09-16T12:00:00.000Z',
 };
 
 describe('shared accessibility primitives', () => {
@@ -117,6 +138,20 @@ describe('shared accessibility primitives', () => {
         .accessibilityRole,
     ).toBe('alert');
     expect(getByLabelText('Try again')).toBeTruthy();
+  });
+
+  it('keeps coach proposal decisions outside the grouped proposal summary', () => {
+    const { getByLabelText } = render(
+      <CoachProposalCard proposal={coachProposal} onApprove={jest.fn()} onReject={jest.fn()} />,
+    );
+
+    expect(
+      getByLabelText(
+        'Coach proposal. Keep the same exercises and add one rep next time.. 1 proposed changes.',
+      ),
+    ).toBeTruthy();
+    expect(getByLabelText('Keep current')).toBeTruthy();
+    expect(getByLabelText('Approve & apply')).toBeTruthy();
   });
 
   it('clamps progress values and exposes the bounded value to assistive technology', () => {

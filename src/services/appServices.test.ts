@@ -1,5 +1,6 @@
 import type { AnalyticsClient, AuthProvider, ErrorReporter } from './contracts';
 import { UnavailableBackendClient, HttpBackendClient } from './backend';
+import { HttpCoachGateway, UnavailableCoachGateway } from './coach';
 import { createAppServices } from './appServices';
 
 const auth: AuthProvider = {
@@ -9,11 +10,12 @@ const auth: AuthProvider = {
 };
 
 describe('app service composition', () => {
-  it('keeps the backend unavailable when no public API endpoint is configured', () => {
+  it('keeps backend and Coach unavailable when no public API endpoint is configured', () => {
     const services = createAppServices({ auth, apiBaseUrl: '  ' });
 
     expect(services.auth).toBe(auth);
     expect(services.backend).toBeInstanceOf(UnavailableBackendClient);
+    expect(services.coach).toBeInstanceOf(UnavailableCoachGateway);
   });
 
   it('injects auth into the configured vendor-neutral HTTP transport', async () => {
@@ -36,6 +38,53 @@ describe('app service composition', () => {
     expect(services.backend).toBeInstanceOf(HttpBackendClient);
     await services.backend.sync([]);
     expect(requestedToken).toBe('token-from-provider');
+  });
+
+  it('routes Coach requests through the configured SHIFT6 API with the app access token', async () => {
+    let requestedUrl = '';
+    let authorization = '';
+    const services = createAppServices({
+      auth: {
+        ...auth,
+        getAccessToken: async () => 'shift6-access-token',
+      },
+      apiBaseUrl: 'https://api.example.test',
+      fetcher: async (input, init) => {
+        requestedUrl = String(input);
+        authorization = new Headers(init?.headers).get('Authorization') ?? '';
+        return new Response(
+          JSON.stringify({
+            kind: 'message',
+            text: 'Keep the next session repeatable.',
+            factsUsed: ['current cycle week'],
+          }),
+          { status: 200 },
+        );
+      },
+    });
+
+    expect(services.coach).toBeInstanceOf(HttpCoachGateway);
+    await services.coach.generateMessage(
+      {
+        user: {
+          id: 'guest-user',
+          unitSystem: 'imperial',
+          goals: ['strength'],
+          experience: 'beginner',
+        },
+        cycle: {
+          id: 'cycle-1',
+          programVersionId: 'version-1',
+          currentWeek: 2,
+          status: 'active',
+        },
+        structuredFacts: { currentWeek: 2 },
+      },
+      'weekly-review',
+    );
+
+    expect(requestedUrl).toBe('https://api.example.test/v1/coach/message');
+    expect(authorization).toBe('Bearer shift6-access-token');
   });
 
   it('uses a no-op analytics client by default and preserves an injected client', () => {

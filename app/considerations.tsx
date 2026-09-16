@@ -162,7 +162,7 @@ export default function ConsiderationsScreen() {
       ))}
 
       {message ? (
-        <Card tone="white" style={styles.messageCard} accessibilityRole="status">
+        <Card tone="white" style={styles.messageCard} accessibilityLabel={message}>
           <Text variant="small" tone="muted">
             {message}
           </Text>

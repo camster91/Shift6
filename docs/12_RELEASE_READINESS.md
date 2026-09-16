@@ -51,6 +51,21 @@ an app restart without repeating a confirmed destructive server request. The pro
 provider revocation and public web deletion resource remain release blockers. See
 `docs/16_ACCOUNT_DELETION_CONTRACT.md`.
 
+The Coach privacy follow-up makes provider-backed Coach processing an explicit local opt-in that is
+disabled by default. When disabled, provider message and plan-proposal methods are not called and the
+deterministic local Coach remains available. The provider-bound context also excludes local user,
+cycle and program-version identifiers in addition to raw health samples, private workout notes,
+manual body metrics, movement/accessibility preferences and analytics payloads. Production provider
+identity, retention/model-training terms and end-to-end provider evaluation remain release blockers.
+
+The accessibility-primitives follow-up hardens shared controls rather than claiming a completed
+native accessibility audit. Buttons expose disabled/busy state consistently, icon buttons no longer
+announce themselves as enabled when no action exists, selected chips include a visible non-colour
+check cue, and interactive program/workout cards expose one labelled focus target instead of nested
+accessible targets. Regression tests also guard app text font scaling, bounded progress semantics,
+minimum touch targets and functional text/status colour contrast. VoiceOver/TalkBack, critical-flow
+large-text behaviour and representative-device verification remain mandatory external evidence.
+
 ## Current Expo compatibility check
 
 The dependency baseline was checked against Expo's current SDK 57 documentation on 2026-09-15.
@@ -106,10 +121,14 @@ check, lint, TypeScript, Expo Doctor, asset/secret/release validation, dependenc
 the web export. Static review in the repository is not a substitute for those commands.
 
 The dependent profile/body-metric branch adds migration 19 plus new repository/UI tests. The
-account-deletion branch adds backend-protocol, cleanup-order and SecureStore recovery tests. Each
-branch requires the same verification gate after its prerequisite branch is validated.
+account-deletion branch adds backend-protocol, cleanup-order and SecureStore recovery tests. The
+Coach privacy branch adds migration 20, privacy-gate and provider-payload tests. The accessibility
+branch adds shared component semantics and colour/touch-target regression tests. Each branch requires
+the same verification gate after its prerequisite branch is validated.
 
 The native/device/store evidence sequence is defined in `docs/13_NATIVE_RELEASE_VERIFICATION.md`.
+The stacked repository verification order is defined in `docs/17_STACKED_PR_VERIFICATION.md` and
+must be extended to include any later dependent PR before merge approval.
 
 ## Release rule
 

@@ -23,7 +23,9 @@ export async function getCoachPrivacyPreference(
   userId: string,
 ): Promise<CoachPrivacyPreference> {
   const normalizedUserId = userId.trim();
-  if (!normalizedUserId) return createDefaultCoachPrivacyPreference('');
+  if (!normalizedUserId) {
+    throw new Error('A user ID is required for Coach privacy preferences.');
+  }
 
   const row = await database.getFirstAsync<CoachPrivacyPreferenceRow>(
     `SELECT user_id, provider_coach_enabled, notice_version, updated_at

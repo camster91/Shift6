@@ -179,13 +179,14 @@ export function validateCoachProposal(proposal: CoachProposal): string[] {
 
   proposal.changes.forEach((change, index) => {
     const prefix = `Change ${index + 1}`;
+    const validField = allowedChangeFields[change.type].includes(change.field);
     if (change.requiresUserConfirmation !== true) {
       errors.push(`${prefix} must require explicit user confirmation.`);
     }
     if (!change.from.trim() || !change.to.trim()) {
       errors.push(`${prefix} must include both current and proposed values.`);
     }
-    if (!allowedChangeFields[change.type].includes(change.field)) {
+    if (!validField) {
       errors.push(`${prefix} uses a field that is not allowed for its change type.`);
     }
     if (change.type === 'exercise-substitution' && !change.exerciseId?.trim()) {
@@ -198,16 +199,16 @@ export function validateCoachProposal(proposal: CoachProposal): string[] {
       errors.push(`${prefix} must include both workout and movement IDs when scoped.`);
     }
 
-    if (change.type === 'target-change') {
+    if (change.type === 'target-change' && validField) {
       validateTargetChange(change, prefix, errors);
     }
-    if (change.type === 'set-count-change') {
+    if (change.type === 'set-count-change' && validField) {
       const setCount = parseSimpleNumber(change.to);
       if (setCount === undefined || !Number.isInteger(setCount) || setCount < 1 || setCount > 20) {
         errors.push(`${prefix} set count must stay between 1 and 20.`);
       }
     }
-    if (change.type === 'schedule-change') {
+    if (change.type === 'schedule-change' && validField) {
       const scheduleValue = parseSimpleNumber(change.to);
       if (
         scheduleValue === undefined ||

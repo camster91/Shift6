@@ -70,12 +70,14 @@ describe('account deletion orchestration', () => {
     expect(deleteLocalData).toHaveBeenCalledWith(database, 'account-user');
   });
 
-  it('reports local cleanup warnings after confirmed remote deletion', async () => {
+  it('keeps auth mounted for a local cleanup retry after remote deletion succeeds', async () => {
+    const signOut = jest.fn(async () => undefined);
+
     const outcome = await deleteAuthenticatedAccount({
       database,
       userId: 'account-user',
       backend: backend(async () => ({ deleted: true })),
-      auth: auth(async () => Promise.reject(new Error('sign-out failed'))),
+      auth: auth(signOut),
       deleteLocalData: async () => Promise.reject(new Error('local delete failed')),
     });
 
@@ -84,6 +86,24 @@ describe('account deletion orchestration', () => {
       localDataDeleted: false,
       signedOut: false,
     });
-    expect(outcome.warnings).toHaveLength(2);
+    expect(outcome.warnings).toHaveLength(1);
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it('reports a sign-out warning after remote and local deletion succeed', async () => {
+    const outcome = await deleteAuthenticatedAccount({
+      database,
+      userId: 'account-user',
+      backend: backend(async () => ({ deleted: true })),
+      auth: auth(async () => Promise.reject(new Error('sign-out failed'))),
+      deleteLocalData: async () => undefined,
+    });
+
+    expect(outcome).toMatchObject({
+      remoteDeleted: true,
+      localDataDeleted: true,
+      signedOut: false,
+    });
+    expect(outcome.warnings).toHaveLength(1);
   });
 });

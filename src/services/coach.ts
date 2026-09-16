@@ -1,10 +1,5 @@
-import type {
-  MAX_COACH_PROMPT_LENGTH,
-  CoachContext,
-  CoachGateway,
-  CoachMessageResult,
-  CoachTask,
-} from './contracts';
+import { MAX_COACH_PROMPT_LENGTH } from './contracts';
+import type { CoachContext, CoachGateway, CoachMessageResult, CoachTask } from './contracts';
 import { classifyCoachSafety, validateCoachProposal } from './coachSafety';
 import type { CoachProposal, CoachProposalChange } from '../domain/types';
 

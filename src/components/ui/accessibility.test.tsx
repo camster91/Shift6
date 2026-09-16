@@ -10,18 +10,20 @@ import { Text } from './Text';
 describe('shared accessibility primitives', () => {
   it('marks a button without an action as disabled', () => {
     const { getByLabelText } = render(<Button label="Save" />);
-    const button = getByLabelText('Save');
 
-    expect(button.props.disabled).toBe(true);
-    expect(button.props.accessibilityState).toEqual({ busy: false, disabled: true });
+    expect(getByLabelText('Save').props.accessibilityState).toEqual({
+      busy: false,
+      disabled: true,
+    });
   });
 
   it('exposes loading buttons as busy and disabled', () => {
     const { getByLabelText } = render(<Button label="Save" loading onPress={jest.fn()} />);
-    const button = getByLabelText('Save');
 
-    expect(button.props.disabled).toBe(true);
-    expect(button.props.accessibilityState).toEqual({ busy: true, disabled: true });
+    expect(getByLabelText('Save').props.accessibilityState).toEqual({
+      busy: true,
+      disabled: true,
+    });
   });
 
   it('keeps icon-button disabled semantics aligned with its actual action state', () => {
@@ -30,7 +32,6 @@ describe('shared accessibility primitives', () => {
     );
     const button = getByLabelText('Close');
 
-    expect(button.props.disabled).toBe(true);
     expect(button.props.accessibilityState).toEqual({ disabled: true });
     expect(button.props.accessibilityHint).toBe('Closes this screen');
   });

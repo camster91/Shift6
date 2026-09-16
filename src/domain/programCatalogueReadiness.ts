@@ -45,9 +45,10 @@ export function assessLaunchProgramCatalogue(
     if (entry.version) executableCount += 1;
 
     const review = reviewByProgramId.get(entry.program.id);
-    const hasValidReview = Boolean(
-      review?.reviewedAt.trim() && review.reviewReference.trim(),
-    );
+    const hasValidReview =
+      review !== undefined &&
+      review.reviewedAt.trim().length > 0 &&
+      review.reviewReference.trim().length > 0;
     if (hasValidReview) contentReviewedCount += 1;
 
     if (!entry.version || metadataIssues.length > 0 || !hasValidReview) return;
@@ -122,7 +123,9 @@ function assessProgramMetadata(entry: ProgramCatalogueEntry): string[] {
   if (!version) {
     blockers.push(`${program.title}: executable program version is missing.`);
   } else if (program.currentVersionId !== version.id) {
-    blockers.push(`${program.title}: current version identifier does not match the executable version.`);
+    blockers.push(
+      `${program.title}: current version identifier does not match the executable version.`,
+    );
   }
 
   return blockers;
@@ -148,7 +151,9 @@ function buildReviewMap(
 
   if (duplicateReviewIds.size > 0) {
     blockers.push(
-      `Program content review evidence must be unique; duplicates: ${[...duplicateReviewIds].sort().join(', ')}.`,
+      `Program content review evidence must be unique; duplicates: ${[...duplicateReviewIds]
+        .sort()
+        .join(', ')}.`,
     );
   }
 

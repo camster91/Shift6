@@ -1,9 +1,9 @@
-import {
+import type {
   MAX_COACH_PROMPT_LENGTH,
-  type CoachContext,
-  type CoachGateway,
-  type CoachMessageResult,
-  type CoachTask,
+  CoachContext,
+  CoachGateway,
+  CoachMessageResult,
+  CoachTask,
 } from './contracts';
 import { classifyCoachSafety, validateCoachProposal } from './coachSafety';
 import type { CoachProposal, CoachProposalChange } from '../domain/types';
@@ -78,6 +78,12 @@ export interface HttpCoachGatewayOptions {
   baseUrl: string;
   getAccessToken: () => Promise<string | null>;
   fetcher?: typeof fetch;
+}
+
+export interface ProviderCoachContext {
+  user: Omit<CoachContext['user'], 'id'>;
+  cycle: Pick<CoachContext['cycle'], 'currentWeek' | 'status'>;
+  structuredFacts: Record<string, string | number | boolean>;
 }
 
 /**
@@ -176,11 +182,11 @@ export function normalizeCoachPrompt(prompt?: string): string | undefined {
 }
 
 /**
- * Keeps free text and unbounded provider fields outside the network contract.
- * The server may add richer facts later, but the mobile boundary must opt in
- * to each field explicitly.
+ * Keeps free text, user identifiers and unbounded provider fields outside the
+ * provider-bound context packet. Authentication identifies the account to the
+ * SHIFT6 service, so the model context does not need local user/cycle/version IDs.
  */
-export function minimizeCoachContext(context: CoachContext): CoachContext {
+export function minimizeCoachContext(context: CoachContext): ProviderCoachContext {
   const structuredFacts = Object.fromEntries(
     Object.entries(context.structuredFacts)
       .filter(([key]) => coachFactKeys.has(key))
@@ -192,12 +198,14 @@ export function minimizeCoachContext(context: CoachContext): CoachContext {
 
   return {
     user: {
-      id: context.user.id,
       unitSystem: context.user.unitSystem,
       goals: [...context.user.goals],
       experience: context.user.experience,
     },
-    cycle: { ...context.cycle },
+    cycle: {
+      currentWeek: context.cycle.currentWeek,
+      status: context.cycle.status,
+    },
     structuredFacts,
   };
 }

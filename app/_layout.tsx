@@ -40,6 +40,7 @@ export default function RootLayout() {
                   <Stack.Screen name="equipment" options={{ presentation: 'card' }} />
                   <Stack.Screen name="considerations" options={{ presentation: 'card' }} />
                   <Stack.Screen name="body-metrics" options={{ presentation: 'card' }} />
+                  <Stack.Screen name="ai-privacy" options={{ presentation: 'card' }} />
                   <Stack.Screen name="sync-review" options={{ presentation: 'card' }} />
                   <Stack.Screen name="workout" options={{ presentation: 'modal' }} />
                 </Stack>

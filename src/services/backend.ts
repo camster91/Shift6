@@ -63,6 +63,7 @@ export class HttpBackendClient implements BackendClient {
   }
 
   async sync(mutations: readonly SyncMutation[]): Promise<SyncResult> {
+    const sentMutationIds = validateSyncMutationBatch(mutations);
     const accessToken = await this.requireAccessToken('Sign in to enable cloud sync.');
 
     let response: Response;
@@ -85,7 +86,16 @@ export class HttpBackendClient implements BackendClient {
       throw new BackendUnavailableError(`The sync service returned HTTP ${response.status}.`);
     }
 
-    return parseSyncResult(await response.json());
+    let parsed: SyncResult;
+    try {
+      parsed = parseSyncResult(await response.json());
+    } catch (error) {
+      if (error instanceof BackendProtocolError) throw error;
+      throw new BackendProtocolError('The sync service returned invalid JSON.');
+    }
+
+    validateSyncResultForBatch(parsed, sentMutationIds);
+    return parsed;
   }
 
   async deleteAccount(): Promise<AccountDeletionResult> {
@@ -156,7 +166,11 @@ export function parseSyncResult(value: unknown): SyncResult {
     throw new BackendProtocolError('The sync response contained invalid conflict details.');
   }
 
-  const serverVersion = typeof value.serverVersion === 'number' ? value.serverVersion : undefined;
+  const serverVersion = optionalServerVersion(value.serverVersion);
+  if (serverVersion === null) {
+    throw new BackendProtocolError('The sync response contained an invalid server version.');
+  }
+
   return {
     acknowledgedMutationIds: unique(acknowledgedMutationIds),
     rejectedMutationIds: unique(rejectedMutationIds),
@@ -165,12 +179,74 @@ export function parseSyncResult(value: unknown): SyncResult {
   };
 }
 
+function validateSyncMutationBatch(mutations: readonly SyncMutation[]): Set<string> {
+  const mutationIds = new Set<string>();
+  const idempotencyKeys = new Set<string>();
+
+  mutations.forEach((mutation, index) => {
+    const id = mutation.id.trim();
+    const idempotencyKey = mutation.idempotencyKey.trim();
+    if (!id) {
+      throw new BackendProtocolError(`Sync mutation ${index + 1} is missing an ID.`);
+    }
+    if (!idempotencyKey) {
+      throw new BackendProtocolError(`Sync mutation ${index + 1} is missing an idempotency key.`);
+    }
+    if (mutationIds.has(id)) {
+      throw new BackendProtocolError(`Sync mutation ID ${id} appears more than once in the batch.`);
+    }
+    if (idempotencyKeys.has(idempotencyKey)) {
+      throw new BackendProtocolError(
+        `Sync idempotency key ${idempotencyKey} appears more than once in the batch.`,
+      );
+    }
+    mutationIds.add(id);
+    idempotencyKeys.add(idempotencyKey);
+  });
+
+  return mutationIds;
+}
+
+function validateSyncResultForBatch(result: SyncResult, sentMutationIds: ReadonlySet<string>): void {
+  const statuses = new Map<string, 'acknowledged' | 'rejected' | 'conflict'>();
+
+  const recordStatus = (mutationId: string, status: 'acknowledged' | 'rejected' | 'conflict') => {
+    if (!sentMutationIds.has(mutationId)) {
+      throw new BackendProtocolError(
+        `The sync service returned ${status} status for unknown mutation ${mutationId}.`,
+      );
+    }
+    const existing = statuses.get(mutationId);
+    if (existing && existing !== status) {
+      throw new BackendProtocolError(
+        `The sync service returned contradictory statuses for mutation ${mutationId}: ${existing} and ${status}.`,
+      );
+    }
+    if (existing === status && status === 'conflict') {
+      throw new BackendProtocolError(
+        `The sync service returned duplicate conflict statuses for mutation ${mutationId}.`,
+      );
+    }
+    statuses.set(mutationId, status);
+  };
+
+  result.acknowledgedMutationIds.forEach((mutationId) => recordStatus(mutationId, 'acknowledged'));
+  result.rejectedMutationIds.forEach((mutationId) => recordStatus(mutationId, 'rejected'));
+  result.conflicts?.forEach((conflict) => recordStatus(conflict.mutationId, 'conflict'));
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function stringArray(value: unknown): string[] | null {
-  return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value : null;
+  if (!Array.isArray(value)) return null;
+  const values: string[] = [];
+  for (const item of value) {
+    if (typeof item !== 'string' || !item.trim()) return null;
+    values.push(item.trim());
+  }
+  return values;
 }
 
 function syncConflicts(value: unknown): SyncConflict[] | null {
@@ -179,12 +255,22 @@ function syncConflicts(value: unknown): SyncConflict[] | null {
 
   const conflicts: SyncConflict[] = [];
   for (const item of value) {
-    if (!isRecord(item) || typeof item.mutationId !== 'string' || !isConflictCode(item.code)) {
+    if (
+      !isRecord(item) ||
+      typeof item.mutationId !== 'string' ||
+      !item.mutationId.trim() ||
+      !isConflictCode(item.code)
+    ) {
       return null;
     }
-    conflicts.push({ mutationId: item.mutationId, code: item.code });
+    conflicts.push({ mutationId: item.mutationId.trim(), code: item.code });
   }
   return conflicts;
+}
+
+function optionalServerVersion(value: unknown): number | undefined | null {
+  if (value === undefined) return undefined;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
 }
 
 function isConflictCode(value: unknown): value is SyncConflictCode {

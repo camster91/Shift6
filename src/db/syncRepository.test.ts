@@ -22,6 +22,13 @@ const issueRow = {
     'The backend reported a version-conflict. Review is required before this change can sync.',
 };
 
+function backendClient(sync: BackendClient['sync']): BackendClient {
+  return {
+    sync,
+    deleteAccount: async () => ({ deleted: true }),
+  };
+}
+
 describe('syncRepository', () => {
   it('reads pending mutations in stable creation order', async () => {
     const database = {
@@ -67,12 +74,10 @@ describe('syncRepository', () => {
         return { changes: 1, lastInsertRowId: 1 };
       },
     } as unknown as SQLiteDatabase;
-    const backend: BackendClient = {
-      sync: async () => ({
-        acknowledgedMutationIds: ['outbox-set-1'],
-        rejectedMutationIds: ['outbox-set-2'],
-      }),
-    };
+    const backend = backendClient(async () => ({
+      acknowledgedMutationIds: ['outbox-set-1'],
+      rejectedMutationIds: ['outbox-set-2'],
+    }));
 
     await expect(flushSyncOutbox(database, backend)).resolves.toMatchObject({
       attemptedMutationIds: ['outbox-set-1', 'outbox-set-2'],
@@ -96,11 +101,9 @@ describe('syncRepository', () => {
         return { changes: 1, lastInsertRowId: 1 };
       },
     } as unknown as SQLiteDatabase;
-    const backend: BackendClient = {
-      sync: async () => {
-        throw new Error('Network unavailable');
-      },
-    };
+    const backend = backendClient(async () => {
+      throw new Error('Network unavailable');
+    });
 
     await expect(flushSyncOutbox(database, backend)).resolves.toMatchObject({
       attemptedMutationIds: ['outbox-set-1'],
@@ -122,12 +125,10 @@ describe('syncRepository', () => {
         return { changes: 1, lastInsertRowId: 1 };
       },
     } as unknown as SQLiteDatabase;
-    const backend: BackendClient = {
-      sync: async () => ({
-        acknowledgedMutationIds: ['outbox-set-1'],
-        rejectedMutationIds: ['outbox-set-1'],
-      }),
-    };
+    const backend = backendClient(async () => ({
+      acknowledgedMutationIds: ['outbox-set-1'],
+      rejectedMutationIds: ['outbox-set-1'],
+    }));
 
     await expect(flushSyncOutbox(database, backend)).resolves.toMatchObject({
       acknowledgedMutationIds: [],
@@ -148,13 +149,11 @@ describe('syncRepository', () => {
         return { changes: 1, lastInsertRowId: 1 };
       },
     } as unknown as SQLiteDatabase;
-    const backend: BackendClient = {
-      sync: async () => ({
-        acknowledgedMutationIds: ['outbox-set-1'],
-        rejectedMutationIds: [],
-        conflicts: [{ mutationId: 'outbox-set-1', code: 'version-conflict' }],
-      }),
-    };
+    const backend = backendClient(async () => ({
+      acknowledgedMutationIds: ['outbox-set-1'],
+      rejectedMutationIds: [],
+      conflicts: [{ mutationId: 'outbox-set-1', code: 'version-conflict' }],
+    }));
 
     await expect(flushSyncOutbox(database, backend)).resolves.toMatchObject({
       acknowledgedMutationIds: [],

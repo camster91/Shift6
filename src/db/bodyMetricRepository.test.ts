@@ -16,6 +16,7 @@ describe('manual body metrics repository', () => {
       '2026-09-16T10:00:00.000Z',
     );
 
+    expect(metric.id).toContain('body-metric-weight-guest-user-');
     expect(metric.value).toBeCloseTo(100, 3);
     expect(metric.unit).toBe('kg');
     expect(bodyMetricValueForUnitSystem(metric, 'imperial')).toBeCloseTo(220.5, 1);

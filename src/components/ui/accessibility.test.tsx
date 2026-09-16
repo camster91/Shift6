@@ -147,7 +147,7 @@ describe('shared accessibility primitives', () => {
 
     expect(
       getByLabelText(
-        'Coach proposal. Keep the same exercises and add one rep next time.. 1 proposed changes.',
+        'Coach proposal. Keep the same exercises and add one rep next time. 1 proposed changes.',
       ),
     ).toBeTruthy();
     expect(getByLabelText('Keep current')).toBeTruthy();

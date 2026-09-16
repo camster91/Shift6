@@ -4,6 +4,7 @@ import {
   BackendUnavailableError,
   HttpBackendClient,
   UnavailableBackendClient,
+  parseAccountDeletionResult,
   parseSyncResult,
 } from './backend';
 
@@ -21,6 +22,7 @@ describe('backend boundary', () => {
     const client = new UnavailableBackendClient();
 
     await expect(client.sync([mutation])).rejects.toBeInstanceOf(BackendUnavailableError);
+    await expect(client.deleteAccount()).rejects.toBeInstanceOf(BackendUnavailableError);
   });
 
   it('injects auth and sends only through the typed sync endpoint', async () => {
@@ -56,6 +58,61 @@ describe('backend boundary', () => {
     expect(JSON.parse(String(requests[0]?.init?.body))).toEqual({ mutations: [mutation] });
   });
 
+  it('requires authenticated remote confirmation before account deletion succeeds', async () => {
+    const requests: Array<{ url: string; init?: RequestInit }> = [];
+    const client = new HttpBackendClient({
+      baseUrl: 'https://api.example.test/',
+      getAccessToken: async () => 'token-for-delete',
+      fetcher: async (url, init) => {
+        requests.push({ url: String(url), init });
+        return new Response(JSON.stringify({ deleted: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      },
+    });
+
+    await expect(client.deleteAccount()).resolves.toEqual({ deleted: true });
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.url).toBe('https://api.example.test/v1/account');
+    expect(requests[0]?.init?.method).toBe('DELETE');
+    expect(requests[0]?.init?.headers).toMatchObject({
+      Authorization: 'Bearer token-for-delete',
+    });
+    expect(requests[0]?.init?.body).toBeUndefined();
+  });
+
+  it('accepts an authenticated no-content deletion response', async () => {
+    const client = new HttpBackendClient({
+      baseUrl: 'https://api.example.test',
+      getAccessToken: async () => 'token-for-delete',
+      fetcher: async () => new Response(null, { status: 204 }),
+    });
+
+    await expect(client.deleteAccount()).resolves.toEqual({ deleted: true });
+  });
+
+  it('fails closed when remote account deletion is not confirmed', async () => {
+    const malformed = new HttpBackendClient({
+      baseUrl: 'https://api.example.test',
+      getAccessToken: async () => 'token-for-delete',
+      fetcher: async () =>
+        new Response(JSON.stringify({ deleted: false }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    });
+    const rejected = new HttpBackendClient({
+      baseUrl: 'https://api.example.test',
+      getAccessToken: async () => 'token-for-delete',
+      fetcher: async () => new Response(null, { status: 409 }),
+    });
+
+    await expect(malformed.deleteAccount()).rejects.toBeInstanceOf(BackendProtocolError);
+    await expect(rejected.deleteAccount()).rejects.toBeInstanceOf(BackendUnavailableError);
+    expect(() => parseAccountDeletionResult({ deleted: false })).toThrow(BackendProtocolError);
+  });
+
   it('does not make a network request without an access token', async () => {
     let requestCount = 0;
     const client = new HttpBackendClient({
@@ -68,6 +125,7 @@ describe('backend boundary', () => {
     });
 
     await expect(client.sync([mutation])).rejects.toBeInstanceOf(BackendUnavailableError);
+    await expect(client.deleteAccount()).rejects.toBeInstanceOf(BackendUnavailableError);
     expect(requestCount).toBe(0);
   });
 

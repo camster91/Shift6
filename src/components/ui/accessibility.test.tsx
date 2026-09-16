@@ -5,6 +5,7 @@ import type { CoachProposal, Program, Workout } from '../../domain/types';
 import { Button } from './Button';
 import { Chip } from './Chip';
 import { CoachProposalCard } from './CoachProposalCard';
+import { EmptyState } from './EmptyState';
 import { ErrorState } from './ErrorState';
 import { IconButton } from './IconButton';
 import { ProgramCard } from './ProgramCard';
@@ -138,6 +139,15 @@ describe('shared accessibility primitives', () => {
         .accessibilityRole,
     ).toBe('alert');
     expect(getByLabelText('Try again')).toBeTruthy();
+  });
+
+  it('keeps empty-state actions outside the grouped empty-state copy', () => {
+    const { getByLabelText } = render(
+      <EmptyState title="No workouts yet" message="Start a program to begin." actionLabel="Browse programs" onAction={jest.fn()} />,
+    );
+
+    expect(getByLabelText('No workouts yet. Start a program to begin.')).toBeTruthy();
+    expect(getByLabelText('Browse programs')).toBeTruthy();
   });
 
   it('keeps coach proposal decisions outside the grouped proposal summary', () => {

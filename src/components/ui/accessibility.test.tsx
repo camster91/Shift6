@@ -143,7 +143,12 @@ describe('shared accessibility primitives', () => {
 
   it('keeps empty-state actions outside the grouped empty-state copy', () => {
     const { getByLabelText } = render(
-      <EmptyState title="No workouts yet" message="Start a program to begin." actionLabel="Browse programs" onAction={jest.fn()} />,
+      <EmptyState
+        title="No workouts yet"
+        message="Start a program to begin."
+        actionLabel="Browse programs"
+        onAction={jest.fn()}
+      />,
     );
 
     expect(getByLabelText('No workouts yet. Start a program to begin.')).toBeTruthy();

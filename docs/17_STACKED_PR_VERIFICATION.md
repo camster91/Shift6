@@ -44,23 +44,30 @@ Code stack, oldest prerequisite first:
    - independent ErrorState and EmptyState recovery/action focus targets;
    - independent Coach proposal decision focus targets;
    - regression tests for the shared interaction boundaries.
+7. **PR #289** — `feat/exercise-content-quality-gates` → `feat/workout-accessibility`
+   - stricter exercise structural/publication checks;
+   - optional draft-compatible media provenance schema;
+   - rights/licence checks for approved media;
+   - explicit human technique-review gate for generated media;
+   - 300-publication-ready-record launch threshold and duplicate stable-ID check;
+   - human content/media review runbook.
 
 Separate sibling documentation PR:
 
 - **PR #284** — `chore/store-release-package` → `feat/profile-considerations-body-metrics`
   - store metadata/privacy/data-safety preparation only;
-  - it does **not** contain #285/#286/#287/#288 because it branched from #283.
+  - it does **not** contain #285/#286/#287/#288/#289 because it branched from #283.
 
 ## First verification target
 
-The most efficient code verification target is the head of **PR #288** because that branch contains
-all code changes from #282, #283, #285, #286, #287 and #288.
+The most efficient code verification target is the head of **PR #289** because that branch contains
+all code changes from #282, #283, #285, #286, #287, #288 and #289.
 
 From a normal authenticated checkout:
 
 ```bash
 git fetch origin
-git switch feat/workout-accessibility
+git switch feat/exercise-content-quality-gates
 git pull --ff-only
 npm ci
 npm run verify
@@ -92,7 +99,8 @@ Suggested ownership:
 - backend deletion/account recovery/Profile deletion flow → #285 branch;
 - migration 20 / Coach privacy gate / provider context minimisation → #286 branch;
 - shared control semantics / focus targets / contrast or component accessibility tests → #287 branch;
-- contextual action labels / radio-capable chips / grouped state-action focus boundaries → #288 branch.
+- contextual action labels / radio-capable chips / grouped state-action focus boundaries → #288 branch;
+- exercise publication/provenance/300-record launch-gate failure → #289 branch.
 
 Because later branches are stacked, a fix made on an earlier branch must then be propagated into its
 descendants with a normal Git rebase/merge workflow before relying on the head branch verification.
@@ -165,6 +173,23 @@ can satisfy native accessibility gates, patch and verify the route-level audit f
 recorded on those issues, including the disabled completed-set Edit path and parent accessibility
 labels around interactive workout/progress controls.
 
+### PR #289
+
+- all 58 current foundational records still pass the runnable-cycle structural gate;
+- all 58 remain draft and none count as publication-ready;
+- a reviewed public record can publish without media;
+- approved media cannot publish without source provenance and rights confirmation;
+- licensed approved media requires source URI and licence metadata;
+- generated approved media requires explicit human technique-review evidence;
+- custom exercises stay private by default;
+- the current catalogue reports 58 public / 0 publication-ready against the 300-record target;
+- 300 unique reviewed records pass the catalogue gate in tests;
+- duplicate stable exercise IDs fail the catalogue gate;
+- the existing exercise-search test still covers 580 records.
+
+PR #289 does **not** supply or review the missing 242+ launch records and does not approve any media.
+Those remain human content-production gates for #274.
+
 ## Native verification after repository gates are green
 
 `npm run verify` is not release proof. Follow `docs/13_NATIVE_RELEASE_VERIFICATION.md` on signed or
@@ -185,8 +210,8 @@ At minimum capture evidence for:
 ## Store/privacy documentation PR #284
 
 PR #284 is documentation-only and can be reviewed separately, but its privacy/store mappings must be
-updated against the eventual integrated release candidate because #285/#286/#287/#288 add account,
-Coach-privacy and accessibility behaviour after #284 branched.
+updated against the eventual integrated release candidate because #285/#286/#287/#288/#289 add
+account, Coach-privacy, accessibility, and content-readiness behaviour after #284 branched.
 
 Do not enter its provisional metadata into App Store Connect or Google Play Console until:
 
@@ -207,8 +232,9 @@ the clean conceptual order is:
 4. retarget/reconcile #286 against updated `main`, then merge;
 5. retarget/reconcile #287 against updated `main`, then merge;
 6. retarget/reconcile #288 against updated `main`, then merge;
-7. reconcile #284 with the integrated code state, update its privacy/store mapping for
-   #285/#286/#287/#288, retarget to `main`, verify documentation accuracy, then merge if approved.
+7. retarget/reconcile #289 against updated `main`, then merge;
+8. reconcile #284 with the integrated code state, update its privacy/store mapping for
+   #285/#286/#287/#288/#289, retarget to `main`, verify documentation accuracy, then merge if approved.
 
 Do not merge a descendant PR first simply because GitHub reports it as mergeable; the stacked base
 branches are part of the intended review history.

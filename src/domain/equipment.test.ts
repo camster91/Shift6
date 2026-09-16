@@ -1,3 +1,4 @@
+import { assessExerciseContent } from './contentReadiness';
 import {
   equipmentCatalog,
   explainExerciseSubstitution,
@@ -23,6 +24,10 @@ describe('equipment-aware exercise catalogue', () => {
       true,
     );
     expect(foundationalExercises.every((exercise) => exercise.instructions.length > 0)).toBe(true);
+
+    const readiness = foundationalExercises.map(assessExerciseContent);
+    expect(readiness.every((report) => report.readyForCycle)).toBe(true);
+    expect(readiness.every((report) => !report.readyForPublication)).toBe(true);
   });
 
   it('includes band-native movements that are compatible with a bands-only inventory', () => {

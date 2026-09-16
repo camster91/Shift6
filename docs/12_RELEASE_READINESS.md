@@ -36,12 +36,20 @@ The Coach evaluation matrix covers provider failure, missed training, plateau th
 discomfort/pain, limited time, equipment changes, medication boundaries, and urgent symptoms using
 the deterministic safety/progression/substitution boundaries.
 
-The optional profile-scope gaps identified during the 2026-09-15 audit now have explicit local-first
+The optional profile-scope gaps identified during the 2026-09-15 audit have explicit local-first
 implementations on `feat/profile-considerations-body-metrics`: structured movement/accessibility
 preferences and manual weight history. Both are excluded from analytics and the sync outbox by
 default, included in local export/delete, and adopted during guest-to-account conversion. The
 consideration screen makes no diagnosis or hidden program inference; manual weight is stored in a
 canonical kilogram value and displayed in the user's selected unit system.
+
+The account-deletion follow-up branch adds the mobile half of the remote deletion contract without
+pretending a production server exists. `BackendClient` exposes authenticated remote deletion;
+non-confirmed responses fail closed; Profile distinguishes guest local deletion from authenticated
+account deletion; and a SecureStore recovery marker lets the app resume local cleanup/sign-out after
+an app restart without repeating a confirmed destructive server request. The production server,
+provider revocation and public web deletion resource remain release blockers. See
+`docs/16_ACCOUNT_DELETION_CONTRACT.md`.
 
 ## Current Expo compatibility check
 
@@ -78,7 +86,9 @@ These cannot be truthfully completed from repository-only work:
 - Native iOS and Android device/simulator verification, including SQLite restart/offline recovery.
 - Signed EAS preview builds with the account credentials and signing assets.
 - Provider-specific authentication and a deployed authenticated backend.
-- Remote account reconciliation/deletion and server conflict-resolution policy.
+- Deployed remote account-deletion/cascade endpoint, provider authorization revocation, retention
+  policy and Google external deletion resource.
+- Server conflict-resolution policy and production row-level authorization evidence.
 - Native Apple Health / Health Connect permission, revocation, disconnect, and store-declaration QA.
 - Selection/configuration of production crash/error monitoring plus retention controls and
   device-level observability.
@@ -95,8 +105,9 @@ and opening draft PR #282 also produced no CI status. The workflow supports manu
 check, lint, TypeScript, Expo Doctor, asset/secret/release validation, dependency audit, Jest, and
 the web export. Static review in the repository is not a substitute for those commands.
 
-The dependent profile/body-metric branch adds migration 19 plus new repository/UI tests and requires
-the same verification gate after PR #282 is validated.
+The dependent profile/body-metric branch adds migration 19 plus new repository/UI tests. The
+account-deletion branch adds backend-protocol, cleanup-order and SecureStore recovery tests. Each
+branch requires the same verification gate after its prerequisite branch is validated.
 
 The native/device/store evidence sequence is defined in `docs/13_NATIVE_RELEASE_VERIFICATION.md`.
 
@@ -104,5 +115,5 @@ The native/device/store evidence sequence is defined in `docs/13_NATIVE_RELEASE_
 
 Do not close the public-release epic or submit to either store until the external verification gates
 above are evidenced. Repository tests, web export, and static configuration checks are necessary but
-are not substitutes for native-device, accessibility, provider, content, or production-release
-verification.
+are not substitutes for native-device, accessibility, provider, content, account-deletion server,
+or production-release verification.

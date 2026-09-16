@@ -92,7 +92,7 @@ export default function ProfileScreen() {
 
     Alert.alert(
       'Delete local data?',
-      'This removes the guest profile, equipment, cycles, workout history, proposals, and pending sync data from this device. It cannot be undone.',
+      'This removes the guest profile, preferences, equipment, body metrics, cycles, workout history, proposals, and pending sync data from this device. It cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -191,6 +191,20 @@ export default function ProfileScreen() {
         onPress={() => router.push('/equipment')}
         style={styles.manageEquipmentButton}
       />
+      <Button
+        label="Movement & accessibility"
+        variant="secondary"
+        icon={<Ionicons name="accessibility-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/considerations')}
+        style={styles.preferenceButton}
+      />
+      <Button
+        label="Manual body metrics"
+        variant="secondary"
+        icon={<Ionicons name="scale-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/body-metrics')}
+        style={styles.preferenceButton}
+      />
 
       <Card tone="blue" style={styles.settingsCard}>
         <Ionicons name="shield-checkmark-outline" size={24} color={colors.ink} />
@@ -199,7 +213,8 @@ export default function ProfileScreen() {
         </Text>
         <Text variant="body" tone="muted">
           Workout data is designed to remain useful on the device before any account or cloud sync
-          is connected.
+          is connected. Movement/accessibility preferences and manual body metrics also stay local
+          until a separate remote privacy policy explicitly opts them in.
         </Text>
       </Card>
 
@@ -323,10 +338,13 @@ const styles = StyleSheet.create({
   editSetupButton: {
     marginTop: spacing.xl,
   },
-  healthButton: {
+  manageEquipmentButton: {
     marginTop: spacing.md,
   },
-  manageEquipmentButton: {
+  preferenceButton: {
+    marginTop: spacing.md,
+  },
+  healthButton: {
     marginTop: spacing.md,
   },
   notificationsButton: {

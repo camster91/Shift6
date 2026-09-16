@@ -162,4 +162,12 @@ describe('local database migrations', () => {
       'FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE',
     );
   });
+
+  it('defaults provider-backed Coach processing to disabled', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS coach_privacy_preferences');
+    expect(statements).toContain('provider_coach_enabled INTEGER NOT NULL DEFAULT 0');
+    expect(statements).toContain('notice_version INTEGER NOT NULL DEFAULT 1');
+  });
 });

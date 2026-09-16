@@ -37,6 +37,7 @@ Implemented:
 - Expo SDK 57 / React Native 0.86 / TypeScript app shell and Router navigation;
 - versioned SQLite migrations and local-first repositories, including migration 19 for profile considerations/body metrics;
 - backend/auth/provider-neutral service seams;
+- authenticated remote account-deletion transport contract with fail-closed response validation;
 - dev/preview/production EAS configuration;
 - GitHub Actions quality workflow plus manual dispatch;
 - one-command `npm run verify` repository gate;
@@ -44,10 +45,11 @@ Implemented:
 - provider-neutral error-reporting seam and root render error boundary.
 
 Remaining:
-- actual CI result for PR #282 and its dependent profile/body-metric branch;
+- actual CI results for the stacked implementation branches;
 - representative native boot and SQLite restart/offline verification;
 - signed EAS preview builds;
 - deployed authenticated backend/auth provider;
+- production remote deletion endpoint/cascade and provider revocation;
 - production error-monitoring provider and retention settings.
 
 ## #273 — Onboarding, profile, equipment and recommendations
@@ -185,7 +187,7 @@ Remaining external verification:
 
 ## #280 — Privacy, accessibility, export/delete and security
 
-**Status: In progress / blocked on backend and native accessibility gates**
+**Status: In progress / blocked on server and native accessibility gates**
 
 Implemented:
 - SecureStore-backed auth-session seam;
@@ -193,6 +195,9 @@ Implemented:
 - analytics allowlist/redaction boundary;
 - local user-data export/delete and guest-account adoption coverage;
 - explicit export/delete/adoption coverage for local considerations and manual body metrics;
+- authenticated mobile account-deletion boundary that fails closed before local mutation;
+- in-app distinction between guest local deletion and authenticated account deletion;
+- durable SecureStore recovery marker so confirmed remote deletion can resume local cleanup/sign-out after app restart without repeating the destructive server request;
 - minimal Coach context and safety boundaries;
 - shared dynamic type, accessible labels/states, touch-target and contrast baselines;
 - dependency audit, secret scan and release-config checks;
@@ -200,7 +205,11 @@ Implemented:
 
 Remaining:
 - deployed backend row-level authorization and server-side access audit;
-- verifiable remote account deletion;
+- deployed account deletion/cascade endpoint;
+- auth-provider revocation, including Sign in with Apple when enabled;
+- public Google account-deletion web resource if account creation ships;
+- documented production retention/deletion policy and provider cascade evidence;
+- native end-to-end account deletion/recovery QA;
 - VoiceOver/TalkBack and accessibility-text-size device audit;
 - production provider/data-retention security review.
 
@@ -217,6 +226,7 @@ Prepared:
 - notification and health permission controls;
 - provider-neutral crash/error seam;
 - privacy-safe analytics funnel;
+- mobile account-deletion flow/recovery contract;
 - staged-release and rollback expectations.
 
 Remaining:
@@ -224,6 +234,8 @@ Remaining:
 - signed iOS/Android candidate builds;
 - representative native E2E/fault/accessibility QA;
 - live auth/backend/crash monitoring;
+- deployed and verified remote account deletion/provider revocation;
+- public external deletion resource where required;
 - content/design approvals;
 - privacy/support URLs and store data declarations;
 - screenshots/listing copy/assets;
@@ -234,4 +246,4 @@ Remaining:
 
 **Status: In progress**
 
-The core local-first six-week training platform and the previously identified optional profile/body-metric code gaps are implemented. The master remains open because the launch gate still depends on reviewed content scale, native/device verification, provider/backend production configuration, accessibility proof, and store-release evidence.
+The core local-first six-week training platform, the previously identified optional profile/body-metric code gaps, and the mobile account-deletion boundary are implemented. The master remains open because the launch gate still depends on reviewed content scale, native/device verification, provider/backend production configuration, accessibility proof, remote deletion/provider evidence, and store-release evidence.

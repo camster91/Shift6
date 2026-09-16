@@ -165,7 +165,9 @@ function assessExerciseMediaForPublication(exerciseName: string, media: Exercise
   }
 
   const warnings: string[] = [];
-  if (!media.uri.trim()) warnings.push(`${exerciseName}: approved media ${media.id} needs a URI.`);
+  if (!media.uri.trim()) {
+    warnings.push(`${exerciseName}: approved media ${media.id} needs a URI.`);
+  }
   if (!media.altText.trim()) {
     warnings.push(`${exerciseName}: approved media ${media.id} needs alt text.`);
   }

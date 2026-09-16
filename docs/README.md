@@ -21,23 +21,37 @@ These documents define intended product behaviour and remain the source of requi
 
 ## Current implementation status
 
-`12_RELEASE_READINESS.md` is the present-tense checkpoint for what is implemented, what remains unverified, and what must not be claimed complete.
+- `12_RELEASE_READINESS.md` — present-tense checkpoint for what is implemented, what remains
+  unverified, and what must not be claimed complete.
+- `14_EPIC_STATUS.md` — evidence-based status matrix for issues #270–#281.
 
-Implementation-status paragraphs embedded in `06_TECHNICAL_ARCHITECTURE.md` and `09_ROADMAP_AND_EPICS.md` record earlier increments. They are useful history, but they can become stale as later branches land. When a historical status note conflicts with current code/tests or `12_RELEASE_READINESS.md`, verify the current branch and use the newer evidence.
+Implementation-status paragraphs embedded in `06_TECHNICAL_ARCHITECTURE.md` and
+`09_ROADMAP_AND_EPICS.md` record earlier increments. They are useful history, but they can become
+stale as later branches land. When a historical status note conflicts with current code/tests or
+`12_RELEASE_READINESS.md`, verify the current branch and use the newer evidence.
 
 ## Release execution
 
-`13_NATIVE_RELEASE_VERIFICATION.md` is the evidence checklist for repository verification, native-device QA, offline/restart durability, accessibility, HealthKit/Health Connect, notifications, auth/backend, observability, content/design approval, store submission, staged rollout and rollback.
+- `13_NATIVE_RELEASE_VERIFICATION.md` — evidence checklist for repository verification,
+  native-device QA, offline/restart durability, accessibility, HealthKit/Health Connect,
+  notifications, auth/backend, observability, content/design approval, store submission, staged
+  rollout and rollback.
+- `15_STORE_RELEASE_PACKAGE.md` — pre-submission App Store/Google Play metadata, provisional privacy
+  and Data safety mappings, Health Connect declaration inventory, account-deletion gates,
+  screenshot plan, required URLs and final submission blockers.
 
-External, credentialed, production, paid-build, store-submission and other difficult-to-reverse actions remain explicit approval gates even when this runbook describes how to perform them.
+External, credentialed, production, paid-build, store-submission and other difficult-to-reverse
+actions remain explicit approval gates even when these runbooks describe how to perform them.
 
 ## Agent rule
 
 Before implementing a supposedly missing feature:
 
 1. read the requirement document;
-2. check `12_RELEASE_READINESS.md`;
+2. check `12_RELEASE_READINESS.md` and `14_EPIC_STATUS.md`;
 3. inspect the current code/tests on the target branch;
 4. distinguish implementation from native/human/provider verification;
 5. do not recreate a feature only because an older checkpoint says it was still open;
-6. do not mark a release gate complete without evidence.
+6. do not mark a release gate complete without evidence;
+7. do not enter store metadata from `15_STORE_RELEASE_PACKAGE.md` until its blockers are resolved and
+   Cameron has explicitly approved submission.

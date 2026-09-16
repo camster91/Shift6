@@ -39,7 +39,7 @@ export function createManualWeightMetric({
   const kilograms = unitSystem === 'imperial' ? poundsToKilograms(value) : value;
 
   return {
-    id: `body-metric-weight-${Date.parse(normalizedMeasuredAt)}`,
+    id: `body-metric-weight-${normalizedUserId}-${Date.parse(normalizedMeasuredAt)}`,
     userId: normalizedUserId,
     type: 'weight',
     value: round(kilograms, 4),

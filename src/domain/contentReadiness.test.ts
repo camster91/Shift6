@@ -206,7 +206,9 @@ describe('content readiness', () => {
 
   it('blocks duplicate stable IDs even when the reviewed-count target is met', () => {
     const catalogue = Array.from({ length: LAUNCH_EXERCISE_TARGET }, (_, index) =>
-      reviewedExercise({ id: index === 1 ? 'exercise-reviewed-1' : `exercise-reviewed-${index + 1}` }),
+      reviewedExercise({
+        id: index === 1 ? 'exercise-reviewed-1' : `exercise-reviewed-${index + 1}`,
+      }),
     );
     const report = assessExerciseCatalogue(catalogue);
 

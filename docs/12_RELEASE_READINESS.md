@@ -1,6 +1,6 @@
 # SHIFT6 release-readiness checkpoint
 
-Updated: 2026-09-15
+Updated: 2026-09-16
 
 ## Status precedence
 
@@ -24,7 +24,7 @@ The non-canonical executable versions are intentionally still catalogued as `met
 are available for engineering and content validation, but the public UI must not treat them as
 publication-ready until exercise/program review gates are completed.
 
-The exercise-detail substitution surface now explains meaningful movement, muscle, tracking, and
+The exercise-detail substitution surface explains meaningful movement, muscle, tracking, and
 equipment differences for compatible alternatives instead of presenting a name-only replacement.
 
 The repository also exposes a provider-neutral error-reporting boundary and a root render error
@@ -35,6 +35,13 @@ configuration rather than hidden defaults.
 The Coach evaluation matrix covers provider failure, missed training, plateau thresholds,
 discomfort/pain, limited time, equipment changes, medication boundaries, and urgent symptoms using
 the deterministic safety/progression/substitution boundaries.
+
+The optional profile-scope gaps identified during the 2026-09-15 audit now have explicit local-first
+implementations on `feat/profile-considerations-body-metrics`: structured movement/accessibility
+preferences and manual weight history. Both are excluded from analytics and the sync outbox by
+default, included in local export/delete, and adopted during guest-to-account conversion. The
+consideration screen makes no diagnosis or hidden program inference; manual weight is stored in a
+canonical kilogram value and displayed in the user's selected unit system.
 
 ## Current Expo compatibility check
 
@@ -54,7 +61,7 @@ check does not replace either one.
 
 ## Remaining product-content gate
 
-The foundational exercise catalogue now contains 58 draft records, including eight band-native
+The foundational exercise catalogue contains 58 draft records, including eight band-native
 movements so the Resistance Bands program can be structurally exercised without pretending other
 equipment is compatible.
 
@@ -62,18 +69,6 @@ The broader 300+ exercise launch target remains a content-production goal. The c
 deliberately draft content. Technique, instructions, imagery/video, licensing/provenance, and
 publication status require human review. Executable does not mean reviewed or safe for public
 publication.
-
-## Remaining in-repository product-scope gaps
-
-The original screen/epic specifications still include two optional profile/onboarding capabilities
-that are not implemented in the current data model or UI:
-
-- onboarding movement/accessibility considerations (explicit, non-diagnostic user selections; no
-  pregnancy/postpartum path should be added until vetted content exists); and
-- optional manual body-metric tracking in Profile/Progress.
-
-These must remain open under #273/#279 until implemented or explicitly descoped. They are not hidden
-inside the external-verification list, and their absence must not be reported as completed work.
 
 ## Remaining external verification gates
 
@@ -91,21 +86,23 @@ These cannot be truthfully completed from repository-only work:
 - App Store and Google Play listing assets, privacy/data-safety declarations, staged rollout,
   rollback, and submission approval.
 
-## Verification still required for this branch
+## Verification still required for these branches
 
 GitHub Actions did not start for repository writes made through the connected GitHub integration,
-and opening draft PR #282 also produced no CI status. The workflow now supports manual
+and opening draft PR #282 also produced no CI status. The workflow supports manual
 `workflow_dispatch`, but the connected GitHub tool cannot dispatch a new run. Before merge, run
 `npm run verify` (or the equivalent CI workflow) and require all repository gates to pass: format
 check, lint, TypeScript, Expo Doctor, asset/secret/release validation, dependency audit, Jest, and
 the web export. Static review in the repository is not a substitute for those commands.
+
+The dependent profile/body-metric branch adds migration 19 plus new repository/UI tests and requires
+the same verification gate after PR #282 is validated.
 
 The native/device/store evidence sequence is defined in `docs/13_NATIVE_RELEASE_VERIFICATION.md`.
 
 ## Release rule
 
 Do not close the public-release epic or submit to either store until the external verification gates
-above are evidenced. Do not close #273/#279 as fully complete while the explicitly listed product
-scope remains open unless that scope is deliberately removed. Repository tests, web export, and
-static configuration checks are necessary but are not substitutes for native-device or
-production-provider verification.
+above are evidenced. Repository tests, web export, and static configuration checks are necessary but
+are not substitutes for native-device, accessibility, provider, content, or production-release
+verification.

@@ -140,6 +140,7 @@ export default function ConsiderationsScreen() {
           label={option.label}
           description={option.description}
           selected={value.movementConsiderations.includes(option.value)}
+          accessibilityRole="checkbox"
           onPress={() => toggleMovement(option.value)}
         />
       ))}
@@ -157,6 +158,7 @@ export default function ConsiderationsScreen() {
           label={option.label}
           description={option.description}
           selected={value.accessibilityNeeds.includes(option.value)}
+          accessibilityRole="checkbox"
           onPress={() => toggleAccessibility(option.value)}
         />
       ))}

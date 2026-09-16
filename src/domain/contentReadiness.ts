@@ -1,11 +1,22 @@
 import type { ExerciseMediaProvenance } from './exerciseMediaProvenance';
 import type { Exercise, ExerciseMedia, Program, ProgramVersion } from './types';
 
+export const LAUNCH_EXERCISE_TARGET = 300;
+
 export interface ContentReadinessReport {
   readyForCycle: boolean;
   readyForPublication: boolean;
   blockers: string[];
   reviewWarnings: string[];
+}
+
+export interface ExerciseCatalogueReadinessReport {
+  targetCount: number;
+  publicRecordCount: number;
+  publicationReadyCount: number;
+  duplicateIds: string[];
+  readyForLaunch: boolean;
+  blockers: string[];
 }
 
 export function assessExerciseContent(exercise: Exercise): ContentReadinessReport {
@@ -52,6 +63,47 @@ export function assessExerciseContent(exercise: Exercise): ContentReadinessRepor
   });
 
   return report(blockers, reviewWarnings);
+}
+
+export function assessExerciseCatalogue(
+  exercises: readonly Exercise[],
+  targetCount = LAUNCH_EXERCISE_TARGET,
+): ExerciseCatalogueReadinessReport {
+  if (!Number.isInteger(targetCount) || targetCount < 1) {
+    throw new Error('Exercise catalogue target must be a positive whole number.');
+  }
+
+  const publicRecords = exercises.filter(
+    (exercise) => !exercise.isCustom && exercise.contentStatus !== 'retired',
+  );
+  const publicationReadyCount = publicRecords.filter(
+    (exercise) => assessExerciseContent(exercise).readyForPublication,
+  ).length;
+  const duplicateIds = findDuplicateExerciseIds(exercises);
+  const blockers: string[] = [];
+
+  if (publicRecords.length < targetCount) {
+    blockers.push(
+      `Launch exercise catalogue needs at least ${targetCount} public records; found ${publicRecords.length}.`,
+    );
+  }
+  if (publicationReadyCount < targetCount) {
+    blockers.push(
+      `Launch exercise catalogue needs at least ${targetCount} publication-ready records; found ${publicationReadyCount}.`,
+    );
+  }
+  if (duplicateIds.length > 0) {
+    blockers.push(`Exercise IDs must be unique; duplicates: ${duplicateIds.join(', ')}.`);
+  }
+
+  return {
+    targetCount,
+    publicRecordCount: publicRecords.length,
+    publicationReadyCount,
+    duplicateIds,
+    readyForLaunch: blockers.length === 0,
+    blockers,
+  };
 }
 
 export function assessProgramVersion(
@@ -154,6 +206,18 @@ function assessMediaProvenance(
   }
 
   return warnings;
+}
+
+function findDuplicateExerciseIds(exercises: readonly Exercise[]): string[] {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+
+  exercises.forEach((exercise) => {
+    if (seen.has(exercise.id)) duplicates.add(exercise.id);
+    seen.add(exercise.id);
+  });
+
+  return [...duplicates].sort();
 }
 
 function report(blockers: string[], reviewWarnings: string[]): ContentReadinessReport {

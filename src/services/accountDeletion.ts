@@ -1,6 +1,10 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { deleteLocalUserData } from '../db/privacyRepository';
+import {
+  accountDeletionRecoveryStore,
+  type AccountDeletionRecoveryStore,
+} from './accountDeletionRecovery';
 import type { AuthProvider, BackendClient } from './contracts';
 
 export interface AccountDeletionOutcome {
@@ -16,13 +20,14 @@ export interface DeleteAuthenticatedAccountInput {
   backend: BackendClient;
   auth: AuthProvider;
   deleteLocalData?: typeof deleteLocalUserData;
+  recoveryStore?: AccountDeletionRecoveryStore;
+  now?: () => string;
 }
 
 /**
  * Remote confirmation is the irreversible boundary. Local data and auth state
  * are not touched until the backend confirms that the account was deleted.
- * If local cleanup then fails, keep the current local identity mounted so the
- * user can retry deletion instead of orphaning rows behind a guest identity.
+ * A secure recovery marker makes post-delete cleanup resumable after app exit.
  */
 export async function deleteAuthenticatedAccount({
   database,
@@ -30,28 +35,69 @@ export async function deleteAuthenticatedAccount({
   backend,
   auth,
   deleteLocalData = deleteLocalUserData,
+  recoveryStore = accountDeletionRecoveryStore,
+  now = () => new Date().toISOString(),
 }: DeleteAuthenticatedAccountInput): Promise<AccountDeletionOutcome> {
   const normalizedUserId = userId.trim();
   if (!normalizedUserId) throw new Error('A user ID is required to delete an account.');
 
   await backend.deleteAccount();
 
+  const remoteDeletedAt = normalizeTimestamp(now());
+  let recoveryPersisted = true;
+  try {
+    await recoveryStore.set({
+      userId: normalizedUserId,
+      stage: 'local-data',
+      remoteDeletedAt,
+    });
+  } catch {
+    recoveryPersisted = false;
+  }
+
   try {
     await deleteLocalData(database, normalizedUserId);
   } catch {
+    if (!recoveryPersisted) {
+      try {
+        await recoveryStore.set({
+          userId: normalizedUserId,
+          stage: 'local-data',
+          remoteDeletedAt,
+        });
+        recoveryPersisted = true;
+      } catch {
+        // The UI still receives the incomplete state for an immediate retry.
+      }
+    }
+
     return {
       remoteDeleted: true,
       localDataDeleted: false,
       signedOut: false,
       warnings: [
         'The remote account was deleted, but local device data could not be cleared. Retry local cleanup before signing out.',
+        ...(recoveryPersisted
+          ? []
+          : [
+              'This device could not save the cleanup recovery marker. Keep SHIFT6 open and retry cleanup now.',
+            ]),
       ],
     };
   }
 
   try {
+    await recoveryStore.set({
+      userId: normalizedUserId,
+      stage: 'sign-out',
+      remoteDeletedAt,
+    });
+  } catch {
+    // A previous local-data marker is still safe: repeating local deletion is idempotent.
+  }
+
+  try {
     await auth.signOut();
-    return { remoteDeleted: true, localDataDeleted: true, signedOut: true, warnings: [] };
   } catch {
     return {
       remoteDeleted: true,
@@ -62,4 +108,19 @@ export async function deleteAuthenticatedAccount({
       ],
     };
   }
+
+  const warnings: string[] = [];
+  try {
+    await recoveryStore.clear(normalizedUserId);
+  } catch {
+    warnings.push('The account was deleted, but the local cleanup marker could not be removed.');
+  }
+
+  return { remoteDeleted: true, localDataDeleted: true, signedOut: true, warnings };
+}
+
+function normalizeTimestamp(value: string): string {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) throw new Error('A valid deletion timestamp is required.');
+  return new Date(timestamp).toISOString();
 }

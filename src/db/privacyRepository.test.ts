@@ -9,6 +9,16 @@ describe('exportLocalUserData', () => {
         if (sql.includes('user_profiles')) return [{ id: 'guest-user', display_name: 'Cameron' }];
         if (sql.includes('user_equipment'))
           return [{ user_id: 'guest-user', equipment_id: 'barbell' }];
+        if (sql.includes('user_considerations'))
+          return [
+            {
+              user_id: 'guest-user',
+              movement_considerations_json: '["avoid-impact"]',
+              accessibility_needs_json: '["larger-text"]',
+            },
+          ];
+        if (sql.includes('body_metrics'))
+          return [{ id: 'metric-1', user_id: 'guest-user', metric_type: 'weight', value: 90 }];
         if (sql.includes('workout_drafts')) return [];
         if (sql.includes('workout_check_ins')) return [];
         if (sql.includes('completed_sets')) return [{ id: 'set-1', session_id: 'session-1' }];
@@ -29,11 +39,19 @@ describe('exportLocalUserData', () => {
     await expect(
       exportLocalUserData(database, 'guest-user', '2026-09-14T12:00:00.000Z'),
     ).resolves.toEqual({
-      schemaVersion: 6,
+      schemaVersion: 7,
       exportedAt: '2026-09-14T12:00:00.000Z',
       userId: 'guest-user',
       userProfiles: [{ id: 'guest-user', display_name: 'Cameron' }],
       userEquipment: [{ user_id: 'guest-user', equipment_id: 'barbell' }],
+      userConsiderations: [
+        {
+          user_id: 'guest-user',
+          movement_considerations_json: '["avoid-impact"]',
+          accessibility_needs_json: '["larger-text"]',
+        },
+      ],
+      bodyMetrics: [{ id: 'metric-1', user_id: 'guest-user', metric_type: 'weight', value: 90 }],
       trainingCycles: [{ id: 'cycle-1', user_id: 'guest-user' }],
       workoutSessions: [{ id: 'session-1', cycle_id: 'cycle-1' }],
       completedSets: [{ id: 'set-1', session_id: 'session-1' }],
@@ -66,16 +84,18 @@ describe('deleteLocalUserData', () => {
 
     await expect(deleteLocalUserData(database, 'guest-user')).resolves.toBeUndefined();
 
-    expect(calls).toHaveLength(16);
+    expect(calls).toHaveLength(18);
     expect(calls[0]?.sql).toContain('DELETE FROM sync_outbox');
     expect(calls[0]?.params.every((param) => param === 'guest-user')).toBe(true);
     expect(calls[1]?.sql).toContain('DELETE FROM notification_preferences');
     expect(calls[2]?.sql).toContain('DELETE FROM health_summaries');
-    expect(calls[3]?.sql).toContain('DELETE FROM cycle_reviews');
-    expect(calls[4]?.sql).toContain('DELETE FROM workout_schedule_overrides');
-    expect(calls[5]?.sql).toContain('DELETE FROM completed_sets');
-    expect(calls[6]?.sql).toContain('DELETE FROM workout_drafts');
-    expect(calls[7]?.sql).toContain('DELETE FROM workout_check_ins');
+    expect(calls[3]?.sql).toContain('DELETE FROM user_considerations');
+    expect(calls[4]?.sql).toContain('DELETE FROM body_metrics');
+    expect(calls[5]?.sql).toContain('DELETE FROM cycle_reviews');
+    expect(calls[6]?.sql).toContain('DELETE FROM workout_schedule_overrides');
+    expect(calls[7]?.sql).toContain('DELETE FROM completed_sets');
+    expect(calls[8]?.sql).toContain('DELETE FROM workout_drafts');
+    expect(calls[9]?.sql).toContain('DELETE FROM workout_check_ins');
     expect(calls.at(-1)?.sql).toContain('DELETE FROM user_profiles');
   });
 });

@@ -27,7 +27,9 @@ export async function saveUserConsiderations(
 
   const normalized: UserConsiderations = {
     userId,
-    movementConsiderations: normalizeMovementConsiderations(considerations.movementConsiderations),
+    movementConsiderations: normalizeMovementConsiderations(
+      considerations.movementConsiderations,
+    ),
     accessibilityNeeds: normalizeAccessibilityNeeds(considerations.accessibilityNeeds),
     updatedAt: normalizeDate(considerations.updatedAt),
   };
@@ -67,7 +69,9 @@ export async function getUserConsiderations(
 
   return {
     userId: row.user_id,
-    movementConsiderations: normalizeMovementConsiderations(parseArray(row.movement_considerations_json)),
+    movementConsiderations: normalizeMovementConsiderations(
+      parseArray(row.movement_considerations_json),
+    ),
     accessibilityNeeds: normalizeAccessibilityNeeds(parseArray(row.accessibility_needs_json)),
     updatedAt: normalizeDate(row.updated_at),
   };

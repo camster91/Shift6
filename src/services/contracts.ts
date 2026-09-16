@@ -50,9 +50,14 @@ export interface SyncResult {
   serverVersion?: number;
 }
 
+export interface AccountDeletionResult {
+  deleted: true;
+}
+
 /** Backend boundary. Implementations may target Supabase or another backend. */
 export interface BackendClient {
   sync(mutations: readonly SyncMutation[]): Promise<SyncResult>;
+  deleteAccount(): Promise<AccountDeletionResult>;
 }
 
 export type CoachTask =

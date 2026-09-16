@@ -12,6 +12,7 @@ export interface OptionCardProps {
   onPress: () => void;
   icon?: ReactNode;
   accessibilityHint?: string;
+  accessibilityRole?: 'radio' | 'checkbox';
   style?: StyleProp<ViewStyle>;
 }
 
@@ -22,14 +23,18 @@ export function OptionCard({
   onPress,
   icon,
   accessibilityHint,
+  accessibilityRole = 'radio',
   style,
 }: OptionCardProps) {
+  const accessibilityState =
+    accessibilityRole === 'checkbox' ? { checked: selected } : { selected };
+
   return (
     <Pressable
       accessibilityHint={accessibilityHint}
       accessibilityLabel={description ? `${label}. ${description}` : label}
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}
+      accessibilityRole={accessibilityRole}
+      accessibilityState={accessibilityState}
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,

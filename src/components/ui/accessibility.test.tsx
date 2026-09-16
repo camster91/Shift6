@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import type { Program, Workout } from '../../domain/types';
 import { Button } from './Button';
 import { Chip } from './Chip';
+import { ErrorState } from './ErrorState';
 import { IconButton } from './IconButton';
 import { ProgramCard } from './ProgramCard';
 import { ProgressIndicator } from './ProgressIndicator';
@@ -57,6 +58,19 @@ describe('shared accessibility primitives', () => {
     });
   });
 
+  it('supports contextual spoken labels without changing visible button copy', () => {
+    const { getByLabelText, getByText } = render(
+      <Button
+        label="Complete"
+        accessibilityLabel="Complete Bench Press set 2"
+        onPress={jest.fn()}
+      />,
+    );
+
+    expect(getByText('Complete')).toBeTruthy();
+    expect(getByLabelText('Complete Bench Press set 2')).toBeTruthy();
+  });
+
   it('keeps icon-button disabled semantics aligned with its actual action state', () => {
     const { getByLabelText } = render(
       <IconButton icon={<View />} label="Close" accessibilityHint="Closes this screen" />,
@@ -77,6 +91,32 @@ describe('shared accessibility primitives', () => {
       disabled: false,
       selected: true,
     });
+  });
+
+  it('supports semantic radio chips for single-choice workout context', () => {
+    const { getByRole } = render(
+      <Chip
+        accessibilityRole="radio"
+        label="Ready to train"
+        selected
+        onPress={jest.fn()}
+      />,
+    );
+    const radio = getByRole('radio');
+
+    expect(radio.props.accessibilityState).toEqual({ disabled: false, selected: true });
+  });
+
+  it('keeps retry actions outside the grouped alert focus target', () => {
+    const { getByLabelText } = render(
+      <ErrorState message="The set could not be saved." onRetry={jest.fn()} />,
+    );
+
+    expect(
+      getByLabelText('Something needs attention. The set could not be saved.').props
+        .accessibilityRole,
+    ).toBe('alert');
+    expect(getByLabelText('Try again')).toBeTruthy();
   });
 
   it('clamps progress values and exposes the bounded value to assistive technology', () => {

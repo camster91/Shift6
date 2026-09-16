@@ -11,7 +11,11 @@ import {
 } from '../src/domain/bodyMetrics';
 import { demoUser } from '../src/domain/fixtures/home';
 import type { UnitSystem } from '../src/domain/types';
-import { deleteBodyMetric, getBodyMetrics, saveManualWeight } from '../src/db/bodyMetricRepository';
+import {
+  deleteBodyMetric,
+  getBodyMetrics,
+  saveManualWeight,
+} from '../src/db/bodyMetricRepository';
 import { useLocalDatabase } from '../src/db/context';
 import { getOnboardingProfile } from '../src/db/profileRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
@@ -35,7 +39,10 @@ export default function BodyMetricsScreen() {
 
     let active = true;
     setLoading(true);
-    void Promise.all([getOnboardingProfile(database, userId), getBodyMetrics(database, userId)])
+    void Promise.all([
+      getOnboardingProfile(database, userId),
+      getBodyMetrics(database, userId),
+    ])
       .then(([profile, stored]) => {
         if (!active) return;
         setUnitSystem(profile?.user.unitSystem ?? demoUser.unitSystem);
@@ -140,6 +147,7 @@ export default function BodyMetricsScreen() {
         </Text>
         <View style={styles.inputRow}>
           <TextInput
+            accessibilityHint="Enter an optional manual weight measurement."
             accessibilityLabel={`Weight in ${unitLabel}`}
             keyboardType="decimal-pad"
             onChangeText={setInput}
@@ -194,6 +202,7 @@ export default function BodyMetricsScreen() {
               <Button
                 label="Delete"
                 variant="ghost"
+                accessibilityHint={`Deletes the manual weight entry from ${formatDate(metric.measuredAt)}.`}
                 onPress={() => requestDelete(metric)}
                 style={styles.deleteButton}
               />

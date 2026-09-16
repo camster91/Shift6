@@ -17,6 +17,16 @@ describe('Coach privacy preference repository', () => {
     });
   });
 
+  it('rejects a missing user identity before reading privacy state', async () => {
+    const getFirstAsync = jest.fn(async () => null);
+    const database = { getFirstAsync } as unknown as SQLiteDatabase;
+
+    await expect(getCoachPrivacyPreference(database, '   ')).rejects.toThrow(
+      'A user ID is required for Coach privacy preferences.',
+    );
+    expect(getFirstAsync).not.toHaveBeenCalled();
+  });
+
   it('persists explicit opt-in without creating a sync mutation', async () => {
     const runAsync = jest.fn(async () => ({ changes: 1, lastInsertRowId: 1 }));
     const database = { runAsync } as unknown as SQLiteDatabase;

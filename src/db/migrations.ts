@@ -334,6 +334,19 @@ export const MIGRATIONS: readonly Migration[] = [
         ON body_metrics(user_id, metric_type, measured_at DESC);`,
     ],
   },
+  {
+    version: 20,
+    name: 'coach-provider-privacy-preference',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS coach_privacy_preferences (
+        user_id TEXT PRIMARY KEY NOT NULL,
+        provider_coach_enabled INTEGER NOT NULL DEFAULT 0,
+        notice_version INTEGER NOT NULL DEFAULT 1,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE
+      );`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

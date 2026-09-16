@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import {
@@ -125,23 +125,26 @@ export default function CoachScreen() {
     };
   }, [database, userId]);
 
-  useEffect(() => {
-    setProviderCoachEnabled(false);
-    if (!database) return;
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      setProviderCoachEnabled(false);
 
-    let active = true;
-    void getCoachPrivacyPreference(database, userId)
-      .then((preference) => {
-        if (active) setProviderCoachEnabled(preference.providerCoachEnabled);
-      })
-      .catch(() => {
-        if (active) setProviderCoachEnabled(false);
-      });
+      if (database) {
+        void getCoachPrivacyPreference(database, userId)
+          .then((preference) => {
+            if (active) setProviderCoachEnabled(preference.providerCoachEnabled);
+          })
+          .catch(() => {
+            if (active) setProviderCoachEnabled(false);
+          });
+      }
 
-    return () => {
-      active = false;
-    };
-  }, [database, userId]);
+      return () => {
+        active = false;
+      };
+    }, [database, userId]),
+  );
 
   const decide = async (proposalId: string, status: 'accepted' | 'rejected') => {
     if (!database || busyProposalId) return;

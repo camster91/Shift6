@@ -1,4 +1,5 @@
-import type { Exercise, Program, ProgramVersion } from './types';
+import type { ExerciseMediaProvenance } from './exerciseMediaProvenance';
+import type { Exercise, ExerciseMedia, Program, ProgramVersion } from './types';
 
 export interface ContentReadinessReport {
   readyForCycle: boolean;
@@ -14,6 +15,12 @@ export function assessExerciseContent(exercise: Exercise): ContentReadinessRepor
   if (!exercise.id.trim()) blockers.push('Exercise ID is required.');
   if (!exercise.name.trim()) blockers.push('Exercise name is required.');
   if (!exercise.setup.trim()) blockers.push(`${exercise.name}: setup is required.`);
+  if (exercise.primaryMuscles.length === 0) {
+    blockers.push(`${exercise.name}: at least one primary muscle is required.`);
+  }
+  if (exercise.equipmentIds.length === 0) {
+    blockers.push(`${exercise.name}: at least one equipment requirement is required.`);
+  }
   if (exercise.instructions.length === 0) {
     blockers.push(`${exercise.name}: at least one instruction is required.`);
   }
@@ -27,15 +34,22 @@ export function assessExerciseContent(exercise: Exercise): ContentReadinessRepor
     blockers.push(`${exercise.name}: retired exercises cannot be published.`);
   }
 
+  if (exercise.isCustom) {
+    reviewWarnings.push(`${exercise.name}: custom exercises stay private by default.`);
+  } else if (exercise.commonMistakes.length === 0) {
+    reviewWarnings.push(`${exercise.name}: public records need common-mistake guidance.`);
+  }
+
   if (exercise.contentStatus === 'draft') {
     reviewWarnings.push(`${exercise.name}: human technique review is pending.`);
   }
   if (exercise.contentStatus === 'reviewed' && !exercise.reviewedAt) {
     reviewWarnings.push(`${exercise.name}: reviewed records need a review timestamp.`);
   }
-  if (exercise.media.some((media) => media.reviewStatus !== 'approved')) {
-    reviewWarnings.push(`${exercise.name}: media approval is pending.`);
-  }
+
+  exercise.media.forEach((media) => {
+    reviewWarnings.push(...assessExerciseMediaForPublication(exercise.name, media));
+  });
 
   return report(blockers, reviewWarnings);
 }
@@ -91,6 +105,55 @@ export function assessProgramVersion(
   });
 
   return report(blockers, reviewWarnings);
+}
+
+function assessExerciseMediaForPublication(exerciseName: string, media: ExerciseMedia): string[] {
+  if (media.reviewStatus !== 'approved') {
+    return [`${exerciseName}: media ${media.id} approval is pending.`];
+  }
+
+  const warnings: string[] = [];
+  if (!media.uri.trim()) warnings.push(`${exerciseName}: approved media ${media.id} needs a URI.`);
+  if (!media.altText.trim()) {
+    warnings.push(`${exerciseName}: approved media ${media.id} needs alt text.`);
+  }
+
+  const provenance = media.provenance;
+  if (!provenance) {
+    warnings.push(`${exerciseName}: approved media ${media.id} needs provenance metadata.`);
+    return warnings;
+  }
+
+  warnings.push(...assessMediaProvenance(exerciseName, media.id, provenance));
+  return warnings;
+}
+
+function assessMediaProvenance(
+  exerciseName: string,
+  mediaId: string,
+  provenance: ExerciseMediaProvenance,
+): string[] {
+  const warnings: string[] = [];
+
+  if (!provenance.sourceLabel.trim()) {
+    warnings.push(`${exerciseName}: approved media ${mediaId} needs a source label.`);
+  }
+  if (!provenance.rightsConfirmedAt) {
+    warnings.push(`${exerciseName}: approved media ${mediaId} needs rights confirmation.`);
+  }
+  if (provenance.sourceKind === 'licensed') {
+    if (!provenance.sourceUri?.trim()) {
+      warnings.push(`${exerciseName}: licensed media ${mediaId} needs a source URI.`);
+    }
+    if (!provenance.license?.trim()) {
+      warnings.push(`${exerciseName}: licensed media ${mediaId} needs licence metadata.`);
+    }
+  }
+  if (provenance.sourceKind === 'generated' && !provenance.techniqueReviewedAt) {
+    warnings.push(`${exerciseName}: generated media ${mediaId} needs human technique review.`);
+  }
+
+  return warnings;
 }
 
 function report(blockers: string[], reviewWarnings: string[]): ContentReadinessReport {

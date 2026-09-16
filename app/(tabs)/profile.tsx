@@ -12,6 +12,7 @@ import { deleteLocalUserData, exportLocalUserData } from '../../src/db/privacyRe
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { colors, radii, spacing } from '../../src/design/tokens';
 import { deleteAuthenticatedAccount } from '../../src/services/accountDeletion';
+import { accountDeletionRecoveryStore } from '../../src/services/accountDeletionRecovery';
 import { useAppServices } from '../../src/services/AppServicesProvider';
 import { useSyncRuntime } from '../../src/services/SyncRuntimeProvider';
 import { useUserIdentity } from '../../src/services/UserIdentityProvider';
@@ -47,6 +48,35 @@ export default function ProfileScreen() {
       active = false;
     };
   }, [database, userId]);
+
+  useEffect(() => {
+    if (identity.kind !== 'account') {
+      setAccountCleanupState('none');
+      return;
+    }
+
+    let active = true;
+    void accountDeletionRecoveryStore
+      .get(userId)
+      .then((recovery) => {
+        if (!active) return;
+        setAccountCleanupState(recovery?.stage ?? 'none');
+        if (recovery) {
+          setPrivacyMessage(
+            'This account was already deleted remotely. Finish the remaining cleanup on this device.',
+          );
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPrivacyMessage('We could not check whether deleted-account cleanup is pending.');
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [identity.kind, userId]);
 
   const selectedEquipment = equipmentCatalog.filter((equipment) =>
     equipmentIds.includes(equipment.id),
@@ -170,7 +200,11 @@ export default function ProfileScreen() {
       }
 
       setAccountCleanupState('none');
-      setPrivacyMessage('Your SHIFT6 account and local data were deleted.');
+      setPrivacyMessage(
+        outcome.warnings.length > 0
+          ? `Your SHIFT6 account and local data were deleted. ${outcome.warnings.join(' ')}`
+          : 'Your SHIFT6 account and local data were deleted.',
+      );
       identity.retry();
     } catch {
       setPrivacyMessage(
@@ -186,26 +220,49 @@ export default function ProfileScreen() {
 
     setPrivacyBusy('account-cleanup');
     setPrivacyMessage(null);
-    try {
-      if (accountCleanupState === 'local-data') {
+
+    const recovery = await accountDeletionRecoveryStore.get(userId).catch(() => null);
+    const remoteDeletedAt = recovery?.remoteDeletedAt ?? new Date().toISOString();
+
+    if (accountCleanupState === 'local-data') {
+      try {
         await deleteLocalUserData(database, userId);
         resetDisplayedLocalProfile();
         setAccountCleanupState('sign-out');
+        await accountDeletionRecoveryStore
+          .set({ userId, stage: 'sign-out', remoteDeletedAt })
+          .catch(() => undefined);
+      } catch {
+        setPrivacyMessage(
+          'The remote account is already deleted, but local cleanup is still incomplete. Try again before signing out.',
+        );
+        setPrivacyBusy(null);
+        return;
       }
+    }
 
+    try {
       await auth.signOut();
-      setAccountCleanupState('none');
-      setPrivacyMessage('Deleted-account cleanup is complete on this device.');
-      identity.retry();
     } catch {
       setPrivacyMessage(
-        accountCleanupState === 'local-data'
-          ? 'The remote account is already deleted, but local cleanup is still incomplete. Try again before signing out.'
-          : 'The account and local data are deleted, but this device could not clear the sign-in session. Try again.',
+        'The account and local data are deleted, but this device could not clear the sign-in session. Try again.',
       );
-    } finally {
       setPrivacyBusy(null);
+      return;
     }
+
+    const markerCleared = await accountDeletionRecoveryStore
+      .clear(userId)
+      .then(() => true)
+      .catch(() => false);
+    setAccountCleanupState('none');
+    setPrivacyMessage(
+      markerCleared
+        ? 'Deleted-account cleanup is complete on this device.'
+        : 'Deleted-account cleanup is complete, but the local recovery marker could not be removed.',
+    );
+    setPrivacyBusy(null);
+    identity.retry();
   };
 
   const resetDisplayedLocalProfile = () => {

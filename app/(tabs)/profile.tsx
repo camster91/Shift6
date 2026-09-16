@@ -190,6 +190,7 @@ export default function ProfileScreen() {
       if (accountCleanupState === 'local-data') {
         await deleteLocalUserData(database, userId);
         resetDisplayedLocalProfile();
+        setAccountCleanupState('sign-out');
       }
 
       await auth.signOut();

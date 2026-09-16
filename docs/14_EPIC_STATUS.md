@@ -1,6 +1,6 @@
 # SHIFT6 epic status matrix
 
-Updated: 2026-09-15
+Updated: 2026-09-16
 
 This file is a present-tense execution aid for issues #270–#281. It does not replace the issue acceptance criteria or `docs/12_RELEASE_READINESS.md`.
 
@@ -35,7 +35,7 @@ Remaining:
 
 Implemented:
 - Expo SDK 57 / React Native 0.86 / TypeScript app shell and Router navigation;
-- versioned SQLite migrations and local-first repositories;
+- versioned SQLite migrations and local-first repositories, including migration 19 for profile considerations/body metrics;
 - backend/auth/provider-neutral service seams;
 - dev/preview/production EAS configuration;
 - GitHub Actions quality workflow plus manual dispatch;
@@ -44,7 +44,7 @@ Implemented:
 - provider-neutral error-reporting seam and root render error boundary.
 
 Remaining:
-- actual CI result for PR #282;
+- actual CI result for PR #282 and its dependent profile/body-metric branch;
 - representative native boot and SQLite restart/offline verification;
 - signed EAS preview builds;
 - deployed authenticated backend/auth provider;
@@ -52,7 +52,7 @@ Remaining:
 
 ## #273 — Onboarding, profile, equipment and recommendations
 
-**Status: In progress**
+**Status: Completed but awaiting provider/native accessibility verification**
 
 Implemented:
 - guest-local onboarding;
@@ -61,10 +61,9 @@ Implemented:
 - Coach tone/intervention preference;
 - deterministic equipment-aware recommendations;
 - editable profile/equipment preferences;
-- transactional guest-data adoption seam for authenticated identity.
-
-Remaining in repository:
-- optional non-diagnostic movement/accessibility considerations from the canonical onboarding spec.
+- structured optional movement/accessibility considerations with no diagnosis or hidden inference;
+- local export/delete coverage for those considerations;
+- transactional guest-data adoption seam, including consideration ownership transfer.
 
 Remaining external verification:
 - provider-specific sign-in/account UX;
@@ -165,7 +164,7 @@ Remaining:
 
 ## #279 — Progress, cardio, mobility and health trends
 
-**Status: In progress / awaiting native health verification**
+**Status: Completed but awaiting native health/CI verification**
 
 Implemented:
 - cycle dashboard and six-week comparison;
@@ -175,13 +174,14 @@ Implemented:
 - typed mobility/power/balance/recovery workout support;
 - optional HealthKit/Health Connect adapters;
 - normalized/deduplicated local health summaries and trend cards;
-- explicit import/disconnect/removal controls and source labels.
-
-Remaining in repository:
-- optional manual body-metric tracking from Profile/Progress.
+- explicit import/disconnect/removal controls and source labels;
+- optional manual weight history with canonical kilogram storage and metric/imperial display;
+- manual metric export/delete and guest-to-account ownership adoption;
+- manual metrics excluded from analytics and sync by default.
 
 Remaining external verification:
-- native health permission/revocation/import QA and store declarations.
+- native health permission/revocation/import QA and store declarations;
+- native/manual body-metric layout and accessibility QA.
 
 ## #280 — Privacy, accessibility, export/delete and security
 
@@ -192,6 +192,7 @@ Implemented:
 - health-data least-permission boundary;
 - analytics allowlist/redaction boundary;
 - local user-data export/delete and guest-account adoption coverage;
+- explicit export/delete/adoption coverage for local considerations and manual body metrics;
 - minimal Coach context and safety boundaries;
 - shared dynamic type, accessible labels/states, touch-target and contrast baselines;
 - dependency audit, secret scan and release-config checks;
@@ -233,4 +234,4 @@ Remaining:
 
 **Status: In progress**
 
-The core local-first six-week training platform is implemented. The master remains open because the launch gate still depends on reviewed content scale, native/device verification, provider/backend production configuration, accessibility proof, and store-release evidence.
+The core local-first six-week training platform and the previously identified optional profile/body-metric code gaps are implemented. The master remains open because the launch gate still depends on reviewed content scale, native/device verification, provider/backend production configuration, accessibility proof, and store-release evidence.

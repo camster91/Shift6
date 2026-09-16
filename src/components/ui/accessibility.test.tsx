@@ -1,11 +1,42 @@
 import { render } from '@testing-library/react-native';
 import { View } from 'react-native';
 
+import type { Program, Workout } from '../../domain/types';
 import { Button } from './Button';
 import { Chip } from './Chip';
 import { IconButton } from './IconButton';
+import { ProgramCard } from './ProgramCard';
 import { ProgressIndicator } from './ProgressIndicator';
 import { Text } from './Text';
+import { WorkoutCard } from './WorkoutCard';
+
+const program: Program = {
+  id: 'program-1',
+  slug: 'barbell-30',
+  title: 'Barbell 30',
+  description: 'A focused strength program.',
+  goals: ['strength'],
+  targetUser: 'Lifters who want focused sessions',
+  experience: ['beginner', 'intermediate'],
+  daysPerWeek: 3,
+  sessionLengthMinutes: 30,
+  requiredEquipmentIds: ['barbell'],
+  optionalEquipmentIds: [],
+  progressionStrategy: 'double-progression',
+  currentVersionId: 'program-version-1',
+  isTemplate: true,
+};
+
+const workout: Workout = {
+  id: 'workout-1',
+  programVersionId: 'program-version-1',
+  title: 'Full Body A',
+  dayOfWeek: 1,
+  focus: 'strength',
+  estimatedDurationMinutes: 30,
+  equipmentIds: ['barbell'],
+  exercises: [],
+};
 
 describe('shared accessibility primitives', () => {
   it('marks a button without an action as disabled', () => {
@@ -59,5 +90,19 @@ describe('shared accessibility primitives', () => {
     const { getByText } = render(<Text>Readable</Text>);
 
     expect(getByText('Readable').props.allowFontScaling).toBe(true);
+  });
+
+  it('gives an interactive program card one labelled focus target', () => {
+    const label = 'Barbell 30. A focused strength program.';
+    const { getAllByLabelText } = render(<ProgramCard program={program} onPress={jest.fn()} />);
+
+    expect(getAllByLabelText(label)).toHaveLength(1);
+  });
+
+  it('gives an interactive workout card one labelled focus target', () => {
+    const label = 'Full Body A, 30 minutes';
+    const { getAllByLabelText } = render(<WorkoutCard workout={workout} onPress={jest.fn()} />);
+
+    expect(getAllByLabelText(label)).toHaveLength(1);
   });
 });

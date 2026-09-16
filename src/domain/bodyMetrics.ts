@@ -49,7 +49,10 @@ export function createManualWeightMetric({
   };
 }
 
-export function bodyMetricValueForUnitSystem(metric: BodyMetric, unitSystem: UnitSystem): number {
+export function bodyMetricValueForUnitSystem(
+  metric: BodyMetric,
+  unitSystem: UnitSystem,
+): number {
   return unitSystem === 'imperial' ? kilogramsToPounds(metric.value) : metric.value;
 }
 

@@ -1,4 +1,9 @@
-import { assessExerciseContent, assessProgramVersion } from './contentReadiness';
+import {
+  assessExerciseCatalogue,
+  assessExerciseContent,
+  assessProgramVersion,
+  LAUNCH_EXERCISE_TARGET,
+} from './contentReadiness';
 import { foundationalExercises } from './fixtures/exercises';
 import { demoProgram, demoProgramVersion } from './fixtures/home';
 import type { Exercise, ExerciseMedia } from './types';
@@ -167,6 +172,48 @@ describe('content readiness', () => {
         'Back squat: licensed media media-1 needs a source URI.',
         'Back squat: licensed media media-1 needs licence metadata.',
       ]),
+    );
+  });
+
+  it('reports the current draft tranche as below the 300-record launch gate', () => {
+    const report = assessExerciseCatalogue(foundationalExercises);
+
+    expect(report.targetCount).toBe(LAUNCH_EXERCISE_TARGET);
+    expect(report.publicRecordCount).toBe(58);
+    expect(report.publicationReadyCount).toBe(0);
+    expect(report.duplicateIds).toEqual([]);
+    expect(report.readyForLaunch).toBe(false);
+    expect(report.blockers).toEqual(
+      expect.arrayContaining([
+        'Launch exercise catalogue needs at least 300 public records; found 58.',
+        'Launch exercise catalogue needs at least 300 publication-ready records; found 0.',
+      ]),
+    );
+  });
+
+  it('passes the launch gate only when 300 unique public records are publication-ready', () => {
+    const catalogue = Array.from({ length: LAUNCH_EXERCISE_TARGET }, (_, index) =>
+      reviewedExercise({ id: `exercise-reviewed-${index + 1}` }),
+    );
+    const report = assessExerciseCatalogue(catalogue);
+
+    expect(report.publicRecordCount).toBe(LAUNCH_EXERCISE_TARGET);
+    expect(report.publicationReadyCount).toBe(LAUNCH_EXERCISE_TARGET);
+    expect(report.duplicateIds).toEqual([]);
+    expect(report.readyForLaunch).toBe(true);
+    expect(report.blockers).toEqual([]);
+  });
+
+  it('blocks duplicate stable IDs even when the reviewed-count target is met', () => {
+    const catalogue = Array.from({ length: LAUNCH_EXERCISE_TARGET }, (_, index) =>
+      reviewedExercise({ id: index === 1 ? 'exercise-reviewed-1' : `exercise-reviewed-${index + 1}` }),
+    );
+    const report = assessExerciseCatalogue(catalogue);
+
+    expect(report.readyForLaunch).toBe(false);
+    expect(report.duplicateIds).toEqual(['exercise-reviewed-1']);
+    expect(report.blockers).toContain(
+      'Exercise IDs must be unique; duplicates: exercise-reviewed-1.',
     );
   });
 

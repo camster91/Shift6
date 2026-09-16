@@ -21,6 +21,8 @@ export interface DeleteAuthenticatedAccountInput {
 /**
  * Remote confirmation is the irreversible boundary. Local data and auth state
  * are not touched until the backend confirms that the account was deleted.
+ * If local cleanup then fails, keep the current local identity mounted so the
+ * user can retry deletion instead of orphaning rows behind a guest identity.
  */
 export async function deleteAuthenticatedAccount({
   database,
@@ -34,23 +36,30 @@ export async function deleteAuthenticatedAccount({
 
   await backend.deleteAccount();
 
-  let localDataDeleted = true;
-  let signedOut = true;
-  const warnings: string[] = [];
-
   try {
     await deleteLocalData(database, normalizedUserId);
   } catch {
-    localDataDeleted = false;
-    warnings.push('The remote account was deleted, but local device data could not be cleared.');
+    return {
+      remoteDeleted: true,
+      localDataDeleted: false,
+      signedOut: false,
+      warnings: [
+        'The remote account was deleted, but local device data could not be cleared. Retry local cleanup before signing out.',
+      ],
+    };
   }
 
   try {
     await auth.signOut();
+    return { remoteDeleted: true, localDataDeleted: true, signedOut: true, warnings: [] };
   } catch {
-    signedOut = false;
-    warnings.push('The remote account was deleted, but the local auth session could not be cleared.');
+    return {
+      remoteDeleted: true,
+      localDataDeleted: true,
+      signedOut: false,
+      warnings: [
+        'The account and local data were deleted, but the local auth session could not be cleared.',
+      ],
+    };
   }
-
-  return { remoteDeleted: true, localDataDeleted, signedOut, warnings };
 }

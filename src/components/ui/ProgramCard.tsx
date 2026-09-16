@@ -16,11 +16,12 @@ export interface ProgramCardProps {
 }
 
 export function ProgramCard({ program, onPress, statusLabel, style }: ProgramCardProps) {
+  const accessibilityLabel = `${program.title}. ${program.description}`;
   const content = (
     <Card
       tone="white"
       style={[styles.card, style]}
-      accessibilityLabel={`${program.title}. ${program.description}`}
+      accessibilityLabel={onPress ? undefined : accessibilityLabel}
     >
       <View style={styles.header}>
         <View style={styles.icon}>
@@ -56,6 +57,7 @@ export function ProgramCard({ program, onPress, statusLabel, style }: ProgramCar
   return (
     <Pressable
       accessibilityHint="Opens program details"
+      accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [pressed && styles.pressed]}

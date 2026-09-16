@@ -12,12 +12,35 @@ describe('classifyCoachSafety', () => {
     expect(result.response).toContain('urgent medical care');
   });
 
+  it('prioritizes urgent symptoms over medication questions in a mixed prompt', () => {
+    const result = classifyCoachSafety('I have chest pain. Should I change my insulin dose?');
+
+    expect(result.route).toBe('urgent-care');
+    expect(result.shouldStopTraining).toBe(true);
+  });
+
   it('routes medication requests to a clinician boundary', () => {
     const result = classifyCoachSafety('Can I change my insulin dose before training?');
 
     expect(result.route).toBe('medication-boundary');
     expect(result.shouldStopTraining).toBe(false);
     expect(result.response).toContain('cannot advise');
+  });
+
+  it('routes individualized nutrition requests away from Coach guidance', () => {
+    const result = classifyCoachSafety('How many calories and what macro target should I use?');
+
+    expect(result.route).toBe('nutrition-boundary');
+    expect(result.shouldStopTraining).toBe(false);
+    expect(result.response).toContain('cannot provide individualized nutrition');
+  });
+
+  it('routes meaningful injury red flags to professional evaluation', () => {
+    const result = classifyCoachSafety('I have sharp pain, numbness, and significant swelling.');
+
+    expect(result.route).toBe('professional-evaluation');
+    expect(result.shouldStopTraining).toBe(true);
+    expect(result.matchedSignals).toEqual(['sharp pain', 'numbness', 'significant swelling']);
   });
 
   it('does not over-route an ordinary training question', () => {
@@ -48,6 +71,7 @@ describe('validateCoachProposal', () => {
     expect(validateCoachProposal(invalidProposal)).toEqual([
       'Change 1 must require explicit user confirmation.',
       'Change 1 uses a field that is not allowed for its change type.',
+      'Change 1 target values must include valid numeric values.',
     ]);
   });
 
@@ -75,7 +99,7 @@ describe('validateCoachProposal', () => {
     const invalidProposal: CoachProposal = {
       ...demoCoachProposal,
       summary: 'Increase your insulin dose before the next workout.',
-      evidence: ['Eat fewer calories to make the plan work faster.'],
+      evidence: ['Use a lower calorie target and different macros.'],
       changes: [
         {
           id: 'change-3',
@@ -129,7 +153,7 @@ describe('validateCoachProposal', () => {
           workoutId: 'workout-1',
           workoutExerciseId: 'workout-exercise-1',
           exerciseId: 'exercise-bench-press',
-          field: 'sets',
+          field: 'setCount',
           from: '3',
           to: '25',
           requiresUserConfirmation: true,
@@ -139,6 +163,46 @@ describe('validateCoachProposal', () => {
 
     expect(validateCoachProposal(invalidProposal)).toContain(
       'Change 1 set count must stay between 1 and 20.',
+    );
+  });
+
+  it('rejects invalid RPE/RIR and schedule bounds', () => {
+    const invalidProposal: CoachProposal = {
+      ...demoCoachProposal,
+      changes: [
+        {
+          id: 'change-rpe',
+          type: 'target-change',
+          field: 'rpe',
+          from: '8',
+          to: '11',
+          requiresUserConfirmation: true,
+        },
+        {
+          id: 'change-rir',
+          type: 'target-change',
+          field: 'rir',
+          from: '2',
+          to: '-1',
+          requiresUserConfirmation: true,
+        },
+        {
+          id: 'change-days',
+          type: 'schedule-change',
+          field: 'daysPerWeek',
+          from: '3',
+          to: '8',
+          requiresUserConfirmation: true,
+        },
+      ],
+    };
+
+    expect(validateCoachProposal(invalidProposal)).toEqual(
+      expect.arrayContaining([
+        'Change 1 RPE must stay between 1 and 10.',
+        'Change 2 RIR must stay between 0 and 10.',
+        'Change 3 schedule value must stay between 1 and 7.',
+      ]),
     );
   });
 });

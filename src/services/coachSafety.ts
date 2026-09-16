@@ -23,22 +23,6 @@ interface SafetyRule {
 
 const safetyRules: readonly SafetyRule[] = [
   {
-    route: 'medication-boundary',
-    signals: [
-      'insulin',
-      'medication',
-      'medicine',
-      'prescription',
-      'dosage',
-      'dose of',
-      'change my dose',
-      'adjust my dose',
-    ],
-    response:
-      'SHIFT6 cannot advise on medication or insulin dosing. Please ask your prescribing clinician or pharmacist.',
-    shouldStopTraining: false,
-  },
-  {
     route: 'urgent-care',
     signals: [
       'chest pain',
@@ -80,12 +64,30 @@ const safetyRules: readonly SafetyRule[] = [
     shouldStopTraining: true,
   },
   {
+    route: 'medication-boundary',
+    signals: [
+      'insulin',
+      'medication',
+      'medicine',
+      'prescription',
+      'dosage',
+      'dose of',
+      'change my dose',
+      'adjust my dose',
+    ],
+    response:
+      'SHIFT6 cannot advise on medication or insulin dosing. Please ask your prescribing clinician or pharmacist.',
+    shouldStopTraining: false,
+  },
+  {
     route: 'nutrition-boundary',
     signals: [
       'how many calories',
       'calorie target',
       'macro target',
+      'my macros',
       'macros should',
+      'macronutrient',
       'meal plan',
       'diet plan',
       'what should i eat',
@@ -114,7 +116,9 @@ const prohibitedProposalTerms = [
   'dosage',
   'dose of',
   'calorie',
-  'macro',
+  'macro target',
+  'macros',
+  'macronutrient',
   'meal plan',
   'diet plan',
   'nutrition plan',
@@ -247,7 +251,19 @@ function validateTargetChange(
     errors.push(`${prefix} ${change.field} must stay above zero.`);
   }
 
-  if (from > 0 && to > from && (to - from) / from > maxTargetIncrease) {
+  const cappedIncreaseFields: readonly string[] = [
+    'load',
+    'reps',
+    'durationSeconds',
+    'distanceMeters',
+    'rpe',
+  ];
+  if (
+    cappedIncreaseFields.includes(change.field) &&
+    from > 0 &&
+    to > from &&
+    (to - from) / from > maxTargetIncrease
+  ) {
     errors.push(`${prefix} increases ${change.field} by more than the allowed 25%.`);
   }
 }

@@ -1,5 +1,10 @@
+import type { CoachProposal } from '../domain/types';
 import type { CoachContext, CoachGateway } from './contracts';
-import { generatePrivacyAwareCoachMessage } from './coachPrivacy';
+import { CoachGatewayUnavailableError } from './coach';
+import {
+  generatePrivacyAwareCoachMessage,
+  generatePrivacyAwareCoachProposal,
+} from './coachPrivacy';
 
 const context: CoachContext = {
   user: {
@@ -25,15 +30,39 @@ const context: CoachContext = {
   },
 };
 
-function gateway(generateMessage: CoachGateway['generateMessage']): CoachGateway {
+const proposal: CoachProposal = {
+  id: 'proposal-1',
+  summary: 'Add one rep to the next target.',
+  confidence: 'medium',
+  evidence: ['The same target was completed twice.'],
+  changes: [
+    {
+      id: 'change-1',
+      type: 'target-change',
+      field: 'reps',
+      from: '6',
+      to: '7',
+      requiresUserConfirmation: true,
+    },
+  ],
+  safetyNotes: [],
+  status: 'pending',
+  createdAt: '2026-09-16T12:00:00.000Z',
+};
+
+function gateway(
+  generateMessage: CoachGateway['generateMessage'],
+  generateProposal: CoachGateway['generateProposal'] = async () =>
+    Promise.reject(new Error('not used')),
+): CoachGateway {
   return {
     generateMessage,
-    generateProposal: async () => Promise.reject(new Error('not used')),
+    generateProposal,
   };
 }
 
 describe('privacy-aware Coach generation', () => {
-  it('never calls the provider gateway while provider processing is disabled', async () => {
+  it('never calls the provider gateway while provider message processing is disabled', async () => {
     const generateMessage = jest.fn(async () => ({
       kind: 'message' as const,
       text: 'remote result',
@@ -55,7 +84,7 @@ describe('privacy-aware Coach generation', () => {
     expect(generateMessage).not.toHaveBeenCalled();
   });
 
-  it('uses the provider only after explicit opt-in', async () => {
+  it('uses the provider for messages only after explicit opt-in', async () => {
     const generateMessage = jest.fn(async () => ({
       kind: 'message' as const,
       text: 'remote result',
@@ -81,7 +110,7 @@ describe('privacy-aware Coach generation', () => {
     expect(generateMessage).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back locally when an enabled provider is unavailable', async () => {
+  it('falls back locally when an enabled message provider is unavailable', async () => {
     const generateMessage = jest.fn(async () => ({
       kind: 'unavailable' as const,
       text: 'not configured',
@@ -124,5 +153,60 @@ describe('privacy-aware Coach generation', () => {
         factsUsed: ['deterministic safety classifier'],
       },
     });
+  });
+
+  it('never calls provider proposal generation while provider processing is disabled', async () => {
+    const generateProposal = jest.fn(async () => proposal);
+
+    await expect(
+      generatePrivacyAwareCoachProposal({
+        providerCoachEnabled: false,
+        gateway: gateway(
+          async () => ({ kind: 'unavailable', text: 'not used', factsUsed: [] }),
+          generateProposal,
+        ),
+        context,
+        task: 'weekly-review',
+      }),
+    ).rejects.toBeInstanceOf(CoachGatewayUnavailableError);
+
+    expect(generateProposal).not.toHaveBeenCalled();
+  });
+
+  it('allows a validated provider proposal request only after explicit opt-in', async () => {
+    const generateProposal = jest.fn(async () => proposal);
+
+    await expect(
+      generatePrivacyAwareCoachProposal({
+        providerCoachEnabled: true,
+        gateway: gateway(
+          async () => ({ kind: 'unavailable', text: 'not used', factsUsed: [] }),
+          generateProposal,
+        ),
+        context,
+        task: 'weekly-review',
+      }),
+    ).resolves.toEqual(proposal);
+
+    expect(generateProposal).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not invent a local proposal when the enabled provider fails', async () => {
+    const providerError = new Error('provider unavailable');
+    const generateProposal = jest.fn(async () => Promise.reject(providerError));
+
+    await expect(
+      generatePrivacyAwareCoachProposal({
+        providerCoachEnabled: true,
+        gateway: gateway(
+          async () => ({ kind: 'unavailable', text: 'not used', factsUsed: [] }),
+          generateProposal,
+        ),
+        context,
+        task: 'weekly-review',
+      }),
+    ).rejects.toBe(providerError);
+
+    expect(generateProposal).toHaveBeenCalledTimes(1);
   });
 });

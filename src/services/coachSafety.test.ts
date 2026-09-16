@@ -70,4 +70,75 @@ describe('validateCoachProposal', () => {
       'Change 1 must identify the affected exercise.',
     );
   });
+
+  it('rejects unsafe medication or nutrition instructions anywhere in provider proposals', () => {
+    const invalidProposal: CoachProposal = {
+      ...demoCoachProposal,
+      summary: 'Increase your insulin dose before the next workout.',
+      evidence: ['Eat fewer calories to make the plan work faster.'],
+      changes: [
+        {
+          id: 'change-3',
+          type: 'target-change',
+          workoutId: 'workout-1',
+          workoutExerciseId: 'workout-exercise-1',
+          exerciseId: 'exercise-bench-press',
+          field: 'reps',
+          from: '8',
+          to: '9',
+          requiresUserConfirmation: true,
+        },
+      ],
+    };
+
+    const errors = validateCoachProposal(invalidProposal);
+    expect(errors.some((error) => /medication|insulin/i.test(error))).toBe(true);
+    expect(errors.some((error) => /nutrition|calorie/i.test(error))).toBe(true);
+  });
+
+  it('rejects unusually large numeric target increases instead of trusting provider output', () => {
+    const invalidProposal: CoachProposal = {
+      ...demoCoachProposal,
+      changes: [
+        {
+          id: 'change-4',
+          type: 'target-change',
+          workoutId: 'workout-1',
+          workoutExerciseId: 'workout-exercise-1',
+          exerciseId: 'exercise-bench-press',
+          field: 'reps',
+          from: '8',
+          to: '12',
+          requiresUserConfirmation: true,
+        },
+      ],
+    };
+
+    expect(validateCoachProposal(invalidProposal)).toContain(
+      'Change 1 increases reps by more than the allowed 25%.',
+    );
+  });
+
+  it('rejects out-of-range set-count mutations', () => {
+    const invalidProposal: CoachProposal = {
+      ...demoCoachProposal,
+      changes: [
+        {
+          id: 'change-5',
+          type: 'set-count-change',
+          workoutId: 'workout-1',
+          workoutExerciseId: 'workout-exercise-1',
+          exerciseId: 'exercise-bench-press',
+          field: 'sets',
+          from: '3',
+          to: '25',
+          requiresUserConfirmation: true,
+        },
+      ],
+    };
+
+    expect(validateCoachProposal(invalidProposal)).toContain(
+      'Change 1 set count must stay between 1 and 20.',
+    );
+  });
 });

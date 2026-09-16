@@ -103,7 +103,8 @@ export class HttpBackendClient implements BackendClient {
         },
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'The account deletion request failed.';
+      const message =
+        error instanceof Error ? error.message : 'The account deletion request failed.';
       throw new BackendUnavailableError(message);
     }
 

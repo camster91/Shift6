@@ -33,23 +33,28 @@ Code stack, oldest prerequisite first:
    - runtime provider message/proposal gate;
    - migration 20;
    - provider-bound context identifier minimisation.
+5. **PR #287** — `feat/accessibility-primitives` → `feat/coach-privacy-controls`
+   - shared disabled/busy accessibility semantics;
+   - non-colour selected-chip cue;
+   - single-focus interactive program/workout cards;
+   - font-scaling, progress, touch-target and colour-contrast regression tests.
 
 Separate sibling documentation PR:
 
 - **PR #284** — `chore/store-release-package` → `feat/profile-considerations-body-metrics`
   - store metadata/privacy/data-safety preparation only;
-  - it does **not** contain #285/#286 because it branched from #283.
+  - it does **not** contain #285/#286/#287 because it branched from #283.
 
 ## First verification target
 
-The most efficient code verification target is the head of **PR #286** because that branch contains
-all code changes from #282, #283, #285 and #286.
+The most efficient code verification target is the head of **PR #287** because that branch contains
+all code changes from #282, #283, #285, #286 and #287.
 
 From a normal authenticated checkout:
 
 ```bash
 git fetch origin
-git switch feat/coach-privacy-controls
+git switch feat/accessibility-primitives
 git pull --ff-only
 npm ci
 npm run verify
@@ -79,7 +84,8 @@ Suggested ownership:
 - catalogue/program/progression/CI failure → #282 branch;
 - migration 19 / considerations / manual metrics / OptionCard checkbox semantics → #283 branch;
 - backend deletion/account recovery/Profile deletion flow → #285 branch;
-- migration 20 / Coach privacy gate / provider context minimisation → #286 branch.
+- migration 20 / Coach privacy gate / provider context minimisation → #286 branch;
+- shared control semantics / focus targets / contrast or component accessibility tests → #287 branch.
 
 Because later branches are stacked, a fix made on an earlier branch must then be propagated into its
 descendants with a normal Git rebase/merge workflow before relying on the head branch verification.
@@ -126,6 +132,17 @@ Do not force-update branches from ChatGPT merely to make the stack appear synchr
 - privacy preference is exportable/deletable/adopted with ownership but not synced/analysed;
 - safety routing still happens before unsafe provider optimisation.
 
+### PR #287
+
+- Button announces disabled when no action exists and busy + disabled while loading;
+- IconButton announces disabled whenever no action exists and exposes its optional hint;
+- selected Chip has a visible non-colour check cue while preserving selected accessibility state;
+- interactive ProgramCard and WorkoutCard expose one labelled focus target rather than a nested card;
+- app Text remains opted into system font scaling;
+- ProgressIndicator clamps and exposes bounded percentage values;
+- functional text/status token pairs remain at or above the repository's 4.5:1 contrast gate;
+- compact/standard touch targets remain at least 44/48 points respectively.
+
 ## Native verification after repository gates are green
 
 `npm run verify` is not release proof. Follow `docs/13_NATIVE_RELEASE_VERIFICATION.md` on signed or
@@ -135,6 +152,7 @@ At minimum capture evidence for:
 
 - small/large representative iPhone and Android layouts;
 - VoiceOver/TalkBack and large text;
+- reduced-motion behaviour on motion-heavy surfaces;
 - offline workout completion, app kill/restart and sync recovery;
 - rest timers/background transitions;
 - HealthKit/Health Connect partial grant, denial, revocation, disconnect and import removal;
@@ -145,8 +163,8 @@ At minimum capture evidence for:
 ## Store/privacy documentation PR #284
 
 PR #284 is documentation-only and can be reviewed separately, but its privacy/store mappings must be
-updated against the eventual integrated release candidate because #285/#286 add account-deletion and
-Coach privacy behaviour after #284 branched.
+updated against the eventual integrated release candidate because #285/#286/#287 add account,
+Coach-privacy and accessibility behaviour after #284 branched.
 
 Do not enter its provisional metadata into App Store Connect or Google Play Console until:
 
@@ -165,8 +183,9 @@ the clean conceptual order is:
 2. retarget/reconcile #283 against updated `main`, then merge;
 3. retarget/reconcile #285 against updated `main`, then merge;
 4. retarget/reconcile #286 against updated `main`, then merge;
-5. reconcile #284 with the integrated code state, update its privacy/store mapping for #285/#286,
-   retarget to `main`, verify documentation accuracy, then merge if approved.
+5. retarget/reconcile #287 against updated `main`, then merge;
+6. reconcile #284 with the integrated code state, update its privacy/store mapping for
+   #285/#286/#287, retarget to `main`, verify documentation accuracy, then merge if approved.
 
 Do not merge a descendant PR first simply because GitHub reports it as mergeable; the stacked base
 branches are part of the intended review history.

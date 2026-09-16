@@ -1,4 +1,6 @@
+import type { CoachProposal } from '../domain/types';
 import type { CoachContext, CoachGateway, CoachMessageResult, CoachTask } from './contracts';
+import { CoachGatewayUnavailableError } from './coach';
 import { buildLocalCoachMessage } from './localCoach';
 
 export interface PrivacyAwareCoachMessage {
@@ -12,6 +14,13 @@ export interface GeneratePrivacyAwareCoachMessageInput {
   context: CoachContext;
   task: CoachTask;
   prompt?: string;
+}
+
+export interface GeneratePrivacyAwareCoachProposalInput {
+  providerCoachEnabled: boolean;
+  gateway: CoachGateway;
+  context: CoachContext;
+  task: CoachTask;
 }
 
 /**
@@ -48,4 +57,24 @@ export async function generatePrivacyAwareCoachMessage({
     source: 'local',
     result: buildLocalCoachMessage(context, task, prompt),
   };
+}
+
+/**
+ * Plan proposals have no local fallback because the local Coach cannot mutate
+ * or invent plan changes. Remote proposal generation is therefore impossible
+ * until provider-backed Coach processing has been explicitly enabled.
+ */
+export async function generatePrivacyAwareCoachProposal({
+  providerCoachEnabled,
+  gateway,
+  context,
+  task,
+}: GeneratePrivacyAwareCoachProposalInput): Promise<CoachProposal> {
+  if (!providerCoachEnabled) {
+    throw new CoachGatewayUnavailableError(
+      'Enable provider-backed Coach processing before requesting a plan proposal.',
+    );
+  }
+
+  return gateway.generateProposal(context, task);
 }

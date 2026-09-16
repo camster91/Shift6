@@ -30,7 +30,7 @@ Code stack, oldest prerequisite first:
 4. **PR #286** — `feat/coach-privacy-controls` → `feat/account-deletion-boundary`
    - provider Coach processing off by default;
    - explicit local privacy preference and disclosure;
-   - runtime provider message/proposal gate;
+   - runtime provider message gate with deterministic local fallback;
    - migration 20;
    - provider-bound context identifier minimisation.
 5. **PR #287** — `feat/accessibility-primitives` → `feat/coach-privacy-controls`
@@ -57,23 +57,30 @@ Code stack, oldest prerequisite first:
    - launch metadata and review-evidence integrity checks;
    - 20-program publication-readiness gate;
    - human program review runbook.
+9. **PR #291** — `feat/coach-proposal-privacy-gate` → `feat/program-content-quality-gates`
+   - provider plan-proposal privacy gate with no local mutation fallback;
+   - authenticated SHIFT6 API transport regression coverage;
+   - urgent/medication/nutrition/injury safety-route hardening;
+   - bounded structured Coach proposal mutations;
+   - expanded adverse-case evaluation matrix;
+   - production provider release-evidence runbook.
 
 Separate sibling documentation PR:
 
 - **PR #284** — `chore/store-release-package` → `feat/profile-considerations-body-metrics`
   - store metadata/privacy/data-safety preparation only;
-  - it does **not** contain #285/#286/#287/#288/#289/#290 because it branched from #283.
+  - it does **not** contain #285/#286/#287/#288/#289/#290/#291 because it branched from #283.
 
 ## First verification target
 
-The most efficient code verification target is the head of **PR #290** because that branch contains
-all code changes from #282, #283, #285, #286, #287, #288, #289 and #290.
+The most efficient code verification target is the head of **PR #291** because that branch contains
+all code changes from #282, #283, #285, #286, #287, #288, #289, #290 and #291.
 
 From a normal authenticated checkout:
 
 ```bash
 git fetch origin
-git switch feat/program-content-quality-gates
+git switch feat/coach-proposal-privacy-gate
 git pull --ff-only
 npm ci
 npm run verify
@@ -103,11 +110,12 @@ Suggested ownership:
 - catalogue/program/progression/CI failure → #282 branch;
 - migration 19 / considerations / manual metrics / OptionCard checkbox semantics → #283 branch;
 - backend deletion/account recovery/Profile deletion flow → #285 branch;
-- migration 20 / Coach privacy gate / provider context minimisation → #286 branch;
+- migration 20 / Coach message privacy gate / provider context minimisation → #286 branch;
 - shared control semantics / focus targets / contrast or component accessibility tests → #287 branch;
 - contextual action labels / radio-capable chips / grouped state-action focus boundaries → #288 branch;
 - exercise publication/provenance/300-record launch-gate failure → #289 branch;
-- curated-program review evidence / 20-program release-gate failure → #290 branch.
+- curated-program review evidence / 20-program release-gate failure → #290 branch;
+- Coach proposal privacy, safety routes, mutation bounds or server-boundary regression → #291 branch.
 
 Because later branches are stacked, a fix made on an earlier branch must then be propagated into its
 descendants with a normal Git rebase/merge workflow before relying on the head branch verification.
@@ -146,7 +154,7 @@ Do not force-update branches from ChatGPT merely to make the stack appear synchr
 
 ### PR #286
 
-- provider Coach message/proposal functions are never called while opt-in is disabled;
+- provider Coach message generation is never called while opt-in is disabled;
 - local deterministic Coach remains usable while disabled;
 - toggling the privacy preference survives restart and refreshes on Coach-tab focus;
 - provider packet does not include local user ID, cycle ID, program-version ID, private workout notes,
@@ -212,6 +220,25 @@ Those remain human content-production gates for #274.
 PR #290 does **not** perform the missing fitness-content review or convert Barbell 30's in-app
 startability into release-level review evidence. Those remain human content gates for #275.
 
+### PR #291
+
+- provider Coach plan-proposal generation is never called while provider processing is disabled;
+- proposal-provider failure propagates and never invents a local plan mutation;
+- configured mobile Coach transport targets the authenticated SHIFT6 API boundary;
+- urgent symptoms outrank medication/nutrition routes when multiple safety signals are present;
+- individualized calorie/macro/meal-plan requests route outside Coach guidance;
+- sharp/worsening/radiating pain, numbness, inability to bear weight and significant swelling route
+  to professional evaluation;
+- unsafe provider proposals involving medication/medical-treatment/nutrition content are rejected;
+- load/rep/duration/distance/RPE increases over 25%, RPE/RIR bounds, set-count bounds and schedule
+  bounds are enforced before proposal storage/approval;
+- the adverse-case matrix covers provider outage, adherence, plateau, readiness/discomfort, limited
+  time, equipment changes, medication, nutrition, injury, urgent symptoms and unsafe mutations.
+
+PR #291 still does **not** configure a real model/provider or production server endpoint. Verify the
+provider/server/privacy/latency/monitoring evidence in `docs/20_COACH_PROVIDER_RELEASE_GATE.md`
+before #278/#280 can be considered release-ready.
+
 ## Native verification after repository gates are green
 
 `npm run verify` is not release proof. Follow `docs/13_NATIVE_RELEASE_VERIFICATION.md` on signed or
@@ -232,9 +259,9 @@ At minimum capture evidence for:
 ## Store/privacy documentation PR #284
 
 PR #284 is documentation-only and can be reviewed separately, but its privacy/store mappings must be
-updated against the eventual integrated release candidate because #285/#286/#287/#288/#289/#290 add
-account, Coach-privacy, accessibility, content-readiness, and program-review behaviour after #284
-branched.
+updated against the eventual integrated release candidate because #285/#286/#287/#288/#289/#290/#291
+add account, Coach-privacy, accessibility, content-readiness, program-review and Coach safety
+behaviour after #284 branched.
 
 Do not enter its provisional metadata into App Store Connect or Google Play Console until:
 
@@ -257,8 +284,10 @@ the clean conceptual order is:
 6. retarget/reconcile #288 against updated `main`, then merge;
 7. retarget/reconcile #289 against updated `main`, then merge;
 8. retarget/reconcile #290 against updated `main`, then merge;
-9. reconcile #284 with the integrated code state, update its privacy/store mapping for
-   #285/#286/#287/#288/#289/#290, retarget to `main`, verify documentation accuracy, then merge if approved.
+9. retarget/reconcile #291 against updated `main`, then merge;
+10. reconcile #284 with the integrated code state, update its privacy/store mapping for
+    #285/#286/#287/#288/#289/#290/#291, retarget to `main`, verify documentation accuracy, then merge
+    if approved.
 
 Do not merge a descendant PR first simply because GitHub reports it as mergeable; the stacked base
 branches are part of the intended review history.

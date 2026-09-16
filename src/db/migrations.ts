@@ -309,6 +309,31 @@ export const MIGRATIONS: readonly Migration[] = [
         ADD COLUMN note TEXT;`,
     ],
   },
+  {
+    version: 19,
+    name: 'profile-considerations-and-manual-body-metrics',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS user_considerations (
+        user_id TEXT PRIMARY KEY NOT NULL,
+        movement_considerations_json TEXT NOT NULL DEFAULT '[]',
+        accessibility_needs_json TEXT NOT NULL DEFAULT '[]',
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE
+      );`,
+      `CREATE TABLE IF NOT EXISTS body_metrics (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL,
+        metric_type TEXT NOT NULL,
+        value REAL NOT NULL,
+        unit TEXT NOT NULL,
+        measured_at TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE
+      );`,
+      `CREATE INDEX IF NOT EXISTS body_metrics_user_type_measured
+        ON body_metrics(user_id, metric_type, measured_at DESC);`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

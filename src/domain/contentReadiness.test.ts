@@ -1,6 +1,11 @@
 import { foundationalExercises } from './fixtures/exercises';
 import { demoProgram, demoProgramVersion } from './fixtures/home';
-import { assessExerciseContent, assessProgramVersion } from './contentReadiness';
+import {
+  EXERCISE_LAUNCH_TARGET,
+  assessExerciseCatalogue,
+  assessExerciseContent,
+  assessProgramVersion,
+} from './contentReadiness';
 
 describe('content readiness', () => {
   it('keeps structurally complete draft exercises runnable but not publication-ready', () => {
@@ -42,6 +47,64 @@ describe('content readiness', () => {
     expect(report.readyForPublication).toBe(true);
     expect(report.blockers).toEqual([]);
     expect(report.reviewWarnings).toEqual([]);
+  });
+
+  it('summarizes the draft catalogue without claiming the launch target is met', () => {
+    const report = assessExerciseCatalogue(foundationalExercises);
+
+    expect(report.totalCount).toBe(foundationalExercises.length);
+    expect(report.draftCount).toBe(foundationalExercises.length);
+    expect(report.reviewedCount).toBe(0);
+    expect(report.retiredCount).toBe(0);
+    expect(report.publicationReadyCount).toBe(0);
+    expect(report.structuralBlockerCount).toBe(0);
+    expect(report.reviewedMissingProvenanceCount).toBe(0);
+    expect(report.mediaApprovalPendingCount).toBe(0);
+    expect(report.launchTarget).toBe(EXERCISE_LAUNCH_TARGET);
+    expect(report.meetsLaunchTarget).toBe(false);
+  });
+
+  it('measures publication-ready records independently from reviewed status', () => {
+    const reviewed = {
+      ...foundationalExercises[0]!,
+      contentStatus: 'reviewed' as const,
+      reviewedAt: '2026-09-16T12:00:00.000Z',
+      reviewedBy: 'fitness-content-reviewer',
+    };
+    const missingProvenance = {
+      ...foundationalExercises[1]!,
+      contentStatus: 'reviewed' as const,
+      reviewedAt: '2026-09-16T12:00:00.000Z',
+    };
+    const pendingMedia = {
+      ...foundationalExercises[2]!,
+      contentStatus: 'reviewed' as const,
+      reviewedAt: '2026-09-16T12:00:00.000Z',
+      reviewedBy: 'fitness-content-reviewer',
+      media: [
+        {
+          id: 'media-draft',
+          type: 'image' as const,
+          uri: 'local://draft',
+          altText: 'Draft technique image',
+          reviewStatus: 'technique-review' as const,
+        },
+      ],
+    };
+
+    const report = assessExerciseCatalogue([reviewed, missingProvenance, pendingMedia], 1);
+
+    expect(report.reviewedCount).toBe(3);
+    expect(report.publicationReadyCount).toBe(1);
+    expect(report.reviewedMissingProvenanceCount).toBe(1);
+    expect(report.mediaApprovalPendingCount).toBe(1);
+    expect(report.meetsLaunchTarget).toBe(true);
+  });
+
+  it('rejects invalid catalogue launch targets', () => {
+    expect(() => assessExerciseCatalogue(foundationalExercises, 0)).toThrow(
+      'Exercise launch target must be a positive integer.',
+    );
   });
 
   it('requires reviewed records before a public program version is publication-ready', () => {

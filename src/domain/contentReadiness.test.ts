@@ -12,6 +12,38 @@ describe('content readiness', () => {
     expect(report.reviewWarnings[0]).toContain('human technique review is pending');
   });
 
+  it('requires reviewer provenance for reviewed exercise publication', () => {
+    const exercise = {
+      ...foundationalExercises[0]!,
+      contentStatus: 'reviewed' as const,
+      reviewedAt: '2026-09-16T12:00:00.000Z',
+    };
+
+    const report = assessExerciseContent(exercise);
+
+    expect(report.readyForCycle).toBe(true);
+    expect(report.readyForPublication).toBe(false);
+    expect(report.reviewWarnings).toContain(
+      `${exercise.name}: reviewed records need reviewer provenance.`,
+    );
+  });
+
+  it('allows reviewed exercise content with timestamp and reviewer provenance', () => {
+    const exercise = {
+      ...foundationalExercises[0]!,
+      contentStatus: 'reviewed' as const,
+      reviewedAt: '2026-09-16T12:00:00.000Z',
+      reviewedBy: 'fitness-content-reviewer',
+    };
+
+    const report = assessExerciseContent(exercise);
+
+    expect(report.readyForCycle).toBe(true);
+    expect(report.readyForPublication).toBe(true);
+    expect(report.blockers).toEqual([]);
+    expect(report.reviewWarnings).toEqual([]);
+  });
+
   it('requires reviewed records before a public program version is publication-ready', () => {
     const report = assessProgramVersion(demoProgram, demoProgramVersion, foundationalExercises);
 

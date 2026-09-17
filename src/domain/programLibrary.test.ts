@@ -1,7 +1,7 @@
 import { assessProgramVersion } from './contentReadiness';
 import { foundationalExercises } from './fixtures/exercises';
 import { demoProgramVersion } from './fixtures/home';
-import { programLibrary } from './programLibrary';
+import { canStartProgramCatalogueEntry, programLibrary } from './programLibrary';
 import { progressionRuleCatalogue } from './progressionRules';
 
 const canonicalLaunchSlugs = [
@@ -36,11 +36,11 @@ describe('program library metadata and executable drafts', () => {
     );
   });
 
-  it('keeps Barbell 30 wired to its canonical version identifier', () => {
+  it('keeps Barbell 30 wired to its canonical version identifier without bypassing review', () => {
     const barbell30 = programLibrary.find((entry) => entry.program.slug === 'barbell-30');
 
     expect(barbell30).toMatchObject({
-      status: 'published',
+      status: 'metadata-draft',
       buildStatus: 'canonical',
       program: {
         id: 'program-barbell-30',
@@ -66,6 +66,12 @@ describe('program library metadata and executable drafts', () => {
       expect(report.readyForCycle).toBe(true);
       expect(report.readyForPublication).toBe(false);
     });
+  });
+
+  it('does not expose draft launch programs as publicly startable', () => {
+    expect(programLibrary.some((entry) => entry.status === 'published')).toBe(false);
+    expect(programLibrary.every((entry) => !canStartProgramCatalogueEntry(entry))).toBe(true);
+    expect(programLibrary.every((entry) => canStartProgramCatalogueEntry(entry, true))).toBe(true);
   });
 
   it('keeps every workout within declared equipment compatibility', () => {
@@ -145,11 +151,13 @@ describe('program library metadata and executable drafts', () => {
     expect(cyclist?.version?.workouts.filter((workout) => workout.isOptional)).toHaveLength(2);
   });
 
-  it('keeps all non-canonical catalogue entries gated from public startability', () => {
-    const drafts = programLibrary.filter((entry) => entry.program.slug !== 'barbell-30');
-
-    expect(drafts.every((entry) => entry.status === 'metadata-draft')).toBe(true);
-    expect(drafts.every((entry) => entry.buildStatus === 'executable-draft')).toBe(true);
+  it('keeps all executable catalogue entries gated from public startability until review passes', () => {
+    expect(programLibrary.every((entry) => entry.status === 'metadata-draft')).toBe(true);
+    expect(
+      programLibrary
+        .filter((entry) => entry.program.slug !== 'barbell-30')
+        .every((entry) => entry.buildStatus === 'executable-draft'),
+    ).toBe(true);
     expect(programLibrary.some((entry) => entry.buildStatus === 'metadata-only')).toBe(false);
   });
 });

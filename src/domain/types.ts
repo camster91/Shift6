@@ -136,6 +136,7 @@ export interface Exercise {
   isCustom: boolean;
   contentStatus: 'draft' | 'reviewed' | 'retired';
   reviewedAt?: ISODateString;
+  reviewedBy?: string;
 }
 
 export interface ExerciseVariant {

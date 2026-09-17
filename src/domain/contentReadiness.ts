@@ -1,10 +1,25 @@
 import type { Exercise, Program, ProgramVersion } from './types';
 
+export const EXERCISE_LAUNCH_TARGET = 300;
+
 export interface ContentReadinessReport {
   readyForCycle: boolean;
   readyForPublication: boolean;
   blockers: string[];
   reviewWarnings: string[];
+}
+
+export interface ExerciseCatalogueReadinessReport {
+  totalCount: number;
+  draftCount: number;
+  reviewedCount: number;
+  retiredCount: number;
+  publicationReadyCount: number;
+  structuralBlockerCount: number;
+  reviewedMissingProvenanceCount: number;
+  mediaApprovalPendingCount: number;
+  launchTarget: number;
+  meetsLaunchTarget: boolean;
 }
 
 export function assessExerciseContent(exercise: Exercise): ContentReadinessReport {
@@ -41,6 +56,57 @@ export function assessExerciseContent(exercise: Exercise): ContentReadinessRepor
   }
 
   return report(blockers, reviewWarnings);
+}
+
+export function assessExerciseCatalogue(
+  exercises: readonly Exercise[],
+  launchTarget = EXERCISE_LAUNCH_TARGET,
+): ExerciseCatalogueReadinessReport {
+  if (!Number.isInteger(launchTarget) || launchTarget < 1) {
+    throw new Error('Exercise launch target must be a positive integer.');
+  }
+
+  let draftCount = 0;
+  let reviewedCount = 0;
+  let retiredCount = 0;
+  let publicationReadyCount = 0;
+  let structuralBlockerCount = 0;
+  let reviewedMissingProvenanceCount = 0;
+  let mediaApprovalPendingCount = 0;
+
+  exercises.forEach((exercise) => {
+    if (exercise.contentStatus === 'draft') draftCount += 1;
+    if (exercise.contentStatus === 'reviewed') reviewedCount += 1;
+    if (exercise.contentStatus === 'retired') retiredCount += 1;
+
+    const readiness = assessExerciseContent(exercise);
+    if (readiness.readyForPublication) publicationReadyCount += 1;
+    if (readiness.blockers.length > 0) structuralBlockerCount += 1;
+
+    if (
+      exercise.contentStatus === 'reviewed' &&
+      (!exercise.reviewedAt || !exercise.reviewedBy?.trim())
+    ) {
+      reviewedMissingProvenanceCount += 1;
+    }
+
+    if (exercise.media.some((media) => media.reviewStatus !== 'approved')) {
+      mediaApprovalPendingCount += 1;
+    }
+  });
+
+  return {
+    totalCount: exercises.length,
+    draftCount,
+    reviewedCount,
+    retiredCount,
+    publicationReadyCount,
+    structuralBlockerCount,
+    reviewedMissingProvenanceCount,
+    mediaApprovalPendingCount,
+    launchTarget,
+    meetsLaunchTarget: publicationReadyCount >= launchTarget,
+  };
 }
 
 export function assessProgramVersion(

@@ -33,6 +33,9 @@ export function assessExerciseContent(exercise: Exercise): ContentReadinessRepor
   if (exercise.contentStatus === 'reviewed' && !exercise.reviewedAt) {
     reviewWarnings.push(`${exercise.name}: reviewed records need a review timestamp.`);
   }
+  if (exercise.contentStatus === 'reviewed' && !exercise.reviewedBy?.trim()) {
+    reviewWarnings.push(`${exercise.name}: reviewed records need reviewer provenance.`);
+  }
   if (exercise.media.some((media) => media.reviewStatus !== 'approved')) {
     reviewWarnings.push(`${exercise.name}: media approval is pending.`);
   }

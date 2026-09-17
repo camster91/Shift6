@@ -5,6 +5,7 @@ import {
   assessExerciseCatalogue,
   assessExerciseContent,
   assessProgramVersion,
+  isExerciseAvailableToUser,
 } from './contentReadiness';
 
 describe('content readiness', () => {
@@ -47,6 +48,31 @@ describe('content readiness', () => {
     expect(report.readyForPublication).toBe(true);
     expect(report.blockers).toEqual([]);
     expect(report.reviewWarnings).toEqual([]);
+  });
+
+  it('fails closed on public draft exercise visibility while preserving dev and private custom use', () => {
+    const draft = foundationalExercises[0]!;
+    const reviewed = {
+      ...draft,
+      contentStatus: 'reviewed' as const,
+      reviewedAt: '2026-09-16T12:00:00.000Z',
+      reviewedBy: 'fitness-content-reviewer',
+    };
+    const custom = {
+      ...draft,
+      id: 'custom-private-exercise',
+      isCustom: true,
+    };
+    const retiredCustom = {
+      ...custom,
+      contentStatus: 'retired' as const,
+    };
+
+    expect(isExerciseAvailableToUser(draft)).toBe(false);
+    expect(isExerciseAvailableToUser(draft, true)).toBe(true);
+    expect(isExerciseAvailableToUser(reviewed)).toBe(true);
+    expect(isExerciseAvailableToUser(custom)).toBe(true);
+    expect(isExerciseAvailableToUser(retiredCustom, true)).toBe(false);
   });
 
   it('summarizes the draft catalogue without claiming the launch target is met', () => {

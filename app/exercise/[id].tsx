@@ -8,6 +8,10 @@ import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { getUserExercises } from '../../src/db/programRepository';
 import { useLocalDatabase } from '../../src/db/context';
 import {
+  assessExerciseContent,
+  isExerciseAvailableToUser,
+} from '../../src/domain/contentReadiness';
+import {
   equipmentCatalog,
   explainExerciseSubstitution,
   findExerciseSubstitutions,
@@ -24,9 +28,13 @@ export default function ExerciseDetailScreen() {
   const userId = useCurrentUserId();
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
+  const catalogueExercises = useMemo(
+    () => foundationalExercises.filter((exercise) => isExerciseAvailableToUser(exercise, __DEV__)),
+    [],
+  );
   const availableExercises = useMemo(
-    () => [...foundationalExercises, ...customExercises],
-    [customExercises],
+    () => [...catalogueExercises, ...customExercises],
+    [catalogueExercises, customExercises],
   );
   const exercise = availableExercises.find((candidate) => candidate.id === id);
 
@@ -51,18 +59,20 @@ export default function ExerciseDetailScreen() {
     return (
       <Screen>
         <IconButton
-          icon={<Ionicons name="arrow-back" size={22} color={colors.ink} />}
+          icon={<Ionicons name="arrow-back" size={22} color={colors.ink} />
           label="Back to Exercise Library"
           onPress={() => router.back()}
         />
         <EmptyState
           title="Movement not found"
-          message="This exercise is not available in the current catalogue preview."
+          message="This exercise is not available in the current catalogue."
         />
       </Screen>
     );
   }
 
+  const contentReadiness = assessExerciseContent(exercise);
+  const publicationReady = contentReadiness.readyForPublication;
   const substitutions = findExerciseSubstitutions(
     exercise,
     availableExercises,
@@ -78,7 +88,7 @@ export default function ExerciseDetailScreen() {
     <Screen>
       <View style={styles.header}>
         <IconButton
-          icon={<Ionicons name="arrow-back" size={22} color={colors.ink} />}
+          icon={<Ionicons name="arrow-back" size={22} color={colors.ink} />
           label="Back to Exercise Library"
           onPress={() => router.back()}
         />
@@ -97,17 +107,25 @@ export default function ExerciseDetailScreen() {
       </Text>
 
       <Card
-        tone={exercise.contentStatus === 'reviewed' ? 'white' : 'lavender'}
+        tone={exercise.isCustom ? 'blue' : publicationReady ? 'white' : 'lavender'}
         style={styles.statusCard}
       >
-        <Text variant="caption" tone="warning">
-          {exercise.contentStatus === 'draft'
-            ? 'TECHNIQUE AND MEDIA REVIEW PENDING'
-            : 'REVIEWED CATALOGUE RECORD'}
+        <Text
+          variant="caption"
+          tone={exercise.isCustom ? 'muted' : publicationReady ? 'success' : 'warning'}
+        >
+          {exercise.isCustom
+            ? 'PRIVATE CUSTOM MOVEMENT'
+            : publicationReady
+              ? 'REVIEWED CATALOGUE RECORD'
+              : 'DEVELOPMENT PREVIEW · CONTENT REVIEW PENDING'}
         </Text>
         <Text variant="small" tone="muted" style={styles.statusCopy}>
-          Draft records are useful for catalogue and substitution development, but are not a
-          substitute for human-reviewed exercise instruction.
+          {exercise.isCustom
+            ? 'This movement is private user-authored content and is not represented as a reviewed public catalogue record.'
+            : publicationReady
+              ? 'This catalogue record has the content-review provenance required for public exercise instruction.'
+              : 'This draft record is visible only for development QA. It is not a substitute for human-reviewed exercise instruction.'}
         </Text>
       </Card>
 
@@ -171,21 +189,34 @@ export default function ExerciseDetailScreen() {
         Compatible substitutions
       </Text>
       {substitutions.length > 0 ? (
-        substitutions.map((candidate) => (
-          <Card key={candidate.id} tone="white" style={styles.substitutionCard}>
-            <Text variant="smallMedium">{candidate.name}</Text>
-            <Text variant="small" tone="muted">
-              {formatLabel(candidate.movementPattern)} · {candidate.primaryMuscles.join(', ')}
-            </Text>
-            <Text variant="small" tone="muted">
-              {explainExerciseSubstitution(exercise, candidate)}
-            </Text>
-          </Card>
-        ))
+        substitutions.map((candidate) => {
+          const candidatePublicationReady = assessExerciseContent(candidate).readyForPublication;
+          return (
+            <Card key={candidate.id} tone="white" style={styles.substitutionCard}>
+              <Text variant="smallMedium">{candidate.name}</Text>
+              <Text variant="small" tone="muted">
+                {formatLabel(candidate.movementPattern)} · {candidate.primaryMuscles.join(', ')}
+              </Text>
+              <Text
+                variant="caption"
+                tone={candidate.isCustom ? 'muted' : candidatePublicationReady ? 'success' : 'warning'}
+              >
+                {candidate.isCustom
+                  ? 'Private custom movement'
+                  : candidatePublicationReady
+                    ? 'Reviewed catalogue record'
+                    : 'Draft preview'}
+              </Text>
+              <Text variant="small" tone="muted">
+                {explainExerciseSubstitution(exercise, candidate)}
+              </Text>
+            </Card>
+          );
+        })
       ) : (
         <EmptyState
           title="No compatible substitution yet"
-          message="Add more equipment or review the full catalogue to find another movement."
+          message="Add more equipment or review the available catalogue to find another movement."
         />
       )}
     </Screen>

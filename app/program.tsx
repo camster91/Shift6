@@ -18,7 +18,11 @@ import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { createTrainingCycle } from '../src/domain/cycle';
 import { equipmentCatalog } from '../src/domain/equipment';
 import { createProgramCopy } from '../src/domain/programBuilder';
-import { getProgramCatalogueStatusLabel, programLibrary } from '../src/domain/programLibrary';
+import {
+  canStartProgramCatalogueEntry,
+  getProgramCatalogueStatusLabel,
+  programLibrary,
+} from '../src/domain/programLibrary';
 import { saveProgramVersion } from '../src/db/programRepository';
 import { colors, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
@@ -34,12 +38,19 @@ export default function ProgramDetailScreen() {
     programLibrary.find((entry) => entry.program.id === programId) ?? programLibrary[0]!;
   const selectedProgram = catalogueEntry.program;
   const selectedVersion = catalogueEntry.version;
-  const isStartable = catalogueEntry.status === 'published' && selectedVersion !== undefined;
+  const isPublished = canStartProgramCatalogueEntry(catalogueEntry);
+  const isDevelopmentPreview =
+    !isPublished && canStartProgramCatalogueEntry(catalogueEntry, __DEV__);
+  const isStartable = isPublished || isDevelopmentPreview;
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleStartCycle = async () => {
     if (starting) return;
+    if (!isStartable) {
+      setError('This program is still in content review and cannot start a public cycle yet.');
+      return;
+    }
 
     setStarting(true);
     setError(null);
@@ -76,6 +87,7 @@ export default function ProgramDetailScreen() {
         programId: selectedProgram.id,
         daysPerWeek: selectedProgram.daysPerWeek,
         sessionLengthMinutes: selectedProgram.sessionLengthMinutes,
+        developmentPreview: isDevelopmentPreview,
       });
       router.replace('/');
     } catch (startError) {
@@ -108,11 +120,26 @@ export default function ProgramDetailScreen() {
 
       <ProgramCard
         program={selectedProgram}
-        statusLabel={getProgramCatalogueStatusLabel(catalogueEntry.status)}
+        statusLabel={
+          isDevelopmentPreview
+            ? 'Draft preview'
+            : getProgramCatalogueStatusLabel(catalogueEntry.status)
+        }
       />
 
       {isStartable ? (
-        <Card tone="lavender" style={styles.cycleCard}>
+        <Card tone={isDevelopmentPreview ? 'yellow' : 'lavender'} style={styles.cycleCard}>
+          {isDevelopmentPreview ? (
+            <>
+              <Text variant="caption" tone="muted">
+                DEVELOPMENT PREVIEW · DRAFT CONTENT
+              </Text>
+              <Text variant="small" tone="muted" style={styles.previewWarning}>
+                This internal preview is available only in development builds. Exercise technique
+                content is not yet approved for public release.
+              </Text>
+            </>
+          ) : null}
           <View style={styles.cardHeader}>
             <Text variant="h3">Six-week shape</Text>
             <Text variant="smallMedium">{selectedProgram.sessionLengthMinutes} min</Text>
@@ -126,9 +153,9 @@ export default function ProgramDetailScreen() {
           </Text>
         </Card>
       ) : (
-        <Card tone="yellow" style={styles.cycleCard} accessibilityLabel="Program content in build">
+        <Card tone="yellow" style={styles.cycleCard} accessibilityLabel="Program content in review">
           <Text variant="caption" tone="muted">
-            CONTENT IN BUILD
+            CONTENT IN REVIEW
           </Text>
           <Text variant="h3" style={styles.buildTitle}>
             This program is being reviewed.
@@ -203,7 +230,7 @@ export default function ProgramDetailScreen() {
 
       {isStartable ? (
         <Button
-          label="Start six-week cycle"
+          label={isDevelopmentPreview ? 'Start draft preview' : 'Start six-week cycle'}
           onPress={handleStartCycle}
           loading={starting}
           icon={<Ionicons name="arrow-forward" size={18} color={colors.white} />}
@@ -220,12 +247,16 @@ export default function ProgramDetailScreen() {
       )}
       <Text variant="caption" tone="muted" style={styles.persistenceNote}>
         {database
-          ? isStartable
-            ? 'Your selected program version will be snapshotted on this device.'
-            : 'This catalogue entry is not startable until its executable version is reviewed.'
+          ? isDevelopmentPreview
+            ? 'Development preview only. The draft program will be snapshotted locally for QA.'
+            : isStartable
+              ? 'Your selected program version will be snapshotted on this device.'
+              : 'This catalogue entry is not startable until its content review passes.'
           : Platform.OS === 'web'
             ? 'Web preview: cycle persistence is not active in this surface.'
-            : 'This program version will be snapshotted locally before future sync.'}
+            : isDevelopmentPreview
+              ? 'Development preview only. Draft content is not approved for public release.'
+              : 'This program version will be snapshotted locally before future sync.'}
       </Text>
     </Screen>
   );
@@ -269,6 +300,10 @@ const styles = StyleSheet.create({
   },
   buildTitle: {
     marginTop: spacing.sm,
+  },
+  previewWarning: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
   },
   equipmentCard: {
     marginTop: spacing.md,

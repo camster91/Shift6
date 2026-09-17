@@ -5,13 +5,12 @@ import type {
   ProgramVersion,
   ProgressionStrategy,
 } from './types';
+import { assessProgramVersion } from './contentReadiness';
+import { foundationalExercises } from './fixtures/exercises';
 import { buildLaunchProgramVersion } from './fixtures/programVersions';
 import { demoProgramVersion } from './fixtures/home';
 
-const metadata: readonly Omit<
-  Program,
-  'currentVersionId' | 'isTemplate'
->[] = [
+const metadata: readonly Omit<Program, 'currentVersionId' | 'isTemplate'>[] = [
   {
     id: 'program-barbell-30',
     slug: 'barbell-30',
@@ -320,9 +319,7 @@ export interface ProgramCatalogueEntry {
 
 export const programLibrary: readonly ProgramCatalogueEntry[] = metadata.map((entry) => {
   const isCanonicalBarbell30 = entry.slug === 'barbell-30';
-  const currentVersionId = isCanonicalBarbell30
-    ? demoProgramVersion.id
-    : `${entry.id}-version-1`;
+  const currentVersionId = isCanonicalBarbell30 ? demoProgramVersion.id : `${entry.id}-version-1`;
   const program: Program = {
     ...entry,
     currentVersionId,
@@ -331,10 +328,13 @@ export const programLibrary: readonly ProgramCatalogueEntry[] = metadata.map((en
   const version = isCanonicalBarbell30
     ? demoProgramVersion
     : buildLaunchProgramVersion(program);
+  const releaseReady =
+    version !== undefined &&
+    assessProgramVersion(program, version, foundationalExercises).readyForPublication;
 
   return {
     program,
-    status: isCanonicalBarbell30 ? 'published' : 'metadata-draft',
+    status: releaseReady ? 'published' : 'metadata-draft',
     buildStatus: isCanonicalBarbell30
       ? 'canonical'
       : version === undefined
@@ -347,7 +347,16 @@ export const programLibrary: readonly ProgramCatalogueEntry[] = metadata.map((en
 export const programLibraryPrograms = programLibrary.map((entry) => entry.program);
 
 export function getProgramCatalogueStatusLabel(status: ProgramCatalogueStatus): string {
-  return status === 'published' ? 'Ready to start' : 'Content in build';
+  return status === 'published' ? 'Ready to start' : 'Content in review';
+}
+
+export function canStartProgramCatalogueEntry(
+  entry: ProgramCatalogueEntry,
+  allowDraftPreview = false,
+): boolean {
+  if (!entry.version) return false;
+  if (entry.status === 'published') return true;
+  return allowDraftPreview && entry.buildStatus !== 'metadata-only';
 }
 
 export type ProgramGoal = Goal;

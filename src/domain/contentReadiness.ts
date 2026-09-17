@@ -58,6 +58,15 @@ export function assessExerciseContent(exercise: Exercise): ContentReadinessRepor
   return report(blockers, reviewWarnings);
 }
 
+export function isExerciseAvailableToUser(
+  exercise: Exercise,
+  allowDraftPreview = false,
+): boolean {
+  if (exercise.contentStatus === 'retired') return false;
+  if (exercise.isCustom) return true;
+  return allowDraftPreview || assessExerciseContent(exercise).readyForPublication;
+}
+
 export function assessExerciseCatalogue(
   exercises: readonly Exercise[],
   launchTarget = EXERCISE_LAUNCH_TARGET,

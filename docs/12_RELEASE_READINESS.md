@@ -1,6 +1,6 @@
 # SHIFT6 release-readiness checkpoint
 
-Updated: 2026-09-16
+Updated: 2026-09-19
 
 ## Status precedence
 
@@ -66,10 +66,17 @@ accessible targets. Regression tests also guard app text font scaling, bounded p
 minimum touch targets and functional text/status colour contrast. VoiceOver/TalkBack, critical-flow
 large-text behaviour and representative-device verification remain mandatory external evidence.
 
+The integrated local candidate exports production JavaScript bundles for both iOS and Android and
+generates both native projects successfully with Expo prebuild. The prebuild audit found and fixed a
+real configuration gap: `userInterfaceStyle: light` required the SDK-compatible `expo-system-ui`
+module and config plugin to take effect on Android. Expo config introspection now contains the
+generated `expo_system_ui_user_interface_style` resource. Native binary compilation is not verified
+on this host because full Xcode is not selected and no Java runtime/Android SDK tooling is available.
+
 ## Current Expo compatibility check
 
-The dependency baseline was checked against Expo's current SDK 57 documentation on 2026-09-15.
-SHIFT6 uses Expo `~57.0.22`, React Native `0.86.3`, React `19.2.3`, and React Native Web `~0.21.0`,
+The dependency baseline was checked against Expo's current SDK 57 documentation on 2026-09-19.
+SHIFT6 uses Expo `~57.0.24`, React Native `0.86.3`, React `19.2.3`, and React Native Web `~0.21.0`,
 which matches the SDK 57 compatibility line. Expo's SDK 57 changelog also identifies React Native
 0.86.3 / Expo 57.0.17+ as the fix level for the Hermes regressions that affected apps importing
 Reanimated or Worklets; this repository is above that Expo fix level.
@@ -79,8 +86,8 @@ References:
 - https://docs.expo.dev/versions/latest/
 - https://expo.dev/changelog/sdk-57
 
-Expo Doctor and native-build verification still remain mandatory release gates; this compatibility
-check does not replace either one.
+Expo Doctor passes all 21 repository checks on the integrated local candidate. Native-build
+verification remains a mandatory release gate; the repository check does not replace it.
 
 ## Remaining product-content gate
 
@@ -111,14 +118,19 @@ These cannot be truthfully completed from repository-only work:
 - App Store and Google Play listing assets, privacy/data-safety declarations, staged rollout,
   rollback, and submission approval.
 
-## Verification still required for these branches
+## Repository verification state
 
-GitHub Actions are disabled at repository level as of 2026-09-19, so rebuild-era branches and draft
-PRs have no CI status beyond separate security checks. The workflow supports manual
-`workflow_dispatch`, but it cannot run until Actions are enabled. Before merge, run
-`npm run verify` (or the equivalent CI workflow) and require all repository gates to pass: format
-check, lint, TypeScript, Expo Doctor, asset/secret/release validation, dependency audit, Jest, and
-the web export. Static review in the repository is not a substitute for those commands.
+GitHub Actions are enabled with GitHub-owned actions allowed. PR #301 at `ccff7e5` has a successful
+quality run covering install, format, lint, TypeScript, Expo Doctor, asset/secret/release validation,
+the high-severity production dependency audit, Jest, and web export. The reconciled local integration
+candidate adds PR #284 and the still-relevant reviewer-provenance requirement from PR #293; it passes
+the same full gate locally with 68 suites / 376 tests and a 31-route web export.
+
+That evidence does not make the existing intermediate PR heads independently green. PR #282 still
+fails its own aggregate gate on formatting and Expo patch drift, and PRs #287–#290 do not contain the
+latest commit from their declared base branches. Use the consolidation guidance in
+`docs/17_STACKED_PR_VERIFICATION.md`; do not infer that the current stack can be merged one PR at a
+time merely because its top is green.
 
 The dependent profile/body-metric branch adds migration 19 plus new repository/UI tests. The
 account-deletion branch adds backend-protocol, cleanup-order and SecureStore recovery tests. The
@@ -127,7 +139,7 @@ branch adds shared component semantics and colour/touch-target regression tests.
 the same verification gate after its prerequisite branch is validated.
 
 The native/device/store evidence sequence is defined in `docs/13_NATIVE_RELEASE_VERIFICATION.md`.
-The stacked repository verification order through PR #301 is defined in
+The stacked repository reconciliation and verification plan through PR #301 is defined in
 `docs/17_STACKED_PR_VERIFICATION.md` and must be extended for any later dependent PR before merge
 approval.
 

@@ -2,9 +2,19 @@
 
 Updated: 2026-09-19
 
-This runbook exists because the connected GitHub integration can author branches and pull requests
-but has not triggered inspectable Actions runs for these commits. None of the stacked PRs should be
-merged based only on static review.
+This runbook records the verified cumulative head, the broken intermediate stack state, and the safe
+path to a reviewable integration branch. GitHub Actions are enabled, but no PR should be merged based
+only on static review or on a successful descendant check that does not match the branch being merged.
+
+## Current verification evidence
+
+- PR #301 is green at `ccff7e5`; its GitHub quality run completed successfully.
+- The local reconciliation candidate combines the cumulative #301 tree, documentation PR #284, and
+  the still-relevant reviewer-provenance requirement from #293.
+- The local candidate passes `npm run verify`: 68 suites / 376 tests, Expo Doctor 21/21, and a
+  31-route web export.
+- The strict release-ready validator remains intentionally blocked on real production URLs/network
+  evidence and approved final icon/adaptive-icon/splash assets.
 
 ## Current stack
 
@@ -101,6 +111,13 @@ Superseded sibling implementation PR:
 
 The most efficient code verification target is the head of **PR #301** because that branch contains
 the active code stack from #282 through #301, excluding the separate sibling PRs called out above.
+
+That target is now verified, but it does not prove the current intermediate heads can land in order:
+
+- PR #282 fails its own gate on eight unformatted files and five Expo patch-version mismatches;
+- PRs #287–#290 are each missing the latest commit from their declared base branch;
+- #284 and #293 are side branches rather than ancestors of #301;
+- merging #293 into #301 directly produces conflicts in seven production/test files.
 
 From a normal authenticated checkout:
 
@@ -297,36 +314,26 @@ Do not enter its provisional metadata into App Store Connect or Google Play Cons
 - store screenshots and copy match the submitted build;
 - Cameron explicitly approves submission.
 
-## Merge sequence
+## Integration plan
 
-No merge is approved by this document. When Cameron explicitly approves merging after verification,
-the clean conceptual order is:
+No push or merge is approved by this document. Do not land the current intermediate heads one by one:
+their declared ancestry and independent verification state no longer support that path.
 
-1. #282 into `main`;
-2. retarget/reconcile #283 against updated `main`, then merge;
-3. retarget/reconcile #285 against updated `main`, then merge;
-4. retarget/reconcile #286 against updated `main`, then merge;
-5. retarget/reconcile #287 against updated `main`, then merge;
-6. retarget/reconcile #288 against updated `main`, then merge;
-7. retarget/reconcile #289 against updated `main`, then merge;
-8. retarget/reconcile #290 against updated `main`, then merge;
-9. retarget/reconcile #291 against updated `main`, then merge;
-10. retarget/reconcile #292 against updated `main`, then merge;
-11. retarget/reconcile #294 against updated `main`, then merge;
-12. retarget/reconcile #295 against updated `main`, then merge;
-13. retarget/reconcile #296 against updated `main`, then merge;
-14. retarget/reconcile #297 against updated `main`, then merge;
-15. retarget/reconcile #298 against updated `main`, then merge;
-16. retarget/reconcile #299 against updated `main`, then merge;
-17. retarget/reconcile #300 against updated `main`, then merge;
-18. retarget/reconcile #301 against updated `main`, then merge;
-19. reconcile #284 with the integrated code state, update its privacy/store mapping for the complete
-    release candidate, retarget to `main`, verify documentation accuracy, then merge if approved;
-20. reconcile or close superseded sibling #293; do not merge it independently into the completed
-    stack without a fresh diff and verification pass.
+Prepare one cumulative integration branch from the verified #301 head, then:
 
-Do not merge a descendant PR first simply because GitHub reports it as mergeable; the stacked base
-branches are part of the intended review history.
+1. merge/reconcile #284's current store-release documentation;
+2. preserve #301's newer runtime content gates while adding #293's reviewer identity requirement;
+3. discard #293's obsolete Actions-disabled note;
+4. renumber its exercise-review checklist so it does not collide with the existing document set;
+5. run focused content/runtime-gate tests, then a fresh `npm ci` and full `npm run verify`;
+6. push only after explicit approval and open a draft integration PR targeting `main`;
+7. require GitHub CI on the exact integration head;
+8. review the cumulative diff and historical PR mapping before any merge approval;
+9. after an approved merge, close or supersede the old stacked PRs with links to the integrated
+   commit so their review history is preserved.
+
+The local candidate currently implements steps 1–5. Pushing it, opening a PR, changing old PR state,
+or merging remains a separate approval boundary.
 
 ## Evidence to record on the PRs
 

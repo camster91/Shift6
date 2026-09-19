@@ -1,6 +1,6 @@
 # SHIFT6 epic status matrix
 
-Updated: 2026-09-16
+Updated: 2026-09-19
 
 This file is a present-tense execution aid for issues #270–#281. It does not replace the issue acceptance criteria or `docs/12_RELEASE_READINESS.md`.
 
@@ -40,13 +40,17 @@ Implemented:
 - authenticated remote account-deletion transport contract with fail-closed response validation;
 - dev/preview/production EAS configuration;
 - GitHub Actions quality workflow plus manual dispatch;
+- successful GitHub Actions quality run on PR #301 at `ccff7e5`;
 - one-command `npm run verify` repository gate;
 - secret/release/asset checks, tests, Expo Doctor and web-export gates;
 - provider-neutral error-reporting seam and root render error boundary.
+- successful iOS/Android JavaScript bundle exports and Expo native-project generation;
+- enforced Android light appearance through `expo-system-ui`, with release-config validation.
 
 Remaining:
-- actual CI results for the stacked implementation branches;
+- CI on the reconciled integration candidate after it is pushed for review;
 - representative native boot and SQLite restart/offline verification;
+- native binary compilation on a host with full Xcode and Java/Android SDK tooling;
 - signed EAS preview builds;
 - deployed authenticated backend/auth provider;
 - production remote deletion endpoint/cascade and provider revocation;
@@ -144,7 +148,8 @@ Implemented:
 - no LLM dependency for calculations.
 
 Remaining:
-- PR #282 repository verification/CI and merge review.
+- integration review and merge approval; the root PR #282 is not independently green, while the
+  reconciled cumulative candidate passes locally.
 
 ## #278 — Provider-agnostic AI PT Coach
 
@@ -228,9 +233,10 @@ Prepared:
 - privacy-safe analytics funnel;
 - mobile account-deletion flow/recovery contract;
 - staged-release and rollback expectations.
+- green repository verification on PR #301 and the reconciled local integration candidate.
 
 Remaining:
-- green repository verification/CI;
+- GitHub CI on the reconciled integration candidate after it is pushed for review;
 - signed iOS/Android candidate builds;
 - representative native E2E/fault/accessibility QA;
 - live auth/backend/crash monitoring;

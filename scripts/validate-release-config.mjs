@@ -34,6 +34,7 @@ async function validate() {
     'expo-sqlite',
     'expo-secure-store',
     'expo-notifications',
+    'expo-system-ui',
     '@kingstinct/react-native-healthkit',
     'react-native-health-connect',
   ]) {

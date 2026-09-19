@@ -11,8 +11,8 @@ only on static review or on a successful descendant check that does not match th
 - PR #301 is green at `ccff7e5`; its GitHub quality run completed successfully.
 - The local reconciliation candidate combines the cumulative #301 tree, documentation PR #284, and
   the still-relevant reviewer-provenance requirement from #293.
-- The local candidate passes `npm run verify`: 68 suites / 376 tests, Expo Doctor 21/21, and a
-  31-route web export.
+- The local candidate passes `npm run verify`: 68 suites / 376 tests, Expo Doctor 21/21, iOS and
+  Android bundles, and a 31-route web export.
 - The strict release-ready validator remains intentionally blocked on real production URLs/network
   evidence and approved final icon/adaptive-icon/splash assets.
 
@@ -140,7 +140,7 @@ npm run verify
 - release-config validation;
 - production dependency audit at high severity;
 - Jest unit/component tests;
-- Expo web export smoke test.
+- Expo iOS, Android and web export smoke tests.
 
 Do not substitute `npm install` for `npm ci` when verifying the committed lockfile.
 

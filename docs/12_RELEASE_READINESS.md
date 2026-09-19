@@ -124,7 +124,7 @@ GitHub Actions are enabled with GitHub-owned actions allowed. PR #301 at `ccff7e
 quality run covering install, format, lint, TypeScript, Expo Doctor, asset/secret/release validation,
 the high-severity production dependency audit, Jest, and web export. The reconciled local integration
 candidate adds PR #284 and the still-relevant reviewer-provenance requirement from PR #293; it passes
-the same full gate locally with 68 suites / 376 tests and a 31-route web export.
+the same full gate locally with 68 suites / 376 tests, iOS and Android bundles, and a 31-route web export.
 
 That evidence does not make the existing intermediate PR heads independently green. PR #282 still
 fails its own aggregate gate on formatting and Expo patch drift, and PRs #287–#290 do not contain the

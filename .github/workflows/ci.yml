@@ -56,5 +56,5 @@ jobs:
       - name: Unit and component tests
         run: npm test -- --ci
 
-      - name: Web export smoke
-        run: npm run export:web
+      - name: iOS, Android and web export smoke
+        run: npm run export:all

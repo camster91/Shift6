@@ -42,7 +42,7 @@ Implemented:
 - GitHub Actions quality workflow plus manual dispatch;
 - successful GitHub Actions quality run on PR #301 at `ccff7e5`;
 - one-command `npm run verify` repository gate;
-- secret/release/asset checks, tests, Expo Doctor and web-export gates;
+- secret/release/asset checks, tests, Expo Doctor and iOS/Android/web export gates;
 - provider-neutral error-reporting seam and root render error boundary.
 - successful iOS/Android JavaScript bundle exports and Expo native-project generation;
 - enforced Android light appearance through `expo-system-ui`, with release-config validation.

@@ -6,7 +6,7 @@ This gate separates ordinary repository verification from the stricter configura
 
 ## Why this is separate
 
-`npm run verify` must remain useful while external release values are intentionally unresolved. It validates source, tests, Expo configuration, assets, secrets, dependency audit and web export.
+`npm run verify` must remain useful while external release values are intentionally unresolved. It validates source, tests, Expo configuration, assets, secrets, dependency audit and iOS/Android/web bundle exports.
 
 `npm run validate:release-ready` is intentionally stricter and should be run only against the exact environment intended for a signed release candidate. It does not submit or deploy anything.
 

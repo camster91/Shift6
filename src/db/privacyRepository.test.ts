@@ -1,6 +1,10 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { deleteLocalUserData, exportLocalUserData } from './privacyRepository';
+import {
+  buildLocalDataExportSummary,
+  deleteLocalUserData,
+  exportLocalUserData,
+} from './privacyRepository';
 
 describe('exportLocalUserData', () => {
   it('returns user-scoped local records with a versioned export envelope', async () => {
@@ -47,9 +51,58 @@ describe('exportLocalUserData', () => {
     await expect(
       exportLocalUserData(database, 'guest-user', '2026-09-14T12:00:00.000Z'),
     ).resolves.toEqual({
-      schemaVersion: 8,
+      schemaVersion: 9,
       exportedAt: '2026-09-14T12:00:00.000Z',
       userId: 'guest-user',
+      summary: {
+        scope: 'local-device',
+        title: 'SHIFT6 local data export',
+        description:
+          'A structured JSON copy of SHIFT6 data owned by this user and currently stored on this device.',
+        limitations:
+          'This is a local-device export. It does not claim to include server-only account data or third-party provider records that are not cached in SHIFT6 local storage.',
+        totalRecordCount: 13,
+        sections: [
+          {
+            key: 'profile',
+            title: 'Profile and equipment',
+            description: 'Your local profile answers and saved equipment inventory.',
+            recordCount: 2,
+          },
+          {
+            key: 'preferences',
+            title: 'Preferences and accessibility',
+            description:
+              'Local movement/accessibility preferences and Coach provider privacy preference.',
+            recordCount: 2,
+          },
+          {
+            key: 'bodyAndHealth',
+            title: 'Body metrics and health summaries',
+            description: 'Manual body measurements and health summaries imported onto this device.',
+            recordCount: 2,
+          },
+          {
+            key: 'trainingHistory',
+            title: 'Training history',
+            description:
+              'Cycles, workout sessions, completed sets, in-progress drafts, check-ins, cycle reviews, and schedule overrides.',
+            recordCount: 3,
+          },
+          {
+            key: 'programsAndExercises',
+            title: 'Your programs and exercises',
+            description: 'Private program copies, program versions, and custom exercise records.',
+            recordCount: 3,
+          },
+          {
+            key: 'coachAndNotifications',
+            title: 'Coach and notification records',
+            description: 'Saved Coach proposals and local notification preferences.',
+            recordCount: 1,
+          },
+        ],
+      },
       userProfiles: [{ id: 'guest-user', display_name: 'Cameron' }],
       userEquipment: [{ user_id: 'guest-user', equipment_id: 'barbell' }],
       userConsiderations: [
@@ -83,6 +136,36 @@ describe('exportLocalUserData', () => {
     });
   });
 });
+
+describe('buildLocalDataExportSummary', () => {
+  it('makes export scope and section counts understandable without exposing record values', () => {
+    const summary = buildLocalDataExportSummary({
+      userProfiles: [{ id: 'user-1' }],
+      userEquipment: [],
+      userConsiderations: [],
+      bodyMetrics: [],
+      coachPrivacyPreferences: [],
+      trainingCycles: [],
+      workoutSessions: [],
+      completedSets: [{ id: 'set-1' }, { id: 'set-2' }],
+      workoutDrafts: [],
+      workoutCheckIns: [],
+      userPrograms: [],
+      userProgramVersions: [],
+      userExercises: [],
+      coachProposals: [],
+      healthSummaries: [],
+      notificationPreferences: [],
+      cycleReviews: [],
+      workoutScheduleOverrides: [],
+    });
+
+    expect(summary.scope).toBe('local-device');
+    expect(summary.totalRecordCount).toBe(3);
+    expect(summary.limitations).toContain('server-only');
+    expect(summary.sections.find((section) => section.key === 'trainingHistory')?.recordCount).toBe(2);
+    expect(JSON.stringify(summary)).not.toContain('set-1');
+  });
 
 describe('deleteLocalUserData', () => {
   it('clears dependent records and sync mutations in one transaction', async () => {

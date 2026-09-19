@@ -109,7 +109,9 @@ export default function ProfileScreen() {
         title: 'SHIFT6 data export',
         message: JSON.stringify(data, null, 2),
       });
-      setPrivacyMessage('Your local export is ready to share.');
+      setPrivacyMessage(
+        `Your local export includes ${data.summary.totalRecordCount} records across ${data.summary.sections.length} sections and is ready to share.`,
+      );
     } catch {
       setPrivacyMessage('We could not prepare the local export.');
     } finally {
@@ -390,8 +392,8 @@ export default function ProfileScreen() {
         <Text variant="smallMedium">Your training record stays yours.</Text>
         <Text variant="small" tone="muted" style={styles.privacyCopy}>
           {identity.kind === 'account'
-            ? 'Export the local record or delete the authenticated account. Remote deletion must be confirmed before SHIFT6 clears this device.'
-            : 'Export or remove the local guest data stored on this device.'}
+            ? 'Export the data currently stored on this device or delete the authenticated account. The export includes profile/preferences, training history, programs/custom exercises, body and health summaries, Coach proposals, and notification settings. It does not claim to include server-only account data.'
+            : 'Export or remove the local guest data stored on this device. The export is structured JSON with a plain-language section summary and record counts.'}
         </Text>
         <Button
           label="Export local data"

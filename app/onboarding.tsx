@@ -167,11 +167,17 @@ export default function OnboardingScreen() {
       const profile = toOnboardingProfile(draft, updatedAt);
       if (database) {
         await saveOnboardingProfile(database, profile);
-        await saveUserConsiderations(database, {
-          ...considerations,
-          userId,
-          updatedAt,
-        });
+        try {
+          await saveUserConsiderations(database, {
+            ...considerations,
+            userId,
+            updatedAt,
+          });
+        } catch {
+          throw new Error(
+            'Your main setup was saved, but movement and accessibility preferences were not. Retry here or edit them later from Profile.',
+          );
+        }
       }
       trackAnalyticsEvent(analytics, 'onboarding_completed', {
         goalCount: draft.goals.length,

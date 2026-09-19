@@ -139,6 +139,10 @@ Verify opt-in, denial, and disabled states for:
 
 Confirm scheduled reminders deep-link to the intended workout without mutating the plan. Verify foreground, background, cold-start, and expired/cancelled reminder behaviour on both platforms.
 
+On Android 13+, confirm the `SHIFT6 reminders` notification channel exists before the permission
+prompt is requested, and confirm workout and rest-timer notifications are scheduled through that
+channel. This ordering is required for Android to display the runtime notification prompt reliably.
+
 ## 9. Authentication/backend gate
 
 This gate cannot pass until an auth provider and authenticated backend are deliberately selected and deployed.

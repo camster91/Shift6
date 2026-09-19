@@ -37,6 +37,25 @@ export interface NotificationProvider {
   getLastResponse(): Promise<NotificationResponsePayload | null>;
 }
 
+export const shift6ReminderChannelId = 'shift6-reminders';
+
+export type NotificationModule = Pick<
+  typeof Notifications,
+  | 'AndroidImportance'
+  | 'SchedulableTriggerInputTypes'
+  | 'addNotificationResponseReceivedListener'
+  | 'cancelScheduledNotificationAsync'
+  | 'getAllScheduledNotificationsAsync'
+  | 'getLastNotificationResponseAsync'
+  | 'getPermissionsAsync'
+  | 'requestPermissionsAsync'
+  | 'scheduleNotificationAsync'
+  | 'setNotificationChannelAsync'
+  | 'setNotificationHandler'
+>;
+
+type NotificationModuleLoader = () => Promise<NotificationModule>;
+
 /** Explicit web/unconfigured boundary; settings remain usable without delivery. */
 export class UnavailableNotificationProvider implements NotificationProvider {
   async isAvailable(): Promise<boolean> {
@@ -79,21 +98,23 @@ export class UnavailableNotificationProvider implements NotificationProvider {
  * outside this provider so domain settings do not silently create reminders.
  */
 export class ExpoNotificationProvider implements NotificationProvider {
+  constructor(private readonly notificationsLoader: NotificationModuleLoader = loadNotifications) {}
+
   async isAvailable(): Promise<boolean> {
     return Platform.OS !== 'web';
   }
 
   async getPermissionStatus(): Promise<NotificationPermissionStatus> {
     if (!(await this.isAvailable())) return 'unavailable';
-    const notifications = await loadNotifications();
-    configurePresentationHandler(notifications);
+    const notifications = await this.notificationsLoader();
+    await configureNativeNotifications(notifications);
     return mapPermissionStatus(await notifications.getPermissionsAsync());
   }
 
   async requestPermission(): Promise<NotificationPermissionStatus> {
     if (!(await this.isAvailable())) return 'unavailable';
-    const notifications = await loadNotifications();
-    configurePresentationHandler(notifications);
+    const notifications = await this.notificationsLoader();
+    await configureNativeNotifications(notifications);
     const permissions = await notifications.requestPermissionsAsync({
       ios: { allowAlert: true, allowBadge: false, allowSound: false },
     });
@@ -102,8 +123,8 @@ export class ExpoNotificationProvider implements NotificationProvider {
 
   async getScheduledNotifications(): Promise<readonly ScheduledNotification[]> {
     if (!(await this.isAvailable())) return [];
-    const notifications = await loadNotifications();
-    configurePresentationHandler(notifications);
+    const notifications = await this.notificationsLoader();
+    await configureNativeNotifications(notifications);
     const scheduled = await notifications.getAllScheduledNotificationsAsync();
     return scheduled.map((request) => ({
       identifier: request.identifier,
@@ -115,8 +136,8 @@ export class ExpoNotificationProvider implements NotificationProvider {
     if (!(await this.isAvailable())) {
       throw new Error('Native notification delivery is unavailable.');
     }
-    const notifications = await loadNotifications();
-    configurePresentationHandler(notifications);
+    const notifications = await this.notificationsLoader();
+    await configureNativeNotifications(notifications);
     return notifications.scheduleNotificationAsync({
       identifier: request.identifier,
       content: {
@@ -128,13 +149,14 @@ export class ExpoNotificationProvider implements NotificationProvider {
       trigger: {
         type: notifications.SchedulableTriggerInputTypes.DATE,
         date: request.scheduledFor,
+        channelId: Platform.OS === 'android' ? shift6ReminderChannelId : undefined,
       },
     });
   }
 
   async cancelScheduledNotification(identifier: string): Promise<void> {
     if (!(await this.isAvailable())) return;
-    const notifications = await loadNotifications();
+    const notifications = await this.notificationsLoader();
     await notifications.cancelScheduledNotificationAsync(identifier);
   }
 
@@ -142,7 +164,7 @@ export class ExpoNotificationProvider implements NotificationProvider {
     listener: (response: NotificationResponsePayload) => void,
   ): Promise<NotificationResponseSubscription> {
     if (!(await this.isAvailable())) return { remove: () => undefined };
-    const notifications = await loadNotifications();
+    const notifications = await this.notificationsLoader();
     const subscription = notifications.addNotificationResponseReceivedListener((response) => {
       listener({ data: response.notification.request.content.data ?? {} });
     });
@@ -151,7 +173,7 @@ export class ExpoNotificationProvider implements NotificationProvider {
 
   async getLastResponse(): Promise<NotificationResponsePayload | null> {
     if (!(await this.isAvailable())) return null;
-    const notifications = await loadNotifications();
+    const notifications = await this.notificationsLoader();
     const response = await notifications.getLastNotificationResponseAsync();
     return response ? { data: response.notification.request.content.data ?? {} } : null;
   }
@@ -168,13 +190,23 @@ function mapPermissionStatus(
   return permissions.canAskAgain ? 'not-determined' : 'denied';
 }
 
-async function loadNotifications() {
+async function loadNotifications(): Promise<NotificationModule> {
   return import('expo-notifications');
 }
 
 let presentationHandlerConfigured = false;
 
-function configurePresentationHandler(notifications: typeof Notifications): void {
+async function configureNativeNotifications(notifications: NotificationModule): Promise<void> {
+  configurePresentationHandler(notifications);
+  if (Platform.OS !== 'android') return;
+  await notifications.setNotificationChannelAsync(shift6ReminderChannelId, {
+    name: 'SHIFT6 reminders',
+    description: 'Workout reminders and active-session rest timer cues.',
+    importance: notifications.AndroidImportance.DEFAULT,
+  });
+}
+
+function configurePresentationHandler(notifications: NotificationModule): void {
   if (presentationHandlerConfigured) return;
   notifications.setNotificationHandler({
     handleNotification: async () => ({

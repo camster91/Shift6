@@ -229,6 +229,8 @@ Prepared:
 - native/release verification runbook;
 - EAS build profiles and stable identifiers;
 - notification and health permission controls;
+- Android reminder-channel creation before permission requests, with local reminders assigned to
+  the managed channel;
 - provider-neutral crash/error seam;
 - privacy-safe analytics funnel;
 - mobile account-deletion flow/recovery contract;

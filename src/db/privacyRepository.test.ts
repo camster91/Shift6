@@ -163,9 +163,12 @@ describe('buildLocalDataExportSummary', () => {
     expect(summary.scope).toBe('local-device');
     expect(summary.totalRecordCount).toBe(3);
     expect(summary.limitations).toContain('server-only');
-    expect(summary.sections.find((section) => section.key === 'trainingHistory')?.recordCount).toBe(2);
+    expect(summary.sections.find((section) => section.key === 'trainingHistory')?.recordCount).toBe(
+      2,
+    );
     expect(JSON.stringify(summary)).not.toContain('set-1');
   });
+});
 
 describe('deleteLocalUserData', () => {
   it('clears dependent records and sync mutations in one transaction', async () => {

@@ -9,12 +9,14 @@ import { demoProgram, demoProgramVersion } from './fixtures/home';
 import type { Exercise, ExerciseMedia } from './types';
 
 const reviewedAt = '2026-09-16T12:00:00.000Z';
+const reviewedBy = 'fitness-content-reviewer';
 
 function reviewedExercise(overrides: Partial<Exercise> = {}): Exercise {
   return {
     ...foundationalExercises[0]!,
     contentStatus: 'reviewed',
     reviewedAt,
+    reviewedBy,
     ...overrides,
   };
 }
@@ -53,6 +55,16 @@ describe('content readiness', () => {
     expect(report.readyForPublication).toBe(true);
     expect(report.blockers).toEqual([]);
     expect(report.reviewWarnings).toEqual([]);
+  });
+
+  it('requires reviewer provenance before a reviewed exercise can publish', () => {
+    const report = assessExerciseContent(reviewedExercise({ reviewedBy: '   ' }));
+
+    expect(report.readyForCycle).toBe(true);
+    expect(report.readyForPublication).toBe(false);
+    expect(report.reviewWarnings).toContain(
+      'Back squat: reviewed records need reviewer provenance.',
+    );
   });
 
   it('requires muscle, equipment, instruction, cue and safety metadata for runnable exercises', () => {

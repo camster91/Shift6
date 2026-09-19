@@ -49,6 +49,7 @@ describe('runtime content release gates', () => {
       ...exercise,
       contentStatus: 'reviewed' as const,
       reviewedAt: '2026-09-19T00:00:00.000Z',
+      reviewedBy: 'fitness-content-reviewer',
     }));
     const reviews = [
       {

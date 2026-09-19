@@ -53,6 +53,7 @@ Supporting release documents on the cumulative stack:
 - `21_SYNC_SERVER_CONTRACT.md` — authenticated sync/idempotency/authorization requirements.
 - `22_RELEASE_CONFIGURATION_GATE.md` — strict submission-time public URL/provider configuration validator.
 - `23_RELEASE_ASSET_GATE.md` — strict final PNG icon/adaptive-icon/splash configuration validator.
+- `24_EXERCISE_REVIEW_CHECKLIST.md` — human sign-off checklist and reviewer-provenance record for public exercise content.
 
 ## Agent rule
 

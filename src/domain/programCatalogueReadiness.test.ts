@@ -11,6 +11,7 @@ function reviewedExercises(): Exercise[] {
     ...exercise,
     contentStatus: 'reviewed' as const,
     reviewedAt,
+    reviewedBy: 'fitness-content-reviewer',
   }));
 }
 

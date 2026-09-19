@@ -13,11 +13,12 @@ export interface WorkoutCardProps {
 }
 
 export function WorkoutCard({ workout, onPress, compact = false }: WorkoutCardProps) {
+  const accessibilityLabel = `${workout.title}, ${workout.estimatedDurationMinutes} minutes`;
   const content = (
     <Card
       tone="white"
       style={[styles.card, compact && styles.compact]}
-      accessibilityLabel={`${workout.title}, ${workout.estimatedDurationMinutes} minutes`}
+      accessibilityLabel={onPress ? undefined : accessibilityLabel}
     >
       <View style={styles.topRow}>
         <View style={styles.categoryMark}>
@@ -47,6 +48,7 @@ export function WorkoutCard({ workout, onPress, compact = false }: WorkoutCardPr
   return (
     <Pressable
       accessibilityHint="Opens the workout"
+      accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [pressed && styles.pressed]}

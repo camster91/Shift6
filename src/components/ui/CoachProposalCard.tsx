@@ -20,13 +20,15 @@ export function CoachProposalCard({
   onReject,
   busy = false,
 }: CoachProposalCardProps) {
+  const spokenSummary = proposal.summary.trim().replace(/[.!?]+$/, '');
+
   return (
-    <Card
-      tone="white"
-      accessibilityLabel={`Coach proposal. ${proposal.summary}. ${proposal.changes.length} proposed changes.`}
-      style={styles.card}
-    >
-      <View style={styles.header}>
+    <Card tone="white" style={styles.card}>
+      <View
+        accessible
+        accessibilityLabel={`Coach proposal. ${spokenSummary}. ${proposal.changes.length} proposed changes.`}
+        style={styles.header}
+      >
         <Text variant="h3" style={styles.title}>
           {proposal.summary}
         </Text>

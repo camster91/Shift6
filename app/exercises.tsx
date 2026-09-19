@@ -7,9 +7,11 @@ import { Card, Chip, EmptyState, IconButton, Screen, Text } from '../src/compone
 import { getOnboardingProfile } from '../src/db/profileRepository';
 import { getUserExercises } from '../src/db/programRepository';
 import { useLocalDatabase } from '../src/db/context';
+import { assessExerciseContent } from '../src/domain/contentReadiness';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
 import { searchExercises, type ExerciseCategoryFilter } from '../src/domain/exerciseCatalog';
 import { demoUser } from '../src/domain/fixtures/home';
+import { isExerciseAvailableToUser } from '../src/domain/runtimeContentGates';
 import type { Difficulty, Exercise, ExerciseClassification } from '../src/domain/types';
 import { colors, radii, spacing } from '../src/design/tokens';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
@@ -50,9 +52,13 @@ export default function ExerciseLibraryScreen() {
     }, [database, userId]),
   );
 
+  const catalogueExercises = useMemo(
+    () => foundationalExercises.filter((exercise) => isExerciseAvailableToUser(exercise, __DEV__)),
+    [],
+  );
   const availableExercises = useMemo(
-    () => [...foundationalExercises, ...customExercises],
-    [customExercises],
+    () => [...catalogueExercises, ...customExercises],
+    [catalogueExercises, customExercises],
   );
 
   const visibleExercises = useMemo(
@@ -116,6 +122,18 @@ export default function ExerciseLibraryScreen() {
         Search by movement, muscle, or training tag. Equipment fit stays visible as you browse.
       </Text>
 
+      {__DEV__ ? (
+        <Card tone="yellow" style={styles.previewCard}>
+          <Text variant="caption" tone="muted">
+            DEVELOPMENT PREVIEW
+          </Text>
+          <Text variant="small" tone="muted" style={styles.previewCopy}>
+            Draft foundational exercises are visible for internal QA. Production builds expose only
+            publication-ready catalogue records plus your private custom exercises.
+          </Text>
+        </Card>
+      ) : null}
+
       <TextInput
         accessibilityLabel="Search exercises"
         autoCapitalize="none"
@@ -135,7 +153,7 @@ export default function ExerciseLibraryScreen() {
           onPress={() => setCompatibleOnly((value) => !value)}
         />
         <Chip
-          label={`${foundationalExercises.length} foundational${customExercises.length > 0 ? ` + ${customExercises.length} private` : ''}`}
+          label={`${catalogueExercises.length} catalogue${customExercises.length > 0 ? ` + ${customExercises.length} private` : ''}`}
         />
       </View>
 
@@ -220,7 +238,9 @@ export default function ExerciseLibraryScreen() {
         />
       ) : (
         visibleExercises.map((exercise) => {
-          const accessibilityLabel = `${exercise.name}. ${exercise.movementPattern}. ${exercise.isCustom ? 'Private custom movement.' : exercise.contentStatus === 'draft' ? 'Technique review pending.' : 'Reviewed.'}`;
+          const publicationReady =
+            !exercise.isCustom && assessExerciseContent(exercise).readyForPublication;
+          const accessibilityLabel = `${exercise.name}. ${exercise.movementPattern}. ${exercise.isCustom ? 'Private custom movement.' : publicationReady ? 'Reviewed catalogue record.' : 'Development preview. Technique review pending.'}`;
           return (
             <Pressable
               key={exercise.id}
@@ -231,10 +251,7 @@ export default function ExerciseLibraryScreen() {
               }
               style={({ pressed }) => [pressed && styles.exercisePressed]}
             >
-              <Card
-                tone={exercise.contentStatus === 'reviewed' ? 'white' : 'lavender'}
-                style={styles.exerciseCard}
-              >
+              <Card tone={publicationReady ? 'white' : 'lavender'} style={styles.exerciseCard}>
                 <View style={styles.exerciseHeader}>
                   <Text variant="h3" style={styles.exerciseName}>
                     {exercise.name}
@@ -251,9 +268,9 @@ export default function ExerciseLibraryScreen() {
                 >
                   {exercise.isCustom
                     ? 'Private custom movement'
-                    : exercise.contentStatus === 'draft'
-                      ? 'Technique and media review pending'
-                      : 'Reviewed catalogue record'}
+                    : publicationReady
+                      ? 'Reviewed catalogue record'
+                      : 'Development preview · technique review pending'}
                 </Text>
               </Card>
             </Pressable>
@@ -317,6 +334,12 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: spacing.md,
+  },
+  previewCard: {
+    marginTop: spacing.xl,
+  },
+  previewCopy: {
+    marginTop: spacing.sm,
   },
   searchInput: {
     minHeight: 52,

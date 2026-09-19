@@ -18,9 +18,26 @@ function contrastRatio(first: string, second: string) {
 }
 
 describe('design token baseline', () => {
-  it('keeps primary functional text above WCAG AA contrast on white', () => {
-    expect(contrastRatio(colors.ink, colors.white)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(colors.inkMuted, colors.white)).toBeGreaterThanOrEqual(4.5);
+  const normalTextPairs: Array<[string, string, string]> = [
+    ['default text on canvas', colors.ink, colors.canvas],
+    ['muted text on canvas', colors.inkMuted, colors.canvas],
+    ['inverse text on ink', colors.white, colors.ink],
+    ['secondary-button text', colors.ink, colors.lavenderBackground],
+    ['success status text', colors.success, colors.canvas],
+    ['warning status text', colors.warning, colors.canvas],
+    ['error status text', colors.error, colors.canvas],
+    ['info status text', colors.info, colors.canvas],
+    ['ink on lavender', colors.ink, colors.lavender],
+    ['ink on blue', colors.ink, colors.blue],
+    ['ink on mint', colors.ink, colors.mint],
+    ['ink on cyan', colors.ink, colors.cyan],
+    ['ink on yellow', colors.ink, colors.yellow],
+    ['ink on coral', colors.ink, colors.coral],
+    ['ink on pink', colors.ink, colors.pink],
+  ];
+
+  it.each(normalTextPairs)('%s keeps at least 4.5:1 contrast', (_name, foreground, background) => {
+    expect(contrastRatio(foreground, background)).toBeGreaterThanOrEqual(4.5);
   });
 
   it('preserves the documented touch and spacing foundations', () => {

@@ -1,6 +1,42 @@
+import {
+  assessExerciseCatalogue,
+  assessExerciseContent,
+  assessProgramVersion,
+  LAUNCH_EXERCISE_TARGET,
+} from './contentReadiness';
 import { foundationalExercises } from './fixtures/exercises';
 import { demoProgram, demoProgramVersion } from './fixtures/home';
-import { assessExerciseContent, assessProgramVersion } from './contentReadiness';
+import type { Exercise, ExerciseMedia } from './types';
+
+const reviewedAt = '2026-09-16T12:00:00.000Z';
+const reviewedBy = 'fitness-content-reviewer';
+
+function reviewedExercise(overrides: Partial<Exercise> = {}): Exercise {
+  return {
+    ...foundationalExercises[0]!,
+    contentStatus: 'reviewed',
+    reviewedAt,
+    reviewedBy,
+    ...overrides,
+  };
+}
+
+function approvedMedia(overrides: Partial<ExerciseMedia> = {}): ExerciseMedia {
+  return {
+    id: 'media-1',
+    type: 'image',
+    uri: 'https://media.example/exercise.png',
+    altText: 'Athlete demonstrating the exercise setup.',
+    reviewStatus: 'approved',
+    provenance: {
+      sourceKind: 'original',
+      sourceLabel: 'SHIFT6 original media',
+      rightsConfirmedAt: reviewedAt,
+      techniqueReviewedAt: reviewedAt,
+    },
+    ...overrides,
+  };
+}
 
 describe('content readiness', () => {
   it('keeps structurally complete draft exercises runnable but not publication-ready', () => {
@@ -10,6 +46,191 @@ describe('content readiness', () => {
     expect(report.readyForPublication).toBe(false);
     expect(report.blockers).toEqual([]);
     expect(report.reviewWarnings[0]).toContain('human technique review is pending');
+  });
+
+  it('allows reviewed public exercises to publish without media', () => {
+    const report = assessExerciseContent(reviewedExercise());
+
+    expect(report.readyForCycle).toBe(true);
+    expect(report.readyForPublication).toBe(true);
+    expect(report.blockers).toEqual([]);
+    expect(report.reviewWarnings).toEqual([]);
+  });
+
+  it('requires reviewer provenance before a reviewed exercise can publish', () => {
+    const report = assessExerciseContent(reviewedExercise({ reviewedBy: '   ' }));
+
+    expect(report.readyForCycle).toBe(true);
+    expect(report.readyForPublication).toBe(false);
+    expect(report.reviewWarnings).toContain(
+      'Back squat: reviewed records need reviewer provenance.',
+    );
+  });
+
+  it('requires muscle, equipment, instruction, cue and safety metadata for runnable exercises', () => {
+    const report = assessExerciseContent(
+      reviewedExercise({
+        primaryMuscles: [],
+        equipmentIds: [],
+        instructions: [],
+        techniqueCues: [],
+        safetyNotes: [],
+      }),
+    );
+
+    expect(report.readyForCycle).toBe(false);
+    expect(report.blockers).toEqual(
+      expect.arrayContaining([
+        'Back squat: at least one primary muscle is required.',
+        'Back squat: at least one equipment requirement is required.',
+        'Back squat: at least one instruction is required.',
+        'Back squat: at least one technique cue is required.',
+        'Back squat: safety notes are required.',
+      ]),
+    );
+  });
+
+  it('requires common-mistake guidance before a public exercise can publish', () => {
+    const report = assessExerciseContent(reviewedExercise({ commonMistakes: [] }));
+
+    expect(report.readyForCycle).toBe(true);
+    expect(report.readyForPublication).toBe(false);
+    expect(report.reviewWarnings).toContain(
+      'Back squat: public records need common-mistake guidance.',
+    );
+  });
+
+  it('keeps custom exercises private even if their record is otherwise reviewed', () => {
+    const report = assessExerciseContent(reviewedExercise({ isCustom: true }));
+
+    expect(report.readyForCycle).toBe(true);
+    expect(report.readyForPublication).toBe(false);
+    expect(report.reviewWarnings).toContain(
+      'Back squat: custom exercises stay private by default.',
+    );
+  });
+
+  it('requires provenance before approved media can publish', () => {
+    const report = assessExerciseContent(
+      reviewedExercise({ media: [approvedMedia({ provenance: undefined })] }),
+    );
+
+    expect(report.readyForCycle).toBe(true);
+    expect(report.readyForPublication).toBe(false);
+    expect(report.reviewWarnings).toContain(
+      'Back squat: approved media media-1 needs provenance metadata.',
+    );
+  });
+
+  it('requires human technique review for generated media even after rights are confirmed', () => {
+    const report = assessExerciseContent(
+      reviewedExercise({
+        media: [
+          approvedMedia({
+            provenance: {
+              sourceKind: 'generated',
+              sourceLabel: 'Internal image generator',
+              rightsConfirmedAt: reviewedAt,
+            },
+          }),
+        ],
+      }),
+    );
+
+    expect(report.readyForCycle).toBe(true);
+    expect(report.readyForPublication).toBe(false);
+    expect(report.reviewWarnings).toContain(
+      'Back squat: generated media media-1 needs human technique review.',
+    );
+  });
+
+  it('allows generated media only after explicit human technique review', () => {
+    const report = assessExerciseContent(
+      reviewedExercise({
+        media: [
+          approvedMedia({
+            provenance: {
+              sourceKind: 'generated',
+              sourceLabel: 'Internal image generator',
+              rightsConfirmedAt: reviewedAt,
+              techniqueReviewedAt: reviewedAt,
+            },
+          }),
+        ],
+      }),
+    );
+
+    expect(report.readyForCycle).toBe(true);
+    expect(report.readyForPublication).toBe(true);
+    expect(report.reviewWarnings).toEqual([]);
+  });
+
+  it('requires source and licence metadata for licensed approved media', () => {
+    const report = assessExerciseContent(
+      reviewedExercise({
+        media: [
+          approvedMedia({
+            provenance: {
+              sourceKind: 'licensed',
+              sourceLabel: 'Licensed exercise library',
+              rightsConfirmedAt: reviewedAt,
+            },
+          }),
+        ],
+      }),
+    );
+
+    expect(report.readyForPublication).toBe(false);
+    expect(report.reviewWarnings).toEqual(
+      expect.arrayContaining([
+        'Back squat: licensed media media-1 needs a source URI.',
+        'Back squat: licensed media media-1 needs licence metadata.',
+      ]),
+    );
+  });
+
+  it('reports the current draft tranche as below the 300-record launch gate', () => {
+    const report = assessExerciseCatalogue(foundationalExercises);
+
+    expect(report.targetCount).toBe(LAUNCH_EXERCISE_TARGET);
+    expect(report.publicRecordCount).toBe(58);
+    expect(report.publicationReadyCount).toBe(0);
+    expect(report.duplicateIds).toEqual([]);
+    expect(report.readyForLaunch).toBe(false);
+    expect(report.blockers).toEqual(
+      expect.arrayContaining([
+        'Launch exercise catalogue needs at least 300 public records; found 58.',
+        'Launch exercise catalogue needs at least 300 publication-ready records; found 0.',
+      ]),
+    );
+  });
+
+  it('passes the launch gate only when 300 unique public records are publication-ready', () => {
+    const catalogue = Array.from({ length: LAUNCH_EXERCISE_TARGET }, (_, index) =>
+      reviewedExercise({ id: `exercise-reviewed-${index + 1}` }),
+    );
+    const report = assessExerciseCatalogue(catalogue);
+
+    expect(report.publicRecordCount).toBe(LAUNCH_EXERCISE_TARGET);
+    expect(report.publicationReadyCount).toBe(LAUNCH_EXERCISE_TARGET);
+    expect(report.duplicateIds).toEqual([]);
+    expect(report.readyForLaunch).toBe(true);
+    expect(report.blockers).toEqual([]);
+  });
+
+  it('blocks duplicate stable IDs even when the reviewed-count target is met', () => {
+    const catalogue = Array.from({ length: LAUNCH_EXERCISE_TARGET }, (_, index) =>
+      reviewedExercise({
+        id: index === 1 ? 'exercise-reviewed-1' : `exercise-reviewed-${index + 1}`,
+      }),
+    );
+    const report = assessExerciseCatalogue(catalogue);
+
+    expect(report.readyForLaunch).toBe(false);
+    expect(report.duplicateIds).toEqual(['exercise-reviewed-1']);
+    expect(report.blockers).toContain(
+      'Exercise IDs must be unique; duplicates: exercise-reviewed-1.',
+    );
   });
 
   it('requires reviewed records before a public program version is publication-ready', () => {

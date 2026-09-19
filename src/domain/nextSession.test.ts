@@ -1,5 +1,9 @@
 import { demoProgram, demoProgramVersion, demoWorkout } from './fixtures/home';
-import { buildNextSessionTargets, readinessInputForWorkout } from './nextSession';
+import {
+  buildNextSessionTargets,
+  progressionStrategyForTarget,
+  readinessInputForWorkout,
+} from './nextSession';
 
 describe('deterministic next-session targets', () => {
   it('uses observed local load and the program strategy to calculate the next target', () => {
@@ -116,5 +120,24 @@ describe('deterministic next-session targets', () => {
       )[0]?.decision,
     ).toMatchObject({ action: 'hold' });
     expect(readinessInputForWorkout('rest')).toMatchObject({ energy: 1, soreness: 5 });
+  });
+
+  it('routes mixed-modality targets to a compatible deterministic strategy', () => {
+    expect(progressionStrategyForTarget('double-progression', { durationSeconds: 600 })).toBe(
+      'time',
+    );
+    expect(progressionStrategyForTarget('double-progression', { distanceMeters: 1000 })).toBe(
+      'distance',
+    );
+    expect(
+      progressionStrategyForTarget('double-progression', {
+        durationSeconds: 600,
+        distanceMeters: 2000,
+      }),
+    ).toBe('cardio');
+    expect(progressionStrategyForTarget('cardio', { reps: { min: 8, max: 12 } })).toBe(
+      'double-progression',
+    );
+    expect(progressionStrategyForTarget('skill', { durationSeconds: 30 })).toBe('skill');
   });
 });

@@ -3,9 +3,14 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   quality:
@@ -13,10 +18,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -51,5 +56,5 @@ jobs:
       - name: Unit and component tests
         run: npm test -- --ci
 
-      - name: Web export smoke
-        run: npm run export:web
+      - name: iOS, Android and web export smoke
+        run: npm run export:all

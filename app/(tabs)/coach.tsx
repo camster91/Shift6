@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import {
@@ -18,6 +19,7 @@ import {
   getPendingCoachProposals,
   updateCoachProposalStatus,
 } from '../../src/db/coachRepository';
+import { getCoachPrivacyPreference } from '../../src/db/coachPrivacyRepository';
 import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
 import { useLocalDatabase } from '../../src/db/context';
 import { getCycleProgressSummary } from '../../src/db/progressRepository';
@@ -36,6 +38,7 @@ import type {
 import { colors, radii, spacing } from '../../src/design/tokens';
 import { useAppServices } from '../../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../../src/services/analytics';
+import { generatePrivacyAwareCoachMessage } from '../../src/services/coachPrivacy';
 import { buildLocalCoachMessage } from '../../src/services/localCoach';
 import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
 
@@ -60,6 +63,7 @@ export default function CoachScreen() {
   const [busyProposalId, setBusyProposalId] = useState<string | null>(null);
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachSource, setCoachSource] = useState<'local' | 'remote'>('local');
+  const [providerCoachEnabled, setProviderCoachEnabled] = useState(false);
   const [question, setQuestion] = useState('');
   const [error, setError] = useState<string | null>(null);
   const trackedProposalIds = useRef(new Set<string>());
@@ -121,6 +125,27 @@ export default function CoachScreen() {
     };
   }, [database, userId]);
 
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      setProviderCoachEnabled(false);
+
+      if (database) {
+        void getCoachPrivacyPreference(database, userId)
+          .then((preference) => {
+            if (active) setProviderCoachEnabled(preference.providerCoachEnabled);
+          })
+          .catch(() => {
+            if (active) setProviderCoachEnabled(false);
+          });
+      }
+
+      return () => {
+        active = false;
+      };
+    }, [database, userId]),
+  );
+
   const decide = async (proposalId: string, status: 'accepted' | 'rejected') => {
     if (!database || busyProposalId) return;
 
@@ -174,20 +199,18 @@ export default function CoachScreen() {
     if (coachLoading) return;
     setCoachLoading(true);
     try {
-      const result = await coach.generateMessage(coachContext, task, prompt);
-      if (result.kind !== 'unavailable') {
-        setCoachSource('remote');
-        setCoachMessage(result);
-        return;
-      }
-    } catch {
-      // The local explanation remains available when the provider or network is unavailable.
+      const response = await generatePrivacyAwareCoachMessage({
+        providerCoachEnabled,
+        gateway: coach,
+        context: coachContext,
+        task,
+        prompt,
+      });
+      setCoachSource(response.source);
+      setCoachMessage(response.result);
     } finally {
       setCoachLoading(false);
     }
-
-    setCoachSource('local');
-    setCoachMessage(buildLocalCoachMessage(coachContext, task, prompt));
   };
 
   const submitQuestion = () => {
@@ -229,6 +252,33 @@ export default function CoachScreen() {
         </Text>
       </Card>
 
+      <Card tone="white" style={styles.privacyCard}>
+        <View style={styles.privacyHeader}>
+          <Ionicons
+            name={providerCoachEnabled ? 'cloud-outline' : 'phone-portrait-outline'}
+            size={22}
+            color={colors.ink}
+          />
+          <View style={styles.privacyCopy}>
+            <Text variant="smallMedium">
+              {providerCoachEnabled ? 'Provider-backed Coach enabled' : 'Local Coach only'}
+            </Text>
+            <Text variant="caption" tone="muted">
+              {providerCoachEnabled
+                ? 'Questions may use the configured Coach service with bounded training context.'
+                : 'Questions stay with the deterministic local explainer; no provider request is made.'}
+            </Text>
+          </View>
+        </View>
+        <Button
+          label="Review AI & Coach privacy"
+          variant="ghost"
+          icon={<Ionicons name="shield-checkmark-outline" size={18} color={colors.ink} />}
+          onPress={() => router.push('/ai-privacy')}
+          style={styles.privacyButton}
+        />
+      </Card>
+
       <Card tone="white" style={styles.askCard} accessibilityLabel="Ask Coach">
         <Text variant="caption" tone="muted">
           ASK COACH
@@ -237,7 +287,11 @@ export default function CoachScreen() {
           Make the next step clear.
         </Text>
         <TextInput
-          accessibilityHint="Ask about your workout, progress, or equipment."
+          accessibilityHint={
+            providerCoachEnabled
+              ? 'May use the configured provider-backed Coach with bounded context.'
+              : 'Uses the local Coach because provider-backed processing is off.'
+          }
           accessibilityLabel="Ask Coach a question"
           autoCapitalize="sentences"
           autoCorrect
@@ -260,7 +314,11 @@ export default function CoachScreen() {
             {question.length}/500
           </Text>
           <Button
-            accessibilityHint="Sends a bounded question to Coach or uses the offline explainer."
+            accessibilityHint={
+              providerCoachEnabled
+                ? 'Uses provider-backed Coach when available, with local fallback.'
+                : 'Uses the local Coach only.'
+            }
             disabled={!question.trim()}
             icon={<Ionicons name="arrow-up" size={18} color={colors.white} />}
             label="Ask Coach"
@@ -417,8 +475,23 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     marginBottom: spacing.sm,
   },
-  askCard: {
+  privacyCard: {
     marginTop: spacing.xl,
+  },
+  privacyHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  privacyCopy: {
+    flex: 1,
+    gap: spacing.xxs,
+  },
+  privacyButton: {
+    marginTop: spacing.md,
+  },
+  askCard: {
+    marginTop: spacing.md,
   },
   askTitle: {
     marginTop: spacing.sm,

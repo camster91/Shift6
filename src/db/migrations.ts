@@ -309,6 +309,44 @@ export const MIGRATIONS: readonly Migration[] = [
         ADD COLUMN note TEXT;`,
     ],
   },
+  {
+    version: 19,
+    name: 'profile-considerations-and-manual-body-metrics',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS user_considerations (
+        user_id TEXT PRIMARY KEY NOT NULL,
+        movement_considerations_json TEXT NOT NULL DEFAULT '[]',
+        accessibility_needs_json TEXT NOT NULL DEFAULT '[]',
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE
+      );`,
+      `CREATE TABLE IF NOT EXISTS body_metrics (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL,
+        metric_type TEXT NOT NULL,
+        value REAL NOT NULL,
+        unit TEXT NOT NULL,
+        measured_at TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE
+      );`,
+      `CREATE INDEX IF NOT EXISTS body_metrics_user_type_measured
+        ON body_metrics(user_id, metric_type, measured_at DESC);`,
+    ],
+  },
+  {
+    version: 20,
+    name: 'coach-provider-privacy-preference',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS coach_privacy_preferences (
+        user_id TEXT PRIMARY KEY NOT NULL,
+        provider_coach_enabled INTEGER NOT NULL DEFAULT 0,
+        notice_version INTEGER NOT NULL DEFAULT 1,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE
+      );`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

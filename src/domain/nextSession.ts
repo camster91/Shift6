@@ -60,12 +60,6 @@ export function buildNextSessionTargets(
   readiness: ReadinessInput = normalReadiness,
   progressionRuleIds: readonly EntityId[] = [],
 ): NextSessionTarget[] {
-  const progressionParameters = resolveProgressionParameters(
-    progressionRuleIds,
-    progressionStrategy,
-    unitSystem,
-  );
-
   return workout.exercises.map((workoutExercise) => {
     const exerciseSets = completedSets.filter(
       (completedSet) =>
@@ -81,9 +75,15 @@ export function buildNextSessionTargets(
       latestLoad,
       unitSystem,
     );
+    const effectiveStrategy = progressionStrategyForTarget(progressionStrategy, currentTarget);
+    const progressionParameters = resolveProgressionParameters(
+      progressionRuleIds,
+      effectiveStrategy,
+      unitSystem,
+    );
 
     const decision = calculateNextTarget({
-      strategy: progressionStrategy,
+      strategy: effectiveStrategy,
       currentTarget,
       completedSets: exerciseSets.map((completedSet) => ({
         completed: true,
@@ -109,6 +109,32 @@ export function buildNextSessionTargets(
       decision,
     };
   });
+}
+
+export function progressionStrategyForTarget(
+  programStrategy: ProgressionStrategy,
+  target: SetTarget,
+): ProgressionStrategy {
+  if (
+    programStrategy === 'volume' ||
+    programStrategy === 'density' ||
+    programStrategy === 'skill'
+  ) {
+    return programStrategy;
+  }
+
+  if (target.durationSeconds !== undefined && target.distanceMeters !== undefined) return 'cardio';
+  if (target.durationSeconds !== undefined) return 'time';
+  if (target.distanceMeters !== undefined) return 'distance';
+
+  if (
+    target.reps !== undefined &&
+    (programStrategy === 'cardio' || programStrategy === 'time' || programStrategy === 'distance')
+  ) {
+    return 'double-progression';
+  }
+
+  return programStrategy;
 }
 
 function withObservedLoad(

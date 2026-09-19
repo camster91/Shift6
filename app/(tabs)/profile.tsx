@@ -11,17 +11,26 @@ import { useLocalDatabase } from '../../src/db/context';
 import { deleteLocalUserData, exportLocalUserData } from '../../src/db/privacyRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { colors, radii, spacing } from '../../src/design/tokens';
+import { deleteAuthenticatedAccount } from '../../src/services/accountDeletion';
+import { accountDeletionRecoveryStore } from '../../src/services/accountDeletionRecovery';
+import { useAppServices } from '../../src/services/AppServicesProvider';
 import { useSyncRuntime } from '../../src/services/SyncRuntimeProvider';
-import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
+import { useUserIdentity } from '../../src/services/UserIdentityProvider';
+
+type PrivacyBusy = 'export' | 'local-delete' | 'account-delete' | 'account-cleanup';
+type AccountCleanupState = 'none' | 'local-data' | 'sign-out';
 
 export default function ProfileScreen() {
   const database = useLocalDatabase();
+  const { auth, backend } = useAppServices();
   const syncRuntime = useSyncRuntime();
-  const userId = useCurrentUserId();
+  const identity = useUserIdentity();
+  const userId = identity.userId;
   const [user, setUser] = useState(demoUser);
   const [equipmentIds, setEquipmentIds] = useState(demoUser.equipmentIds);
-  const [privacyBusy, setPrivacyBusy] = useState<'export' | 'delete' | null>(null);
+  const [privacyBusy, setPrivacyBusy] = useState<PrivacyBusy | null>(null);
   const [privacyMessage, setPrivacyMessage] = useState<string | null>(null);
+  const [accountCleanupState, setAccountCleanupState] = useState<AccountCleanupState>('none');
 
   useEffect(() => {
     if (!database) return;
@@ -39,6 +48,35 @@ export default function ProfileScreen() {
       active = false;
     };
   }, [database, userId]);
+
+  useEffect(() => {
+    if (identity.kind !== 'account') {
+      setAccountCleanupState('none');
+      return;
+    }
+
+    let active = true;
+    void accountDeletionRecoveryStore
+      .get(userId)
+      .then((recovery) => {
+        if (!active) return;
+        setAccountCleanupState(recovery?.stage ?? 'none');
+        if (recovery) {
+          setPrivacyMessage(
+            'This account was already deleted remotely. Finish the remaining cleanup on this device.',
+          );
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPrivacyMessage('We could not check whether deleted-account cleanup is pending.');
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [identity.kind, userId]);
 
   const selectedEquipment = equipmentCatalog.filter((equipment) =>
     equipmentIds.includes(equipment.id),
@@ -71,7 +109,9 @@ export default function ProfileScreen() {
         title: 'SHIFT6 data export',
         message: JSON.stringify(data, null, 2),
       });
-      setPrivacyMessage('Your local export is ready to share.');
+      setPrivacyMessage(
+        `Your local export includes ${data.summary.totalRecordCount} records across ${data.summary.sections.length} sections and is ready to share.`,
+      );
     } catch {
       setPrivacyMessage('We could not prepare the local export.');
     } finally {
@@ -79,20 +119,15 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleDelete = () => {
-    if (!database) {
-      setPrivacyMessage('Web preview: local deletion is available on native builds.');
-      return;
-    }
-
-    if (Platform.OS === 'web') {
+  const handleLocalDelete = () => {
+    if (!database || Platform.OS === 'web') {
       setPrivacyMessage('Web preview: local deletion is available on native builds.');
       return;
     }
 
     Alert.alert(
       'Delete local data?',
-      'This removes the guest profile, equipment, cycles, workout history, proposals, and pending sync data from this device. It cannot be undone.',
+      'This removes the guest profile, preferences, equipment, body metrics, cycles, workout history, proposals, and pending sync data from this device. It cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -107,18 +142,134 @@ export default function ProfileScreen() {
   const performLocalDelete = async () => {
     if (!database) return;
 
-    setPrivacyBusy('delete');
+    setPrivacyBusy('local-delete');
     setPrivacyMessage(null);
     try {
       await deleteLocalUserData(database, userId);
-      setUser({ ...demoUser, displayName: 'Guest', equipmentIds: [] });
-      setEquipmentIds([]);
+      resetDisplayedLocalProfile();
       setPrivacyMessage('Local data was deleted from this device.');
     } catch {
       setPrivacyMessage('We could not delete local data.');
     } finally {
       setPrivacyBusy(null);
     }
+  };
+
+  const handleAccountDelete = () => {
+    if (!database || Platform.OS === 'web') {
+      setPrivacyMessage('Account deletion must be completed from a native authenticated build.');
+      return;
+    }
+
+    Alert.alert(
+      'Delete your SHIFT6 account?',
+      'SHIFT6 will first require the authenticated server to confirm account deletion. Only after that confirmation will this device clear the local training record and sign out. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: () => void performAccountDelete(),
+        },
+      ],
+    );
+  };
+
+  const performAccountDelete = async () => {
+    if (!database || identity.kind !== 'account') return;
+
+    setPrivacyBusy('account-delete');
+    setPrivacyMessage(null);
+    try {
+      const outcome = await deleteAuthenticatedAccount({
+        database,
+        userId,
+        backend,
+        auth,
+      });
+
+      if (!outcome.localDataDeleted) {
+        setAccountCleanupState('local-data');
+        setPrivacyMessage(outcome.warnings.join(' '));
+        return;
+      }
+
+      resetDisplayedLocalProfile();
+      if (!outcome.signedOut) {
+        setAccountCleanupState('sign-out');
+        setPrivacyMessage(outcome.warnings.join(' '));
+        return;
+      }
+
+      setAccountCleanupState('none');
+      setPrivacyMessage(
+        outcome.warnings.length > 0
+          ? `Your SHIFT6 account and local data were deleted. ${outcome.warnings.join(' ')}`
+          : 'Your SHIFT6 account and local data were deleted.',
+      );
+      identity.retry();
+    } catch {
+      setPrivacyMessage(
+        'Remote account deletion was not confirmed. Your local data and sign-in state were left unchanged.',
+      );
+    } finally {
+      setPrivacyBusy(null);
+    }
+  };
+
+  const finishAccountCleanup = async () => {
+    if (!database || identity.kind !== 'account' || accountCleanupState === 'none') return;
+
+    setPrivacyBusy('account-cleanup');
+    setPrivacyMessage(null);
+
+    const recovery = await accountDeletionRecoveryStore.get(userId).catch(() => null);
+    const remoteDeletedAt = recovery?.remoteDeletedAt ?? new Date().toISOString();
+
+    if (accountCleanupState === 'local-data') {
+      try {
+        await deleteLocalUserData(database, userId);
+        resetDisplayedLocalProfile();
+        setAccountCleanupState('sign-out');
+        await accountDeletionRecoveryStore
+          .set({ userId, stage: 'sign-out', remoteDeletedAt })
+          .catch(() => undefined);
+      } catch {
+        setPrivacyMessage(
+          'The remote account is already deleted, but local cleanup is still incomplete. Try again before signing out.',
+        );
+        setPrivacyBusy(null);
+        return;
+      }
+    }
+
+    try {
+      await auth.signOut();
+    } catch {
+      setPrivacyMessage(
+        'The account and local data are deleted, but this device could not clear the sign-in session. Try again.',
+      );
+      setPrivacyBusy(null);
+      return;
+    }
+
+    const markerCleared = await accountDeletionRecoveryStore
+      .clear(userId)
+      .then(() => true)
+      .catch(() => false);
+    setAccountCleanupState('none');
+    setPrivacyMessage(
+      markerCleared
+        ? 'Deleted-account cleanup is complete on this device.'
+        : 'Deleted-account cleanup is complete, but the local recovery marker could not be removed.',
+    );
+    setPrivacyBusy(null);
+    identity.retry();
+  };
+
+  const resetDisplayedLocalProfile = () => {
+    setUser({ ...demoUser, displayName: 'Guest', equipmentIds: [] });
+    setEquipmentIds([]);
   };
 
   return (
@@ -191,6 +342,20 @@ export default function ProfileScreen() {
         onPress={() => router.push('/equipment')}
         style={styles.manageEquipmentButton}
       />
+      <Button
+        label="Movement & accessibility"
+        variant="secondary"
+        icon={<Ionicons name="accessibility-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/considerations')}
+        style={styles.preferenceButton}
+      />
+      <Button
+        label="Manual body metrics"
+        variant="secondary"
+        icon={<Ionicons name="scale-outline" size={18} color={colors.ink} />}
+        onPress={() => router.push('/body-metrics')}
+        style={styles.preferenceButton}
+      />
 
       <Card tone="blue" style={styles.settingsCard}>
         <Ionicons name="shield-checkmark-outline" size={24} color={colors.ink} />
@@ -199,7 +364,8 @@ export default function ProfileScreen() {
         </Text>
         <Text variant="body" tone="muted">
           Workout data is designed to remain useful on the device before any account or cloud sync
-          is connected.
+          is connected. Movement/accessibility preferences and manual body metrics also stay local
+          until a separate remote privacy policy explicitly opts them in.
         </Text>
       </Card>
 
@@ -225,8 +391,9 @@ export default function ProfileScreen() {
       <Card tone="white" style={styles.privacyCard}>
         <Text variant="smallMedium">Your training record stays yours.</Text>
         <Text variant="small" tone="muted" style={styles.privacyCopy}>
-          Export or remove the local guest data stored on this device. Remote account deletion will
-          be added when account services are connected.
+          {identity.kind === 'account'
+            ? 'Export the data currently stored on this device or delete the authenticated account. The export includes profile/preferences, training history, programs/custom exercises, body and health summaries, Coach proposals, and notification settings. It does not claim to include server-only account data.'
+            : 'Export or remove the local guest data stored on this device. The export is structured JSON with a plain-language section summary and record counts.'}
         </Text>
         <Button
           label="Export local data"
@@ -237,15 +404,41 @@ export default function ProfileScreen() {
           onPress={() => void handleExport()}
           style={styles.privacyButton}
         />
-        <Button
-          label="Delete local data"
-          variant="ghost"
-          loading={privacyBusy === 'delete'}
-          disabled={privacyBusy !== null && privacyBusy !== 'delete'}
-          icon={<Ionicons name="trash-outline" size={18} color={colors.error} />}
-          onPress={handleDelete}
-          style={styles.deleteButton}
-        />
+
+        {identity.kind === 'guest' ? (
+          <Button
+            label="Delete local data"
+            variant="ghost"
+            loading={privacyBusy === 'local-delete'}
+            disabled={privacyBusy !== null && privacyBusy !== 'local-delete'}
+            icon={<Ionicons name="trash-outline" size={18} color={colors.error} />}
+            onPress={handleLocalDelete}
+            style={styles.deleteButton}
+          />
+        ) : accountCleanupState === 'none' ? (
+          <Button
+            label="Delete account"
+            variant="ghost"
+            loading={privacyBusy === 'account-delete'}
+            disabled={privacyBusy !== null && privacyBusy !== 'account-delete'}
+            icon={<Ionicons name="trash-outline" size={18} color={colors.error} />}
+            accessibilityHint="Requests authenticated remote account deletion before clearing this device."
+            onPress={handleAccountDelete}
+            style={styles.deleteButton}
+          />
+        ) : (
+          <Button
+            label="Finish account cleanup"
+            variant="secondary"
+            loading={privacyBusy === 'account-cleanup'}
+            disabled={privacyBusy !== null && privacyBusy !== 'account-cleanup'}
+            icon={<Ionicons name="refresh-outline" size={18} color={colors.ink} />}
+            accessibilityHint="Retries the remaining local cleanup after the remote account was already deleted."
+            onPress={() => void finishAccountCleanup()}
+            style={styles.deleteButton}
+          />
+        )}
+
         {privacyMessage ? (
           <Text variant="caption" tone="muted" style={styles.privacyMessage}>
             {privacyMessage}
@@ -323,10 +516,13 @@ const styles = StyleSheet.create({
   editSetupButton: {
     marginTop: spacing.xl,
   },
-  healthButton: {
+  manageEquipmentButton: {
     marginTop: spacing.md,
   },
-  manageEquipmentButton: {
+  preferenceButton: {
+    marginTop: spacing.md,
+  },
+  healthButton: {
     marginTop: spacing.md,
   },
   notificationsButton: {

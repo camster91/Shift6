@@ -1,11 +1,39 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+export type LocalDataExportSectionKey =
+  | 'profile'
+  | 'preferences'
+  | 'bodyAndHealth'
+  | 'trainingHistory'
+  | 'programsAndExercises'
+  | 'coachAndNotifications';
+
+export interface LocalDataExportSectionSummary {
+  key: LocalDataExportSectionKey;
+  title: string;
+  description: string;
+  recordCount: number;
+}
+
+export interface LocalDataExportSummary {
+  scope: 'local-device';
+  title: string;
+  description: string;
+  limitations: string;
+  totalRecordCount: number;
+  sections: LocalDataExportSectionSummary[];
+}
+
 export interface LocalDataExport {
-  schemaVersion: 6;
+  schemaVersion: 9;
   exportedAt: string;
   userId: string;
+  summary: LocalDataExportSummary;
   userProfiles: Record<string, unknown>[];
   userEquipment: Record<string, unknown>[];
+  userConsiderations: Record<string, unknown>[];
+  bodyMetrics: Record<string, unknown>[];
+  coachPrivacyPreferences: Record<string, unknown>[];
   trainingCycles: Record<string, unknown>[];
   workoutSessions: Record<string, unknown>[];
   completedSets: Record<string, unknown>[];
@@ -32,6 +60,20 @@ export async function exportLocalUserData(
   );
   const userEquipment = await database.getAllAsync<Record<string, unknown>>(
     'SELECT * FROM user_equipment WHERE user_id = ? ORDER BY equipment_id;',
+    userId,
+  );
+  const userConsiderations = await database.getAllAsync<Record<string, unknown>>(
+    'SELECT * FROM user_considerations WHERE user_id = ?;',
+    userId,
+  );
+  const bodyMetrics = await database.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM body_metrics
+      WHERE user_id = ?
+      ORDER BY metric_type ASC, measured_at ASC, id ASC;`,
+    userId,
+  );
+  const coachPrivacyPreferences = await database.getAllAsync<Record<string, unknown>>(
+    'SELECT * FROM coach_privacy_preferences WHERE user_id = ?;',
     userId,
   );
   const trainingCycles = await database.getAllAsync<Record<string, unknown>>(
@@ -115,12 +157,12 @@ export async function exportLocalUserData(
     userId,
   );
 
-  return {
-    schemaVersion: 6,
-    exportedAt,
-    userId,
+  const summary = buildLocalDataExportSummary({
     userProfiles,
     userEquipment,
+    userConsiderations,
+    bodyMetrics,
+    coachPrivacyPreferences,
     trainingCycles,
     workoutSessions,
     completedSets,
@@ -134,6 +176,95 @@ export async function exportLocalUserData(
     notificationPreferences,
     cycleReviews,
     workoutScheduleOverrides,
+  });
+
+  return {
+    schemaVersion: 9,
+    exportedAt,
+    userId,
+    summary,
+    userProfiles,
+    userEquipment,
+    userConsiderations,
+    bodyMetrics,
+    coachPrivacyPreferences,
+    trainingCycles,
+    workoutSessions,
+    completedSets,
+    workoutDrafts,
+    workoutCheckIns,
+    userPrograms,
+    userProgramVersions,
+    userExercises,
+    coachProposals,
+    healthSummaries,
+    notificationPreferences,
+    cycleReviews,
+    workoutScheduleOverrides,
+  };
+}
+
+export function buildLocalDataExportSummary(
+  data: Omit<LocalDataExport, 'schemaVersion' | 'exportedAt' | 'userId' | 'summary'>,
+): LocalDataExportSummary {
+  const sections: LocalDataExportSectionSummary[] = [
+    {
+      key: 'profile',
+      title: 'Profile and equipment',
+      description: 'Your local profile answers and saved equipment inventory.',
+      recordCount: data.userProfiles.length + data.userEquipment.length,
+    },
+    {
+      key: 'preferences',
+      title: 'Preferences and accessibility',
+      description:
+        'Local movement/accessibility preferences and Coach provider privacy preference.',
+      recordCount: data.userConsiderations.length + data.coachPrivacyPreferences.length,
+    },
+    {
+      key: 'bodyAndHealth',
+      title: 'Body metrics and health summaries',
+      description: 'Manual body measurements and health summaries imported onto this device.',
+      recordCount: data.bodyMetrics.length + data.healthSummaries.length,
+    },
+    {
+      key: 'trainingHistory',
+      title: 'Training history',
+      description:
+        'Cycles, workout sessions, completed sets, in-progress drafts, check-ins, cycle reviews, and schedule overrides.',
+      recordCount:
+        data.trainingCycles.length +
+        data.workoutSessions.length +
+        data.completedSets.length +
+        data.workoutDrafts.length +
+        data.workoutCheckIns.length +
+        data.cycleReviews.length +
+        data.workoutScheduleOverrides.length,
+    },
+    {
+      key: 'programsAndExercises',
+      title: 'Your programs and exercises',
+      description: 'Private program copies, program versions, and custom exercise records.',
+      recordCount:
+        data.userPrograms.length + data.userProgramVersions.length + data.userExercises.length,
+    },
+    {
+      key: 'coachAndNotifications',
+      title: 'Coach and notification records',
+      description: 'Saved Coach proposals and local notification preferences.',
+      recordCount: data.coachProposals.length + data.notificationPreferences.length,
+    },
+  ];
+
+  return {
+    scope: 'local-device',
+    title: 'SHIFT6 local data export',
+    description:
+      'A structured JSON copy of SHIFT6 data owned by this user and currently stored on this device.',
+    limitations:
+      'This is a local-device export. It does not claim to include server-only account data or third-party provider records that are not cached in SHIFT6 local storage.',
+    totalRecordCount: sections.reduce((total, section) => total + section.recordCount, 0),
+    sections,
   };
 }
 
@@ -203,6 +334,9 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
     );
     await database.runAsync('DELETE FROM notification_preferences WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM health_summaries WHERE user_id = ?;', userId);
+    await database.runAsync('DELETE FROM user_considerations WHERE user_id = ?;', userId);
+    await database.runAsync('DELETE FROM body_metrics WHERE user_id = ?;', userId);
+    await database.runAsync('DELETE FROM coach_privacy_preferences WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM cycle_reviews WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM workout_schedule_overrides WHERE user_id = ?;', userId);
     await database.runAsync(

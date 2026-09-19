@@ -72,6 +72,12 @@ export async function migrateLocalUserToAccount(
        UNION ALL
        SELECT 1 FROM health_summaries WHERE user_id = ?
        UNION ALL
+       SELECT 1 FROM user_considerations WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM body_metrics WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM coach_privacy_preferences WHERE user_id = ?
+       UNION ALL
        SELECT 1 FROM cycle_reviews WHERE user_id = ?
        UNION ALL
        SELECT 1 FROM workout_schedule_overrides WHERE user_id = ?
@@ -80,6 +86,9 @@ export async function migrateLocalUserToAccount(
        UNION ALL
        SELECT 1 FROM sync_outbox WHERE idempotency_key = ?
         LIMIT 1;`,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
       destinationUserId,
       destinationUserId,
       destinationUserId,
@@ -233,6 +242,21 @@ export async function migrateLocalUserToAccount(
     );
     await database.runAsync(
       'UPDATE health_summaries SET user_id = ? WHERE user_id = ?;',
+      destinationUserId,
+      sourceUserId,
+    );
+    await database.runAsync(
+      'UPDATE user_considerations SET user_id = ? WHERE user_id = ?;',
+      destinationUserId,
+      sourceUserId,
+    );
+    await database.runAsync(
+      'UPDATE body_metrics SET user_id = ? WHERE user_id = ?;',
+      destinationUserId,
+      sourceUserId,
+    );
+    await database.runAsync(
+      'UPDATE coach_privacy_preferences SET user_id = ? WHERE user_id = ?;',
       destinationUserId,
       sourceUserId,
     );

@@ -292,18 +292,19 @@ export default function ProgressScreen() {
       <CardioProgressCard summary={cardioProgress} />
 
       {exerciseChoices.length > 0 ? (
-        <View style={styles.exerciseSelector} accessibilityLabel="Movement trend selector">
+        <View style={styles.exerciseSelector}>
           <Text variant="h3">Movement trends</Text>
           <Text variant="small" tone="muted" style={styles.selectorCopy}>
             Compare strength, cardio, and timed movements from the active program. Values come from
             completed local sets.
           </Text>
-          <View style={styles.selectorChips}>
+          <View style={styles.selectorChips} accessibilityRole="radiogroup">
             {exerciseChoices.map((choice) => (
               <Chip
                 key={choice.exerciseId}
                 label={choice.label}
                 selected={choice.exerciseId === selectedExerciseId}
+                accessibilityRole="radio"
                 onPress={() => void handleSelectExercise(choice.exerciseId)}
               />
             ))}

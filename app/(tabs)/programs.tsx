@@ -8,11 +8,8 @@ import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { useLocalDatabase } from '../../src/db/context';
 import { demoUser } from '../../src/domain/fixtures/home';
 import { recommendPrograms } from '../../src/domain/onboarding';
-import {
-  getProgramCatalogueStatusLabel,
-  programLibrary,
-  programLibraryPrograms,
-} from '../../src/domain/programLibrary';
+import { programLibrary, programLibraryPrograms } from '../../src/domain/programLibrary';
+import { getProgramRuntimeStatusLabel } from '../../src/domain/runtimeContentGates';
 import { colors, spacing } from '../../src/design/tokens';
 import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
 
@@ -120,8 +117,8 @@ export default function ProgramsScreen() {
     ({ program }) => !featuredIds.has(program.id),
   );
 
-  const catalogueStatusByProgramId = useMemo(
-    () => new Map(programLibrary.map((entry) => [entry.program.id, entry.status])),
+  const catalogueEntryByProgramId = useMemo(
+    () => new Map(programLibrary.map((entry) => [entry.program.id, entry])),
     [],
   );
 
@@ -178,12 +175,14 @@ export default function ProgramsScreen() {
         />
       ) : (
         featuredRecommendations.map((recommendation) => {
-          const entryStatus = catalogueStatusByProgramId.get(recommendation.program.id);
+          const catalogueEntry = catalogueEntryByProgramId.get(recommendation.program.id);
           return (
             <View key={recommendation.program.id} style={styles.recommendationItem}>
               <ProgramCard
                 program={recommendation.program}
-                statusLabel={entryStatus ? getProgramCatalogueStatusLabel(entryStatus) : undefined}
+                statusLabel={
+                  catalogueEntry ? getProgramRuntimeStatusLabel(catalogueEntry, __DEV__) : undefined
+                }
                 onPress={() =>
                   router.push({
                     pathname: '/program',
@@ -244,12 +243,14 @@ export default function ProgramsScreen() {
         {`${additionalRecommendations.length} more matching launch program${additionalRecommendations.length === 1 ? '' : 's'}. Additional versions are being built and reviewed before they can start a cycle.`}
       </Text>
       {additionalRecommendations.map((recommendation) => {
-        const entryStatus = catalogueStatusByProgramId.get(recommendation.program.id);
+        const catalogueEntry = catalogueEntryByProgramId.get(recommendation.program.id);
         return (
           <ProgramCard
             key={recommendation.program.id}
             program={recommendation.program}
-            statusLabel={entryStatus ? getProgramCatalogueStatusLabel(entryStatus) : undefined}
+            statusLabel={
+              catalogueEntry ? getProgramRuntimeStatusLabel(catalogueEntry, __DEV__) : undefined
+            }
             onPress={() =>
               router.push({
                 pathname: '/program',

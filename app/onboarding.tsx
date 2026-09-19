@@ -28,16 +28,25 @@ import {
   toOnboardingProfile,
   unitOptions,
 } from '../src/domain/onboarding';
+import {
+  accessibilityNeedOptions,
+  createEmptyUserConsiderations,
+  movementConsiderationOptions,
+  type AccessibilityNeed,
+  type MovementConsideration,
+  type UserConsiderations,
+} from '../src/domain/considerations';
 import { equipmentCatalog } from '../src/domain/equipment';
 import { programLibraryPrograms } from '../src/domain/programLibrary';
 import { useLocalDatabase } from '../src/db/context';
+import { getUserConsiderations, saveUserConsiderations } from '../src/db/considerationsRepository';
 import { getOnboardingProfile, saveOnboardingProfile } from '../src/db/profileRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
-const stepCount = 9;
+const stepCount = 10;
 
 export default function OnboardingScreen() {
   const database = useLocalDatabase();
@@ -45,6 +54,9 @@ export default function OnboardingScreen() {
   const userId = useCurrentUserId();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState(() => createOnboardingDraft());
+  const [considerations, setConsiderations] = useState<UserConsiderations>(() =>
+    createEmptyUserConsiderations(userId, new Date(0).toISOString()),
+  );
   const [loadingProfile, setLoadingProfile] = useState(database !== null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,14 +67,20 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     if (!database) {
+      setConsiderations(createEmptyUserConsiderations(userId, new Date(0).toISOString()));
       setLoadingProfile(false);
       return;
     }
 
     let active = true;
-    void getOnboardingProfile(database, userId)
-      .then((profile) => {
-        if (active && profile) setDraft(fromOnboardingProfile(profile));
+    void Promise.all([
+      getOnboardingProfile(database, userId),
+      getUserConsiderations(database, userId),
+    ])
+      .then(([profile, savedConsiderations]) => {
+        if (!active) return;
+        if (profile) setDraft(fromOnboardingProfile(profile));
+        setConsiderations(savedConsiderations);
       })
       .catch(() => {
         if (active)
@@ -94,6 +112,28 @@ export default function OnboardingScreen() {
     setError(null);
   };
 
+  const toggleMovementConsideration = (value: MovementConsideration) => {
+    setConsiderations((current) => ({
+      ...current,
+      userId,
+      movementConsiderations: current.movementConsiderations.includes(value)
+        ? current.movementConsiderations.filter((item) => item !== value)
+        : [...current.movementConsiderations, value],
+    }));
+    setError(null);
+  };
+
+  const toggleAccessibilityNeed = (value: AccessibilityNeed) => {
+    setConsiderations((current) => ({
+      ...current,
+      userId,
+      accessibilityNeeds: current.accessibilityNeeds.includes(value)
+        ? current.accessibilityNeeds.filter((item) => item !== value)
+        : [...current.accessibilityNeeds, value],
+    }));
+    setError(null);
+  };
+
   const canContinue = getCanContinue(step, draft);
 
   if (loadingProfile) {
@@ -120,8 +160,22 @@ export default function OnboardingScreen() {
 
     setSaving(true);
     try {
-      const profile = toOnboardingProfile(draft, new Date().toISOString());
-      if (database) await saveOnboardingProfile(database, profile);
+      const updatedAt = new Date().toISOString();
+      const profile = toOnboardingProfile(draft, updatedAt);
+      if (database) {
+        await saveOnboardingProfile(database, profile);
+        try {
+          await saveUserConsiderations(database, {
+            ...considerations,
+            userId,
+            updatedAt,
+          });
+        } catch {
+          throw new Error(
+            'Your main setup was saved, but movement and accessibility preferences were not. Retry here or edit them later from Profile.',
+          );
+        }
+      }
       trackAnalyticsEvent(analytics, 'onboarding_completed', {
         goalCount: draft.goals.length,
         equipmentCount: draft.equipmentIds.length,
@@ -160,7 +214,16 @@ export default function OnboardingScreen() {
       </View>
 
       <ProgressIndicator label="Your setup" value={(step + 1) / stepCount} />
-      {renderStep(step, draft, updateDraft, recommendations, database !== null)}
+      {renderStep(
+        step,
+        draft,
+        updateDraft,
+        considerations,
+        toggleMovementConsideration,
+        toggleAccessibilityNeed,
+        recommendations,
+        database !== null,
+      )}
 
       {error ? (
         <Card tone="coral" style={styles.errorCard} accessibilityLabel={`Setup error. ${error}`}>
@@ -214,12 +277,14 @@ function getCanContinue(step: number, draft: ReturnType<typeof createOnboardingD
         draft.preferredTrainingTime !== null
       );
     case 5:
-      return draft.unitSystem !== null;
+      return true;
     case 6:
-      return draft.healthConnection !== null;
+      return draft.unitSystem !== null;
     case 7:
-      return draft.coachTone !== null && draft.coachIntervention !== null;
+      return draft.healthConnection !== null;
     case 8:
+      return draft.coachTone !== null && draft.coachIntervention !== null;
+    case 9:
       return isOnboardingComplete(draft);
     default:
       return false;
@@ -233,6 +298,9 @@ function renderStep(
     key: Key,
     value: ReturnType<typeof createOnboardingDraft>[Key],
   ) => void,
+  considerations: UserConsiderations,
+  toggleMovementConsideration: (value: MovementConsideration) => void,
+  toggleAccessibilityNeed: (value: AccessibilityNeed) => void,
   recommendations: ReturnType<typeof recommendPrograms>,
   hasNativeDatabase: boolean,
 ) {
@@ -386,6 +454,48 @@ function renderStep(
     case 5:
       return (
         <OptionStep
+          eyebrow="MOVEMENT & ACCESSIBILITY"
+          title="Anything you want SHIFT6 to work around?"
+          subtitle="Optional, non-diagnostic preferences only. Skip anything you do not want to answer; leaving this blank does not create a hidden health assumption."
+        >
+          <Text variant="smallMedium" style={styles.fieldLabel}>
+            Movement preferences
+          </Text>
+          {movementConsiderationOptions.map((option) => (
+            <OptionCard
+              key={option.value}
+              label={option.label}
+              description={option.description}
+              selected={considerations.movementConsiderations.includes(option.value)}
+              accessibilityRole="checkbox"
+              onPress={() => toggleMovementConsideration(option.value)}
+            />
+          ))}
+          <Text variant="smallMedium" style={styles.fieldLabel}>
+            Accessibility preferences
+          </Text>
+          {accessibilityNeedOptions.map((option) => (
+            <OptionCard
+              key={option.value}
+              label={option.label}
+              description={option.description}
+              selected={considerations.accessibilityNeeds.includes(option.value)}
+              accessibilityRole="checkbox"
+              onPress={() => toggleAccessibilityNeed(option.value)}
+            />
+          ))}
+          <Card tone="blue" style={styles.infoCard}>
+            <Ionicons name="shield-checkmark-outline" size={22} color={colors.ink} />
+            <Text variant="small" tone="muted" style={styles.cardText}>
+              These preferences stay local by default. SHIFT6 does not diagnose a condition or infer
+              one from anything you select or skip.
+            </Text>
+          </Card>
+        </OptionStep>
+      );
+    case 6:
+      return (
+        <OptionStep
           eyebrow="UNITS"
           title="Which units feel natural?"
           subtitle="You can switch this any time. SHIFT6 will keep your workout targets consistent."
@@ -401,7 +511,7 @@ function renderStep(
           ))}
         </OptionStep>
       );
-    case 6:
+    case 7:
       return (
         <OptionStep
           eyebrow="OPTIONAL HEALTH CONTEXT"
@@ -426,7 +536,7 @@ function renderStep(
           </Card>
         </OptionStep>
       );
-    case 7:
+    case 8:
       return (
         <OptionStep
           eyebrow="COACH SETUP"
@@ -459,7 +569,7 @@ function renderStep(
           ))}
         </OptionStep>
       );
-    case 8: {
+    case 9: {
       const recommendation = recommendations[0];
       return (
         <View style={styles.step}>

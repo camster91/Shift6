@@ -16,15 +16,13 @@ export function ErrorState({
   onRetry,
 }: ErrorStateProps) {
   return (
-    <View
-      accessibilityLabel={`${title}. ${message}`}
-      accessibilityRole="alert"
-      style={styles.container}
-    >
-      <Text variant="h3">{title}</Text>
-      <Text variant="body" tone="muted" style={styles.message}>
-        {message}
-      </Text>
+    <View style={styles.container}>
+      <View accessibilityLabel={`${title}. ${message}`} accessibilityRole="alert">
+        <Text variant="h3">{title}</Text>
+        <Text variant="body" tone="muted" style={styles.message}>
+          {message}
+        </Text>
+      </View>
       {onRetry ? <Button label="Try again" variant="secondary" onPress={onRetry} /> : null}
     </View>
   );

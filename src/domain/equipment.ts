@@ -71,6 +71,50 @@ export function findExerciseSubstitutions(
     .map(({ candidate }) => candidate);
 }
 
+export function explainExerciseSubstitution(source: Exercise, candidate: Exercise): string {
+  const sameMovement = source.movementPattern === candidate.movementPattern;
+  const sharedMuscles = candidate.primaryMuscles.filter((muscle) =>
+    source.primaryMuscles.includes(muscle),
+  );
+  const sourceEquipment = readableEquipment(source.equipmentIds);
+  const candidateEquipment = readableEquipment(candidate.equipmentIds);
+  const sameTracking = source.trackingType === candidate.trackingType;
+
+  const similarities: string[] = [];
+  const differences: string[] = [];
+
+  if (sameMovement) {
+    similarities.push(`keeps the ${formatLabel(source.movementPattern)} movement pattern`);
+  } else {
+    differences.push(
+      `changes the movement pattern from ${formatLabel(source.movementPattern)} to ${formatLabel(candidate.movementPattern)}`,
+    );
+  }
+
+  if (sharedMuscles.length > 0) {
+    similarities.push(`still emphasizes ${formatList(sharedMuscles.map(formatLabel))}`);
+  } else {
+    differences.push('shifts the primary muscle emphasis');
+  }
+
+  if (sourceEquipment !== candidateEquipment) {
+    differences.push(`uses ${candidateEquipment} instead of ${sourceEquipment}`);
+  }
+
+  if (!sameTracking) {
+    differences.push(
+      `changes tracking from ${formatLabel(source.trackingType)} to ${formatLabel(candidate.trackingType)}`,
+    );
+  }
+
+  const similarityText = similarities.length > 0 ? capitalize(similarities.join(' and ')) : '';
+  const differenceText = differences.length > 0 ? capitalize(differences.join(' and ')) : '';
+
+  if (similarityText && differenceText) return `${similarityText}. ${differenceText}.`;
+  if (similarityText) return `${similarityText}.`;
+  return `${differenceText || 'This is an equipment-compatible alternative'}.`;
+}
+
 function substitutionScore(source: Exercise, candidate: Exercise): number {
   const sharedMuscles = candidate.primaryMuscles.filter((muscle) =>
     source.primaryMuscles.includes(muscle),
@@ -82,6 +126,31 @@ function substitutionScore(source: Exercise, candidate: Exercise): number {
     sharedMuscles * 10 +
     sharedTags * 3
   );
+}
+
+function readableEquipment(equipmentIds: readonly string[]): string {
+  const names = equipmentIds.map(
+    (equipmentId) => equipmentCatalog.find((item) => item.id === equipmentId)?.name ?? equipmentId,
+  );
+  return formatList(names);
+}
+
+function formatLabel(value: string): string {
+  return value
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatList(values: readonly string[]): string {
+  if (values.length === 0) return 'no equipment';
+  if (values.length === 1) return values[0] ?? '';
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(', ')}, and ${values.at(-1)}`;
+}
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function equipment(

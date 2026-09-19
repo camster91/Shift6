@@ -52,10 +52,25 @@ const proposalResponse = {
 };
 
 describe('Coach gateway boundary', () => {
-  it('minimizes structured context before a provider can receive it', () => {
+  it('minimizes structured context and removes internal identifiers before provider transport', () => {
     const minimized = minimizeCoachContext(context);
 
-    expect(minimized.structuredFacts).toEqual({ workoutTitle: 'Strength A', currentWeek: 2 });
+    expect(minimized).toEqual({
+      user: {
+        unitSystem: 'imperial',
+        goals: ['strength'],
+        experience: 'beginner',
+      },
+      cycle: {
+        currentWeek: 2,
+        status: 'active',
+      },
+      structuredFacts: { workoutTitle: 'Strength A', currentWeek: 2 },
+    });
+    expect(JSON.stringify(minimized)).not.toContain('guest-user');
+    expect(JSON.stringify(minimized)).not.toContain('cycle-1');
+    expect(JSON.stringify(minimized)).not.toContain('version-1');
+    expect(JSON.stringify(minimized)).not.toContain('privateNote');
   });
 
   it('requires an injected access token and never invents a provider result', async () => {
@@ -69,17 +84,20 @@ describe('Coach gateway boundary', () => {
     );
   });
 
-  it('sends a bounded authenticated request and parses a message response', async () => {
+  it('sends a bounded authenticated request without internal user/cycle identifiers', async () => {
     let requestUrl = '';
     let requestBody = '';
     let authorization = '';
+    let protocolVersion = '';
     const gateway = new HttpCoachGateway({
       baseUrl: 'https://api.example.test/',
       getAccessToken: async () => 'test-token',
       fetcher: async (input, init) => {
         requestUrl = String(input);
         requestBody = String(init?.body);
-        authorization = new Headers(init?.headers).get('Authorization') ?? '';
+        const headers = new Headers(init?.headers);
+        authorization = headers.get('Authorization') ?? '';
+        protocolVersion = headers.get('X-Shift6-Protocol-Version') ?? '';
         return new Response(
           JSON.stringify({
             kind: 'message',
@@ -97,12 +115,36 @@ describe('Coach gateway boundary', () => {
     });
     expect(requestUrl).toBe('https://api.example.test/v1/coach/message');
     expect(authorization).toBe('Bearer test-token');
-    expect(JSON.parse(requestBody).context.structuredFacts).toEqual({
-      workoutTitle: 'Strength A',
-      currentWeek: 2,
+    expect(protocolVersion).toBe('1');
+    expect(JSON.parse(requestBody).context).toEqual({
+      user: {
+        unitSystem: 'imperial',
+        goals: ['strength'],
+        experience: 'beginner',
+      },
+      cycle: { currentWeek: 2, status: 'active' },
+      structuredFacts: {
+        workoutTitle: 'Strength A',
+        currentWeek: 2,
+      },
     });
   });
 
+  it('fails closed when the server requires a newer API protocol', async () => {
+    const gateway = new HttpCoachGateway({
+      baseUrl: 'https://api.example.test',
+      getAccessToken: async () => 'test-token',
+      fetcher: async () =>
+        new Response(null, {
+          status: 426,
+          headers: { 'X-Shift6-Min-Protocol-Version': '2' },
+        }),
+    });
+
+    await expect(gateway.generateMessage(context, 'weekly-review')).rejects.toBeInstanceOf(
+      CoachGatewayProtocolError,
+    );
+  });
   it('sends a trimmed bounded question separately from structured context', async () => {
     let requestBody = '';
     const gateway = new HttpCoachGateway({

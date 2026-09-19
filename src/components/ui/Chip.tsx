@@ -8,14 +8,21 @@ export interface ChipProps {
   selected?: boolean;
   onPress?: () => void;
   disabled?: boolean;
+  accessibilityRole?: 'button' | 'radio' | 'checkbox';
 }
 
-export function Chip({ label, selected = false, onPress, disabled = false }: ChipProps) {
+export function Chip({
+  label,
+  selected = false,
+  onPress,
+  disabled = false,
+  accessibilityRole = 'button',
+}: ChipProps) {
   const content = (
     <>
       <View style={[styles.dot, selected && styles.selectedDot]} />
       <Text variant="caption" tone={selected ? 'inverse' : 'muted'}>
-        {label}
+        {selected ? `✓ ${label}` : label}
       </Text>
     </>
   );
@@ -24,11 +31,14 @@ export function Chip({ label, selected = false, onPress, disabled = false }: Chi
     return <View style={[styles.base, selected && styles.selected]}>{content}</View>;
   }
 
+  const accessibilityState =
+    accessibilityRole === 'checkbox' ? { checked: selected, disabled } : { disabled, selected };
+
   return (
     <Pressable
       accessibilityLabel={label}
-      accessibilityRole="button"
-      accessibilityState={{ disabled, selected }}
+      accessibilityRole={accessibilityRole}
+      accessibilityState={accessibilityState}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [

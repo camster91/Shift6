@@ -69,6 +69,9 @@ describe('migrateLocalUserToAccount', () => {
     expect(calls.some((call) => call.sql.includes('INSERT INTO user_profiles'))).toBe(true);
     expect(calls.some((call) => call.sql.includes('UPDATE user_equipment'))).toBe(true);
     expect(calls.some((call) => call.sql.includes('UPDATE training_cycles'))).toBe(true);
+    expect(calls.some((call) => call.sql.includes('UPDATE user_considerations'))).toBe(true);
+    expect(calls.some((call) => call.sql.includes('UPDATE body_metrics'))).toBe(true);
+    expect(calls.some((call) => call.sql.includes('UPDATE coach_privacy_preferences'))).toBe(true);
     const profileMutation = calls.find((call) => call.sql.includes('UPDATE sync_outbox'));
     expect(profileMutation?.params).toContain('profile:account-1');
     expect(JSON.parse(String(profileMutation?.params[3]))).toEqual({

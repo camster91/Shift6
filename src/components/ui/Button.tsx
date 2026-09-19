@@ -15,6 +15,7 @@ export interface ButtonProps {
   loading?: boolean;
   icon?: ReactNode;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
   accessibilityHint?: string;
 }
 
@@ -26,6 +27,7 @@ export function Button({
   loading = false,
   icon,
   style,
+  accessibilityLabel,
   accessibilityHint,
 }: ButtonProps) {
   const isDisabled = disabled || loading || !onPress;
@@ -34,9 +36,9 @@ export function Button({
   return (
     <Pressable
       accessibilityHint={accessibilityHint}
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
-      accessibilityState={{ disabled: isDisabled }}
+      accessibilityState={{ busy: loading, disabled: isDisabled }}
       disabled={isDisabled}
       onPress={onPress}
       style={({ pressed }) => [

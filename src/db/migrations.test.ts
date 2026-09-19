@@ -149,4 +149,25 @@ describe('local database migrations', () => {
 
     expect(statements).toContain('ADD COLUMN note TEXT');
   });
+
+  it('stores local-only structured considerations and body metrics', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS user_considerations');
+    expect(statements).toContain("movement_considerations_json TEXT NOT NULL DEFAULT '[]'");
+    expect(statements).toContain("accessibility_needs_json TEXT NOT NULL DEFAULT '[]'");
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS body_metrics');
+    expect(statements).toContain('body_metrics_user_type_measured');
+    expect(statements).toContain(
+      'FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE',
+    );
+  });
+
+  it('defaults provider-backed Coach processing to disabled', () => {
+    const statements = MIGRATIONS.flatMap((migration) => migration.statements).join('\n');
+
+    expect(statements).toContain('CREATE TABLE IF NOT EXISTS coach_privacy_preferences');
+    expect(statements).toContain('provider_coach_enabled INTEGER NOT NULL DEFAULT 0');
+    expect(statements).toContain('notice_version INTEGER NOT NULL DEFAULT 1');
+  });
 });

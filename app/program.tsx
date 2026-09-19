@@ -18,7 +18,11 @@ import { saveTrainingCycle } from '../src/db/cycleRepository';
 import { createTrainingCycle } from '../src/domain/cycle';
 import { equipmentCatalog } from '../src/domain/equipment';
 import { createProgramCopy } from '../src/domain/programBuilder';
-import { getProgramCatalogueStatusLabel, programLibrary } from '../src/domain/programLibrary';
+import { programLibrary } from '../src/domain/programLibrary';
+import {
+  getProgramRuntimeStatusLabel,
+  isProgramStartAllowed,
+} from '../src/domain/runtimeContentGates';
 import { saveProgramVersion } from '../src/db/programRepository';
 import { colors, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
@@ -34,7 +38,8 @@ export default function ProgramDetailScreen() {
     programLibrary.find((entry) => entry.program.id === programId) ?? programLibrary[0]!;
   const selectedProgram = catalogueEntry.program;
   const selectedVersion = catalogueEntry.version;
-  const isStartable = catalogueEntry.status === 'published' && selectedVersion !== undefined;
+  const publicationReady = isProgramStartAllowed(catalogueEntry, false);
+  const isStartable = isProgramStartAllowed(catalogueEntry, __DEV__);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -108,8 +113,24 @@ export default function ProgramDetailScreen() {
 
       <ProgramCard
         program={selectedProgram}
-        statusLabel={getProgramCatalogueStatusLabel(catalogueEntry.status)}
+        statusLabel={getProgramRuntimeStatusLabel(catalogueEntry, __DEV__)}
       />
+
+      {isStartable && !publicationReady ? (
+        <Card
+          tone="yellow"
+          style={styles.cycleCard}
+          accessibilityLabel="Development preview. Program content review is not complete."
+        >
+          <Text variant="caption" tone="muted">
+            DEVELOPMENT PREVIEW
+          </Text>
+          <Text variant="small" tone="muted" style={styles.cardText}>
+            This executable draft is available only for internal QA. It is not publication-ready
+            fitness content.
+          </Text>
+        </Card>
+      ) : null}
 
       {isStartable ? (
         <Card tone="lavender" style={styles.cycleCard}>
@@ -203,7 +224,7 @@ export default function ProgramDetailScreen() {
 
       {isStartable ? (
         <Button
-          label="Start six-week cycle"
+          label={publicationReady ? 'Start six-week cycle' : 'Start draft preview'}
           onPress={handleStartCycle}
           loading={starting}
           icon={<Ionicons name="arrow-forward" size={18} color={colors.white} />}
@@ -220,9 +241,11 @@ export default function ProgramDetailScreen() {
       )}
       <Text variant="caption" tone="muted" style={styles.persistenceNote}>
         {database
-          ? isStartable
+          ? publicationReady
             ? 'Your selected program version will be snapshotted on this device.'
-            : 'This catalogue entry is not startable until its executable version is reviewed.'
+            : isStartable
+              ? 'Development preview: this draft can be tested locally but is not release-ready.'
+              : 'This catalogue entry is not startable until its content review gates pass.'
           : Platform.OS === 'web'
             ? 'Web preview: cycle persistence is not active in this surface.'
             : 'This program version will be snapshotted locally before future sync.'}

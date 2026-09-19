@@ -1,8 +1,15 @@
-import type { AuthProvider, AnalyticsClient, BackendClient, CoachGateway } from './contracts';
+import type {
+  AnalyticsClient,
+  AuthProvider,
+  BackendClient,
+  CoachGateway,
+  ErrorReporter,
+} from './contracts';
 import { createNoopAnalyticsClient } from './analytics';
 import { UnavailableBackendClient, HttpBackendClient } from './backend';
 import { HttpCoachGateway, UnavailableCoachGateway } from './coach';
 import { ExpoConnectivityProvider } from './connectivity';
+import { createNoopErrorReporter } from './errors';
 import { createPlatformHealthProvider, type HealthProvider } from './health';
 import type { ConnectivityProvider } from './syncCoordinator';
 
@@ -12,6 +19,7 @@ export interface AppServices {
   backend: BackendClient;
   coach: CoachGateway;
   connectivity: ConnectivityProvider;
+  errors: ErrorReporter;
   health: HealthProvider;
 }
 
@@ -22,6 +30,7 @@ export interface AppServicesOptions {
   fetcher?: typeof fetch;
   connectivity?: ConnectivityProvider;
   coach?: CoachGateway;
+  errors?: ErrorReporter;
   health?: HealthProvider;
 }
 
@@ -36,6 +45,7 @@ export function createAppServices({
   fetcher,
   connectivity = new ExpoConnectivityProvider(),
   coach: configuredCoach,
+  errors: configuredErrors,
   health: configuredHealth,
 }: AppServicesOptions): AppServices {
   const backend = apiBaseUrl?.trim()
@@ -56,6 +66,7 @@ export function createAppServices({
       : new UnavailableCoachGateway());
   const health = configuredHealth ?? createPlatformHealthProvider();
   const analytics = configuredAnalytics ?? createNoopAnalyticsClient();
+  const errors = configuredErrors ?? createNoopErrorReporter();
 
-  return { auth, analytics, backend, coach, connectivity, health };
+  return { auth, analytics, backend, coach, connectivity, errors, health };
 }

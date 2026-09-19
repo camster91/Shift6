@@ -15,14 +15,16 @@ export interface EmptyStateProps {
 
 export function EmptyState({ title, message, icon, actionLabel, onAction }: EmptyStateProps) {
   return (
-    <View accessibilityLabel={`${title}. ${message}`} style={styles.container}>
-      {icon ? <View style={styles.icon}>{icon}</View> : null}
-      <Text variant="h3" style={styles.title}>
-        {title}
-      </Text>
-      <Text variant="body" tone="muted" style={styles.message}>
-        {message}
-      </Text>
+    <View style={styles.container}>
+      <View accessible accessibilityLabel={`${title}. ${message}`} style={styles.copy}>
+        {icon ? <View style={styles.icon}>{icon}</View> : null}
+        <Text variant="h3" style={styles.title}>
+          {title}
+        </Text>
+        <Text variant="body" tone="muted" style={styles.message}>
+          {message}
+        </Text>
+      </View>
       {actionLabel && onAction ? <Button label={actionLabel} onPress={onAction} /> : null}
     </View>
   );
@@ -34,6 +36,9 @@ const styles = StyleSheet.create({
     padding: spacing.xxxl,
     backgroundColor: colors.white,
     borderRadius: 20,
+  },
+  copy: {
+    alignItems: 'center',
   },
   icon: {
     marginBottom: spacing.md,

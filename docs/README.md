@@ -31,6 +31,16 @@ Implementation-status paragraphs embedded in `06_TECHNICAL_ARCHITECTURE.md` and 
 
 External, credentialed, production, paid-build, store-submission and other difficult-to-reverse actions remain explicit approval gates even when this runbook describes how to perform them.
 
+Supporting release documents on the cumulative stack:
+
+- `15_STORE_RELEASE_PACKAGE.md` — draft store copy, data-safety inventory, screenshots and submission blockers.
+- `16_ACCOUNT_DELETION_CONTRACT.md` — mobile/server deletion contract and recovery expectations.
+- `17_STACKED_PR_VERIFICATION.md` — exact-head stack verification and merge sequencing.
+- `18_EXERCISE_CONTENT_REVIEW.md` and `19_PROGRAM_CONTENT_REVIEW.md` — human content-review evidence gates.
+- `20_COACH_PROVIDER_RELEASE_GATE.md` — provider/privacy/evaluation evidence for remote Coach.
+- `21_SYNC_SERVER_CONTRACT.md` — authenticated sync/idempotency/authorization requirements.
+- `22_RELEASE_CONFIGURATION_GATE.md` — strict submission-time public URL/provider configuration validator.
+
 ## Agent rule
 
 Before implementing a supposedly missing feature:

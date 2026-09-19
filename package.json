@@ -21,7 +21,8 @@
     "validate:release-config": "node scripts/validate-release-config.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
     "export:web": "expo export --platform web",
-    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run doctor && npm run validate:assets && npm run check:secrets && npm run validate:release-config && npm audit --omit=dev --audit-level=high && npm test -- --ci && npm run export:web"
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run doctor && npm run validate:assets && npm run check:secrets && npm run validate:release-config && npm audit --omit=dev --audit-level=high && npm test -- --ci && npm run export:web",
+    "validate:release-ready": "node scripts/validate-release-ready.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",

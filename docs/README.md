@@ -40,6 +40,7 @@ Supporting release documents on the cumulative stack:
 - `20_COACH_PROVIDER_RELEASE_GATE.md` — provider/privacy/evaluation evidence for remote Coach.
 - `21_SYNC_SERVER_CONTRACT.md` — authenticated sync/idempotency/authorization requirements.
 - `22_RELEASE_CONFIGURATION_GATE.md` — strict submission-time public URL/provider configuration validator.
+- `23_RELEASE_ASSET_GATE.md` — strict final PNG icon/adaptive-icon/splash configuration validator.
 
 ## Agent rule
 

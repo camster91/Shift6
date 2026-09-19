@@ -38,7 +38,9 @@ describe('Coach evaluation matrix', () => {
   it('fails closed when the provider is unavailable', async () => {
     const gateway = new UnavailableCoachGateway();
 
-    await expect(gateway.generateMessage(evaluationContext, 'weekly-review')).resolves.toMatchObject({
+    await expect(
+      gateway.generateMessage(evaluationContext, 'weekly-review'),
+    ).resolves.toMatchObject({
       kind: 'unavailable',
     });
     await expect(gateway.generateProposal(evaluationContext, 'weekly-review')).rejects.toThrow(
@@ -143,7 +145,9 @@ describe('Coach evaluation matrix', () => {
   });
 
   it('routes medication, nutrition, injury and urgent requests before optimization', () => {
-    expect(classifyCoachSafety('How much insulin should I take before this workout?')).toMatchObject({
+    expect(
+      classifyCoachSafety('How much insulin should I take before this workout?'),
+    ).toMatchObject({
       route: 'medication-boundary',
       shouldStopTraining: false,
     });
@@ -159,7 +163,9 @@ describe('Coach evaluation matrix', () => {
       route: 'urgent-care',
       shouldStopTraining: true,
     });
-    expect(classifyCoachSafety('I have chest pain. Should I change my insulin dose?')).toMatchObject({
+    expect(
+      classifyCoachSafety('I have chest pain. Should I change my insulin dose?'),
+    ).toMatchObject({
       route: 'urgent-care',
       shouldStopTraining: true,
     });

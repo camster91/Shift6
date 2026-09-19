@@ -11,11 +11,7 @@ import {
 } from '../src/domain/bodyMetrics';
 import { demoUser } from '../src/domain/fixtures/home';
 import type { UnitSystem } from '../src/domain/types';
-import {
-  deleteBodyMetric,
-  getBodyMetrics,
-  saveManualWeight,
-} from '../src/db/bodyMetricRepository';
+import { deleteBodyMetric, getBodyMetrics, saveManualWeight } from '../src/db/bodyMetricRepository';
 import { useLocalDatabase } from '../src/db/context';
 import { getOnboardingProfile } from '../src/db/profileRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
@@ -39,10 +35,7 @@ export default function BodyMetricsScreen() {
 
     let active = true;
     setLoading(true);
-    void Promise.all([
-      getOnboardingProfile(database, userId),
-      getBodyMetrics(database, userId),
-    ])
+    void Promise.all([getOnboardingProfile(database, userId), getBodyMetrics(database, userId)])
       .then(([profile, stored]) => {
         if (!active) return;
         setUnitSystem(profile?.user.unitSystem ?? demoUser.unitSystem);

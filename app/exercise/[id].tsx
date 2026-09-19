@@ -27,7 +27,8 @@ export default function ExerciseDetailScreen() {
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
   const catalogueExercises = useMemo(
-    () => foundationalExercises.filter((candidate) => isExerciseAvailableToUser(candidate, __DEV__)),
+    () =>
+      foundationalExercises.filter((candidate) => isExerciseAvailableToUser(candidate, __DEV__)),
     [],
   );
   const availableExercises = useMemo(

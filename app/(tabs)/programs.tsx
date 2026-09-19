@@ -180,7 +180,9 @@ export default function ProgramsScreen() {
             <View key={recommendation.program.id} style={styles.recommendationItem}>
               <ProgramCard
                 program={recommendation.program}
-                statusLabel={catalogueEntry ? getProgramRuntimeStatusLabel(catalogueEntry, __DEV__) : undefined}
+                statusLabel={
+                  catalogueEntry ? getProgramRuntimeStatusLabel(catalogueEntry, __DEV__) : undefined
+                }
                 onPress={() =>
                   router.push({
                     pathname: '/program',
@@ -246,7 +248,9 @@ export default function ProgramsScreen() {
           <ProgramCard
             key={recommendation.program.id}
             program={recommendation.program}
-            statusLabel={catalogueEntry ? getProgramRuntimeStatusLabel(catalogueEntry, __DEV__) : undefined}
+            statusLabel={
+              catalogueEntry ? getProgramRuntimeStatusLabel(catalogueEntry, __DEV__) : undefined
+            }
             onPress={() =>
               router.push({
                 pathname: '/program',

@@ -1,17 +1,8 @@
-import type {
-  ExperienceLevel,
-  Goal,
-  Program,
-  ProgramVersion,
-  ProgressionStrategy,
-} from './types';
+import type { ExperienceLevel, Goal, Program, ProgramVersion, ProgressionStrategy } from './types';
 import { buildLaunchProgramVersion } from './fixtures/programVersions';
 import { demoProgramVersion } from './fixtures/home';
 
-const metadata: readonly Omit<
-  Program,
-  'currentVersionId' | 'isTemplate'
->[] = [
+const metadata: readonly Omit<Program, 'currentVersionId' | 'isTemplate'>[] = [
   {
     id: 'program-barbell-30',
     slug: 'barbell-30',
@@ -68,7 +59,8 @@ const metadata: readonly Omit<
     id: 'program-beginner-gym-3-day',
     slug: 'beginner-gym-3-day',
     title: 'Beginner Gym 3-Day',
-    description: 'Three approachable gym sessions using simple free-weight and bodyweight patterns.',
+    description:
+      'Three approachable gym sessions using simple free-weight and bodyweight patterns.',
     goals: ['strength', 'general-health', 'consistent-training'],
     targetUser: 'New gym members who want clear sessions without unnecessary complexity.',
     experience: ['beginner'],
@@ -320,17 +312,13 @@ export interface ProgramCatalogueEntry {
 
 export const programLibrary: readonly ProgramCatalogueEntry[] = metadata.map((entry) => {
   const isCanonicalBarbell30 = entry.slug === 'barbell-30';
-  const currentVersionId = isCanonicalBarbell30
-    ? demoProgramVersion.id
-    : `${entry.id}-version-1`;
+  const currentVersionId = isCanonicalBarbell30 ? demoProgramVersion.id : `${entry.id}-version-1`;
   const program: Program = {
     ...entry,
     currentVersionId,
     isTemplate: true,
   };
-  const version = isCanonicalBarbell30
-    ? demoProgramVersion
-    : buildLaunchProgramVersion(program);
+  const version = isCanonicalBarbell30 ? demoProgramVersion : buildLaunchProgramVersion(program);
 
   return {
     program,

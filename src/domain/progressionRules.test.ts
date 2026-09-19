@@ -61,11 +61,7 @@ describe('versioned progression rules', () => {
     });
 
     expect(
-      resolveProgressionParameters(
-        [defaultProgressionRuleId('cardio')],
-        'cardio',
-        'metric',
-      ),
+      resolveProgressionParameters([defaultProgressionRuleId('cardio')], 'cardio', 'metric'),
     ).toMatchObject({
       durationIncrementSeconds: 60,
       distanceIncrementMeters: 250,

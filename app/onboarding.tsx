@@ -39,10 +39,7 @@ import {
 import { equipmentCatalog } from '../src/domain/equipment';
 import { programLibraryPrograms } from '../src/domain/programLibrary';
 import { useLocalDatabase } from '../src/db/context';
-import {
-  getUserConsiderations,
-  saveUserConsiderations,
-} from '../src/db/considerationsRepository';
+import { getUserConsiderations, saveUserConsiderations } from '../src/db/considerationsRepository';
 import { getOnboardingProfile, saveOnboardingProfile } from '../src/db/profileRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
@@ -490,8 +487,8 @@ function renderStep(
           <Card tone="blue" style={styles.infoCard}>
             <Ionicons name="shield-checkmark-outline" size={22} color={colors.ink} />
             <Text variant="small" tone="muted" style={styles.cardText}>
-              These preferences stay local by default. SHIFT6 does not diagnose a condition or
-              infer one from anything you select or skip.
+              These preferences stay local by default. SHIFT6 does not diagnose a condition or infer
+              one from anything you select or skip.
             </Text>
           </Card>
         </OptionStep>

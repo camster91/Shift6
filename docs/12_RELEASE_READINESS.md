@@ -113,9 +113,9 @@ These cannot be truthfully completed from repository-only work:
 
 ## Verification still required for these branches
 
-GitHub Actions did not start for repository writes made through the connected GitHub integration,
-and opening draft PR #282 also produced no CI status. The workflow supports manual
-`workflow_dispatch`, but the connected GitHub tool cannot dispatch a new run. Before merge, run
+GitHub Actions are disabled at repository level as of 2026-09-19, so rebuild-era branches and draft
+PRs have no CI status beyond separate security checks. The workflow supports manual
+`workflow_dispatch`, but it cannot run until Actions are enabled. Before merge, run
 `npm run verify` (or the equivalent CI workflow) and require all repository gates to pass: format
 check, lint, TypeScript, Expo Doctor, asset/secret/release validation, dependency audit, Jest, and
 the web export. Static review in the repository is not a substitute for those commands.
@@ -127,8 +127,9 @@ branch adds shared component semantics and colour/touch-target regression tests.
 the same verification gate after its prerequisite branch is validated.
 
 The native/device/store evidence sequence is defined in `docs/13_NATIVE_RELEASE_VERIFICATION.md`.
-The stacked repository verification order is defined in `docs/17_STACKED_PR_VERIFICATION.md` and
-must be extended to include any later dependent PR before merge approval.
+The stacked repository verification order through PR #301 is defined in
+`docs/17_STACKED_PR_VERIFICATION.md` and must be extended for any later dependent PR before merge
+approval.
 
 ## Release rule
 

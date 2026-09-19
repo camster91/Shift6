@@ -108,7 +108,11 @@ function assessProgramMetadata(entry: ProgramCatalogueEntry): string[] {
   if (!program.description.trim()) blockers.push(`${program.title}: description is required.`);
   if (program.goals.length === 0) blockers.push(`${program.title}: at least one goal is required.`);
   if (!program.targetUser.trim()) blockers.push(`${program.title}: target audience is required.`);
-  if (!Number.isInteger(program.daysPerWeek) || program.daysPerWeek < 1 || program.daysPerWeek > 7) {
+  if (
+    !Number.isInteger(program.daysPerWeek) ||
+    program.daysPerWeek < 1 ||
+    program.daysPerWeek > 7
+  ) {
     blockers.push(`${program.title}: days per week must be between 1 and 7.`);
   }
   if (!Number.isInteger(program.sessionLengthMinutes) || program.sessionLengthMinutes < 1) {

@@ -129,9 +129,9 @@ describe('program library metadata and executable drafts', () => {
     ).toBe(true);
 
     expect(hybrid?.program.daysPerWeek).toBe(5);
-    expect(hybrid?.version?.workouts.filter((workout) => workout.focus === 'strength')).toHaveLength(
-      3,
-    );
+    expect(
+      hybrid?.version?.workouts.filter((workout) => workout.focus === 'strength'),
+    ).toHaveLength(3);
     expect(hybrid?.version?.workouts.filter((workout) => workout.focus === 'cardio')).toHaveLength(
       2,
     );

@@ -123,21 +123,21 @@ describe('deterministic next-session targets', () => {
   });
 
   it('routes mixed-modality targets to a compatible deterministic strategy', () => {
-    expect(
-      progressionStrategyForTarget('double-progression', { durationSeconds: 600 }),
-    ).toBe('time');
-    expect(
-      progressionStrategyForTarget('double-progression', { distanceMeters: 1000 }),
-    ).toBe('distance');
+    expect(progressionStrategyForTarget('double-progression', { durationSeconds: 600 })).toBe(
+      'time',
+    );
+    expect(progressionStrategyForTarget('double-progression', { distanceMeters: 1000 })).toBe(
+      'distance',
+    );
     expect(
       progressionStrategyForTarget('double-progression', {
         durationSeconds: 600,
         distanceMeters: 2000,
       }),
     ).toBe('cardio');
-    expect(
-      progressionStrategyForTarget('cardio', { reps: { min: 8, max: 12 } }),
-    ).toBe('double-progression');
+    expect(progressionStrategyForTarget('cardio', { reps: { min: 8, max: 12 } })).toBe(
+      'double-progression',
+    );
     expect(progressionStrategyForTarget('skill', { durationSeconds: 30 })).toBe('skill');
   });
 });

@@ -1,9 +1,6 @@
 import { foundationalExercises } from './fixtures/exercises';
 import { programLibrary } from './programLibrary';
-import {
-  assessLaunchProgramCatalogue,
-  LAUNCH_PROGRAM_TARGET,
-} from './programCatalogueReadiness';
+import { assessLaunchProgramCatalogue, LAUNCH_PROGRAM_TARGET } from './programCatalogueReadiness';
 import type { ProgramContentReviewEvidence } from './programContentReview';
 import type { Exercise } from './types';
 

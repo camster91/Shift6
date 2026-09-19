@@ -57,7 +57,10 @@ function isPlaceholderOrPrivateHost(host) {
 function evidence(name) {
   const raw = value(name);
   assert(raw.length > 0, `${name} is required when its feature is enabled.`);
-  assert(!/^(?:todo|tbd|placeholder|none)$/i.test(raw), `${name} must reference real review evidence.`);
+  assert(
+    !/^(?:todo|tbd|placeholder|none)$/i.test(raw),
+    `${name} must reference real review evidence.`,
+  );
   return raw;
 }
 

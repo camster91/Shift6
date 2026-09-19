@@ -228,11 +228,7 @@ export function isValidCoachProposal(proposal: CoachProposal): boolean {
   return validateCoachProposal(proposal).length === 0;
 }
 
-function validateTargetChange(
-  change: CoachProposalChange,
-  prefix: string,
-  errors: string[],
-): void {
+function validateTargetChange(change: CoachProposalChange, prefix: string, errors: string[]): void {
   if (change.field === 'tempo') return;
 
   const from = parseSimpleNumber(change.from);

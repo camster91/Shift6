@@ -43,7 +43,9 @@ export default function AiPrivacyScreen() {
       .catch(() => {
         if (active) {
           setPreference(createDefaultCoachPrivacyPreference(userId));
-          setMessage('We could not load the saved Coach privacy preference. Provider processing is off.');
+          setMessage(
+            'We could not load the saved Coach privacy preference. Provider processing is off.',
+          );
         }
       })
       .finally(() => {
@@ -57,7 +59,9 @@ export default function AiPrivacyScreen() {
 
   const save = async () => {
     if (!database) {
-      setMessage('Web preview: provider Coach processing remains off because this preference is stored on native builds.');
+      setMessage(
+        'Web preview: provider Coach processing remains off because this preference is stored on native builds.',
+      );
       return;
     }
 
@@ -77,7 +81,9 @@ export default function AiPrivacyScreen() {
           : 'Provider-backed Coach processing is off. Coach questions stay with the local explainer.',
       );
     } catch {
-      setMessage('We could not save the preference. Provider processing remains off until a saved opt-in can be read.');
+      setMessage(
+        'We could not save the preference. Provider processing remains off until a saved opt-in can be read.',
+      );
     } finally {
       setSaving(false);
     }
@@ -108,22 +114,22 @@ export default function AiPrivacyScreen() {
       <Card tone="blue" style={styles.disclosureCard}>
         <Text variant="h3">What enabling provider Coach means</Text>
         <Text variant="small" tone="muted" style={styles.disclosureCopy}>
-          When enabled, a Coach question and a limited structured training context may be sent to the
-          configured SHIFT6 Coach service and its AI provider so it can generate a response.
+          When enabled, a Coach question and a limited structured training context may be sent to
+          the configured SHIFT6 Coach service and its AI provider so it can generate a response.
         </Text>
         <Text variant="small" tone="muted" style={styles.disclosureCopy}>
           The current mobile boundary allows facts such as units, goals, experience, cycle week,
-          workout title/focus/duration, completed/planned workout counts, cardio minutes and personal
-          record count. Free-text questions are bounded before transmission.
+          workout title/focus/duration, completed/planned workout counts, cardio minutes and
+          personal record count. Free-text questions are bounded before transmission.
         </Text>
         <Text variant="small" tone="muted" style={styles.disclosureCopy}>
           Raw Apple Health or Health Connect samples, private workout notes, manual body metrics,
-          movement/accessibility preferences and analytics payloads are not part of the Coach context
-          sent by the current mobile architecture.
+          movement/accessibility preferences and analytics payloads are not part of the Coach
+          context sent by the current mobile architecture.
         </Text>
         <Text variant="small" tone="muted" style={styles.disclosureCopy}>
-          The production AI provider, retention period and provider-training policy are not finalized
-          yet. They must be disclosed accurately before public release.
+          The production AI provider, retention period and provider-training policy are not
+          finalized yet. They must be disclosed accurately before public release.
         </Text>
       </Card>
 

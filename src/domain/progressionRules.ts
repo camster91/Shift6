@@ -20,30 +20,26 @@ export const barbell30DoubleProgressionRule: ProgressionRule = {
   },
 };
 
-const defaultRuleParameters: Readonly<
-  Record<ProgressionStrategy, ProgressionRule['parameters']>
-> = {
-  'linear-load': { loadIncrementImperial: 5, loadIncrementMetric: 2.5 },
-  'double-progression': { loadIncrementImperial: 5, loadIncrementMetric: 2.5 },
-  'rep-target': {
-    loadIncrementImperial: 5,
-    loadIncrementMetric: 2.5,
-    totalRepTarget: 30,
-  },
-  'rpe-rir': { loadIncrementImperial: 5, loadIncrementMetric: 2.5 },
-  volume: {},
-  density: { durationIncrementSeconds: 10 },
-  time: { durationIncrementSeconds: 15 },
-  distance: { distanceIncrementMeters: 250 },
-  cardio: { durationIncrementSeconds: 60, distanceIncrementMeters: 250 },
-  skill: {},
-};
+const defaultRuleParameters: Readonly<Record<ProgressionStrategy, ProgressionRule['parameters']>> =
+  {
+    'linear-load': { loadIncrementImperial: 5, loadIncrementMetric: 2.5 },
+    'double-progression': { loadIncrementImperial: 5, loadIncrementMetric: 2.5 },
+    'rep-target': {
+      loadIncrementImperial: 5,
+      loadIncrementMetric: 2.5,
+      totalRepTarget: 30,
+    },
+    'rpe-rir': { loadIncrementImperial: 5, loadIncrementMetric: 2.5 },
+    volume: {},
+    density: { durationIncrementSeconds: 10 },
+    time: { durationIncrementSeconds: 15 },
+    distance: { distanceIncrementMeters: 250 },
+    cardio: { durationIncrementSeconds: 60, distanceIncrementMeters: 250 },
+    skill: {},
+  };
 
 export const defaultProgressionRules: readonly ProgressionRule[] = (
-  Object.entries(defaultRuleParameters) as [
-    ProgressionStrategy,
-    ProgressionRule['parameters'],
-  ][]
+  Object.entries(defaultRuleParameters) as [ProgressionStrategy, ProgressionRule['parameters']][]
 ).map(([strategy, parameters]) => ({
   id: defaultProgressionRuleId(strategy),
   strategy,

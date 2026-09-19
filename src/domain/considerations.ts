@@ -71,9 +71,7 @@ export interface UserConsiderations {
 }
 
 const movementValues = new Set<string>(movementConsiderationOptions.map((option) => option.value));
-const accessibilityValues = new Set<string>(
-  accessibilityNeedOptions.map((option) => option.value),
-);
+const accessibilityValues = new Set<string>(accessibilityNeedOptions.map((option) => option.value));
 
 export function createEmptyUserConsiderations(
   userId: string,
@@ -95,9 +93,7 @@ export function normalizeAccessibilityNeeds(values: readonly unknown[]): Accessi
 function uniqueKnown(values: readonly unknown[], allowed: ReadonlySet<string>): string[] {
   return [
     ...new Set(
-      values.filter(
-        (value): value is string => typeof value === 'string' && allowed.has(value),
-      ),
+      values.filter((value): value is string => typeof value === 'string' && allowed.has(value)),
     ),
   ];
 }

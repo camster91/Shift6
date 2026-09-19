@@ -1,6 +1,6 @@
 # SHIFT6 stacked PR verification and merge sequence
 
-Updated: 2026-09-16
+Updated: 2026-09-19
 
 This runbook exists because the connected GitHub integration can author branches and pull requests
 but has not triggered inspectable Actions runs for these commits. None of the stacked PRs should be
@@ -64,6 +64,26 @@ Code stack, oldest prerequisite first:
    - bounded structured Coach proposal mutations;
    - expanded adverse-case evaluation matrix;
    - production provider release-evidence runbook.
+10. **PR #292** — `feat/sync-contract-hardening` → `feat/coach-proposal-privacy-gate`
+    - fail-closed sync response validation;
+    - idempotency, authorization and conflict-handling contract.
+11. **PR #294** — `fix/runtime-content-release-gates` → `feat/sync-contract-hardening`
+    - fail-closed production exercise/program publication gates;
+    - explicit development-only draft preview paths.
+12. **PR #295** — `fix/route-accessibility-gaps` → `fix/runtime-content-release-gates`
+    - route-level workout and progress accessibility fixes.
+13. **PR #296** — `chore/release-ready-validation` → `fix/route-accessibility-gaps`
+    - executable release-mode, URL, provider-review and network-audit gate.
+14. **PR #297** — `fix/runtime-environment-validation` → `chore/release-ready-validation`
+    - fail-closed public environment and API URL validation.
+15. **PR #298** — `fix/api-protocol-compatibility` → `fix/runtime-environment-validation`
+    - mobile/server protocol-version handshake for sync, account deletion and Coach requests.
+16. **PR #299** — `chore/release-asset-validation` → `fix/api-protocol-compatibility`
+    - release-only icon, adaptive-icon and splash asset gate.
+17. **PR #300** — `feat/onboarding-considerations-step` → `chore/release-asset-validation`
+    - optional movement/accessibility onboarding step and partial-save recovery message.
+18. **PR #301** — `feat/understandable-data-export` → `feat/onboarding-considerations-step`
+    - versioned local-device export summary, scope disclosure and record counts.
 
 Separate sibling documentation PR:
 
@@ -71,16 +91,22 @@ Separate sibling documentation PR:
   - store metadata/privacy/data-safety preparation only;
   - it does **not** contain #285/#286/#287/#288/#289/#290/#291 because it branched from #283.
 
+Superseded sibling implementation PR:
+
+- **PR #293** — `chore/exercise-review-provenance` → `feat/coach-privacy-controls`
+  - its release-gating intent is covered by #289, #290 and #294 in the active stack;
+  - reconcile or close it instead of merging it independently into the active stack.
+
 ## First verification target
 
-The most efficient code verification target is the head of **PR #291** because that branch contains
-all code changes from #282, #283, #285, #286, #287, #288, #289, #290 and #291.
+The most efficient code verification target is the head of **PR #301** because that branch contains
+the active code stack from #282 through #301, excluding the separate sibling PRs called out above.
 
 From a normal authenticated checkout:
 
 ```bash
 git fetch origin
-git switch feat/coach-proposal-privacy-gate
+git switch feat/understandable-data-export
 git pull --ff-only
 npm ci
 npm run verify
@@ -285,9 +311,19 @@ the clean conceptual order is:
 7. retarget/reconcile #289 against updated `main`, then merge;
 8. retarget/reconcile #290 against updated `main`, then merge;
 9. retarget/reconcile #291 against updated `main`, then merge;
-10. reconcile #284 with the integrated code state, update its privacy/store mapping for
-    #285/#286/#287/#288/#289/#290/#291, retarget to `main`, verify documentation accuracy, then merge
-    if approved.
+10. retarget/reconcile #292 against updated `main`, then merge;
+11. retarget/reconcile #294 against updated `main`, then merge;
+12. retarget/reconcile #295 against updated `main`, then merge;
+13. retarget/reconcile #296 against updated `main`, then merge;
+14. retarget/reconcile #297 against updated `main`, then merge;
+15. retarget/reconcile #298 against updated `main`, then merge;
+16. retarget/reconcile #299 against updated `main`, then merge;
+17. retarget/reconcile #300 against updated `main`, then merge;
+18. retarget/reconcile #301 against updated `main`, then merge;
+19. reconcile #284 with the integrated code state, update its privacy/store mapping for the complete
+    release candidate, retarget to `main`, verify documentation accuracy, then merge if approved;
+20. reconcile or close superseded sibling #293; do not merge it independently into the completed
+    stack without a fresh diff and verification pass.
 
 Do not merge a descendant PR first simply because GitHub reports it as mergeable; the stacked base
 branches are part of the intended review history.

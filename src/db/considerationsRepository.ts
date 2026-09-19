@@ -27,9 +27,7 @@ export async function saveUserConsiderations(
 
   const normalized: UserConsiderations = {
     userId,
-    movementConsiderations: normalizeMovementConsiderations(
-      considerations.movementConsiderations,
-    ),
+    movementConsiderations: normalizeMovementConsiderations(considerations.movementConsiderations),
     accessibilityNeeds: normalizeAccessibilityNeeds(considerations.accessibilityNeeds),
     updatedAt: normalizeDate(considerations.updatedAt),
   };

@@ -58,8 +58,8 @@ describe('runtime content release gates', () => {
       },
     ];
 
-    expect(
-      isProgramStartAllowed(barbell30, false, { exercises: reviewedExercises, reviews }),
-    ).toBe(true);
+    expect(isProgramStartAllowed(barbell30, false, { exercises: reviewedExercises, reviews })).toBe(
+      true,
+    );
   });
 });

@@ -20,10 +20,7 @@ export interface RuntimeProgramReadiness {
   blockers: string[];
 }
 
-export function isExerciseAvailableToUser(
-  exercise: Exercise,
-  allowDraftPreview = false,
-): boolean {
+export function isExerciseAvailableToUser(exercise: Exercise, allowDraftPreview = false): boolean {
   if (exercise.isCustom) return true;
   if (exercise.contentStatus === 'retired') return false;
   if (allowDraftPreview) return true;

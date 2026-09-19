@@ -62,8 +62,8 @@ const coachProposal: CoachProposal = {
 };
 
 describe('shared accessibility primitives', () => {
-  it('marks a button without an action as disabled', () => {
-    const { getByLabelText } = render(<Button label="Save" />);
+  it('marks a button without an action as disabled', async () => {
+    const { getByLabelText } = await render(<Button label="Save" />);
 
     expect(getByLabelText('Save').props.accessibilityState).toEqual({
       busy: false,
@@ -71,8 +71,8 @@ describe('shared accessibility primitives', () => {
     });
   });
 
-  it('exposes loading buttons as busy and disabled', () => {
-    const { getByLabelText } = render(<Button label="Save" loading onPress={jest.fn()} />);
+  it('exposes loading buttons as busy and disabled', async () => {
+    const { getByLabelText } = await render(<Button label="Save" loading onPress={jest.fn()} />);
 
     expect(getByLabelText('Save').props.accessibilityState).toEqual({
       busy: true,
@@ -80,8 +80,8 @@ describe('shared accessibility primitives', () => {
     });
   });
 
-  it('supports contextual spoken labels without changing visible button copy', () => {
-    const { getByLabelText, getByText } = render(
+  it('supports contextual spoken labels without changing visible button copy', async () => {
+    const { getByLabelText, getByText } = await render(
       <Button
         label="Complete"
         accessibilityLabel="Complete Bench Press set 2"
@@ -93,8 +93,8 @@ describe('shared accessibility primitives', () => {
     expect(getByLabelText('Complete Bench Press set 2')).toBeTruthy();
   });
 
-  it('keeps icon-button disabled semantics aligned with its actual action state', () => {
-    const { getByLabelText } = render(
+  it('keeps icon-button disabled semantics aligned with its actual action state', async () => {
+    const { getByLabelText } = await render(
       <IconButton icon={<View />} label="Close" accessibilityHint="Closes this screen" />,
     );
     const button = getByLabelText('Close');
@@ -103,8 +103,8 @@ describe('shared accessibility primitives', () => {
     expect(button.props.accessibilityHint).toBe('Closes this screen');
   });
 
-  it('adds a visible non-colour cue for selected chips', () => {
-    const { getByLabelText, getByText } = render(
+  it('adds a visible non-colour cue for selected chips', async () => {
+    const { getByLabelText, getByText } = await render(
       <Chip label="Strength" selected onPress={jest.fn()} />,
     );
 
@@ -115,22 +115,17 @@ describe('shared accessibility primitives', () => {
     });
   });
 
-  it('supports semantic radio chips for single-choice workout context', () => {
-    const { getByRole } = render(
-      <Chip
-        accessibilityRole="radio"
-        label="Ready to train"
-        selected
-        onPress={jest.fn()}
-      />,
+  it('supports semantic radio chips for single-choice workout context', async () => {
+    const { getByRole } = await render(
+      <Chip accessibilityRole="radio" label="Ready to train" selected onPress={jest.fn()} />,
     );
     const radio = getByRole('radio');
 
     expect(radio.props.accessibilityState).toEqual({ disabled: false, selected: true });
   });
 
-  it('keeps retry actions outside the grouped alert focus target', () => {
-    const { getByLabelText } = render(
+  it('keeps retry actions outside the grouped alert focus target', async () => {
+    const { getByLabelText } = await render(
       <ErrorState message="The set could not be saved." onRetry={jest.fn()} />,
     );
 
@@ -141,8 +136,8 @@ describe('shared accessibility primitives', () => {
     expect(getByLabelText('Try again')).toBeTruthy();
   });
 
-  it('keeps empty-state actions outside the grouped empty-state copy', () => {
-    const { getByLabelText } = render(
+  it('keeps empty-state actions outside the grouped empty-state copy', async () => {
+    const { getByLabelText } = await render(
       <EmptyState
         title="No workouts yet"
         message="Start a program to begin."
@@ -155,8 +150,8 @@ describe('shared accessibility primitives', () => {
     expect(getByLabelText('Browse programs')).toBeTruthy();
   });
 
-  it('keeps coach proposal decisions outside the grouped proposal summary', () => {
-    const { getByLabelText } = render(
+  it('keeps coach proposal decisions outside the grouped proposal summary', async () => {
+    const { getByLabelText } = await render(
       <CoachProposalCard proposal={coachProposal} onApprove={jest.fn()} onReject={jest.fn()} />,
     );
 
@@ -169,29 +164,35 @@ describe('shared accessibility primitives', () => {
     expect(getByLabelText('Approve & apply')).toBeTruthy();
   });
 
-  it('clamps progress values and exposes the bounded value to assistive technology', () => {
-    const { getByLabelText } = render(<ProgressIndicator label="Cycle progress" value={1.4} />);
+  it('clamps progress values and exposes the bounded value to assistive technology', async () => {
+    const { getByLabelText } = await render(
+      <ProgressIndicator label="Cycle progress" value={1.4} />,
+    );
     const progress = getByLabelText('Cycle progress: 100%');
 
     expect(progress.props.accessibilityValue).toEqual({ min: 0, max: 100, now: 100 });
   });
 
-  it('keeps app text opted into system font scaling', () => {
-    const { getByText } = render(<Text>Readable</Text>);
+  it('keeps app text opted into system font scaling', async () => {
+    const { getByText } = await render(<Text>Readable</Text>);
 
     expect(getByText('Readable').props.allowFontScaling).toBe(true);
   });
 
-  it('gives an interactive program card one labelled focus target', () => {
+  it('gives an interactive program card one labelled focus target', async () => {
     const label = 'Barbell 30. A focused strength program.';
-    const { getAllByLabelText } = render(<ProgramCard program={program} onPress={jest.fn()} />);
+    const { getAllByLabelText } = await render(
+      <ProgramCard program={program} onPress={jest.fn()} />,
+    );
 
     expect(getAllByLabelText(label)).toHaveLength(1);
   });
 
-  it('gives an interactive workout card one labelled focus target', () => {
+  it('gives an interactive workout card one labelled focus target', async () => {
     const label = 'Full Body A, 30 minutes';
-    const { getAllByLabelText } = render(<WorkoutCard workout={workout} onPress={jest.fn()} />);
+    const { getAllByLabelText } = await render(
+      <WorkoutCard workout={workout} onPress={jest.fn()} />,
+    );
 
     expect(getAllByLabelText(label)).toHaveLength(1);
   });

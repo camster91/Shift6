@@ -236,7 +236,11 @@ const launchPlans: Readonly<Record<string, readonly WorkoutPlan[]>> = {
   ],
   'busy-20': [
     workout('Busy A', 'mixed', 1, ['exercise-split-squat', 'exercise-push-up', 'exercise-plank']),
-    workout('Busy B', 'mixed', 2, ['exercise-reverse-lunge', 'exercise-push-up', 'exercise-dead-bug']),
+    workout('Busy B', 'mixed', 2, [
+      'exercise-reverse-lunge',
+      'exercise-push-up',
+      'exercise-dead-bug',
+    ]),
     workout('Busy C', 'mixed', 4, [
       'exercise-walking-lunge',
       'exercise-push-up',

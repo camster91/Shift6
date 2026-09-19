@@ -95,9 +95,15 @@ async function validate() {
   }
 
   const splashPlugin = findPlugin(expo.plugins ?? [], 'expo-splash-screen');
-  assert(Array.isArray(splashPlugin), 'expo-splash-screen must use configured plugin form for release.');
+  assert(
+    Array.isArray(splashPlugin),
+    'expo-splash-screen must use configured plugin form for release.',
+  );
   const splashOptions = splashPlugin[1];
-  assert(splashOptions && typeof splashOptions === 'object', 'expo-splash-screen release options are missing.');
+  assert(
+    splashOptions && typeof splashOptions === 'object',
+    'expo-splash-screen release options are missing.',
+  );
   await pngDimensions('expo-splash-screen.image', splashOptions.image);
   assertHexColor('expo-splash-screen.backgroundColor', splashOptions.backgroundColor);
 

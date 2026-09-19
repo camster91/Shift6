@@ -910,10 +910,7 @@ export default function ActiveWorkoutScreen() {
 
       {restSecondsRemaining > 0 ? (
         <Card tone="ink" style={styles.timerCard}>
-          <View
-            accessible
-            accessibilityLabel={`Rest timer: ${formatTimer(restSecondsRemaining)}`}
-          >
+          <View accessible accessibilityLabel={`Rest timer: ${formatTimer(restSecondsRemaining)}`}>
             <Text variant="caption" tone="inverse">
               REST TIMER
             </Text>

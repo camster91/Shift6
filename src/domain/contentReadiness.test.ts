@@ -93,7 +93,9 @@ describe('content readiness', () => {
 
     expect(report.readyForCycle).toBe(true);
     expect(report.readyForPublication).toBe(false);
-    expect(report.reviewWarnings).toContain('Back squat: custom exercises stay private by default.');
+    expect(report.reviewWarnings).toContain(
+      'Back squat: custom exercises stay private by default.',
+    );
   });
 
   it('requires provenance before approved media can publish', () => {

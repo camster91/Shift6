@@ -13,10 +13,7 @@ import {
   type UserConsiderations,
 } from '../src/domain/considerations';
 import { useLocalDatabase } from '../src/db/context';
-import {
-  getUserConsiderations,
-  saveUserConsiderations,
-} from '../src/db/considerationsRepository';
+import { getUserConsiderations, saveUserConsiderations } from '../src/db/considerationsRepository';
 import { colors, spacing } from '../src/design/tokens';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 

@@ -32,9 +32,7 @@ export function Chip({
   }
 
   const accessibilityState =
-    accessibilityRole === 'checkbox'
-      ? { checked: selected, disabled }
-      : { disabled, selected };
+    accessibilityRole === 'checkbox' ? { checked: selected, disabled } : { disabled, selected };
 
   return (
     <Pressable

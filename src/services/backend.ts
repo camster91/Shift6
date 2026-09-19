@@ -115,6 +115,7 @@ export class HttpBackendClient implements BackendClient {
         headers: {
           Accept: 'application/json',
           Authorization: `Bearer ${accessToken}`,
+          ...apiProtocolRequestHeaders(),
         },
       });
     } catch (error) {
@@ -215,7 +216,10 @@ function validateSyncMutationBatch(mutations: readonly SyncMutation[]): Set<stri
   return mutationIds;
 }
 
-function validateSyncResultForBatch(result: SyncResult, sentMutationIds: ReadonlySet<string>): void {
+function validateSyncResultForBatch(
+  result: SyncResult,
+  sentMutationIds: ReadonlySet<string>,
+): void {
   const statuses = new Map<string, 'acknowledged' | 'rejected' | 'conflict'>();
 
   const recordStatus = (mutationId: string, status: 'acknowledged' | 'rejected' | 'conflict') => {

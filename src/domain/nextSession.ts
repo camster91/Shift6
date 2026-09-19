@@ -115,7 +115,11 @@ export function progressionStrategyForTarget(
   programStrategy: ProgressionStrategy,
   target: SetTarget,
 ): ProgressionStrategy {
-  if (programStrategy === 'volume' || programStrategy === 'density' || programStrategy === 'skill') {
+  if (
+    programStrategy === 'volume' ||
+    programStrategy === 'density' ||
+    programStrategy === 'skill'
+  ) {
     return programStrategy;
   }
 
@@ -125,9 +129,7 @@ export function progressionStrategyForTarget(
 
   if (
     target.reps !== undefined &&
-    (programStrategy === 'cardio' ||
-      programStrategy === 'time' ||
-      programStrategy === 'distance')
+    (programStrategy === 'cardio' || programStrategy === 'time' || programStrategy === 'distance')
   ) {
     return 'double-progression';
   }

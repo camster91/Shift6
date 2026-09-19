@@ -135,7 +135,7 @@ Remaining:
 
 ## #277 — Deterministic six-week progression engine
 
-**Status: Completed but awaiting CI/merge verification**
+**Status: Completed but awaiting integration review/merge approval**
 
 Implemented:
 - cycle creation/week state and program-specific Week 6 behaviour;

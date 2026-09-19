@@ -418,7 +418,7 @@ preview remains non-persistent.
 The first #274 content increment establishes catalogue behavior without importing the archived application or unreviewed imagery:
 
 - the taxonomy covers 23 equipment types from free weights, machines, cardio, bodyweight, accessories, and mobility;
-- the first 50 foundational exercise records share the canonical schema, stable IDs, tracking types, tags, and review status;
+- the 58 foundational exercise records share the canonical schema, stable IDs, tracking types, tags, and review status;
 - `searchExercises` searches names, aliases, movement patterns, muscles, and tags while optionally restricting results to the saved equipment profile;
 - `findExerciseSubstitutions` ranks compatible candidates by movement pattern, shared primary muscles, and tags, with no AI or network dependency;
 - the Exercise Library surface makes the draft/review boundary visible and does not present placeholder media as approved instruction.

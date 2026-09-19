@@ -6,6 +6,7 @@ import type {
   SyncMutation,
   SyncResult,
 } from './contracts';
+import { apiProtocolCompatibilityError, apiProtocolRequestHeaders } from './apiProtocol';
 
 export type BackendAvailability = 'unconfigured' | 'adapter-pending' | 'available';
 
@@ -74,6 +75,7 @@ export class HttpBackendClient implements BackendClient {
           Accept: 'application/json',
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
+          ...apiProtocolRequestHeaders(),
         },
         body: JSON.stringify({ mutations }),
       });
@@ -81,6 +83,9 @@ export class HttpBackendClient implements BackendClient {
       const message = error instanceof Error ? error.message : 'The sync request failed.';
       throw new BackendUnavailableError(message);
     }
+
+    const protocolError = apiProtocolCompatibilityError(response.headers);
+    if (protocolError) throw new BackendProtocolError(protocolError);
 
     if (!response.ok) {
       throw new BackendUnavailableError(`The sync service returned HTTP ${response.status}.`);
@@ -117,6 +122,9 @@ export class HttpBackendClient implements BackendClient {
         error instanceof Error ? error.message : 'The account deletion request failed.';
       throw new BackendUnavailableError(message);
     }
+
+    const protocolError = apiProtocolCompatibilityError(response.headers);
+    if (protocolError) throw new BackendProtocolError(protocolError);
 
     if (!response.ok) {
       throw new BackendUnavailableError(

@@ -15,10 +15,28 @@ SHIFT6 API boundary:
 POST /v1/sync
 Authorization: Bearer <access token>
 Content-Type: application/json
+X-Shift6-Protocol-Version: 1
 ```
 
 The mobile app does not receive database credentials and must not talk directly to a privileged
 server database connection.
+
+### Mobile/API protocol compatibility
+
+The current mobile API protocol is version `1`. Authenticated sync, account-deletion and Coach
+requests advertise `X-Shift6-Protocol-Version: 1`.
+
+A server may return `X-Shift6-Min-Protocol-Version: <positive integer>`. When that minimum is newer
+than the protocol supported by the installed mobile build, the client fails closed before applying
+response data or continuing account/Coach handling. Invalid minimum-protocol headers are also
+protocol errors.
+
+For staged rollout, the production server must continue accepting every still-supported mobile
+protocol until the corresponding older app versions have aged out of the supported window. Raising
+the minimum protocol is a deliberate compatibility event and must not be used as an accidental
+kill switch for active users. Offline workout logging must remain local-first even when sync is
+temporarily incompatible.
+
 
 The request body is:
 

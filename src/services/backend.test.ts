@@ -72,10 +72,24 @@ describe('backend boundary', () => {
     expect(requests[0]?.init?.method).toBe('POST');
     expect(requests[0]?.init?.headers).toMatchObject({
       Authorization: 'Bearer token-for-test',
+      'X-Shift6-Protocol-Version': '1',
     });
     expect(JSON.parse(String(requests[0]?.init?.body))).toEqual({ mutations: [mutation] });
   });
 
+  it('fails closed when the server requires a newer API protocol', async () => {
+    const client = new HttpBackendClient({
+      baseUrl: 'https://api.example.test',
+      getAccessToken: async () => 'token-for-test',
+      fetcher: async () =>
+        new Response(null, {
+          status: 426,
+          headers: { 'X-Shift6-Min-Protocol-Version': '2' },
+        }),
+    });
+
+    await expect(client.sync([mutation])).rejects.toBeInstanceOf(BackendProtocolError);
+  });
   it('allows a partial sync result so unresolved mutations remain retryable in the outbox', async () => {
     const client = httpClient({
       acknowledgedMutationIds: ['outbox-1'],
@@ -199,6 +213,7 @@ describe('backend boundary', () => {
     expect(requests[0]?.init?.method).toBe('DELETE');
     expect(requests[0]?.init?.headers).toMatchObject({
       Authorization: 'Bearer token-for-delete',
+      'X-Shift6-Protocol-Version': '1',
     });
     expect(requests[0]?.init?.body).toBeUndefined();
   });

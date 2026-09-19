@@ -2,6 +2,7 @@ import { MAX_COACH_PROMPT_LENGTH } from './contracts';
 import type { CoachContext, CoachGateway, CoachMessageResult, CoachTask } from './contracts';
 import { classifyCoachSafety, validateCoachProposal } from './coachSafety';
 import type { CoachProposal, CoachProposalChange } from '../domain/types';
+import { apiProtocolCompatibilityError, apiProtocolRequestHeaders } from './apiProtocol';
 
 const coachFactKeys = new Set([
   'workoutTitle',
@@ -145,12 +146,16 @@ export class HttpCoachGateway implements CoachGateway {
           Accept: 'application/json',
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
+          ...apiProtocolRequestHeaders(),
         },
         body: JSON.stringify(body),
       });
     } catch (error) {
       throw new CoachGatewayUnavailableError('The Coach service could not be reached.', error);
     }
+
+    const protocolError = apiProtocolCompatibilityError(response.headers);
+    if (protocolError) throw new CoachGatewayProtocolError(protocolError);
 
     if (!response.ok) {
       throw new CoachGatewayUnavailableError(`The Coach service returned HTTP ${response.status}.`);

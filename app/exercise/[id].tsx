@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Card, Chip, EmptyState, IconButton, Screen, Text } from '../../src/components/ui';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
+import { assessExerciseContent } from '../../src/domain/contentReadiness';
 import { getUserExercises } from '../../src/db/programRepository';
 import { useLocalDatabase } from '../../src/db/context';
 import {
@@ -14,6 +15,7 @@ import {
 } from '../../src/domain/equipment';
 import { foundationalExercises } from '../../src/domain/fixtures/exercises';
 import { demoUser } from '../../src/domain/fixtures/home';
+import { isExerciseAvailableToUser } from '../../src/domain/runtimeContentGates';
 import type { Exercise } from '../../src/domain/types';
 import { colors, spacing } from '../../src/design/tokens';
 import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
@@ -24,9 +26,13 @@ export default function ExerciseDetailScreen() {
   const userId = useCurrentUserId();
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState(demoUser.equipmentIds);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
+  const catalogueExercises = useMemo(
+    () => foundationalExercises.filter((candidate) => isExerciseAvailableToUser(candidate, __DEV__)),
+    [],
+  );
   const availableExercises = useMemo(
-    () => [...foundationalExercises, ...customExercises],
-    [customExercises],
+    () => [...catalogueExercises, ...customExercises],
+    [catalogueExercises, customExercises],
   );
   const exercise = availableExercises.find((candidate) => candidate.id === id);
 
@@ -63,6 +69,8 @@ export default function ExerciseDetailScreen() {
     );
   }
 
+  const publicationReady =
+    !exercise.isCustom && assessExerciseContent(exercise).readyForPublication;
   const substitutions = findExerciseSubstitutions(
     exercise,
     availableExercises,
@@ -96,18 +104,20 @@ export default function ExerciseDetailScreen() {
         {exercise.unilateral ? 'unilateral' : 'bilateral'}
       </Text>
 
-      <Card
-        tone={exercise.contentStatus === 'reviewed' ? 'white' : 'lavender'}
-        style={styles.statusCard}
-      >
+      <Card tone={publicationReady ? 'white' : 'lavender'} style={styles.statusCard}>
         <Text variant="caption" tone="warning">
-          {exercise.contentStatus === 'draft'
-            ? 'TECHNIQUE AND MEDIA REVIEW PENDING'
-            : 'REVIEWED CATALOGUE RECORD'}
+          {exercise.isCustom
+            ? 'PRIVATE CUSTOM MOVEMENT'
+            : publicationReady
+              ? 'REVIEWED CATALOGUE RECORD'
+              : 'DEVELOPMENT PREVIEW · TECHNIQUE REVIEW PENDING'}
         </Text>
         <Text variant="small" tone="muted" style={styles.statusCopy}>
-          Draft records are useful for catalogue and substitution development, but are not a
-          substitute for human-reviewed exercise instruction.
+          {exercise.isCustom
+            ? 'Private custom movements stay on your account and are not treated as public reviewed content.'
+            : publicationReady
+              ? 'This catalogue record passed the repository publication gate.'
+              : 'Draft records are available only for development QA and are not a substitute for human-reviewed exercise instruction.'}
         </Text>
       </Card>
 

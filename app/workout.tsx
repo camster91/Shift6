@@ -909,12 +909,11 @@ export default function ActiveWorkoutScreen() {
       ) : null}
 
       {restSecondsRemaining > 0 ? (
-        <Card
-          tone="ink"
-          style={styles.timerCard}
-          accessibilityLabel={`Rest timer: ${formatTimer(restSecondsRemaining)}`}
-        >
-          <View>
+        <Card tone="ink" style={styles.timerCard}>
+          <View
+            accessible
+            accessibilityLabel={`Rest timer: ${formatTimer(restSecondsRemaining)}`}
+          >
             <Text variant="caption" tone="inverse">
               REST TIMER
             </Text>
@@ -1053,11 +1052,7 @@ export default function ActiveWorkoutScreen() {
               </Card>
             ) : null}
             {substitutionFor === workoutExercise.id ? (
-              <Card
-                tone="lavender"
-                style={styles.substitutionCard}
-                accessibilityLabel={`${exerciseName} substitution options`}
-              >
+              <Card tone="lavender" style={styles.substitutionCard}>
                 <Text variant="smallMedium">Equipment-compatible options</Text>
                 <Text variant="caption" tone="muted">
                   Choose before completing this movement. The current set prescription is kept.
@@ -1176,8 +1171,8 @@ export default function ActiveWorkoutScreen() {
                     ) : null}
                     <Button
                       label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
+                      accessibilityLabel={`${completed ? (editing ? 'Save' : 'Edit') : 'Complete'} ${exerciseName} set ${workoutSet.setNumber}`}
                       variant={completed && !editing ? 'secondary' : 'primary'}
-                      disabled={completed && !editing}
                       loading={savingSetKey === key}
                       onPress={
                         completed && !editing
@@ -1195,11 +1190,7 @@ export default function ActiveWorkoutScreen() {
       })}
 
       {!allSetsComplete ? (
-        <Card
-          tone="yellow"
-          style={styles.partialCard}
-          accessibilityLabel={completedCount > 0 ? 'Save a partial workout' : 'Skip workout'}
-        >
+        <Card tone="yellow" style={styles.partialCard}>
           <Text variant="smallMedium">
             {completedCount > 0 ? 'Need to stop early?' : 'Need to skip this session?'}
           </Text>
@@ -1292,7 +1283,7 @@ function WorkoutPreflight({
   ];
 
   return (
-    <Card tone="lavender" style={styles.preflightCard} accessibilityLabel="Workout preflight">
+    <Card tone="lavender" style={styles.preflightCard}>
       <View style={styles.preflightHeader}>
         <View style={styles.preflightIcon}>
           <Ionicons name="checkmark-circle-outline" size={22} color={colors.ink} />
@@ -1326,6 +1317,7 @@ function WorkoutPreflight({
             key={option.value}
             label={option.label}
             selected={readiness === option.value}
+            accessibilityRole="radio"
             onPress={() => onReadinessChange(option.value)}
           />
         ))}

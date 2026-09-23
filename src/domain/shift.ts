@@ -86,7 +86,8 @@ export interface MeasuredValue {
 }
 
 export interface ShiftProgress {
-  calendarWeek: number;
+  // Existing TrainingCycle position; #315 will define calendar position separately.
+  cycleWeek: number;
   completedSessions: number;
   plannedSessions: number;
   baseline: MeasuredValue | null;
@@ -277,7 +278,7 @@ export function evaluateShift(
     } else change = latest.canonicalValue === baseline.canonicalValue ? 'unchanged' : 'improved';
   }
   return {
-    calendarWeek: cycle.currentWeek,
+    cycleWeek: cycle.currentWeek,
     completedSessions: cycle.weeks.reduce((n, w) => n + w.completedWorkoutCount, 0),
     plannedSessions: cycle.weeks.reduce((n, w) => n + w.plannedWorkoutCount, 0),
     baseline,

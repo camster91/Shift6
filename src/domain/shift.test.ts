@@ -63,7 +63,7 @@ describe('Shift outcome integrity', () => {
       observation('best', 11),
       observation('latest', 8, { measuredAt: '2026-09-15T10:00:00Z' }),
     ]);
-    expect(result.calendarWeek).toBe(4);
+    expect(result.cycleWeek).toBe(4);
     expect(result.completedSessions).toBeGreaterThan(0);
     expect(result.latest?.canonicalValue).toBe(8);
     expect(result.personalBest?.canonicalValue).toBe(11);

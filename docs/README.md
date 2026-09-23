@@ -1,8 +1,15 @@
 # SHIFT6 documentation index
 
+**Read first:** [goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) (#304/#305) and [master build prompt](11_MASTER_BUILD_PROMPT.md). Older breadth targets in this archive are future ambitions or historical implementation notes; the focused release manifest and human review determine public content.
+
+
 Use this index to distinguish durable product requirements from historical implementation notes and current release readiness.
 
 ## Product and architecture requirements
+
+- `25_GOAL_FIRST_RELEASE_CONTRACT.md` — current goal-first scope, lifecycle, release rule and screen/state handoff.
+- `26_SCOPE_DISPOSITION.md` — classification of older breadth and release assumptions.
+- `content/release-manifest.json` — versioned focused public-content allowlist; empty until reviewed pilot IDs are approved.
 
 These documents define intended product behaviour and remain the source of requirements unless deliberately revised:
 
@@ -11,7 +18,7 @@ These documents define intended product behaviour and remain the source of requi
 3. `02_SCREEN_BY_SCREEN_SPEC.md` — mobile information architecture and capability requirements.
 4. `03_SHIFT6_PROGRESSION_ENGINE.md` — deterministic six-week progression and review rules.
 5. `04_AI_PT_COACH.md` — Coach behaviour, provider abstraction, safety and evaluation requirements.
-6. `05_PROGRAMS_EXERCISES_EQUIPMENT.md` — canonical 20 launch programs and exercise/equipment model.
+6. `05_PROGRAMS_EXERCISES_EQUIPMENT.md` — historical 20-program catalogue, future breadth target and exercise/equipment model.
 7. `06_TECHNICAL_ARCHITECTURE.md` — technical architecture plus accumulated implementation checkpoints.
 8. `07_ASSET_AND_ICON_PROMPTS.md` — asset/icon production direction and provenance expectations.
 9. `08_PRIVACY_ACCESSIBILITY_SAFETY.md` — privacy, accessibility, health-data and safety requirements.

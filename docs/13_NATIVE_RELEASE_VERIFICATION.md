@@ -1,5 +1,10 @@
 # SHIFT6 native and release verification runbook
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+For the focused binary, verify goal/baseline, offline session/recovery, measurement integrity, interruption/re-entry, review choices, accessibility and actual permission/entitlement disclosures on iOS and low/mid-range Android. The current repository verification is not a signed-device test. Follow [the focused scope](25_GOAL_FIRST_RELEASE_CONTRACT.md).
+
+
 Updated: 2026-09-15
 
 This runbook turns the remaining external release gates into an evidence-based checklist. It does not authorize store submission, production deployment, paid build usage, credential changes, or backend/account changes. Those remain explicit approval actions.

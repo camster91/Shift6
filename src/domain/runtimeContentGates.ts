@@ -1,3 +1,4 @@
+import { focusedReleaseManifest } from './focusedRelease';
 import { assessExerciseContent, assessProgramVersion } from './contentReadiness';
 import { foundationalExercises } from './fixtures/exercises';
 import {
@@ -10,6 +11,7 @@ import type { Exercise } from './types';
 export interface RuntimeProgramGateOptions {
   exercises?: readonly Exercise[];
   reviews?: readonly ProgramContentReviewEvidence[];
+  enabledProgramIds?: readonly string[];
 }
 
 export interface RuntimeProgramReadiness {
@@ -20,11 +22,17 @@ export interface RuntimeProgramReadiness {
   blockers: string[];
 }
 
-export function isExerciseAvailableToUser(exercise: Exercise, allowDraftPreview = false): boolean {
+export function isExerciseAvailableToUser(
+  exercise: Exercise,
+  allowDraftPreview = false,
+  enabledExerciseIds: readonly string[] = focusedReleaseManifest.enabledExerciseIds,
+): boolean {
   if (exercise.isCustom) return true;
   if (exercise.contentStatus === 'retired') return false;
   if (allowDraftPreview) return true;
-  return assessExerciseContent(exercise).readyForPublication;
+  return (
+    enabledExerciseIds.includes(exercise.id) && assessExerciseContent(exercise).readyForPublication
+  );
 }
 
 export function getProgramRuntimeReadiness(
@@ -79,7 +87,13 @@ export function isProgramStartAllowed(
   options: RuntimeProgramGateOptions = {},
 ): boolean {
   const readiness = getProgramRuntimeReadiness(entry, options);
-  if (readiness.readyForPublication) return true;
+  if (
+    readiness.readyForPublication &&
+    (options.enabledProgramIds ?? focusedReleaseManifest.enabledProgramIds).includes(
+      entry.program.id,
+    )
+  )
+    return true;
   return allowDraftPreview && readiness.hasExecutableVersion;
 }
 
@@ -89,7 +103,13 @@ export function getProgramRuntimeStatusLabel(
   options: RuntimeProgramGateOptions = {},
 ): string {
   const readiness = getProgramRuntimeReadiness(entry, options);
-  if (readiness.readyForPublication) return 'Ready to start';
+  if (
+    readiness.readyForPublication &&
+    (options.enabledProgramIds ?? focusedReleaseManifest.enabledProgramIds).includes(
+      entry.program.id,
+    )
+  )
+    return 'Ready to start';
   if (allowDraftPreview && readiness.hasExecutableVersion) return 'Draft preview';
   return 'Content in review';
 }

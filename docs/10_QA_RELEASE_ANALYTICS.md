@@ -1,5 +1,10 @@
 # SHIFT6 — QA, Release, Analytics & Rollback
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+Focused QA adds typed comparable baseline/result checks, zero baseline, missed sessions and re-entry, no-test review, early target and all end choices. Separate plan adherence from physical progress. #314/#316 define denominators before pilot; no raw health notes in events. A passing export is not native, content or store verification.
+
+
 ## Device QA matrix
 
 At minimum for meaningful releases:

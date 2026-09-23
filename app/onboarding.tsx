@@ -37,7 +37,8 @@ import {
   type UserConsiderations,
 } from '../src/domain/considerations';
 import { equipmentCatalog } from '../src/domain/equipment';
-import { programLibraryPrograms } from '../src/domain/programLibrary';
+import { programLibrary, programLibraryPrograms } from '../src/domain/programLibrary';
+import { isProgramStartAllowed } from '../src/domain/runtimeContentGates';
 import { useLocalDatabase } from '../src/db/context';
 import { getUserConsiderations, saveUserConsiderations } from '../src/db/considerationsRepository';
 import { getOnboardingProfile, saveOnboardingProfile } from '../src/db/profileRepository';
@@ -98,13 +99,19 @@ export default function OnboardingScreen() {
   const recommendations = useMemo(() => {
     if (!isOnboardingComplete(draft)) return [];
 
-    return recommendPrograms(programLibraryPrograms, {
-      goals: draft.goals,
-      experience: draft.experience!,
-      equipmentIds: draft.equipmentIds,
-      trainingDaysPerWeek: draft.trainingDaysPerWeek!,
-      preferredSessionMinutes: draft.preferredSessionMinutes!,
-    });
+    return recommendPrograms(
+      programLibraryPrograms.filter((program) => {
+        const entry = programLibrary.find((candidate) => candidate.program.id === program.id);
+        return entry && isProgramStartAllowed(entry, __DEV__);
+      }),
+      {
+        goals: draft.goals,
+        experience: draft.experience!,
+        equipmentIds: draft.equipmentIds,
+        trainingDaysPerWeek: draft.trainingDaysPerWeek!,
+        preferredSessionMinutes: draft.preferredSessionMinutes!,
+      },
+    );
   }, [draft]);
 
   const updateDraft = <Key extends keyof typeof draft>(key: Key, value: (typeof draft)[Key]) => {

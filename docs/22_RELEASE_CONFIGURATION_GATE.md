@@ -1,5 +1,7 @@
 # SHIFT6 release-ready configuration gate
 
+The focused-v1 release also requires `content/release-manifest.json` to name enabled reviewed Shifts and referenced public exercises. `npm run validate:release-ready` runs `scripts/validate-release-content.mjs` after configuration checks and deliberately fails while the manifest is empty. This is separate from the future 20-program/300-exercise catalogue targets. See [#305 scope contract](25_GOAL_FIRST_RELEASE_CONTRACT.md).
+
 Updated: 2026-09-19
 
 This gate separates ordinary repository verification from the stricter configuration needed for a signed public-release candidate.

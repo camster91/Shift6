@@ -1,17 +1,20 @@
 # SHIFT6
 
-SHIFT6 is a free-first mobile fitness platform for iOS and Android built around one core idea: **progress is easier to understand and sustain when training is organized into focused 6-week cycles.**
+**Current product direction:** [#304](https://github.com/camster91/Shift6/issues/304) — **Six weeks. One measurable goal.** Start with about three human-reviewed rep, timed and Barbell/strength Shifts; see [the canonical goal-first contract](docs/25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305). The broad catalogue and feature descriptions below include historical implementation and future ambition. They are not focused-v1 release promises. No pilot content is approved yet.
 
-The app combines structured workout programming, hundreds of exercises, equipment-aware program building, health and recovery context, and a provider-agnostic AI personal-training coach that helps users plan, execute, review, and adapt their training.
+
+SHIFT6 is a free-first mobile fitness app for iOS and Android built around one core idea: **progress is easier to understand and sustain when training is organized into focused 6-week cycles.**
+
+The focused product helps a user choose one measurable goal, establish a baseline, follow today's session and review real change after six weeks. Existing broader catalogue, health and optional Coach systems remain available for later gated expansion.
 
 ## Product promise
 
 **Train with a plan. Review every 6 weeks. Keep moving forward.**
 
-SHIFT6 is intended to become a long-term fitness operating system rather than a single workout app. Users can:
+Future breadth ambition (outside focused v1): users may eventually:
 
 - follow curated programs;
-- choose from at least 20 launch programs;
+- choose from a future catalogue of 20 or more reviewed programs;
 - build their own programs and workouts;
 - add, remove, reorder, substitute, or edit exercises;
 - search hundreds of exercises by movement, muscle, equipment, goal, difficulty, or accessibility needs;
@@ -174,6 +177,8 @@ UX, remote deletion, and native account verification remain explicitly open.
 
 ## Canonical planning docs
 
+Start with `docs/25_GOAL_FIRST_RELEASE_CONTRACT.md` for #304, `docs/26_SCOPE_DISPOSITION.md` for the #305 historical-scope audit, and `docs/07_ASSET_AND_ICON_PROMPTS.md` for #319. The release allowlist lives in `content/release-manifest.json`.
+
 1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition
 2. `docs/01_BRAND_AND_DESIGN_SYSTEM.md` — SHIFT6 identity and Figma-first design direction
 3. `docs/02_SCREEN_BY_SCREEN_SPEC.md` — end-to-end mobile information architecture and screen requirements
@@ -211,4 +216,4 @@ The architecture remains replaceable behind interfaces where possible. Product b
 
 ## Definition of success
 
-A first public release is successful when a new user can install SHIFT6, onboard in a few minutes, choose or build a program, complete workouts offline, see progress across a six-week cycle, receive useful coach feedback, safely edit their plan, and understand exactly what to do next without encountering a paywall for core training functionality.
+A first focused release succeeds when a new user can choose one reviewed Shift, record an honest baseline, complete sessions offline, return after interruption, distinguish actual measured progress from adherence, review the block and select a next step without a core-training paywall or provider-backed AI.

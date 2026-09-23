@@ -1,5 +1,10 @@
 # SHIFT6 — Roadmap & Engineering Epics
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+The phases below are historical broad roadmap notes. Current sequence: #305 → #306 → #309/#315 → #307 → #308 → #310 → #311 → #312 → #313 → #314 → #316. #319 visual work runs alongside this sequence. #270–#281 remain applicable where compatible, with safety/reliability unchanged. See [capability map](25_GOAL_FIRST_RELEASE_CONTRACT.md).
+
+
 ## Delivery philosophy
 
 Build the smallest complete vertical slice first: onboarding → program → workout → progress → cycle review. Do not build 300 exercise media assets before the logging engine works.

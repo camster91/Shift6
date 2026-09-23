@@ -1,5 +1,10 @@
 # SHIFT6 release-readiness checkpoint
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+This document records earlier foundation checkpoints, not approval of the #304 Shift implementation. The focused product remains unimplemented on main at #305 start. The checked-in [release manifest](../content/release-manifest.json) has no approved public Shifts and strict release readiness intentionally fails until human review, exact-binary native checks and store claims are verified. Do not infer a focused launch from 20 executable historical entries.
+
+
 Updated: 2026-09-19
 
 ## Status precedence
@@ -95,7 +100,7 @@ The foundational exercise catalogue contains 58 draft records, including eight b
 movements so the Resistance Bands program can be structurally exercised without pretending other
 equipment is compatible.
 
-The broader 300+ exercise launch target remains a content-production goal. The current catalogue is
+The broader 300+ exercise catalogue remains a future content-production goal. The current catalogue is
 deliberately draft content. Technique, instructions, imagery/video, licensing/provenance, and
 publication status require human review. Executable does not mean reviewed or safe for public
 publication.

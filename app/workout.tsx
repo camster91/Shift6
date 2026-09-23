@@ -23,6 +23,7 @@ import {
   demoWorkout,
 } from '../src/domain/fixtures/home';
 import { foundationalExercises } from '../src/domain/fixtures/exercises';
+import { isExerciseAvailableToUser } from '../src/domain/runtimeContentGates';
 import { buildNextSessionTargets, readinessInputForWorkout } from '../src/domain/nextSession';
 import { resolveTrackingType } from '../src/domain/exerciseTracking';
 import {
@@ -930,7 +931,14 @@ export default function ActiveWorkoutScreen() {
           (candidate) => candidate.id === workoutExercise.exerciseId,
         );
         const substitutions = sourceExercise
-          ? findExerciseSubstitutions(sourceExercise, availableExercises, availableEquipmentIds, 3)
+          ? findExerciseSubstitutions(
+              sourceExercise,
+              availableExercises.filter((candidate) =>
+                isExerciseAvailableToUser(candidate, __DEV__),
+              ),
+              availableEquipmentIds,
+              3,
+            )
           : [];
 
         return (

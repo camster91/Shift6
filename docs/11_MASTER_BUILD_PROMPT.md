@@ -1,75 +1,30 @@
 # SHIFT6 — Master Build Prompt for Coding Agents
 
-Use this as the root implementation instruction for any coding agent/harness working in this repository.
+You are extending the existing Expo SDK 57 / React Native / TypeScript SHIFT6 app. Read [the canonical goal-first contract](25_GOAL_FIRST_RELEASE_CONTRACT.md), [product epic #304](https://github.com/camster91/Shift6/issues/304), and the current code before implementation. **Six weeks. One measurable goal.** Preserve SQLite, immutable/copy-on-write versions, offline workout recovery, deterministic progression, ownership, privacy, accessibility and relevant #270–#281 engineering work. Do not rebuild or revive the archived app.
 
----
+One primary Shift ties a protocol-defined baseline and goal to the current cycle, today's session, comparable observations and Week 6 review. Six weeks is a review structure, not a performance guarantee. Completion, adherence, calendar week, latest result, personal best and estimate are different. A workout never moves a performance marker without a comparable recorded measurement. Protocols include type, variant/assistance, equipment, units, relevant rep count/distance, version, source, date and improvement direction. No misleading percentage from zero.
 
-You are implementing SHIFT6, a free-first iOS/Android fitness platform centered on six-week progression cycles and an AI personal-training coach.
+The schedule follows the calendar; progression follows actual performance. No punishment, unsafe catch-up, silent target rise or stale week after interruption. Users confirm meaningful pause/repeat/re-entry changes. They may maintain, repeat, progress, choose another goal or take a planned break. A final test is optional and a completed block is not automatically an achieved goal. Ordinary progression remains deterministic; Coach is optional and must never block training or prescribe diagnosis, rehabilitation, medication/insulin changes or training through pain.
 
-Before changing code:
-1. Read `README.md` and every relevant file under `docs/`.
-2. Inspect the current repository state, open issues, active PRs, CI, and recent decisions.
-3. Treat the planning docs as canonical unless a newer explicit GitHub decision supersedes them.
-4. Do not restore the archived pre-rebuild implementation unless an issue explicitly requires migration of a specific proven element.
+## Order of work
 
-Product requirements:
-- iOS and Android;
-- React Native/Expo/TypeScript baseline unless architecture decision record changes it;
-- Figma-first token-driven UI;
-- original SHIFT6 visual identity;
-- offline-first workout logging;
-- six-week cycle engine implemented deterministically;
-- 20 curated programs target;
-- 300+ launch exercise target;
-- custom programs/workouts/exercises;
-- equipment-aware substitutions;
-- health integration adapters;
-- provider-agnostic AI coach;
-- user approval before coach plan changes;
-- accessibility and privacy as acceptance criteria;
-- core features free at launch.
+1. #305: reconcile repository docs, versioned release manifest and publication gates. This issue is documentation and release-contract work, not goal-first UI implementation.
+2. #306: Shift lifecycle and typed measurements on existing TrainingCycle/ProgramVersion; preserve old data and immutable history.
+3. #309: define approximately three representative, content-reviewed rep, timed and Barbell/strength pilot templates with exact versioned IDs.
+4. #315: confirm calendar, pause, repeat, re-entry and review-date rules with #306/#309.
+5. #307: choose one goal, main-plan/add-on context and honest baseline fallback.
+6. #308: one active Shift and clear Today action; simplify navigation.
+7. #310: reliable offline focus workout, micro-objectives, partial and stop paths.
+8. #311: deterministic adaptive progression from actual performance and one-tap difficulty.
+9. #312: honest milestones, optional final test, review and Shift history.
+10. #313: contextual, disableable Coach explanation.
+11. #314: healthy motion/engagement and privacy-safe event dictionary.
+12. #316: simulation, exact-build QA, approved human pilot and decision.
 
-Engineering rules:
-- Prefer small, composable domain modules.
-- Separate deterministic training logic from generative AI.
-- Do not put provider-specific AI code in domain layers.
-- Do not store secrets client-side.
-- Use typed contracts.
-- Preserve workout history through immutable snapshots/versioning.
-- Local workout logging must succeed without network.
-- Every sync mutation must be idempotent.
-- No silent conflict overwrites.
-- Add tests for domain logic and bug fixes.
-- Add migration tests for schema changes.
-- Add accessibility labels with UI implementation.
-- Avoid speculative abstractions that have no current consumer.
+#319 develops the visual world beside engineering. It does not delay the core slice or permit unapproved production art. Build Visual DNA and representative Figma screens; version prompts in [asset plan](07_ASSET_AND_ICON_PROMPTS.md). Keep rich media optional for critical logging, use native motion for frequent controls, honour reduced motion and test low/mid-range Android.
 
-Safety rules:
-- Do not implement medical diagnosis or treatment.
-- Do not build medication or insulin-dosing features.
-- Pain/discomfort flags halt normal progression for the affected movement and route to safe guidance.
-- AI must clearly distinguish facts, estimates, and missing data.
-- Do not generate fabricated health metrics.
+## Publication and release rules
 
-For each task:
-1. Restate objective and acceptance criteria.
-2. Identify affected domain/data/UI surfaces.
-3. Implement the smallest complete change.
-4. Add/update tests.
-5. Run relevant lint/typecheck/unit/E2E checks.
-6. Verify representative iOS and Android layouts when UI changes.
-7. Verify offline/error/loading/empty states when relevant.
-8. Report exactly what was completed, what was not verified, and any blockers.
+Use `content/release-manifest.json` as the explicit public allowlist. Every enabled Shift and referenced exercise needs content, safety, provenance and implementation evidence; search, recommendation, deep links and offline cache cannot bypass it. Draft content may remain private or preview-only in development. Do not replace human review with synthetic timestamps. The release validator must fail closed until approved content is enabled. Twenty programs and 300+ exercises are future breadth targets, not pilot blockers. Core training is free and works without a paid provider call.
 
-Never:
-- deploy production;
-- submit to stores;
-- merge PRs;
-- delete data;
-- alter billing;
-- change production credentials;
-without explicit approval for that exact action.
-
-When a requirement is ambiguous, favour the simplest behaviour that preserves user data, user control, accessibility, and six-week-cycle semantics.
-
----
+For each increment, inspect the actual source, implement a vertical slice, run relevant tests and `npm run verify`, then record what was and was not verified. Device, Figma, exercise-content, pilot and store evidence require their own real checks. Do not mark later issues complete based on this prompt. Do not merge, distribute builds or submit stores without Cameron's approval.

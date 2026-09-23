@@ -1,5 +1,10 @@
 # SHIFT6 — Six-Week Progression Engine
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+#306/#311 must separate calendar position, adherence, latest comparable measurement, personal best and estimate. Never move physical progress for workout completion alone, compare assisted to unassisted or divide by a zero baseline. #315 handles honest pause/re-entry dates; deterministic progression responds to performance and simple difficulty without AI.
+
+
 ## Purpose
 
 The progression engine is the product's deterministic core. AI may explain or recommend around it, but basic progression cannot depend on an LLM.

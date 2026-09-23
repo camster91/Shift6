@@ -23,6 +23,7 @@ import {
 } from '../src/domain/cycleProgression';
 import { defaultTargetForTrackingType, resolveTrackingType } from '../src/domain/exerciseTracking';
 import { searchExercises } from '../src/domain/exerciseCatalog';
+import { isExerciseAvailableToUser } from '../src/domain/runtimeContentGates';
 import {
   addExerciseToWorkout,
   addWorkoutToProgram,
@@ -255,10 +256,15 @@ export default function ProgramBuilderScreen() {
   );
   const pickerExercises = useMemo(
     () =>
-      searchExercises([...foundationalExercises, ...Object.values(customExercises)], {
-        query: exercisePickerQuery,
-        limit: 8,
-      }),
+      searchExercises(
+        [...foundationalExercises, ...Object.values(customExercises)].filter((exercise) =>
+          isExerciseAvailableToUser(exercise, __DEV__),
+        ),
+        {
+          query: exercisePickerQuery,
+          limit: 8,
+        },
+      ),
     [customExercises, exercisePickerQuery],
   );
 
@@ -550,13 +556,18 @@ export default function ProgramBuilderScreen() {
               <Text variant="small" tone="muted">
                 No exercises yet. Add a starter movement, then configure its target below.
               </Text>
-              <Button
-                label="Add starter plank"
-                variant="ghost"
-                icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
-                onPress={() => handleAddPlank(workout.id)}
-                style={styles.emptyWorkoutButton}
-              />
+              {isExerciseAvailableToUser(
+                foundationalExercises.find((item) => item.id === 'exercise-plank')!,
+                __DEV__,
+              ) ? (
+                <Button
+                  label="Add starter plank"
+                  variant="ghost"
+                  icon={<Ionicons name="add-outline" size={18} color={colors.ink} />}
+                  onPress={() => handleAddPlank(workout.id)}
+                  style={styles.emptyWorkoutButton}
+                />
+              ) : null}
             </View>
           ) : (
             workout.exercises.map((exercise, exerciseIndex) => {
@@ -572,7 +583,9 @@ export default function ProgramBuilderScreen() {
               const substitutions = sourceExercise
                 ? findExerciseSubstitutions(
                     sourceExercise,
-                    foundationalExercises,
+                    foundationalExercises.filter((candidate) =>
+                      isExerciseAvailableToUser(candidate, __DEV__),
+                    ),
                     availableEquipmentIds,
                     3,
                   )

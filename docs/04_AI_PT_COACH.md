@@ -1,5 +1,10 @@
 # SHIFT6 — AI Personal Trainer Coach
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+The architecture below is retained for optional #313 contextual explanation. Core sessions, progression, review and six-week completion work without a provider, payment or enabled Coach. The old prominent surfaces are future options subject to privacy/provider gates; no medical, rehabilitation, medication or insulin advice.
+
+
 ## Role
 
 The SHIFT6 Coach is a training assistant, not a doctor, diagnostician, therapist, or autonomous authority. Its job is to help users understand their plan, adapt training within safe bounds, interpret their own training data, choose substitutions, and stay consistent.

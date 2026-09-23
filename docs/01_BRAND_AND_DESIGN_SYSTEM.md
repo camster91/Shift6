@@ -1,5 +1,10 @@
 # SHIFT6 — Brand & Design System
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+#319 defines the Figma-first custom visual and motion world in [the prompt system](07_ASSET_AND_ICON_PROMPTS.md). The older five-destination navigation is historical design direction; #308 makes one active Shift and Today dominant, with Coach contextual. Use native motion for frequent actions and static/reduced-motion alternatives.
+
+
 ## Design objective
 
 Build an original premium fitness identity based on the visual direction supplied in the reference screenshots: light surfaces, lavender framing, rounded cards, black high-contrast controls, pastel information blocks, clean photography, playful dimensional objects, and spacious mobile layouts.

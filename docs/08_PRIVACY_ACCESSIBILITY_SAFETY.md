@@ -1,5 +1,10 @@
 # SHIFT6 — Privacy, Accessibility & Safety
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+#304/#305 retain all privacy, accessibility and safety requirements. A narrow pilot does not waive human exercise review. Optional AI and health cannot block core offline training. Stop/discomfort is distinct from one-tap difficulty; no diagnosis, rehab, medication/insulin advice or training through pain. Audit actual native permissions against enabled features.
+
+
 ## Privacy baseline
 
 SHIFT6 handles potentially sensitive fitness and health information. Privacy is a product requirement, not legal copy added later.

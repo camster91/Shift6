@@ -1,5 +1,10 @@
 # SHIFT6 exercise content and media review workflow
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+For focused v1, every exercise referenced by an enabled public Shift must pass the same human technique, safety and media/provenance checks below. The old 300-record threshold is a future breadth target; unreviewed drafts remain unavailable to public discovery, direct links and offline content. See [manifest](../content/release-manifest.json).
+
+
 Updated: 2026-09-16
 
 This document defines the evidence required before an exercise or exercise-media item can be treated
@@ -9,7 +14,7 @@ as public launch content. It does not approve any current exercise record or med
 
 The repository currently contains 58 foundational exercise records. They are intentionally marked
 `draft`, are media-free, and are suitable for product-development and cycle-structure testing only.
-The launch target remains at least 300 unique public exercise records that pass the publication gate.
+The future catalogue target remains at least 300 unique reviewed public exercise records. The focused release requires every enabled referenced record to pass this gate, regardless of count.
 
 `assessExerciseCatalogue()` is the canonical repository-level launch check. It reports:
 

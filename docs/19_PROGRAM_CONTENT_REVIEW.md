@@ -1,8 +1,13 @@
 # SHIFT6 launch program fitness-content review workflow
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+For focused v1, every enabled Shift/version requires traceable fitness review and all referenced exercises must be publication-ready. Twenty executable historical catalogue entries do not mean 20 reviewed launch Shifts. The count gate below describes the former broad launch goal, retained as future catalogue ambition; [the manifest](../content/release-manifest.json) defines the actual focused release.
+
+
 Updated: 2026-09-16
 
-This document defines the evidence required before one of the 20 launch programs can count as
+This document defines the evidence required before a historical catalogue program can count as
 fitness-content reviewed and publication-ready. It does not approve any current program.
 
 ## Current state
@@ -22,7 +27,7 @@ fitness review.
 - programs with traceable fitness-content review evidence;
 - programs whose version and referenced exercises are publication-ready.
 
-The launch gate requires at least 20 in each relevant category, unique program IDs/slugs, valid
+The historical broad-catalogue gate required at least 20 in each relevant category, unique program IDs/slugs, valid
 metadata, and no unresolved publication blockers.
 
 ## Review evidence

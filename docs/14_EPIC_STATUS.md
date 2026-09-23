@@ -1,5 +1,10 @@
 # SHIFT6 epic status matrix
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+The status below records earlier engineering epics. [#304](https://github.com/camster91/Shift6/issues/304) is now canonical product scope; #305 reconciles repository gates, #319 plans visual direction. None of #306–#316 is implemented merely because issues are specified. Preserve past test and PR evidence without calling the goal-first app verified.
+
+
 Updated: 2026-09-19
 
 This file is a present-tense execution aid for issues #270–#281. It does not replace the issue acceptance criteria or `docs/12_RELEASE_READINESS.md`.

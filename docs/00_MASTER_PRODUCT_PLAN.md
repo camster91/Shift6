@@ -1,5 +1,10 @@
 # SHIFT6 — Master Product Plan
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+The first focused journey is goal → typed baseline → today's offline-capable session → comparable measured progress → interruption/re-entry → optional Week 6 test and review → maintain, repeat, adjust, another goal or planned break. One primary Shift; six weeks is review, never a guaranteed outcome. The existing broad sections describe later capability unless listed as focused-v1 in the [contract](25_GOAL_FIRST_RELEASE_CONTRACT.md).
+
+
 ## 1. Vision
 
 SHIFT6 is the long-term fitness app a user should not need to replace. It should serve beginners, experienced lifters, busy adults, home-gym users, commercial-gym users, runners, cyclists, people focused on mobility and healthy ageing, and users who simply want a clear sustainable plan.
@@ -111,24 +116,23 @@ User then chooses: repeat, progress, modify, change goals, or select a different
 
 ### Required for first public release
 - iOS and Android;
-- account + guest mode with later account conversion;
-- onboarding;
-- 20 curated programs;
-- 300+ exercise records at launch target;
-- equipment catalogue;
-- custom program/workout builder;
+- guest/local training; accounts and sync only if exact-build evidence supports them;
+- goal-first onboarding and a comparable or explicitly deferred baseline;
+- approximately three reviewed pilot Shifts; the historical 20-program catalogue is a future expansion;
+- every enabled pilot exercise reviewed; 300+ reviewed exercise records remain a future catalogue target;
+- relevant equipment and safe substitutions;
 - active workout logging;
 - rest timers;
 - offline workout completion;
-- six-week cycle tracking;
-- basic coach chat and structured recommendations;
-- progress dashboard;
-- exercise history;
-- Apple Health / Health Connect basic integration where feasible;
-- reminders;
-- export/delete account;
+- honest six-week review, optional assessment and next choice;
+- measurement progress separate from adherence, plus pause and re-entry;
+- local export/delete and accurate guest recovery explanation;
 - accessibility baseline;
-- crash reporting and privacy-safe analytics.
+- privacy-safe measurement if enabled, with exact binary/native release evidence.
+
+Custom builders, broad exercise search, Health integrations, provider-backed Coach, accounts/sync,
+advanced metrics and reminders remain gated supporting work or future breadth. None is required to
+complete the core Shift lifecycle. See [the release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md).
 
 ### Post-launch expansion
 - Apple Watch companion;

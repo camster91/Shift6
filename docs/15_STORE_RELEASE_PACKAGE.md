@@ -1,5 +1,10 @@
 # SHIFT6 store release package
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+**Proposed focused store story (not approved for submission):** Pick one goal → know today's session → train without distractions → life happens, keep going → see what actually changed → choose the next Shift. Replace older broad feature copy/screenshots only when the exact build supports it. Never advertise draft exercises/programs, provider AI, health integrations, fabricated results or unverified screenshots. Store metadata below is historical draft material.
+
+
 Updated: 2026-09-16
 Status: **pre-submission draft — do not publish from this file without final provider/native review**
 
@@ -62,14 +67,14 @@ submission.
 | Field | Draft |
 | --- | --- |
 | App name | `SHIFT6` |
-| Apple subtitle | `Six-week training, made clear` |
+| Apple subtitle | `Six weeks. One goal.` |
 | Primary category | Health & Fitness |
 | Secondary category | Optional; leave unset unless store strategy requires one |
-| Google short description | `Plan six weeks, train offline, track progress, and keep control of every change.` |
-| Apple promotional text | `Build a clear six-week training plan, log workouts offline, adapt around your equipment, and review real progress without losing control of your program.` |
+| Google short description | `Pick one goal. Train with a clear plan. See what actually changed.` |
+| Apple promotional text | `Choose one measurable goal, follow focused sessions, return after life interrupts, and review real progress after six weeks.` |
 | Apple keywords | `fitness,workout,strength,training,exercise,gym,home gym,cardio,mobility,progress` |
 
-Character checks at drafting time:
+Recheck platform character limits before submission; the earlier counts below described older copy:
 
 - app name: 6 / 30;
 - Apple subtitle: 29 / 30;
@@ -82,21 +87,18 @@ Character checks at drafting time:
 SHIFT6 organizes training into focused six-week cycles so you always know what to do today, what
 changed, and what comes next.
 
-Choose a structured program or build your own. Track strength, cardio, mobility, and conditioning
-with workouts that remain usable offline. Your equipment profile helps surface realistic programs
-and substitutions, while copy-on-write plan editing keeps completed history intact.
+Choose one reviewed goal and record where you started. Follow today's session, log it offline,
+and return after interruptions without catch-up pressure. At six weeks, compare measurements made
+under the same protocol and choose what comes next. A specific result is not guaranteed.
 
 Built around clear six-week reviews:
 
-- Follow one of 20 curated program frameworks.
-- Log sets, reps, load, RPE/RIR, time, and distance.
+- Pick one reviewed Shift and follow a focused six-week plan.
+- Log the measurements relevant to your Shift.
 - Resume unfinished workouts and keep training without a network connection.
-- Review adherence, personal records, training volume, cardio, and cycle progress.
-- Build custom programs, workouts, and private exercises.
-- Adjust schedules and substitute movements around available equipment.
-- Use optional Coach guidance grounded in your approved plan and logged training.
-- Review suggested plan changes before anything meaningful changes.
-- Optionally connect supported Apple Health or Health Connect summaries.
+- See completed sessions separately from actual measured improvement.
+- Pause, adjust a schedule, repeat a week or return with a suitable session.
+- Review your block with or without a final test, then maintain, repeat, adjust, choose another goal or take a planned break.
 - Export or delete local training data from the app.
 
 SHIFT6 is general fitness and wellness software. It does not diagnose or treat medical conditions,
@@ -107,8 +109,8 @@ optional, and core workout logging remains usable without health permissions.
 
 Do not publish the description until all of these are true:
 
-- `20 curated program frameworks` has completed content review and the public build exposes them;
-- provider-backed Coach is configured if remote Coach language is retained;
+- every enabled Shift and referenced exercise has content review and passes the focused manifest gate;
+- all named interactions are present and verified in the exact signed build;
 - Apple Health / Health Connect declarations match the actual signed binaries;
 - export/delete language matches both local and remote account behaviour;
 - no feature named above is disabled behind an unreleased feature flag.
@@ -117,14 +119,12 @@ Do not publish the description until all of these are true:
 
 Do not create final screenshots until Figma/native visual QA is approved. The recommended sequence is:
 
-1. **Today / Week view** — “Know what to do today.”
-2. **Active workout** — offline-capable set logging, timer and clear targets.
-3. **Six-week cycle** — visible week/phase progression and review framing.
-4. **Programs** — curated program catalogue and equipment-aware fit.
-5. **Builder** — editable private program/workout structure.
-6. **Progress** — cycle facts, records, volume and cardio summaries with text alternatives.
-7. **Coach** — facts-first explanation and a proposed change that visibly requires approval.
-8. **Privacy/health** — optional health connection plus local export/delete controls.
+1. **Pick one goal** — reviewed Shift selection and honest baseline.
+2. **Know what to do today** — one active Shift and clear next action.
+3. **Train without distractions** — offline-capable focus session.
+4. **Life happens. Keep going.** — pause and re-entry.
+5. **See what actually changed** — comparable result, clearly separate from adherence.
+6. **Choose your next Shift** — optional test, review and next choice.
 
 Screenshot rules:
 
@@ -320,7 +320,7 @@ review appropriate to the release jurisdictions.
 - [ ] PR #282 verified and merged.
 - [ ] PR #283 verified and merged if the optional local profile/body-metric scope ships.
 - [ ] `npm run verify` and CI green on the final release candidate.
-- [ ] 300+ reviewed exercise content target or an explicitly approved launch-scope change.
+- [ ] Every enabled Shift and referenced exercise has traceable human content review and is reachable only through the focused release manifest.
 - [ ] All public programs and exercise technique/media reviewed.
 - [ ] Final Figma/icon/store artwork approved.
 - [ ] Signed iOS and Android release candidates pass the native QA matrix.

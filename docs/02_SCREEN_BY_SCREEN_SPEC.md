@@ -1,5 +1,10 @@
 # SHIFT6 — Screen-by-Screen Product Specification
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+The numbered inventory below predates #304 and is a broad feature inventory. The focused flow and screen/state issue map are in [the contract](25_GOAL_FIRST_RELEASE_CONTRACT.md). #307 simplifies onboarding to a chosen Shift and baseline; #308 centres Today; #310 focuses the session; #312/#315 provide review and return. Health, Coach setup and broad browsing cannot be prerequisites.
+
+
 This is the canonical mobile information architecture. Screens may later merge, but each capability must remain represented.
 
 ## A. Launch & onboarding

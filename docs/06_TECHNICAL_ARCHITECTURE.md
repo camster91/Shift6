@@ -1,5 +1,10 @@
 # SHIFT6 — Technical Architecture
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+Preserve this existing architecture. #306 adds Shift semantics on TrainingCycle/ProgramVersion without replacing local-first SQLite, immutable snapshots or sync boundaries. The focused-v1 allowlist is [versioned](../content/release-manifest.json); active public paths must fail closed, while migrations preserve old cycles without invented goal outcomes. Health/remote services require exact-binary review when enabled.
+
+
 ## Goals
 
 - iOS + Android from one maintainable product codebase;
@@ -423,7 +428,7 @@ The first #274 content increment establishes catalogue behavior without importin
 - `findExerciseSubstitutions` ranks compatible candidates by movement pattern, shared primary muscles, and tags, with no AI or network dependency;
 - the Exercise Library surface makes the draft/review boundary visible and does not present placeholder media as approved instruction.
 
-The catalogue is not yet the 300+ launch set: content review, custom exercises, exercise detail, substitution selection, media production, and the remaining records are still required.
+The catalogue is not yet the future 300+ reviewed set: content review, custom exercises, exercise detail, substitution selection, media production, and the remaining records are still required.
 
 The catalogue surface now links each foundational record to an exercise-detail route with setup, instructions, technique cues, safety notes, visible review status, and deterministic equipment-aware substitution candidates. The detail route is still intentionally read-only until reviewed media and a user-owned substitution action are ready.
 

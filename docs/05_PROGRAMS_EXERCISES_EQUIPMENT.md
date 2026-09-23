@@ -1,5 +1,10 @@
 # SHIFT6 — Programs, Exercises & Equipment
 
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+The enumerated 20-program catalogue and 300+ exercise target are retained as implementation history and future breadth. #309 selects approximately three representative reviewed rep, timed and Barbell/strength Shifts; exact public IDs are pending. [The release manifest](../content/release-manifest.json) and per-record human review, not counts, control focused-v1 publication.
+
+
 ## Program model
 
 A program contains:
@@ -21,7 +26,7 @@ A program contains:
 
 Users can duplicate any template into an editable personal program.
 
-## 20 curated launch programs
+## Historical 20-program catalogue — future breadth
 
 1. **SHIFT6 Foundations** — beginner, 3 days, full body, general gym.
 2. **Barbell 30** — 3 strength days + cardio, rack/barbell/bench, 30-minute lifting sessions.
@@ -62,7 +67,7 @@ sessions. These versions remain behind the public startability gate until conten
 
 ## Exercise catalogue target
 
-Launch target: **300+ high-quality exercise records**, not hundreds of near-duplicate low-quality entries.
+Future catalogue target: **300+ high-quality reviewed exercise records**, not hundreds of near-duplicate low-quality entries.
 
 Long-term target: 500–800 variants as media coverage grows.
 

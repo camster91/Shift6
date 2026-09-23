@@ -9,7 +9,10 @@ import { useLocalDatabase } from '../../src/db/context';
 import { demoUser } from '../../src/domain/fixtures/home';
 import { recommendPrograms } from '../../src/domain/onboarding';
 import { programLibrary, programLibraryPrograms } from '../../src/domain/programLibrary';
-import { getProgramRuntimeStatusLabel } from '../../src/domain/runtimeContentGates';
+import {
+  getProgramRuntimeStatusLabel,
+  isProgramStartAllowed,
+} from '../../src/domain/runtimeContentGates';
 import { colors, spacing } from '../../src/design/tokens';
 import { useCurrentUserId } from '../../src/services/UserIdentityProvider';
 
@@ -76,7 +79,14 @@ export default function ProgramsScreen() {
   );
 
   const recommendations = useMemo(
-    () => recommendPrograms(programLibraryPrograms, profilePreferences),
+    () =>
+      recommendPrograms(
+        programLibraryPrograms.filter((program) => {
+          const entry = programLibrary.find((candidate) => candidate.program.id === program.id);
+          return entry && isProgramStartAllowed(entry, __DEV__);
+        }),
+        profilePreferences,
+      ),
     [profilePreferences],
   );
 

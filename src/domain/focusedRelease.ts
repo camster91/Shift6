@@ -43,6 +43,7 @@ export function assessFocusedReleaseContent(
     const review = reviews.filter(
       (candidate) =>
         candidate.programId === id &&
+        candidate.programVersionId === entry.version!.id &&
         candidate.reviewedAt.trim() &&
         candidate.reviewReference.trim(),
     );

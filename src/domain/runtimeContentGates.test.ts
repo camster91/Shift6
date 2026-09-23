@@ -54,6 +54,7 @@ describe('runtime content release gates', () => {
     const reviews = [
       {
         programId: barbell30.program.id,
+        programVersionId: barbell30.version!.id,
         reviewedAt: '2026-09-19T00:00:00.000Z',
         reviewReference: 'review/fitness/barbell-30/v1',
       },
@@ -67,7 +68,36 @@ describe('runtime content release gates', () => {
         exercises: reviewedExercises,
         reviews,
         enabledProgramIds: [barbell30.program.id],
+        enabledExerciseIds: [
+          ...new Set(
+            barbell30.version!.workouts.flatMap((workout) =>
+              workout.exercises.map((item) => item.exerciseId),
+            ),
+          ),
+        ],
       }),
     ).toBe(true);
+    expect(
+      isProgramStartAllowed(barbell30, false, {
+        exercises: reviewedExercises,
+        reviews,
+        enabledProgramIds: [barbell30.program.id],
+        enabledExerciseIds: [],
+      }),
+    ).toBe(false);
+    expect(
+      isProgramStartAllowed(barbell30, false, {
+        exercises: reviewedExercises,
+        reviews: [{ ...reviews[0]!, programVersionId: 'old-version' }],
+        enabledProgramIds: [barbell30.program.id],
+        enabledExerciseIds: [
+          ...new Set(
+            barbell30.version!.workouts.flatMap((workout) =>
+              workout.exercises.map((item) => item.exerciseId),
+            ),
+          ),
+        ],
+      }),
+    ).toBe(false);
   });
 });

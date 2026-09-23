@@ -12,6 +12,7 @@ export interface RuntimeProgramGateOptions {
   exercises?: readonly Exercise[];
   reviews?: readonly ProgramContentReviewEvidence[];
   enabledProgramIds?: readonly string[];
+  enabledExerciseIds?: readonly string[];
 }
 
 export interface RuntimeProgramReadiness {
@@ -55,15 +56,25 @@ export function getProgramRuntimeReadiness(
     };
   }
 
-  const versionReadiness = assessProgramVersion(entry.program, entry.version, exercises);
-  const exerciseContentReady = versionReadiness.readyForPublication;
+  const version = entry.version;
+  const versionReadiness = assessProgramVersion(entry.program, version, exercises);
+  const enabledExerciseIds = new Set(
+    options.enabledExerciseIds ?? focusedReleaseManifest.enabledExerciseIds,
+  );
+  const referencedExercisesEnabled = version.workouts.every((workout) =>
+    workout.exercises.every((movement) => enabledExerciseIds.has(movement.exerciseId)),
+  );
+  const exerciseContentReady = versionReadiness.readyForPublication && referencedExercisesEnabled;
   if (!exerciseContentReady) {
     blockers.push(...versionReadiness.blockers, ...versionReadiness.reviewWarnings);
+    if (!referencedExercisesEnabled)
+      blockers.push('Referenced exercise is not enabled for release.');
   }
 
   const review = reviews.find(
     (candidate) =>
       candidate.programId === entry.program.id &&
+      candidate.programVersionId === version.id &&
       candidate.reviewedAt.trim().length > 0 &&
       candidate.reviewReference.trim().length > 0,
   );

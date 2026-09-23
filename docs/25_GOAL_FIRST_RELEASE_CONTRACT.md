@@ -6,7 +6,7 @@ Canonical product epic: [#304](https://github.com/camster91/Shift6/issues/304). 
 
 ## Product and measurement contract
 
-A Shift references the existing TrainingCycle and ProgramVersion; #306 specifies its exact ownership, migration and lifecycle. Do not duplicate their sources of truth. Existing cycles without goal metadata must survive without invented baselines, achievements or changed completed snapshots. Corrections require traceable amendments.
+A Shift references the existing TrainingCycle and ProgramVersion; #306 specifies its exact ownership, migration and lifecycle. Do not duplicate their sources of truth. Existing cycles without goal metadata must survive without invented baselines, achievements or changed completed snapshots. Corrections require traceable amendments. Fitness review evidence is bound to the exact immutable program version; a new version requires new review.
 
 A measurement protocol records exercise/variant, assistance, equipment/setup, units, relevant reps or distance, protocol version, source/date and whether higher, lower or completion is better. Reps, load at a specified rep count, timed hold, fixed-distance time, distance and completion are distinct types. Compare only compatible observations. Do not equate assisted with unassisted work or calculate a percentage increase from zero. Keep calendar position, completed sessions, adherence, latest comparable measurement, personal best and estimate separate. A logged session cannot advance a physical-performance marker without an actual qualifying measurement.
 

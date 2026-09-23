@@ -47,6 +47,7 @@ export function assessLaunchProgramCatalogue(
     const review = reviewByProgramId.get(entry.program.id);
     const hasValidReview =
       review !== undefined &&
+      review.programVersionId === entry.version?.id &&
       review.reviewedAt.trim().length > 0 &&
       review.reviewReference.trim().length > 0;
     if (hasValidReview) contentReviewedCount += 1;

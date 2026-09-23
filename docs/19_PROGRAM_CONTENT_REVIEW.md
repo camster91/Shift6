@@ -4,6 +4,8 @@
 
 For focused v1, every enabled Shift/version requires traceable fitness review and all referenced exercises must be publication-ready. Twenty executable historical catalogue entries do not mean 20 reviewed launch Shifts. The count gate below describes the former broad launch goal, retained as future catalogue ambition; [the manifest](../content/release-manifest.json) defines the actual focused release.
 
+Review evidence must name both `programId` and the exact immutable `programVersionId`. A later version of the same program needs its own human review before publication. The runtime start gate also checks that every referenced public exercise appears in the enabled release allowlist.
+
 
 Updated: 2026-09-16
 

@@ -19,6 +19,7 @@ const reviewedExercises = foundationalExercises.map((exercise) => ({
 const review = [
   {
     programId: barbell.program.id,
+    programVersionId: barbell.version!.id,
     reviewedAt: '2026-09-23T00:00:00Z',
     reviewReference: 'fixture-only',
   },
@@ -60,6 +61,11 @@ describe('focused release allowlist', () => {
     expect(assessFocusedReleaseContent(manifest, programLibrary, reviewedExercises, [])).toContain(
       `Enabled Shift ${barbell.program.id} needs one traceable fitness-content review.`,
     );
+    expect(
+      assessFocusedReleaseContent(manifest, programLibrary, reviewedExercises, [
+        { ...review[0]!, programVersionId: 'old-version' },
+      ]),
+    ).toContain(`Enabled Shift ${barbell.program.id} needs one traceable fitness-content review.`);
   });
   it('rejects unknown and duplicate enabled IDs', () => {
     expect(

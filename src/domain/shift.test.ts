@@ -212,6 +212,34 @@ describe('Shift outcome integrity', () => {
         .baseline?.canonicalValue,
     ).toBe(4);
   });
+  it('resolves correction chains independent of input order and rejects ambiguous amendments', () => {
+    const baseline = observation('baseline', 5);
+    const original = observation('original', 8, { measuredAt: '2026-09-04T10:00:00Z' });
+    const first = observation('first', 9, {
+      correctsObservationId: 'original',
+      measuredAt: '2026-09-15T10:00:00Z',
+    });
+    const second = observation('second', 10, {
+      correctsObservationId: 'first',
+      measuredAt: '2026-09-18T10:00:00Z',
+    });
+    const later = observation('later', 7, { measuredAt: '2026-09-10T10:00:00Z' });
+    const reversed = evaluateShift(baseShift, cycle, [second, later, first, original, baseline]);
+    expect(reversed.latest?.observationId).toBe('later');
+    expect(reversed.personalBest?.canonicalValue).toBe(10);
+    expect(reversed).toEqual(
+      evaluateShift(baseShift, cycle, [baseline, original, first, second, later]),
+    );
+
+    const competing = observation('competing', 11, { correctsObservationId: 'original' });
+    const ambiguous = evaluateShift(baseShift, cycle, [baseline, original, first, competing]);
+    expect(ambiguous.latest?.canonicalValue).toBe(8);
+    expect(ambiguous.excludedObservationIds).toEqual(
+      expect.arrayContaining(['first', 'competing']),
+    );
+    const dangling = observation('dangling', 20, { correctsObservationId: 'missing' });
+    expect(evaluateShift(baseShift, cycle, [baseline, dangling]).latest?.canonicalValue).toBe(5);
+  });
   it('allows a closed block without conflating review with target attainment', () => {
     const result = evaluateShift(
       { ...baseShift, reviewState: 'completed', nextChoice: 'maintain' },

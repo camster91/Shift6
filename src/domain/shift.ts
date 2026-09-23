@@ -201,25 +201,60 @@ export function evaluateShift(
     if (value && !normalized.has(observation.id)) normalized.set(observation.id, value);
     else excludedObservationIds.push(observation.id);
   }
+  const corrections = new Map<EntityId, EntityId>();
+  const declaredCorrections = new Set<EntityId>();
+  const children = new Map<EntityId, EntityId[]>();
+  for (const observation of observations) {
+    if (observation.shiftId !== shift.id || !observation.correctsObservationId) continue;
+    declaredCorrections.add(observation.id);
+    if (!normalized.has(observation.id) || !normalized.has(observation.correctsObservationId)) {
+      if (normalized.has(observation.id)) excludedObservationIds.push(observation.id);
+      continue;
+    }
+    corrections.set(observation.id, observation.correctsObservationId);
+    children.set(observation.correctsObservationId, [
+      ...(children.get(observation.correctsObservationId) ?? []),
+      observation.id,
+    ]);
+  }
+  const resolved = new Map<EntityId, { date: ISODateString; depth: number } | null>();
+  const resolving = new Set<EntityId>();
+  const resolve = (id: EntityId): { date: ISODateString; depth: number } | null => {
+    if (resolved.has(id)) return resolved.get(id)!;
+    if (resolving.has(id)) return null;
+    const value = normalized.get(id);
+    if (!value) return null;
+    const parent = corrections.get(id);
+    if (!parent) return { date: value.measuredAt, depth: 0 };
+    if (children.get(parent)?.length !== 1) return null;
+    resolving.add(id);
+    const ancestor = resolve(parent);
+    resolving.delete(id);
+    const result = ancestor ? { date: ancestor.date, depth: ancestor.depth + 1 } : null;
+    resolved.set(id, result);
+    return result;
+  };
   const superseded = new Set<EntityId>();
   const amendmentByOriginal = new Map<EntityId, EntityId>();
-  for (const observation of observations) {
-    if (
-      observation.shiftId !== shift.id ||
-      !observation.correctsObservationId ||
-      !normalized.has(observation.id) ||
-      !normalized.has(observation.correctsObservationId)
-    )
+  for (const [id, parent] of [...corrections].sort(
+    ([a], [b]) => (resolve(a)?.depth ?? Infinity) - (resolve(b)?.depth ?? Infinity),
+  )) {
+    const effective = resolve(id);
+    if (!effective) {
+      excludedObservationIds.push(id);
       continue;
-    // A later correction changes the recorded value, not when the effort occurred.
-    normalized.set(observation.id, {
-      ...normalized.get(observation.id)!,
-      measuredAt: normalized.get(observation.correctsObservationId)!.measuredAt,
-    });
-    superseded.add(observation.correctsObservationId);
-    amendmentByOriginal.set(observation.correctsObservationId, observation.id);
+    }
+    // A correction changes the value at the original effort date, regardless of input order.
+    normalized.set(id, { ...normalized.get(id)!, measuredAt: effective.date });
+    superseded.add(parent);
+    amendmentByOriginal.set(parent, id);
   }
-  for (const [id, value] of normalized) if (!superseded.has(id)) valid.push(value);
+  for (const [id, value] of normalized)
+    if (
+      !superseded.has(id) &&
+      (!declaredCorrections.has(id) || (corrections.has(id) && resolve(id)))
+    )
+      valid.push(value);
   valid.sort(
     (a, b) =>
       a.measuredAt.localeCompare(b.measuredAt) || a.observationId.localeCompare(b.observationId),

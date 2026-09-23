@@ -14,6 +14,8 @@ Protocols are immutable comparison keys: stable ID/version, metric, exercise, va
 
 The pure evaluator rejects non-finite/negative values, invalid units and incompatible context without altering the input. It normalizes compatible lb/kg, minutes/seconds and km/m/metres/miles for comparison, retaining original entry. Zero can be a valid measured baseline; an unavailable or deferred baseline is separately represented. For zero baseline, show absolute change only. Last measured value/date, personal best/date and any future estimate are separate. Target attainment uses the latest comparable observation; a stale best cannot imply current ability. An already-met baseline is a separate flag, so a later lower result cannot masquerade as current attainment.
 
+Correction chains resolve to the original effort date regardless of input order. A correction with a missing parent, a cycle, or competing amendments to one record is excluded from the measured series until the conflict is reviewed; the original valid value remains visible for a competing branch. Persistence must preserve a separate time when each amendment was entered and must not silently pick a winner.
+
 ## Pending integration
 
 1. #309 selects exact protocols, target predicates, test/return safety rules and human reviewer evidence for three templates. No universal fitness threshold is invented here.

@@ -2,6 +2,7 @@ import type { ISODateString } from './types';
 
 export interface ProgramContentReviewEvidence {
   programId: string;
+  programVersionId: string;
   reviewedAt: ISODateString;
   reviewReference: string;
 }

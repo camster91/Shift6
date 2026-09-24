@@ -18,6 +18,7 @@ function reviewedExercises(): Exercise[] {
 function reviewEvidence(): ProgramContentReviewEvidence[] {
   return programLibrary.map((entry) => ({
     programId: entry.program.id,
+    programVersionId: entry.version!.id,
     reviewedAt,
     reviewReference: `content-review/${entry.program.slug}`,
   }));
@@ -73,6 +74,16 @@ describe('launch program catalogue readiness', () => {
     expect(report.readyForLaunch).toBe(false);
   });
 
+  it('does not carry a fitness review forward to a new immutable program version', () => {
+    const staleReviews = reviewEvidence().map((review, index) =>
+      index === 0 ? { ...review, programVersionId: 'previous-version' } : review,
+    );
+    const report = assessLaunchProgramCatalogue(programLibrary, reviewedExercises(), staleReviews);
+    expect(report.contentReviewedCount).toBe(LAUNCH_PROGRAM_TARGET - 1);
+    expect(report.publicationReadyCount).toBe(LAUNCH_PROGRAM_TARGET - 1);
+    expect(report.readyForLaunch).toBe(false);
+  });
+
   it('blocks stale or duplicate program-review evidence', () => {
     const reviews = reviewEvidence();
     const report = assessLaunchProgramCatalogue(programLibrary, reviewedExercises(), [
@@ -80,6 +91,7 @@ describe('launch program catalogue readiness', () => {
       reviews[0]!,
       {
         programId: 'program-retired-example',
+        programVersionId: 'old-version',
         reviewedAt,
         reviewReference: 'content-review/retired-example',
       },

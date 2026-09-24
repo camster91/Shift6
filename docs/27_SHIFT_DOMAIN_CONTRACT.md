@@ -1,6 +1,6 @@
 # SHIFT6 Shift and measurement contract — #306 working slice
 
-This is the first #306 implementation slice, stacked on #305. It defines pure, deterministic domain types and comparisons. It does **not** migrate user data, enable a Shift in the release manifest, or complete #306. #309 must approve exact pilot protocols and #315 must settle calendar/re-entry transitions before persistence or UI integration.
+This is the first #306 implementation slice, following merged #305. It defines pure, deterministic domain types and comparisons. It does **not** migrate user data, enable a Shift in the release manifest, or complete #306. #309 must approve exact pilot protocols and #315 must settle calendar/re-entry transitions before persistence or UI integration.
 
 ## Ownership and lifecycle
 
@@ -15,6 +15,8 @@ Protocols are immutable comparison keys: stable ID/version, metric, exercise, va
 The pure evaluator rejects non-finite/negative values, invalid units and incompatible context without altering the input. It normalizes compatible lb/kg, minutes/seconds and km/m/metres/miles for comparison, retaining original entry. Zero can be a valid measured baseline; an unavailable or deferred baseline is separately represented. For zero baseline, show absolute change only. Last measured value/date, personal best/date and any future estimate are separate. Target attainment uses the latest comparable observation; a stale best cannot imply current ability. An already-met baseline is a separate flag, so a later lower result cannot masquerade as current attainment.
 
 Correction chains resolve to the original effort date regardless of input order. A correction with a missing parent, a cycle, or competing amendments to one record is excluded from the measured series until the conflict is reviewed; the original valid value remains visible for a competing branch. Persistence must preserve a separate time when each amendment was entered and must not silently pick a winner.
+
+For completion-based measurements, true and false are observations rather than session counts. A later false after true is decreased current performance even when the historical best remains true; no numeric or percentage change is calculated. This is a comparison result, not a judgment about the user's choice to pause or skip testing.
 
 ## Pending integration
 

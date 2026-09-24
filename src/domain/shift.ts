@@ -310,7 +310,13 @@ export function evaluateShift(
             : 'decreased';
       if (baseline.canonicalValue !== 0)
         percentChange = (absoluteChange / Math.abs(baseline.canonicalValue)) * 100;
-    } else change = latest.canonicalValue === baseline.canonicalValue ? 'unchanged' : 'improved';
+    } else
+      change =
+        latest.canonicalValue === baseline.canonicalValue
+          ? 'unchanged'
+          : better(shift.protocol, latest.canonicalValue, baseline.canonicalValue)
+            ? 'improved'
+            : 'decreased';
   }
   return {
     cycleWeek: cycle.currentWeek,

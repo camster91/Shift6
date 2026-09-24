@@ -113,6 +113,68 @@ describe('Shift outcome integrity', () => {
     expect(result.change).toBe('improved');
     expect(result.attainment).toBe('not-met');
   });
+  it('keeps completion regression, historical best and current attainment distinct', () => {
+    const protocol: MeasurementProtocol = {
+      ...repProtocol,
+      id: 'completion',
+      metric: 'completion',
+      canonicalUnit: 'completed',
+      direction: 'complete',
+    };
+    const shift: Shift = { ...baseShift, protocol, target: true };
+    const result = evaluateShift(shift, cycle, [
+      observation('baseline', true, { protocolId: 'completion', unit: 'completed' }),
+      observation('latest', false, {
+        protocolId: 'completion',
+        unit: 'completed',
+        measuredAt: '2026-09-15T10:00:00Z',
+      }),
+    ]);
+    expect(result.change).toBe('decreased');
+    expect(result.attainment).toBe('not-met');
+    expect(result.baselineAlreadyMet).toBe(true);
+    expect(result.personalBest?.canonicalValue).toBe(true);
+    expect(result.absoluteChange).toBeNull();
+    expect(result.percentChange).toBeNull();
+    expect(
+      normalizeObservation(protocol, observation('invalid', 1, { protocolId: 'completion' })),
+    ).toBeNull();
+  });
+  it('compares hold duration and distance only with compatible units', () => {
+    const hold: MeasurementProtocol = {
+      ...repProtocol,
+      id: 'hold',
+      metric: 'hold-duration',
+      canonicalUnit: 'seconds',
+      direction: 'higher',
+    };
+    const distance: MeasurementProtocol = {
+      ...repProtocol,
+      id: 'distance',
+      metric: 'distance',
+      canonicalUnit: 'meters',
+      direction: 'higher',
+    };
+    expect(
+      normalizeObservation(hold, observation('hold', 1.5, { protocolId: 'hold', unit: 'minutes' }))
+        ?.canonicalValue,
+    ).toBe(90);
+    expect(
+      normalizeObservation(
+        distance,
+        observation('distance', 1, { protocolId: 'distance', unit: 'miles' }),
+      )?.canonicalValue,
+    ).toBeCloseTo(1609.344);
+    expect(
+      normalizeObservation(hold, observation('wrong', 1, { protocolId: 'hold', unit: 'km' })),
+    ).toBeNull();
+    expect(
+      normalizeObservation(
+        distance,
+        observation('wrong', 1, { protocolId: 'distance', unit: 'seconds' }),
+      ),
+    ).toBeNull();
+  });
   it('requires comparable protocol, variant and rep count through versioned identity', () => {
     const protocol: MeasurementProtocol = {
       ...repProtocol,

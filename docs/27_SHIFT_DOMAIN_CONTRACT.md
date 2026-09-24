@@ -22,6 +22,6 @@ For completion-based measurements, true and false are observations rather than s
 
 1. #309 selects exact protocols, target predicates, test/return safety rules and human reviewer evidence for three templates. No universal fitness threshold is invented here.
 2. #315 owns calendar projection, pause/resume/repeat and review dates. Do not put a competing week clock in `Shift`.
-3. Add a versioned SQLite migration and atomic owner-scoped repositories for Shift metadata, immutable observations and amendment history, with one-primary-active enforcement, before UI consumption.
+3. Use `28_SHIFT_PERSISTENCE_SYNC_CONTRACT.md` to review the versioned SQLite migration and atomic owner-scoped repositories for Shift metadata, immutable observations and amendment history, with one-primary-active enforcement, before UI consumption.
 4. Extend export/delete, guest adoption, outbox idempotency, sync conflict and restore contracts and tests with those records. Do not publish a partial persistence implementation.
 5. #307/#308/#312 consume the resulting projections with accessible missing/non-comparable states; #281 supplies exact-device evidence.

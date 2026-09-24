@@ -1,4 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 
 import type { BackendClient } from '../services/contracts';
 import { flushSyncOutbox, getPendingSyncIssues, getPendingSyncMutations } from './syncRepository';
@@ -47,6 +48,24 @@ describe('syncRepository', () => {
     ]);
   });
 
+  it('never sends an unrecognised Shift row to a server that could acknowledge it', async () => {
+    const database = {
+      getAllAsync: async () => [
+        pendingRow,
+        { ...pendingRow, id: 'outbox-shift-1', entity_type: 'shift' },
+      ],
+    } as unknown as SQLiteDatabase;
+    const sync = jest.fn(async () => ({
+      acknowledgedMutationIds: ['outbox-shift-1'],
+      rejectedMutationIds: [],
+    }));
+
+    await expect(flushSyncOutbox(database, backendClient(sync))).rejects.toThrow(
+      'Local sync entity shift is not supported',
+    );
+    expect(sync).not.toHaveBeenCalled();
+  });
+
   it('reads reviewable sync issues without exposing mutation payloads', async () => {
     const database = {
       getAllAsync: async () => [issueRow],
@@ -63,6 +82,64 @@ describe('syncRepository', () => {
         kind: 'conflict',
       },
     ]);
+  });
+
+  it('shows an unsupported Shift row as a review issue before any sync attempt', async () => {
+    const sqlite = new DatabaseSync(':memory:');
+    try {
+      sqlite.exec(`CREATE TABLE sync_outbox (
+        id TEXT PRIMARY KEY NOT NULL, idempotency_key TEXT NOT NULL UNIQUE,
+        entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL, attempt_count INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT
+      );`);
+      const insert = sqlite.prepare(
+        `INSERT INTO sync_outbox
+          (id, idempotency_key, entity_type, entity_id, payload_json, created_at, last_error)
+         VALUES (?, ?, ?, ?, ?, ?, ?);`,
+      );
+      insert.run('known', 'known-key', 'completed-set', 'set-1', '{"private":"known"}', '1', null);
+      insert.run('shift', 'shift-key', 'shift', 'shift-1', '{"private":"shift"}', '2', null);
+      insert.run(
+        'failed',
+        'failed-key',
+        'training-cycle',
+        'cycle-1',
+        '{}',
+        '3',
+        'Sync request failed.',
+      );
+      const database = {
+        getAllAsync: async (sql: string, ...params: unknown[]) =>
+          sqlite.prepare(sql).all(...(params as SQLInputValue[])),
+      } as unknown as SQLiteDatabase;
+
+      const issues = await getPendingSyncIssues(database);
+      expect(issues).toEqual([
+        {
+          id: 'shift',
+          entityType: 'shift',
+          entityId: 'shift-1',
+          createdAt: '2',
+          attemptCount: 0,
+          lastError:
+            'Local sync entity shift is not supported by this build. Update the app before retrying.',
+          kind: 'rejected',
+        },
+        {
+          id: 'failed',
+          entityType: 'training-cycle',
+          entityId: 'cycle-1',
+          createdAt: '3',
+          attemptCount: 0,
+          lastError: 'Sync request failed.',
+          kind: 'failed',
+        },
+      ]);
+      expect(JSON.stringify(issues)).not.toContain('private');
+    } finally {
+      sqlite.close();
+    }
   });
 
   it('deletes only acknowledged mutations and retains rejected rows with an error', async () => {

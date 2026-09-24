@@ -6,6 +6,7 @@ import type {
   SyncMutation,
   SyncResult,
 } from './contracts';
+import { isSupportedSyncEntityType } from './contracts';
 import { apiProtocolCompatibilityError, apiProtocolRequestHeaders } from './apiProtocol';
 
 export type BackendAvailability = 'unconfigured' | 'adapter-pending' | 'available';
@@ -193,6 +194,9 @@ function validateSyncMutationBatch(mutations: readonly SyncMutation[]): Set<stri
   const idempotencyKeys = new Set<string>();
 
   mutations.forEach((mutation, index) => {
+    if (!isSupportedSyncEntityType(mutation.entityType)) {
+      throw new BackendProtocolError(`Sync mutation ${index + 1} has an unsupported entity type.`);
+    }
     const id = mutation.id.trim();
     const idempotencyKey = mutation.idempotencyKey.trim();
     if (!id) {

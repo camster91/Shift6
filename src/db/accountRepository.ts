@@ -68,6 +68,8 @@ export async function migrateLocalUserToAccount(
        UNION ALL
        SELECT 1 FROM training_cycles WHERE user_id = ?
        UNION ALL
+       SELECT 1 FROM shifts WHERE user_id = ?
+       UNION ALL
        SELECT 1 FROM coach_proposals WHERE user_id = ?
        UNION ALL
        SELECT 1 FROM health_summaries WHERE user_id = ?
@@ -98,10 +100,23 @@ export async function migrateLocalUserToAccount(
       destinationUserId,
       destinationUserId,
       destinationUserId,
+      destinationUserId,
       `profile:${destinationUserId}`,
     );
     if (destinationConflict) {
       throw new Error('The account already has local data; explicit merge is required.');
+    }
+
+    // This build has no Shift sync payload/ID contract. A row left by a newer
+    // build could belong to either local identity, so adoption must not move
+    // the Shift while stranding its unsent owner identity in the outbox.
+    const unsupportedShiftMutation = await database.getFirstAsync<{ id: string }>(
+      `SELECT id FROM sync_outbox
+        WHERE entity_type IN ('shift', 'shift-protocol', 'shift-observation', 'shift-goal-revision')
+        LIMIT 1;`,
+    );
+    if (unsupportedShiftMutation) {
+      throw new Error('Shift sync mutations require a compatible build before account adoption.');
     }
 
     const sourceProfile = await database.getFirstAsync<UserProfileRow>(
@@ -111,6 +126,10 @@ export async function migrateLocalUserToAccount(
          FROM user_profiles
         WHERE id = ?
         LIMIT 1;`,
+      sourceUserId,
+    );
+    const sourceShift = await database.getFirstAsync<{ id: string }>(
+      'SELECT id FROM shifts WHERE user_id = ? LIMIT 1;',
       sourceUserId,
     );
     const mutations = await database.getAllAsync<SyncMutationRow>(
@@ -173,6 +192,9 @@ export async function migrateLocalUserToAccount(
       sourceUserId,
     );
 
+    if (sourceShift && !sourceProfile) {
+      throw new Error('Local Shift ownership has no source profile; adoption cannot continue.');
+    }
     if (!sourceProfile && mutations.length === 0) return;
 
     for (const mutation of mutations) {
@@ -232,6 +254,13 @@ export async function migrateLocalUserToAccount(
     );
     await database.runAsync(
       'UPDATE training_cycles SET user_id = ? WHERE user_id = ?;',
+      destinationUserId,
+      sourceUserId,
+    );
+    // Cycle ownership cascades through the composite Shift foreign key. This
+    // also covers an otherwise valid Shift whose cycle owner did not change.
+    await database.runAsync(
+      'UPDATE shifts SET user_id = ? WHERE user_id = ?;',
       destinationUserId,
       sourceUserId,
     );

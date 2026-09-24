@@ -1,0 +1,399 @@
+# SHIFT6 — Roadmap & Engineering Epics
+
+> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+
+The phases below are historical broad roadmap notes. Current sequence: #305 → #306 → #309/#315 → #307 → #308 → #310 → #311 → #312 → #313 → #314 → #316. #319 visual work runs alongside this sequence. #270–#281 remain applicable where compatible, with safety/reliability unchanged. See [capability map](25_GOAL_FIRST_RELEASE_CONTRACT.md).
+
+
+## Delivery philosophy
+
+Build the smallest complete vertical slice first: onboarding → program → workout → progress → cycle review. Do not build 300 exercise media assets before the logging engine works.
+
+## Phase 0 — Foundation
+
+Epic 1: Product/design system
+
+- Figma token system
+- logo/app icon
+- navigation
+- core components
+- accessibility baselines
+
+Epic 2: Repository/app bootstrap
+
+- Expo TypeScript app
+- environments
+- lint/typecheck/tests
+- CI
+- routing
+- local database
+- backend skeleton
+
+Epic 3: Auth/profile
+
+- guest mode
+- account conversion
+- Apple/Google/email auth
+- units/goals/equipment/schedule
+
+Exit gate: app boots on representative iOS/Android devices, CI green, design tokens implemented.
+
+## Phase 1 — Workout core
+
+Epic 4: Exercise catalogue
+
+- schema
+- search/filter
+- seed 50 foundational exercises first
+- detail screen
+- media placeholders
+
+Epic 5: Program model
+
+- templates
+- custom program builder
+- workout builder
+- versioning
+
+Epic 6: Active workout
+
+- offline set logging
+- timer
+- notes
+- substitutions
+- pause/resume
+- summary
+
+Exit gate: complete Barbell 30 entirely offline and retain data after app restart.
+
+## Phase 2 — SHIFT6 differentiation
+
+Epic 7: Six-week engine
+
+- cycle creation
+- progression strategies
+- cycle dashboard
+- week transitions
+- review facts
+
+Epic 8: Progress
+
+- strength charts
+- records
+- consistency
+- cardio minutes
+- cycle comparison
+
+Epic 9: AI coach
+
+- provider-agnostic gateway
+- structured context
+- chat
+- weekly review
+- proposal diff/approval
+- safety evaluation suite
+
+Exit gate: user can complete a full simulated six-week cycle and approve/reject coach changes.
+
+## Phase 3 — Breadth
+
+Epic 10: 20 curated programs
+
+- content review
+- equipment filters
+- recommendation logic
+
+Epic 11: 300+ exercise catalogue
+
+- exercise QA
+- substitution graph
+- media production
+
+Epic 12: Cardio/mobility/power/balance
+
+- session types
+- interval builder
+- mobility routines
+
+Epic 13: Health integrations
+
+- Apple Health
+- Health Connect
+- permissions
+- import/dedup
+- health trend UI
+
+## Phase 4 — Public-release hardening
+
+Epic 14: Notifications
+Epic 15: Data export/delete/privacy
+Epic 16: Analytics/crash/performance
+Epic 17: Accessibility audit
+Epic 18: Security review
+Epic 19: Store assets/privacy disclosures
+Epic 20: Release pipeline and staged rollout
+
+## Post-launch
+
+- Apple Watch
+- Wear OS
+- localization
+- trainer/client tools
+- richer nutrition/protein/hydration
+- voice coach
+- additional device integrations
+- community only after privacy/abuse design
+
+## Issue-writing rule
+
+Every implementation issue should include:
+
+- objective;
+- user value;
+- source doc links;
+- in scope;
+- out of scope;
+- technical notes;
+- data changes;
+- analytics events;
+- accessibility requirements;
+- acceptance criteria;
+- mobile QA (small iPhone, large iPhone, representative Android small/large, tablet if affected);
+- offline behaviour;
+- error states;
+- security/privacy notes;
+- rollback/migration considerations;
+- screenshots/Figma links once available.
+
+## Recommended build order
+
+1. Design tokens + component primitives
+2. Local DB + domain models
+3. Onboarding/equipment
+4. Exercise catalogue 50-core seed
+5. Program templates
+6. Active workout offline
+7. Barbell 30
+8. Program builder
+9. Cycle engine
+10. Progress
+11. Coach
+12. More programs/exercises
+13. Health integrations
+14. release hardening
+
+## First foundation execution sequence — #271 + #272
+
+The reset repository has no application code, so the first two epics are delivered as small, independently reviewable slices:
+
+1. **Repository and runtime bootstrap (#272):** Expo SDK 57 project metadata, TypeScript strictness, public environment example, dependency alignment, and a quality CI workflow.
+2. **Design-token baseline (#271):** implementation tokens for colour, typography, spacing, radius, elevation, motion, icons, touch targets, and semantic states; keep the Figma variable names aligned with the code vocabulary.
+3. **Core primitives (#271):** `Screen`, `Text`, `Button`, `IconButton`, `Card`, `ProgramCard`, `WorkoutCard`, `Chip`, `ProgressIndicator`, `SixWeekIndicator`, `BottomNavigation`, `EmptyState`, `ErrorState`, `OfflineBanner`, and `LoadingSkeleton`, including accessible labels and non-colour state cues.
+4. **Domain and local durability boundary (#272):** stable typed entities, Barbell 30 fixture data, a versioned SQLite migration, and an atomic completed-set/outbox repository. Do not connect UI success states until the active workout uses this repository.
+5. **Navigation and real fixture surfaces (#271/#272):** Home, Programs, Coach, Progress, and Profile tabs; a six-week cycle motif; a typed Barbell 30 Home card; and an honest active-workout route that makes the local durability boundary visible.
+6. **Verification gate:** lint, format, typecheck, unit/component tests, Expo doctor, web bundle and accessibility smoke tests; then native simulator/device boot, signed preview build, and native SQLite restart/offline tests before calling the foundation device-verified.
+
+Current branch status: steps 1–5 are implemented; #271 now has token-driven primitives plus a semantic icon registry and original SVG asset handoff boundary, while Figma approval and final exports remain open; #272 now has a vendor-neutral authenticated HTTP sync transport, explicit unavailable behavior and response validation, an injected auth/session contract, and a service composition seam, but no backend/auth provider is connected; the first #273 onboarding increment is implemented with deterministic recommendations and a native profile/equipment persistence boundary, and the Programs surface now ranks the 20-program metadata catalogue from those saved preferences with real schedule/duration filters; the first #274 increment adds a 23-item equipment taxonomy, 58 draft exercise records, searchable catalogue behavior, deterministic substitutions, a read-only exercise detail route, a content-readiness gate that separates runnable drafts from publication-approved content, runtime resolution of user-owned custom exercise names/tracking types in active workouts, and a safe active-workout substitution path before first-set completion; #275 now carries metadata for all 20 planned launch programs while keeping only Barbell 30 startable, plus an immutable custom-copy/custom-exercise builder, local version snapshots, a private-copy cycle start path, accessible exercise reorder/remove/set-count controls, deterministic substitution choices, tracking-aware target configuration, and optional empty-workout creation with a starter movement in the private builder; the first #277 deterministic progression increment is implemented and unit-tested, with next-session targets now derived from the latest completed local workout and applied to routed Barbell 30 sessions; the first #276 active-workout path now persists unfinished inputs, resumes the latest in-progress session across route/app reopen, creates a distinct session for a repeated completed workout, supports in-place set correction through the same idempotent outbox, routes completion to a persisted check-in summary, observes runtime offline state without blocking local logging, excludes optional sessions from cycle advancement, exposes two optional Barbell 30 cardio sessions, and renders tracking-aware time/distance inputs; the first cycle-start increment now persists a program-version snapshot and links Home/workout reads to the active cycle; Home now also resolves the persisted profile greeting, current weekday workout, and completed-aware weekly schedule from the active version snapshot; the first progress increment now derives cycle facts from local session/set records, the next progress increment now derives per-exercise strength history, deterministic personal records, and next-session trend context from canonical completed-set identities, cycle-review aggregation now includes persisted effort/discomfort check-ins and record IDs, Review now exposes those facts plus explicit next-cycle choices, and Progress now compares aggregate facts with the immediately prior local cycle when available; cycle completion now advances from persisted weekly counts and exposes a deterministic review boundary; the sync outbox now has an explicit idempotent flush contract behind `BackendClient`, plus a connectivity-aware coordinator that leaves offline mutations queued; #278 now has a provider-neutral safety classifier, proposal validator, scoped local proposal store, an atomic user-approved private-revision application path, and a Coach surface that reads pending proposals and records explicit decisions; #279/#280 now have a provider-neutral optional health contract with an explicit unavailable adapter, a user-scoped local export/delete repository surfaced from Profile, and privacy-safe analytics filtering. CI now runs Expo Doctor and web export, and the cumulative repository gate is green on PR #301. Step 6 is partially verified on the web/tooling surface. Native device verification and the signed preview build still require full Xcode plus Java/Android tooling or EAS credentials and must not be inferred from bundle export or Expo prebuild.
+
+The onboarding increment intentionally stops at saving preferences and returning to the Programs surface. Native Home now routes a fresh local install into that onboarding flow, while the web preview remains ungated because it has no durable database. Profile edits now queue a stable, replaceable profile snapshot in the local-first outbox in the same transaction as the local profile/equipment write. The increment does not claim account conversion, health permission requests, or a fully populated program library. Cycle creation is now covered for the Barbell 30 fixture; multi-program cycle selection and a populated library remain later boundaries. Starting the curated template now creates a private snapshot with a unique program/version namespace; builder visits receive unique private program/version IDs so completed-cycle snapshots cannot be overwritten by a later edit, active-workout substitutions create a new revision while preserving unfinished-session continuity, the builder can add searched foundational catalogue movements with tracking-aware default targets and persisted equipment/unit preferences, active workout substitution ranking also uses that profile, Programs now exposes a guarded blank six-week builder path, Review can launch a private adjustment from the completed cycle's own program snapshot with a blocking retry state if that snapshot is unavailable, and the builder now edits workout metadata, shared rest, bounded exercise notes, typed workout sections, and validated superset/circuit groups through immutable domain operations. Active workouts now also show an equipment/readiness preflight and persist its optional context locally.
+
+The Exercise Library and detail route now include persisted user-owned custom movements alongside the foundational catalogue; custom records remain private and explicitly unreviewed until separate content and technique approval.
+
+The app shell now mounts an authenticated-only sync runtime that retries the local outbox on foreground/resume/reconnect when a real auth session is injected; the default guest configuration intentionally skips backend work. Native background scheduling, auth/token refresh, conflict resolution, and device-level reconnect proof remain open #272/release gates.
+
+The auth boundary now includes Expo SecureStore-backed session persistence with malformed/expired-session cleanup and explicit sign-out. No provider-specific sign-in flow, credential, or backend account conversion is claimed yet.
+
+The local account-conversion seam now supports transactional guest-data adoption into an empty authenticated identity and rewrites queued user payloads without changing workout/session/set IDs. Provider-specific sign-in, destination conflict UX, backend account reconciliation, and remote deletion remain open.
+
+Profile now exposes runtime offline/syncing/partial/failure status using the shared accessible banner, while guest and web-preview states remain explicit and non-misleading.
+
+The active workout now carries builder-authored section, superset/circuit, note, and custom-exercise cues into the logging surface without changing completed-set identity.
+
+Active workout drafts now flush on inactive/background app-state transitions as well as during debounced editing, improving pause/reopen durability without adding a network dependency.
+
+Readiness selections from workout preflight now feed the deterministic next-session target calculation: limited/rest context holds progression and ready context uses the normal rule, with all plan changes still requiring the existing user-approved boundaries.
+
+Progress movement history now includes deterministic duration and distance points and personal records, with the Progress selector and accessible chart presenting cardio/timed metrics alongside strength history. The underlying values remain local-first and version-scoped; no estimated strength value is generated for a timed or distance movement.
+
+Progress history now surfaces the three most recent typed personal-record events alongside the chart, keeping the Records surface grounded in the existing deterministic domain output.
+
+The cycle review now carries persisted workout readiness labels into deterministic facts and presents their counts as transparent training context. It does not calculate a medical readiness score or let those labels bypass the existing progression rules.
+
+Health Connections now has a local trend read surface for the latest persisted daily summaries, with explicit empty, unavailable, and web-preview states. Native provider adapters and an explicit local import action now exist behind `HealthProvider`; native device verification, revocation behavior, and release declarations remain gated.
+
+Coach now has an offline deterministic explainer for workout, progress, cycle, shortening, and substitution prompts. It uses bounded structured facts and the existing safety classifier; it does not call a model or mutate plan data. Provider-backed Coach responses and proposal generation remain open #278 work.
+
+Progress and Review now show deterministic completed training days and active cycle weeks from local session timestamps as consistency context. No punitive streak score is introduced.
+
+Active workout set rows now expose target-driven RPE/RIR inputs and reject out-of-range values locally before persistence. This keeps effort-aware progression grounded in the user's recorded set rather than an omitted or unvalidated field.
+
+Notification settings now have a user-scoped local preference row with opt-in-safe defaults, granular controls, privacy export/delete coverage, and guest-account ownership transfer. A native `expo-notifications` permission adapter is wired behind a provider boundary; the web preview stays explicit about unavailable delivery. Remote push credentials and background delivery remain open #280/#281 work.
+
+Onboarding now stores a coarse preferred training window (morning, afternoon, or evening) in the local profile and sync payload, with existing profiles migrating to a morning default. Profile surfaces the choice for transparency. Exact reminder scheduling still requires an explicit schedule and native delivery verification.
+
+Local workout reminders now reconcile a bounded seven-day one-shot schedule from the active program snapshot and preferred training window after explicit device permission. Stable SHIFT6-owned identifiers are cancelled before replacement, notification payloads carry a validated workout deep-link, and cold-start or foreground taps route back to the workout surface without mutating plan data. Remote push, review scheduling, exact alarm editing, background delivery guarantees, and native device verification remain open #280/#281 work.
+
+Rest-timer cues now use the same permission-gated local adapter after a set is durably persisted. The active session replaces one stable cue as the user progresses and cancels it on pause/unmount, so notification delivery remains optional and cannot block offline workout logging. Review/cycle delivery, remote push, exact alarm editing, background guarantees, and native verification remain open.
+
+The health boundary now validates and normalizes provider summaries in the domain layer, deduplicates by source plus stable sample ID, and exposes explicit UTC-day trend aggregation rules for additive, average, and latest-value metrics. Native permission adapters, local health persistence, and disclosure UI now sit behind the provider/repository boundaries; device verification, revocation behavior, remote policy, and release declarations remain later #279/#280 gates.
+
+Normalized health summaries now have a local SQLite repository with user-scoped upserts, filtered reads, local export/delete coverage, and guest-account ownership transfer. They remain outside the sync outbox until a least-privilege remote health policy is approved.
+
+Profile now links to a health-settings route that discloses the optional data types and exposes an explicit read-only import action. Native adapters remain unavailable in web preview, while last-sync/disconnect controls, revocation behavior, and device verification remain release-gated.
+
+Authenticated sync triggers now use a single-flight runtime guard so foreground, reconnect, and manual attempts cannot overlap; retries remain available after the active attempt settles.
+
+Coach approval now revalidates the persisted active-cycle/program-version pointer inside its local transaction, preventing a stale screen from applying a proposal after another plan revision has become active.
+
+Cycle advancement now uses distinct required workout identities from persisted complete sessions, so duplicate attempts cannot advance a week before its required schedule is represented.
+
+CI now runs on feature-branch pushes in addition to pull requests, so the foundation gate is available before a branch is opened for review.
+
+The dedicated cycle dashboard now makes the six-week signature visible as a real route, using the persisted active cycle/version snapshot, current-week completion, schedule categories, and program-defined Week 6 meaning. It links back into workout, progress, and review flows without duplicating progression calculations. A first calendar/rescheduling surface now adds cycle-scoped local date overrides and feeds the current-week schedule back into Home and the cycle dashboard; multi-workout date planning and drag interactions remain later surfaces.
+
+The #271 asset handoff now has a CI-enforced manifest validator for review metadata, safe paths, implementation references, and basic SVG integrity. This protects the Figma-first boundary without presenting exploratory or fallback assets as approved production exports.
+
+The provider-backed Coach boundary now has a tested HTTP adapter with bounded structured context, injected authentication, response validation, deterministic safety rerouting, and local fallback when no backend/provider is available. It does not claim a connected model provider, backend deployment, account UI, or autonomous plan changes.
+
+The first native health adapter increment is now implemented for iOS HealthKit and Android Health Connect behind the same provider contract. The import service reads only granted types, writes normalized summaries to local SQLite, never adds health records to the workout sync outbox, and keeps web/unavailable states explicit. Configuration is read-only and opt-in: HealthKit update/background access is disabled and Android declares only the six matching read permissions. A custom native development build, device permission/revocation verification, health privacy review, and store health-data declarations are still required before release claims.
+
+The cycle-review increment now persists optional user reflection locally (overall rating, next-block focus, note, and explicit repeat/adjust/change-program choice) with a replaceable `cycle-review` outbox mutation. Export, delete, and guest-account adoption cover the record. It does not change deterministic progression or apply a Coach proposal; native migration/restart proof and the remaining progress/change-next-cycle matrix remain open.
+
+Health settings now expose explicit local disconnect and imported-summary removal controls. A
+disconnect updates the profile and replaceable outbox snapshot atomically, stops future SHIFT6
+imports, and explains that platform permission revocation still belongs to Apple Health or Health
+Connect settings. Summary removal is separately confirmed and user-scoped; native revocation,
+remote deletion, and store declarations remain open #279/#280 release gates.
+
+The active workout now provides a bounded session-note field. Notes are persisted on the local
+session record, flushed across pause, backgrounding, and completion, shown in the summary, and kept
+out of analytics. Native restart proof remains part of the broader #276 verification gate.
+
+The analytics increment now exposes an injected no-op-by-default client and instruments the
+documented six-week funnel at onboarding, program start, workout start/completion, Week 2, cycle
+completion, and next-cycle start. It also records health connection and exercise substitution
+events, custom-program creation, and Coach proposal display/approval through a privacy-safe
+allowlist; free-text, coach conversation, raw health samples, email, and location remain excluded.
+A production analytics/crash provider, retention controls, and device-level observability
+verification remain open #272/#280/#281 work.
+
+The sync boundary now distinguishes typed backend conflicts from transient failures. Version,
+ownership, and validation conflicts remain queued, are never auto-merged, and surface through a
+runtime `conflict` state and an accessible Profile banner. Conflict-resolution UX, server-side
+version policy, authenticated backend behavior, and native reconnect proof remain open #272 work.
+
+Cycle Review now exposes all six typed next-block choices. Repeat creates a new private
+program/version namespace from the completed cycle's snapshot; progress and adjust open a private
+source copy; change exercises opens the same copy with explicit context; change program returns to
+the catalogue; and build new opens a blank private builder. The selected action is saved before
+navigation, while automatic cross-cycle progression carryover remains open until its deterministic
+rules are defined.
+
+The cycle engine now has a regression test for the full six-week transition sequence, in addition
+to isolated partial, next-week, and Week 6 completion cases.
+
+The progression boundary now resolves version-owned rule IDs through a typed deterministic
+catalogue. Barbell 30's rule is unit-aware and is consumed by both active workout and Progress
+next-session targets; missing or draft rules use conservative defaults until program-specific
+parameters are reviewed. This is an implementation checkpoint for #277, not a claim that all 20
+launch programs have production-reviewed progression rules.
+
+The #272 sync slice now includes a local review route for outbox failures and backend conflicts.
+It reads issue metadata without sending or displaying mutation payloads, explains the no-auto-merge
+boundary, and provides an explicit retry. Resolution choices remain blocked until server-side
+version policy and a diff contract exist.
+
+Program Detail now consumes an optional executable version from each catalogue entry and uses the
+same copy-on-write cycle-start path for whichever reviewed entry is selected. Barbell 30 remains the
+only startable launch program; the other 19 entries remain metadata-only until their full content
+and safety review are complete.
+
+Profile now provides a dedicated searchable equipment manager. Changes replace the user-scoped
+equipment rows and profile snapshot atomically, remain local-first, and feed the existing program
+recommendation and substitution boundaries. Exact equipment-location metadata and custom equipment
+creation remain later #273/#274 work.
+
+Progress now includes the first transparent training-volume view for #279: complete local sets are
+grouped deterministically by exercise, movement pattern, and primary muscle, with load volume kept
+separate from set counts. The UI labels the primary-muscle totals as approximate because categories
+can overlap, shows an honest empty state before the first completed session, and does not infer load
+volume when load or reps are missing. Detailed trend/charts and broader recovery correlations
+remain later work.
+
+The Progress increment now also covers the first cycle-level cardio view for #279: completed cardio
+session rows are deduplicated by session, summed by cycle week, and rendered with total time,
+optional distance, and an honest empty state. Health-provider data remains outside this manual
+workout progress aggregation, and pace/zones remain later work.
+
+Do not start store submission until data deletion, privacy disclosure, crash monitoring, accessibility audit, and offline workout reliability are complete.
+
+The Coach increment now adds a bounded free-form question surface for #278. Questions are kept out
+of analytics, safety-sensitive prompts are routed deterministically before provider transport, and
+the offline fallback maps common questions to structured local explanations. Provider-backed
+conversation, durable chat history, and proposal generation remain gated by the server contract and
+explicit user approval.
+
+The #274 catalogue increment now exposes the planned difficulty, unilateral/bilateral,
+compound/isolation, and mobility/power/cardio filters in the typed search boundary and Exercise
+Library UI. The 58 foundational records remain explicitly draft pending technique/media review;
+the 300+ reviewed-content target is still open.
+
+The #275/#274 builder increment now captures complete private custom-movement metadata and derives
+tracking-aware starter targets. Custom records remain draft and user-owned; optional media capture,
+technique review, and public sharing are still later gates.
+
+The builder now reloads user-owned custom exercises and searches them alongside foundational
+movements, completing the private reuse path without opening public sharing or catalogue
+publication.
+
+The #276 active-workout increment now supports explicit session shortening after a user logs at
+least one set. A bounded reason is persisted with the local `partial` session, queued for later
+sync, and shown in the summary; partial sessions remain out of required adherence and cycle
+advancement while preserving the logged-set record. The focused repository/migration tests and
+web accessibility smoke path pass. Native restart/offline/device proof remains a release gate.
+
+The same #276 surface now supports skipping an untouched session with a bounded reason. The local
+transaction persists a `skipped` session, queues the mutation through the idempotent outbox, and
+removes the draft without advancing the cycle or counting the session toward adherence. The
+summary retains the decision; native restart/offline/device proof remains a release gate.
+
+The active-workout slice now links barbell users to an editable, unit-aware plate calculator. Its
+pure domain algorithm loads only symmetric plate pairs, never overshoots a target, and makes an
+underloaded result explicit when the local inventory cannot match exactly. It does not change
+workout targets or persisted history.
+
+The first workout-history surface now reads immutable local sessions and completed-set aggregates,
+keeps partial/skipped/offline context visible, and links from Home into a filterable history route.
+It does not introduce a second source of truth for Progress or alter completed records.
+
+The #277/#275 Review → progression-copy path now applies ordinary deterministic target changes from
+the completed cycle to a new private version. Matching uses canonical exercise plus immediate
+source-workout identity; safety/readiness flags and confirmation-requiring strategies hold the
+source target. The builder shows the change list before the user saves or starts the next cycle.
+
+The #276 active-workout increment now reuses the typed builder operations for accessible exercise
+reordering and add-set controls. Changes create a private version revision and update the active
+cycle/session pointer in one local SQLite transaction without rewriting completed sets or the source
+template. Active-session set removal remains deferred until completed-set-aware semantics are
+defined.
+
+Authenticated active-workout writes now also trigger a non-blocking single-flight sync attempt after
+local persistence. Guest and offline sessions remain fully local-first, with their outbox mutations
+waiting for a later authenticated foreground/reconnect retry.
+
+The SQLite bootstrap boundary now presents a retryable local-storage error state when opening or
+migrating the database fails. The app does not imply that workout logging is available until local
+storage is ready, and raw database details are not exposed in the user-facing error.
+
+Active workout now also consumes the shared sync runtime state and shows offline, syncing,
+retry-paused, or conflict feedback without disabling local set logging.
+
+The substitution path now clears unfinished input and target-override state for the replaced
+movement while preserving the stable workout-exercise identity. Completed-set substitution remains
+blocked to protect historical meaning.
+
+The #272 identity increment now routes all account-scoped app surfaces through a shared local-owner
+context. The current guest ID remains the default, and an injected account session adopts guest
+records before SyncRuntime or notifications mount. Adoption uses the existing conflict-safe
+transaction and is covered by focused resolver tests; provider-specific sign-in, account conflict
+UX, remote deletion, and native account verification remain release-gated.

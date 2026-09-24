@@ -37,6 +37,7 @@ metadata, and no unresolved publication blockers.
 A completed program review is represented by `ProgramContentReviewEvidence`:
 
 - `programId` — the stable program identifier;
+- `programVersionId` — the exact immutable executable version reviewed;
 - `reviewedAt` — when the human review was completed;
 - `reviewReference` — a traceable internal review record, issue, document reference, or other
   auditable identifier.
@@ -97,7 +98,7 @@ For each program:
 5. Verify every referenced exercise passes the exercise publication gate.
 6. Record a durable review reference and completion timestamp.
 7. Add review evidence only after the reviewer signs off on the resulting version.
-8. Re-run the 20-program catalogue readiness gate.
+8. Re-run the focused-release manifest and version-bound publication gate for every enabled Shift. Run the 20-program catalogue assessment separately when pursuing the future breadth target.
 9. Verify the reviewed program in program detail, preflight, active workout, progression, summary,
    and next-cycle flows on representative native builds.
 10. Require renewed review when a later change materially alters exercise selection, targets,

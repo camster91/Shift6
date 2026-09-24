@@ -63,6 +63,8 @@ Supporting release documents on the cumulative stack:
 - `24_EXERCISE_REVIEW_CHECKLIST.md` — human sign-off checklist and reviewer-provenance record for public exercise content.
 - `27_SHIFT_DOMAIN_CONTRACT.md` — #306's implemented pure Shift measurement semantics and remaining integration gates.
 - `28_SHIFT_PERSISTENCE_SYNC_CONTRACT.md` — proposed owner, revision, outbox, adoption and privacy contract for #306 persistence; no migration is implemented yet.
+- `29_SHIFT_CALENDAR_PROJECTION.md` — implemented read-only elapsed calendar projection and pending #315 schedule transitions.
+- `30_PILOT_SHIFT_CANDIDATE_REVIEW.md` — #309's three candidate source lineages, measurement boundaries and human review handoff; no content approval.
 
 ## Agent rule
 

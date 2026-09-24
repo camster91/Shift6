@@ -347,6 +347,96 @@ export const MIGRATIONS: readonly Migration[] = [
       );`,
     ],
   },
+  {
+    version: 21,
+    name: 'empty-shift-measurement-foundation',
+    statements: [
+      `CREATE UNIQUE INDEX IF NOT EXISTS training_cycles_id_user
+        ON training_cycles(id, user_id);`,
+      `CREATE TABLE IF NOT EXISTS shifts (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL,
+        cycle_id TEXT NOT NULL UNIQUE,
+        program_version_id TEXT NOT NULL,
+        template_id TEXT NOT NULL,
+        template_version INTEGER NOT NULL CHECK (template_version > 0),
+        block_objective TEXT NOT NULL,
+        longer_term_aspiration TEXT,
+        active_protocol_id TEXT NOT NULL,
+        active_protocol_version INTEGER NOT NULL CHECK (active_protocol_version > 0),
+        target_json TEXT NOT NULL,
+        baseline_state TEXT NOT NULL CHECK (baseline_state IN ('measured', 'not-yet-able', 'deferred', 'missing')),
+        baseline_observation_id TEXT,
+        review_state TEXT NOT NULL CHECK (review_state IN ('due', 'completed', 'declined', 'postponed', 'missing')),
+        next_choice TEXT NOT NULL CHECK (next_choice IN ('maintain', 'repeat', 'modify', 'new-goal', 'break', 'undecided')),
+        is_primary INTEGER NOT NULL CHECK (is_primary IN (0, 1)),
+        created_at TEXT NOT NULL,
+        UNIQUE(id, user_id),
+        CHECK ((baseline_state = 'measured') = (baseline_observation_id IS NOT NULL)),
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (cycle_id, user_id) REFERENCES training_cycles(id, user_id) ON UPDATE CASCADE
+      );`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS shifts_one_primary_per_user
+        ON shifts(user_id) WHERE is_primary = 1;`,
+      `CREATE INDEX IF NOT EXISTS shifts_user_created
+        ON shifts(user_id, created_at DESC);`,
+      `CREATE TABLE IF NOT EXISTS shift_protocols (
+        shift_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        protocol_id TEXT NOT NULL,
+        protocol_version INTEGER NOT NULL CHECK (protocol_version > 0),
+        snapshot_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (shift_id, protocol_id, protocol_version),
+        FOREIGN KEY (shift_id, user_id) REFERENCES shifts(id, user_id) ON UPDATE CASCADE ON DELETE CASCADE
+      );`,
+      `CREATE TABLE IF NOT EXISTS shift_observations (
+        id TEXT PRIMARY KEY NOT NULL,
+        shift_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        protocol_id TEXT NOT NULL,
+        protocol_version INTEGER NOT NULL,
+        measured_at TEXT NOT NULL,
+        recorded_at TEXT NOT NULL,
+        source TEXT NOT NULL CHECK (source IN ('assessment', 'historical-entry', 'import', 'qualifying-workout')),
+        value_json TEXT NOT NULL,
+        unit TEXT NOT NULL,
+        workout_session_id TEXT,
+        corrects_observation_id TEXT,
+        UNIQUE(shift_id, id),
+        CHECK (corrects_observation_id IS NULL OR corrects_observation_id <> id),
+        CHECK (source <> 'qualifying-workout' OR workout_session_id IS NOT NULL),
+        FOREIGN KEY (shift_id, user_id) REFERENCES shifts(id, user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (shift_id, protocol_id, protocol_version)
+          REFERENCES shift_protocols(shift_id, protocol_id, protocol_version),
+        FOREIGN KEY (shift_id, corrects_observation_id)
+          REFERENCES shift_observations(shift_id, id)
+      );`,
+      `CREATE INDEX IF NOT EXISTS shift_observations_user_date
+        ON shift_observations(user_id, shift_id, measured_at, id);`,
+      `CREATE TABLE IF NOT EXISTS shift_goal_revisions (
+        id TEXT PRIMARY KEY NOT NULL,
+        shift_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        previous_revision_id TEXT,
+        protocol_id TEXT NOT NULL,
+        protocol_version INTEGER NOT NULL,
+        target_json TEXT NOT NULL,
+        block_objective TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        recorded_at TEXT NOT NULL,
+        UNIQUE(shift_id, id),
+        CHECK (previous_revision_id IS NULL OR previous_revision_id <> id),
+        FOREIGN KEY (shift_id, user_id) REFERENCES shifts(id, user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (shift_id, protocol_id, protocol_version)
+          REFERENCES shift_protocols(shift_id, protocol_id, protocol_version),
+        FOREIGN KEY (shift_id, previous_revision_id)
+          REFERENCES shift_goal_revisions(shift_id, id)
+      );`,
+      `CREATE INDEX IF NOT EXISTS shift_goal_revisions_user_date
+        ON shift_goal_revisions(user_id, shift_id, recorded_at, id);`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

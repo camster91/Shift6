@@ -16,21 +16,28 @@ export interface AuthProvider {
   signOut(): Promise<void>;
 }
 
+export const SYNC_ENTITY_TYPES = [
+  'workout-session',
+  'completed-set',
+  'profile',
+  'program-version',
+  'exercise',
+  'training-cycle',
+  'coach-proposal',
+  'workout-check-in',
+  'cycle-review',
+  'notification-preference',
+  'workout-schedule-override',
+] as const;
+
+export function isSupportedSyncEntityType(value: string): value is SyncMutation['entityType'] {
+  return (SYNC_ENTITY_TYPES as readonly string[]).includes(value);
+}
+
 export interface SyncMutation {
   id: EntityId;
   idempotencyKey: string;
-  entityType:
-    | 'workout-session'
-    | 'completed-set'
-    | 'profile'
-    | 'program-version'
-    | 'exercise'
-    | 'training-cycle'
-    | 'coach-proposal'
-    | 'workout-check-in'
-    | 'cycle-review'
-    | 'notification-preference'
-    | 'workout-schedule-override';
+  entityType: (typeof SYNC_ENTITY_TYPES)[number];
   entityId: EntityId;
   payload: Record<string, unknown>;
   createdAt: ISODateString;

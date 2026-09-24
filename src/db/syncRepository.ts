@@ -1,11 +1,17 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { BackendClient, SyncMutation, SyncResult } from '../services/contracts';
+import {
+  SYNC_ENTITY_TYPES,
+  isSupportedSyncEntityType,
+  type BackendClient,
+  type SyncMutation,
+  type SyncResult,
+} from '../services/contracts';
 
 interface SyncOutboxRow {
   id: string;
   idempotency_key: string;
-  entity_type: SyncMutation['entityType'];
+  entity_type: string;
   entity_id: string;
   payload_json: string;
   created_at: string;
@@ -13,7 +19,7 @@ interface SyncOutboxRow {
 
 export interface SyncIssue {
   id: string;
-  entityType: SyncMutation['entityType'];
+  entityType: string;
   entityId: string;
   createdAt: string;
   attemptCount: number;
@@ -23,11 +29,11 @@ export interface SyncIssue {
 
 interface SyncIssueRow {
   id: string;
-  entity_type: SyncMutation['entityType'];
+  entity_type: string;
   entity_id: string;
   created_at: string;
   attempt_count: number;
-  last_error: string;
+  last_error: string | null;
 }
 
 export interface SyncRunResult {
@@ -51,14 +57,21 @@ export async function getPendingSyncMutations(
     safeLimit,
   );
 
-  return rows.map((row) => ({
-    id: row.id,
-    idempotencyKey: row.idempotency_key,
-    entityType: row.entity_type,
-    entityId: row.entity_id,
-    payload: JSON.parse(row.payload_json) as Record<string, unknown>,
-    createdAt: row.created_at,
-  }));
+  return rows.map((row) => {
+    // A newer or malformed local entity must never be sent to a v1 server that
+    // could acknowledge it without storing the evidence.
+    if (!isSupportedSyncEntityType(row.entity_type)) {
+      throw new Error(`Local sync entity ${row.entity_type} is not supported by this build.`);
+    }
+    return {
+      id: row.id,
+      idempotencyKey: row.idempotency_key,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      payload: JSON.parse(row.payload_json) as Record<string, unknown>,
+      createdAt: row.created_at,
+    };
+  });
 }
 
 /** Read-only local issue summary for an explicit review surface. */
@@ -67,24 +80,32 @@ export async function getPendingSyncIssues(
   limit = 50,
 ): Promise<SyncIssue[]> {
   const safeLimit = Math.max(1, Math.floor(limit));
+  const supportedTypes = SYNC_ENTITY_TYPES.map(() => '?').join(', ');
   const rows = await database.getAllAsync<SyncIssueRow>(
     `SELECT id, entity_type, entity_id, created_at, attempt_count, last_error
        FROM sync_outbox
-      WHERE last_error IS NOT NULL
+      WHERE last_error IS NOT NULL OR entity_type NOT IN (${supportedTypes})
       ORDER BY created_at ASC, id ASC
       LIMIT ?;`,
+    ...SYNC_ENTITY_TYPES,
     safeLimit,
   );
 
-  return rows.map((row) => ({
-    id: row.id,
-    entityType: row.entity_type,
-    entityId: row.entity_id,
-    createdAt: row.created_at,
-    attemptCount: row.attempt_count,
-    lastError: row.last_error,
-    kind: issueKind(row.last_error),
-  }));
+  return rows.map((row) => {
+    const unsupported = !isSupportedSyncEntityType(row.entity_type);
+    const lastError = unsupported
+      ? `Local sync entity ${row.entity_type} is not supported by this build. Update the app before retrying.`
+      : (row.last_error ?? 'Sync needs review.');
+    return {
+      id: row.id,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      createdAt: row.created_at,
+      attemptCount: row.attempt_count,
+      lastError,
+      kind: unsupported ? 'rejected' : issueKind(lastError),
+    };
+  });
 }
 
 export async function flushSyncOutbox(

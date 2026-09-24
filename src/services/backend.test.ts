@@ -45,6 +45,19 @@ describe('backend boundary', () => {
     await expect(client.deleteAccount()).rejects.toBeInstanceOf(BackendUnavailableError);
   });
 
+  it('rejects an unsupported entity before making a network request', async () => {
+    const fetcher = jest.fn(async () => new Response('{}'));
+    const client = new HttpBackendClient({
+      baseUrl: 'https://api.example.test',
+      getAccessToken: async () => 'token-for-test',
+      fetcher,
+    });
+    const unknown = { ...mutation, entityType: 'shift' } as unknown as SyncMutation;
+
+    await expect(client.sync([unknown])).rejects.toBeInstanceOf(BackendProtocolError);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it('injects auth and sends only through the typed sync endpoint', async () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     const client = new HttpBackendClient({

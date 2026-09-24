@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { deleteLocalUserData } from '../db/privacyRepository';
+import { assertNoUnsupportedShiftOutboxRows, deleteLocalUserData } from '../db/privacyRepository';
 import {
   accountDeletionRecoveryStore,
   type AccountDeletionRecoveryStore,
@@ -40,6 +40,12 @@ export async function deleteAuthenticatedAccount({
 }: DeleteAuthenticatedAccountInput): Promise<AccountDeletionOutcome> {
   const normalizedUserId = userId.trim();
   if (!normalizedUserId) throw new Error('A user ID is required to delete an account.');
+
+  // Do not cross the irreversible remote boundary if a newer Shift mutation
+  // could survive local cleanup under an unknown child entity ID convention.
+  if (deleteLocalData === deleteLocalUserData) {
+    await assertNoUnsupportedShiftOutboxRows(database);
+  }
 
   await backend.deleteAccount();
 

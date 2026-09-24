@@ -39,6 +39,25 @@ function recoveryStore() {
 }
 
 describe('account deletion orchestration', () => {
+  it('does not request irreversible remote deletion while future Shift child sync records remain', async () => {
+    const deleteAccount = jest.fn(async () => ({ deleted: true as const }));
+    const signOut = jest.fn(async () => undefined);
+    const databaseWithUnknownShift = {
+      getFirstAsync: async () => ({ id: 'future-child' }),
+    } as unknown as SQLiteDatabase;
+
+    await expect(
+      deleteAuthenticatedAccount({
+        database: databaseWithUnknownShift,
+        userId: 'account-user',
+        backend: backend(deleteAccount),
+        auth: auth(signOut),
+      }),
+    ).rejects.toThrow('Shift sync records require a compatible build');
+    expect(deleteAccount).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
   it('does not touch local data, auth, or recovery when remote deletion is not confirmed', async () => {
     const deleteLocalData = jest.fn(async () => undefined);
     const signOut = jest.fn(async () => undefined);

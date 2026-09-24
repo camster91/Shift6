@@ -4,6 +4,7 @@ export type LocalDataExportSectionKey =
   | 'profile'
   | 'preferences'
   | 'bodyAndHealth'
+  | 'shiftsAndMeasurements'
   | 'trainingHistory'
   | 'programsAndExercises'
   | 'coachAndNotifications';
@@ -25,7 +26,7 @@ export interface LocalDataExportSummary {
 }
 
 export interface LocalDataExport {
-  schemaVersion: 9;
+  schemaVersion: 10;
   exportedAt: string;
   userId: string;
   summary: LocalDataExportSummary;
@@ -35,6 +36,10 @@ export interface LocalDataExport {
   bodyMetrics: Record<string, unknown>[];
   coachPrivacyPreferences: Record<string, unknown>[];
   trainingCycles: Record<string, unknown>[];
+  shifts: Record<string, unknown>[];
+  shiftProtocols: Record<string, unknown>[];
+  shiftObservations: Record<string, unknown>[];
+  shiftGoalRevisions: Record<string, unknown>[];
   workoutSessions: Record<string, unknown>[];
   completedSets: Record<string, unknown>[];
   workoutDrafts: Record<string, unknown>[];
@@ -78,6 +83,25 @@ export async function exportLocalUserData(
   );
   const trainingCycles = await database.getAllAsync<Record<string, unknown>>(
     'SELECT * FROM training_cycles WHERE user_id = ? ORDER BY started_at ASC, id ASC;',
+    userId,
+  );
+  const shifts = await database.getAllAsync<Record<string, unknown>>(
+    'SELECT * FROM shifts WHERE user_id = ? ORDER BY created_at ASC, id ASC;',
+    userId,
+  );
+  const shiftProtocols = await database.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM shift_protocols
+      WHERE user_id = ? ORDER BY shift_id ASC, protocol_id ASC, protocol_version ASC;`,
+    userId,
+  );
+  const shiftObservations = await database.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM shift_observations
+      WHERE user_id = ? ORDER BY measured_at ASC, recorded_at ASC, id ASC;`,
+    userId,
+  );
+  const shiftGoalRevisions = await database.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM shift_goal_revisions
+      WHERE user_id = ? ORDER BY recorded_at ASC, id ASC;`,
     userId,
   );
   const workoutSessions = await database.getAllAsync<Record<string, unknown>>(
@@ -164,6 +188,10 @@ export async function exportLocalUserData(
     bodyMetrics,
     coachPrivacyPreferences,
     trainingCycles,
+    shifts,
+    shiftProtocols,
+    shiftObservations,
+    shiftGoalRevisions,
     workoutSessions,
     completedSets,
     workoutDrafts,
@@ -179,7 +207,7 @@ export async function exportLocalUserData(
   });
 
   return {
-    schemaVersion: 9,
+    schemaVersion: 10,
     exportedAt,
     userId,
     summary,
@@ -189,6 +217,10 @@ export async function exportLocalUserData(
     bodyMetrics,
     coachPrivacyPreferences,
     trainingCycles,
+    shifts,
+    shiftProtocols,
+    shiftObservations,
+    shiftGoalRevisions,
     workoutSessions,
     completedSets,
     workoutDrafts,
@@ -226,6 +258,17 @@ export function buildLocalDataExportSummary(
       title: 'Body metrics and health summaries',
       description: 'Manual body measurements and health summaries imported onto this device.',
       recordCount: data.bodyMetrics.length + data.healthSummaries.length,
+    },
+    {
+      key: 'shiftsAndMeasurements',
+      title: 'Shifts and measurements',
+      description:
+        'Shift goals, measurement protocols, recorded results, and goal revisions stored on this device.',
+      recordCount:
+        data.shifts.length +
+        data.shiftProtocols.length +
+        data.shiftObservations.length +
+        data.shiftGoalRevisions.length,
     },
     {
       key: 'trainingHistory',
@@ -273,14 +316,29 @@ export function buildLocalDataExportSummary(
  * explicit confirmation before invoking this operation and separately handle
  * remote account deletion when an account backend is connected.
  */
+export async function assertNoUnsupportedShiftOutboxRows(database: SQLiteDatabase): Promise<void> {
+  // Child mutation IDs have no agreed owner-scoped encoding yet. Never report a
+  // complete deletion while one could remain on this device under another ID.
+  const row = await database.getFirstAsync<{ id: string }>(
+    `SELECT id FROM sync_outbox
+      WHERE entity_type IN ('shift-protocol', 'shift-observation', 'shift-goal-revision')
+      LIMIT 1;`,
+  );
+  if (row) throw new Error('Shift sync records require a compatible build before local deletion.');
+}
+
 export async function deleteLocalUserData(database: SQLiteDatabase, userId: string): Promise<void> {
   await database.withTransactionAsync(async () => {
+    await assertNoUnsupportedShiftOutboxRows(database);
     await database.runAsync(
       `DELETE FROM sync_outbox
         WHERE (entity_type = 'profile' AND entity_id = ?)
            OR (entity_type = 'notification-preference' AND entity_id = ?)
            OR (entity_type = 'training-cycle' AND entity_id IN (
                 SELECT id FROM training_cycles WHERE user_id = ?
+              ))
+           OR (entity_type = 'shift' AND entity_id IN (
+                SELECT id FROM shifts WHERE user_id = ?
               ))
            OR (entity_type = 'cycle-review' AND entity_id IN (
                 SELECT id FROM cycle_reviews WHERE user_id = ?
@@ -331,6 +389,7 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
       userId,
       userId,
       userId,
+      userId,
     );
     await database.runAsync('DELETE FROM notification_preferences WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM health_summaries WHERE user_id = ?;', userId);
@@ -339,6 +398,11 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
     await database.runAsync('DELETE FROM coach_privacy_preferences WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM cycle_reviews WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM workout_schedule_overrides WHERE user_id = ?;', userId);
+    // Children precede protocols and the Shift. The Shift precedes its cycle and profile.
+    await database.runAsync('DELETE FROM shift_observations WHERE user_id = ?;', userId);
+    await database.runAsync('DELETE FROM shift_goal_revisions WHERE user_id = ?;', userId);
+    await database.runAsync('DELETE FROM shift_protocols WHERE user_id = ?;', userId);
+    await database.runAsync('DELETE FROM shifts WHERE user_id = ?;', userId);
     await database.runAsync(
       `DELETE FROM completed_sets
         WHERE session_id IN (

@@ -1,6 +1,12 @@
 # Shift persistence and sync boundary — #306 design contract
 
-Status: proposed shared contract for #306, #309 and #315. No migration, server support, public template or production write path exists yet. This note records the decisions needed before the additive migration; it is not an implementation or release approval.
+Status: partial #306 implementation and shared contract for #309 and #315. Migration 21 creates empty local Shift tables and indexes. No Shift repository writer, server support, public template or production write path exists. The migration does not backfill legacy cycles or approve any content for release.
+
+## Implemented local boundary
+
+Migration 21 adds `shifts`, `shift_protocols`, `shift_observations` and `shift_goal_revisions` without changing existing rows. SQLite foreign keys tie a Shift to a cycle belonging to the same owner, tie observations and revisions to a protocol snapshot on that Shift, and prevent a second primary Shift for the owner. The schema stores original units, measured and recorded dates, source, correction parent, and a distinct baseline state. Real SQLite tests cover upgrade of a populated legacy database, idempotent migration, cross-owner cycle rejection, primary uniqueness and protocol mismatch rejection.
+
+These tables have no application write API. The schema alone does not validate the full typed protocol, workout eligibility, target semantics, immutable append-only behaviour, baseline observation linkage, or sync compatibility. Those checks belong in the future transactional repository and server contract. The `template_id` in the schema does not make a draft candidate public or eligible.
 
 ## Existing sources of truth
 
@@ -28,4 +34,4 @@ The current `sync_outbox` and `SyncMutation` contract has no Shift entity types 
 
 ## Dependency gates
 
-The generic schema does not set exercise prescriptions or return thresholds. #309 must select exact pilot template/protocol IDs, reviewer evidence and any qualifying-workout/test rules. #315 must define calendar projections and pause/re-entry transactions before their data is added. The migration and repository can then be implemented and tested as one coherent slice with real SQLite constraints, owner isolation, duplicate/retry/conflict, legacy-cycle migration, guest adoption, export/delete and sync protocol tests. Keep the public release manifest empty until reviewed content is approved.
+The generic schema does not set exercise prescriptions or return thresholds. #309 must select exact pilot template/protocol IDs, reviewer evidence and any qualifying-workout/test rules. #315 must define pause/re-entry transactions before their data is added. Before enabling a writer, implement and test transactional owner checks, immutable protocol/observation rules, guest adoption, export/delete and a versioned server sync protocol together. The existing account adoption and export/delete code does not yet include these empty tables. Keep the public release manifest empty until reviewed content is approved.

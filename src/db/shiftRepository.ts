@@ -74,13 +74,43 @@ export async function createShift(
     throw new Error('A baseline observation is only valid for a measured baseline.');
   }
 
+  const isPrimary = options.isPrimary ?? true;
+  const expectedStoredShift = {
+    id: shift.id,
+    user_id: shift.userId,
+    cycle_id: shift.cycleId,
+    program_version_id: shift.programVersionId,
+    template_id: shift.templateId,
+    template_version: options.templateVersion,
+    block_objective: shift.blockObjective,
+    longer_term_aspiration: shift.longerTermAspiration ?? null,
+    active_protocol_id: shift.protocol.id,
+    active_protocol_version: shift.protocol.version,
+    target_json: JSON.stringify(shift.target),
+    baseline_state: shift.baseline.state,
+    baseline_observation_id:
+      shift.baseline.state === 'measured' ? shift.baseline.observationId : null,
+    review_state: shift.reviewState,
+    next_choice: shift.nextChoice,
+    is_primary: isPrimary ? 1 : 0,
+    created_at: options.createdAt,
+  };
+
   await database.withTransactionAsync(async () => {
-    const existing = await database.getFirstAsync<{ id: string; user_id: string }>(
-      'SELECT id, user_id FROM shifts WHERE id = ? LIMIT 1;',
+    const existing = await database.getFirstAsync<typeof expectedStoredShift>(
+      `SELECT id, user_id, cycle_id, program_version_id, template_id, template_version,
+              block_objective, longer_term_aspiration, active_protocol_id, active_protocol_version,
+              target_json, baseline_state, baseline_observation_id, review_state, next_choice,
+              is_primary, created_at
+         FROM shifts
+        WHERE id = ?
+        LIMIT 1;`,
       shift.id,
     );
     if (existing) {
-      if (existing.user_id !== shift.userId) throw new Error('Shift ID belongs to another user.');
+      if (JSON.stringify(existing) !== JSON.stringify(expectedStoredShift)) {
+        throw new Error('Shift ID already exists with different contents.');
+      }
       return;
     }
 
@@ -97,7 +127,6 @@ export async function createShift(
       throw new Error('Shift and cycle program versions must agree.');
     }
 
-    const isPrimary = options.isPrimary ?? true;
     if (isPrimary) {
       const competing = await database.getFirstAsync<{ id: string }>(
         'SELECT id FROM shifts WHERE user_id = ? AND is_primary = 1 LIMIT 1;',
@@ -443,7 +472,13 @@ async function queueImmutableMutation(
   createdAt: string,
 ): Promise<void> {
   const idempotencyKey = `${entityType}:${entityId}`;
-  const id = `outbox-${entityType}-${entityId}`;
+  const order = {
+    shift: '0',
+    'shift-protocol': '1',
+    'shift-observation': '2',
+    'shift-goal-revision': '3',
+  } satisfies Record<ShiftSyncEntityType, string>;
+  const id = `outbox-shift-${order[entityType]}-${entityId}`;
   const payloadJson = JSON.stringify(payload);
 
   const existing = await database.getFirstAsync<{ payload_json: string }>(

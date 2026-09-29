@@ -185,14 +185,18 @@ describe('migrateLocalUserToAccount', () => {
         );
       }
 
-      await expect(migrateLocalUserToAccount(database, 'guest-user', 'account-1')).resolves.toEqual({
-        status: 'migrated',
-        fromUserId: 'guest-user',
-        toUserId: 'account-1',
-      });
+      await expect(migrateLocalUserToAccount(database, 'guest-user', 'account-1')).resolves.toEqual(
+        {
+          status: 'migrated',
+          fromUserId: 'guest-user',
+          toUserId: 'account-1',
+        },
+      );
 
       const mutations = sqlite
-        .prepare('SELECT entity_type, entity_id, payload_json FROM sync_outbox ORDER BY entity_type;')
+        .prepare(
+          'SELECT entity_type, entity_id, payload_json FROM sync_outbox ORDER BY entity_type;',
+        )
         .all() as Array<{ entity_type: string; entity_id: string; payload_json: string }>;
       expect(mutations.map((row) => row.entity_type)).toEqual([
         'shift',

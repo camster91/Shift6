@@ -51,21 +51,21 @@ describe('syncRepository', () => {
   it(
     'never sends an unrecognised future Shift row to a server that could acknowledge it',
     async () => {
-    const database = {
-      getAllAsync: async () => [
-        pendingRow,
-        { ...pendingRow, id: 'outbox-shift-1', entity_type: 'future-shift-v3' },
-      ],
-    } as unknown as SQLiteDatabase;
-    const sync = jest.fn(async () => ({
-      acknowledgedMutationIds: ['outbox-shift-1'],
-      rejectedMutationIds: [],
-    }));
+      const database = {
+        getAllAsync: async () => [
+          pendingRow,
+          { ...pendingRow, id: 'outbox-shift-1', entity_type: 'future-shift-v3' },
+        ],
+      } as unknown as SQLiteDatabase;
+      const sync = jest.fn(async () => ({
+        acknowledgedMutationIds: ['outbox-shift-1'],
+        rejectedMutationIds: [],
+      }));
 
-    await expect(flushSyncOutbox(database, backendClient(sync))).rejects.toThrow(
-      'Local sync entity future-shift-v3 is not supported',
-    );
-    expect(sync).not.toHaveBeenCalled();
+      await expect(flushSyncOutbox(database, backendClient(sync))).rejects.toThrow(
+        'Local sync entity future-shift-v3 is not supported',
+      );
+      expect(sync).not.toHaveBeenCalled();
     },
   );
 
@@ -90,9 +90,9 @@ describe('syncRepository', () => {
   it(
     'shows an unsupported future Shift row as a review issue before any sync attempt',
     async () => {
-    const sqlite = new DatabaseSync(':memory:');
-    try {
-      sqlite.exec(`CREATE TABLE sync_outbox (
+      const sqlite = new DatabaseSync(':memory:');
+      try {
+        sqlite.exec(`CREATE TABLE sync_outbox (
         id TEXT PRIMARY KEY NOT NULL, idempotency_key TEXT NOT NULL UNIQUE,
         entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, payload_json TEXT NOT NULL,
         created_at TEXT NOT NULL, attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -158,9 +158,9 @@ describe('syncRepository', () => {
         },
       ]);
       expect(JSON.stringify(issues)).not.toContain('private');
-    } finally {
-      sqlite.close();
-    }
+      } finally {
+        sqlite.close();
+      }
     },
   );
 

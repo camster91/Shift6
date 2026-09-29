@@ -160,6 +160,58 @@ describe('migrateLocalUserToAccount', () => {
     }
   });
 
+  it('rewrites queued Shift mutation ownership during guest adoption', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      seedShift(sqlite, 'guest-user');
+      const rows = [
+        ['shift', 'shift-guest-user'],
+        ['shift-protocol', 'shift-guest-user:reps:1'],
+        ['shift-observation', 'observation-guest-user'],
+        ['shift-goal-revision', 'revision-guest-user'],
+      ] as const;
+      const insert = sqlite.prepare(
+        `INSERT INTO sync_outbox
+          (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
+         VALUES (?, ?, ?, ?, ?, '2026-09-01');`,
+      );
+      for (const [entityType, entityId] of rows) {
+        insert.run(
+          `outbox-${entityType}`,
+          `${entityType}:${entityId}`,
+          entityType,
+          entityId,
+          JSON.stringify({ userId: 'guest-user', entityId }),
+        );
+      }
+
+      await expect(migrateLocalUserToAccount(database, 'guest-user', 'account-1')).resolves.toEqual({
+        status: 'migrated',
+        fromUserId: 'guest-user',
+        toUserId: 'account-1',
+      });
+
+      const mutations = sqlite
+        .prepare('SELECT entity_type, entity_id, payload_json FROM sync_outbox ORDER BY entity_type;')
+        .all() as Array<{ entity_type: string; entity_id: string; payload_json: string }>;
+      expect(mutations.map((row) => row.entity_type)).toEqual([
+        'shift',
+        'shift-goal-revision',
+        'shift-observation',
+        'shift-protocol',
+      ]);
+      expect(mutations.every((row) => JSON.parse(row.payload_json).userId === 'account-1')).toBe(
+        true,
+      );
+      expect(mutations.map((row) => row.entity_id).sort()).toEqual(
+        rows.map(([, entityId]) => entityId).sort(),
+      );
+      expect(sqlite.prepare('PRAGMA foreign_key_check;').all()).toEqual([]);
+    } finally {
+      sqlite.close();
+    }
+  });
+
   it('refuses to merge a guest Shift into an account with its own Shift', async () => {
     const { database, sqlite } = sqliteDatabase();
     try {

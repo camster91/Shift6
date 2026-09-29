@@ -317,14 +317,13 @@ export function buildLocalDataExportSummary(
  * remote account deletion when an account backend is connected.
  */
 export async function assertNoUnsupportedShiftOutboxRows(database: SQLiteDatabase): Promise<void> {
-  // Child mutation IDs have no agreed owner-scoped encoding yet. Never report a
-  // complete deletion while one could remain on this device under another ID.
   const row = await database.getFirstAsync<{ id: string }>(
     `SELECT id FROM sync_outbox
-      WHERE entity_type IN ('shift-protocol', 'shift-observation', 'shift-goal-revision')
+      WHERE entity_type LIKE 'shift%'
+        AND entity_type NOT IN ('shift', 'shift-protocol', 'shift-observation', 'shift-goal-revision')
       LIMIT 1;`,
   );
-  if (row) throw new Error('Shift sync records require a compatible build before local deletion.');
+  if (row) throw new Error('A newer Shift sync record requires a compatible build before deletion.');
 }
 
 export async function deleteLocalUserData(database: SQLiteDatabase, userId: string): Promise<void> {
@@ -339,6 +338,16 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
               ))
            OR (entity_type = 'shift' AND entity_id IN (
                 SELECT id FROM shifts WHERE user_id = ?
+              ))
+           OR (entity_type = 'shift-protocol' AND entity_id IN (
+                SELECT shift_id || ':' || protocol_id || ':' || protocol_version
+                  FROM shift_protocols WHERE user_id = ?
+              ))
+           OR (entity_type = 'shift-observation' AND entity_id IN (
+                SELECT id FROM shift_observations WHERE user_id = ?
+              ))
+           OR (entity_type = 'shift-goal-revision' AND entity_id IN (
+                SELECT id FROM shift_goal_revisions WHERE user_id = ?
               ))
            OR (entity_type = 'cycle-review' AND entity_id IN (
                 SELECT id FROM cycle_reviews WHERE user_id = ?
@@ -378,6 +387,9 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
            OR (entity_type = 'workout-schedule-override' AND entity_id IN (
                 SELECT id FROM workout_schedule_overrides WHERE user_id = ?
               ));`,
+      userId,
+      userId,
+      userId,
       userId,
       userId,
       userId,

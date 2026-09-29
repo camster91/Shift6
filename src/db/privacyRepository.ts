@@ -316,9 +316,7 @@ export function buildLocalDataExportSummary(
  * explicit confirmation before invoking this operation and separately handle
  * remote account deletion when an account backend is connected.
  */
-export async function assertNoUnsupportedShiftOutboxRows(
-  database: SQLiteDatabase,
-): Promise<void> {
+export async function assertNoUnsupportedShiftOutboxRows(database: SQLiteDatabase): Promise<void> {
   const row = await database.getFirstAsync<{ id: string }>(
     `SELECT id FROM sync_outbox
       WHERE entity_type LIKE 'shift%'

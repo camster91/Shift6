@@ -19,7 +19,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Print Prettier diff
+      - name: Print formatted files
         run: |
           npm run format
-          git diff -- src/db/privacyRepository.ts src/db/shiftRepository.test.ts src/db/syncRepository.test.ts
+          echo "===PRIVACY==="
+          cat src/db/privacyRepository.ts
+          echo "===SHIFT_TEST==="
+          cat src/db/shiftRepository.test.ts
+          echo "===SYNC_TEST==="
+          cat src/db/syncRepository.test.ts
+          echo "===END==="

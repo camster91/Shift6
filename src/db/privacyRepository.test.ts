@@ -367,7 +367,9 @@ describe('deleteLocalUserData', () => {
         });
       }
       expect(
-        sqlite.prepare('SELECT entity_type, entity_id FROM sync_outbox ORDER BY entity_type;').all(),
+        sqlite
+          .prepare('SELECT entity_type, entity_id FROM sync_outbox ORDER BY entity_type;')
+          .all(),
       ).toEqual([
         { entity_type: 'shift', entity_id: 'shift-owner-2' },
         { entity_type: 'shift-goal-revision', entity_id: 'revision-owner-2' },

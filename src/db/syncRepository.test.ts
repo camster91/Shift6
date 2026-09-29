@@ -48,7 +48,9 @@ describe('syncRepository', () => {
     ]);
   });
 
-  it('never sends an unrecognised future Shift row to a server that could acknowledge it', async () => {
+  it(
+    'never sends an unrecognised future Shift row to a server that could acknowledge it',
+    async () => {
     const database = {
       getAllAsync: async () => [
         pendingRow,
@@ -64,7 +66,8 @@ describe('syncRepository', () => {
       'Local sync entity future-shift-v3 is not supported',
     );
     expect(sync).not.toHaveBeenCalled();
-  });
+    },
+  );
 
   it('reads reviewable sync issues without exposing mutation payloads', async () => {
     const database = {
@@ -84,7 +87,9 @@ describe('syncRepository', () => {
     ]);
   });
 
-  it('shows an unsupported future Shift row as a review issue before any sync attempt', async () => {
+  it(
+    'shows an unsupported future Shift row as a review issue before any sync attempt',
+    async () => {
     const sqlite = new DatabaseSync(':memory:');
     try {
       sqlite.exec(`CREATE TABLE sync_outbox (
@@ -98,8 +103,24 @@ describe('syncRepository', () => {
           (id, idempotency_key, entity_type, entity_id, payload_json, created_at, last_error)
          VALUES (?, ?, ?, ?, ?, ?, ?);`,
       );
-      insert.run('known', 'known-key', 'completed-set', 'set-1', '{"private":"known"}', '1', null);
-      insert.run('shift', 'shift-key', 'future-shift-v3', 'shift-1', '{"private":"shift"}', '2', null);
+      insert.run(
+        'known',
+        'known-key',
+        'completed-set',
+        'set-1',
+        '{"private":"known"}',
+        '1',
+        null,
+      );
+      insert.run(
+        'shift',
+        'shift-key',
+        'future-shift-v3',
+        'shift-1',
+        '{"private":"shift"}',
+        '2',
+        null,
+      );
       insert.run(
         'failed',
         'failed-key',
@@ -140,7 +161,8 @@ describe('syncRepository', () => {
     } finally {
       sqlite.close();
     }
-  });
+    },
+  );
 
   it('deletes only acknowledged mutations and retains rejected rows with an error', async () => {
     const calls: Array<{ sql: string; params: unknown[] }> = [];

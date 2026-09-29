@@ -178,7 +178,7 @@ describe('migrateLocalUserToAccount', () => {
     }
   });
 
-  it('blocks adoption on a reserved Shift outbox row without changing either owner', async () => {
+  it('blocks adoption on a future Shift outbox row without changing either owner', async () => {
     const { database, sqlite } = sqliteDatabase();
     try {
       seedShift(sqlite, 'guest-user');
@@ -187,13 +187,13 @@ describe('migrateLocalUserToAccount', () => {
         .prepare(
           `INSERT INTO sync_outbox
         (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-        VALUES ('future-protocol', 'shift-protocol:future', 'shift-protocol', 'unknown-format',
+        VALUES ('future-protocol', 'shift-v3:future', 'shift-v3', 'unknown-format',
                 '{"userId":"guest-user"}', '2026-09-01');`,
         )
         .run();
 
       await expect(migrateLocalUserToAccount(database, 'guest-user', 'account-1')).rejects.toThrow(
-        'Shift sync mutations require a compatible build',
+        'A newer Shift sync mutation requires a compatible build',
       );
       expect(sqlite.prepare('SELECT id FROM user_profiles ORDER BY id;').all()).toEqual([
         { id: 'guest-user' },

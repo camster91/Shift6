@@ -14,7 +14,10 @@ function databaseFixture() {
   const database = {
     runAsync: async (sql: string, ...params: unknown[]) => {
       const result = sqlite.prepare(sql).run(...(params as SQLInputValue[]));
-      return { changes: Number(result.changes), lastInsertRowId: Number(result.lastInsertRowid) };
+      return {
+        changes: Number(result.changes),
+        lastInsertRowId: Number(result.lastInsertRowid),
+      };
     },
     getFirstAsync: async (sql: string, ...params: unknown[]) =>
       sqlite.prepare(sql).get(...(params as SQLInputValue[])) ?? null,
@@ -89,7 +92,9 @@ const baseline: ShiftObservation = {
 };
 
 describe('shiftRepository', () => {
-  it('creates a measured Shift, protocol, baseline, revision and v2 sync records atomically', async () => {
+  it(
+    'creates a measured Shift, protocol, baseline, revision and v2 sync records atomically',
+    async () => {
     const { sqlite, database } = databaseFixture();
     try {
       await createShift(database, shift, {
@@ -98,7 +103,9 @@ describe('shiftRepository', () => {
         baselineObservation: baseline,
       });
 
-      expect(sqlite.prepare('SELECT baseline_state, baseline_observation_id FROM shifts;').get()).toEqual({
+      expect(
+        sqlite.prepare('SELECT baseline_state, baseline_observation_id FROM shifts;').get(),
+      ).toEqual({
         baseline_state: 'measured',
         baseline_observation_id: 'obs-baseline',
       });
@@ -117,10 +124,12 @@ describe('shiftRepository', () => {
       expect(sqlite.prepare('PRAGMA foreign_key_check;').all()).toEqual([]);
     } finally {
       sqlite.close();
-    }
-  });
+    },
+  );
 
-  it('is idempotent for an identical observation and rejects conflicting reuse of the ID', async () => {
+  it(
+    'is idempotent for an identical observation and rejects conflicting reuse of the ID',
+    async () => {
     const { sqlite, database } = databaseFixture();
     try {
       await createShift(database, shift, {
@@ -142,10 +151,14 @@ describe('shiftRepository', () => {
       });
 
       expect(
-        sqlite.prepare("SELECT COUNT(*) AS count FROM shift_observations WHERE id = 'obs-week-3';").get(),
+        sqlite
+          .prepare("SELECT COUNT(*) AS count FROM shift_observations WHERE id = 'obs-week-3';")
+          .get(),
       ).toEqual({ count: 1 });
       expect(
-        sqlite.prepare("SELECT COUNT(*) AS count FROM sync_outbox WHERE entity_id = 'obs-week-3';").get(),
+        sqlite
+          .prepare("SELECT COUNT(*) AS count FROM sync_outbox WHERE entity_id = 'obs-week-3';")
+          .get(),
       ).toEqual({ count: 1 });
 
       await expect(
@@ -155,10 +168,12 @@ describe('shiftRepository', () => {
       ).rejects.toThrow('different contents');
     } finally {
       sqlite.close();
-    }
-  });
+    },
+  );
 
-  it('keeps corrections append-only and prevents competing corrections for one measurement', async () => {
+  it(
+    'keeps corrections append-only and prevents competing corrections for one measurement',
+    async () => {
     const { sqlite, database } = databaseFixture();
     try {
       await createShift(database, shift, {
@@ -177,7 +192,9 @@ describe('shiftRepository', () => {
       });
 
       expect(
-        sqlite.prepare('SELECT id, corrects_observation_id FROM shift_observations ORDER BY id;').all(),
+        sqlite
+          .prepare('SELECT id, corrects_observation_id FROM shift_observations ORDER BY id;')
+          .all(),
       ).toEqual([
         { id: 'obs-baseline', corrects_observation_id: null },
         { id: 'obs-baseline-correction', corrects_observation_id: 'obs-baseline' },
@@ -194,7 +211,8 @@ describe('shiftRepository', () => {
     } finally {
       sqlite.close();
     }
-  });
+    },
+  );
 
   it('rolls the whole create transaction back when baseline evidence is invalid', async () => {
     const { sqlite, database } = databaseFixture();
@@ -207,8 +225,12 @@ describe('shiftRepository', () => {
         }),
       ).rejects.toThrow('not valid for its measurement protocol');
 
-      expect(sqlite.prepare('SELECT COUNT(*) AS count FROM shifts;').get()).toEqual({ count: 0 });
-      expect(sqlite.prepare('SELECT COUNT(*) AS count FROM sync_outbox;').get()).toEqual({ count: 0 });
+      expect(sqlite.prepare('SELECT COUNT(*) AS count FROM shifts;').get()).toEqual({
+        count: 0,
+      });
+      expect(sqlite.prepare('SELECT COUNT(*) AS count FROM sync_outbox;').get()).toEqual({
+        count: 0,
+      });
     } finally {
       sqlite.close();
     }

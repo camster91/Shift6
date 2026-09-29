@@ -1,4 +1,4 @@
-export const SHIFT6_API_PROTOCOL_VERSION = 1;
+export const SHIFT6_API_PROTOCOL_VERSION = 2;
 export const SHIFT6_API_PROTOCOL_HEADER = 'X-Shift6-Protocol-Version';
 export const SHIFT6_MIN_API_PROTOCOL_HEADER = 'X-Shift6-Min-Protocol-Version';
 

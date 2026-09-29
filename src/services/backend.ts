@@ -100,6 +100,15 @@ export class HttpBackendClient implements BackendClient {
       throw new BackendProtocolError('The sync service returned invalid JSON.');
     }
 
+    if (
+      mutations.some((mutation) => mutation.entityType.startsWith('shift')) &&
+      (parsed.serverVersion ?? 0) < 2
+    ) {
+      throw new BackendProtocolError(
+        'The sync service does not advertise Shift sync protocol version 2 support.',
+      );
+    }
+
     validateSyncResultForBatch(parsed, sentMutationIds);
     return parsed;
   }

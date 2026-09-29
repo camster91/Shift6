@@ -202,7 +202,7 @@ describe('deleteLocalUserData', () => {
     } as unknown as SQLiteDatabase;
 
     await expect(deleteLocalUserData(database, 'owner-1')).rejects.toThrow(
-      'Shift sync records require a compatible build',
+      'A newer Shift sync record requires a compatible build',
     );
     expect(runAsync).not.toHaveBeenCalled();
   });
@@ -321,13 +321,25 @@ describe('deleteLocalUserData', () => {
              VALUES (?, ?, ?, 'reps', 1, '10', 'Rep goal', 'initial', '2026-09-01');`,
           )
           .run(`revision-${owner}`, `shift-${owner}`, owner);
-        sqlite
-          .prepare(
-            `INSERT INTO sync_outbox
-              (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-             VALUES (?, ?, 'shift', ?, '{}', '2026-09-01');`,
-          )
-          .run(`outbox-${owner}`, `key-${owner}`, `shift-${owner}`);
+        const outboxRows = [
+          ['shift', `shift-${owner}`],
+          ['shift-protocol', `shift-${owner}:reps:1`],
+          ['shift-observation', `observation-${owner}`],
+          ['shift-goal-revision', `revision-${owner}`],
+        ] as const;
+        const insertOutbox = sqlite.prepare(
+          `INSERT INTO sync_outbox
+            (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
+           VALUES (?, ?, ?, ?, '{}', '2026-09-01');`,
+        );
+        for (const [entityType, entityId] of outboxRows) {
+          insertOutbox.run(
+            `outbox-${entityType}-${owner}`,
+            `${entityType}:${entityId}`,
+            entityType,
+            entityId,
+          );
+        }
       }
 
       const exportData = await exportLocalUserData(database, 'owner-1', '2026-09-24');
@@ -354,8 +366,15 @@ describe('deleteLocalUserData', () => {
           count: 1,
         });
       }
-      expect(sqlite.prepare('SELECT entity_id FROM sync_outbox;').all()).toEqual([
-        { entity_id: 'shift-owner-2' },
+      expect(
+        sqlite
+          .prepare('SELECT entity_type, entity_id FROM sync_outbox ORDER BY entity_type;')
+          .all(),
+      ).toEqual([
+        { entity_type: 'shift', entity_id: 'shift-owner-2' },
+        { entity_type: 'shift-goal-revision', entity_id: 'revision-owner-2' },
+        { entity_type: 'shift-observation', entity_id: 'observation-owner-2' },
+        { entity_type: 'shift-protocol', entity_id: 'shift-owner-2:reps:1' },
       ]);
       expect(sqlite.prepare('PRAGMA foreign_key_check;').all()).toEqual([]);
     } finally {

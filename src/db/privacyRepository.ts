@@ -316,14 +316,18 @@ export function buildLocalDataExportSummary(
  * explicit confirmation before invoking this operation and separately handle
  * remote account deletion when an account backend is connected.
  */
-export async function assertNoUnsupportedShiftOutboxRows(database: SQLiteDatabase): Promise<void> {
+export async function assertNoUnsupportedShiftOutboxRows(
+  database: SQLiteDatabase,
+): Promise<void> {
   const row = await database.getFirstAsync<{ id: string }>(
     `SELECT id FROM sync_outbox
       WHERE entity_type LIKE 'shift%'
         AND entity_type NOT IN ('shift', 'shift-protocol', 'shift-observation', 'shift-goal-revision')
       LIMIT 1;`,
   );
-  if (row) throw new Error('A newer Shift sync record requires a compatible build before deletion.');
+  if (row) {
+    throw new Error('A newer Shift sync record requires a compatible build before deletion.');
+  }
 }
 
 export async function deleteLocalUserData(database: SQLiteDatabase, userId: string): Promise<void> {

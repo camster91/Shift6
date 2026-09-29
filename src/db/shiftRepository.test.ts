@@ -11,6 +11,7 @@ function databaseFixture() {
   for (const migration of MIGRATIONS) {
     for (const statement of migration.statements) sqlite.exec(statement);
   }
+
   const database = {
     runAsync: async (sql: string, ...params: unknown[]) => {
       const result = sqlite.prepare(sql).run(...(params as SQLInputValue[]));
@@ -45,6 +46,7 @@ function databaseFixture() {
                'supportive', 'balanced', 'not-now', '2026-09-01', '2026-09-01', '2026-09-01');`,
     )
     .run();
+
   sqlite
     .prepare(
       `INSERT INTO training_cycles
@@ -95,122 +97,121 @@ describe('shiftRepository', () => {
   it(
     'creates a measured Shift, protocol, baseline, revision and v2 sync records atomically',
     async () => {
-    const { sqlite, database } = databaseFixture();
-    try {
-      await createShift(database, shift, {
-        templateVersion: 1,
-        createdAt: '2026-09-01T12:05:00.000Z',
-        baselineObservation: baseline,
-      });
+      const { sqlite, database } = databaseFixture();
+      try {
+        await createShift(database, shift, {
+          templateVersion: 1,
+          createdAt: '2026-09-01T12:05:00.000Z',
+          baselineObservation: baseline,
+        });
 
-      expect(
-        sqlite.prepare('SELECT baseline_state, baseline_observation_id FROM shifts;').get(),
-      ).toEqual({
-        baseline_state: 'measured',
-        baseline_observation_id: 'obs-baseline',
-      });
-      expect(sqlite.prepare('SELECT value_json, unit FROM shift_observations;').get()).toEqual({
-        value_json: '4',
-        unit: 'reps',
-      });
-      expect(
-        sqlite.prepare('SELECT entity_type FROM sync_outbox ORDER BY entity_type;').all(),
-      ).toEqual([
-        { entity_type: 'shift' },
-        { entity_type: 'shift-goal-revision' },
-        { entity_type: 'shift-observation' },
-        { entity_type: 'shift-protocol' },
-      ]);
-      expect(sqlite.prepare('PRAGMA foreign_key_check;').all()).toEqual([]);
-    } finally {
-      sqlite.close();
+        expect(
+          sqlite.prepare('SELECT baseline_state, baseline_observation_id FROM shifts;').get(),
+        ).toEqual({
+          baseline_state: 'measured',
+          baseline_observation_id: 'obs-baseline',
+        });
+        expect(sqlite.prepare('SELECT value_json, unit FROM shift_observations;').get()).toEqual({
+          value_json: '4',
+          unit: 'reps',
+        });
+        expect(
+          sqlite.prepare('SELECT entity_type FROM sync_outbox ORDER BY entity_type;').all(),
+        ).toEqual([
+          { entity_type: 'shift' },
+          { entity_type: 'shift-goal-revision' },
+          { entity_type: 'shift-observation' },
+          { entity_type: 'shift-protocol' },
+        ]);
+        expect(sqlite.prepare('PRAGMA foreign_key_check;').all()).toEqual([]);
+      } finally {
+        sqlite.close();
+      }
     },
   );
 
   it(
     'is idempotent for an identical observation and rejects conflicting reuse of the ID',
     async () => {
-    const { sqlite, database } = databaseFixture();
-    try {
-      await createShift(database, shift, {
-        templateVersion: 1,
-        createdAt: '2026-09-01T12:05:00.000Z',
-        baselineObservation: baseline,
-      });
-      const next: ShiftObservation = {
-        ...baseline,
-        id: 'obs-week-3',
-        measuredAt: '2026-09-15T12:00:00.000Z',
-        value: 7,
-      };
-      await appendShiftObservation(database, shift.id, next, {
-        recordedAt: '2026-09-15T12:01:00.000Z',
-      });
-      await appendShiftObservation(database, shift.id, next, {
-        recordedAt: '2026-09-15T12:01:00.000Z',
-      });
+      const { sqlite, database } = databaseFixture();
+      try {
+        await createShift(database, shift, {
+          templateVersion: 1,
+          createdAt: '2026-09-01T12:05:00.000Z',
+          baselineObservation: baseline,
+        });
 
-      expect(
-        sqlite
-          .prepare("SELECT COUNT(*) AS count FROM shift_observations WHERE id = 'obs-week-3';")
-          .get(),
-      ).toEqual({ count: 1 });
-      expect(
-        sqlite
-          .prepare("SELECT COUNT(*) AS count FROM sync_outbox WHERE entity_id = 'obs-week-3';")
-          .get(),
-      ).toEqual({ count: 1 });
+        const next: ShiftObservation = {
+          ...baseline,
+          id: 'obs-week-3',
+          measuredAt: '2026-09-15T12:00:00.000Z',
+          value: 7,
+        };
+        const options = { recordedAt: '2026-09-15T12:01:00.000Z' };
+        await appendShiftObservation(database, shift.id, next, options);
+        await appendShiftObservation(database, shift.id, next, options);
 
-      await expect(
-        appendShiftObservation(database, shift.id, { ...next, value: 8 }, {
-          recordedAt: '2026-09-15T12:01:00.000Z',
-        }),
-      ).rejects.toThrow('different contents');
-    } finally {
-      sqlite.close();
+        expect(
+          sqlite
+            .prepare("SELECT COUNT(*) AS count FROM shift_observations WHERE id = 'obs-week-3';")
+            .get(),
+        ).toEqual({ count: 1 });
+        expect(
+          sqlite
+            .prepare("SELECT COUNT(*) AS count FROM sync_outbox WHERE entity_id = 'obs-week-3';")
+            .get(),
+        ).toEqual({ count: 1 });
+
+        await expect(
+          appendShiftObservation(database, shift.id, { ...next, value: 8 }, options),
+        ).rejects.toThrow('different contents');
+      } finally {
+        sqlite.close();
+      }
     },
   );
 
   it(
     'keeps corrections append-only and prevents competing corrections for one measurement',
     async () => {
-    const { sqlite, database } = databaseFixture();
-    try {
-      await createShift(database, shift, {
-        templateVersion: 1,
-        createdAt: '2026-09-01T12:05:00.000Z',
-        baselineObservation: baseline,
-      });
-      const correction: ShiftObservation = {
-        ...baseline,
-        id: 'obs-baseline-correction',
-        value: 5,
-        correctsObservationId: baseline.id,
-      };
-      await appendShiftObservation(database, shift.id, correction, {
-        recordedAt: '2026-09-02T12:00:00.000Z',
-      });
+      const { sqlite, database } = databaseFixture();
+      try {
+        await createShift(database, shift, {
+          templateVersion: 1,
+          createdAt: '2026-09-01T12:05:00.000Z',
+          baselineObservation: baseline,
+        });
 
-      expect(
-        sqlite
-          .prepare('SELECT id, corrects_observation_id FROM shift_observations ORDER BY id;')
-          .all(),
-      ).toEqual([
-        { id: 'obs-baseline', corrects_observation_id: null },
-        { id: 'obs-baseline-correction', corrects_observation_id: 'obs-baseline' },
-      ]);
+        const correction: ShiftObservation = {
+          ...baseline,
+          id: 'obs-baseline-correction',
+          value: 5,
+          correctsObservationId: baseline.id,
+        };
+        await appendShiftObservation(database, shift.id, correction, {
+          recordedAt: '2026-09-02T12:00:00.000Z',
+        });
 
-      await expect(
-        appendShiftObservation(
-          database,
-          shift.id,
-          { ...correction, id: 'obs-second-correction', value: 6 },
-          { recordedAt: '2026-09-03T12:00:00.000Z' },
-        ),
-      ).rejects.toThrow('already has a different correction');
-    } finally {
-      sqlite.close();
-    }
+        expect(
+          sqlite
+            .prepare('SELECT id, corrects_observation_id FROM shift_observations ORDER BY id;')
+            .all(),
+        ).toEqual([
+          { id: 'obs-baseline', corrects_observation_id: null },
+          { id: 'obs-baseline-correction', corrects_observation_id: 'obs-baseline' },
+        ]);
+
+        await expect(
+          appendShiftObservation(
+            database,
+            shift.id,
+            { ...correction, id: 'obs-second-correction', value: 6 },
+            { recordedAt: '2026-09-03T12:00:00.000Z' },
+          ),
+        ).rejects.toThrow('already has a different correction');
+      } finally {
+        sqlite.close();
+      }
     },
   );
 

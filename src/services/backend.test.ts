@@ -52,7 +52,7 @@ describe('backend boundary', () => {
       getAccessToken: async () => 'token-for-test',
       fetcher,
     });
-    const unknown = { ...mutation, entityType: 'shift' } as unknown as SyncMutation;
+    const unknown = { ...mutation, entityType: 'future-shift-v3' } as unknown as SyncMutation;
 
     await expect(client.sync([unknown])).rejects.toBeInstanceOf(BackendProtocolError);
     expect(fetcher).not.toHaveBeenCalled();
@@ -85,9 +85,31 @@ describe('backend boundary', () => {
     expect(requests[0]?.init?.method).toBe('POST');
     expect(requests[0]?.init?.headers).toMatchObject({
       Authorization: 'Bearer token-for-test',
-      'X-Shift6-Protocol-Version': '1',
+      'X-Shift6-Protocol-Version': '2',
     });
     expect(JSON.parse(String(requests[0]?.init?.body))).toEqual({ mutations: [mutation] });
+  });
+
+  it('requires server version 2 before acknowledging Shift mutations', async () => {
+    const shiftMutation: SyncMutation = {
+      ...mutation,
+      entityType: 'shift',
+      entityId: 'shift-1',
+      idempotencyKey: 'shift:shift-1',
+    };
+    const oldServer = httpClient({
+      acknowledgedMutationIds: ['outbox-1'],
+      rejectedMutationIds: [],
+      serverVersion: 1,
+    });
+    const currentServer = httpClient({
+      acknowledgedMutationIds: ['outbox-1'],
+      rejectedMutationIds: [],
+      serverVersion: 2,
+    });
+
+    await expect(oldServer.sync([shiftMutation])).rejects.toBeInstanceOf(BackendProtocolError);
+    await expect(currentServer.sync([shiftMutation])).resolves.toMatchObject({ serverVersion: 2 });
   });
 
   it('fails closed when the server requires a newer API protocol', async () => {
@@ -226,7 +248,7 @@ describe('backend boundary', () => {
     expect(requests[0]?.init?.method).toBe('DELETE');
     expect(requests[0]?.init?.headers).toMatchObject({
       Authorization: 'Bearer token-for-delete',
-      'X-Shift6-Protocol-Version': '1',
+      'X-Shift6-Protocol-Version': '2',
     });
     expect(requests[0]?.init?.body).toBeUndefined();
   });

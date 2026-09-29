@@ -114,7 +114,9 @@ export async function migrateLocalUserToAccount(
         LIMIT 1;`,
     );
     if (unsupportedShiftMutation) {
-      throw new Error('A newer Shift sync mutation requires a compatible build before account adoption.');
+      throw new Error(
+        'A newer Shift sync mutation requires a compatible build before account adoption.',
+      );
     }
 
     const sourceProfile = await database.getFirstAsync<UserProfileRow>(

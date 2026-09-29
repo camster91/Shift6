@@ -24,7 +24,6 @@ interface CycleRow {
   id: string;
   user_id: string;
   program_version_id: string;
-  status: string;
 }
 
 interface ProtocolRow {
@@ -86,7 +85,7 @@ export async function createShift(
     }
 
     const cycle = await database.getFirstAsync<CycleRow>(
-      `SELECT id, user_id, program_version_id, status
+      `SELECT id, user_id, program_version_id
          FROM training_cycles
         WHERE id = ?
         LIMIT 1;`,
@@ -125,8 +124,8 @@ export async function createShift(
       shift.protocol.id,
       shift.protocol.version,
       JSON.stringify(shift.target),
-      shift.baseline.state,
-      shift.baseline.state === 'measured' ? null : null,
+      shift.baseline.state === 'measured' ? 'missing' : shift.baseline.state,
+      null,
       shift.reviewState,
       shift.nextChoice,
       isPrimary ? 1 : 0,
@@ -163,7 +162,9 @@ export async function createShift(
         recordedAt: options.createdAt,
       });
       await database.runAsync(
-        'UPDATE shifts SET baseline_observation_id = ? WHERE id = ? AND user_id = ?;',
+        `UPDATE shifts
+            SET baseline_state = 'measured', baseline_observation_id = ?
+          WHERE id = ? AND user_id = ?;`,
         baselineObservation.id,
         shift.id,
         shift.userId,

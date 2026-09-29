@@ -202,7 +202,7 @@ describe('deleteLocalUserData', () => {
     } as unknown as SQLiteDatabase;
 
     await expect(deleteLocalUserData(database, 'owner-1')).rejects.toThrow(
-      'Shift sync records require a compatible build',
+      'A newer Shift sync record requires a compatible build',
     );
     expect(runAsync).not.toHaveBeenCalled();
   });

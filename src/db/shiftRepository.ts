@@ -45,14 +45,11 @@ interface ObservationRow {
   corrects_observation_id: string | null;
 }
 
-const SHIFT_SYNC_ENTITY_TYPES = [
-  'shift',
-  'shift-protocol',
-  'shift-observation',
-  'shift-goal-revision',
-] as const;
-
-type ShiftSyncEntityType = (typeof SHIFT_SYNC_ENTITY_TYPES)[number];
+type ShiftSyncEntityType =
+  | 'shift'
+  | 'shift-protocol'
+  | 'shift-observation'
+  | 'shift-goal-revision';
 
 export async function createShift(
   database: SQLiteDatabase,

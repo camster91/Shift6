@@ -107,6 +107,16 @@ export async function migrateLocalUserToAccount(
       throw new Error('The account already has local data; explicit merge is required.');
     }
 
+    const unsupportedShiftMutation = await database.getFirstAsync<{ id: string }>(
+      `SELECT id FROM sync_outbox
+        WHERE entity_type LIKE 'shift%'
+          AND entity_type NOT IN ('shift', 'shift-protocol', 'shift-observation', 'shift-goal-revision')
+        LIMIT 1;`,
+    );
+    if (unsupportedShiftMutation) {
+      throw new Error('A newer Shift sync mutation requires a compatible build before account adoption.');
+    }
+
     const sourceProfile = await database.getFirstAsync<UserProfileRow>(
       `SELECT id, display_name, unit_system, goals_json, experience, training_days_per_week,
               preferred_session_minutes, preferred_training_time, coach_tone, coach_intervention,

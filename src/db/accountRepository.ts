@@ -107,16 +107,16 @@ export async function migrateLocalUserToAccount(
       throw new Error('The account already has local data; explicit merge is required.');
     }
 
-    // This build has no Shift sync payload/ID contract. A row left by a newer
-    // build could belong to either local identity, so adoption must not move
-    // the Shift while stranding its unsent owner identity in the outbox.
     const unsupportedShiftMutation = await database.getFirstAsync<{ id: string }>(
       `SELECT id FROM sync_outbox
-        WHERE entity_type IN ('shift', 'shift-protocol', 'shift-observation', 'shift-goal-revision')
+        WHERE entity_type LIKE 'shift%'
+          AND entity_type NOT IN ('shift', 'shift-protocol', 'shift-observation', 'shift-goal-revision')
         LIMIT 1;`,
     );
     if (unsupportedShiftMutation) {
-      throw new Error('Shift sync mutations require a compatible build before account adoption.');
+      throw new Error(
+        'A newer Shift sync mutation requires a compatible build before account adoption.',
+      );
     }
 
     const sourceProfile = await database.getFirstAsync<UserProfileRow>(
@@ -178,7 +178,24 @@ export async function migrateLocalUserToAccount(
            OR (entity_type = 'workout-schedule-override' AND entity_id IN (
                 SELECT id FROM workout_schedule_overrides WHERE user_id = ?
               ))
+           OR (entity_type = 'shift' AND entity_id IN (
+                SELECT id FROM shifts WHERE user_id = ?
+              ))
+           OR (entity_type = 'shift-protocol' AND entity_id IN (
+                SELECT shift_id || ':' || protocol_id || ':' || protocol_version
+                  FROM shift_protocols WHERE user_id = ?
+              ))
+           OR (entity_type = 'shift-observation' AND entity_id IN (
+                SELECT id FROM shift_observations WHERE user_id = ?
+              ))
+           OR (entity_type = 'shift-goal-revision' AND entity_id IN (
+                SELECT id FROM shift_goal_revisions WHERE user_id = ?
+              ))
         ORDER BY created_at ASC, id ASC;`,
+      sourceUserId,
+      sourceUserId,
+      sourceUserId,
+      sourceUserId,
       sourceUserId,
       sourceUserId,
       sourceUserId,

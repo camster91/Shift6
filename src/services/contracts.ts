@@ -28,6 +28,10 @@ export const SYNC_ENTITY_TYPES = [
   'cycle-review',
   'notification-preference',
   'workout-schedule-override',
+  'shift',
+  'shift-protocol',
+  'shift-observation',
+  'shift-goal-revision',
 ] as const;
 
 export function isSupportedSyncEntityType(value: string): value is SyncMutation['entityType'] {

@@ -1,219 +1,81 @@
 # SHIFT6
 
-**Current product direction:** [#304](https://github.com/camster91/Shift6/issues/304) — **Six weeks. One measurable goal.** Start with about three human-reviewed rep, timed and Barbell/strength Shifts; see [the canonical goal-first contract](docs/25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305). The broad catalogue and feature descriptions below include historical implementation and future ambition. They are not focused-v1 release promises. No pilot content is approved yet.
+A local-first mobile fitness app for iOS and Android that organizes training into focused six-week cycles: pick one measurable goal, record a baseline, train, and review real change after six weeks.
 
+> Status: in active rebuild. The repository was reset in September 2026 and `main` now holds a new React Native / Expo foundation. It is not released on the App Store or Google Play yet, and no program content has passed human review for public release. The earlier Vite/Capacitor web version is preserved on the `archive/pre-shift6-rebuild-2026-09-13` branch.
 
-SHIFT6 is a free-first mobile fitness app for iOS and Android built around one core idea: **progress is easier to understand and sustain when training is organized into focused 6-week cycles.**
+## Why
 
-The focused product helps a user choose one measurable goal, establish a baseline, follow today's session and review real change after six weeks. Existing broader catalogue, health and optional Coach systems remain available for later gated expansion.
+Progress is easier to see and sustain when training is organized into short, focused blocks. SHIFT6 keeps core training free, works offline, and separates measured progress from simple adherence, so users can tell whether a block actually moved them toward their goal.
 
-## Product promise
+## What is built today
 
-**Train with a plan. Review every 6 weeks. Keep moving forward.**
+- Guest onboarding and profile setup, with an equipment manager that feeds program recommendations and substitutions
+- Versioned six-week programs: a launch catalogue of 20 program definitions with executable versions (Barbell 30 is the startable one; the rest are drafts pending content review)
+- Active workout logging with per-set entry, session notes, exercise reordering, added sets, equipment substitution, and explicit partial or skipped sessions with a reason
+- Deterministic next-session targets from completed set history, with unit-aware load increments (for example 5 lb or 2.5 kg); AI never sets targets
+- Cycle calendar with rescheduling, week transitions, and an end-of-cycle review and reflection
+- Progress views: training volume by exercise, movement pattern and muscle, plus a cycle-level cardio summary
+- Searchable exercise library with filters (equipment, difficulty, stance, focus) and a custom exercise builder
+- Coach surface with a deterministic safety classifier and proposal validator; provider-backed AI is opt-in and off by default, and can never change a plan on its own
+- Apple Health and Health Connect adapters with explicit disconnect and data-removal controls
+- Local-first SQLite storage with versioned migrations and an idempotent sync outbox that surfaces conflicts for review instead of overwriting data
+- Privacy controls: local export and delete, guest-to-account data adoption, privacy-safe analytics and error reporting that are no-ops by default
+- Plate calculator, body metrics, notifications, accessibility-tested UI components
 
-Future breadth ambition (outside focused v1): users may eventually:
+## Tech stack
 
-- follow curated programs;
-- choose from a future catalogue of 20 or more reviewed programs;
-- build their own programs and workouts;
-- add, remove, reorder, substitute, or edit exercises;
-- search hundreds of exercises by movement, muscle, equipment, goal, difficulty, or accessibility needs;
-- track strength, conditioning, mobility, cardio, body metrics, consistency, and health signals;
-- progress through 6-week training cycles;
-- work with an AI PT coach that reviews performance and proposes safe, explainable changes;
-- connect Apple Health / Health Connect where supported;
-- train offline and sync later;
-- keep core functionality free at launch on the App Store and Google Play.
+- Expo SDK 57, React Native 0.86, React 19, TypeScript
+- Expo Router (tab navigation), React Native Reanimated, Gesture Handler
+- expo-sqlite for on-device storage, expo-secure-store, expo-notifications
+- HealthKit (`@kingstinct/react-native-healthkit`) and Android Health Connect (`react-native-health-connect`)
+- Jest (`jest-expo`) and React Native Testing Library, ESLint, Prettier
+- EAS build configuration (`eas.json`), GitHub Actions CI
 
-## Current repository status
+## Getting started
 
-This repository was intentionally reset on 2026-09-13 to become the canonical SHIFT6 rebuild. The previous implementation is preserved on:
+Requires Node 22.
 
-`archive/pre-shift6-rebuild-2026-09-13`
+```bash
+npm ci
+cp .env.example .env
+npm start          # Expo dev server
+npm run ios        # or: npm run android / npm run web
+```
 
-`main` now contains the implemented rebuild foundation. Do not restore the archived application wholesale; any reuse must be an explicit migration decision that fits the current versioned, local-first architecture.
+The web target is a UI preview only: it has no persistence because the SQLite web worker is not available there. iOS and Android use the real SQLite provider.
 
-### Foundation implementation checkpoint
+## Quality checks
 
-The current increment also persists an optional end-of-cycle reflection (rating, next-block focus, and note) as a user-scoped, replaceable local record. It is included in local export/delete/account-adoption boundaries and can be synced later through the existing provider-neutral outbox contract. The reflection is feedback only: it does not alter progression or apply Coach recommendations.
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run verify     # full CI gate: format, lint, typecheck, expo-doctor, asset and secret checks, audit, tests, export
+```
 
-The app-service boundary now also provides a no-op-by-default, privacy-safe analytics client. Initial
-journey instrumentation covers onboarding, program start, workout start/completion, Week 2, cycle
-completion, next-cycle start, health connection, and exercise substitution without accepting free
-text, raw health samples, or other sensitive payloads.
+CI runs the same steps on every push and pull request, ending with an iOS, Android and web export smoke test.
 
-The local-first sync boundary now retains typed version, ownership, and validation conflicts and
-surfaces them as review-required state instead of silently overwriting future plan changes.
+## Project structure
 
-The deterministic next-session seam now resolves the active program version's progression rule IDs
-through a typed rule catalogue. Barbell 30 uses unit-aware load increments (5 lb imperial, 2.5 kg
-metric); drafts and unknown rule references use conservative deterministic defaults. Every supported
-progression strategy now has an explicit deterministic default rule, mixed-modality targets route to
-a compatible strategy, and AI remains outside target calculation.
+```
+app/                 Expo Router screens (tabs: home, programs, coach, progress, profile)
+src/components/ui/   token-driven UI primitives
+src/domain/          progression, cycles, calendar, programs, exercise catalogue (pure logic + tests)
+src/db/              SQLite migrations and repositories
+src/services/        sync, health, coach, notifications, analytics, auth boundaries
+content/             release manifest
+assets/              brand marks and asset manifest
+docs/                product, design, architecture and release planning
+scripts/             asset, secret and release-config validators
+```
 
-The sync boundary now has a local review surface for pending outbox failures and typed backend
-conflicts. Profile links to it when a conflict is detected; retry is explicit, and no local plan or
-history is merged, discarded, or overwritten automatically.
+## Docs
 
-The launch catalogue contains 20 stable program definitions and executable six-week versions for all
-20. Barbell 30 remains the canonical startable fixture; the other 19 versions stay behind the public
-startability gate as content drafts until exercise and program review is complete. The foundational
-exercise catalogue contains 58 draft records, including eight band-native movements used by the
-Resistance Bands draft.
-
-Profile now links to a dedicated equipment manager. It edits the same user-scoped onboarding
-profile transaction and outbox snapshot, so later program recommendations and workout substitutions
-see the user's current equipment without introducing a second preference store.
-
-Progress now also includes a local-first training-volume breakdown derived from completed sets in
-the active cycle. The deterministic domain view groups sets by exercise, movement pattern, and
-primary muscle, and keeps load volume separate from set counts. Primary-muscle totals are explicitly
-approximate because one set may be credited to multiple primary muscles; missing load or reps never
-creates fabricated load volume.
-
-Repeating a completed cycle now creates a new private program/version namespace before the next
-cycle is saved. This keeps future edits copy-on-write and prevents completed-cycle history from
-being rewritten through a reused version ID.
-
-The Progress surface also has a local cycle-level cardio view. It deduplicates completed cardio
-sessions, aggregates manual duration/distance measurements by week, and keeps missing metrics
-missing; it does not infer cardio from a health provider or from strength volume.
-
-Coach now includes a bounded freeform question surface. Questions stay outside analytics, are
-short-circuited through deterministic safety routing when needed, and use the local structured
-explainer when a provider-backed Coach is unavailable. Provider transport receives the trimmed
-question separately from the allowlisted context and still cannot mutate a plan. The repository
-also includes an evaluation matrix for provider failure, missed training, plateaus, discomfort,
-limited-time requests, equipment changes, medication boundaries, and urgent symptoms.
-
-The Exercise Library now supports deterministic filters for difficulty, unilateral/bilateral
-stance, compound/isolation classification, and mobility/power/cardio focus. Classification is
-explicit on seeded records with a conservative fallback for legacy JSON; all current catalogue
-records remain draft until technique and media review is complete.
-
-The custom builder now captures private movement metadata instead of assuming a fixed carry: users
-choose movement category, tracking type, difficulty, available equipment, primary muscles,
-instructions, and notes. The created record remains user-owned and draft, and its first workout
-target is derived from the chosen tracking type.
-
-The builder also reloads the user’s private exercise library on later visits, so a saved custom
-movement can be searched and reused across workouts without changing the public catalogue.
-
-The active workout now supports an explicit early-stop path after at least one set is logged. The
-user chooses a bounded reason (time, readiness, discomfort, equipment, or other); native SQLite
-persists the session as `partial`, queues the same idempotent workout-session mutation, deletes the
-draft, and leaves the cycle week unchanged. Partial sessions remain visible in the summary with
-their logged-set count, while adherence and cycle advancement continue to require a complete
-workout. Web preview passes the selected state through the route because native SQLite is
-intentionally unavailable there.
-
-The same boundary supports skipping an untouched session with a bounded reason. Native SQLite
-persists the session as `skipped`, queues it for later sync, deletes the draft, and keeps the session
-out of adherence, cycle advancement, and completed-session progression while retaining the user’s
-decision in the summary.
-
-The Review → progression-copy path now reads completed local set history and applies only ordinary
-deterministic target changes to a new private version. History is scoped by canonical exercise and
-the immediate source workout, while missing data, limited readiness, discomfort, and confirmation-
-requiring strategies keep the source target unchanged.
-
-The rebuild foundation was developed on `feat/shift6-rebuild-foundation` and merged into `main` on
-2026-09-15. It introduced a clean Expo SDK 57 / React Native 0.86 / TypeScript application shell,
-Expo Router tabs, token-driven UI primitives, typed domain fixtures, versioned SQLite migrations for
-native builds, an idempotent workout-session/completed-set outbox and flush contract, persisted guest
-onboarding/profile setup, a versioned Barbell 30 six-week cycle start flow, local progress aggregation
-from completed workout records with deterministic next-session targets, a persisted cycle-week
-transition and review boundary, a provider-neutral Coach safety classifier and proposal validator,
-a searchable draft exercise library with equipment-aware filtering, the 20-program launch catalogue,
-a copy-on-write custom builder foundation, and a cycle-aware local calendar with idempotent
-rescheduling.
-
-The app-services layer now also has a provider-neutral error-reporting contract and root render error
-boundary. Reporting defaults to a no-op until a production provider, privacy/retention policy, and
-device-level verification are explicitly configured.
-
-The rebuild deliberately does not restore the archived web application. The archived implementation was inspected and rejected for direct reuse because it is a Vite/Capacitor app built around browser `localStorage`, a single mutable state payload, and fixed progression assumptions that conflict with the new program-version and program-specific Week 6 model. The design layer now also exposes semantic icon names and an original SVG asset handoff boundary; the current Ionicons glyphs are explicitly temporary fallbacks pending Figma review.
-
-The web target is a UI preview only: it uses a platform-specific no-persistence provider because the SDK 57 SQLite web worker requires a WASM asset that is not present in the resolved package. iOS and Android continue to use the real SQLite provider. Native simulator/device boot remains a separate verification gate because this workstation has no usable `simctl` runtime or connected Android device.
-
-The calendar increment stores local `YYYY-MM-DD` schedule overrides against a cycle/week/workout
-occurrence. It projects completed, partial, skipped, in-progress, missed, current, and upcoming
-states from local session history; a move is written to SQLite and the sync outbox in one
-transaction, while the web preview keeps the interaction non-persistent. Home and the cycle
-dashboard consume the same schedule projection, so a moved session remains coherent across routes.
-
-Health settings now provide explicit local disconnect and imported-summary removal controls. The
-disconnect action stops future SHIFT6 imports and updates the replaceable profile snapshot
-atomically; a separate confirmation removes only normalized summaries stored on the device. OS-level
-HealthKit/Health Connect revocation remains a native platform-settings and device-verification gate.
-
-Active workouts also support a bounded session note that is flushed locally across editing,
-backgrounding, pausing, and completion, then shown in the workout summary. Notes remain outside
-analytics and are covered by the existing local export/delete boundary.
-
-Active workouts now expose accessible copy-on-write controls for moving an exercise up or down and
-adding a set. Reordering preserves workout-exercise and completed-set IDs; added sets use the
-versioned builder rules and remain local-first. Template data and completed history are not mutated.
-
-When an authenticated backend is configured, active-workout local writes now trigger a non-blocking
-single-flight sync attempt after the local transaction succeeds. Guest mode and offline mode leave
-the outbox untouched for a later authenticated retry.
-
-Native database bootstrap failures now show a bounded retry surface without exposing raw SQLite
-details. Workout data is not presented as available until the local database and migrations open
-successfully.
-
-The active workout also reflects offline, syncing, retry-paused, and conflict states from the
-shared sync runtime while keeping local set completion independent of cloud availability.
-
-Equipment substitutions in an unfinished session now clear the old movement's draft inputs and
-target override before the replacement is displayed. A completed set still blocks substitution so
-history cannot be silently reclassified.
-
-The app now resolves local ownership through a single identity boundary. The default shell remains
-guest-owned, while an injected authenticated session must adopt guest data transactionally before
-account-scoped routes, notifications, or sync mount. Provider-specific sign-in, account conflict
-UX, remote deletion, and native account verification remain explicitly open.
-
-## Canonical planning docs
-
-Start with `docs/25_GOAL_FIRST_RELEASE_CONTRACT.md` for #304, `docs/26_SCOPE_DISPOSITION.md` for the #305 historical-scope audit, and `docs/07_ASSET_AND_ICON_PROMPTS.md` for #319. The release allowlist lives in `content/release-manifest.json`.
-
-1. `docs/00_MASTER_PRODUCT_PLAN.md` — vision, scope, principles, launch definition
-2. `docs/01_BRAND_AND_DESIGN_SYSTEM.md` — SHIFT6 identity and Figma-first design direction
-3. `docs/02_SCREEN_BY_SCREEN_SPEC.md` — end-to-end mobile information architecture and screen requirements
-4. `docs/03_SHIFT6_PROGRESSION_ENGINE.md` — six-week progression model and adaptation rules
-5. `docs/04_AI_PT_COACH.md` — AI coach architecture, behaviour, guardrails, and prompt strategy
-6. `docs/05_PROGRAMS_EXERCISES_EQUIPMENT.md` — program builder, 20 seed programs, exercise/equipment catalogue
-7. `docs/06_TECHNICAL_ARCHITECTURE.md` — proposed mobile/backend/offline/integration architecture
-8. `docs/07_ASSET_AND_ICON_PROMPTS.md` — prompts and production plan for custom imagery and icons
-9. `docs/08_PRIVACY_ACCESSIBILITY_SAFETY.md` — health-data privacy, accessibility, safety, and AI boundaries
-10. `docs/09_ROADMAP_AND_EPICS.md` — build phases, issue structure, acceptance gates
-11. `docs/10_QA_RELEASE_ANALYTICS.md` — QA matrix, analytics, App Store/Play Store, release and rollback
-12. `docs/11_MASTER_BUILD_PROMPT.md` — implementation handoff prompt for coding agents/harnesses
-13. `docs/12_RELEASE_READINESS.md` — verified implementation state and remaining external release gates
-
-## Design reference
-
-Primary visual direction supplied for this rebuild:
-
-https://dribbble.com/shots/23040815-Fitness-App-Design-Concept
-
-The goal is **not to clone the reference**. SHIFT6 should reinterpret its light premium aesthetic, large typography, soft lavender background, white surfaces, black pill navigation, playful pastel category cards, 3D object accents, generous spacing, and rounded geometry into a distinct brand and accessible product system.
-
-## Initial product architecture recommendation
-
-- React Native + Expo + TypeScript
-- Expo Router
-- token-driven component library built from Figma variables
-- local-first workout logging with SQLite and an explicit sync/outbox layer
-- PostgreSQL backend with strict row-level access control
-- provider-agnostic AI gateway on the server
-- Apple Health / HealthKit and Android Health Connect integration through native adapters
-- GitHub Actions + EAS build/release pipeline
-
-The architecture remains replaceable behind interfaces where possible. Product behaviour and data models are more important than any single vendor.
-
-## Definition of success
-
-A first focused release succeeds when a new user can choose one reviewed Shift, record an honest baseline, complete sessions offline, return after interruption, distinguish actual measured progress from adherence, review the block and select a next step without a core-training paywall or provider-backed AI.
+- [docs/00_MASTER_PRODUCT_PLAN.md](docs/00_MASTER_PRODUCT_PLAN.md): vision and principles
+- [docs/03_SHIFT6_PROGRESSION_ENGINE.md](docs/03_SHIFT6_PROGRESSION_ENGINE.md): six-week progression model
+- [docs/04_AI_PT_COACH.md](docs/04_AI_PT_COACH.md): coach guardrails
+- [docs/06_TECHNICAL_ARCHITECTURE.md](docs/06_TECHNICAL_ARCHITECTURE.md): architecture
+- [docs/08_PRIVACY_ACCESSIBILITY_SAFETY.md](docs/08_PRIVACY_ACCESSIBILITY_SAFETY.md): privacy, accessibility and safety
+- [docs/12_RELEASE_READINESS.md](docs/12_RELEASE_READINESS.md): current implementation state
+- [docs/25_GOAL_FIRST_RELEASE_CONTRACT.md](docs/25_GOAL_FIRST_RELEASE_CONTRACT.md): scope of the first focused release

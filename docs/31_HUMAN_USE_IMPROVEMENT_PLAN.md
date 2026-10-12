@@ -1,5 +1,11 @@
 # Human-use improvement work and remaining evidence
 
+> Historical checkpoint. The authorized guest-only mobile implementation in
+> [doc 33](33_MOBILE_GUEST_RELEASE.md) supersedes the server dependency and disabled
+> goal-writer status below. Current device and human acceptance is in
+> [docs 13](13_NATIVE_RELEASE_VERIFICATION.md) and [34](34_HUMAN_USE_ACCEPTANCE.md).
+> The following historical results are not current test or audit totals.
+
 This work follows the goal-first scope in docs 25–30: beginners and returning
 exercisers completing six weeks around one measurable goal. It does not claim a
 100/100 result, approve fitness content, or authorize a public release.

@@ -1,6 +1,11 @@
 # SHIFT6 documentation index
 
-**Read first:** [goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) (#304/#305) and [master build prompt](11_MASTER_BUILD_PROMPT.md). Older breadth targets in this archive are future ambitions or historical implementation notes; the focused release manifest and human review determine public content.
+**Current guest/mobile checkpoint:** [doc 33](33_MOBILE_GUEST_RELEASE.md),
+[native verification](13_NATIVE_RELEASE_VERIFICATION.md), and
+[human-use acceptance](34_HUMAN_USE_ACCEPTANCE.md). These supersede historical
+backend, web and implementation-status claims for this release.
+
+**Product requirements:** [goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) (#304/#305) and [master build prompt](11_MASTER_BUILD_PROMPT.md). Older breadth targets in this archive are future ambitions or historical implementation notes; the focused release manifest and human review determine public content.
 
 
 Use this index to distinguish durable product requirements from historical implementation notes and current release readiness.
@@ -28,20 +33,21 @@ These documents define intended product behaviour and remain the source of requi
 
 ## Current implementation status
 
-- `12_RELEASE_READINESS.md` — present-tense checkpoint for what is implemented, what remains
-  unverified, and what must not be claimed complete.
+- `33_MOBILE_GUEST_RELEASE.md` — current mobile guest implementation and verification.
+- `34_HUMAN_USE_ACCEPTANCE.md` — weighted assessment criteria, user tasks and missing evidence.
+- `12_RELEASE_READINESS.md` — historical checkpoint; use doc 33 for this branch.
 - `14_EPIC_STATUS.md` — evidence-based status matrix for issues #270–#281.
 
 Implementation-status paragraphs embedded in `06_TECHNICAL_ARCHITECTURE.md` and
 `09_ROADMAP_AND_EPICS.md` record earlier increments. They are useful history, but they can become
 stale as later branches land. When a historical status note conflicts with current code/tests or
-`12_RELEASE_READINESS.md`, verify the current branch and use the newer evidence.
+`33_MOBILE_GUEST_RELEASE.md`, verify the current branch and use the newer evidence.
 
 ## Release execution
 
 - `13_NATIVE_RELEASE_VERIFICATION.md` — evidence checklist for repository verification,
   native-device QA, offline/restart durability, accessibility, HealthKit/Health Connect,
-  notifications, auth/backend, observability, content/design approval, store submission, staged
+  notifications, guest privacy, content approval, store preparation, staged
   rollout and rollback.
 - `15_STORE_RELEASE_PACKAGE.md` — pre-submission App Store/Google Play metadata, provisional privacy
   and Data safety mappings, Health Connect declaration inventory, account-deletion gates,
@@ -74,7 +80,7 @@ Supporting release documents on the cumulative stack:
 Before implementing a supposedly missing feature:
 
 1. read the requirement document;
-2. check `12_RELEASE_READINESS.md` and `14_EPIC_STATUS.md`;
+2. check `33_MOBILE_GUEST_RELEASE.md` and current native/human evidence;
 3. inspect the current code/tests on the target branch;
 4. distinguish implementation from native/human/provider verification;
 5. do not recreate a feature only because an older checkpoint says it was still open;

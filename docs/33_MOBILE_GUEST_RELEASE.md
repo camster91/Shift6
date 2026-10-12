@@ -45,8 +45,8 @@ goal changes. A new native build must be used to validate these changes.
 
 1. Obtain qualified review of any public exercise/program content to be enabled.
 2. Validate the final build on physical iOS/Android devices with VoiceOver/
-   TalkBack, largest text, keyboard, offline restore, permissions and backgrounding.
-3. Run the usability sessions in docs 18/23; record actual results and fix failures.
+   TalkBack, largest text, keyboard, offline recovery, permissions and backgrounding.
+3. Run the usability sessions in [doc 34](34_HUMAN_USE_ACCEPTANCE.md); record actual results and fix failures.
 4. Configure Apple/Google distribution credentials and build signed store binaries.
 5. Complete actual store privacy declarations, screenshots, listing, support and
    policy URLs; review store submissions before publication.

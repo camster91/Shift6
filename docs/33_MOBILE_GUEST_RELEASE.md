@@ -7,6 +7,7 @@ rejects accidentally supplying a backend URL in that mode.
 ## Implemented
 
 - Six-step setup, owner-scoped draft recovery, offline logging and workout resume.
+- Isolated native SQLite transactions enable foreign keys on every connection and refuse unsafe goal writes.
 - Guest auth is unavailable, sync runtime does not subscribe or flush, and new
   local writes do not create cloud outbox records. Existing records are retained.
 - Profile explains local storage and offers export and deletion.
@@ -17,7 +18,7 @@ rejects accidentally supplying a backend URL in that mode.
   in history. Target revisions and review choices have a separate local journal.
   Goals are tied to an immutable plan version. Replacing a primary goal requires
   explicit confirmation and retains its history.
-- Export schema 12 includes personal goal drafts and journal entries. Owner
+- Export schema 12 includes personal goal drafts and journal entries. Native sharing uses a JSON file, not a potentially oversized Android text payload. Temporary copies are stored in owner-scoped private cache folders and removed during local deletion; later exports age out copies older than a day. Owner
   checks apply before mutation; deletion cascades through goal history.
 - Higgsfield artwork and silent optional motion, native icons/splash, reduced
   motion, background playback stop and poster fallback. See doc 32 for earlier

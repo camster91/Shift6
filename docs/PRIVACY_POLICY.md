@@ -16,7 +16,7 @@ Optional Apple Health or Health Connect access requires your permission. You
 can decline, revoke access in system settings, or disconnect and remove imported
 health records from SHIFT6. Optional reminders use native notification permission.
 
-You can export your local records from Profile. Choosing a destination in the
+You can export your local records as a JSON file from Profile. SHIFT6 keeps a temporary copy in private app cache so the receiving app can read it. A later export removes copies older than a day, and deleting local records removes the temporary copies for that user. Device storage management may also clear cache files. Choosing a destination in the
 system sharing interface may send that export outside your device; you control
 the destination. Treat exports as private files.
 

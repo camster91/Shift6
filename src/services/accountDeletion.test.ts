@@ -163,3 +163,39 @@ describe('account deletion orchestration', () => {
     expect(outcome.warnings).toHaveLength(1);
   });
 });
+
+test('temporary export cleanup waits for confirmed remote deletion and precedes local record deletion', async () => {
+  const additional = jest.fn(async () => undefined);
+  await expect(
+    deleteAuthenticatedAccount({
+      database,
+      userId: 'account-user',
+      backend: backend(async () => Promise.reject(new Error('not confirmed'))),
+      auth: auth(async () => undefined),
+      deleteLocalData: async () => undefined,
+      clearAdditionalLocalData: additional,
+      recoveryStore: recoveryStore().store,
+    }),
+  ).rejects.toThrow('not confirmed');
+  expect(additional).not.toHaveBeenCalled();
+  const order: string[] = [];
+  await deleteAuthenticatedAccount({
+    database,
+    userId: 'account-user',
+    backend: backend(async () => {
+      order.push('remote');
+      return { deleted: true };
+    }),
+    auth: auth(async () => {
+      order.push('auth');
+    }),
+    deleteLocalData: async () => {
+      order.push('records');
+    },
+    clearAdditionalLocalData: async () => {
+      order.push('exports');
+    },
+    recoveryStore: recoveryStore().store,
+  });
+  expect(order).toEqual(['remote', 'exports', 'records', 'auth']);
+});

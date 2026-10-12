@@ -62,7 +62,7 @@ async function personalTransaction(
   return db.withExclusiveTransactionAsync(async (tx) => {
     const flags = await tx.getFirstAsync<{ foreign_keys: number }>('PRAGMA foreign_keys;');
     if (flags?.foreign_keys !== 1)
-      throw new Error('Foreign-key protection is unavailable. Use an updated native build.');
+      throw new Error('This build cannot save goals safely. Update the native app and try again.');
     await operation(tx);
   });
 }

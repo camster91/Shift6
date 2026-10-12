@@ -20,6 +20,7 @@ export interface DeleteAuthenticatedAccountInput {
   backend: BackendClient;
   auth: AuthProvider;
   deleteLocalData?: typeof deleteLocalUserData;
+  clearAdditionalLocalData?: (userId: string) => Promise<void>;
   recoveryStore?: AccountDeletionRecoveryStore;
   now?: () => string;
 }
@@ -35,6 +36,7 @@ export async function deleteAuthenticatedAccount({
   backend,
   auth,
   deleteLocalData = deleteLocalUserData,
+  clearAdditionalLocalData,
   recoveryStore = accountDeletionRecoveryStore,
   now = () => new Date().toISOString(),
 }: DeleteAuthenticatedAccountInput): Promise<AccountDeletionOutcome> {
@@ -62,6 +64,7 @@ export async function deleteAuthenticatedAccount({
   }
 
   try {
+    await clearAdditionalLocalData?.(normalizedUserId);
     await deleteLocalData(database, normalizedUserId);
   } catch {
     if (!recoveryPersisted) {

@@ -38,6 +38,14 @@ async function validate() {
   const plugins = (expo?.plugins ?? []).map((plugin) =>
     Array.isArray(plugin) ? plugin[0] : plugin,
   );
+  const sqlitePlugin = expo.plugins.find(
+    (plugin) => Array.isArray(plugin) && plugin[0] === 'expo-sqlite',
+  );
+  assert(
+    sqlitePlugin?.[1]?.customBuildFlags?.split(/\s+/).includes('-DSQLITE_DEFAULT_FOREIGN_KEYS=1'),
+    'Every native SQLite connection must enable foreign keys by default.',
+  );
+
   for (const requiredPlugin of [
     'expo-router',
     'expo-sqlite',

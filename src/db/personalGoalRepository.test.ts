@@ -255,3 +255,11 @@ test.each([
   expect((await getPersonalGoal(db, 'owner', 'cycle'))?.protocol).toEqual(configured);
   expect((await getPersonalObservations(db, 'owner', 'goal'))[0]?.value).toBe(value);
 });
+
+test('fails closed when an isolated connection has foreign keys disabled', async () => {
+  sqlite.exec('PRAGMA foreign_keys=OFF;');
+  await expect(createPersonalGoal(db, 'owner', 'cycle', goal, now)).rejects.toThrow(
+    'Foreign-key protection',
+  );
+  expect(sqlite.prepare('SELECT count(*) n FROM shifts').get()).toEqual({ n: 0 });
+});

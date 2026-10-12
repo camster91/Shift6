@@ -3,13 +3,17 @@ name: Native validation
 on:
   workflow_dispatch:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - '.env.release.example'
 
 permissions:
   contents: read
 
 concurrency:
   group: native-validation-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   CI: '1'

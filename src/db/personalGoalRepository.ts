@@ -52,6 +52,20 @@ function protocolErrors(p: MeasurementProtocol): string[] {
     return ['Unsupported measurement protocol.'];
   return validateMeasurementProtocol(p);
 }
+/** Expo's isolated transactions open a new native connection. The build flag
+ * enables foreign keys on that connection before BEGIN; changing the pragma
+ * inside a transaction would silently have no effect. */
+async function personalTransaction(
+  db: SQLiteDatabase,
+  operation: (tx: SQLiteDatabase) => Promise<void>,
+) {
+  return db.withExclusiveTransactionAsync(async (tx) => {
+    const flags = await tx.getFirstAsync<{ foreign_keys: number }>('PRAGMA foreign_keys;');
+    if (flags?.foreign_keys !== 1)
+      throw new Error('Foreign-key protection is unavailable. Use an updated native build.');
+    await operation(tx);
+  });
+}
 async function ownedRow(db: SQLiteDatabase, owner: string, id: string): Promise<GoalRow> {
   const row = await db.getFirstAsync<GoalRow>(
     "SELECT * FROM shifts WHERE id = ? AND user_id = ? AND template_id='personal-entry-v1';",
@@ -178,7 +192,7 @@ export async function createPersonalGoal(
         (goal.protocol.metric === 'reps' && !Number.isInteger(goal.target))
   )
     throw new Error('Enter a valid positive target.');
-  await db.withExclusiveTransactionAsync(async (tx) => {
+  await personalTransaction(db, async (tx) => {
     const cycle = await tx.getFirstAsync<{ program_version_id: string; status: string }>(
       'SELECT program_version_id,status FROM training_cycles WHERE id = ? AND user_id = ?;',
       cycleId,
@@ -297,7 +311,7 @@ export async function appendPersonalObservation(
     throw new Error('This release records self-entered measurements only.');
   if (Date.parse(observation.measuredAt) > Date.parse(at))
     throw new Error('A measurement cannot be in the future.');
-  await db.withExclusiveTransactionAsync(async (tx) => {
+  await personalTransaction(db, async (tx) => {
     const row = await ownedRow(tx, owner, observation.shiftId);
     const goal = await readGoal(tx, row);
     if (!normalizeObservation(goal.protocol, observation))
@@ -377,7 +391,7 @@ export async function setPersonalBaselineState(
   at: string,
 ) {
   guestOnly();
-  await db.withExclusiveTransactionAsync(async (tx) => {
+  await personalTransaction(db, async (tx) => {
     await ownedRow(tx, owner, id);
     if (await event(tx, owner, id, operation, 'baseline-state', { state }, at))
       await tx.runAsync(
@@ -400,7 +414,7 @@ export async function revisePersonalTarget(
 ) {
   guestOnly();
   text(reason, 'Reason');
-  await db.withExclusiveTransactionAsync(async (tx) => {
+  await personalTransaction(db, async (tx) => {
     const goal = await readGoal(tx, await ownedRow(tx, owner, id));
     if (
       goal.protocol.metric === 'completion'
@@ -454,7 +468,7 @@ export async function savePersonalReview(
     !['maintain', 'repeat', 'modify', 'new-goal', 'break', 'undecided'].includes(choice)
   )
     throw new Error('Choose a valid review and next step.');
-  await db.withExclusiveTransactionAsync(async (tx) => {
+  await personalTransaction(db, async (tx) => {
     const goal = await readGoal(tx, await ownedRow(tx, owner, id));
     if (
       await event(

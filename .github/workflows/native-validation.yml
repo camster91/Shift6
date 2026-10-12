@@ -1,0 +1,71 @@
+name: Native validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: '1'
+  EXPO_PUBLIC_ENVIRONMENT: staging
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run validate:release-config
+      - run: npm run validate:release-assets
+      - run: npx expo prebuild --no-install --platform android
+      - name: Compile release-mode APK for testing
+        working-directory: android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64 --no-daemon --max-workers=2
+      - name: Save test-signed APK (not a store submission)
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-test-release
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run validate:release-config
+      - run: npm run validate:release-assets
+      - run: npx expo prebuild --no-install --platform ios
+      - name: Install native pods
+        working-directory: ios
+        run: pod install
+      - name: Compile unsigned Release simulator app
+        run: >-
+          xcodebuild -workspace ios/SHIFT6.xcworkspace -scheme SHIFT6
+          -configuration Release -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath native-build CODE_SIGNING_ALLOWED=NO build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios-unsigned-simulator-release
+          path: native-build/Build/Products/Release-iphonesimulator/SHIFT6.app
+          if-no-files-found: error

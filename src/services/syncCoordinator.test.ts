@@ -87,3 +87,46 @@ describe('flushWhenOnline', () => {
     ).resolves.toMatchObject({ outcome: 'empty' });
   });
 });
+
+describe('bounded queue draining', () => {
+  it('sends later snapshots after earlier acknowledgements in the same online run', async () => {
+    const batches = [
+      runResult({ attemptedMutationIds: ['old'], acknowledgedMutationIds: ['old'] }),
+      runResult({ attemptedMutationIds: ['new'], acknowledgedMutationIds: ['new'] }),
+      runResult({ attemptedMutationIds: [], acknowledgedMutationIds: [] }),
+    ];
+    let calls = 0;
+    const result = await flushWhenOnline(
+      database,
+      backend,
+      { getStatus: async () => 'online' },
+      50,
+      async () => batches[calls++]!,
+    );
+    expect(calls).toBe(3);
+    expect(result.run?.acknowledgedMutationIds).toEqual(['old', 'new']);
+    expect(result.outcome).toBe('synced');
+  });
+
+  it('stops draining when a later batch needs conflict review', async () => {
+    let calls = 0;
+    const result = await flushWhenOnline(
+      database,
+      backend,
+      { getStatus: async () => 'online' },
+      50,
+      async () => {
+        calls += 1;
+        return calls === 1
+          ? runResult()
+          : runResult({
+              attemptedMutationIds: ['conflict'],
+              acknowledgedMutationIds: [],
+              conflictedMutationIds: ['conflict'],
+            });
+      },
+    );
+    expect(calls).toBe(2);
+    expect(result.outcome).toBe('conflict');
+  });
+});

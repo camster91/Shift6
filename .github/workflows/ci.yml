@@ -50,6 +50,9 @@ jobs:
       - name: Validate release config
         run: npm run validate:release-config
 
+      - name: Validate native artwork assets
+        run: npm run validate:release-assets
+
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 

@@ -1,3 +1,4 @@
+import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { OnboardingProfile } from '../domain/types';
@@ -79,7 +80,7 @@ export async function saveOnboardingProfile(
 
 /**
  * Disconnects future health imports without touching the platform permission.
- * The profile snapshot and replaceable outbox mutation change together so a
+ * The profile snapshot and immutable outbox operation change together so a
  * later authenticated sync cannot resurrect the previous preference.
  */
 export async function updateHealthConnectionPreference(
@@ -155,13 +156,7 @@ async function enqueueProfileMutation(
   profile: OnboardingProfile,
 ): Promise<void> {
   await database.runAsync(
-    `INSERT INTO sync_outbox
-      (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(idempotency_key) DO UPDATE SET
-       payload_json = excluded.payload_json,
-       created_at = excluded.created_at,
-       last_error = NULL;`,
+    SYNC_MUTATION_INSERT_SQL,
     `outbox-profile-${profile.user.id}`,
     `profile:${profile.user.id}`,
     'profile',

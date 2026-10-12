@@ -1,3 +1,5 @@
+import { ShiftArtwork } from '../../src/components/artwork/ShiftArtwork';
+import { shiftArtwork } from '../../src/design/artwork';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -11,7 +13,6 @@ import {
   ErrorState,
   IconButton,
   LoadingSkeleton,
-  ProgressIndicator,
   Screen,
   SixWeekIndicator,
   Text,
@@ -27,7 +28,7 @@ import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { getUserProgramVersion } from '../../src/db/programRepository';
 import { getCompletedWorkoutIds } from '../../src/db/progressRepository';
 import { buildCurrentCycleWeekSchedule, formatDateKey } from '../../src/domain/calendar';
-import { getTodayWorkout } from '../../src/domain/home';
+import { daysSinceLastTraining, getTodayWorkout } from '../../src/domain/home';
 import {
   demoCycle,
   demoProgram,
@@ -67,6 +68,8 @@ export default function HomeScreen() {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [daysAway, setDaysAway] = useState<number | null>(null);
+  const [hasUnfinishedWorkout, setHasUnfinishedWorkout] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -81,6 +84,8 @@ export default function HomeScreen() {
       setTodayWorkout(null);
       setSchedule([]);
       setCompletedWorkoutIds(new Set());
+      setDaysAway(null);
+      setHasUnfinishedWorkout(false);
       void Promise.all([
         getOnboardingProfile(database, userId),
         getActiveTrainingCycle(database, userId),
@@ -108,6 +113,15 @@ export default function HomeScreen() {
           setCurrentProgram(snapshot.program);
           setCurrentProgramVersion(snapshot.version);
           const now = new Date();
+          setDaysAway(daysSinceLastTraining(cycle.startedAt, scheduleSessions, now));
+          const unfinished = scheduleSessions.find(
+            (session) =>
+              session.cycleWeek === cycle.currentWeek && session.status === 'in-progress',
+          );
+          const unfinishedWorkout = snapshot.version.workouts.find(
+            (workout) => workout.id === unfinished?.workoutId,
+          );
+          setHasUnfinishedWorkout(Boolean(unfinishedWorkout));
           const cycleSchedule = buildCurrentCycleWeekSchedule(
             cycle,
             snapshot.version,
@@ -119,7 +133,10 @@ export default function HomeScreen() {
             (entry) => entry.date === formatDateKey(now) && entry.workoutId,
           );
           setTodayWorkout(
-            snapshot.version.workouts.find((workout) => workout.id === scheduledToday?.workoutId) ??
+            unfinishedWorkout ??
+              snapshot.version.workouts.find(
+                (workout) => workout.id === scheduledToday?.workoutId,
+              ) ??
               getTodayWorkout(snapshot.version, now) ??
               snapshot.version.workouts[0]!,
           );
@@ -196,9 +213,10 @@ export default function HomeScreen() {
         <Text variant="h3" accessibilityRole="header">
           SHIFT6
         </Text>
+        <ShiftArtwork {...shiftArtwork.journey} />
         <EmptyState
           title="Your next Shift starts with one goal"
-          message="Choose a goal and a six-week plan. Your sessions and measured progress will appear here when you start."
+          message="Choose a goal and a six-week plan. Your sessions and training history will appear here when you start."
           icon={<Ionicons name="compass-outline" size={32} color={colors.ink} />}
           actionLabel="Explore programs"
           onAction={() => router.push('/programs')}
@@ -215,7 +233,9 @@ export default function HomeScreen() {
             SHIFT6
           </Text>
           <Text variant="caption" tone="muted">
-            {currentUser.displayName.toUpperCase()}'S TRAINING HOME
+            {currentUser.displayName === 'You'
+              ? 'YOUR TRAINING HOME'
+              : `${currentUser.displayName.toUpperCase()}'S TRAINING HOME`}
           </Text>
         </View>
         <IconButton
@@ -233,6 +253,33 @@ export default function HomeScreen() {
           Progress, six weeks at a time.
         </Text>
       </View>
+
+      <View style={styles.sectionHeader}>
+        <View>
+          <Text variant="caption" tone="muted">
+            TODAY'S WORKOUT
+          </Text>
+          <Text variant="h2">Ready when you are.</Text>
+        </View>
+        <Chip label={`${todayWorkout.estimatedDurationMinutes} min`} selected />
+      </View>
+
+      <WorkoutCard
+        workout={todayWorkout}
+        onPress={() =>
+          router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
+        }
+      />
+      <Button
+        label={hasUnfinishedWorkout ? 'Resume workout' : 'Start workout'}
+        icon={<Ionicons name="arrow-forward" size={18} color={colors.white} />}
+        onPress={() =>
+          router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
+        }
+        style={styles.primaryAction}
+      />
+
+      <ShiftArtwork {...shiftArtwork.journey} />
 
       <Card tone="lavender" style={styles.cycleCard}>
         <View style={styles.cycleTopRow}>
@@ -257,7 +304,6 @@ export default function HomeScreen() {
         <View style={styles.cycleIndicator}>
           <SixWeekIndicator weeks={currentCycle.weeks} />
         </View>
-        <ProgressIndicator label="Cycle progress" value={currentCycle.currentWeek / 6} />
       </Card>
       <Button
         label="View cycle dashboard"
@@ -281,30 +327,23 @@ export default function HomeScreen() {
         style={styles.historyAction}
       />
 
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text variant="caption" tone="muted">
-            TODAY'S WORKOUT
+      {daysAway !== null && daysAway >= 7 ? (
+        <Card tone="mint">
+          <ShiftArtwork {...shiftArtwork.return} />
+          <Text variant="h3" accessibilityRole="header">
+            Your plan is still here.
           </Text>
-          <Text variant="h2">Ready when you are.</Text>
-        </View>
-        <Chip label={`${todayWorkout.estimatedDurationMinutes} min`} selected />
-      </View>
-
-      <WorkoutCard
-        workout={todayWorkout}
-        onPress={() =>
-          router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
-        }
-      />
-      <Button
-        label="Start workout"
-        icon={<Ionicons name="arrow-forward" size={18} color={colors.white} />}
-        onPress={() =>
-          router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
-        }
-        style={styles.primaryAction}
-      />
+          <Text variant="body" tone="muted">
+            You do not need to catch up on missed sessions. Choose a day that works for you, check
+            how you feel before training, and take the next session at your own pace.
+          </Text>
+          <Button
+            label="Choose a training day"
+            variant="secondary"
+            onPress={() => router.push('/calendar')}
+          />
+        </Card>
+      ) : null}
 
       <View style={styles.sectionHeader}>
         <View>

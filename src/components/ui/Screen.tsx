@@ -10,6 +10,7 @@ export interface ScreenProps {
   scroll?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   scrollViewProps?: Omit<ScrollViewProps, 'contentContainerStyle' | 'children'>;
+  footer?: ReactNode;
 }
 
 export function Screen({
@@ -17,6 +18,7 @@ export function Screen({
   scroll = true,
   contentContainerStyle,
   scrollViewProps,
+  footer,
 }: ScreenProps) {
   const content = <View style={[styles.content, contentContainerStyle]}>{children}</View>;
 
@@ -24,6 +26,10 @@ export function Screen({
     <SafeAreaView style={styles.root} edges={['top']}>
       {scroll ? (
         <ScrollView
+          style={styles.scrollViewport}
+          automaticallyAdjustKeyboardInsets
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           {...scrollViewProps}
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
@@ -33,6 +39,11 @@ export function Screen({
       ) : (
         <View style={styles.staticContainer}>{content}</View>
       )}
+      {footer ? (
+        <SafeAreaView edges={['bottom']} style={styles.footer}>
+          <View style={styles.footerContent}>{footer}</View>
+        </SafeAreaView>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -45,6 +56,19 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     paddingBottom: 128,
+  },
+  scrollViewport: { flex: 1 },
+  footer: {
+    backgroundColor: colors.canvas,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  footerContent: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   staticContainer: {
     flex: 1,

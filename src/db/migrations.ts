@@ -437,6 +437,17 @@ export const MIGRATIONS: readonly Migration[] = [
         ON shift_goal_revisions(user_id, shift_id, recorded_at, id);`,
     ],
   },
+  {
+    version: 22,
+    name: 'local-onboarding-recovery',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS onboarding_drafts (
+        user_id TEXT PRIMARY KEY NOT NULL,
+        state_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

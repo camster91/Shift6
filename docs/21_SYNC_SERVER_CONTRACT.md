@@ -240,3 +240,21 @@ Before #272/#280 or the release epic can treat cloud sync as production-ready, r
 
 Repository client tests prove only the mobile contract and fail-closed behaviour. They do not prove a
 real server exists or is correctly authorized.
+
+## Immutable mobile operation snapshots
+
+Each mobile write now queues a distinct immutable operation ID and retry key,
+while keeping the stable entity ID in the payload. Retrying a queued operation
+reads the original persisted snapshot and key. Editing that entity creates a
+new operation; acknowledging an earlier in-flight snapshot cannot erase it.
+Guest adoption preserves operation identities while remapping the owner before
+that guest's operations become eligible for authenticated sync.
+
+The mobile queue uses insertion order rather than entity timestamps, which may
+be unchanged on corrections or session updates. A network batch contains only
+the earliest outstanding operation for each entity. An unresolved operation
+blocks later snapshots of that entity. This prevents partial acknowledgements
+from allowing an old retry to overwrite a newer server value. Separate entities
+may share a batch; dependency authorization and durable acknowledgement remain
+server requirements. Conflicts require explicit review rather than discarding
+an older snapshot to unblock later changes.

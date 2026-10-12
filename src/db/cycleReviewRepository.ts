@@ -1,3 +1,4 @@
+import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type {
@@ -21,8 +22,8 @@ interface CycleReviewRow {
 
 /**
  * Stores the user's end-of-cycle reflection separately from derived facts.
- * The reflection is replaceable for the same cycle and syncs with one stable
- * idempotency key, so editing feedback cannot create duplicate records.
+ * Edits retain the same reflection entity but queue distinct immutable
+ * operations, each with a persisted retry key.
  */
 export async function saveCycleReview(
   database: SQLiteDatabase,
@@ -59,13 +60,7 @@ export async function saveCycleReview(
       review.updatedAt,
     );
     await database.runAsync(
-      `INSERT INTO sync_outbox
-        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(idempotency_key) DO UPDATE SET
-         payload_json = excluded.payload_json,
-         created_at = excluded.created_at,
-         last_error = NULL;`,
+      SYNC_MUTATION_INSERT_SQL,
       `outbox-cycle-review-${review.id}`,
       `cycle-review:${review.id}`,
       'cycle-review',

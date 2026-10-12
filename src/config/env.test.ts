@@ -1,6 +1,21 @@
 import { normalizeApiBaseUrl, parseAppEnvironment } from './env';
+import easBuildConfiguration from '../../eas.json';
 
 describe('runtime environment configuration', () => {
+  it.each(Object.entries(easBuildConfiguration.build))(
+    'starts with the environment configured for the %s native build',
+    (_name, profile) => {
+      const configured = 'env' in profile ? profile.env.EXPO_PUBLIC_ENVIRONMENT : undefined;
+      expect(() => parseAppEnvironment(configured)).not.toThrow();
+    },
+  );
+
+  it('uses production release gates in the production native build', () => {
+    expect(
+      parseAppEnvironment(easBuildConfiguration.build.production.env.EXPO_PUBLIC_ENVIRONMENT),
+    ).toBe('production');
+  });
+
   it('defaults an omitted environment to development', () => {
     expect(parseAppEnvironment(undefined)).toBe('development');
     expect(parseAppEnvironment('   ')).toBe('development');

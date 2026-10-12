@@ -18,6 +18,12 @@ async function validate() {
   const easConfig = await readJson('eas.json');
   const envExample = await readFile(path.join(repositoryRoot, '.env.example'), 'utf8');
   const expo = appConfig.expo;
+  const validEnvironments = ['development', 'staging', 'production'];
+  const configuredEnvironment = process.env.EXPO_PUBLIC_ENVIRONMENT;
+  assert(
+    configuredEnvironment === undefined || validEnvironments.includes(configuredEnvironment),
+    `EXPO_PUBLIC_ENVIRONMENT is not accepted by the app: ${configuredEnvironment}.`,
+  );
 
   assert(expo?.name === 'SHIFT6', 'app.json must use the SHIFT6 display name.');
   assert(expo?.slug === 'shift6', 'app.json must use the stable shift6 slug.');
@@ -43,7 +49,16 @@ async function validate() {
 
   for (const profile of ['development', 'preview', 'production']) {
     assert(easConfig.build?.[profile], `eas.json is missing the ${profile} build profile.`);
+    const environment = easConfig.build[profile].env?.EXPO_PUBLIC_ENVIRONMENT;
+    assert(
+      environment === undefined || validEnvironments.includes(environment),
+      `eas.json ${profile} uses an environment the app cannot start with: ${environment}.`,
+    );
   }
+  assert(
+    easConfig.build.production.env?.EXPO_PUBLIC_ENVIRONMENT === 'production',
+    'The production build must explicitly select the production runtime environment.',
+  );
   assert(easConfig.cli?.appVersionSource === 'remote', 'eas.json must use remote app versioning.');
   assert(
     /(?:^|\n)EXPO_PUBLIC_ENVIRONMENT=/.test(envExample),

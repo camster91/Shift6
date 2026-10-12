@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "provider": "Higgsfield",
+  "generatedAt": "2026-10-11",
+  "status": "generated-integrated-awaiting-human-native-review",
+  "sourceBrief": "docs/07_ASSET_AND_ICON_PROMPTS.md",
+  "records": [
+    {
+      "asset": "journey",
+      "jobId": "480c3fcb-cdf4-4d58-891c-21d10fc1be2c",
+      "requested": {
+        "model": "gpt_image_2_5",
+        "aspect_ratio": "16:9",
+        "count": 1,
+        "prompt": "Original SHIFT6 art direction: premium tactile matte ceramic sculptures, lavender #B3A0FF, mint #B9EFC5, powder blue #A0C6FF, cream #F8F8F8, charcoal #0D101B. Orthographic three-quarter camera, 70mm lens feel, warm diffuse light from upper left, soft contact shadows, carefully composed editorial negative space. Exactly six thick rounded sculptural modules as a proprietary stepped path; no rings, logos from other brands, text, digits, people, workout technique, trophy, coins, confetti, neon or fitness stock imagery. Crisp mobile silhouette, physically consistent materials. Wide hero: six lavender rounded ceramic stepping blocks gently rise across a mint plinth, representing an approachable six-week journey. Hero sits centrally in lower middle 60%, clean cream background, generous empty top and sides. One charcoal sphere rests at the first step; do not imply completed training or numerical success."
+      }
+    },
+    {
+      "asset": "return",
+      "jobId": "18bb104b-2e43-47c3-b255-a4aae2a02751",
+      "requested": {
+        "model": "gpt_image_2_5",
+        "aspect_ratio": "16:9",
+        "count": 1,
+        "prompt": "Original SHIFT6 art direction: premium tactile matte ceramic sculptures, lavender #B3A0FF, mint #B9EFC5, powder blue #A0C6FF, cream #F8F8F8, charcoal #0D101B. Orthographic three-quarter camera, 70mm lens feel, warm diffuse light from upper left, soft contact shadows, carefully composed editorial negative space. Exactly six thick rounded sculptural modules as a proprietary stepped path; no rings, logos from other brands, text, digits, people, workout technique, trophy, coins, confetti, neon or fitness stock imagery. Crisp mobile silhouette, physically consistent materials. Wide welcome-back artwork: six mint ceramic stepping blocks form a continuous gentle path on a cream surface. A lavender arch shelters the first block and a powder-blue sphere rests nearby. All modules intact, welcoming and calm. No broken chains, missed-streak symbols or punishment. Central safe area 65% with empty sides."
+      }
+    },
+    {
+      "asset": "session-saved",
+      "jobId": "e3fefc84-7062-4c21-8847-5e90bc8e08f6",
+      "requested": {
+        "model": "gpt_image_2_5",
+        "aspect_ratio": "16:9",
+        "count": 1,
+        "prompt": "Original SHIFT6 art direction: premium tactile matte ceramic sculptures, lavender #B3A0FF, mint #B9EFC5, powder blue #A0C6FF, cream #F8F8F8, charcoal #0D101B. Orthographic three-quarter camera, 70mm lens feel, warm diffuse light from upper left, soft contact shadows, carefully composed editorial negative space. Exactly six thick rounded sculptural modules as a proprietary stepped path; no rings, logos from other brands, text, digits, people, workout technique, trophy, coins, confetti, neon or fitness stock imagery. Crisp mobile silhouette, physically consistent materials. Wide session-saved artwork: six rounded lavender blocks settle neatly in a small sculptural stack on a mint base, one powder-blue sphere beside the base. Calm feeling of putting something safely in place; no claims of strength improvement, target attainment or personal best. Centered lower-middle composition, cream background and wide negative space."
+      }
+    },
+    {
+      "asset": "launcher",
+      "jobId": "3d3f7b46-6860-4bf7-a6a0-f497f45ae957",
+      "requested": {
+        "model": "gpt_image_2_5",
+        "aspect_ratio": "1:1",
+        "count": 1,
+        "prompt": "Original SHIFT6 art direction: premium tactile matte ceramic sculptures, lavender #B3A0FF, mint #B9EFC5, powder blue #A0C6FF, cream #F8F8F8, charcoal #0D101B. Orthographic three-quarter camera, 70mm lens feel, warm diffuse light from upper left, soft contact shadows, carefully composed editorial negative space. Exactly six thick rounded sculptural modules as a proprietary stepped path; no rings, logos from other brands, text, digits, people, workout technique, trophy, coins, confetti, neon or fitness stock imagery. Crisp mobile silhouette, physically consistent materials. App launcher artwork, completely flat front view: six chunky lavender rounded rectangular modules form a single compact diagonal stepped S-like path, visually unified but six pieces discernible, on solid deep charcoal #0D101B background filling every pixel. Bold simple compact emblem fits central 58% of square. Flat matte materials with very subtle shading, no thin details, no text or letters, no outer rounded-square frame, no border, no shadow outside the emblem. Strong small-size contrast."
+      }
+    },
+    {
+      "asset": "journey-motion",
+      "jobId": "fcfb24d3-5450-4c33-a5cd-fa8609738c81",
+      "requested": {
+        "model": "seedance_2_5",
+        "mode": "omni_reference",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "16:9",
+        "generate_audio": false,
+        "medias": [
+          {
+            "role": "start_image",
+            "value": "480c3fcb-cdf4-4d58-891c-21d10fc1be2c"
+          },
+          {
+            "role": "end_image",
+            "value": "480c3fcb-cdf4-4d58-891c-21d10fc1be2c"
+          }
+        ],
+        "prompt": "A silent seamless four-second decorative loop based exactly on the supplied ceramic sculpture. Locked camera. Preserve exactly six lavender ceramic steps, mint base and charcoal sphere, original colors, scale and composition. Sphere remains on first step: tiny gentle breathing motion of no more than 2% with a slow soft moving highlight; settle back to identical starting composition. No climbing, no new objects, no text, no cuts, no flashing, no results or progress claims. Calm premium tactile materials. Motion should be almost still, suitable for an accessible mobile app."
+      }
+    },
+    {
+      "asset": "session-saved-motion",
+      "jobId": "da1d25ec-879c-407f-bd2e-8c15ab963310",
+      "requested": {
+        "model": "seedance_2_5",
+        "mode": "omni_reference",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "16:9",
+        "generate_audio": false,
+        "medias": [
+          {
+            "role": "start_image",
+            "value": "e3fefc84-7062-4c21-8847-5e90bc8e08f6"
+          },
+          {
+            "role": "end_image",
+            "value": "e3fefc84-7062-4c21-8847-5e90bc8e08f6"
+          }
+        ],
+        "prompt": "Silent four-second premium tactile ceramic motion, exactly matching the supplied sculpture. Camera completely locked. Preserve all six rounded lavender modules, mint base and blue sphere with their identity, spacing and color. A soft highlight slowly passes over the settled sculpture; very small calm settling movement less than 2%, then back to the identical first frame. No extra objects, text, confetti, flashing, sparks, changes of shape, numerical results, trophies or claims of physical improvement. Final pose is quiet and safe; seamless return to start."
+      }
+    },
+    {
+      "asset": "adaptive-foreground",
+      "jobId": "879179cc-c4b0-4490-904d-99f48498fbfd",
+      "requested": {
+        "model": "gpt_image_2_5",
+        "background": "transparent",
+        "quality": "high",
+        "resolution": "1k",
+        "aspect_ratio": "1:1",
+        "medias": [
+          {
+            "role": "image",
+            "value": "3d3f7b46-6860-4bf7-a6a0-f497f45ae957"
+          }
+        ],
+        "prompt": "Prepare the supplied app mark as an Android adaptive icon foreground. Preserve the exact six lavender rounded modules, their relative positions, tactile material, colors and silhouette. Remove the charcoal background completely; output actual transparent alpha, not a checkerboard illustration. Keep the mark within the center 58% of a square 1024px canvas. No extra border, letters, shadows beyond the mark, or new shape."
+      }
+    },
+    {
+      "asset": "adaptive-monochrome",
+      "jobId": "9a5ad502-2149-4793-9d44-25f396a8d726",
+      "requested": {
+        "model": "gpt_image_2_5",
+        "background": "transparent",
+        "quality": "high",
+        "resolution": "1k",
+        "aspect_ratio": "1:1",
+        "medias": [
+          {
+            "role": "image",
+            "value": "3d3f7b46-6860-4bf7-a6a0-f497f45ae957"
+          }
+        ],
+        "prompt": "Create the Android themed monochrome foreground version of the supplied app mark. Preserve the exact six-module silhouette and relative position of the reference, centered within the middle 58% of a 1024px square canvas. Modules solid pure white with no gradients, material shading or colors. Everything outside the six modules is truly transparent alpha, not a checkerboard image. No background, border, text, letters, extra shapes or shadows."
+      }
+    },
+    {
+      "asset": "adaptive-foreground-v02",
+      "jobId": "c2ea3188-45ba-45d4-aa9b-97f10292df2e",
+      "model": "gpt_image_2_5",
+      "variant": "sunburst",
+      "sourceReferenceJobId": "3d3f7b46-6860-4bf7-a6a0-f497f45ae957",
+      "purpose": "Flat crisp Android/splash export",
+      "status": "generated-draft",
+      "sourceFile": "source/adaptive-foreground-v02.png"
+    }
+  ],
+  "exportProcessing": {
+    "stills": "960px JPEG quality scale 2; native iOS/Android Image compatibility",
+    "motion": "H264 baseline yuv420p, 960px, CRF25, no audio, faststart",
+    "nativeForeground": "Alpha >=235 mask to remove generated halo; 768px canvas padded to 1024px with transparent 128px border",
+    "nativeMonochrome": "Same foreground alpha mask with white RGB; identical shape and safe area",
+    "launcher": "Original opaque 1024px Higgsfield launcher PNG"
+  },
+  "fileInventory": [
+    {
+      "repositoryPath": "assets/higgsfield/source/adaptive-foreground-v01.png",
+      "bytes": 919934,
+      "sha256": "fa6b7666986d88b174c98b54c1dd3e2f8f587fe7d45af645d5d1c5e4b6f688f0"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/source/adaptive-foreground-v02.png",
+      "bytes": 742460,
+      "sha256": "a85c866653334b830a214f5df1b8d09537e081f75d1bcb29a2f84d78fce0464f"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/source/adaptive-monochrome-v01.png",
+      "bytes": 971542,
+      "sha256": "0b8b33174cc07ea8770b8f0aba649b7dd93c2f25398feb2deb5d0a7a7c4e6307"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/source/journey-v01.mp4",
+      "bytes": 172215,
+      "sha256": "f0a053f5dead51fd42d74a76f4202c874168deda2f945dde04f0a365b09bff89"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/source/journey-v01.png",
+      "bytes": 1023670,
+      "sha256": "cd54182f8c2e4b701f9373e98b59423038c58cedf693e9e0a4fe69f71f2a4ace"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/source/launcher-v01.png",
+      "bytes": 877962,
+      "sha256": "4728bc3b2a638f25b2538730229316ddc8459562cb5531b95dc9c773c3a420e3"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/source/return-v01.png",
+      "bytes": 1031125,
+      "sha256": "ac4c859c9429bceb49da3c96cdfd4451fe704353e594792dbcaa49444ee513c2"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/source/session-saved-v01.mp4",
+      "bytes": 210053,
+      "sha256": "b5b17bed9647ede42fcefd4674c96dd0604924bb75348eef3f5b1aefeb2eb668"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/source/session-saved-v01.png",
+      "bytes": 997119,
+      "sha256": "391e174b78095efbcece7646951e98fa58136cc7c8569d08dda296864ec52a05"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/runtime/journey-v01.jpg",
+      "bytes": 22539,
+      "sha256": "5d4c6ad5821949d61eedbcee64916cf517491fe26f67cc9a2fb3cc07667ea1b1"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/runtime/journey-v01.mp4",
+      "bytes": 53465,
+      "sha256": "51c8fbc57f25dfacd62fe2480dc0230e5206aef035881fa4794305a7e2b5e738"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/runtime/return-v01.jpg",
+      "bytes": 21343,
+      "sha256": "24c846c12ac61f6b1690f000df40b203ea9bbdce680374337d6ed1833f2a7d9e"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/runtime/session-saved-v01.jpg",
+      "bytes": 18609,
+      "sha256": "14f9d2f91d099beebf35b5bc3b0eced89341e85989b3b2c4c550eda3c4185db7"
+    },
+    {
+      "repositoryPath": "assets/higgsfield/runtime/session-saved-v01.mp4",
+      "bytes": 70552,
+      "sha256": "15b1fc45d06b6bcb11f499e8b3fe40cd94013152ba06545a777942985d6f1469"
+    },
+    {
+      "repositoryPath": "assets/release/shift6-adaptive-foreground-v02.png",
+      "bytes": 652133,
+      "sha256": "798e31f3d72670229a1d1effc3feaf90d26894b38f0f60bf0523392920c0706c"
+    },
+    {
+      "repositoryPath": "assets/release/shift6-adaptive-monochrome-v02.png",
+      "bytes": 14127,
+      "sha256": "887be3c85f2e8be67cfe819eb158f97800f95756fe76504122edc52236f57c24"
+    },
+    {
+      "repositoryPath": "assets/release/shift6-icon-v01.png",
+      "bytes": 877962,
+      "sha256": "4728bc3b2a638f25b2538730229316ddc8459562cb5531b95dc9c773c3a420e3"
+    },
+    {
+      "repositoryPath": "assets/release/shift6-splash-v02.png",
+      "bytes": 652133,
+      "sha256": "798e31f3d72670229a1d1effc3feaf90d26894b38f0f60bf0523392920c0706c"
+    }
+  ]
+}

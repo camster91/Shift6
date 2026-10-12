@@ -25,7 +25,7 @@ describe('workout check-ins', () => {
     });
 
     expect(calls[0]?.sql).toContain('INSERT INTO workout_check_ins');
-    expect(calls[1]?.sql).toContain('ON CONFLICT(idempotency_key) DO UPDATE');
+    expect(calls[1]?.sql).not.toContain('DO UPDATE');
     expect(calls[1]?.params).toContain('workout-check-in');
   });
 

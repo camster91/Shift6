@@ -62,9 +62,12 @@ Supporting release documents on the cumulative stack:
 - `23_RELEASE_ASSET_GATE.md` — strict final PNG icon/adaptive-icon/splash configuration validator.
 - `24_EXERCISE_REVIEW_CHECKLIST.md` — human sign-off checklist and reviewer-provenance record for public exercise content.
 - `27_SHIFT_DOMAIN_CONTRACT.md` — #306's implemented pure Shift measurement semantics and remaining integration gates.
-- `28_SHIFT_PERSISTENCE_SYNC_CONTRACT.md` — proposed owner, revision, outbox, adoption and privacy contract for #306 persistence; no migration is implemented yet.
+- `28_SHIFT_PERSISTENCE_SYNC_CONTRACT.md` — owner, revision, outbox, adoption and privacy contract for #306 persistence; migration 21 and local privacy/adoption coverage are implemented, with writer/server integration pending.
 - `29_SHIFT_CALENDAR_PROJECTION.md` — implemented read-only elapsed calendar projection and pending #315 schedule transitions.
 - `30_PILOT_SHIFT_CANDIDATE_REVIEW.md` — #309's three candidate source lineages, measurement boundaries and human review handoff; no content approval.
+
+- `31_HUMAN_USE_IMPROVEMENT_PLAN.md` — implemented reliability/usability changes and the remaining goal-first delivery/evidence sequence.
+- `32_NATIVE_MEDIA_AND_BUILD_EVIDENCE.md` — Higgsfield media provenance, accessible playback, native configuration/build evidence and device QA requirements.
 
 ## Agent rule
 

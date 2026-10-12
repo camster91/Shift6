@@ -1,4 +1,4 @@
-import type { ProgramVersion, WeeklyScheduleEntry, Workout } from './types';
+import type { ProgramVersion, WeeklyScheduleEntry, Workout, WorkoutScheduleSession } from './types';
 
 const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
@@ -61,4 +61,25 @@ export function buildWeeklySchedule(
           : 'upcoming',
     };
   });
+}
+
+/** An engagement cue only: it never advances or changes the training prescription. */
+export function daysSinceLastTraining(
+  cycleStartedAt: string,
+  sessions: readonly WorkoutScheduleSession[],
+  now: Date,
+): number | null {
+  const timestamps = [
+    cycleStartedAt,
+    ...sessions
+      .filter((session) => session.status === 'complete' || session.status === 'partial')
+      .map((session) => session.completedAt)
+      .filter((date): date is string => date !== undefined),
+  ]
+    .map((value) => new Date(value))
+    .filter((date) => Number.isFinite(date.getTime()) && date <= now);
+  if (!timestamps.length || !Number.isFinite(now.getTime())) return null;
+  const latest = timestamps.reduce((a, b) => (a > b ? a : b));
+  const day = (date: Date) => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  return Math.max(0, Math.round((day(now) - day(latest)) / 86_400_000));
 }

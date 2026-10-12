@@ -1,3 +1,5 @@
+import { ShiftArtwork } from '../src/components/artwork/ShiftArtwork';
+import { shiftArtwork } from '../src/design/artwork';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
@@ -295,6 +297,8 @@ export default function WorkoutSummaryScreen() {
       ) : null}
 
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
+
+      {!isSkipped ? <ShiftArtwork {...shiftArtwork.sessionSaved} /> : null}
 
       <Text variant="h2" style={styles.sectionTitle}>
         How did it feel?

@@ -26,10 +26,11 @@ export interface LocalDataExportSummary {
 }
 
 export interface LocalDataExport {
-  schemaVersion: 10;
+  schemaVersion: 11;
   exportedAt: string;
   userId: string;
   summary: LocalDataExportSummary;
+  onboardingDrafts?: Record<string, unknown>[];
   userProfiles: Record<string, unknown>[];
   userEquipment: Record<string, unknown>[];
   userConsiderations: Record<string, unknown>[];
@@ -59,6 +60,10 @@ export async function exportLocalUserData(
   userId: string,
   exportedAt: string,
 ): Promise<LocalDataExport> {
+  const onboardingDrafts = await database.getAllAsync<Record<string, unknown>>(
+    'SELECT * FROM onboarding_drafts WHERE user_id = ?;',
+    userId,
+  );
   const userProfiles = await database.getAllAsync<Record<string, unknown>>(
     'SELECT * FROM user_profiles WHERE id = ?;',
     userId,
@@ -182,6 +187,7 @@ export async function exportLocalUserData(
   );
 
   const summary = buildLocalDataExportSummary({
+    onboardingDrafts,
     userProfiles,
     userEquipment,
     userConsiderations,
@@ -207,10 +213,11 @@ export async function exportLocalUserData(
   });
 
   return {
-    schemaVersion: 10,
+    schemaVersion: 11,
     exportedAt,
     userId,
     summary,
+    onboardingDrafts,
     userProfiles,
     userEquipment,
     userConsiderations,
@@ -244,7 +251,8 @@ export function buildLocalDataExportSummary(
       key: 'profile',
       title: 'Profile and equipment',
       description: 'Your local profile answers and saved equipment inventory.',
-      recordCount: data.userProfiles.length + data.userEquipment.length,
+      recordCount:
+        data.userProfiles.length + data.userEquipment.length + (data.onboardingDrafts?.length ?? 0),
     },
     {
       key: 'preferences',
@@ -448,6 +456,7 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
     await database.runAsync('DELETE FROM user_exercises WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM coach_proposals WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM user_equipment WHERE user_id = ?;', userId);
+    await database.runAsync('DELETE FROM onboarding_drafts WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM user_profiles WHERE id = ?;', userId);
   });
 }

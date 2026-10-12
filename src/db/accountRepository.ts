@@ -57,56 +57,6 @@ export async function migrateLocalUserToAccount(
   };
 
   await database.withTransactionAsync(async () => {
-    const destinationConflict = await database.getFirstAsync<{ conflict: 1 }>(
-      `SELECT 1 AS conflict
-         FROM user_profiles
-        WHERE id = ?
-       UNION ALL
-       SELECT 1 FROM user_programs WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM user_exercises WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM training_cycles WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM shifts WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM coach_proposals WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM health_summaries WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM user_considerations WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM body_metrics WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM coach_privacy_preferences WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM cycle_reviews WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM workout_schedule_overrides WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM notification_preferences WHERE user_id = ?
-       UNION ALL
-       SELECT 1 FROM sync_outbox WHERE idempotency_key = ?
-        LIMIT 1;`,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      destinationUserId,
-      `profile:${destinationUserId}`,
-    );
-    if (destinationConflict) {
-      throw new Error('The account already has local data; explicit merge is required.');
-    }
-
     // This build has no Shift sync payload/ID contract. A row left by a newer
     // build could belong to either local identity, so adoption must not move
     // the Shift while stranding its unsent owner identity in the outbox.
@@ -126,6 +76,10 @@ export async function migrateLocalUserToAccount(
          FROM user_profiles
         WHERE id = ?
         LIMIT 1;`,
+      sourceUserId,
+    );
+    const sourceDraft = await database.getFirstAsync<{ user_id: string }>(
+      'SELECT user_id FROM onboarding_drafts WHERE user_id = ? LIMIT 1;',
       sourceUserId,
     );
     const sourceShift = await database.getFirstAsync<{ id: string }>(
@@ -195,19 +149,73 @@ export async function migrateLocalUserToAccount(
     if (sourceShift && !sourceProfile) {
       throw new Error('Local Shift ownership has no source profile; adoption cannot continue.');
     }
-    if (!sourceProfile && mutations.length === 0) return;
+    if (!sourceProfile && !sourceDraft && mutations.length === 0) return;
+
+    const destinationConflict = await database.getFirstAsync<{ conflict: 1 }>(
+      `SELECT 1 AS conflict
+         FROM user_profiles
+        WHERE id = ?
+       UNION ALL
+       SELECT 1 FROM onboarding_drafts WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM user_programs WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM user_exercises WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM training_cycles WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM shifts WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM coach_proposals WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM health_summaries WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM user_considerations WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM body_metrics WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM coach_privacy_preferences WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM cycle_reviews WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM workout_schedule_overrides WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM notification_preferences WHERE user_id = ?
+       UNION ALL
+       SELECT 1 FROM sync_outbox WHERE idempotency_key = ?
+        LIMIT 1;`,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      destinationUserId,
+      `profile:${destinationUserId}`,
+    );
+    if (destinationConflict) {
+      throw new Error('The account already has local data; explicit merge is required.');
+    }
 
     for (const mutation of mutations) {
       const payload = parseMutationPayload(mutation.payload_json, mutation.id);
       const nextPayload = replaceUserIdentity(payload, sourceUserId, destinationUserId);
-      const isProfileMutation = mutation.entity_type === 'profile';
+      const isOwnerEntity =
+        mutation.entity_type === 'profile' || mutation.entity_type === 'notification-preference';
       await database.runAsync(
         `UPDATE sync_outbox
             SET id = ?, idempotency_key = ?, entity_id = ?, payload_json = ?
           WHERE id = ?;`,
-        isProfileMutation ? `outbox-profile-${destinationUserId}` : mutation.id,
-        isProfileMutation ? `profile:${destinationUserId}` : mutation.idempotency_key,
-        isProfileMutation ? destinationUserId : mutation.entity_id,
+        mutation.id,
+        mutation.idempotency_key,
+        isOwnerEntity ? destinationUserId : mutation.entity_id,
         JSON.stringify(nextPayload),
         mutation.id,
       );
@@ -237,6 +245,11 @@ export async function migrateLocalUserToAccount(
       );
     }
 
+    await database.runAsync(
+      'UPDATE onboarding_drafts SET user_id = ? WHERE user_id = ?;',
+      destinationUserId,
+      sourceUserId,
+    );
     await database.runAsync(
       'UPDATE user_equipment SET user_id = ? WHERE user_id = ?;',
       destinationUserId,

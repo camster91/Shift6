@@ -1,3 +1,4 @@
+import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { Exercise, Program, ProgramVersion } from '../domain/types';
@@ -68,13 +69,7 @@ export async function saveProgramVersionInTransaction(
     throw new Error('The program version ID belongs to another program.');
   }
   await database.runAsync(
-    `INSERT INTO sync_outbox
-      (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(idempotency_key) DO UPDATE SET
-       payload_json = excluded.payload_json,
-       created_at = excluded.created_at,
-       last_error = NULL;`,
+    SYNC_MUTATION_INSERT_SQL,
     `outbox-program-version-${version.id}`,
     `program-version:${version.id}`,
     'program-version',
@@ -153,13 +148,7 @@ export async function saveCustomExercise(
       throw new Error('The exercise ID belongs to another local user.');
     }
     await database.runAsync(
-      `INSERT INTO sync_outbox
-        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(idempotency_key) DO UPDATE SET
-         payload_json = excluded.payload_json,
-         created_at = excluded.created_at,
-         last_error = NULL;`,
+      SYNC_MUTATION_INSERT_SQL,
       `outbox-exercise-${exercise.id}`,
       `exercise:${exercise.id}`,
       'exercise',

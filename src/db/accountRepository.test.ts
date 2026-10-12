@@ -152,9 +152,9 @@ describe('migrateLocalUserToAccount', () => {
         ).toBeUndefined();
       }
       expect(sqlite.prepare('PRAGMA foreign_key_check;').all()).toEqual([]);
-      await expect(migrateLocalUserToAccount(database, 'guest-user', 'account-1')).rejects.toThrow(
-        'explicit merge is required',
-      );
+      await expect(
+        migrateLocalUserToAccount(database, 'guest-user', 'account-1'),
+      ).resolves.toMatchObject({ status: 'no-data' });
     } finally {
       sqlite.close();
     }
@@ -172,6 +172,21 @@ describe('migrateLocalUserToAccount', () => {
         { id: 'shift-account-1', user_id: 'account-1' },
         { id: 'shift-guest-user', user_id: 'guest-user' },
       ]);
+      expect(sqlite.prepare('PRAGMA foreign_key_check;').all()).toEqual([]);
+    } finally {
+      sqlite.close();
+    }
+  });
+
+  it('allows an adopted account to restart without trying to merge its own data', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      seedShift(sqlite, 'guest-user');
+      await migrateLocalUserToAccount(database, 'guest-user', 'account-1');
+      await expect(
+        migrateLocalUserToAccount(database, 'guest-user', 'account-1'),
+      ).resolves.toMatchObject({ status: 'no-data' });
+      expect(sqlite.prepare('SELECT user_id FROM shifts;').get()).toEqual({ user_id: 'account-1' });
       expect(sqlite.prepare('PRAGMA foreign_key_check;').all()).toEqual([]);
     } finally {
       sqlite.close();
@@ -292,7 +307,8 @@ describe('migrateLocalUserToAccount', () => {
     expect(calls.some((call) => call.sql.includes('UPDATE body_metrics'))).toBe(true);
     expect(calls.some((call) => call.sql.includes('UPDATE coach_privacy_preferences'))).toBe(true);
     const profileMutation = calls.find((call) => call.sql.includes('UPDATE sync_outbox'));
-    expect(profileMutation?.params).toContain('profile:account-1');
+    expect(profileMutation?.params).toContain('account-1');
+    expect(profileMutation?.params).toContain('profile:guest-user');
     expect(JSON.parse(String(profileMutation?.params[3]))).toEqual({
       userId: 'account-1',
       profile: { user: { id: 'account-1' } },
@@ -302,7 +318,13 @@ describe('migrateLocalUserToAccount', () => {
 
   it('refuses an implicit merge into an account with local data', async () => {
     const database = {
-      getFirstAsync: async () => ({ conflict: 1 }),
+      getFirstAsync: async (sql: string) =>
+        sql.includes('AS conflict')
+          ? { conflict: 1 }
+          : sql.includes('FROM user_profiles')
+            ? profileRow()
+            : null,
+      getAllAsync: async () => [],
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
 

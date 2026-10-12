@@ -39,6 +39,35 @@ export async function flushWhenOnline(
   }
 
   const run = await flush(database, backend, limit);
+  let last = run;
+  const seen = new Set(run.attemptedMutationIds);
+  // Drain serial snapshots without waiting for another foreground event. Bound
+  // network work and stop immediately on a conflict, failure or partial result.
+  for (let batch = 1; batch < 10; batch += 1) {
+    if (
+      last.attemptedMutationIds.length === 0 ||
+      last.conflictedMutationIds.length > 0 ||
+      last.failedMutationIds.length > 0 ||
+      last.rejectedMutationIds.length > 0 ||
+      last.acknowledgedMutationIds.length !== last.attemptedMutationIds.length
+    )
+      break;
+    const next = await flush(database, backend, limit);
+    if (next.attemptedMutationIds.length === 0) break;
+    // An acknowledged operation appearing again means no queue progress. Do
+    // not spin on a faulty storage/provider boundary.
+    if (next.attemptedMutationIds.every((id) => seen.has(id))) break;
+    for (const id of next.attemptedMutationIds) seen.add(id);
+    for (const field of [
+      'attemptedMutationIds',
+      'acknowledgedMutationIds',
+      'rejectedMutationIds',
+      'conflictedMutationIds',
+      'failedMutationIds',
+    ] as const)
+      run[field] = [...new Set([...run[field], ...next[field]])];
+    last = next;
+  }
   if (run.attemptedMutationIds.length === 0) {
     return { connectivity: status, outcome: 'empty', run };
   }

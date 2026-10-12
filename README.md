@@ -10,8 +10,8 @@ Progress is easier to see and sustain when training is organized into short, foc
 
 ## What is built today
 
-- Guest onboarding and profile setup, with an equipment manager that feeds program recommendations and substitutions
-- Versioned six-week programs: a launch catalogue of 20 program definitions with executable versions (Barbell 30 is the startable one; the rest are drafts pending content review)
+- Guest onboarding with six essential setup steps and optional profile details, with an equipment manager that feeds program recommendations and substitutions
+- Versioned six-week programs: 20 historical candidate definitions for development. The focused public release manifest has no approved enabled Shifts; candidate content requires human review.
 - Active workout logging with per-set entry, session notes, exercise reordering, added sets, equipment substitution, and explicit partial or skipped sessions with a reason
 - Deterministic next-session targets from completed set history, with unit-aware load increments (for example 5 lb or 2.5 kg); AI never sets targets
 - Cycle calendar with rescheduling, week transitions, and an end-of-cycle review and reflection
@@ -21,7 +21,12 @@ Progress is easier to see and sustain when training is organized into short, foc
 - Apple Health and Health Connect adapters with explicit disconnect and data-removal controls
 - Local-first SQLite storage with versioned migrations and an idempotent sync outbox that surfaces conflicts for review instead of overwriting data
 - Privacy controls: local export and delete, guest-to-account data adoption, privacy-safe analytics and error reporting that are no-ops by default
-- Plate calculator, body metrics, notifications, accessibility-tested UI components
+- Plate calculator, body metrics, notifications and component accessibility tests; native assistive-technology review remains pending
+- Custom Higgsfield artwork, launcher/splash exports and optional silent animations with reduced-motion and backgrounding support
+
+Goal measurement semantics and the persistence schema are implemented; the production
+goal writer and matching server acceptance remain pending. Current native build and
+media evidence is recorded in [docs/32_NATIVE_MEDIA_AND_BUILD_EVIDENCE.md](docs/32_NATIVE_MEDIA_AND_BUILD_EVIDENCE.md).
 
 ## Tech stack
 
@@ -43,7 +48,7 @@ npm start          # Expo dev server
 npm run ios        # or: npm run android / npm run web
 ```
 
-The web target is a UI preview only: it has no persistence because the SQLite web worker is not available there. iOS and Android use the real SQLite provider.
+The web target is a UI preview only: it has no persistence because the SQLite web worker is not available there. iOS and Android use the real SQLite provider. Health integrations require a native build with their modules; Expo Go cannot verify them.
 
 ## Quality checks
 
@@ -55,6 +60,11 @@ npm run verify     # full CI gate: format, lint, typecheck, expo-doctor, asset a
 ```
 
 CI runs the same steps on every push and pull request, ending with an iOS, Android and web export smoke test.
+
+The manual **Native validation** workflow also compiles an Android release-mode test
+APK and an unsigned iOS Release simulator app on macOS. Store signing and physical
+device QA are separate release requirements. Unresolved dependency audit and
+content/release gates currently prevent a full release-ready pass.
 
 ## Project structure
 

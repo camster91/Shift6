@@ -47,7 +47,7 @@ function protocolErrors(p: MeasurementProtocol): string[] {
     distance: ['meters', 'higher'],
     completion: ['completed', 'complete'],
   };
-  const spec = specs[p.metric];
+  const spec = Object.prototype.hasOwnProperty.call(specs, p.metric) ? specs[p.metric] : undefined;
   if (!spec || p.canonicalUnit !== spec[0] || p.direction !== spec[1])
     return ['Unsupported measurement protocol.'];
   return validateMeasurementProtocol(p);

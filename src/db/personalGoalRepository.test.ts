@@ -259,7 +259,20 @@ test.each([
 test('fails closed when an isolated connection has foreign keys disabled', async () => {
   sqlite.exec('PRAGMA foreign_keys=OFF;');
   await expect(createPersonalGoal(db, 'owner', 'cycle', goal, now)).rejects.toThrow(
-    'Foreign-key protection',
+    'cannot save goals safely',
   );
+  expect(sqlite.prepare('SELECT count(*) n FROM shifts').get()).toEqual({ n: 0 });
+});
+
+test('rejects inherited object names as measurement metrics', async () => {
+  const invalid = {
+    ...protocol,
+    metric: 'constructor',
+    canonicalUnit: undefined,
+    direction: undefined,
+  } as unknown as MeasurementProtocol;
+  await expect(
+    createPersonalGoal(db, 'owner', 'cycle', { ...goal, protocol: invalid }, now),
+  ).rejects.toThrow('measurement setup');
   expect(sqlite.prepare('SELECT count(*) n FROM shifts').get()).toEqual({ n: 0 });
 });

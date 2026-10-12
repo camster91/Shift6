@@ -175,7 +175,15 @@ export default function ProgressScreen() {
 
   if (loading || (database && currentCycle && loadedFor?.database !== database)) {
     return (
-      <Screen>
+      <Screen
+        footer={
+          <Button
+            label="Personal goal and review"
+            variant="secondary"
+            onPress={() => router.push('/goal')}
+          />
+        }
+      >
         <LoadingSkeleton width="34%" height={14} />
         <LoadingSkeleton width="80%" height={44} style={styles.loadingTitle} />
         <LoadingSkeleton height={220} style={styles.loadingCard} />
@@ -185,7 +193,15 @@ export default function ProgressScreen() {
 
   if (!database || !currentCycle || !currentProgram || !summary || loadedFor?.userId !== userId) {
     return (
-      <Screen>
+      <Screen
+        footer={
+          <Button
+            label="Personal goal and review"
+            variant="secondary"
+            onPress={() => router.push('/goal')}
+          />
+        }
+      >
         <ErrorState
           title="Progress unavailable"
           message={
@@ -223,7 +239,15 @@ export default function ProgressScreen() {
   };
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <Button
+          label="Personal goal and review"
+          variant="secondary"
+          onPress={() => router.push('/goal')}
+        />
+      }
+    >
       <Text variant="caption" tone="muted">
         CYCLE PROGRESS
       </Text>

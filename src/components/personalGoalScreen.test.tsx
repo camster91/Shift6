@@ -1,6 +1,6 @@
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import PersonalGoalScreen from '../../app/goal';
-import { getActiveTrainingCycle } from '../db/cycleRepository';
+import { getActiveTrainingCycle, getLatestTrainingCycle } from '../db/cycleRepository';
 import {
   appendPersonalObservation,
   createPersonalGoal,
@@ -13,7 +13,10 @@ import type { Shift } from '../domain/shift';
 jest.mock('expo-router', () => ({ router: { back: jest.fn(), push: jest.fn() } }));
 jest.mock('../db/context', () => ({ useLocalDatabase: () => mockDb }));
 jest.mock('../services/UserIdentityProvider', () => ({ useCurrentUserId: () => 'owner' }));
-jest.mock('../db/cycleRepository', () => ({ getActiveTrainingCycle: jest.fn() }));
+jest.mock('../db/cycleRepository', () => ({
+  getActiveTrainingCycle: jest.fn(),
+  getLatestTrainingCycle: jest.fn(),
+}));
 jest.mock('../db/personalGoalRepository', () => ({
   appendPersonalObservation: jest.fn(),
   createPersonalGoal: jest.fn(),
@@ -131,4 +134,48 @@ test('completion measurements require an explicit result and preserve a failed a
       expect.any(String),
     ),
   );
+});
+
+test('measurement choices expose the selected state to assistive technology', async () => {
+  const screen = await render(<PersonalGoalScreen />);
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Repetitions', selected: true })).toBeTruthy(),
+  );
+  await fireEvent.press(screen.getByRole('button', { name: 'Hold in seconds' }));
+  expect(screen.getByRole('button', { name: 'Hold in seconds', selected: true })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Repetitions', selected: false })).toBeTruthy();
+});
+
+test('the goal remains reviewable after its training cycle has completed', async () => {
+  jest.mocked(getActiveTrainingCycle).mockResolvedValue(null);
+  jest.mocked(getLatestTrainingCycle).mockResolvedValue({
+    id: 'cycle',
+    userId: 'owner',
+    programVersionId: 'plan',
+    status: 'complete',
+    currentWeek: 6,
+    startedAt: '2026-10-12T00:00:00Z',
+    weeks: [],
+  });
+  jest.mocked(getPersonalGoal).mockResolvedValue(goal);
+  const screen = await render(<PersonalGoalScreen />);
+  await waitFor(() => expect(screen.getByText('My hold')).toBeTruthy());
+  expect(screen.getByText('Review and next step')).toBeTruthy();
+  expect(getLatestTrainingCycle).toHaveBeenCalledWith(mockDb, 'owner');
+});
+
+test('a completed cycle without a goal offers a new plan instead of an unusable creation form', async () => {
+  jest.mocked(getActiveTrainingCycle).mockResolvedValue(null);
+  jest.mocked(getLatestTrainingCycle).mockResolvedValue({
+    id: 'cycle',
+    userId: 'owner',
+    programVersionId: 'plan',
+    status: 'complete',
+    currentWeek: 6,
+    startedAt: '2026-10-12T00:00:00Z',
+    weeks: [],
+  });
+  const screen = await render(<PersonalGoalScreen />);
+  await waitFor(() => expect(screen.getByText('Choose a plan')).toBeTruthy());
+  expect(screen.queryByLabelText('What do you want to track?')).toBeNull();
 });

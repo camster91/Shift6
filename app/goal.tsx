@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { Button, Card, Screen, Text } from '../src/components/ui';
 import { useLocalDatabase } from '../src/db/context';
-import { getActiveTrainingCycle } from '../src/db/cycleRepository';
+import { getActiveTrainingCycle, getLatestTrainingCycle } from '../src/db/cycleRepository';
 import {
   appendPersonalObservation,
   createPersonalGoal,
@@ -93,7 +93,8 @@ export default function PersonalGoalScreen() {
       return;
     }
     void (async () => {
-      const active = await getActiveTrainingCycle(db, owner);
+      const active =
+        (await getActiveTrainingCycle(db, owner)) ?? (await getLatestTrainingCycle(db, owner));
       if (!live) return;
       if (active) {
         const current = await getPersonalGoal(db, owner, active.id);
@@ -106,7 +107,11 @@ export default function PersonalGoalScreen() {
         if (draft)
           setFields({
             ...initial,
-            ...Object.fromEntries(Object.entries(draft).filter(([k]) => k in initial)),
+            ...Object.fromEntries(
+              Object.entries(draft).filter(([k]) =>
+                Object.prototype.hasOwnProperty.call(initial, k),
+              ),
+            ),
           });
       }
     })()
@@ -185,7 +190,8 @@ export default function PersonalGoalScreen() {
   const create = () =>
     act(async () => {
       const metric = fields.metric as Metric;
-      if (!(metric in labels)) throw new Error('Choose a measurement.');
+      if (!Object.prototype.hasOwnProperty.call(labels, metric))
+        throw new Error('Choose a measurement.');
       const id = uid();
       const protocol = {
         id: `${id}-setup`,
@@ -259,7 +265,7 @@ export default function PersonalGoalScreen() {
   return (
     <Screen
       footer={
-        loaded && cycle ? (
+        loaded && cycle && (goal || cycle.status === 'active') ? (
           <View>
             {error ? (
               <Text accessibilityRole="alert">{error}</Text>
@@ -283,7 +289,7 @@ export default function PersonalGoalScreen() {
       </Text>
       {!loaded ? (
         <Text>Loading your goal…</Text>
-      ) : !cycle ? (
+      ) : !cycle || (!goal && cycle.status !== 'active') ? (
         <Card>
           <Text>Start a training plan before adding a personal goal.</Text>
           <Button label="Choose a plan" onPress={() => router.push('/programs')} />
@@ -297,6 +303,7 @@ export default function PersonalGoalScreen() {
               key={m}
               label={labels[m]}
               variant={fields.metric === m ? 'primary' : 'secondary'}
+              selected={fields.metric === m}
               disabled={busy}
               onPress={() => change('metric', m)}
               style={styles.field}
@@ -392,6 +399,7 @@ export default function PersonalGoalScreen() {
                     key={option}
                     label={option === 'true' ? 'Completed' : 'Not completed'}
                     variant={value === option ? 'primary' : 'secondary'}
+                    selected={value === option}
                     disabled={busy}
                     onPress={() => setValue(option)}
                     style={styles.field}

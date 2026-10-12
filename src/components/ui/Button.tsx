@@ -17,6 +17,7 @@ export interface ButtonProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  selected?: boolean;
 }
 
 export function Button({
@@ -29,6 +30,7 @@ export function Button({
   style,
   accessibilityLabel,
   accessibilityHint,
+  selected,
 }: ButtonProps) {
   const isDisabled = disabled || loading || !onPress;
   const textTone = variant === 'primary' ? 'inverse' : 'default';
@@ -38,7 +40,11 @@ export function Button({
       accessibilityHint={accessibilityHint}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
-      accessibilityState={{ busy: loading, disabled: isDisabled }}
+      accessibilityState={{
+        busy: loading,
+        disabled: isDisabled,
+        ...(selected === undefined ? {} : { selected }),
+      }}
       disabled={isDisabled}
       onPress={onPress}
       style={({ pressed }) => [

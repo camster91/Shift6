@@ -52,3 +52,44 @@ goal changes. A new native build must be used to validate these changes.
    policy URLs; review store submissions before publication.
 
 This document records engineering scope, not a 100/100 human usability score.
+
+## Verification and review handoff
+
+The final implementation at 94c8fd82 passes all 502 tests in 84 suites,
+formatting, lint, TypeScript, Expo Doctor (21/21), mobile bundle exports,
+asset/release configuration and vendor source inventory checks. The production
+npm audit reports zero known vulnerabilities. Private dependency forks still
+require independent review; that result is not a general security certification.
+
+The goal remains reachable from Progress after a cycle completes, and completed
+cycles use the latest owned cycle for review. Measurement choices expose their
+selected state to assistive technology. Unknown inherited object names cannot
+be accepted as measurement metrics.
+
+[Draft PR 330](https://github.com/camster91/Shift6/pull/330) contains the reviewable
+change. [Final source quality run](https://github.com/camster91/Shift6/actions/runs/38296497279)
+is green. [Final native run](https://github.com/camster91/Shift6/actions/runs/38296497294)
+builds the test-signed Android APK and unsigned iOS simulator app; its job results
+and downloadable artifacts are the authoritative build evidence.
+
+The prior native run at 7454ca88 compiled both platforms, installed and cold-launched
+the iOS app, verified a live process and saved an iPhone simulator screenshot.
+The screenshot shows the six-step setup with its fixed Continue footer. This is
+not evidence of physical-device VoiceOver, health permissions or complete user
+journeys. Earlier workflow failures were validation-script problems (missing
+ripgrep and incompatible Xcode architecture arguments), corrected in the branch.
+
+Android local compilation succeeded for arm64 and x86_64. A saved test APK passed
+signature, ZIP alignment and 16 KB ELF page checks for 48 native libraries. That
+first saved APK predates the final file-export and review changes; use the final
+native run's artifact for the completed implementation. The installed first APK's
+hash matched its saved file. This session's AOSP ATD software emulator produced
+black captures for both SHIFT6 and a separate minimal native control Activity;
+its captures cannot establish visual readiness. No crash appeared in the sampled
+crash buffer. Physical Android layout and accessibility testing remain required.
+
+Expo CLI reports "Not logged in" in this environment, and no EAS project is linked
+in app.json. Signed distribution builds require the owner's Expo project and
+Apple/Google distribution setup. Public fitness content remains blocked by the
+empty release manifest. No review timestamps, user-study results, network-audit
+references or store approvals were invented to pass those gates.

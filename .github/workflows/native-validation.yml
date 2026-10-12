@@ -69,7 +69,8 @@ jobs:
           xcodebuild -workspace ios/SHIFT6.xcworkspace -scheme SHIFT6
           -configuration Release -sdk iphonesimulator
           -destination 'generic/platform=iOS Simulator'
-          -derivedDataPath native-build CODE_SIGNING_ALLOWED=NO build
+          -derivedDataPath native-build -arch "$(uname -m)"
+          ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
       - name: Install and cold-launch on iPhone simulator
         run: |
           simulator_id=$(python3 - <<'PYTHON'
@@ -86,7 +87,7 @@ jobs:
           xcrun simctl launch "$simulator_id" com.shift6.app
           sleep 5
           xcrun simctl io "$simulator_id" screenshot native-build/ios-cold-launch.png
-          xcrun simctl spawn "$simulator_id" launchctl list | rg 'com.shift6.app'
+          xcrun simctl spawn "$simulator_id" launchctl list | awk '$1 ~ /^[0-9]+$/ && $1 != 0 && /com[.]shift6[.]app/ {live=1} END {exit !live}'
       - uses: actions/upload-artifact@v7
         with:
           name: ios-cold-launch

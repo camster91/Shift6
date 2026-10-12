@@ -13,6 +13,7 @@ describe('exportLocalUserData', () => {
   it('returns user-scoped local records with a versioned export envelope', async () => {
     const database = {
       getAllAsync: async (sql: string) => {
+        if (sql.includes('personal_goal')) return [];
         if (sql.includes('onboarding_drafts')) return [];
         if (sql.includes('user_profiles')) return [{ id: 'guest-user', display_name: 'Cameron' }];
         if (sql.includes('user_equipment'))
@@ -59,7 +60,9 @@ describe('exportLocalUserData', () => {
     await expect(
       exportLocalUserData(database, 'guest-user', '2026-09-14T12:00:00.000Z'),
     ).resolves.toEqual({
-      schemaVersion: 11,
+      schemaVersion: 12,
+      personalGoalEvents: [],
+      personalGoalDrafts: [],
       onboardingDrafts: [],
       exportedAt: '2026-09-14T12:00:00.000Z',
       userId: 'guest-user',
@@ -333,7 +336,7 @@ describe('deleteLocalUserData', () => {
       }
 
       const exportData = await exportLocalUserData(database, 'owner-1', '2026-09-24');
-      expect(exportData.schemaVersion).toBe(11);
+      expect(exportData.schemaVersion).toBe(12);
       expect(exportData.shifts.map((row) => row.id)).toEqual(['shift-owner-1']);
       expect(exportData.shiftProtocols.map((row) => row.shift_id)).toEqual(['shift-owner-1']);
       expect(exportData.shiftObservations.map((row) => row.id)).toEqual(['observation-owner-1']);

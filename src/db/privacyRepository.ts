@@ -26,10 +26,12 @@ export interface LocalDataExportSummary {
 }
 
 export interface LocalDataExport {
-  schemaVersion: 11;
+  schemaVersion: 12;
   exportedAt: string;
   userId: string;
   summary: LocalDataExportSummary;
+  personalGoalEvents?: Record<string, unknown>[];
+  personalGoalDrafts?: Record<string, unknown>[];
   onboardingDrafts?: Record<string, unknown>[];
   userProfiles: Record<string, unknown>[];
   userEquipment: Record<string, unknown>[];
@@ -60,6 +62,14 @@ export async function exportLocalUserData(
   userId: string,
   exportedAt: string,
 ): Promise<LocalDataExport> {
+  const personalGoalEvents = await database.getAllAsync<Record<string, unknown>>(
+    'SELECT * FROM personal_goal_events WHERE user_id=? ORDER BY rowid;',
+    userId,
+  );
+  const personalGoalDrafts = await database.getAllAsync<Record<string, unknown>>(
+    'SELECT * FROM personal_goal_drafts WHERE user_id=?;',
+    userId,
+  );
   const onboardingDrafts = await database.getAllAsync<Record<string, unknown>>(
     'SELECT * FROM onboarding_drafts WHERE user_id = ?;',
     userId,
@@ -187,6 +197,8 @@ export async function exportLocalUserData(
   );
 
   const summary = buildLocalDataExportSummary({
+    personalGoalEvents,
+    personalGoalDrafts,
     onboardingDrafts,
     userProfiles,
     userEquipment,
@@ -213,10 +225,12 @@ export async function exportLocalUserData(
   });
 
   return {
-    schemaVersion: 11,
+    schemaVersion: 12,
     exportedAt,
     userId,
     summary,
+    personalGoalEvents,
+    personalGoalDrafts,
     onboardingDrafts,
     userProfiles,
     userEquipment,
@@ -276,7 +290,9 @@ export function buildLocalDataExportSummary(
         data.shifts.length +
         data.shiftProtocols.length +
         data.shiftObservations.length +
-        data.shiftGoalRevisions.length,
+        data.shiftGoalRevisions.length +
+        (data.personalGoalEvents?.length ?? 0) +
+        (data.personalGoalDrafts?.length ?? 0),
     },
     {
       key: 'trainingHistory',

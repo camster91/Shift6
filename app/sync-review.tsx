@@ -1,3 +1,4 @@
+import { runtimeConfig } from '../src/config/env';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -26,7 +27,7 @@ export default function SyncReviewScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const loadIssues = useCallback(async () => {
-    if (!database) {
+    if (!database || runtimeConfig.releaseMode === 'guest-only') {
       setLoading(false);
       return;
     }
@@ -68,6 +69,19 @@ export default function SyncReviewScreen() {
       </Screen>
     );
   }
+
+  if (runtimeConfig.releaseMode === 'guest-only')
+    return (
+      <Screen>
+        <Text variant="h1" accessibilityRole="header">
+          Your records stay on this device
+        </Text>
+        <Text style={{ marginVertical: 16 }}>
+          Cloud sync is not part of this release. Export or delete your local records from Profile.
+        </Text>
+        <Button label="Go to Profile" onPress={() => router.replace('/profile')} />
+      </Screen>
+    );
 
   return (
     <Screen>

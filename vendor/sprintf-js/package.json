@@ -1,0 +1,9 @@
+{
+  "description": "JavaScript sprintf implementation",
+  "main": "src/sprintf.js",
+  "license": "BSD-3-Clause",
+  "name": "@shift6/sprintf-js",
+  "version": "1.0.3-shift6.1",
+  "private": true,
+  "upstreamVersion": "1.0.3"
+}

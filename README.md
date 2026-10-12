@@ -1,6 +1,6 @@
 # SHIFT6
 
-A local-first mobile fitness app for iOS and Android that organizes training into focused six-week cycles: pick one measurable goal, record a baseline, train, and review real change after six weeks.
+A mobile-only, guest-first fitness app for iOS and Android that organizes training into focused six-week cycles: pick one measurable goal, record a baseline, train, and review real change after six weeks.
 
 > Status: in active rebuild. The repository was reset in September 2026 and `main` now holds a new React Native / Expo foundation. It is not released on the App Store or Google Play yet, and no program content has passed human review for public release. The earlier Vite/Capacitor web version is preserved on the `archive/pre-shift6-rebuild-2026-09-13` branch.
 
@@ -17,16 +17,14 @@ Progress is easier to see and sustain when training is organized into short, foc
 - Cycle calendar with rescheduling, week transitions, and an end-of-cycle review and reflection
 - Progress views: training volume by exercise, movement pattern and muscle, plus a cycle-level cardio summary
 - Searchable exercise library with filters (equipment, difficulty, stance, focus) and a custom exercise builder
-- Coach surface with a deterministic safety classifier and proposal validator; provider-backed AI is opt-in and off by default, and can never change a plan on its own
+- Coach surface with a deterministic safety classifier and proposal validator; provider-backed AI is disabled in the guest-only build, and can never change a plan on its own
 - Apple Health and Health Connect adapters with explicit disconnect and data-removal controls
-- Local-first SQLite storage with versioned migrations and an idempotent sync outbox that surfaces conflicts for review instead of overwriting data
-- Privacy controls: local export and delete, guest-to-account data adoption, privacy-safe analytics and error reporting that are no-ops by default
+- On-device SQLite storage with versioned migrations; guest builds do not enqueue cloud sync
+- Privacy controls: local export and delete; accounts, analytics and remote error reporting are disabled for this release
 - Plate calculator, body metrics, notifications and component accessibility tests; native assistive-technology review remains pending
 - Custom Higgsfield artwork, launcher/splash exports and optional silent animations with reduced-motion and backgrounding support
 
-Goal measurement semantics and the persistence schema are implemented; the production
-goal writer and matching server acceptance remain pending. Current native build and
-media evidence is recorded in [docs/32_NATIVE_MEDIA_AND_BUILD_EVIDENCE.md](docs/32_NATIVE_MEDIA_AND_BUILD_EVIDENCE.md).
+Personal goals now support self-entered repetitions, hold duration and distance, an explicit baseline, measured progress, append-only corrections, target revisions and a recorded review. These do not approve or publish the candidate fitness catalogue. See [mobile release status](docs/33_MOBILE_GUEST_RELEASE.md) for current checks and remaining external gates.
 
 ## Tech stack
 
@@ -45,10 +43,10 @@ Requires Node 22.
 npm ci
 cp .env.example .env
 npm start          # Expo dev server
-npm run ios        # or: npm run android / npm run web
+npm run ios        # or: npm run android
 ```
 
-The web target is a UI preview only: it has no persistence because the SQLite web worker is not available there. iOS and Android use the real SQLite provider. Health integrations require a native build with their modules; Expo Go cannot verify them.
+Only iOS and Android are supported release targets. Native health integrations require a native build; Expo Go cannot verify them. No backend endpoint is needed for this guest release.
 
 ## Quality checks
 
@@ -59,12 +57,11 @@ npm test
 npm run verify     # full CI gate: format, lint, typecheck, expo-doctor, asset and secret checks, audit, tests, export
 ```
 
-CI runs the same steps on every push and pull request, ending with an iOS, Android and web export smoke test.
+CI runs the same steps on every push and pull request, ending with iOS and Android export smoke tests.
 
-The manual **Native validation** workflow also compiles an Android release-mode test
+The **Native validation** workflow runs on pull requests and can also be started manually. It compiles an Android release-mode test
 APK and an unsigned iOS Release simulator app on macOS. Store signing and physical
-device QA are separate release requirements. Unresolved dependency audit and
-content/release gates currently prevent a full release-ready pass.
+device QA are separate release requirements. Content approval, signing and physical device evidence remain release gates. Dependency patches are source tracked in vendor/ with regression and integrity checks.
 
 ## Project structure
 

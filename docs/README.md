@@ -81,3 +81,6 @@ Before implementing a supposedly missing feature:
 6. do not mark a release gate complete without evidence;
 7. do not enter store metadata from `15_STORE_RELEASE_PACKAGE.md` until its blockers are resolved and
    Cameron has explicitly approved submission.
+
+- [Mobile guest release](33_MOBILE_GUEST_RELEASE.md): current implementation and external launch gates.
+- [Privacy policy draft](PRIVACY_POLICY.md) and [support](SUPPORT.md).

@@ -30,7 +30,10 @@ async function validate() {
   assert(expo?.scheme === 'shift6', 'app.json must define the shift6 deep-link scheme.');
   assert(expo?.ios?.bundleIdentifier === 'com.shift6.app', 'iOS bundle ID is missing or changed.');
   assert(expo?.android?.package === 'com.shift6.app', 'Android package is missing or changed.');
-  assert(expo?.web?.output === 'static', 'The web preview must use static output.');
+  assert(
+    JSON.stringify(expo?.platforms) === JSON.stringify(['ios', 'android']),
+    'Release platforms must be iOS and Android only.',
+  );
 
   const plugins = (expo?.plugins ?? []).map((plugin) =>
     Array.isArray(plugin) ? plugin[0] : plugin,
@@ -74,7 +77,7 @@ async function validate() {
   );
 
   console.log(
-    'Validated Expo identifiers, native plugins, web output, EAS profiles, and public environment keys.',
+    'Validated Expo identifiers, native plugins, mobile platforms, EAS profiles, and public environment keys.',
   );
 }
 

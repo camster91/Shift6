@@ -1,3 +1,4 @@
+import { runtimeConfig } from '../../src/config/env';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -85,15 +86,17 @@ export default function ProfileScreen() {
     preferredTrainingTimeOptions.find((option) => option.value === user.preferredTrainingTime)
       ?.label ?? 'Training time not set';
   const syncStatus =
-    syncRuntime.connectivity === 'offline'
-      ? ('offline' as const)
-      : syncRuntime.state === 'syncing'
-        ? ('syncing' as const)
-        : syncRuntime.state === 'conflict'
-          ? ('sync-conflict' as const)
-          : syncRuntime.state === 'failed' || syncRuntime.state === 'partial'
-            ? ('sync-failed' as const)
-            : null;
+    runtimeConfig.releaseMode === 'guest-only'
+      ? null
+      : syncRuntime.connectivity === 'offline'
+        ? ('offline' as const)
+        : syncRuntime.state === 'syncing'
+          ? ('syncing' as const)
+          : syncRuntime.state === 'conflict'
+            ? ('sync-conflict' as const)
+            : syncRuntime.state === 'failed' || syncRuntime.state === 'partial'
+              ? ('sync-failed' as const)
+              : null;
 
   const handleExport = async () => {
     if (!database) {
@@ -360,12 +363,12 @@ export default function ProfileScreen() {
       <Card tone="blue" style={styles.settingsCard}>
         <Ionicons name="shield-checkmark-outline" size={24} color={colors.ink} />
         <Text variant="h3" style={styles.settingsTitle}>
-          Local-first by default.
+          Saved on this device.
         </Text>
         <Text variant="body" tone="muted">
-          Workout data is designed to remain useful on the device before any account or cloud sync
-          is connected. Movement/accessibility preferences and manual body metrics also stay local
-          until a separate remote privacy policy explicitly opts them in.
+          This release saves your training, preferences and measurements on this device. No account
+          or cloud sync is required. You can export your records below; deleting the app may remove
+          local data.
         </Text>
       </Card>
 

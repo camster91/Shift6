@@ -1,3 +1,4 @@
+import { runtimeConfig } from '../src/config/env';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -88,6 +89,20 @@ export default function AiPrivacyScreen() {
       setSaving(false);
     }
   };
+
+  if (runtimeConfig.releaseMode === 'guest-only')
+    return (
+      <Screen>
+        <Text variant="h1" accessibilityRole="header">
+          Coach works on your device
+        </Text>
+        <Text style={{ marginVertical: 16 }}>
+          This release uses local Coach rules. Questions, training and health data are not sent to
+          an AI provider.
+        </Text>
+        <Button label="Back to Profile" onPress={() => router.back()} />
+      </Screen>
+    );
 
   return (
     <Screen>

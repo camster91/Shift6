@@ -306,6 +306,12 @@ export default function HomeScreen() {
         </View>
       </Card>
       <Button
+        label="Personal goal"
+        variant="secondary"
+        onPress={() => router.push('/goal')}
+        style={styles.cycleAction}
+      />
+      <Button
         label="View cycle dashboard"
         variant="ghost"
         icon={<Ionicons name="analytics-outline" size={18} color={colors.ink} />}

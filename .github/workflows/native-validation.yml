@@ -2,6 +2,7 @@ name: Native validation
 
 on:
   workflow_dispatch:
+  pull_request:
 
 permissions:
   contents: read
@@ -13,6 +14,7 @@ concurrency:
 env:
   CI: '1'
   EXPO_PUBLIC_ENVIRONMENT: staging
+  EXPO_PUBLIC_RELEASE_MODE: guest-only
 
 jobs:
   android:
@@ -64,6 +66,28 @@ jobs:
           -configuration Release -sdk iphonesimulator
           -destination 'generic/platform=iOS Simulator'
           -derivedDataPath native-build CODE_SIGNING_ALLOWED=NO build
+      - name: Install and cold-launch on iPhone simulator
+        run: |
+          simulator_id=$(python3 - <<'PYTHON'
+          import json, subprocess
+          devices=json.loads(subprocess.check_output(['xcrun','simctl','list','devices','available','--json']))['devices']
+          phones=[d for runtime, rows in devices.items() if 'iOS' in runtime for d in rows if d['name'].startswith('iPhone')]
+          if not phones: raise SystemExit('No available iPhone simulator')
+          print(phones[0]['udid'])
+          PYTHON
+          )
+          xcrun simctl boot "$simulator_id"
+          xcrun simctl bootstatus "$simulator_id" -b
+          xcrun simctl install "$simulator_id" native-build/Build/Products/Release-iphonesimulator/SHIFT6.app
+          xcrun simctl launch "$simulator_id" com.shift6.app
+          sleep 5
+          xcrun simctl io "$simulator_id" screenshot native-build/ios-cold-launch.png
+          xcrun simctl spawn "$simulator_id" launchctl list | rg 'com.shift6.app'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios-cold-launch
+          path: native-build/ios-cold-launch.png
+          if-no-files-found: error
       - uses: actions/upload-artifact@v7
         with:
           name: ios-unsigned-simulator-release

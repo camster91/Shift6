@@ -24,7 +24,7 @@ Progress is easier to see and sustain when training is organized into short, foc
 - Plate calculator, body metrics, notifications and component accessibility tests; native assistive-technology review remains pending
 - Custom Higgsfield artwork, launcher/splash exports and optional silent animations with reduced-motion and backgrounding support
 
-Personal goals now support self-entered repetitions, hold duration and distance, an explicit baseline, measured progress, append-only corrections, target revisions and a recorded review. These do not approve or publish the candidate fitness catalogue. See [mobile release status](docs/33_MOBILE_GUEST_RELEASE.md) for current checks and remaining external gates.
+Personal goals now support self-entered repetitions, load for reps, hold duration, fixed-distance time, distance and completion, an explicit baseline, measured progress, append-only corrections, target revisions and a recorded review. These do not approve or publish the candidate fitness catalogue. See [mobile release status](docs/33_MOBILE_GUEST_RELEASE.md) for current checks and remaining external gates.
 
 ## Tech stack
 
@@ -46,7 +46,7 @@ npm start          # Expo dev server
 npm run ios        # or: npm run android
 ```
 
-Only iOS and Android are supported release targets. Native health integrations require a native build; Expo Go cannot verify them. No backend endpoint is needed for this guest release.
+Only iOS and Android are supported release targets. The ios/android scripts compile native development apps, including health modules; they require Xcode on macOS or the Android SDK respectively. Expo Go cannot verify these native integrations. EAS internal profiles produce standalone test builds. No backend endpoint is needed for this guest release.
 
 ## Quality checks
 

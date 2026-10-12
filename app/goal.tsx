@@ -25,13 +25,23 @@ import {
 import type { TrainingCycle } from '../src/domain/types';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
-type Metric = 'reps' | 'hold-duration' | 'distance';
+type Metric = MeasurementProtocol['metric'];
 const labels: Record<Metric, string> = {
   reps: 'Repetitions',
   'hold-duration': 'Hold in seconds',
   distance: 'Distance in meters',
+  'load-for-reps': 'Load for a fixed rep count (kg)',
+  'fixed-distance-time': 'Time for a fixed distance (seconds)',
+  completion: 'Complete an activity',
 };
-const units = { reps: 'reps', 'hold-duration': 'seconds', distance: 'meters' } as const;
+const units = {
+  reps: 'reps',
+  'hold-duration': 'seconds',
+  distance: 'meters',
+  'load-for-reps': 'kg',
+  'fixed-distance-time': 'seconds',
+  completion: 'completed',
+} as const;
 const initial = {
   objective: '',
   metric: 'reps',
@@ -39,6 +49,8 @@ const initial = {
   setup: '',
   assistance: '',
   replace: 'no',
+  repCount: '',
+  fixedDistance: '',
 };
 const uid = () => `personal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 function numeric(value: string) {
@@ -184,7 +196,16 @@ export default function PersonalGoalScreen() {
         equipmentSetup: fields.setup,
         metric,
         canonicalUnit: units[metric],
-        direction: 'higher',
+        direction:
+          metric === 'completion'
+            ? 'complete'
+            : metric === 'fixed-distance-time'
+              ? 'lower'
+              : 'higher',
+        ...(metric === 'load-for-reps' ? { repCount: numeric(fields.repCount) } : {}),
+        ...(metric === 'fixed-distance-time'
+          ? { fixedDistanceMeters: numeric(fields.fixedDistance) }
+          : {}),
       } as MeasurementProtocol;
       await createPersonalGoal(
         db!,
@@ -194,7 +215,7 @@ export default function PersonalGoalScreen() {
           id,
           objective: fields.objective,
           protocol,
-          target: numeric(fields.target),
+          target: metric === 'completion' ? true : numeric(fields.target),
           replacePrimary: fields.replace === 'yes',
         },
         new Date().toISOString(),
@@ -203,6 +224,8 @@ export default function PersonalGoalScreen() {
   const record = (baseline: boolean) =>
     act(async () => {
       if (!goal) return;
+      if (goal.protocol.metric === 'completion' && !['true', 'false'].includes(value))
+        throw new Error('Choose completed or not completed.');
       const at = new Date().toISOString();
       await appendPersonalObservation(
         db!,
@@ -214,7 +237,7 @@ export default function PersonalGoalScreen() {
           protocolVersion: goal.protocol.version,
           measuredAt: correction?.measuredAt ?? at,
           source: correction ? 'historical-entry' : 'assessment',
-          value: numeric(value),
+          value: goal.protocol.metric === 'completion' ? value === 'true' : numeric(value),
           unit: goal.protocol.canonicalUnit,
           ...(correction ? { correctsObservationId: correction.id } : {}),
         },
@@ -228,9 +251,28 @@ export default function PersonalGoalScreen() {
   const display = (v: number | boolean | undefined) =>
     v === undefined
       ? 'Not measured'
-      : String(typeof v === 'number' ? Math.round(v * 100) / 100 : v);
+      : typeof v === 'boolean'
+        ? v
+          ? 'Completed'
+          : 'Not completed'
+        : String(Math.round(v * 100) / 100);
   return (
-    <Screen>
+    <Screen
+      footer={
+        loaded && cycle ? (
+          <View>
+            {error ? (
+              <Text accessibilityRole="alert">{error}</Text>
+            ) : notice ? (
+              <Text accessibilityLiveRegion="polite">{notice}</Text>
+            ) : null}
+            {!goal ? (
+              <Button label="Save personal goal" loading={busy} onPress={() => void create()} />
+            ) : null}
+          </View>
+        ) : undefined
+      }
+    >
       <Button label="Back" variant="ghost" onPress={() => router.back()} />
       <Text variant="h1" accessibilityRole="header">
         Personal goal
@@ -260,11 +302,26 @@ export default function PersonalGoalScreen() {
               style={styles.field}
             />
           ))}
-          {input(
-            `Target (${units[fields.metric as Metric] ?? 'choose measurement'})`,
-            fields.target,
-            (v) => change('target', v),
-            true,
+          {fields.metric === 'load-for-reps'
+            ? input('Fixed rep count', fields.repCount, (v) => change('repCount', v), true)
+            : null}
+          {fields.metric === 'fixed-distance-time'
+            ? input(
+                'Fixed distance (meters)',
+                fields.fixedDistance,
+                (v) => change('fixedDistance', v),
+                true,
+              )
+            : null}
+          {fields.metric === 'completion' ? (
+            <Text>Target: complete this activity.</Text>
+          ) : (
+            input(
+              `Target (${units[fields.metric as Metric] ?? 'choose measurement'})`,
+              fields.target,
+              (v) => change('target', v),
+              true,
+            )
           )}
           {input('Equipment and setup (write “none” if none)', fields.setup, (v) =>
             change('setup', v),
@@ -287,17 +344,24 @@ export default function PersonalGoalScreen() {
             onPress={() => change('replace', fields.replace === 'yes' ? 'no' : 'yes')}
             style={styles.field}
           />
-          <Button label="Save personal goal" loading={busy} onPress={() => void create()} />
         </Card>
       ) : (
         <>
           <Card>
             <Text variant="h2">{goal.blockObjective}</Text>
             <Text>
-              Target: {String(goal.target)} {goal.protocol.canonicalUnit}
+              Target:{' '}
+              {goal.target === true
+                ? 'Complete this activity'
+                : String(goal.target) + ' ' + goal.protocol.canonicalUnit}
             </Text>
             <Text>
               Setup: {goal.protocol.equipmentSetup}. Assistance: {goal.protocol.assistance}.
+              {goal.protocol.metric === 'load-for-reps'
+                ? ' Fixed rep count: ' + goal.protocol.repCount
+                : goal.protocol.metric === 'fixed-distance-time'
+                  ? ' Fixed distance: ' + goal.protocol.fixedDistanceMeters + ' meters'
+                  : ''}
             </Text>
             <Text>
               Baseline: {display(progress?.baseline?.canonicalValue)} · Latest:{' '}
@@ -321,7 +385,22 @@ export default function PersonalGoalScreen() {
               {correction ? 'Correct a measurement' : 'Record a measurement'}
             </Text>
             {correction ? <Text>The original entry and date stay in your history.</Text> : null}
-            {input(`Actual value (${goal.protocol.canonicalUnit})`, value, setValue, true)}
+            {goal.protocol.metric === 'completion' ? (
+              <View>
+                {(['true', 'false'] as const).map((option) => (
+                  <Button
+                    key={option}
+                    label={option === 'true' ? 'Completed' : 'Not completed'}
+                    variant={value === option ? 'primary' : 'secondary'}
+                    disabled={busy}
+                    onPress={() => setValue(option)}
+                    style={styles.field}
+                  />
+                ))}
+              </View>
+            ) : (
+              input(`Actual value (${goal.protocol.canonicalUnit})`, value, setValue, true)
+            )}
             <Button
               label={correction ? 'Save correction' : 'Save measurement'}
               loading={busy}
@@ -375,7 +454,7 @@ export default function PersonalGoalScreen() {
               observations.map((o) => (
                 <View key={o.id} style={styles.field}>
                   <Text>
-                    {new Date(o.measuredAt).toLocaleString()} · {String(o.value)} {o.unit}
+                    {new Date(o.measuredAt).toLocaleString()} · {display(o.value)} {o.unit}
                     {o.correctsObservationId ? ' · correction' : ''}
                   </Text>
                   {!observations.some((child) => child.correctsObservationId === o.id) ? (
@@ -395,31 +474,33 @@ export default function PersonalGoalScreen() {
               ))
             )}
           </Card>
-          <Card style={styles.field}>
-            <Text variant="h2">Revise target</Text>
-            {input(`New target (${goal.protocol.canonicalUnit})`, newTarget, setNewTarget, true)}
-            {input('Reason for changing target', reason, setReason)}
-            <Button
-              label="Save target revision"
-              disabled={busy}
-              onPress={() =>
-                void act(async () => {
-                  await revisePersonalTarget(
-                    db!,
-                    owner,
-                    goal.id,
-                    numeric(newTarget),
-                    reason,
-                    uid(),
-                    new Date().toISOString(),
-                  );
-                  setNewTarget('');
-                  setReason('');
-                })
-              }
-            />
-            <Text>Previous target revisions and measurements stay in your exported history.</Text>
-          </Card>
+          {goal.protocol.metric !== 'completion' ? (
+            <Card style={styles.field}>
+              <Text variant="h2">Revise target</Text>
+              {input(`New target (${goal.protocol.canonicalUnit})`, newTarget, setNewTarget, true)}
+              {input('Reason for changing target', reason, setReason)}
+              <Button
+                label="Save target revision"
+                disabled={busy}
+                onPress={() =>
+                  void act(async () => {
+                    await revisePersonalTarget(
+                      db!,
+                      owner,
+                      goal.id,
+                      numeric(newTarget),
+                      reason,
+                      uid(),
+                      new Date().toISOString(),
+                    );
+                    setNewTarget('');
+                    setReason('');
+                  })
+                }
+              />
+              <Text>Previous target revisions and measurements stay in your exported history.</Text>
+            </Card>
+          ) : null}
           <Card>
             <Text variant="h2">Review and next step</Text>
             <Text>
@@ -469,12 +550,12 @@ export default function PersonalGoalScreen() {
           </Card>
         </>
       )}
-      {error ? (
+      {!cycle && error ? (
         <Text accessibilityRole="alert" style={styles.field}>
           {error}
         </Text>
       ) : null}
-      {notice ? (
+      {!cycle && notice ? (
         <Text accessibilityLiveRegion="polite" style={styles.field}>
           {notice}
         </Text>

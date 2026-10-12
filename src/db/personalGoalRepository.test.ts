@@ -208,3 +208,50 @@ test('export includes private goal journal and drafts only for the requested own
   expect(other.personalGoalEvents).toEqual([]);
   expect(other.personalGoalDrafts).toEqual([]);
 });
+
+test.each([
+  {
+    metric: 'load-for-reps',
+    canonicalUnit: 'kg',
+    direction: 'higher',
+    repCount: 5,
+    target: 30,
+    value: 20,
+  },
+  { metric: 'hold-duration', canonicalUnit: 'seconds', direction: 'higher', target: 60, value: 30 },
+  {
+    metric: 'fixed-distance-time',
+    canonicalUnit: 'seconds',
+    direction: 'lower',
+    fixedDistanceMeters: 1000,
+    target: 300,
+    value: 400,
+  },
+  { metric: 'distance', canonicalUnit: 'meters', direction: 'higher', target: 1000, value: 500 },
+  {
+    metric: 'completion',
+    canonicalUnit: 'completed',
+    direction: 'complete',
+    target: true,
+    value: false,
+  },
+])('persists the explicit $metric measurement setup and baseline', async (specification) => {
+  const { target, value, ...measurement } = specification;
+  const configured = { ...protocol, ...measurement } as MeasurementProtocol;
+  await createPersonalGoal(
+    db,
+    'owner',
+    'cycle',
+    { ...goal, protocol: configured, target: target as number | true },
+    now,
+  );
+  await appendPersonalObservation(
+    db,
+    'owner',
+    { ...observation, value, unit: configured.canonicalUnit },
+    true,
+    now,
+  );
+  expect((await getPersonalGoal(db, 'owner', 'cycle'))?.protocol).toEqual(configured);
+  expect((await getPersonalObservations(db, 'owner', 'goal'))[0]?.value).toBe(value);
+});

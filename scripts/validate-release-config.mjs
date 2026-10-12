@@ -52,6 +52,14 @@ async function validate() {
 
   for (const profile of ['development', 'preview', 'production']) {
     assert(easConfig.build?.[profile], `eas.json is missing the ${profile} build profile.`);
+    assert(
+      easConfig.build[profile].env?.EXPO_PUBLIC_RELEASE_MODE === 'guest-only',
+      'All shipping profiles must select guest-only mode.',
+    );
+    assert(
+      !easConfig.build[profile].env?.EXPO_PUBLIC_API_BASE_URL,
+      'Guest-only build profiles cannot configure a backend URL.',
+    );
     const environment = easConfig.build[profile].env?.EXPO_PUBLIC_ENVIRONMENT;
     assert(
       environment === undefined || validEnvironments.includes(environment),

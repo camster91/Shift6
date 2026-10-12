@@ -103,3 +103,32 @@ test('requires actual input and explicitly records a zero baseline', async () =>
     ),
   );
 });
+
+test('completion measurements require an explicit result and preserve a failed attempt', async () => {
+  jest.mocked(getPersonalGoal).mockResolvedValue({
+    ...goal,
+    target: true,
+    protocol: {
+      ...goal.protocol,
+      metric: 'completion',
+      canonicalUnit: 'completed',
+      direction: 'complete',
+    },
+  });
+  const screen = await render(<PersonalGoalScreen />);
+  await waitFor(() => expect(screen.getByText('My hold')).toBeTruthy());
+  await fireEvent.press(screen.getByText('Save measurement'));
+  await waitFor(() => expect(screen.getByText('Choose completed or not completed.')).toBeTruthy());
+  expect(appendPersonalObservation).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByText('Not completed'));
+  await fireEvent.press(screen.getByText('Save as baseline'));
+  await waitFor(() =>
+    expect(appendPersonalObservation).toHaveBeenCalledWith(
+      mockDb,
+      'owner',
+      expect.objectContaining({ value: false, unit: 'completed' }),
+      true,
+      expect.any(String),
+    ),
+  );
+});

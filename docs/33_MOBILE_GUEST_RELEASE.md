@@ -10,7 +10,7 @@ rejects accidentally supplying a backend URL in that mode.
 - Guest auth is unavailable, sync runtime does not subscribe or flush, and new
   local writes do not create cloud outbox records. Existing records are retained.
 - Profile explains local storage and offers export and deletion.
-- Local personal goals: user-declared repetitions, hold duration or distance,
+- Local personal goals: user-declared repetitions, load for reps, hold duration, fixed-distance time, distance or completion,
   target, explicit setup/assistance, recoverable creation drafts, measured baseline,
   latest and personal best. Missing baselines are not zero.
 - Corrections append records with the original measurement date; old values stay

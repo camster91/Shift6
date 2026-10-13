@@ -25,11 +25,13 @@ Direct cancellation-versus-confirmation export comparison verifies **workoutSess
 
 The saved baseline's scheduled dates initially equal all original dates. Its revision then projects October 21 without modifying those baseline bytes. Original date/timezone provenance is explicit; this observation does not establish actual travel-zone or reminder behavior.
 
-## Restore: pending final readback
+## Observed native schema-15 restore
 
-After deletion, the native restore entry, schema-15 preview and confirmation/result are captured as `schedule-native-restore-entry-eb6c`, `schedule-restore-preview-eb6c`, `schedule-restore-confirm-dialog-eb6c` and `schedule-restore-result-eb6c`. The result reports 1054 records restored locally. This screen alone does not establish preserved records: fresh receiving-app re-export and baseline/revision/actual/provenance comparisons remain pending. No complete restore pass is claimed here until those post-commit bytes are received and checked. Existing-data rejection and Cancel behavior retain their earlier candidate-specific evidence in [doc 39](39_LOCAL_RECOVERY_HEALTH_QA.md).
+After deletion, choose the externally preserved schema-15 backup, review the preview, then explicitly confirm local restore. Captures: `schedule-native-restore-entry-eb6c`, `schedule-restore-preview-eb6c`, `schedule-restore-confirm-dialog-eb6c` and `schedule-restore-result-eb6c`. The result reports 1054 records restored locally. Continue and open Calendar: `schedule-restored-calendar-projection-eb6c` shows completed October 13 and the projected moved date October 21 immediately after restoration.
 
-**Observed copy limitation on `eb6cd6d2`:** the restore result screen still describes recovery as “a schema-12 SHIFT6 JSON export”, although the accepted file and its preview are schema 15. Expected copy should accurately describe the supported format range. This is a misleading instruction within #331, not proof of a failed restore; source copy correction and native retest are pending.
+Fresh export was received and opened outside the app: `schedule-restored-export-eb6c.json`, with `schedule-restored-export-received-eb6c` capture. Integer schemaVersion=15 and totalRecordCount=1054 match the source backup. Every record section equals `schedule-confirm-export-eb6c.json`, including exact baseline/revision rows, eight actuals and unit provenance, sessions, legacy overrides, programs/versions and 1002 imported health summaries. No metadata normalization difference was observed for this same-owner guest backup; only the export timestamp changes. Practical memory remains disabled (enabled=0), with no Coach provider or notification consent records. These states were already off/absent in the source, so this is not a native enabled-consent-reset test. Existing-data rejection and Cancel behavior retain their earlier candidate-specific evidence in [doc 39](39_LOCAL_RECOVERY_HEALTH_QA.md).
+
+**Observed copy defect on `eb6cd6d2`, [#358](https://github.com/camster91/Shift6/issues/358):** the restore result screen still describes recovery as “a schema-12 SHIFT6 JSON export”, although the accepted file and its preview are schema 15. Expected copy should accurately describe the supported format range. Source `05d4cf32` corrects the supported-backup wording and actual record count; its native retest remains pending. This is misleading instruction text, not a failed restore.
 
 ## Source implementation and verification
 
@@ -47,7 +49,7 @@ These checks support the scheduling portion of [#315](https://github.com/camster
 
 ## Remaining acceptance
 
-- Complete schema-15 native restore and external readback, including exact schedule journal, owned original versions, actual values/units and reset consent defaults. Retest duplicate/existing-data refusal and old schema-14 native normalization on this binary.
+- Retest enabled-consent reset, duplicate/existing-data refusal, malformed/cross-owner schedule rejection and old schema-14 native normalization on this binary. The observed same-owner schema-15 restore above does not prove every recovery edge case.
 - Run each of the three changed Start paths on native Android: private Builder start, programme start and repeat-cycle start. Inspect full date/zone preview, Cancel with no writes, explicit confirmation, fresh saved cycle/baseline and guarded receipts. No new-cycle acceptance is inferred from this existing-cycle move.
 - Native second-move chains, stale preview after competing evidence, date entry outside the visible calendar grid, day-boundary/DST/travel-zone behavior and earlier/future/completed-week refusal cases remain incomplete.
 - Reminder permission/opt-in, consent-preserving recalculation, actual delivery/actions and source agreement across Calendar/Home/Coach on this candidate remain pending. A saved planning date does not prove a notification was delivered.

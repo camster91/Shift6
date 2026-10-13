@@ -270,7 +270,7 @@ export default function CycleDashboardScreen() {
         <IconButton
           icon={<Ionicons name="arrow-back" size={22} color={colors.ink} />}
           label="Back to Home"
-          onPress={() => router.back()}
+          onPress={() => router.replace('/')}
         />
         <Text variant="caption" tone="muted">
           CYCLE DASHBOARD

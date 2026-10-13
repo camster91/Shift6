@@ -1,0 +1,57 @@
+name: Native runtime QA
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: native-runtime-qa-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  ios-guest-journey:
+    runs-on: macos-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Find a successful native build with identical app source
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: python3 scripts/select-native-qa-artifact.py
+      - uses: actions/download-artifact@v8
+        with:
+          name: ios-unsigned-simulator-release
+          run-id: ${{ steps.candidate.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: native-qa/SHIFT6.app
+      - name: Install pinned UI automation tooling
+        run: |
+          npm install --global appium@3.8.0
+          appium driver install --source=npm appium-xcuitest-driver@12.17.3
+      - name: Run the guest journey on iPhone simulator
+        env:
+          QA_NATIVE_SOURCE: ${{ steps.candidate.outputs.source_sha }}
+          QA_NATIVE_RUN: ${{ steps.candidate.outputs.run_id }}
+        run: |
+          mkdir -p native-qa/evidence
+          appium --log native-qa/evidence/appium.log --log-timestamp > native-qa/evidence/appium-console.log 2>&1 &
+          python3 scripts/mobile-runtime-qa.py
+      - name: Preserve screenshots, UI trees and actual results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-guest-runtime-qa
+          path: native-qa/evidence
+          if-no-files-found: warn

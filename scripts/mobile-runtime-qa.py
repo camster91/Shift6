@@ -163,6 +163,8 @@ def journey():
     snapshot('setup-rhythm')
     click('2 days')
     click('30 min')
+    click('Morning. Start the day with a clear training window.')
+    snapshot('setup-rhythm-all-required-choices')
     click('Continue')
     expect('SETUP · 5 OF 6')
     snapshot('setup-units')
@@ -319,7 +321,6 @@ except Exception as error:
     raise
 finally:
     try:
-        subprocess.run(['xcrun', 'simctl', 'spawn', device['udid'], 'log', 'show', '--last', '5m', '--predicate', 'process == "SHIFT6"', '--style', 'compact'], stdout=(OUT / 'app-runtime.log').open('w'), stderr=subprocess.DEVNULL, timeout=30)
         container = subprocess.check_output(['xcrun', 'simctl', 'get_app_container', device['udid'], 'com.shift6.app', 'data'], timeout=30).decode().strip()
         import sqlite3
         for db_path in Path(container).rglob('shift6.db'):
@@ -329,6 +330,11 @@ finally:
                 RESULT['syntheticOnboardingRows'] = {t: [dict(r) for r in db.execute('SELECT * FROM "' + t.replace('"', '""') + '" LIMIT 10')] for t in tables}
     except Exception as diagnostic_error:
         RESULT['diagnosticError'] = str(diagnostic_error)
+    try:
+        with (OUT / 'app-runtime.log').open('w') as log:
+            subprocess.run(['xcrun', 'simctl', 'spawn', device['udid'], 'log', 'show', '--last', '2m', '--predicate', 'process == "SHIFT6"', '--style', 'compact'], stdout=log, stderr=subprocess.DEVNULL, timeout=15)
+    except Exception as log_error:
+        RESULT['logDiagnosticError'] = str(log_error)
     RESULT['finishedAt'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     (OUT / 'results.json').write_text(json.dumps(RESULT, indent=2) + '\n')
     if SESSION:

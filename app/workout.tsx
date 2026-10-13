@@ -842,6 +842,39 @@ export default function ActiveWorkoutScreen() {
     const distanceMeters = parseNumber(input.distance);
     const rpe = parseNumber(input.rpe);
     const rir = parseNumber(input.rir);
+    const invalidEntry = (
+      [
+        [
+          input.reps,
+          reps,
+          'Enter valid nonnegative reps, or clear the field if reps were not recorded.',
+        ],
+        [
+          input.duration,
+          durationSeconds,
+          'Enter a valid nonnegative time in seconds, or clear the field if time was not recorded.',
+        ],
+        [
+          input.distance,
+          distanceMeters,
+          'Enter a valid nonnegative distance in meters, or clear the field if distance was not recorded.',
+        ],
+        [
+          input.rpe,
+          rpe,
+          'Enter a valid RPE from 1 to 10, or clear the field if RPE was not recorded.',
+        ],
+        [
+          input.rir,
+          rir,
+          'Enter a valid RIR from 0 to 10, or clear the field if RIR was not recorded.',
+        ],
+      ] as const
+    ).find(([raw, parsed]) => raw.trim() && parsed === undefined);
+    if (invalidEntry) {
+      setError(invalidEntry[2]);
+      return;
+    }
     const trackingType = getTrackingType(workoutExercise.exerciseId, target, availableExercises);
     if (target?.reps !== undefined && reps === undefined) {
       setError(`Enter the reps completed for set ${setNumber} before marking it complete.`);

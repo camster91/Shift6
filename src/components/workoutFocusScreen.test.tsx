@@ -473,6 +473,102 @@ test.each(['-5', 'not a number', 'Infinity'])(
 );
 
 test.each([
+  ['RPE', '-5'],
+  ['RPE', 'not a number'],
+  ['RPE', 'Infinity'],
+  ['RIR', '-5'],
+  ['RIR', 'not a number'],
+  ['RIR', 'Infinity'],
+] as const)(
+  'nonempty invalid optional %s %s cannot silently disappear from a saved set',
+  async (field, value) => {
+    const screen = await render(<ActiveWorkoutScreen />);
+    await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+    await fireEvent.press(screen.getByLabelText('Show optional effort fields'));
+    await fireEvent.changeText(
+      screen.getByLabelText(`Back squat set 1 ${field} from ${field === 'RPE' ? 1 : 0} to 10`),
+      value,
+    );
+    await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+    expect(mockSaveSet).not.toHaveBeenCalled();
+    expect(mockUpdateSet).not.toHaveBeenCalled();
+    expect(
+      screen.getByLabelText(`Back squat set 1 ${field} from ${field === 'RPE' ? 1 : 0} to 10`).props
+        .value,
+    ).toBe(value);
+    expect(
+      screen.getByText(
+        `Enter a valid ${field} from ${field === 'RPE' ? 1 : 0} to 10, or clear the field if ${field} was not recorded.`,
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText('Back squat set 2 reps')).toBeNull();
+  },
+);
+
+test.each(['-5', 'not a number', 'Infinity'])(
+  'nonempty optional reps %s cannot silently disappear when no reps target is prescribed',
+  async (value) => {
+    const target = mockVersion.workouts[0]!.exercises[0]!.sets[0]!.target;
+    const previous = target.reps;
+    delete target.reps;
+    try {
+      const screen = await render(<ActiveWorkoutScreen />);
+      await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+      await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), value);
+      await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+      expect(mockSaveSet).not.toHaveBeenCalled();
+      expect(screen.getByLabelText('Back squat set 1 reps').props.value).toBe(value);
+      expect(
+        screen.getByText(
+          'Enter valid nonnegative reps, or clear the field if reps were not recorded.',
+        ),
+      ).toBeTruthy();
+    } finally {
+      target.reps = previous;
+    }
+  },
+);
+
+test('blank optional effort is omitted while explicitly recorded zero RIR is preserved', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText('Show optional effort fields'));
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 RIR from 0 to 10'), '0');
+  await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+  await waitFor(() => expect(mockSaveSet).toHaveBeenCalledTimes(1));
+  expect(mockSaveSet.mock.calls[0]?.[1]).toMatchObject({ rir: 0 });
+  expect(mockSaveSet.mock.calls[0]?.[1].rpe).toBeUndefined();
+});
+
+test.each([
+  ['RPE', '0', 'RPE must be between 1 and 10.'],
+  ['RPE', '11', 'RPE must be between 1 and 10.'],
+  ['RIR', '11', 'RIR must be between 0 and 10.'],
+] as const)('existing %s range refuses %s without saving', async (field, value, message) => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText('Show optional effort fields'));
+  await fireEvent.changeText(
+    screen.getByLabelText(`Back squat set 1 ${field} from ${field === 'RPE' ? 1 : 0} to 10`),
+    value,
+  );
+  await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+  expect(mockSaveSet).not.toHaveBeenCalled();
+  expect(screen.getByText(message)).toBeTruthy();
+});
+
+test('valid fractional effort retains the existing numeric contract', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText('Show optional effort fields'));
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 RPE from 1 to 10'), '7.5');
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 RIR from 0 to 10'), '1.5');
+  await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+  await waitFor(() => expect(mockSaveSet).toHaveBeenCalledTimes(1));
+  expect(mockSaveSet.mock.calls[0]?.[1]).toMatchObject({ rpe: 7.5, rir: 1.5 });
+});
+
+test.each([
   ['kg', '40 kg'],
   ['lb', '40 lb'],
   [undefined, '40 (unit unknown)'],

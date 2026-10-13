@@ -9,6 +9,7 @@ Observed 13 October 2026. This extends the frozen findings in [doc 36](36_PC_NAT
 - Baseline installed app: `b131a9e6`, recorded APK SHA-256 in doc 36. Updated installed app: `d9c5b2e2`, APK SHA-256 `A354DC1490EC28ECB925D02BE08799252A39A2891751B14EABA5C8001D1E97D6`. Native release build succeeded in 1m25s, 715 tasks. This test-signed x86_64 APK is for this emulator, not the Samsung S25 Ultra or store distribution.
 - Guest-only staging configuration, empty API URL, no backend, virtual Wi-Fi/data disabled. This increment preserved the existing synthetic database during APK upgrade, then deliberately deleted it for empty-install restore testing.
 - Source checks at `cc99c873` plus formatting-only `7016fe3a`: complete `npm run verify` passed, 588 tests/96 suites, 5 security tests, Expo Doctor 21/21, production audit zero vulnerabilities, both mobile exports. Sunday's restore validation was added at `d9c5b2e2`, with 16 real-SQLite tests, TypeScript/lint/format passing and a fresh native build. Later integration changes require their own verification.
+- Full integration verification at `01ec36a1` then passed all `npm run verify` stages, including **590 tests in 96 suites** and both mobile exports. Subsequent commits only preserve QA evidence/docs and its byte attributes; no app implementation changed after this check.
 
 ## Observed findings and retests
 

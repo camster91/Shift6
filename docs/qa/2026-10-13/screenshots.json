@@ -1,0 +1,207 @@
+[
+  {
+    "file": "baseline-custom-added.png",
+    "bytes": 210259,
+    "sha256": "16BE7EA78CB41CEE2B84E8AC08C8FF4714635DE97BB87C550BF86DCBF826863E"
+  },
+  {
+    "file": "baseline-guest-sync-copy.png",
+    "bytes": 202596,
+    "sha256": "C7354173ADFC375E3DB8C53DA3FC06972C3907CC2FBC50D46D040D819301BFDE"
+  },
+  {
+    "file": "baseline-imperial-goal.png",
+    "bytes": 165461,
+    "sha256": "1516D50A657FF2F1A5ED7439F2B7B3D8E6E879DD76F28FA50DC1362C1D1EEBDA"
+  },
+  {
+    "file": "baseline-offline-sets-recovered.png",
+    "bytes": 211004,
+    "sha256": "9B4100E2B483952396919E687849A6F136449DBA32B2EFEF69F534DC8B99FD01"
+  },
+  {
+    "file": "baseline-partial-saved.png",
+    "bytes": 276232,
+    "sha256": "B086DE378CC31D482954F47938E77106F84807C8E27583E321FAACDE93FA823B"
+  },
+  {
+    "file": "baseline-programs.png",
+    "bytes": 217809,
+    "sha256": "BAF05A6A7424967DA210CAE3D2D2CD4DA7F4A831971B45DE4F7AE72687A151CD"
+  },
+  {
+    "file": "baseline-setup-step6.png",
+    "bytes": 284067,
+    "sha256": "E68950D4B972ECA470F6B15625A5895869D1690E9AC88B62966FBB8B7C962E47"
+  },
+  {
+    "file": "baseline-step4-missing-time.png",
+    "bytes": 199729,
+    "sha256": "AC7DAC78233FA063F8B55898C418BD6F35E0621C894BB475F2FD1ECF5067551F"
+  },
+  {
+    "file": "baseline-workout-added.png",
+    "bytes": 201626,
+    "sha256": "60BBF4CB2BBD3829723B55E487B25796957DB2929924FF30B3506F7B1CA88BC6"
+  },
+  {
+    "file": "candidate-b131-fresh-setup.png",
+    "bytes": 227653,
+    "sha256": "0D9CCC47982A524DCD191B087061A5A2534ADB875D3B731F2BE75FC4CFB0FA93"
+  },
+  {
+    "file": "candidate-deleted-force-close.png",
+    "bytes": 227558,
+    "sha256": "5F2466B2468DED666767621B0607CE095398D11A71E65D0C8948994AC480F881"
+  },
+  {
+    "file": "candidate-deleted-fresh-setup.png",
+    "bytes": 222127,
+    "sha256": "53036FC19C2CBCA0FCF155D5621B511512B4D528FB89BC918DB2962AF1BE0156"
+  },
+  {
+    "file": "candidate-export-opened-outside.png",
+    "bytes": 71994,
+    "sha256": "D1817AA3C7C06DD6FDD2299E951E2BBFD279D5E845E82EAC7FAFAACC45112020"
+  },
+  {
+    "file": "candidate-goal-correction.png",
+    "bytes": 183261,
+    "sha256": "3AA305712754AF02D72B03174F136D19886BDC5F35E71C3C876FBD8ABE81AB10"
+  },
+  {
+    "file": "candidate-goal-created.png",
+    "bytes": 180794,
+    "sha256": "46021955536245F72C85A7190866E8C16D2AC1653194D25A50AB9CA1123E9111"
+  },
+  {
+    "file": "candidate-goal-review.png",
+    "bytes": 193669,
+    "sha256": "A8798193C70BA5E0803424E8316579291687C6137445DB562AA73C8523A175FF"
+  },
+  {
+    "file": "candidate-goal-revision.png",
+    "bytes": 203615,
+    "sha256": "5DA138600C30B5F34E7729957CE901029E4291C5D5E55E0B8C2F0238A2C57ACA"
+  },
+  {
+    "file": "candidate-guest-save-local.png",
+    "bytes": 251586,
+    "sha256": "24C0ACA90E9078615013CE199243E4AD6C1A6A11D3F357BCE0EBBAE9048B3D70"
+  },
+  {
+    "file": "candidate-health-empty-import.png",
+    "bytes": 236228,
+    "sha256": "D1840306F27242048716930BD164AC00377762A9D08D6D5E7288B6EFED365AF6"
+  },
+  {
+    "file": "candidate-imperial-goal-units.png",
+    "bytes": 192735,
+    "sha256": "E390B91254E77F2A6353EC9986BE261D651C61A6DE82732F36FACE097AE80834"
+  },
+  {
+    "file": "candidate-large-text-home-fixed.png",
+    "bytes": 234110,
+    "sha256": "2288EDAC6E0956F317096710220EB13663BB47FDF7DF6E16FF1E6114BDBE1F93"
+  },
+  {
+    "file": "candidate-large-text-home.png",
+    "bytes": 240275,
+    "sha256": "0DED315483AB1ED6F3C2E5FA44F136B7B96F928E7EDB3F3F95BA4C9ACA1FE476"
+  },
+  {
+    "file": "candidate-large-text-keyboard.png",
+    "bytes": 232780,
+    "sha256": "E62C42E858BE130BD0030F2394E5682E5E8943D4A8155A7A0B8EBD2EEF2D58A5"
+  },
+  {
+    "file": "candidate-motion-frame1.png",
+    "bytes": 273461,
+    "sha256": "5677BF56DB12B4BF9BF2E6EC7B5606189D301B1608B829B5204247624E151A56"
+  },
+  {
+    "file": "candidate-motion-restored.png",
+    "bytes": 274505,
+    "sha256": "70F24528422C73AAC32483C54A0276474E69822FB730EFE16AC1F998B3E7B540"
+  },
+  {
+    "file": "candidate-motion-user-stopped.png",
+    "bytes": 274036,
+    "sha256": "6BFCACA366A48F664404517BB628906C85FED7DD0A965E688781D23724C600FA"
+  },
+  {
+    "file": "candidate-notification-denied.png",
+    "bytes": 250116,
+    "sha256": "A518961778F7F16F18F0763762A8EE7C6AF5A5A8209D76234F5F94408AA9B12B"
+  },
+  {
+    "file": "candidate-notification-fixed-local-copy.png",
+    "bytes": 231768,
+    "sha256": "1F87B44DAC310A08D6AB026070072DF4C15F486986ABFE7811A15E033A21CD6A"
+  },
+  {
+    "file": "candidate-notification-fixed-status.png",
+    "bytes": 261769,
+    "sha256": "BD01491C8BC73D6B3C37F88B66532D5A1C3F26B622FC620F70FF9A9997AA91A5"
+  },
+  {
+    "file": "candidate-notification-scheduled.png",
+    "bytes": 250599,
+    "sha256": "F4CE8A01FC03A1E2F9B49035F4F460D1A9B32B51CABF15F521CC7C493AF09100"
+  },
+  {
+    "file": "candidate-notification-sync-copy.png",
+    "bytes": 233074,
+    "sha256": "20F43AB8F02D1CA1DC46A47B5C3AFC67505E49915BC1DFB3A1C85FE46B8B7FD1"
+  },
+  {
+    "file": "candidate-postdelete-export-opened.png",
+    "bytes": 74637,
+    "sha256": "D4C1C2F5D36B9D8C170322B64B3348CE172E74BE69B0658BB766018E05288907"
+  },
+  {
+    "file": "candidate-private-draft-after-relaunch.png",
+    "bytes": 222088,
+    "sha256": "64D3089A5B8855B321BE42307D08F5D516082411E0B90AD4035BF37A3202EBBA"
+  },
+  {
+    "file": "candidate-private-draft-saved.png",
+    "bytes": 193974,
+    "sha256": "E938AA7CA2468715C3FD3D7AE8CA17028299638C8A0E2A8EC1C7A6F3777C154C"
+  },
+  {
+    "file": "candidate-public-gate-private-entry.png",
+    "bytes": 222931,
+    "sha256": "E8D40FAF2F4D6E03D0BA840F81306BEAAF9E46B32C64F016E8FDC2A833F3293A"
+  },
+  {
+    "file": "candidate-reduced-motion-home.png",
+    "bytes": 274239,
+    "sha256": "64188807D508633BBDA9C2CD4354B95CE3848874B112BF61802ED7E380D5A1B9"
+  },
+  {
+    "file": "candidate-setup-force-close-recovered.png",
+    "bytes": 222447,
+    "sha256": "0B600A80415BE2956DCE7D65D155E0EDB4E70F45A09D4E1FA7E417B0CA382704"
+  },
+  {
+    "file": "candidate-step4-time-guidance.png",
+    "bytes": 214705,
+    "sha256": "CE3267F919E1A6B257F21689642615CBAB7851FA2CC59E1E051D227580FA0ED5"
+  },
+  {
+    "file": "candidate-step6-local-summary.png",
+    "bytes": 290375,
+    "sha256": "8F95BF739B05C6E3C6A9C3AB7FAA88EC697810FB917429360BB84B654ACCF3BC"
+  },
+  {
+    "file": "harness-focus-observation.png",
+    "bytes": 165632,
+    "sha256": "DC594ECE26AA39CF535D2C349B64FD6BF136482ABC0B8133B6213E888B67163F"
+  },
+  {
+    "file": "talkback-harness-prompt-blocked.png",
+    "bytes": 57864,
+    "sha256": "CCEFAAA274C2014C1405182211A1BB4EE26B476BEA4E364682BD8C7D5D49119B"
+  }
+]

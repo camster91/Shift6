@@ -1,48 +1,6 @@
-import { buildCycleSchedule } from './calendar';
-import type {
-  ProgramVersion,
-  TrainingCycle,
-  Workout,
-  WorkoutScheduleOverride,
-  WorkoutScheduleSession,
-} from './types';
-
-export interface CoachWorkoutSelection {
-  workout: Workout;
-  basis: 'resumable' | 'scheduled';
-  scheduledDate: string;
-}
-
-/** Use owned saved cycle occurrences, never the first template workout or a
- * weekday fallback. A paused/mismatched prescription cannot advertise training. */
-export function selectCoachWorkout(
-  cycle: TrainingCycle,
-  version: ProgramVersion,
-  overrides: readonly WorkoutScheduleOverride[],
-  sessions: readonly WorkoutScheduleSession[],
-  now: Date,
-): CoachWorkoutSelection | null {
-  if (cycle.status !== 'active' || cycle.programVersionId !== version.id) return null;
-  const occurrences = buildCycleSchedule(cycle, version, overrides, sessions, now).filter(
-    (occurrence) => occurrence.cycleWeek === cycle.currentWeek,
-  );
-  const unfinished = [...sessions]
-    .reverse()
-    .find((session) => session.cycleWeek === cycle.currentWeek && session.status === 'in-progress');
-  const resumable = occurrences.find(
-    (occurrence) => occurrence.workout.id === unfinished?.workoutId,
-  );
-  if (resumable)
-    return {
-      workout: resumable.workout,
-      basis: 'resumable',
-      scheduledDate: resumable.scheduledDate,
-    };
-  const current = occurrences.find((occurrence) => occurrence.status === 'current');
-  return current
-    ? { workout: current.workout, basis: 'scheduled', scheduledDate: current.scheduledDate }
-    : null;
-}
+import type { TrainingWorkoutSelection } from './trainingSelection';
+export { selectTrainingWorkout as selectCoachWorkout } from './trainingSelection';
+export type CoachWorkoutSelection = TrainingWorkoutSelection;
 
 export const coachNavigationCapabilities = [
   { id: 'open-setup', label: 'Review your setup' },

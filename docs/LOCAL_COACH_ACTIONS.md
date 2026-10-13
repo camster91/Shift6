@@ -32,6 +32,14 @@ only an occurrence scheduled for today is selected. Completed/skipped sessions,
 paused cycles, mismatched snapshots, unscheduled days and missing records do not
 fall back to the first workout or a guessed weekday session.
 
+Home now uses that same read-only selector. With several unfinished workouts it
+offers the newest recorded attempt, matching Coach. If the first workout on a
+shared date is complete, both choose the remaining current workout. On a day
+without available training, Home keeps the saved cycle and calendar visible
+instead of manufacturing a Start action. Weekly cards resolve exact saved
+workout IDs, including moved sessions. Opening Home still performs no session
+write; Start/Resume remains an explicit user action.
+
 Local explanation reports missing workout availability honestly. The Coach tab
 invalidates and reloads its context on every return so prior workout/progress
 facts are not silently reused after logging. Asynchronous responses and route
@@ -52,6 +60,11 @@ Coach transport and local explainer regression tests remain in the focused set.
 this candidate. Component focus simulation is not native tab-navigation QA.
 The root integration run owns full `npm run verify` and native acceptance after
 combining branches; no physical-device/provider integration is claimed here.
+
+The Home/Coach follow-up passed **20 tests in four focused suites**, TypeScript
+and focused lint. Its three rendered Home regressions cover multiple unfinished
+attempts, completed-first same-date selection and retaining the cycle without an
+invented start action. Native verification of this follow-up remains pending.
 
 Remaining work for the issues includes confirmed model-action previews and
 execution/readback, conversational field extraction with recoverable state,

@@ -21,6 +21,15 @@ export function buildLocalCoachMessage(
   }
 
   const facts = context.structuredFacts;
+  if (
+    facts.workoutAvailable === false &&
+    ['explain-workout', 'shorten-workout', 'substitution'].includes(task)
+  ) {
+    return message(
+      'There is no scheduled or resumable workout available now. Open your calendar to review the saved schedule, or build a private plan. No session or plan was changed.',
+      ['current saved schedule availability'],
+    );
+  }
   const workoutTitle = stringFact(facts, 'workoutTitle', 'your next workout');
   const focus = stringFact(facts, 'workoutFocus', 'training');
   const duration = numberFact(facts, 'estimatedDurationMinutes');

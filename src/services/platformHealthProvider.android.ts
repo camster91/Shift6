@@ -90,9 +90,11 @@ class AndroidHealthConnectProvider implements HealthProvider {
     types: readonly HealthDataType[],
     range: HealthDateRange,
   ): Promise<HealthSummary[]> {
-    if (!validRange(range) || !(await this.isAvailable())) return [];
-
-    if (!(await initialize())) return [];
+    if (!validRange(range)) throw new Error('Choose a valid health import range.');
+    if (!(await this.isAvailable()))
+      throw new Error('Health Connect became unavailable during import.');
+    if (!(await initialize()))
+      throw new Error('Health Connect could not initialize for this read.');
     const summaries: HealthSummary[] = [];
     for (const type of uniqueTypes(types)) {
       summaries.push(...(await readType(type, range)));
@@ -202,7 +204,7 @@ function sourceName(source: string | undefined): string {
 function validRange(range: HealthDateRange): boolean {
   const start = Date.parse(range.startAt);
   const end = Date.parse(range.endAt);
-  return Number.isFinite(start) && Number.isFinite(end) && end >= start;
+  return Number.isFinite(start) && Number.isFinite(end) && end > start;
 }
 
 function uniqueTypes(types: readonly HealthDataType[]): HealthDataType[] {

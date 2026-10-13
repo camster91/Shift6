@@ -1,3 +1,6 @@
+import * as HealthConnect from 'react-native-health-connect';
+import { createPlatformHealthProvider } from '../services/platformHealthProvider.android';
+import { syncHealthSummaries } from '../services/healthSync';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { saveHealthSummaries, getDailyHealthTrends } from './healthRepository';
@@ -111,3 +114,37 @@ test('midnight-adjacent totals are excluded from the selected range and instant 
     sqlite.prepare("SELECT id FROM health_summaries WHERE user_id='one' ORDER BY id").all(),
   ).toEqual([{ id: 'prior' }, { id: total.id }]);
 });
+
+afterEach(() => jest.restoreAllMocks());
+test.each(['initialization failed', 'SDK unavailable'])(
+  'retains seeded cache when %s after permissions succeeded',
+  async (failure) => {
+    await saveHealthSummaries(db, 'one', [raw]);
+    const sdk = jest.spyOn(HealthConnect, 'getSdkStatus');
+    if (failure === 'SDK unavailable')
+      sdk
+        .mockResolvedValueOnce(HealthConnect.SdkAvailabilityStatus.SDK_AVAILABLE)
+        .mockResolvedValueOnce(HealthConnect.SdkAvailabilityStatus.SDK_AVAILABLE)
+        .mockResolvedValueOnce(HealthConnect.SdkAvailabilityStatus.SDK_UNAVAILABLE);
+    else sdk.mockResolvedValue(HealthConnect.SdkAvailabilityStatus.SDK_AVAILABLE);
+    const initialize = jest.spyOn(HealthConnect, 'initialize').mockResolvedValueOnce(true);
+    if (failure === 'initialization failed') initialize.mockResolvedValueOnce(false);
+    jest.spyOn(HealthConnect, 'requestPermission').mockResolvedValue([]);
+    jest
+      .spyOn(HealthConnect, 'getGrantedPermissions')
+      .mockResolvedValue([{ accessType: 'read', recordType: 'Steps' }]);
+    const aggregate = jest.spyOn(HealthConnect, 'aggregateRecord');
+    const result = await syncHealthSummaries({
+      database: db,
+      userId: 'one',
+      provider: createPlatformHealthProvider(),
+      types: ['steps'],
+      range: coverage.range,
+    });
+    expect(result).toMatchObject({ status: 'failed', importedCount: 0 });
+    expect(aggregate).not.toHaveBeenCalled();
+    expect(await getDailyHealthTrends(db, 'one')).toEqual([
+      expect.objectContaining({ value: 1000, sourceLabel: 'phone' }),
+    ]);
+  },
+);

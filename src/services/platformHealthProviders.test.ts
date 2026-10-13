@@ -238,7 +238,7 @@ describe('native health provider boundaries', () => {
           startAt: validRange.endAt,
           endAt: validRange.startAt,
         }),
-      ).resolves.toEqual([]);
+      ).rejects.toThrow('valid health import range');
       expect(initialize).not.toHaveBeenCalled();
     });
   });

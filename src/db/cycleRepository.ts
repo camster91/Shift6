@@ -4,6 +4,10 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { advanceCycleAfterCompletedWorkout } from '../domain/cycle';
 import type { ProgramVersion, TrainingCycle } from '../domain/types';
+import { lifecycleDate } from '../domain/cycleLifecycle';
+import { addDaysToDateKey } from '../domain/calendar';
+import { confirmScheduleBaselineInTransaction } from './scheduleRevisionRepository';
+import { stableSnapshotJSON } from '../domain/programPersistence';
 
 interface TrainingCycleRow {
   id: string;
@@ -49,6 +53,77 @@ export async function saveTrainingCycleInTransaction(
     JSON.stringify(cycle.weeks),
   );
   await queueCycleSync(database, cycle);
+}
+
+/** The Start preview freezes date, timezone and version; existing unanchored cycles stay legacy. */
+export async function saveTrainingCycleWithSchedule(
+  database: SQLiteDatabase,
+  cycle: TrainingCycle,
+  version: ProgramVersion,
+  timeZone: string,
+  startDate: string,
+  isCurrent: () => boolean = () => true,
+): Promise<void> {
+  await database.withExclusiveTransactionAsync(async (tx) => {
+    const confirmedAt = new Date().toISOString();
+    if (
+      !isCurrent() ||
+      cycle.programVersionId !== version.id ||
+      lifecycleDate(cycle.startedAt, timeZone) !== startDate ||
+      lifecycleDate(confirmedAt, timeZone) !== startDate
+    )
+      throw new Error('The Start preview changed. Review the date and plan again.');
+    const existing = await tx.getFirstAsync<TrainingCycleRow>(
+      'SELECT * FROM training_cycles WHERE id=?;',
+      cycle.id,
+    );
+    const existingBaseline = existing
+      ? await tx.getFirstAsync<{ confirmed_at: string }>(
+          'SELECT confirmed_at FROM schedule_baselines WHERE cycle_id=? AND user_id=?;',
+          cycle.id,
+          cycle.userId,
+        )
+      : null;
+    if (
+      existing &&
+      (JSON.stringify(mapTrainingCycle(existing)) !== JSON.stringify(cycle) || !existingBaseline)
+    )
+      throw new Error('This cycle already exists. Start confirmation cannot rewrite its history.');
+    const saved = await tx.getFirstAsync<{ version_json: string }>(
+      'SELECT v.version_json FROM user_program_versions v JOIN user_programs p ON p.id=v.program_id WHERE v.id=? AND p.user_id=?;',
+      version.id,
+      cycle.userId,
+    );
+    if (
+      !saved ||
+      stableSnapshotJSON(JSON.parse(saved.version_json)) !== stableSnapshotJSON(version)
+    )
+      throw new Error('The saved private plan changed. Review Start again.');
+    if (!existing) await saveTrainingCycleInTransaction(tx, cycle);
+    const dates = cycle.weeks.flatMap((week) =>
+      version.workouts.map((workout) => {
+        const date = addDaysToDateKey(startDate, (week.weekNumber - 1) * 7 + workout.dayOfWeek - 1);
+        return {
+          cycleWeek: week.weekNumber,
+          workoutId: workout.id,
+          originalDate: date,
+          scheduledDate: date,
+        };
+      }),
+    );
+    await confirmScheduleBaselineInTransaction(tx, {
+      userId: cycle.userId,
+      cycleId: cycle.id,
+      programVersionId: version.id,
+      operationId: `${cycle.id}-start-schedule`,
+      timeZone,
+      confirmedAt: existingBaseline?.confirmed_at ?? confirmedAt,
+      datesJSON: JSON.stringify(dates),
+      expectedOverridesJSON: '[]',
+      confirmed: true,
+    });
+    if (!isCurrent()) throw new Error('Start context changed before commit.');
+  });
 }
 
 export async function advanceTrainingCycleAfterCompletedWorkout(

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, StyleSheet, TextInput, View } from 'react-native';
 
 import {
   Button,
@@ -58,7 +58,8 @@ import type {
   WorkoutExercise,
 } from '../src/domain/types';
 import { useLocalDatabase } from '../src/db/context';
-import { getLatestTrainingCycle, saveTrainingCycle } from '../src/db/cycleRepository';
+import { getLatestTrainingCycle, saveTrainingCycleWithSchedule } from '../src/db/cycleRepository';
+import { lifecycleDate } from '../src/domain/cycleLifecycle';
 import { getOnboardingProfile } from '../src/db/profileRepository';
 import { getCycleCompletedSetRecords } from '../src/db/progressRepository';
 import {
@@ -76,7 +77,7 @@ import { PlanTextImport } from '../src/components/PlanTextImport';
 import { appendPlanText } from '../src/domain/planTextImport';
 import { builderRouteKey, type PlanImportRecovery } from '../src/domain/builderRecovery';
 import { useBuilderRecovery } from '../src/services/useBuilderRecovery';
-import { ImmutableProgramVersionError } from '../src/domain/programPersistence';
+import { ImmutableProgramVersionError, stableSnapshotJSON } from '../src/domain/programPersistence';
 import type { BuilderRecoverySnapshot } from '../src/domain/localPersistence';
 
 const starterPlank = foundationalExercises.find((exercise) => exercise.id === 'exercise-plank');
@@ -578,7 +579,30 @@ export default function ProgramBuilderScreen() {
     }
   };
 
-  const handleStartCycle = async () => {
+  const startFocus = useRef(0);
+  useFocusEffect(
+    useCallback(() => {
+      const generation = ++startFocus.current;
+      return () => {
+        if (startFocus.current === generation) startFocus.current++;
+      };
+    }, [database, userId, sourceVersionId]),
+  );
+  const startMounted = useRef(true);
+  useEffect(() => {
+    startMounted.current = true;
+    return () => {
+      startMounted.current = false;
+    };
+  }, []);
+  const handleStartCycle = async (preview?: {
+    startedAt: string;
+    cycleId: string;
+    timeZone: string;
+    startDate: string;
+    recoveryJSON: string;
+    focusGeneration: number;
+  }) => {
     if (starting || saving || canonicalOperation.current) return;
     if (!canMutateDraft()) {
       setError('Wait for your private draft to finish loading before starting.');
@@ -604,28 +628,68 @@ export default function ProgramBuilderScreen() {
       return;
     }
     const savedRecoverySnapshot = recoverySnapshot;
+    if (!preview) {
+      const startedAt = new Date().toISOString();
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const nextPreview = {
+        startedAt,
+        cycleId: `cycle-${userId}-${draft.program.id}-${Date.now()}`,
+        timeZone,
+        startDate: lifecycleDate(startedAt, timeZone),
+        recoveryJSON: stableSnapshotJSON(savedRecoverySnapshot),
+        focusGeneration: startFocus.current,
+      };
+      Alert.alert(
+        'Start this six-week cycle?',
+        `Start date ${nextPreview.startDate} · ${timeZone}. This saves the six-week calendar for your current private plan. Any current active cycle will be paused; its history stays unchanged.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Start cycle', onPress: () => void handleStartCycle(nextPreview) },
+        ],
+      );
+      return;
+    }
+    const stillReviewed = () =>
+      startMounted.current &&
+      startFocus.current === preview.focusGeneration &&
+      canMutateDraft() &&
+      stableSnapshotJSON(recoverySnapshotRef.current) === preview.recoveryJSON;
+    if (
+      !stillReviewed() ||
+      lifecycleDate(new Date().toISOString(), preview.timeZone) !== preview.startDate
+    ) {
+      setError('The plan or date changed. Review Start again before confirming.');
+      return;
+    }
 
     canonicalOperation.current = true;
     setStarting(true);
     setError(null);
     try {
       const program = renameProgram(draft.program, draft.program.title);
-      const startedAt = new Date().toISOString();
+      const startedAt = preview.startedAt;
       const cycle = createTrainingCycle({
-        id: `cycle-${userId}-${draft.program.id}-${Date.now()}`,
+        id: preview.cycleId,
         userId,
         programVersion: draft.version,
         startedAt,
       });
       if (database) {
         for (const exercise of Object.values(customExercises)) {
-          if (!canMutateDraft()) return;
+          if (!stillReviewed()) return;
           await saveCustomExercise(database, userId, exercise, startedAt);
         }
-        if (!canMutateDraft()) return;
+        if (!stillReviewed()) return;
         await saveProgramVersion(database, userId, program, draft.version);
-        if (!canMutateDraft()) return;
-        await saveTrainingCycle(database, cycle);
+        if (!stillReviewed()) return;
+        await saveTrainingCycleWithSchedule(
+          database,
+          cycle,
+          draft.version,
+          preview.timeZone,
+          preview.startDate,
+          stillReviewed,
+        );
       }
       if (!canMutateDraft()) return;
       await recovery.clearAfterCanonical(savedRecoverySnapshot);

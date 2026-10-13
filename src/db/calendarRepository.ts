@@ -1,5 +1,7 @@
 import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { getLocalScheduleProjectionInTransaction } from './scheduleRevisionRepository';
+import { buildWorkoutScheduleOverrideId } from '../domain/calendar';
 
 import type {
   WorkoutScheduleOverride,
@@ -31,6 +33,45 @@ export async function getWorkoutScheduleOverrides(
   userId: string,
   cycleId: string,
 ): Promise<WorkoutScheduleOverride[]> {
+  let result: WorkoutScheduleOverride[] | undefined;
+  await database.withExclusiveTransactionAsync(async (tx) => {
+    result = await getWorkoutScheduleOverridesInTransaction(tx, userId, cycleId);
+  });
+  if (!result) throw new Error('Schedule dates could not be read.');
+  return result;
+}
+
+export async function getWorkoutScheduleOverridesInTransaction(
+  database: SQLiteDatabase,
+  userId: string,
+  cycleId: string,
+): Promise<WorkoutScheduleOverride[]> {
+  const baseline = await database.getFirstAsync<{ confirmed_at: string }>(
+    'SELECT confirmed_at FROM schedule_baselines WHERE user_id=? AND cycle_id=?;',
+    userId,
+    cycleId,
+  );
+  if (baseline) {
+    const now = new Date().toISOString();
+    const projection = await getLocalScheduleProjectionInTransaction(
+      database,
+      userId,
+      cycleId,
+      now,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
+    return projection.occurrences.map((entry) => ({
+      id: buildWorkoutScheduleOverrideId(cycleId, entry.cycleWeek, entry.workout.id),
+      userId,
+      cycleId,
+      cycleWeek: entry.cycleWeek,
+      workoutId: entry.workout.id,
+      originalDate: entry.originalDate,
+      scheduledDate: entry.scheduledDate,
+      createdAt: baseline.confirmed_at,
+      updatedAt: projection.latestRecordedAt ?? baseline.confirmed_at,
+    }));
+  }
   const rows = await database.getAllAsync<ScheduleOverrideRow>(
     `SELECT id, user_id, cycle_id, cycle_week, workout_id, original_date,
             scheduled_date, created_at, updated_at

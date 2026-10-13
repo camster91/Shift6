@@ -111,8 +111,9 @@ export function buildCycleSchedule(
     .filter((week) => week.weekNumber >= 1 && week.weekNumber <= 6)
     .flatMap((week) =>
       programVersion.workouts.map((workout) => {
-        const originalDate = getPlannedWorkoutDateKey(cycle, week.weekNumber, workout);
         const override = overridesByOccurrence.get(occurrenceKey(week.weekNumber, workout.id));
+        const originalDate =
+          override?.originalDate ?? getPlannedWorkoutDateKey(cycle, week.weekNumber, workout);
         const scheduledDate = override?.scheduledDate ?? originalDate;
         const status = getOccurrenceStatus(
           sessionsByOccurrence.get(occurrenceKey(week.weekNumber, workout.id)) ?? [],
@@ -151,30 +152,40 @@ export function buildCurrentCycleWeekSchedule(
   const occurrences = buildCycleSchedule(cycle, programVersion, overrides, sessions, today).filter(
     (occurrence) => occurrence.cycleWeek === cycle.currentWeek,
   );
-  const weekStart = getCycleWeekStartDateKey(cycle, cycle.currentWeek);
+  const first = occurrences[0];
+  const weekStart = first
+    ? addDaysToDateKey(first.originalDate, -(first.workout.dayOfWeek - 1))
+    : getCycleWeekStartDateKey(cycle, cycle.currentWeek);
+  const dates = [
+    ...new Set([
+      ...Array.from({ length: 7 }, (_, index) => addDaysToDateKey(weekStart, index)),
+      ...occurrences.map((entry) => entry.scheduledDate),
+    ]),
+  ].sort();
 
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = addDaysToDateKey(weekStart, index);
-    const occurrence = occurrences
+  return dates.flatMap<WeeklyScheduleEntry>((date) => {
+    const matching = occurrences
       .filter((candidate) => candidate.scheduledDate === date)
       .sort(
         (left, right) =>
           Number(Boolean(left.workout.isOptional)) - Number(Boolean(right.workout.isOptional)) ||
           left.workout.id.localeCompare(right.workout.id),
-      )[0];
+      );
 
-    if (!occurrence) {
-      return {
-        id: `schedule-rest-${cycle.id}-${cycle.currentWeek}-${date}`,
-        day: getCalendarDayLabel(date),
-        date,
-        title: 'Rest',
-        category: 'rest' as const,
-        status: 'rest' as const,
-      };
+    if (!matching.length) {
+      return [
+        {
+          id: `schedule-rest-${cycle.id}-${cycle.currentWeek}-${date}`,
+          day: getCalendarDayLabel(date),
+          date,
+          title: 'Rest',
+          category: 'rest' as const,
+          status: 'rest' as const,
+        },
+      ];
     }
 
-    return {
+    return matching.map((occurrence) => ({
       id: occurrence.id,
       day: getCalendarDayLabel(date),
       date,
@@ -182,7 +193,7 @@ export function buildCurrentCycleWeekSchedule(
       workoutId: occurrence.workout.id,
       category: getScheduleCategory(occurrence.workout),
       status: toWeeklyScheduleStatus(occurrence.status),
-    };
+    }));
   });
 }
 

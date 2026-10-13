@@ -1,13 +1,12 @@
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import CalendarScreen from '../../app/calendar';
 import { getActiveTrainingCycle } from '../db/cycleRepository';
 import { getUserProgramVersion } from '../db/programRepository';
+import { getWorkoutScheduleOverrides, getWorkoutScheduleSessions } from '../db/calendarRepository';
 import {
-  getWorkoutScheduleOverrides,
-  getWorkoutScheduleSessions,
-  saveWorkoutScheduleOverride,
-} from '../db/calendarRepository';
+  previewLocalScheduleMove,
+  confirmLocalScheduleMove,
+} from '../db/scheduleRevisionRepository';
 import { demoCycle, demoProgram, demoProgramVersion } from '../domain/fixtures/home';
 const mockDb = {},
   mockRefresh = jest.fn();
@@ -28,76 +27,117 @@ jest.mock('../db/programRepository', () => ({ getUserProgramVersion: jest.fn() }
 jest.mock('../db/calendarRepository', () => ({
   getWorkoutScheduleOverrides: jest.fn(),
   getWorkoutScheduleSessions: jest.fn(),
-  saveWorkoutScheduleOverride: jest.fn(),
+}));
+jest.mock('../db/scheduleRevisionRepository', () => ({
+  previewLocalScheduleMove: jest.fn(),
+  confirmLocalScheduleMove: jest.fn(),
+  getConfirmedScheduleTimeZone: async () => null,
 }));
 beforeEach(() => {
   jest.clearAllMocks();
   jest.useFakeTimers({ doNotFake: ['setTimeout', 'clearTimeout'] });
   jest.setSystemTime(new Date(2026, 9, 14, 7));
-  jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
   jest.mocked(getActiveTrainingCycle).mockResolvedValue({
     ...demoCycle,
+    currentWeek: 1,
     userId: 'guest-user',
-    startedAt: new Date(2026, 9, 14, 12).toISOString(),
+    startedAt: new Date(2026, 9, 14, 6).toISOString(),
   });
   jest
     .mocked(getUserProgramVersion)
     .mockResolvedValue({ program: demoProgram, version: demoProgramVersion });
   jest.mocked(getWorkoutScheduleOverrides).mockResolvedValue([]);
   jest.mocked(getWorkoutScheduleSessions).mockResolvedValue([]);
-  jest.mocked(saveWorkoutScheduleOverride).mockResolvedValue(undefined);
+  jest.mocked(previewLocalScheduleMove).mockImplementation(async (_db, input) => ({
+    move: { ...input, previousRevisionId: null },
+    cycleFingerprint: 'reviewed-cycle',
+    effectiveDate: '2026-10-14',
+    baseline: null,
+    dates: [],
+  }));
+  jest.mocked(confirmLocalScheduleMove).mockResolvedValue({ status: 'appended', revisions: [] });
   mockRefresh.mockResolvedValue({ status: 'scheduled' });
 });
-afterEach(() => {
-  jest.restoreAllMocks();
-  jest.useRealTimers();
-});
-test('a move previews dates, cancellation writes nothing, confirmation refreshes only after save', async () => {
+afterEach(() => jest.useRealTimers());
+async function openReview() {
   const screen = await render(<CalendarScreen />);
   await waitFor(() =>
     expect(screen.getAllByLabelText('Move Strength A later').length).toBeGreaterThan(0),
   );
   await fireEvent.press(screen.getAllByLabelText('Move Strength A later')[0]!);
-  expect(Alert.alert).toHaveBeenCalledWith(
-    'Move this session?',
-    expect.stringContaining('Oct 14'),
-    expect.any(Array),
-  );
-  expect(saveWorkoutScheduleOverride).not.toHaveBeenCalled();
-  expect(mockRefresh).not.toHaveBeenCalled();
-  const choices = jest.mocked(Alert.alert).mock.calls[0]?.[2];
-  await act(async () => choices?.find((choice) => choice.text === 'Cancel')?.onPress?.());
-  expect(saveWorkoutScheduleOverride).not.toHaveBeenCalled();
-  await act(async () => choices?.find((choice) => choice.text === 'Move session')?.onPress?.());
-  await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
-  expect(saveWorkoutScheduleOverride).toHaveBeenCalledWith(
+  return screen;
+}
+test('date and original timezone are reviewed before confirmation; Cancel writes nothing', async () => {
+  const screen = await openReview();
+  expect(screen.getByDisplayValue('2026-10-15')).toBeTruthy();
+  expect(confirmLocalScheduleMove).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Review date change'));
+  await waitFor(() => expect(screen.getByLabelText('Confirm session date')).toBeTruthy());
+  expect(previewLocalScheduleMove).toHaveBeenCalledWith(
     mockDb,
-    expect.objectContaining({ scheduledDate: '2026-10-15', originalDate: '2026-10-14' }),
+    expect.objectContaining({
+      toDate: '2026-10-15',
+      cycleWeek: 1,
+      originalTimeZone: expect.any(String),
+    }),
+    expect.any(String),
   );
-  expect(jest.mocked(saveWorkoutScheduleOverride).mock.invocationCallOrder[0]).toBeLessThan(
+  await fireEvent.press(screen.getByLabelText('Cancel date change'));
+  expect(confirmLocalScheduleMove).not.toHaveBeenCalled();
+  expect(mockRefresh).not.toHaveBeenCalled();
+});
+test('confirmation waits for the atomic save before refreshing dates and reminders', async () => {
+  const screen = await openReview();
+  await fireEvent.press(screen.getByLabelText('Review date change'));
+  await waitFor(() => expect(screen.getByLabelText('Confirm session date')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText('Confirm session date'));
+  await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
+  expect(confirmLocalScheduleMove).toHaveBeenCalledWith(
+    mockDb,
+    expect.objectContaining({ move: expect.objectContaining({ toDate: '2026-10-15' }) }),
+    expect.any(String),
+    expect.any(Function),
+  );
+  expect(jest.mocked(confirmLocalScheduleMove).mock.invocationCallOrder[0]).toBeLessThan(
     mockRefresh.mock.invocationCallOrder[0]!,
   );
 });
-test('reminder failure does not undo a committed calendar move', async () => {
-  mockRefresh.mockRejectedValueOnce(new Error('notifications unavailable'));
-  const screen = await render(<CalendarScreen />);
+test('stale confirmation preserves entered date for a new review and does not refresh reminders', async () => {
+  jest
+    .mocked(confirmLocalScheduleMove)
+    .mockRejectedValueOnce(new Error('The cycle or date changed. Review this move again.'));
+  const screen = await openReview();
+  await fireEvent.press(screen.getByLabelText('Review date change'));
+  await waitFor(() => expect(screen.getByLabelText('Confirm session date')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText('Confirm session date'));
   await waitFor(() =>
-    expect(screen.getAllByLabelText('Move Strength A later').length).toBeGreaterThan(0),
+    expect(screen.getByText('The cycle or date changed. Review this move again.')).toBeTruthy(),
   );
-  await fireEvent.press(screen.getAllByLabelText('Move Strength A later')[0]!);
-  await act(async () =>
-    jest
-      .mocked(Alert.alert)
-      .mock.calls[0]?.[2]?.find((choice) => choice.text === 'Move session')
-      ?.onPress?.(),
+  expect(screen.getByDisplayValue('2026-10-15')).toBeTruthy();
+  expect(screen.getByLabelText('Review date change')).toBeTruthy();
+  expect(mockRefresh).not.toHaveBeenCalled();
+});
+test('editing the date invalidates a prior preview instead of confirming different input', async () => {
+  const screen = await openReview();
+  await fireEvent.press(screen.getByLabelText('Review date change'));
+  await waitFor(() => expect(screen.getByLabelText('Confirm session date')).toBeTruthy());
+  await fireEvent.changeText(screen.getByLabelText('New session date YYYY-MM-DD'), '2026-10-20');
+  expect(screen.queryByLabelText('Confirm session date')).toBeNull();
+  expect(confirmLocalScheduleMove).not.toHaveBeenCalled();
+});
+test('reminder failure reports the committed date and does not pretend its save failed', async () => {
+  mockRefresh.mockRejectedValueOnce(new Error('notifications unavailable'));
+  const screen = await openReview();
+  await fireEvent.press(screen.getByLabelText('Review date change'));
+  await waitFor(() => expect(screen.getByLabelText('Confirm session date')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText('Confirm session date'));
+  await waitFor(() =>
+    expect(
+      screen.getByText(
+        'Date saved. Device reminders could not be refreshed; check notification settings.',
+      ),
+    ).toBeTruthy(),
   );
-  await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
-  expect(saveWorkoutScheduleOverride).toHaveBeenCalledTimes(1);
-  expect(screen.getAllByText('MOVED').length).toBe(1);
+  expect(confirmLocalScheduleMove).toHaveBeenCalledTimes(1);
   expect(screen.queryByText('notifications unavailable')).toBeNull();
-  expect(
-    screen.getByText(
-      'Date saved. Device reminders could not be refreshed; check notification settings.',
-    ),
-  ).toBeTruthy();
 });

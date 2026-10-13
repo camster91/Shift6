@@ -46,6 +46,10 @@ const mockSource = jest.fn(
   ): Promise<Pick<BuilderRecoverySnapshot, 'program' | 'version'> | null> => null,
 );
 jest.mock('expo-router', () => ({
+  useFocusEffect: (callback: () => void) => {
+    const React = jest.requireActual('react');
+    React.useEffect(callback, [callback]);
+  },
   router: { replace: jest.fn(), back: jest.fn() },
   useLocalSearchParams: () => ({ mode: 'blank' }),
 }));

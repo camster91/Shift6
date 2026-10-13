@@ -20,9 +20,15 @@ import {
   confirmScheduleBaseline,
   appendLocalScheduleMove,
   getLocalScheduleProjection,
+  previewLocalScheduleMove,
+  confirmLocalScheduleMove,
 } from './scheduleRevisionRepository';
 import { migrateLocalUserToAccount } from './accountRepository';
 import { saveWorkoutScheduleOverride } from './calendarRepository';
+import { getWorkoutScheduleOverrides } from './calendarRepository';
+import { buildCurrentCycleWeekSchedule } from '../domain/calendar';
+import { selectTrainingWorkout } from '../domain/trainingSelection';
+import { saveTrainingCycleWithSchedule } from './cycleRepository';
 import type { ScheduleMove } from '../domain/scheduleRevision';
 jest.mock('../config/env', () => ({ runtimeConfig: { releaseMode: 'guest-only' } }));
 let sqlite: DatabaseSync;
@@ -539,4 +545,174 @@ test('adoption remaps owner graphs together while preserving immutable dates and
     before.scheduleRevisions!.map((row) => ({ ...row, user_id: 'account-user' })),
   );
   expect(() => validateLocalBackup(JSON.stringify(after))).not.toThrow();
+});
+const previewInput = () => ({ ...intent, originalTimeZone: 'America/Toronto' });
+test('first Calendar preview is inert; confirmation atomically anchors dates and appends exactly once', async () => {
+  const before = await exportNow();
+  const preview = await previewLocalScheduleMove(db, previewInput(), stamp);
+  expect(preview.baseline).not.toBeNull();
+  expect(await exportNow()).toEqual(before);
+  expect((await confirmLocalScheduleMove(db, preview, '2026-10-13T12:05:00.000Z')).status).toBe(
+    'appended',
+  );
+  expect((await confirmLocalScheduleMove(db, preview, '2026-10-13T12:06:00.000Z')).status).toBe(
+    'already-applied',
+  );
+  const after = await exportNow();
+  expect(after.scheduleBaselines).toHaveLength(1);
+  expect(after.scheduleRevisions).toHaveLength(1);
+  expect(after.trainingCycles).toEqual(before.trainingCycles);
+  expect(after.workoutSessions).toEqual(before.workoutSessions);
+});
+test('failed first confirmation after baseline write leaves neither anchor nor move behind', async () => {
+  const preview = await previewLocalScheduleMove(db, previewInput(), stamp);
+  const before = await exportNow();
+  const run = db.runAsync.bind(db);
+  db.runAsync = (async (sql: string, ...args: SQLiteBindValue[]) => {
+    if (sql.includes('INSERT INTO schedule_revisions'))
+      throw new Error('synthetic move write failure');
+    return run(sql, ...args);
+  }) as typeof db.runAsync;
+  await expect(confirmLocalScheduleMove(db, preview, stamp)).rejects.toThrow('move write');
+  expect(await exportNow()).toEqual(before);
+});
+test('first confirmation rejects newly started actuals and date rollover without anchoring stale input', async () => {
+  const preview = await previewLocalScheduleMove(db, previewInput(), stamp);
+  await expect(confirmLocalScheduleMove(db, preview, '2026-10-14T12:00:00.000Z')).rejects.toThrow(
+    'date changed',
+  );
+  sqlite
+    .prepare(
+      'INSERT INTO workout_sessions (id,cycle_id,workout_id,program_version_id,status,started_at,cycle_week,workout_focus,is_offline) VALUES (?,?,?,?,?,?,?,?,?)',
+    )
+    .run(
+      'stale-started',
+      intent.cycleId,
+      intent.workoutId,
+      intent.programVersionId,
+      'partial',
+      stamp,
+      1,
+      'strength',
+      1,
+    );
+  const before = await exportNow();
+  await expect(confirmLocalScheduleMove(db, preview, stamp)).rejects.toThrow('history');
+  expect(await exportNow()).toEqual(before);
+});
+test('schema15 restore immediately supplies replayed dates to shared Calendar/Home/Cycle/Coach/reminder adapter', async () => {
+  const preview = await previewLocalScheduleMove(
+    db,
+    { ...previewInput(), toDate: '2026-10-25' },
+    stamp,
+  );
+  await confirmLocalScheduleMove(db, preview, stamp);
+  const backup = await exportNow();
+  await deleteLocalUserData(db, 'guest-user');
+  await restoreLocalBackup(db, 'guest-user', JSON.stringify(backup));
+  const overrides = await getWorkoutScheduleOverrides(db, intent.userId, intent.cycleId);
+  const row = backup.trainingCycles.find((cycle) => cycle.id === intent.cycleId)!;
+  const cycle = {
+    id: String(row.id),
+    userId: String(row.user_id),
+    programVersionId: String(row.program_version_id),
+    status: 'active' as const,
+    currentWeek: 1,
+    startedAt: String(row.started_at),
+    weeks: JSON.parse(String(row.weeks_json)),
+  };
+  const version = JSON.parse(
+    String(
+      backup.userProgramVersions.find((entry) => entry.id === intent.programVersionId)!
+        .version_json,
+    ),
+  );
+  const date = parseDateKey('2026-10-25');
+  expect(
+    buildCycleSchedule(cycle, version, overrides, [], date).find(
+      (entry) => entry.cycleWeek === 1 && entry.workout.id === intent.workoutId,
+    ),
+  ).toMatchObject({
+    originalDate: intent.fromDate,
+    scheduledDate: '2026-10-25',
+    status: 'current',
+  });
+  expect(
+    buildCurrentCycleWeekSchedule(cycle, version, overrides, [], date).find(
+      (entry) => entry.workoutId === intent.workoutId,
+    ),
+  ).toMatchObject({ date: '2026-10-25', status: 'current' });
+  expect(selectTrainingWorkout(cycle, version, overrides, [], date)?.workout.id).toBe(
+    intent.workoutId,
+  );
+  expect(await getWorkoutScheduleOverrides(db, intent.userId, intent.cycleId)).toEqual(overrides);
+});
+test('new Start confirmation saves a pinned baseline with its cycle and rejects existing legacy backfill', async () => {
+  const backup = await exportNow();
+  const version = JSON.parse(
+    String(
+      backup.userProgramVersions.find((entry) => entry.id === intent.programVersionId)!
+        .version_json,
+    ),
+  );
+  const startedAt = new Date().toISOString();
+  const cycle = createTrainingCycle({
+    id: 'explicit-new-start',
+    userId: intent.userId,
+    programVersion: version,
+    startedAt,
+  });
+  const date = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(startedAt));
+  await saveTrainingCycleWithSchedule(db, cycle, version, 'America/Toronto', date);
+  expect(
+    sqlite.prepare('SELECT * FROM schedule_baselines WHERE cycle_id=?').all(cycle.id),
+  ).toHaveLength(1);
+  await expect(
+    saveTrainingCycleWithSchedule(
+      db,
+      { ...cycle, id: intent.cycleId, startedAt: stamp },
+      version,
+      'America/Toronto',
+      '2026-10-13',
+    ),
+  ).rejects.toThrow('already exists');
+});
+test('new-cycle baseline failure rolls back cycle creation, prior-cycle pause, journal and outbox', async () => {
+  const backup = await exportNow();
+  const beforeOutbox = sqlite.prepare('SELECT * FROM sync_outbox ORDER BY id').all();
+  const version = JSON.parse(
+    String(
+      backup.userProgramVersions.find((entry) => entry.id === intent.programVersionId)!
+        .version_json,
+    ),
+  );
+  const startedAt = new Date().toISOString();
+  const cycle = createTrainingCycle({
+    id: 'failed-new-start',
+    userId: intent.userId,
+    programVersion: version,
+    startedAt,
+  });
+  const date = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(startedAt));
+  const run = db.runAsync.bind(db);
+  db.runAsync = (async (sql: string, ...args: SQLiteBindValue[]) => {
+    if (sql.includes('INSERT INTO schedule_baselines'))
+      throw new Error('synthetic Start anchor failure');
+    return run(sql, ...args);
+  }) as typeof db.runAsync;
+  await expect(
+    saveTrainingCycleWithSchedule(db, cycle, version, 'America/Toronto', date),
+  ).rejects.toThrow('anchor failure');
+  expect(await exportNow()).toEqual(backup);
+  expect(sqlite.prepare('SELECT * FROM sync_outbox ORDER BY id').all()).toEqual(beforeOutbox);
 });

@@ -23,6 +23,10 @@ jest.mock('../db/builderRecoveryRepository', () => ({
   clearBuilderRecovery: async () => undefined,
 }));
 jest.mock('expo-router', () => ({
+  useFocusEffect: (callback: () => void) => {
+    const React = jest.requireActual('react');
+    React.useEffect(callback, [callback]);
+  },
   router: { replace: jest.fn() },
   useLocalSearchParams: () => ({ sourceVersionId: 'saved-source' }),
 }));

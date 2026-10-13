@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, StyleSheet, TextInput, View } from 'react-native';
 
 import {
   Button,
@@ -15,11 +15,13 @@ import {
   Text,
 } from '../src/components/ui';
 import { getCycleReview, saveCycleReview } from '../src/db/cycleReviewRepository';
-import { getLatestTrainingCycle, saveTrainingCycle } from '../src/db/cycleRepository';
+import { getLatestTrainingCycle, saveTrainingCycleWithSchedule } from '../src/db/cycleRepository';
 import { useLocalDatabase } from '../src/db/context';
 import { getCycleProgressSummary } from '../src/db/progressRepository';
 import { getUserProgramVersion, saveProgramVersion } from '../src/db/programRepository';
 import { getWeekSixGuidance } from '../src/domain/progression';
+import { lifecycleDate } from '../src/domain/cycleLifecycle';
+import { stableSnapshotJSON } from '../src/domain/programPersistence';
 import { createTrainingCycle } from '../src/domain/cycle';
 import { createNextCycleCopy } from '../src/domain/programBuilder';
 import type { CycleProgressSummary } from '../src/domain/progression';
@@ -56,6 +58,48 @@ export default function CycleReviewScreen() {
   const [loadedFor, setLoadedFor] = useState<{ database: typeof database; userId: string } | null>(
     null,
   );
+
+  const repeatContext = useRef({
+    database,
+    userId,
+    snapshot: stableSnapshotJSON({
+      cycle,
+      program,
+      programVersion,
+      overallRating,
+      focus,
+      reviewNote,
+    }),
+  });
+  repeatContext.current = {
+    database,
+    userId,
+    snapshot: stableSnapshotJSON({
+      cycle,
+      program,
+      programVersion,
+      overallRating,
+      focus,
+      reviewNote,
+    }),
+  };
+  const repeatFocus = useRef(0);
+  useFocusEffect(
+    useCallback(() => {
+      const generation = ++repeatFocus.current;
+      return () => {
+        if (repeatFocus.current === generation) repeatFocus.current++;
+      };
+    }, [database, userId]),
+  );
+  const repeatMounted = useRef(true),
+    repeatPending = useRef(false);
+  useEffect(() => {
+    repeatMounted.current = true;
+    return () => {
+      repeatMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!database) {
@@ -182,17 +226,60 @@ export default function CycleReviewScreen() {
     }
   };
 
-  const handleRepeatCycle = async () => {
-    if (reviewBusy || !database || !cycle || !program || !programVersion) return;
+  const handleRepeatCycle = async (preview?: {
+    startedAt: string;
+    startDate: string;
+    timeZone: string;
+    token: number;
+    snapshot: string;
+    focusGeneration: number;
+  }) => {
+    if (repeatPending.current || reviewBusy || !database || !cycle || !program || !programVersion)
+      return;
 
+    if (!preview) {
+      const startedAt = new Date().toISOString(),
+        timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const next = {
+        startedAt,
+        timeZone,
+        startDate: lifecycleDate(startedAt, timeZone),
+        token: Date.now(),
+        snapshot: repeatContext.current.snapshot,
+        focusGeneration: repeatFocus.current,
+      };
+      Alert.alert(
+        'Start a new six-week cycle?',
+        `Start date ${next.startDate} · ${timeZone}. This creates a new cycle with the same targets and pauses any active cycle. It does not repeat a completed week or change your recorded history.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Start new cycle', onPress: () => void handleRepeatCycle(next) },
+        ],
+      );
+      return;
+    }
+    const isCurrent = () =>
+      repeatMounted.current &&
+      repeatFocus.current === preview.focusGeneration &&
+      repeatContext.current.database === database &&
+      repeatContext.current.userId === userId &&
+      repeatContext.current.snapshot === preview.snapshot;
+    if (
+      !isCurrent() ||
+      lifecycleDate(new Date().toISOString(), preview.timeZone) !== preview.startDate
+    ) {
+      setError('The review, plan or date changed. Review the new cycle again.');
+      return;
+    }
+    repeatPending.current = true;
     setError(null);
     try {
       const savedReview = await persistReview('repeat');
-      if (!savedReview) return;
+      if (!savedReview || !isCurrent()) return;
 
       setReviewBusy('repeat');
-      const startedAt = new Date().toISOString();
-      const nextProgramId = `program-${program.slug}-${userId}-${Date.now()}`;
+      const startedAt = preview.startedAt;
+      const nextProgramId = `program-${program.slug}-${userId}-${preview.token}`;
       const copy = createNextCycleCopy({
         sourceProgram: program,
         sourceVersion: programVersion,
@@ -202,13 +289,22 @@ export default function CycleReviewScreen() {
         createdAt: startedAt,
       });
       const nextCycle = createTrainingCycle({
-        id: `cycle-${userId}-${cycle.id}-${Date.now()}`,
+        id: `cycle-${userId}-${cycle.id}-${preview.token}`,
         userId,
         programVersion: copy.version,
         startedAt,
       });
       await saveProgramVersion(database, userId, copy.program, copy.version);
-      await saveTrainingCycle(database, nextCycle);
+      if (!isCurrent()) return;
+      await saveTrainingCycleWithSchedule(
+        database,
+        nextCycle,
+        copy.version,
+        preview.timeZone,
+        preview.startDate,
+        isCurrent,
+      );
+      if (!isCurrent()) return;
       trackAnalyticsEvent(analytics, 'next_cycle_started', {
         cycleId: nextCycle.id,
         programId: copy.program.sourceProgramId ?? copy.program.id,
@@ -219,7 +315,8 @@ export default function CycleReviewScreen() {
         repeatError instanceof Error ? repeatError.message : 'We could not start the next cycle.',
       );
     } finally {
-      setReviewBusy(null);
+      repeatPending.current = false;
+      if (isCurrent()) setReviewBusy(null);
     }
   };
 
@@ -409,8 +506,8 @@ export default function CycleReviewScreen() {
             plan change without your confirmation.
           </Text>
           <Button
-            label="Repeat this cycle"
-            onPress={handleRepeatCycle}
+            label="Start a new cycle with these targets"
+            onPress={() => void handleRepeatCycle()}
             loading={reviewBusy === 'repeat'}
             icon={<Ionicons name="refresh-outline" size={18} color={colors.white} />}
             style={styles.actionButton}

@@ -11,6 +11,38 @@ import {
 } from './calendar';
 
 describe('calendar domain', () => {
+  it('keeps pinned original dates after travel and includes every same-day and beyond-week occurrence', () => {
+    const first = demoProgramVersion.workouts[0]!;
+    const second = { ...first, id: 'second-same-day', title: 'Second same day' };
+    const version = { ...demoProgramVersion, workouts: [first, second] };
+    const pinned = [first, second].map((workout) => ({
+      id: `pin-${workout.id}`,
+      userId: demoCycle.userId,
+      cycleId: demoCycle.id,
+      cycleWeek: 1,
+      workoutId: workout.id,
+      originalDate: '2026-09-13',
+      scheduledDate: '2026-09-25',
+      createdAt: demoCycle.startedAt,
+      updatedAt: demoCycle.startedAt,
+    }));
+    const cycle = { ...demoCycle, currentWeek: 1, startedAt: '2026-09-14T01:00:00.000Z' };
+    const occurrences = buildCycleSchedule(cycle, version, pinned, [], parseDateKey('2026-09-25'));
+    expect(
+      occurrences.filter((entry) => entry.cycleWeek === 1).map((entry) => entry.originalDate),
+    ).toEqual(['2026-09-13', '2026-09-13']);
+    const week = buildCurrentCycleWeekSchedule(
+      cycle,
+      version,
+      pinned,
+      [],
+      parseDateKey('2026-09-25'),
+    );
+    expect(
+      week.filter((entry) => entry.date === '2026-09-25').map((entry) => entry.workoutId),
+    ).toEqual([first.id, second.id].sort());
+    expect(week.some((entry) => entry.date === '2026-09-13')).toBe(true);
+  });
   it('uses local date keys and keeps date arithmetic stable across DST boundaries', () => {
     expect(formatDateKey(new Date(2026, 2, 8, 23, 30))).toBe('2026-03-08');
     expect(addDaysToDateKey('2026-03-08', 1)).toBe('2026-03-09');

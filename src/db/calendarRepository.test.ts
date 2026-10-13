@@ -21,6 +21,9 @@ const override = {
 describe('calendar repository', () => {
   it('reads user-scoped overrides and workout session outcomes', async () => {
     const database = {
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        callback(database),
+      getFirstAsync: async () => null,
       getAllAsync: async (sql: string) => {
         if (sql.includes('workout_schedule_overrides')) {
           return [

@@ -1,4 +1,5 @@
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import ProgramBuilderScreen from '../../app/builder';
 import { demoProgram, demoProgramVersion } from '../domain/fixtures/home';
 import { createCustomExercise } from '../domain/programBuilder';
@@ -12,6 +13,11 @@ let mockDatabase: object | null = {};
 let mockReleaseMode = 'guest-only';
 let mockParams: { mode?: string; sourceVersionId?: string } = { mode: 'blank' };
 const mockSaveProgram = jest.fn(async (..._args: unknown[]) => undefined);
+const mockStartSchedule = jest.fn(async (..._args: unknown[]) => undefined);
+jest.mock('../db/cycleRepository', () => ({
+  getLatestTrainingCycle: async () => null,
+  saveTrainingCycleWithSchedule: (...args: unknown[]) => mockStartSchedule(...args),
+}));
 jest.mock('../db/builderRecoveryRepository', () => ({
   getBuilderRecovery: async () => null,
   saveBuilderRecovery: async (
@@ -25,6 +31,10 @@ jest.mock('../db/builderRecoveryRepository', () => ({
   clearBuilderRecovery: async () => undefined,
 }));
 jest.mock('expo-router', () => ({
+  useFocusEffect: (callback: () => void) => {
+    const React = jest.requireActual('react');
+    React.useEffect(callback, [callback]);
+  },
   router: { replace: jest.fn() },
   useLocalSearchParams: () => mockParams,
 }));
@@ -56,7 +66,10 @@ beforeEach(() => {
   jest.mocked(getUserExercises).mockResolvedValue([]);
   jest.mocked(getUserProgramVersion).mockResolvedValue(null);
   mockSaveProgram.mockResolvedValue(undefined);
+  mockStartSchedule.mockResolvedValue(undefined);
+  jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 });
+afterEach(() => jest.restoreAllMocks());
 
 test('a saved source opens an explicit copy with its actual workout and custom movement', async () => {
   mockParams = { sourceVersionId: 'saved-private-version' };
@@ -105,6 +118,81 @@ test('a saved source opens an explicit copy with its actual workout and custom m
     movement,
     expect.any(String),
   );
+});
+
+async function startablePrivatePlan() {
+  mockParams = { sourceVersionId: 'start-private-version' };
+  const movement = createCustomExercise({
+    id: 'start-custom',
+    name: 'My start movement',
+    movementPattern: 'squat',
+    primaryMuscles: ['quadriceps'],
+    equipmentIds: ['equipment-bodyweight'],
+  });
+  const version = {
+    ...demoProgramVersion,
+    id: 'start-private-version',
+    workouts: [
+      {
+        ...demoProgramVersion.workouts[0]!,
+        title: 'My start workout',
+        exercises: [{ ...demoProgramVersion.workouts[0]!.exercises[0]!, exerciseId: movement.id }],
+      },
+    ],
+  };
+  jest.mocked(getUserProgramVersion).mockResolvedValue({
+    program: { ...demoProgram, title: 'My start plan', isTemplate: false, ownerId: 'guest-user' },
+    version,
+  });
+  jest.mocked(getUserExercises).mockResolvedValue([movement]);
+  const screen = await render(<ProgramBuilderScreen />);
+  await waitFor(() => expect(screen.getByDisplayValue('My start plan copy')).toBeTruthy());
+  return screen;
+}
+test('Start displays the frozen date and timezone, Cancel writes nothing, confirmation saves one anchored cycle', async () => {
+  const screen = await startablePrivatePlan();
+  await fireEvent.press(screen.getByLabelText('Start this six-week cycle'));
+  expect(Alert.alert).toHaveBeenCalledWith(
+    'Start this six-week cycle?',
+    expect.stringContaining('Start date'),
+    expect.any(Array),
+  );
+  expect(mockSaveProgram).not.toHaveBeenCalled();
+  expect(mockStartSchedule).not.toHaveBeenCalled();
+  const choices = jest.mocked(Alert.alert).mock.calls[0]![2]!;
+  await act(async () => choices.find((choice) => choice.text === 'Cancel')?.onPress?.());
+  expect(mockStartSchedule).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Start this six-week cycle'));
+  await act(async () =>
+    jest
+      .mocked(Alert.alert)
+      .mock.calls[1]![2]!.find((choice) => choice.text === 'Start cycle')
+      ?.onPress?.(),
+  );
+  await waitFor(() => expect(mockStartSchedule).toHaveBeenCalledTimes(1));
+  expect(mockStartSchedule).toHaveBeenCalledWith(
+    mockDatabase,
+    expect.objectContaining({ userId: 'guest-user', currentWeek: 1 }),
+    expect.objectContaining({ workouts: expect.any(Array) }),
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    expect.stringMatching(/^\d{4}-\d\d-\d\d$/),
+    expect.any(Function),
+  );
+});
+test('editing after Start preview rejects the old confirmation without writing its cycle', async () => {
+  const screen = await startablePrivatePlan();
+  await fireEvent.press(screen.getByLabelText('Start this six-week cycle'));
+  const choices = jest.mocked(Alert.alert).mock.calls[0]![2]!;
+  await fireEvent.changeText(
+    screen.getByDisplayValue('My start plan copy'),
+    'Changed after preview',
+  );
+  await act(async () => choices.find((choice) => choice.text === 'Start cycle')?.onPress?.());
+  expect(mockStartSchedule).not.toHaveBeenCalled();
+  expect(mockSaveProgram).not.toHaveBeenCalled();
+  expect(
+    screen.getByText('The plan or date changed. Review Start again before confirming.'),
+  ).toBeTruthy();
 });
 
 test('an unavailable or foreign saved source cannot silently become a blank saved plan', async () => {

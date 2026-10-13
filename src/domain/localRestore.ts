@@ -828,6 +828,13 @@ export function validateLocalBackup(serialized: string): RestorePreview {
         'invalid revision history.',
       );
   }
+  // Corrections form a single chain. Importing two children of one original
+  // would bypass the same "already corrected" rule used during local entry.
+  unique(
+    data.shiftObservations.filter((row) => row.corrects_observation_id !== null),
+    ['corrects_observation_id'],
+    'correction parent (branched corrections are not supported)',
+  );
   for (const [index, row] of (data.personalGoalEvents ?? []).entries()) {
     check(goals.has(String(row.shift_id)), 'orphan goal journal.');
     const value = get('personalGoalEvents', index, 'payload_json');

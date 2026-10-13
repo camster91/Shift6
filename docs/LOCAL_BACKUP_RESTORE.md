@@ -91,11 +91,18 @@ UI tests establish inert preview, separate confirmation and conflict handling.
 The fresh-setup entry test confirms it creates neither a profile nor draft.
 Automated coverage does not establish physical recoverability or usability.
 
-The implementation's full `npm run verify` completed on this PC: **544 tests in
+The initial implementation (`613c2c40`) full `npm run verify` completed on this PC: **544 tests in
 91 suites**, Expo Doctor 21/21, formatting/lint/TypeScript, assets/secrets/release
 configuration, production dependency audit (zero known vulnerabilities), 79-file
 vendor inventory, five security regressions and both Hermes exports passed.
 The local log is `restore-verify.log`; native picker execution is still pending.
+
+Independent review found that a backup could branch two corrections from the
+same original, bypassing local entry's single-child rule. The follow-up rejects
+duplicate non-null correction parents before any transaction/write. Valid
+successive correction chains remain supported. All **14 restore SQLite tests**,
+TypeScript and focused lint passed after this fix; the root integration run owns
+the next combined full verification and native checks.
 
 Before closing issue 331, test the signed candidate on physical iOS and Android:
 actual file-provider selection, cancellation, a large supported history,

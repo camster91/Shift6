@@ -143,6 +143,60 @@ test('late write failure rolls back every table', async () => {
   expect((await exportLocalUserData(db, 'guest-user', stamp)).summary.totalRecordCount).toBe(0);
 });
 
+test('branched corrections are rejected before any transaction or write', async () => {
+  const data = fixture();
+  const correction = data.shiftObservations.find((row) => row.corrects_observation_id !== null)!;
+  data.shiftObservations.push({
+    ...correction,
+    id: 'second-child-of-original',
+    value_json: '38',
+    recorded_at: stamp,
+  });
+  const writes = jest.spyOn(db, 'runAsync'),
+    transaction = jest.spyOn(db, 'withExclusiveTransactionAsync');
+  await expect(restoreLocalBackup(db, 'guest-user', serialized(data))).rejects.toThrow(
+    'branched corrections',
+  );
+  expect(writes).not.toHaveBeenCalled();
+  expect(transaction).not.toHaveBeenCalled();
+  expect((await exportLocalUserData(db, 'guest-user', stamp)).summary.totalRecordCount).toBe(0);
+});
+
+test('a later correction of the latest correction remains a valid chain', async () => {
+  const data = fixture();
+  const prior = data.shiftObservations.find((row) => row.corrects_observation_id !== null)!;
+  const child = {
+    ...prior,
+    id: 'latest-correction',
+    corrects_observation_id: prior.id,
+    value_json: '38',
+    recorded_at: stamp,
+  };
+  data.shiftObservations.push(child);
+  const journal = data.personalGoalEvents!.find(
+    (row) => row.kind === 'measurement' && String(row.payload_json).includes(String(prior.id)),
+  )!;
+  const payload = JSON.parse(String(journal.payload_json));
+  payload.observation = {
+    ...payload.observation,
+    id: child.id,
+    correctsObservationId: prior.id,
+    value: 38,
+  };
+  data.personalGoalEvents!.push({
+    ...journal,
+    id: 'measurement:latest-correction',
+    payload_json: JSON.stringify(payload),
+    recorded_at: stamp,
+  });
+  await restoreLocalBackup(db, 'guest-user', serialized(data));
+  const exported = await exportLocalUserData(db, 'guest-user', stamp);
+  expect(exported.shiftObservations.find((row) => row.id === child.id)).toEqual(child);
+  expect(validateLocalBackup(JSON.stringify(exported)).recordCount).toBe(
+    exported.summary.totalRecordCount,
+  );
+});
+
 test.each([
   [
     'future schema',

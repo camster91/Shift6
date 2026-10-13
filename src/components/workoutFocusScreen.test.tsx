@@ -385,6 +385,7 @@ test('correction keeps restored canonical set ID and operation identity rather t
     id: original.id,
     idempotencyKey: original.idempotencyKey,
     reps: 6,
+    completedAt: original.completedAt,
   });
   expect(mockUpdateSet.mock.calls[0]![3]).toEqual(original);
 });

@@ -917,7 +917,8 @@ export default function ActiveWorkoutScreen() {
       distanceMeters,
       rpe,
       rir,
-      completedAt: new Date().toISOString(),
+      completedAt:
+        alreadyCompleted && expectedSaved ? expectedSaved.completedAt : new Date().toISOString(),
       idempotencyKey:
         alreadyCompleted && expectedSaved
           ? expectedSaved.idempotencyKey

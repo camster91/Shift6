@@ -172,6 +172,49 @@ test('explicit set corrections update provenance atomically and removing load re
   );
   expect(sqlite.prepare('SELECT * FROM completed_set_load_provenance').all()).toEqual([]);
 });
+
+test('a correction after midnight preserves occurrence time and records correction time separately', async () => {
+  const original = { ...next(), completedAt: '2026-10-14T23:59:45.788Z' };
+  await saveCompletedSet(db, original, 'guest-user');
+  const editedAt = '2026-10-15T00:12:37.323Z';
+  const clock = jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(editedAt);
+  try {
+    await updateCompletedSet(
+      db,
+      { ...original, load: 88.18490487395103, loadUnit: 'lb', completedAt: editedAt },
+      'guest-user',
+      original,
+    );
+  } finally {
+    clock.mockRestore();
+  }
+  const actuals = await getCompletedSets(db, saved.sessionId);
+  expect(actuals).toHaveLength(2);
+  expect(actuals.find((set) => set.id === original.id)).toMatchObject({
+    completedAt: original.completedAt,
+    idempotencyKey: original.idempotencyKey,
+    reps: original.reps,
+    loadUnit: 'lb',
+    load: 88.18490487395103,
+  });
+  expect(sqlite.prepare('SELECT * FROM completed_set_load_provenance').get()).toMatchObject({
+    set_completed_at: original.completedAt,
+    recorded_at: editedAt,
+  });
+  const backup = await exportLocalUserData(db, 'guest-user', editedAt);
+  expect(() => validateLocalBackup(JSON.stringify(backup))).not.toThrow();
+  const fresh = {
+    ...next(),
+    id: 'later-set',
+    setNumber: 3,
+    idempotencyKey: 'later-operation',
+    completedAt: editedAt,
+  };
+  await saveCompletedSet(db, fresh, 'guest-user');
+  expect(
+    (await getCompletedSets(db, saved.sessionId)).find((set) => set.id === fresh.id),
+  ).toMatchObject({ completedAt: editedAt });
+});
 test('late adoption failure preserves provenance owner and snapshots', async () => {
   await saveCompletedSet(db, next(), 'guest-user');
   await saveWorkoutDraft(db, saved.sessionId, draft(), stamp, 'guest-user');

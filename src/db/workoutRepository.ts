@@ -525,7 +525,7 @@ export async function deleteWorkoutDraft(
 }
 
 /**
- * Corrects a previously completed set without changing its stable identity.
+ * Corrects a previously completed set without changing its stable identity or occurrence time.
  * Each correction queues a new immutable operation for the same set entity,
  * so an earlier in-flight acknowledgement cannot erase the correction.
  */
@@ -538,6 +538,9 @@ export async function updateCompletedSet(
 ): Promise<'updated' | 'missing'> {
   const expected = JSON.parse(stableSnapshotJSON(expectedSaved)) as CompletedSet;
   const correction = JSON.parse(stableSnapshotJSON(completedSet)) as CompletedSet;
+  // An edit records new measurements, not a new performance on the edit date.
+  correction.completedAt = expected.completedAt;
+  const recordedAt = new Date().toISOString();
   const identity = ['id', 'sessionId', 'workoutExerciseId', 'setNumber', 'idempotencyKey'] as const;
   if (identity.some((field) => expected[field] !== correction[field]))
     throw new Error('The set correction must identify the original saved set.');
@@ -587,7 +590,7 @@ export async function updateCompletedSet(
     if (result.changes !== 1)
       throw new Error('This saved set changed during the correction. Reload before editing.');
     assertCurrent();
-    await writeSetLoadProvenance(tx, correction, ownerId);
+    await writeSetLoadProvenance(tx, correction, ownerId, recordedAt);
     const saved = (await getCompletedSets(tx, correction.sessionId)).find(
       (set) => set.id === correction.id,
     );
@@ -606,7 +609,7 @@ export async function updateCompletedSet(
       'completed-set',
       correction.id,
       JSON.stringify(confirmed),
-      correction.completedAt,
+      recordedAt,
     );
     assertCurrent();
     updated = true;

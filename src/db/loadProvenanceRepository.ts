@@ -21,6 +21,7 @@ export async function writeSetLoadProvenance(
   db: SQLiteDatabase,
   set: CompletedSet,
   owner: string | undefined,
+  recordedAt: string = set.completedAt,
 ) {
   await assertOwnedLoadSession(db, set.sessionId, owner);
   if (set.load === undefined) {
@@ -44,7 +45,7 @@ export async function writeSetLoadProvenance(
     unit,
     set.load,
     set.completedAt,
-    set.completedAt,
+    recordedAt,
   );
 }
 export function splitDraftLoadUnits(values: WorkoutDraftValues) {

@@ -635,6 +635,7 @@ describe('workout drafts and corrections', () => {
 
   it('updates a completed set and queues a separate correction snapshot', async () => {
     const calls: string[] = [];
+    const bindings: unknown[][] = [];
     const previous: CompletedSet = {
       id: 'set-1',
       sessionId: 'session-1',
@@ -670,9 +671,11 @@ describe('workout drafts and corrections', () => {
       ],
       withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
         callback(database),
-      runAsync: async (sql: string) => {
+      runAsync: async (sql: string, ...args: unknown[]) => {
         calls.push(sql);
-        if (sql.includes('UPDATE completed_sets')) current = correction;
+        bindings.push(args);
+        if (sql.includes('UPDATE completed_sets'))
+          current = { ...correction, completedAt: previous.completedAt };
         return { changes: 1, lastInsertRowId: 1 };
       },
     } as unknown as SQLiteDatabase;
@@ -683,5 +686,12 @@ describe('workout drafts and corrections', () => {
     expect(calls[0]).toContain('session_id=?');
     expect(calls[1]).toContain('completed_set_load_provenance');
     expect(calls[2]).not.toContain('DO UPDATE');
+    expect(JSON.parse(String(bindings[2]![4]))).toMatchObject({
+      load: 100,
+      completedAt: previous.completedAt,
+      idempotencyKey: previous.idempotencyKey,
+    });
+    expect(bindings[1]![5]).toBe(previous.completedAt);
+    expect(bindings[1]![6]).toBe(bindings[2]![5]);
   });
 });

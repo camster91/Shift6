@@ -6,6 +6,53 @@ import {
 } from './nextSession';
 
 describe('deterministic next-session targets', () => {
+  it.each([
+    ['metric', 'imperial', 42.5],
+    ['imperial', 'metric', 45],
+  ] as const)(
+    'uses the explicit %s target unit instead of the %s presentation preference',
+    (targetUnit, profileUnit, expectedLoad) => {
+      const original = demoWorkout.exercises[0]!;
+      const exercise = {
+        ...original,
+        sets: [
+          {
+            ...original.sets[0]!,
+            target: { reps: { min: 6, max: 8 }, load: { value: 40, unit: targetUnit } },
+          },
+        ],
+      };
+      const workout = { ...demoWorkout, exercises: [exercise] };
+      const before = JSON.stringify(workout);
+      const result = buildNextSessionTargets(
+        workout,
+        'double-progression',
+        [
+          {
+            id: 'actual-set',
+            sessionId: 'actual-session',
+            workoutExerciseId: exercise.id,
+            exerciseId: exercise.exerciseId,
+            setNumber: 1,
+            load: 40,
+            reps: 8,
+            completedAt: '2026-10-13T00:00:00Z',
+            idempotencyKey: 'actual-set',
+          },
+        ],
+        profileUnit,
+        undefined,
+        ['rule-barbell-30-double-progression'],
+      );
+      expect(result[0]?.decision.nextTarget.load).toEqual({
+        value: expectedLoad,
+        unit: targetUnit,
+      });
+      expect(result[0]?.currentTarget.load).toEqual({ value: 40, unit: targetUnit });
+      expect(JSON.stringify(workout)).toBe(before);
+    },
+  );
+
   it('uses observed local load and the program strategy to calculate the next target', () => {
     const squat = demoWorkout.exercises[0]!;
     const targets = buildNextSessionTargets(

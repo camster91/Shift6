@@ -27,8 +27,9 @@ import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { getUserProgramVersion } from '../../src/db/programRepository';
 import { getCompletedWorkoutIds } from '../../src/db/progressRepository';
-import { buildCurrentCycleWeekSchedule, formatDateKey } from '../../src/domain/calendar';
-import { daysSinceLastTraining, getTodayWorkout } from '../../src/domain/home';
+import { buildCurrentCycleWeekSchedule } from '../../src/domain/calendar';
+import { daysSinceLastTraining } from '../../src/domain/home';
+import { selectTrainingWorkout } from '../../src/domain/trainingSelection';
 import {
   demoCycle,
   demoProgram,
@@ -114,14 +115,14 @@ export default function HomeScreen() {
           setCurrentProgramVersion(snapshot.version);
           const now = new Date();
           setDaysAway(daysSinceLastTraining(cycle.startedAt, scheduleSessions, now));
-          const unfinished = scheduleSessions.find(
-            (session) =>
-              session.cycleWeek === cycle.currentWeek && session.status === 'in-progress',
+          const selection = selectTrainingWorkout(
+            cycle,
+            snapshot.version,
+            scheduleOverrides,
+            scheduleSessions,
+            now,
           );
-          const unfinishedWorkout = snapshot.version.workouts.find(
-            (workout) => workout.id === unfinished?.workoutId,
-          );
-          setHasUnfinishedWorkout(Boolean(unfinishedWorkout));
+          setHasUnfinishedWorkout(selection?.basis === 'resumable');
           const cycleSchedule = buildCurrentCycleWeekSchedule(
             cycle,
             snapshot.version,
@@ -129,17 +130,7 @@ export default function HomeScreen() {
             scheduleSessions,
             now,
           );
-          const scheduledToday = cycleSchedule.find(
-            (entry) => entry.date === formatDateKey(now) && entry.workoutId,
-          );
-          setTodayWorkout(
-            unfinishedWorkout ??
-              snapshot.version.workouts.find(
-                (workout) => workout.id === scheduledToday?.workoutId,
-              ) ??
-              getTodayWorkout(snapshot.version, now) ??
-              snapshot.version.workouts[0]!,
-          );
+          setTodayWorkout(selection?.workout ?? null);
           setSchedule(cycleSchedule);
         })
         .catch((loadError) => {
@@ -207,7 +198,7 @@ export default function HomeScreen() {
     );
   }
 
-  if (!currentCycle || !currentProgram || !currentProgramVersion || !todayWorkout) {
+  if (!currentCycle || !currentProgram || !currentProgramVersion) {
     return (
       <Screen>
         <Text variant="h3" accessibilityRole="header">
@@ -254,30 +245,52 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionCopy}>
-          <Text variant="caption" tone="muted">
-            TODAY'S WORKOUT
-          </Text>
-          <Text variant="h2">Ready when you are.</Text>
-        </View>
-        <Chip label={`${todayWorkout.estimatedDurationMinutes} min`} selected />
-      </View>
+      {todayWorkout ? (
+        <>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionCopy}>
+              <Text variant="caption" tone="muted">
+                TODAY'S WORKOUT
+              </Text>
+              <Text variant="h2">
+                {hasUnfinishedWorkout ? 'Continue where you left off.' : 'Ready when you are.'}
+              </Text>
+            </View>
+            <Chip label={`${todayWorkout.estimatedDurationMinutes} min`} selected />
+          </View>
 
-      <WorkoutCard
-        workout={todayWorkout}
-        onPress={() =>
-          router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
-        }
-      />
-      <Button
-        label={hasUnfinishedWorkout ? 'Resume workout' : 'Start workout'}
-        icon={<Ionicons name="arrow-forward" size={18} color={colors.white} />}
-        onPress={() =>
-          router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
-        }
-        style={styles.primaryAction}
-      />
+          <WorkoutCard
+            workout={todayWorkout}
+            actionLabel={hasUnfinishedWorkout ? 'Resume workout' : 'Start workout'}
+            onPress={() =>
+              router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
+            }
+          />
+          <Button
+            label={hasUnfinishedWorkout ? 'Resume workout' : 'Start workout'}
+            icon={<Ionicons name="arrow-forward" size={18} color={colors.white} />}
+            onPress={() =>
+              router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
+            }
+            style={styles.primaryAction}
+          />
+        </>
+      ) : (
+        <Card>
+          <Text variant="h3" accessibilityRole="header">
+            No workout scheduled now
+          </Text>
+          <Text variant="body" tone="muted">
+            Your saved cycle and history are still here. Check your calendar for the next training
+            day.
+          </Text>
+          <Button
+            label="Check training calendar"
+            variant="secondary"
+            onPress={() => router.push('/calendar')}
+          />
+        </Card>
+      )}
 
       <ShiftArtwork {...shiftArtwork.journey} />
 
@@ -367,10 +380,7 @@ export default function HomeScreen() {
       >
         {schedule.map((entry) => {
           const workout = entry.workoutId
-            ? currentProgramVersion.workouts.find(
-                (candidate) =>
-                  candidate.id === entry.workoutId || candidate.dayOfWeek === dayNumber(entry.day),
-              )
+            ? currentProgramVersion.workouts.find((candidate) => candidate.id === entry.workoutId)
             : null;
           const completed = workout ? completedWorkoutIds.has(workout.id) : false;
           const card = (
@@ -566,7 +576,3 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
 });
-
-function dayNumber(day: string): number {
-  return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(day) + 1;
-}

@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, AppState, StyleSheet, TextInput, View } from 'react-native';
 
 import {
   Button,
@@ -19,7 +19,11 @@ import {
   Screen,
   Text,
 } from '../src/components/ui';
-import { equipmentCatalog, findExerciseSubstitutions } from '../src/domain/equipment';
+import {
+  equipmentCatalog,
+  findExerciseSubstitutions,
+  missingEquipment,
+} from '../src/domain/equipment';
 import {
   demoCycle,
   demoProgram,
@@ -82,6 +86,14 @@ import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 import * as Network from 'expo-network';
 import type { ConnectivityStatus } from '../src/services/syncCoordinator';
 
+import {
+  nextWorkoutSet,
+  previousComparableSet,
+  appendSetDifficultyNote,
+  setDifficultyChoices,
+  type SetDifficulty,
+} from '../src/domain/workoutFocus';
+
 type SetInputValues = WorkoutDraftSetValues;
 type PartialWorkoutReason = Exclude<NonNullable<WorkoutSession['completionReason']>, 'all-targets'>;
 
@@ -140,6 +152,16 @@ export default function ActiveWorkoutScreen() {
     buildInitialValues(activeWorkout),
   );
   const [targetOverrides, setTargetOverrides] = useState<Record<string, SetTarget>>({});
+  const [showAllSets, setShowAllSets] = useState(false);
+  const [previousSets, setPreviousSets] = useState<CompletedSet[]>([]);
+  const [targetReasons, setTargetReasons] = useState<Record<string, string>>({});
+  const [showTargetReason, setShowTargetReason] = useState(false);
+  const [lastSavedSet, setLastSavedSet] = useState<{ name: string; number: number } | null>(null);
+  const [difficultySaving, setDifficultySaving] = useState(false);
+  const feedbackWrite = useRef<Promise<void> | null>(null);
+  const feedbackGeneration = useRef(0);
+  const feedbackContext = useRef({ database, userId, sessionId: '' });
+  const [difficulty, setDifficulty] = useState<SetDifficulty | null>(null);
   const [showEffortDetails, setShowEffortDetails] = useState(false);
   const [completedSetKeys, setCompletedSetKeys] = useState<Set<string>>(() => new Set());
   const [editingSetKey, setEditingSetKey] = useState<string | null>(null);
@@ -165,6 +187,8 @@ export default function ActiveWorkoutScreen() {
   const [connectivity, setConnectivity] = useState<ConnectivityStatus>('unknown');
   const [readiness, setReadiness] = useState<WorkoutReadiness | null>(null);
   const [sessionNote, setSessionNote] = useState('');
+  const sessionNoteRef = useRef(sessionNote);
+  sessionNoteRef.current = sessionNote;
   const [readinessSaving, setReadinessSaving] = useState(false);
   const [restTimerEnabled, setRestTimerEnabled] = useState(false);
   const trackedWorkoutSessionId = useRef<string | null>(null);
@@ -193,6 +217,14 @@ export default function ActiveWorkoutScreen() {
     setCustomExercises([]);
     setValues(buildInitialValues(activeWorkout));
     setTargetOverrides({});
+    setPreviousSets([]);
+    setTargetReasons({});
+    setShowAllSets(false);
+    setLastSavedSet(null);
+    setDifficulty(null);
+    feedbackGeneration.current++;
+    feedbackWrite.current = null;
+    setDifficultySaving(false);
     setCompletedSetKeys(new Set());
     setEditingSetKey(null);
     setSubstitutionFor(null);
@@ -224,6 +256,7 @@ export default function ActiveWorkoutScreen() {
     [activeCycle.id, activeCycle.currentWeek, activeWorkout, connectivity, readiness, startedAt],
   );
   const session = resumedSession ?? proposedSession;
+  feedbackContext.current = { database, userId, sessionId: session.id };
   const canMutate =
     previewEnabled ||
     (routeReady &&
@@ -392,6 +425,7 @@ export default function ActiveWorkoutScreen() {
           setReadiness(readiness ?? null);
           setSessionNote(note);
           setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
+          setPreviousSets(previousSets);
           const nextTargets =
             previousSets.length > 0
               ? buildNextSessionTargets(
@@ -407,6 +441,11 @@ export default function ActiveWorkoutScreen() {
             nextTargets.map((target) => [target.workoutExerciseId, target.decision.nextTarget]),
           );
           setTargetOverrides(overrides);
+          setTargetReasons(
+            Object.fromEntries(
+              nextTargets.map((target) => [target.workoutExerciseId, target.decision.reason]),
+            ),
+          );
           setValues((current) =>
             hydrateWorkoutValues(
               activeWorkout,
@@ -464,7 +503,8 @@ export default function ActiveWorkoutScreen() {
     if (!database || !canMutate) return;
 
     const timeout = setTimeout(() => {
-      void updateWorkoutSessionNote(database, session.id, sessionNote).catch(() => {
+      if (feedbackWrite.current) return;
+      void updateWorkoutSessionNote(database, session.id, sessionNoteRef.current).catch(() => {
         setError('We could not save the workout note locally.');
       });
     }, 300);
@@ -483,14 +523,23 @@ export default function ActiveWorkoutScreen() {
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'inactive' || nextState === 'background') {
         flushDraft();
-        void updateWorkoutSessionNote(database, session.id, sessionNote).catch(() => {
+        void (async () => {
+          await feedbackWrite.current;
+          const current = feedbackContext.current;
+          if (
+            current.database === database &&
+            current.userId === userId &&
+            current.sessionId === session.id
+          )
+            await updateWorkoutSessionNote(database, session.id, sessionNoteRef.current);
+        })().catch(() => {
           setError('We could not save the workout note locally.');
         });
       }
     });
 
     return () => subscription.remove();
-  }, [canMutate, database, session.id, sessionNote, values]);
+  }, [canMutate, database, session.id, sessionNote, userId, values]);
 
   useEffect(() => {
     if (restEndsAt === null) return;
@@ -522,6 +571,8 @@ export default function ActiveWorkoutScreen() {
   );
   const completedCount = completedSetKeys.size;
   const allSetsComplete = completedCount >= totalSets;
+  const focus = nextWorkoutSet(activeWorkout, completedSetKeys, editingSetKey);
+  const previousResult = focus ? previousComparableSet(focus, previousSets) : undefined;
 
   const updateValue = (key: string, field: keyof SetInputValues, value: string) => {
     setValues((current) => ({
@@ -532,7 +583,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleCompleteSet = async (workoutExercise: WorkoutExercise, setNumber: number) => {
-    if (!canMutate) return;
+    if (!canMutate || feedbackWrite.current) return;
     const key = setKey(workoutExercise.id, setNumber);
     const alreadyCompleted = completedSetKeys.has(key);
     const editing = editingSetKey === key;
@@ -597,6 +648,12 @@ export default function ActiveWorkoutScreen() {
         void flushNow();
       }
       setCompletedSetKeys((current) => new Set(current).add(key));
+      feedbackGeneration.current++;
+      setLastSavedSet({
+        name: formatExerciseName(workoutExercise.exerciseId, availableExercises),
+        number: setNumber,
+      });
+      setDifficulty(null);
       if (editing) {
         setEditingSetKey(null);
       } else {
@@ -619,11 +676,70 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
+  const handleDifficulty = (choice: SetDifficulty) => {
+    if (!canMutate || !lastSavedSet || feedbackWrite.current) return;
+    const generation = feedbackGeneration.current;
+    const context = feedbackContext.current;
+    setDifficultySaving(true);
+    setError(null);
+    const operation = Promise.resolve()
+      .then(async () => {
+        try {
+          const next = appendSetDifficultyNote(
+            sessionNoteRef.current,
+            lastSavedSet.name,
+            lastSavedSet.number,
+            choice,
+          );
+          if (database) await updateWorkoutSessionNote(database, session.id, next);
+          const current = feedbackContext.current;
+          if (
+            generation !== feedbackGeneration.current ||
+            current.database !== context.database ||
+            current.userId !== context.userId ||
+            current.sessionId !== context.sessionId
+          )
+            return;
+          sessionNoteRef.current = next;
+          setSessionNote(next);
+          setDifficulty(choice);
+        } catch (error) {
+          if (generation === feedbackGeneration.current)
+            setError(error instanceof Error ? error.message : 'Set feedback could not be saved.');
+        }
+      })
+      .finally(() => {
+        if (feedbackWrite.current === operation) {
+          feedbackWrite.current = null;
+          setDifficultySaving(false);
+        }
+      });
+    feedbackWrite.current = operation;
+    return operation;
+  };
+
+  const handleDiscomfortStop = () => {
+    if (!canMutate || finishing || partialFinishing || allSetsComplete) return;
+    Alert.alert(
+      'Stop this session for discomfort?',
+      'Save only your already completed sets, or record an untouched session as skipped. This does not advance your training week or prescribe work through discomfort.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: completedCount ? 'Save partial and stop' : 'Skip and stop',
+          onPress: () =>
+            void handleFinishEarly(completedCount ? 'partial' : 'skipped', 'discomfort'),
+        },
+      ],
+    );
+  };
+
   const handlePauseWorkout = async () => {
     if (!canMutate) return;
     if (database) {
       try {
-        await updateWorkoutSessionNote(database, session.id, sessionNote);
+        await feedbackWrite.current;
+        await updateWorkoutSessionNote(database, session.id, sessionNoteRef.current);
         await saveWorkoutDraft(database, session.id, values, new Date().toISOString());
         void flushNow();
       } catch {
@@ -792,12 +908,13 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleFinishWorkout = async () => {
-    if (!canMutate || !allSetsComplete || finishing) return;
+    if (!canMutate || !allSetsComplete || editingSetKey !== null || finishing) return;
 
     setFinishing(true);
     setError(null);
     try {
-      if (database) await updateWorkoutSessionNote(database, session.id, sessionNote);
+      await feedbackWrite.current;
+      if (database) await updateWorkoutSessionNote(database, session.id, sessionNoteRef.current);
       const updatedCycle = database
         ? await completeWorkoutSessionAndAdvanceCycle(
             database,
@@ -855,7 +972,8 @@ export default function ActiveWorkoutScreen() {
     setError(null);
     try {
       if (database) {
-        await updateWorkoutSessionNote(database, session.id, sessionNote);
+        await feedbackWrite.current;
+        await updateWorkoutSessionNote(database, session.id, sessionNoteRef.current);
         const finishedSession =
           status === 'partial'
             ? await finishWorkoutSessionPartially(
@@ -959,8 +1077,30 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
+  const missingGearNames = missingEquipment(activeWorkout.equipmentIds, availableEquipmentIds).map(
+    (id) => equipmentCatalog.find((equipment) => equipment.id === id)?.name ?? id,
+  );
+
   return (
-    <Screen>
+    <Screen
+      footer={
+        !showAllSets && focus ? (
+          <View>
+            <Text variant="caption">
+              {formatExerciseName(focus.exercise.exerciseId, availableExercises)} · set{' '}
+              {focus.set.setNumber} · Confirm the actual values you entered.
+            </Text>
+            <Button
+              label={completedSetKeys.has(focus.key) ? 'Save edited set' : 'Complete set'}
+              accessibilityLabel={`${completedSetKeys.has(focus.key) ? 'Save' : 'Complete'} ${formatExerciseName(focus.exercise.exerciseId, availableExercises)} set ${focus.set.setNumber}`}
+              disabled={savingSetKey !== null || revisionSaving || difficultySaving}
+              loading={savingSetKey === focus.key}
+              onPress={() => void handleCompleteSet(focus.exercise, focus.set.setNumber)}
+            />
+          </View>
+        ) : undefined
+      }
+    >
       <View style={styles.header}>
         <IconButton
           icon={<Ionicons name="arrow-back" size={22} color={colors.ink} />}
@@ -978,77 +1118,72 @@ export default function ActiveWorkoutScreen() {
         <Button label="Pause" variant="ghost" onPress={() => void handlePauseWorkout()} />
       </View>
 
-      <Text variant="display" accessibilityRole="header" style={styles.title}>
+      <Text
+        variant={showAllSets ? 'display' : 'h3'}
+        accessibilityRole="header"
+        style={styles.title}
+      >
         {activeWorkout.title}
       </Text>
-      <Text variant="body" tone="muted" style={styles.subtitle}>
-        Complete each set when it is done. Your device saves the set before the button changes
-        state.
+      <Text variant={showAllSets ? 'body' : 'caption'} tone="muted" style={styles.subtitle}>
+        {showAllSets
+          ? 'Complete each set when it is done. Your device saves the set before the button changes state.'
+          : 'Suggested values are not measurements. Enter your actual result, then tap Complete.'}
       </Text>
 
       {syncStatus ? <OfflineBanner status={syncStatus} /> : null}
-
-      <WorkoutPreflight
-        workout={activeWorkout}
-        availableEquipmentIds={availableEquipmentIds}
-        hasLocalDatabase={database !== null}
-        readiness={readiness}
-        saving={readinessSaving}
-        onReadinessChange={(nextReadiness) => void handleReadinessChange(nextReadiness)}
-      />
-
-      <Card tone={database ? 'mint' : 'yellow'} style={styles.localFirstCard}>
-        <View style={styles.localFirstHeader}>
-          <Ionicons
-            name={database ? 'phone-portrait-outline' : 'desktop-outline'}
-            size={22}
-            color={colors.ink}
-          />
-          <Text variant="smallMedium">{database ? 'Saved on this device' : 'Web preview'}</Text>
-        </View>
-        <Text variant="small" tone="muted" style={styles.localFirstText}>
-          {database
-            ? 'Your sets save on this device, even when you are offline.'
-            : 'This preview keeps your entries only while this browser session is open.'}
+      {!showAllSets && missingGearNames.length ? (
+        <Text variant="small" tone="error" accessibilityRole="alert">
+          Missing {missingGearNames.join(', ')} in your equipment profile. Review adjustments before
+          training if needed.
         </Text>
-      </Card>
-
-      <Text variant="h2" style={styles.sessionNoteTitle}>
-        Session note
-      </Text>
-      <Text variant="small" tone="muted" style={styles.sessionNoteCopy}>
-        Capture a cue, how the session felt, or something to remember. This stays with the local
-        workout record and is never sent to analytics.
-      </Text>
-      <TextInput
-        accessibilityLabel="Optional session note"
-        multiline
-        maxLength={500}
-        onChangeText={setSessionNote}
-        placeholder="Optional note for this workout"
-        placeholderTextColor={colors.inkMuted}
-        style={styles.sessionNoteInput}
-        value={sessionNote}
-      />
-      <Text variant="caption" tone="muted" style={styles.sessionNoteMeta}>
-        {sessionNote.length}/500 · Saved locally while you train
-      </Text>
-
-      {activeWorkout.equipmentIds.includes('equipment-barbell') ? (
-        <Button
-          label="Open plate calculator"
-          variant="ghost"
-          icon={<Ionicons name="calculator-outline" size={18} color={colors.ink} />}
-          onPress={() =>
-            router.push({
-              pathname: '/plate-calculator',
-              params: { unitSystem },
-            })
-          }
-          style={styles.plateCalculatorButton}
-        />
       ) : null}
 
+      {showAllSets ? (
+        <>
+          <Text variant="h2" style={styles.sessionNoteTitle}>
+            Session note
+          </Text>
+          <Text variant="small" tone="muted" style={styles.sessionNoteCopy}>
+            Capture a cue, how the session felt, or something to remember. This stays with the local
+            workout record and is never sent to analytics.
+          </Text>
+          <TextInput
+            accessibilityLabel="Optional session note"
+            multiline
+            maxLength={500}
+            editable={!difficultySaving}
+            onChangeText={(text) => {
+              if (!feedbackWrite.current) {
+                sessionNoteRef.current = text;
+                setSessionNote(text);
+              }
+            }}
+            placeholder="Optional note for this workout"
+            placeholderTextColor={colors.inkMuted}
+            style={styles.sessionNoteInput}
+            value={sessionNote}
+          />
+          <Text variant="caption" tone="muted" style={styles.sessionNoteMeta}>
+            {sessionNote.length}/500 · Saved locally while you train
+          </Text>
+
+          {activeWorkout.equipmentIds.includes('equipment-barbell') ? (
+            <Button
+              label="Open plate calculator"
+              variant="ghost"
+              icon={<Ionicons name="calculator-outline" size={18} color={colors.ink} />}
+              onPress={() =>
+                router.push({
+                  pathname: '/plate-calculator',
+                  params: { unitSystem },
+                })
+              }
+              style={styles.plateCalculatorButton}
+            />
+          ) : null}
+        </>
+      ) : null}
       {restSecondsRemaining > 0 ? (
         <Card tone="ink" style={styles.timerCard}>
           <View accessible accessibilityLabel={`Rest timer: ${formatTimer(restSecondsRemaining)}`}>
@@ -1065,6 +1200,381 @@ export default function ActiveWorkoutScreen() {
 
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
 
+      {activeWorkout.exercises
+        .filter((exercise) => showAllSets || exercise.id === focus?.exercise.id)
+        .map((workoutExercise) => {
+          const exerciseName = formatExerciseName(workoutExercise.exerciseId, availableExercises);
+          const sourceExercise = availableExercises.find(
+            (candidate) => candidate.id === workoutExercise.exerciseId,
+          );
+          const substitutions = sourceExercise
+            ? findExerciseSubstitutions(
+                sourceExercise,
+                availableExercises.filter((candidate) =>
+                  isExerciseAvailableToUser(candidate, __DEV__),
+                ),
+                availableEquipmentIds,
+                3,
+              )
+            : [];
+
+          return (
+            <Card key={workoutExercise.id} tone="white" style={styles.exerciseCard}>
+              <View style={styles.exerciseHeader}>
+                <View style={styles.exerciseNumber}>
+                  <Text variant="smallMedium">{workoutExercise.order}</Text>
+                </View>
+                <View style={styles.exerciseCopy}>
+                  <Text variant="h3">{exerciseName}</Text>
+                  <Text variant="small" tone="muted">
+                    {workoutExercise.sets.length} sets ·{' '}
+                    {targetSummary(workoutExercise.sets[0]?.target)}
+                  </Text>
+                </View>
+                {substitutions.length > 0 ? (
+                  <Button
+                    label={substitutionFor === workoutExercise.id ? 'Close' : 'Substitute'}
+                    variant="ghost"
+                    onPress={() =>
+                      setSubstitutionFor((current) =>
+                        current === workoutExercise.id ? null : workoutExercise.id,
+                      )
+                    }
+                    accessibilityHint="Available before completing a set so workout history stays clear"
+                    style={styles.substitutionToggle}
+                  />
+                ) : null}
+              </View>
+              {showAllSets ? (
+                <View
+                  style={styles.exerciseMetaRow}
+                  accessibilityLabel={`${formatSection(workoutExercise.section)}${workoutExercise.groupType ? `. ${formatGroupType(workoutExercise.groupType)}` : ''}`}
+                >
+                  <Chip label={formatSection(workoutExercise.section)} />
+                  {workoutExercise.groupType ? (
+                    <Chip label={formatGroupType(workoutExercise.groupType)} selected />
+                  ) : null}
+                </View>
+              ) : null}
+              {showAllSets ? (
+                <View style={styles.exerciseControls}>
+                  <Text variant="caption" tone="muted">
+                    Adjust this session
+                  </Text>
+                  <View style={styles.exerciseActionRow}>
+                    <IconButton
+                      icon={
+                        <Ionicons
+                          name="chevron-up-outline"
+                          size={18}
+                          color={
+                            revisionSaving || workoutExercise.order === 1
+                              ? colors.inkMuted
+                              : colors.ink
+                          }
+                        />
+                      }
+                      label={`Move ${exerciseName} up`}
+                      disabled={revisionSaving || workoutExercise.order === 1}
+                      onPress={() => handleMoveExercise(workoutExercise, -1)}
+                      style={styles.exerciseAction}
+                    />
+                    <IconButton
+                      icon={
+                        <Ionicons
+                          name="chevron-down-outline"
+                          size={18}
+                          color={
+                            revisionSaving ||
+                            workoutExercise.order === activeWorkout.exercises.length
+                              ? colors.inkMuted
+                              : colors.ink
+                          }
+                        />
+                      }
+                      label={`Move ${exerciseName} down`}
+                      disabled={
+                        revisionSaving || workoutExercise.order === activeWorkout.exercises.length
+                      }
+                      onPress={() => handleMoveExercise(workoutExercise, 1)}
+                      style={styles.exerciseAction}
+                    />
+                    <Text
+                      variant="caption"
+                      accessibilityLabel={`${workoutExercise.sets.length} sets for ${exerciseName}`}
+                      style={styles.setCount}
+                    >
+                      {workoutExercise.sets.length} sets
+                    </Text>
+                    <IconButton
+                      icon={
+                        <Ionicons
+                          name="add-outline"
+                          size={18}
+                          color={
+                            revisionSaving || workoutExercise.sets.length >= 20
+                              ? colors.inkMuted
+                              : colors.ink
+                          }
+                        />
+                      }
+                      label={`Add a set to ${exerciseName}`}
+                      disabled={revisionSaving || workoutExercise.sets.length >= 20}
+                      onPress={() => handleAddSet(workoutExercise)}
+                      style={styles.exerciseAction}
+                    />
+                  </View>
+                </View>
+              ) : null}
+              {showAllSets && workoutExercise.notes ? (
+                <Card
+                  tone="lavender"
+                  style={styles.exerciseNote}
+                  accessibilityLabel={`Exercise note for ${exerciseName}: ${workoutExercise.notes}`}
+                >
+                  <Text variant="caption" tone="muted">
+                    EXERCISE NOTE
+                  </Text>
+                  <Text variant="small" style={styles.exerciseNoteCopy}>
+                    {workoutExercise.notes}
+                  </Text>
+                </Card>
+              ) : null}
+              {substitutionFor === workoutExercise.id ? (
+                <Card tone="lavender" style={styles.substitutionCard}>
+                  <Text variant="smallMedium">Equipment-compatible options</Text>
+                  <Text variant="caption" tone="muted">
+                    Choose before completing this movement. The current set prescription is kept.
+                  </Text>
+                  {substitutions.map((candidate) => (
+                    <Button
+                      key={candidate.id}
+                      label={`Use ${candidate.name}`}
+                      variant="ghost"
+                      onPress={() => void handleSubstituteExercise(workoutExercise, candidate.id)}
+                      style={styles.substitutionButton}
+                    />
+                  ))}
+                </Card>
+              ) : null}
+              <View style={styles.setList}>
+                {workoutExercise.sets
+                  .filter(
+                    (set) =>
+                      showAllSets || setKey(workoutExercise.id, set.setNumber) === focus?.key,
+                  )
+                  .map((workoutSet) => {
+                    const key = setKey(workoutExercise.id, workoutSet.setNumber);
+                    const completed = completedSetKeys.has(key);
+                    const editing = editingSetKey === key;
+                    return (
+                      <View key={workoutSet.id} style={styles.setRow}>
+                        <View style={styles.setLabel}>
+                          <Text variant="smallMedium">Set {workoutSet.setNumber}</Text>
+                          <Text variant="caption" tone="muted">
+                            {targetSummary(
+                              targetOverrides[workoutExercise.id] ?? workoutSet.target,
+                            )}
+                          </Text>
+                        </View>
+                        {showsLoad(
+                          workoutExercise.exerciseId,
+                          workoutSet.target,
+                          availableExercises,
+                        ) ? (
+                          <TextInput
+                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} load`}
+                            accessibilityHint={`Enter actual load in ${(targetOverrides[workoutExercise.id]?.load?.unit ?? workoutSet.target.load?.unit ?? unitSystem) === 'imperial' ? 'pounds' : 'kilograms'}`}
+                            editable={!completed || editing}
+                            keyboardType="decimal-pad"
+                            onChangeText={(value) => updateValue(key, 'load', value)}
+                            placeholder={
+                              (targetOverrides[workoutExercise.id]?.load?.unit ??
+                                workoutSet.target.load?.unit ??
+                                unitSystem) === 'imperial'
+                                ? 'lb'
+                                : 'kg'
+                            }
+                            placeholderTextColor={colors.inkMuted}
+                            style={styles.valueInput}
+                            value={values[key]?.load ?? ''}
+                          />
+                        ) : null}
+                        {showsReps(
+                          workoutExercise.exerciseId,
+                          workoutSet.target,
+                          availableExercises,
+                        ) ? (
+                          <TextInput
+                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} reps`}
+                            editable={!completed || editing}
+                            keyboardType="number-pad"
+                            onChangeText={(value) => updateValue(key, 'reps', value)}
+                            placeholder="Reps"
+                            placeholderTextColor={colors.inkMuted}
+                            style={styles.valueInput}
+                            value={values[key]?.reps ?? ''}
+                          />
+                        ) : null}
+                        {showsDuration(
+                          workoutExercise.exerciseId,
+                          workoutSet.target,
+                          availableExercises,
+                        ) ? (
+                          <TextInput
+                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} duration in seconds`}
+                            editable={!completed || editing}
+                            keyboardType="number-pad"
+                            onChangeText={(value) => updateValue(key, 'duration', value)}
+                            placeholder="Seconds"
+                            placeholderTextColor={colors.inkMuted}
+                            style={styles.valueInput}
+                            value={values[key]?.duration ?? ''}
+                          />
+                        ) : null}
+                        {showsDistance(
+                          workoutExercise.exerciseId,
+                          workoutSet.target,
+                          availableExercises,
+                        ) ? (
+                          <TextInput
+                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} distance in meters`}
+                            editable={!completed || editing}
+                            keyboardType="decimal-pad"
+                            onChangeText={(value) => updateValue(key, 'distance', value)}
+                            placeholder="Meters"
+                            placeholderTextColor={colors.inkMuted}
+                            style={styles.valueInput}
+                            value={values[key]?.distance ?? ''}
+                          />
+                        ) : null}
+                        {showEffortDetails || values[key]?.rpe ? (
+                          <TextInput
+                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
+                            editable={!completed || editing}
+                            keyboardType="decimal-pad"
+                            onChangeText={(value) => updateValue(key, 'rpe', value)}
+                            placeholder="RPE"
+                            placeholderTextColor={colors.inkMuted}
+                            style={styles.effortInput}
+                            value={values[key]?.rpe ?? ''}
+                          />
+                        ) : null}
+                        {showEffortDetails || values[key]?.rir ? (
+                          <TextInput
+                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
+                            editable={!completed || editing}
+                            keyboardType="number-pad"
+                            onChangeText={(value) => updateValue(key, 'rir', value)}
+                            placeholder="RIR"
+                            placeholderTextColor={colors.inkMuted}
+                            style={styles.effortInput}
+                            value={values[key]?.rir ?? ''}
+                          />
+                        ) : null}
+                        {showAllSets ? (
+                          <Button
+                            label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
+                            accessibilityLabel={`${completed ? (editing ? 'Save' : 'Edit') : 'Complete'} ${exerciseName} set ${workoutSet.setNumber}`}
+                            variant={completed && !editing ? 'secondary' : 'primary'}
+                            loading={savingSetKey === key}
+                            onPress={
+                              completed && !editing
+                                ? () => setEditingSetKey(key)
+                                : () => handleCompleteSet(workoutExercise, workoutSet.setNumber)
+                            }
+                            style={styles.completeButton}
+                          />
+                        ) : null}
+                      </View>
+                    );
+                  })}
+              </View>
+            </Card>
+          );
+        })}
+
+      {showAllSets ? (
+        <>
+          <Card tone="lavender">
+            <Text variant="h2" accessibilityRole="header">
+              {focus
+                ? `${formatExerciseName(focus.exercise.exerciseId, availableExercises)} · set ${focus.set.setNumber} of ${focus.exercise.sets.length}`
+                : 'All planned sets saved'}
+            </Text>
+            <Text variant="small">
+              {focus
+                ? `Target: ${targetSummary(targetOverrides[focus.exercise.id] ?? focus.set.target)}`
+                : 'Finish when ready, or review your saved results.'}
+            </Text>
+            <Text variant="small" tone="muted">
+              Suggested values are not measurements. Edit the fields to match what you actually did,
+              then tap Complete to confirm that result.
+            </Text>
+            {previousResult ? (
+              <Text variant="small">
+                Previous completed session · set {previousResult.setNumber}:{' '}
+                {targetSummary({
+                  reps: previousResult.reps,
+                  durationSeconds: previousResult.durationSeconds,
+                  distanceMeters: previousResult.distanceMeters,
+                })}
+                {previousResult.load !== undefined
+                  ? ` · load ${previousResult.load} (saved units)`
+                  : ''}{' '}
+                · {new Date(previousResult.completedAt).toLocaleDateString()}
+              </Text>
+            ) : null}
+            {focus && targetReasons[focus.exercise.id] ? (
+              <>
+                <Button
+                  label={showTargetReason ? 'Hide target explanation' : 'Why this target?'}
+                  variant="ghost"
+                  onPress={() => setShowTargetReason((value) => !value)}
+                />
+                {showTargetReason ? (
+                  <Text variant="small">{targetReasons[focus.exercise.id]}</Text>
+                ) : null}
+              </>
+            ) : null}
+          </Card>
+        </>
+      ) : null}
+      <Button
+        label={showAllSets ? 'Focus on current set' : 'Review all sets and adjustments'}
+        variant="secondary"
+        onPress={() => setShowAllSets((value) => !value)}
+      />
+      {!allSetsComplete ? (
+        <Button label="Discomfort — stop session" variant="ghost" onPress={handleDiscomfortStop} />
+      ) : null}
+      {showAllSets ? (
+        <>
+          <WorkoutPreflight
+            workout={activeWorkout}
+            availableEquipmentIds={availableEquipmentIds}
+            hasLocalDatabase={database !== null}
+            readiness={readiness}
+            saving={readinessSaving}
+            onReadinessChange={(nextReadiness) => void handleReadinessChange(nextReadiness)}
+          />
+          <Card tone={database ? 'mint' : 'yellow'} style={styles.localFirstCard}>
+            <View style={styles.localFirstHeader}>
+              <Ionicons
+                name={database ? 'phone-portrait-outline' : 'desktop-outline'}
+                size={22}
+                color={colors.ink}
+              />
+              <Text variant="smallMedium">{database ? 'Saved on this device' : 'Web preview'}</Text>
+            </View>
+            <Text variant="small" tone="muted" style={styles.localFirstText}>
+              {database
+                ? 'Your sets save on this device, even when you are offline.'
+                : 'This preview keeps your entries only while this browser session is open.'}
+            </Text>
+          </Card>
+        </>
+      ) : null}
       <Button
         label={showEffortDetails ? 'Hide optional effort fields' : 'Show optional effort fields'}
         variant="ghost"
@@ -1077,275 +1587,35 @@ export default function ActiveWorkoutScreen() {
         </Text>
       ) : null}
 
-      {activeWorkout.exercises.map((workoutExercise) => {
-        const exerciseName = formatExerciseName(workoutExercise.exerciseId, availableExercises);
-        const sourceExercise = availableExercises.find(
-          (candidate) => candidate.id === workoutExercise.exerciseId,
-        );
-        const substitutions = sourceExercise
-          ? findExerciseSubstitutions(
-              sourceExercise,
-              availableExercises.filter((candidate) =>
-                isExerciseAvailableToUser(candidate, __DEV__),
-              ),
-              availableEquipmentIds,
-              3,
-            )
-          : [];
-
-        return (
-          <Card key={workoutExercise.id} tone="white" style={styles.exerciseCard}>
-            <View style={styles.exerciseHeader}>
-              <View style={styles.exerciseNumber}>
-                <Text variant="smallMedium">{workoutExercise.order}</Text>
-              </View>
-              <View style={styles.exerciseCopy}>
-                <Text variant="h3">{exerciseName}</Text>
-                <Text variant="small" tone="muted">
-                  {workoutExercise.sets.length} sets ·{' '}
-                  {targetSummary(workoutExercise.sets[0]?.target)}
-                </Text>
-              </View>
-              {substitutions.length > 0 ? (
-                <Button
-                  label={substitutionFor === workoutExercise.id ? 'Close' : 'Substitute'}
-                  variant="ghost"
-                  onPress={() =>
-                    setSubstitutionFor((current) =>
-                      current === workoutExercise.id ? null : workoutExercise.id,
-                    )
-                  }
-                  accessibilityHint="Available before completing a set so workout history stays clear"
-                  style={styles.substitutionToggle}
-                />
-              ) : null}
-            </View>
-            <View
-              style={styles.exerciseMetaRow}
-              accessibilityLabel={`${formatSection(workoutExercise.section)}${workoutExercise.groupType ? `. ${formatGroupType(workoutExercise.groupType)}` : ''}`}
-            >
-              <Chip label={formatSection(workoutExercise.section)} />
-              {workoutExercise.groupType ? (
-                <Chip label={formatGroupType(workoutExercise.groupType)} selected />
-              ) : null}
-            </View>
-            <View style={styles.exerciseControls}>
-              <Text variant="caption" tone="muted">
-                Adjust this session
-              </Text>
-              <View style={styles.exerciseActionRow}>
-                <IconButton
-                  icon={
-                    <Ionicons
-                      name="chevron-up-outline"
-                      size={18}
-                      color={
-                        revisionSaving || workoutExercise.order === 1 ? colors.inkMuted : colors.ink
-                      }
-                    />
-                  }
-                  label={`Move ${exerciseName} up`}
-                  disabled={revisionSaving || workoutExercise.order === 1}
-                  onPress={() => handleMoveExercise(workoutExercise, -1)}
-                  style={styles.exerciseAction}
-                />
-                <IconButton
-                  icon={
-                    <Ionicons
-                      name="chevron-down-outline"
-                      size={18}
-                      color={
-                        revisionSaving || workoutExercise.order === activeWorkout.exercises.length
-                          ? colors.inkMuted
-                          : colors.ink
-                      }
-                    />
-                  }
-                  label={`Move ${exerciseName} down`}
-                  disabled={
-                    revisionSaving || workoutExercise.order === activeWorkout.exercises.length
-                  }
-                  onPress={() => handleMoveExercise(workoutExercise, 1)}
-                  style={styles.exerciseAction}
-                />
-                <Text
-                  variant="caption"
-                  accessibilityLabel={`${workoutExercise.sets.length} sets for ${exerciseName}`}
-                  style={styles.setCount}
-                >
-                  {workoutExercise.sets.length} sets
-                </Text>
-                <IconButton
-                  icon={
-                    <Ionicons
-                      name="add-outline"
-                      size={18}
-                      color={
-                        revisionSaving || workoutExercise.sets.length >= 20
-                          ? colors.inkMuted
-                          : colors.ink
-                      }
-                    />
-                  }
-                  label={`Add a set to ${exerciseName}`}
-                  disabled={revisionSaving || workoutExercise.sets.length >= 20}
-                  onPress={() => handleAddSet(workoutExercise)}
-                  style={styles.exerciseAction}
-                />
-              </View>
-            </View>
-            {workoutExercise.notes ? (
-              <Card
-                tone="lavender"
-                style={styles.exerciseNote}
-                accessibilityLabel={`Exercise note for ${exerciseName}: ${workoutExercise.notes}`}
-              >
-                <Text variant="caption" tone="muted">
-                  EXERCISE NOTE
-                </Text>
-                <Text variant="small" style={styles.exerciseNoteCopy}>
-                  {workoutExercise.notes}
-                </Text>
-              </Card>
-            ) : null}
-            {substitutionFor === workoutExercise.id ? (
-              <Card tone="lavender" style={styles.substitutionCard}>
-                <Text variant="smallMedium">Equipment-compatible options</Text>
-                <Text variant="caption" tone="muted">
-                  Choose before completing this movement. The current set prescription is kept.
-                </Text>
-                {substitutions.map((candidate) => (
-                  <Button
-                    key={candidate.id}
-                    label={`Use ${candidate.name}`}
-                    variant="ghost"
-                    onPress={() => void handleSubstituteExercise(workoutExercise, candidate.id)}
-                    style={styles.substitutionButton}
-                  />
-                ))}
-              </Card>
-            ) : null}
-            <View style={styles.setList}>
-              {workoutExercise.sets.map((workoutSet) => {
-                const key = setKey(workoutExercise.id, workoutSet.setNumber);
-                const completed = completedSetKeys.has(key);
-                const editing = editingSetKey === key;
-                return (
-                  <View key={workoutSet.id} style={styles.setRow}>
-                    <View style={styles.setLabel}>
-                      <Text variant="smallMedium">Set {workoutSet.setNumber}</Text>
-                      <Text variant="caption" tone="muted">
-                        {targetSummary(targetOverrides[workoutExercise.id] ?? workoutSet.target)}
-                      </Text>
-                    </View>
-                    {showsLoad(
-                      workoutExercise.exerciseId,
-                      workoutSet.target,
-                      availableExercises,
-                    ) ? (
-                      <TextInput
-                        accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} load`}
-                        editable={!completed || editing}
-                        keyboardType="decimal-pad"
-                        onChangeText={(value) => updateValue(key, 'load', value)}
-                        placeholder="Load"
-                        placeholderTextColor={colors.inkMuted}
-                        style={styles.valueInput}
-                        value={values[key]?.load ?? ''}
-                      />
-                    ) : null}
-                    {showsReps(
-                      workoutExercise.exerciseId,
-                      workoutSet.target,
-                      availableExercises,
-                    ) ? (
-                      <TextInput
-                        accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} reps`}
-                        editable={!completed || editing}
-                        keyboardType="number-pad"
-                        onChangeText={(value) => updateValue(key, 'reps', value)}
-                        placeholder="Reps"
-                        placeholderTextColor={colors.inkMuted}
-                        style={styles.valueInput}
-                        value={values[key]?.reps ?? ''}
-                      />
-                    ) : null}
-                    {showsDuration(
-                      workoutExercise.exerciseId,
-                      workoutSet.target,
-                      availableExercises,
-                    ) ? (
-                      <TextInput
-                        accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} duration in seconds`}
-                        editable={!completed || editing}
-                        keyboardType="number-pad"
-                        onChangeText={(value) => updateValue(key, 'duration', value)}
-                        placeholder="Seconds"
-                        placeholderTextColor={colors.inkMuted}
-                        style={styles.valueInput}
-                        value={values[key]?.duration ?? ''}
-                      />
-                    ) : null}
-                    {showsDistance(
-                      workoutExercise.exerciseId,
-                      workoutSet.target,
-                      availableExercises,
-                    ) ? (
-                      <TextInput
-                        accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} distance in meters`}
-                        editable={!completed || editing}
-                        keyboardType="decimal-pad"
-                        onChangeText={(value) => updateValue(key, 'distance', value)}
-                        placeholder="Meters"
-                        placeholderTextColor={colors.inkMuted}
-                        style={styles.valueInput}
-                        value={values[key]?.distance ?? ''}
-                      />
-                    ) : null}
-                    {showEffortDetails || values[key]?.rpe ? (
-                      <TextInput
-                        accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
-                        editable={!completed || editing}
-                        keyboardType="decimal-pad"
-                        onChangeText={(value) => updateValue(key, 'rpe', value)}
-                        placeholder="RPE"
-                        placeholderTextColor={colors.inkMuted}
-                        style={styles.effortInput}
-                        value={values[key]?.rpe ?? ''}
-                      />
-                    ) : null}
-                    {showEffortDetails || values[key]?.rir ? (
-                      <TextInput
-                        accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
-                        editable={!completed || editing}
-                        keyboardType="number-pad"
-                        onChangeText={(value) => updateValue(key, 'rir', value)}
-                        placeholder="RIR"
-                        placeholderTextColor={colors.inkMuted}
-                        style={styles.effortInput}
-                        value={values[key]?.rir ?? ''}
-                      />
-                    ) : null}
-                    <Button
-                      label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
-                      accessibilityLabel={`${completed ? (editing ? 'Save' : 'Edit') : 'Complete'} ${exerciseName} set ${workoutSet.setNumber}`}
-                      variant={completed && !editing ? 'secondary' : 'primary'}
-                      loading={savingSetKey === key}
-                      onPress={
-                        completed && !editing
-                          ? () => setEditingSetKey(key)
-                          : () => handleCompleteSet(workoutExercise, workoutSet.setNumber)
-                      }
-                      style={styles.completeButton}
-                    />
-                  </View>
-                );
-              })}
-            </View>
-          </Card>
-        );
-      })}
-
+      {lastSavedSet ? (
+        <Card tone="mint">
+          <Text variant="smallMedium">
+            How did {lastSavedSet.name} set {lastSavedSet.number} feel?
+          </Text>
+          <Text variant="caption">
+            Optional self-report saved in your local session note. It does not assign an RPE/RIR
+            score or change targets.
+          </Text>
+          <View>
+            {setDifficultyChoices.map((choice) => (
+              <Button
+                key={choice}
+                label={choice}
+                variant={difficulty === choice ? 'primary' : 'secondary'}
+                selected={difficulty === choice}
+                disabled={difficultySaving}
+                onPress={() => void handleDifficulty(choice)}
+              />
+            ))}
+          </View>
+          {difficulty === 'Too hard' ? (
+            <Text variant="small">
+              One difficult set does not establish a plateau. You can rest, edit your actual result,
+              pause, or save partial work.
+            </Text>
+          ) : null}
+        </Card>
+      ) : null}
       {!allSetsComplete ? (
         <Card tone="yellow" style={styles.partialCard}>
           <Text variant="smallMedium">
@@ -1398,12 +1668,16 @@ export default function ActiveWorkoutScreen() {
       <Button
         label="Finish workout"
         onPress={handleFinishWorkout}
-        disabled={!allSetsComplete}
+        disabled={!allSetsComplete || editingSetKey !== null}
         loading={finishing}
         icon={<Ionicons name="checkmark" size={18} color={colors.white} />}
         style={styles.finishButton}
         accessibilityHint={
-          allSetsComplete ? 'Saves the completed workout locally' : 'Complete every set first'
+          editingSetKey !== null
+            ? 'Save your edited set first'
+            : allSetsComplete
+              ? 'Saves the completed workout locally'
+              : 'Complete every set first'
         }
       />
     </Screen>
@@ -1427,12 +1701,12 @@ function WorkoutPreflight({
   saving,
   onReadinessChange,
 }: WorkoutPreflightProps) {
-  const requiredEquipment = equipmentCatalog.filter((equipment) =>
-    workout.equipmentIds.includes(equipment.id),
+  const requiredEquipment = equipmentCatalog.filter(
+    (equipment) =>
+      workout.equipmentIds.includes(equipment.id) && equipment.id !== 'equipment-bodyweight',
   );
-  const missingEquipment = requiredEquipment.filter(
-    (equipment) => !availableEquipmentIds.includes(equipment.id),
-  );
+  const missingIds = missingEquipment(workout.equipmentIds, availableEquipmentIds);
+  const missingGear = requiredEquipment.filter((equipment) => missingIds.includes(equipment.id));
   const readinessOptions: readonly { value: WorkoutReadiness; label: string }[] = [
     { value: 'ready', label: 'Ready to train' },
     { value: 'limited', label: 'Limited today' },
@@ -1461,9 +1735,9 @@ function WorkoutPreflight({
       <Text variant="small" tone="muted">
         {requiredEquipment.length === 0
           ? 'No equipment required.'
-          : missingEquipment.length === 0
+          : missingGear.length === 0
             ? `Ready with ${requiredEquipment.map((equipment) => equipment.name).join(', ')}.`
-            : `Missing ${missingEquipment.map((equipment) => equipment.name).join(', ')}. Use a substitution below if needed.`}
+            : `Missing ${missingGear.map((equipment) => equipment.name).join(', ')}. Use a substitution below if needed.`}
       </Text>
       <Text variant="smallMedium" style={styles.preflightLabel}>
         How are you feeling?

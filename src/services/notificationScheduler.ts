@@ -7,6 +7,8 @@ import type {
   PreferredTrainingTime,
   ProgramVersion,
   TrainingCycle,
+  WorkoutScheduleOverride,
+  WorkoutScheduleSession,
 } from '../domain/types';
 import type { NotificationProvider, ScheduledNotification } from './notifications';
 
@@ -16,11 +18,16 @@ export const managedRestTimerKind = 'shift6-rest-timer';
 export interface RefreshWorkoutReminderScheduleInput {
   userId: string;
   preferences: NotificationPreference;
-  cycle: Pick<TrainingCycle, 'id' | 'programVersionId' | 'currentWeek' | 'status'> | null;
+  cycle: Pick<
+    TrainingCycle,
+    'id' | 'programVersionId' | 'currentWeek' | 'status' | 'startedAt' | 'weeks'
+  > | null;
   programVersion: ProgramVersion | null;
   preferredTrainingTime: PreferredTrainingTime;
   now: Date;
   lookaheadDays?: number;
+  overrides?: readonly WorkoutScheduleOverride[];
+  sessions?: readonly WorkoutScheduleSession[];
 }
 
 export type WorkoutReminderScheduleOutcome =
@@ -84,6 +91,8 @@ export async function refreshWorkoutReminderSchedule(
     preferredTrainingTime: input.preferredTrainingTime,
     now: input.now,
     lookaheadDays: input.lookaheadDays,
+    overrides: input.overrides,
+    sessions: input.sessions,
   });
   const createdIdentifiers: string[] = [];
 

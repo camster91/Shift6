@@ -72,6 +72,8 @@ import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 import { runtimeConfig } from '../src/config/env';
+import { PlanTextImport } from '../src/components/PlanTextImport';
+import { appendPlanText } from '../src/domain/planTextImport';
 
 const starterPlank = foundationalExercises.find((exercise) => exercise.id === 'exercise-plank');
 const demoCatalogueEntry = programLibrary.find((entry) => entry.program.id === demoProgram.id);
@@ -702,6 +704,27 @@ export default function ProgramBuilderScreen() {
             workout={workout}
             onChange={(metadata) => {
               updateDraftVersion((version) => updateWorkoutMetadata(version, workout.id, metadata));
+            }}
+          />
+          <PlanTextImport
+            available={[...foundationalExercises, ...Object.values(customExercises)].filter(
+              (exercise) => isExerciseAvailableToUser(exercise, __DEV__),
+            )}
+            workoutTitle={workout.title}
+            onApply={(text) => {
+              if (!canMutateDraft())
+                throw new Error('Wait for your private draft to finish loading.');
+              const imported = appendPlanText(
+                draft.program,
+                draft.version,
+                userId,
+                workout.id,
+                text,
+                [...foundationalExercises, ...Object.values(customExercises)].filter((exercise) =>
+                  isExerciseAvailableToUser(exercise, __DEV__),
+                ),
+              );
+              updateDraftVersion(() => imported);
             }}
           />
           {workout.exercises.length === 0 ? (

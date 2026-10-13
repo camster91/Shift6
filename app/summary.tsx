@@ -1,6 +1,8 @@
 import { ShiftArtwork } from '../src/components/artwork/ShiftArtwork';
 import { shiftArtwork } from '../src/design/artwork';
 import { router, useLocalSearchParams } from 'expo-router';
+import { runtimeConfig } from '../src/config/env';
+import { summaryVolumeLabel } from '../src/domain/summaryVolume';
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
@@ -363,8 +365,11 @@ export default function WorkoutSummaryScreen() {
         style={styles.actionButton}
       />
       <Text variant="caption" tone="muted" style={styles.persistenceNote}>
-        Your check-in is saved on this device and queued for sync when an account backend is
-        connected.
+        {runtimeConfig.releaseMode === 'guest-only'
+          ? saved
+            ? 'Check-in saved on this device. Cloud sync is not enabled.'
+            : 'Save your check-in to keep it on this device. Cloud sync is not enabled.'
+          : 'Your saved check-in is kept on this device and queued for sync when an account backend is connected.'}
       </Text>
     </Screen>
   );
@@ -427,7 +432,6 @@ function buildSummaryFacts(
   const durationMinutes = session?.completedAt
     ? Math.max(0, (Date.parse(session.completedAt) - Date.parse(session.startedAt)) / 60_000)
     : undefined;
-  const volume = sets.reduce((total, set) => total + (set.load ?? 0) * (set.reps ?? 0), 0);
   const cardioMinutes =
     workout.focus === 'cardio'
       ? sets.reduce((total, set) => total + (set.durationSeconds ?? 0), 0) / 60
@@ -439,7 +443,7 @@ function buildSummaryFacts(
       durationMinutes === undefined
         ? `${workout.estimatedDurationMinutes} min target`
         : `${Math.round(durationMinutes)} min`,
-    volumeLabel: volume > 0 ? `${Math.round(volume).toLocaleString()} lb-reps` : 'Not measured',
+    volumeLabel: summaryVolumeLabel(sets),
     cardioLabel: cardioMinutes > 0 ? `${Math.round(cardioMinutes)} min` : '—',
   };
 }

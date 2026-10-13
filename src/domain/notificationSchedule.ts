@@ -1,10 +1,12 @@
-import { getDayOfWeek } from './home';
+import { buildCycleSchedule, formatDateKey, parseDateKey, addDaysToDateKey } from './calendar';
 import type {
   ISODateString,
   NotificationPreference,
   PreferredTrainingTime,
   ProgramVersion,
   TrainingCycle,
+  WorkoutScheduleOverride,
+  WorkoutScheduleSession,
 } from './types';
 
 export const workoutReminderLookaheadDays = 7;
@@ -34,11 +36,16 @@ export interface WorkoutReminderSchedule {
 export interface BuildWorkoutReminderScheduleInput {
   userId: string;
   preferences: Pick<NotificationPreference, 'workoutReminders'>;
-  cycle: Pick<TrainingCycle, 'id' | 'programVersionId' | 'currentWeek' | 'status'>;
+  cycle: Pick<
+    TrainingCycle,
+    'id' | 'programVersionId' | 'currentWeek' | 'status' | 'startedAt' | 'weeks'
+  >;
   programVersion: ProgramVersion;
   preferredTrainingTime: PreferredTrainingTime;
   now: Date;
   lookaheadDays?: number;
+  overrides?: readonly WorkoutScheduleOverride[];
+  sessions?: readonly WorkoutScheduleSession[];
 }
 
 /**
@@ -54,6 +61,8 @@ export function buildWorkoutReminderSchedule({
   preferredTrainingTime,
   now,
   lookaheadDays = workoutReminderLookaheadDays,
+  overrides = [],
+  sessions = [],
 }: BuildWorkoutReminderScheduleInput): WorkoutReminderSchedule[] {
   if (!preferences.workoutReminders || cycle.status !== 'active') return [];
   if (!userId.trim()) throw new Error('A user ID is required for workout reminders.');
@@ -66,48 +75,41 @@ export function buildWorkoutReminderSchedule({
   if (Number.isNaN(now.getTime())) throw new Error('A valid date is required for reminders.');
 
   const clock = preferredTrainingTimeClock[preferredTrainingTime];
-  const firstDay = new Date(now);
-  firstDay.setHours(0, 0, 0, 0);
+  const firstDay = formatDateKey(now);
+  const endDay = addDaysToDateKey(firstDay, lookaheadDays);
   const schedules: WorkoutReminderSchedule[] = [];
-
-  for (let dayOffset = 0; dayOffset < lookaheadDays; dayOffset += 1) {
-    const date = new Date(firstDay);
-    date.setDate(firstDay.getDate() + dayOffset);
-    const dayOfWeek = getDayOfWeek(date);
-    const scheduledDate = new Date(date);
+  const occurrences = buildCycleSchedule(
+    cycle,
+    programVersion,
+    overrides.filter((item) => item.userId === userId),
+    sessions,
+    now,
+  );
+  for (const occurrence of occurrences) {
+    if (
+      occurrence.cycleWeek !== cycle.currentWeek ||
+      !['current', 'upcoming'].includes(occurrence.status) ||
+      occurrence.scheduledDate < firstDay ||
+      occurrence.scheduledDate >= endDay
+    )
+      continue;
+    const scheduledDate = parseDateKey(occurrence.scheduledDate);
     scheduledDate.setHours(clock.hour, clock.minute, 0, 0);
     if (scheduledDate.getTime() <= now.getTime()) continue;
-
-    const workouts = programVersion.workouts
-      .filter((workout) => workout.dayOfWeek === dayOfWeek)
-      .sort(
-        (left, right) =>
-          Number(Boolean(left.isOptional)) - Number(Boolean(right.isOptional)) ||
-          left.id.localeCompare(right.id),
-      );
-
-    for (const workout of workouts) {
-      const dateKey = formatDateKey(scheduledDate);
-      schedules.push({
-        id: `shift6:workout-reminder:${userId}:${cycle.id}:${cycle.currentWeek}:${workout.id}:${dateKey}`,
-        kind: 'workout-reminder',
-        userId,
-        cycleId: cycle.id,
-        cycleWeek: cycle.currentWeek,
-        workoutId: workout.id,
-        title: `${workout.title} is coming up`,
-        body: `Week ${cycle.currentWeek} · ${workout.estimatedDurationMinutes} min · Tap to get started.`,
-        deepLink: `/workout?workoutId=${encodeURIComponent(workout.id)}`,
-        scheduledFor: scheduledDate.toISOString(),
-      });
-    }
+    const workout = occurrence.workout;
+    schedules.push({
+      id: `shift6:workout-reminder:${userId}:${cycle.id}:${occurrence.cycleWeek}:${workout.id}:${occurrence.scheduledDate}`,
+      kind: 'workout-reminder',
+      userId,
+      cycleId: cycle.id,
+      cycleWeek: occurrence.cycleWeek,
+      workoutId: workout.id,
+      title: `${workout.title} is coming up`,
+      body: `Training week ${occurrence.cycleWeek} · ${workout.estimatedDurationMinutes} min · Tap to view your session.`,
+      deepLink: `/workout?workoutId=${encodeURIComponent(workout.id)}`,
+      scheduledFor: scheduledDate.toISOString(),
+    });
   }
 
   return schedules;
-}
-
-function formatDateKey(date: Date): string {
-  return [date.getFullYear(), date.getMonth() + 1, date.getDate()]
-    .map((part) => String(part).padStart(2, '0'))
-    .join('-');
 }

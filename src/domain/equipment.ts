@@ -38,7 +38,9 @@ export function missingEquipment(
   availableEquipmentIds: readonly string[],
 ): string[] {
   const available = new Set(availableEquipmentIds);
-  return requiredEquipmentIds.filter((id) => !available.has(id));
+  // Bodyweight is a no-gear marker, not something the user must own. This says
+  // nothing about physical ability or suitability for the movement.
+  return requiredEquipmentIds.filter((id) => id !== 'equipment-bodyweight' && !available.has(id));
 }
 
 export function isExerciseCompatible(

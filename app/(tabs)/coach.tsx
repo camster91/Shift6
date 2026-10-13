@@ -20,11 +20,18 @@ import {
   updateCoachProposalStatus,
 } from '../../src/db/coachRepository';
 import { getCoachPrivacyPreference } from '../../src/db/coachPrivacyRepository';
-import { getActiveTrainingCycle } from '../../src/db/cycleRepository';
 import { useLocalDatabase } from '../../src/db/context';
 import { getCycleProgressSummary } from '../../src/db/progressRepository';
-import { getUserProgramVersion } from '../../src/db/programRepository';
-import { getOnboardingProfile } from '../../src/db/profileRepository';
+import { CoachWorkflowActions } from '../../src/components/CoachWorkflowActions';
+import {
+  loadCoachNavigationSnapshot,
+  resolveCoachNavigation,
+  type CoachNavigationSnapshot,
+} from '../../src/services/coachNavigation';
+import type {
+  CoachNavigationCapability,
+  CoachWorkoutSelection,
+} from '../../src/domain/coachCapabilities';
 import type { CycleProgressSummary } from '../../src/domain/progression';
 import type { CoachContext, CoachMessageResult, CoachTask } from '../../src/services/contracts';
 import type {
@@ -62,6 +69,10 @@ export default function CoachScreen() {
   const [question, setQuestion] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [reloadIndex, setReloadIndex] = useState(0);
+  const [navigationSnapshot, setNavigationSnapshot] = useState<CoachNavigationSnapshot | null>(
+    null,
+  );
+  const [navigationBusy, setNavigationBusy] = useState(false);
   const trackedProposalIds = useRef(new Set<string>());
   const currentIdentity = useRef({ database, userId });
   currentIdentity.current = { database, userId };
@@ -91,6 +102,7 @@ export default function CoachScreen() {
   useEffect(() => {
     requestId.current += 1;
     setLoadedFor(null);
+    setNavigationSnapshot(null);
     setActiveCycle(null);
     setActiveProgram(null);
     setActiveProgramVersion(null);
@@ -98,6 +110,7 @@ export default function CoachScreen() {
     setCoachMessage(null);
     setProposals([]);
     setBusyProposalId(null);
+    setNavigationBusy(false);
     setQuestion('');
     setError(null);
     setCoachLoading(false);
@@ -111,24 +124,22 @@ export default function CoachScreen() {
     setLoading(true);
     void (async () => {
       try {
-        const cycle = await getActiveTrainingCycle(database, userId);
-        const snapshot = cycle
-          ? await getUserProgramVersion(database, userId, cycle.programVersionId)
-          : null;
+        const navigation = await loadCoachNavigationSnapshot(database, userId);
+        const { cycle, snapshot, profile } = navigation;
         const pending = cycle ? await getPendingCoachProposals(database, userId, cycle.id) : [];
-        const profile = await getOnboardingProfile(database, userId);
         const summary =
           cycle && snapshot && profile
             ? await getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle))
             : null;
         if (active) {
+          setNavigationSnapshot(navigation);
           setActiveCycle(cycle);
           setActiveProgram(snapshot?.program ?? null);
           setActiveProgramVersion(snapshot?.version ?? null);
           setProposals(cycle && snapshot && profile && summary ? pending : []);
           setCoachContext(
             cycle && snapshot && profile && summary
-              ? createCoachContext(profile.user, cycle, snapshot.version, summary)
+              ? createCoachContext(profile.user, cycle, navigation.selection, summary)
               : null,
           );
           setLoadedFor({ database, userId });
@@ -149,6 +160,12 @@ export default function CoachScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      // Tabs remain mounted. Immediately invalidate old facts on every return,
+      // then hydrate the current record rather than reusing prior session data.
+      setLoading(true);
+      setCoachContext(null);
+      setNavigationSnapshot(null);
+      setReloadIndex((current) => current + 1);
       setProviderCoachEnabled(false);
 
       if (database) {
@@ -166,6 +183,35 @@ export default function CoachScreen() {
       };
     }, [database, userId]),
   );
+
+  const openWorkflow = async (id: CoachNavigationCapability) => {
+    if (!database || navigationBusy) return;
+    setNavigationBusy(true);
+    setError(null);
+    try {
+      const result = await resolveCoachNavigation(database, userId, id);
+      if (
+        currentIdentity.current.database !== database ||
+        currentIdentity.current.userId !== userId
+      )
+        return;
+      router.push(result.route);
+    } catch (actionError) {
+      if (
+        currentIdentity.current.database === database &&
+        currentIdentity.current.userId === userId
+      )
+        setError(
+          actionError instanceof Error ? actionError.message : 'This local action is unavailable.',
+        );
+    } finally {
+      if (
+        currentIdentity.current.database === database &&
+        currentIdentity.current.userId === userId
+      )
+        setNavigationBusy(false);
+    }
+  };
 
   const decide = async (proposalId: string, status: 'accepted' | 'rejected') => {
     if (!database || !contextReady || busyProposalId) return;
@@ -299,6 +345,13 @@ export default function CoachScreen() {
         {!loading && database ? (
           <Button label="Reload Coach" onPress={() => setReloadIndex((current) => current + 1)} />
         ) : null}
+        {!loading && navigationSnapshot?.owner === userId ? (
+          <CoachWorkflowActions
+            state={navigationSnapshot}
+            busy={navigationBusy}
+            onOpen={(id) => void openWorkflow(id)}
+          />
+        ) : null}
       </Screen>
     );
   }
@@ -312,8 +365,15 @@ export default function CoachScreen() {
         A thoughtful next step.
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
-        Coach guidance will stay grounded in your approved plan and logged training.
+        Coach guidance will stay grounded in your saved plan and logged training.
       </Text>
+      {navigationSnapshot ? (
+        <CoachWorkflowActions
+          state={navigationSnapshot}
+          busy={navigationBusy}
+          onOpen={(id) => void openWorkflow(id)}
+        />
+      ) : null}
 
       <Card tone="lavender" style={styles.noteCard}>
         <View style={styles.noteHeader}>
@@ -497,10 +557,10 @@ function getPlannedWorkoutCount(cycle: TrainingCycle): number {
 function createCoachContext(
   user: User,
   cycle: TrainingCycle,
-  programVersion: ProgramVersion,
+  selection: CoachWorkoutSelection | null,
   summary: CycleProgressSummary,
 ): CoachContext {
-  const workout = programVersion.workouts[0];
+  const workout = selection?.workout;
   return {
     user: {
       id: user.id,
@@ -515,6 +575,7 @@ function createCoachContext(
       status: cycle.status,
     },
     structuredFacts: {
+      workoutAvailable: workout !== undefined,
       workoutTitle: workout?.title ?? 'your next workout',
       workoutFocus: workout?.focus ?? 'training',
       estimatedDurationMinutes: workout?.estimatedDurationMinutes,

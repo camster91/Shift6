@@ -19,7 +19,8 @@ import {
   refreshWorkoutReminderSchedule,
   type WorkoutReminderScheduleResult,
 } from './notificationScheduler';
-import { createSingleFlight } from './syncRuntime';
+import { createTrailingRefresh } from './notificationRefresh';
+import { getWorkoutScheduleOverrides, getWorkoutScheduleSessions } from '../db/calendarRepository';
 import { useCurrentUserId } from './UserIdentityProvider';
 
 const notificationProvider = createExpoNotificationProvider();
@@ -56,11 +57,19 @@ export function NotificationRuntimeProvider({ children }: { children: ReactNode 
       const programVersion = cycle
         ? ((await getUserProgramVersion(database, userId, cycle.programVersionId))?.version ?? null)
         : null;
+      const [overrides, sessions] = cycle
+        ? await Promise.all([
+            getWorkoutScheduleOverrides(database, userId, cycle.id),
+            getWorkoutScheduleSessions(database, cycle.id),
+          ])
+        : [[], []];
       const result = await refreshWorkoutReminderSchedule(notificationProvider, {
         userId,
         preferences,
         cycle,
         programVersion,
+        overrides,
+        sessions,
         preferredTrainingTime: profile?.user.preferredTrainingTime ?? 'morning',
         now: new Date(),
       });
@@ -77,7 +86,7 @@ export function NotificationRuntimeProvider({ children }: { children: ReactNode 
     }
   }, [database, userId]);
 
-  const refreshNow = useMemo(() => createSingleFlight(performRefresh), [performRefresh]);
+  const refreshNow = useMemo(() => createTrailingRefresh(performRefresh), [performRefresh]);
 
   useEffect(() => {
     if (!database) return;

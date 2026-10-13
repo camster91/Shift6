@@ -21,7 +21,7 @@ describe('notification scheduler', () => {
   const input = {
     userId: 'guest-user',
     preferences,
-    cycle: demoCycle,
+    cycle: { ...demoCycle, startedAt: new Date(2026, 8, 14, 12).toISOString() },
     programVersion: demoProgramVersion,
     preferredTrainingTime: 'morning' as const,
     now: new Date(2026, 8, 14, 7, 30),
@@ -167,3 +167,63 @@ function createProvider({
     getLastResponse: async () => null,
   };
 }
+
+test('moves cancel old native reminders and repeated reconciliation retains one pending cue per occurrence', async () => {
+  const pending = new Map<string, LocalNotificationRequest>();
+  const provider: NotificationProvider = {
+    ...createProvider({}),
+    getScheduledNotifications: async () =>
+      Array.from(pending.entries()).map(([identifier, request]) => ({
+        identifier,
+        data: request.data,
+      })),
+    cancelScheduledNotification: async (id) => {
+      pending.delete(id);
+    },
+    scheduleLocalNotification: async (request) => {
+      pending.set(request.identifier, request);
+      return request.identifier;
+    },
+  };
+  const cycle = { ...demoCycle, startedAt: new Date(2026, 8, 14, 12).toISOString() };
+  const input = {
+    userId: 'guest-user',
+    preferences: {
+      userId: 'guest-user',
+      workoutReminders: true,
+      restTimer: false,
+      weeklyReview: false,
+      cycleReview: false,
+      coachMessages: false,
+      updatedAt: cycle.startedAt,
+    },
+    cycle,
+    programVersion: demoProgramVersion,
+    preferredTrainingTime: 'morning' as const,
+    now: new Date(2026, 8, 14, 7),
+  };
+  await refreshWorkoutReminderSchedule(provider, input);
+  const oldId = Array.from(pending.keys()).find((id) => id.endsWith(':2026-09-14'))!;
+  const movedInput = {
+    ...input,
+    overrides: [
+      {
+        id: 'move',
+        userId: 'guest-user',
+        cycleId: cycle.id,
+        cycleWeek: 1,
+        workoutId: demoProgramVersion.workouts[0]!.id,
+        originalDate: '2026-09-14',
+        scheduledDate: '2026-09-15',
+        createdAt: cycle.startedAt,
+        updatedAt: cycle.startedAt,
+      },
+    ],
+  };
+  await refreshWorkoutReminderSchedule(provider, movedInput);
+  expect(pending.has(oldId)).toBe(false);
+  expect(pending.size).toBe(5);
+  const ids = Array.from(pending.keys());
+  await refreshWorkoutReminderSchedule(provider, movedInput);
+  expect(Array.from(pending.keys())).toEqual(ids);
+});

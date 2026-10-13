@@ -5,6 +5,7 @@ import type { CoachProposal, CoachProposalChange } from '../domain/types';
 import { apiProtocolCompatibilityError, apiProtocolRequestHeaders } from './apiProtocol';
 
 const coachFactKeys = new Set([
+  'workoutAvailable',
   'workoutTitle',
   'workoutFocus',
   'estimatedDurationMinutes',

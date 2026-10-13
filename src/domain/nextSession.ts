@@ -79,7 +79,9 @@ export function buildNextSessionTargets(
     const progressionParameters = resolveProgressionParameters(
       progressionRuleIds,
       effectiveStrategy,
-      unitSystem,
+      // Explicit prescription units own numeric increments. Profile units are
+      // presentation preferences and cannot reinterpret imported kg/lb targets.
+      currentTarget.load?.unit ?? unitSystem,
     );
 
     const decision = calculateNextTarget({

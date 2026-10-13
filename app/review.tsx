@@ -280,12 +280,12 @@ export default function CycleReviewScreen() {
       </View>
 
       <Text variant="display" accessibilityRole="header" style={styles.title}>
-        {isComplete ? 'Six weeks, reviewed.' : 'Your next review is taking shape.'}
+        {isComplete ? 'Your training record, reviewed.' : 'Review your training so far.'}
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
         {isComplete
           ? 'Use the record you created to decide what the next block should ask of you.'
-          : 'Complete the six-week block and SHIFT6 will summarize the record before you choose what comes next.'}
+          : 'You can review your saved record and reflect without finishing every workout or taking a performance test.'}
       </Text>
 
       <Card tone={isComplete ? 'mint' : 'lavender'} style={styles.cycleCard}>

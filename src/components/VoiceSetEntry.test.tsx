@@ -29,6 +29,72 @@ function fixture() {
   };
   return { adapter, resolve: (text: string) => resolve(text) };
 }
+
+test.each([
+  ['duration', 'thirty seconds', 'Report hold time in seconds.', { duration: '30' }],
+  [
+    'distance',
+    'five hundred meters',
+    'Report distance in meters, kilometers or miles.',
+    { distance: '500' },
+  ],
+] as const)(
+  'voice guidance and preview use only the %s field for this set',
+  async (field, spoken, guidance, expected) => {
+    const f = fixture(),
+      apply = jest.fn(() => true);
+    const scopedBinding: VoiceSetBinding = {
+      ...binding,
+      allowed: [field],
+      required: [field],
+      loadUnit: 'lb',
+    };
+    const screen = await render(
+      <VoiceSetEntry binding={scopedBinding} adapter={f.adapter} onApply={apply} />,
+    );
+    expect(
+      screen.getByText(`Report actual results, for example “${spoken}”. ${guidance}`),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Load for this set/)).toBeNull();
+    expect(screen.queryByText(/eight reps|forty kilograms|forty pounds/)).toBeNull();
+    await act(async () => {
+      void screen
+        .getByLabelText('Speak a set entry')
+        .props.onStartShouldSetResponder.testOnly_pressabilityConfig()
+        .onPress();
+    });
+    await act(async () => f.resolve(spoken));
+    expect(apply).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Use reviewed values in unsaved set')).toBeEnabled();
+    await fireEvent.press(screen.getByLabelText('Use reviewed values in unsaved set'));
+    expect(apply).toHaveBeenCalledWith(expected, voiceBindingKey(scopedBinding));
+  },
+);
+
+test.each(['kg', 'lb', 'unknown'] as const)(
+  'loaded set instructions disclose %s actual units and include required reps',
+  async (loadUnit) => {
+    const f = fixture(),
+      apply = jest.fn(() => true);
+    const screen = await render(
+      <VoiceSetEntry binding={{ ...binding, loadUnit }} adapter={f.adapter} onApply={apply} />,
+    );
+    const spokenLoad = loadUnit === 'lb' ? 'forty pounds' : 'forty kilograms';
+    expect(
+      screen.getByText(`Report actual results, for example “eight reps, ${spokenLoad}”.`),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        loadUnit === 'unknown'
+          ? 'Load for this set is unknown: report kilograms or pounds explicitly.'
+          : `Load for this set is ${loadUnit}.`,
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Report hold time|Report distance/)).toBeNull();
+    expect(f.adapter.listen).not.toHaveBeenCalled();
+    expect(apply).not.toHaveBeenCalled();
+  },
+);
 test('transcript does not apply automatically; ambiguity requires correction and repeat callback applies once', async () => {
   const f = fixture(),
     apply = jest.fn(() => true);

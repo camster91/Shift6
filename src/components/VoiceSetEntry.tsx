@@ -59,6 +59,23 @@ export function VoiceSetEntry({
     return () => subscription.remove();
   }, [adapter]);
   const draft = preview ? parseVoiceSet(preview.text, binding) : null;
+  const examples = {
+    reps: 'eight reps',
+    load: binding.loadUnit === 'lb' ? 'forty pounds' : 'forty kilograms',
+    duration: 'thirty seconds',
+    distance: 'five hundred meters',
+    rpe: 'RPE seven',
+    rir: 'two reps left',
+  };
+  const exampleFields = [
+    ...new Set([
+      ...binding.required.filter((field) => binding.allowed.includes(field)),
+      ...binding.allowed.filter((field) =>
+        ['reps', 'load', 'duration', 'distance'].includes(field),
+      ),
+    ]),
+  ];
+  const example = exampleFields.map((field) => examples[field]).join(', ');
   return (
     <Card>
       <Text variant="h3">Voice set entry</Text>
@@ -67,13 +84,21 @@ export function VoiceSetEntry({
         values, then use the usual Complete or Save correction control.
       </Text>
       <Text>
-        Say explicit values such as “eight reps, forty kilograms, two reps left”. Holds need
-        seconds; distances need meters, kilometers or miles. Load for this set is{' '}
-        {binding.loadUnit === 'unknown'
-          ? 'unknown: report kilograms or pounds explicitly'
-          : binding.loadUnit}
-        .
+        Report actual results{example ? `, for example “${example}”` : ' with explicit values'}.
+        {binding.allowed.includes('duration') ? ' Report hold time in seconds.' : ''}
+        {binding.allowed.includes('distance')
+          ? ' Report distance in meters, kilometers or miles.'
+          : ''}
       </Text>
+      {binding.allowed.includes('load') ? (
+        <Text>
+          Load for this set is{' '}
+          {binding.loadUnit === 'unknown'
+            ? 'unknown: report kilograms or pounds explicitly'
+            : binding.loadUnit}
+          .
+        </Text>
+      ) : null}
       <Button
         label={listening ? 'Listening on device…' : 'Speak a set entry'}
         disabled={listening || disabled}

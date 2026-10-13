@@ -63,6 +63,7 @@ describe('exportLocalUserData', () => {
         if (sql.includes('notification_preferences')) return [];
         if (sql.includes('cycle_reviews')) return [];
         if (sql.includes('workout_schedule_overrides')) return [];
+        if (sql.includes('schedule_baselines') || sql.includes('schedule_revisions')) return [];
         return [{ id: 'proposal-1', user_id: 'guest-user' }];
       },
     } as unknown as SQLiteDatabase;
@@ -70,8 +71,10 @@ describe('exportLocalUserData', () => {
     await expect(
       exportLocalUserData(database, 'guest-user', '2026-09-14T12:00:00.000Z'),
     ).resolves.toEqual({
-      schemaVersion: 14,
+      schemaVersion: 15,
       completedSetLoadProvenance: [],
+      scheduleBaselines: [],
+      scheduleRevisions: [],
       workoutDraftLoadUnits: [],
       cycleLifecycleEvents: [],
       coachMemoryPreferences: [],
@@ -248,9 +251,9 @@ describe('deleteLocalUserData', () => {
 
     await expect(deleteLocalUserData(database, 'guest-user')).resolves.toBeUndefined();
 
-    expect(calls).toHaveLength(31);
-    expect(calls.slice(0, 7).every((call) => call.params[0] === 'guest-user')).toBe(true);
-    calls.splice(0, 7);
+    expect(calls).toHaveLength(33);
+    expect(calls.slice(0, 9).every((call) => call.params[0] === 'guest-user')).toBe(true);
+    calls.splice(0, 9);
     expect(calls[0]?.sql).toContain('DELETE FROM sync_outbox');
     expect(calls[0]?.params.every((param) => param === 'guest-user')).toBe(true);
     expect(calls[1]?.sql).toContain('DELETE FROM notification_preferences');
@@ -369,7 +372,7 @@ describe('deleteLocalUserData', () => {
       }
 
       const exportData = await exportLocalUserData(database, 'owner-1', '2026-09-24');
-      expect(exportData.schemaVersion).toBe(14);
+      expect(exportData.schemaVersion).toBe(15);
       expect(exportData.shifts.map((row) => row.id)).toEqual(['shift-owner-1']);
       expect(exportData.shiftProtocols.map((row) => row.shift_id)).toEqual(['shift-owner-1']);
       expect(exportData.shiftObservations.map((row) => row.id)).toEqual(['observation-owner-1']);

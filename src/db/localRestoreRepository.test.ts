@@ -158,15 +158,15 @@ test('legacy 12 remains strict and normalizes empty schema 13 sections', () => {
   legacy.coachMemoryFacts = [];
   expect(() => validateLocalBackup(serialized(legacy))).toThrow();
   const future = fixture13();
-  future.schemaVersion = 15 as 13;
-  expect(() => validateLocalBackup(serialized(future))).toThrow('schemas 12, 13 and 14');
+  future.schemaVersion = 16 as 13;
+  expect(() => validateLocalBackup(serialized(future))).toThrow('schemas 12, 13, 14 and 15');
 });
 
 test('schema 13 requires additions and restores all five tables with disabled memory and draft ownership', async () => {
   const data = fixture13();
   await restoreLocalBackup(db, 'guest-user', serialized(data));
   const exported = await exportLocalUserData(db, 'guest-user', stamp);
-  expect(exported.schemaVersion).toBe(14);
+  expect(exported.schemaVersion).toBe(15);
   expect(exported.coachMemoryPreferences?.[0]?.enabled).toBe(0);
   expect(
     JSON.parse(String(exported.builderRecoveryDrafts?.[0]?.snapshot_json)).program.ownerId,
@@ -206,7 +206,12 @@ test('additive migration24 preserves actual schema12 rows from a migration23 dat
     }
     old.exec('COMMIT;');
     const snapshots = Object.entries(restoreTables)
-      .filter(([key]) => !(key in persistenceSections) && !(key in loadProvenanceSections))
+      .filter(
+        ([key]) =>
+          !(key in persistenceSections) &&
+          !(key in loadProvenanceSections) &&
+          !['scheduleBaselines', 'scheduleRevisions'].includes(key),
+      )
       .map(([, table]) => [table, old.prepare(`SELECT * FROM ${table}`).all()] as const);
     for (const statement of MIGRATIONS.find((entry) => entry.version === 24)!.statements)
       old.exec(statement);

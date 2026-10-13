@@ -34,7 +34,13 @@ export interface ScheduleRevisionContext {
 }
 
 function requireId(value: string): void {
-  if (typeof value !== 'string' || !value.trim()) throw new Error('A schedule binding is missing.');
+  if (
+    typeof value !== 'string' ||
+    !value.trim() ||
+    value.length > 1024 ||
+    /[\u0000-\u001f]/.test(value)
+  )
+    throw new Error('A schedule binding is missing or invalid.');
 }
 
 function requireInstant(value: string): void {
@@ -127,6 +133,7 @@ export function projectScheduleRevisions(
     requireDate(revision.effectiveDate);
     if (
       ids.has(revision.operationId) ||
+      revision.cycleWeek > context.cycle.currentWeek ||
       revision.previousRevisionId !== (previous?.operationId ?? null) ||
       revision.recordedAt < context.cycle.startedAt ||
       (previous && revision.recordedAt < previous.recordedAt) ||

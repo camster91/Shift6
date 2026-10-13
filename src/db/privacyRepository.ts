@@ -1,5 +1,6 @@
 import { loadProvenanceSections } from '../domain/loadUnits';
 import { persistenceSections } from '../domain/localPersistence';
+import { schedulePersistenceSections } from '../domain/scheduleSnapshot';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export type LocalDataExportSectionKey =
@@ -28,7 +29,9 @@ export interface LocalDataExportSummary {
 }
 
 export interface LocalDataExport {
-  schemaVersion: 12 | 13 | 14;
+  schemaVersion: 12 | 13 | 14 | 15;
+  scheduleBaselines?: Record<string, unknown>[];
+  scheduleRevisions?: Record<string, unknown>[];
   completedSetLoadProvenance?: Record<string, unknown>[];
   workoutDraftLoadUnits?: Record<string, unknown>[];
   cycleLifecycleEvents?: Record<string, unknown>[];
@@ -85,7 +88,11 @@ async function exportLocalUserDataInTransaction(
   exportedAt: string,
 ): Promise<LocalDataExport> {
   const additions: Record<string, Record<string, unknown>[]> = {};
-  for (const [key, table] of Object.entries({ ...persistenceSections, ...loadProvenanceSections }))
+  for (const [key, table] of Object.entries({
+    ...persistenceSections,
+    ...loadProvenanceSections,
+    ...schedulePersistenceSections,
+  }))
     additions[key] = await database.getAllAsync(
       `SELECT * FROM ${table} WHERE user_id=? ORDER BY rowid;`,
       userId,
@@ -254,7 +261,7 @@ async function exportLocalUserDataInTransaction(
   });
 
   return {
-    schemaVersion: 14,
+    schemaVersion: 15,
     exportedAt,
     userId,
     summary,
@@ -340,7 +347,9 @@ export function buildLocalDataExportSummary(
         (data.cycleLifecycleEvents?.length ?? 0) +
         (data.setFeedbackEvents?.length ?? 0) +
         (data.completedSetLoadProvenance?.length ?? 0) +
-        (data.workoutDraftLoadUnits?.length ?? 0),
+        (data.workoutDraftLoadUnits?.length ?? 0) +
+        (data.scheduleBaselines?.length ?? 0) +
+        (data.scheduleRevisions?.length ?? 0),
     },
     {
       key: 'programsAndExercises',
@@ -395,7 +404,11 @@ export async function assertNoUnsupportedShiftOutboxRows(database: SQLiteDatabas
 export async function deleteLocalUserData(database: SQLiteDatabase, userId: string): Promise<void> {
   await database.withExclusiveTransactionAsync(async (database) => {
     await assertNoUnsupportedShiftOutboxRows(database);
-    for (const table of Object.values({ ...persistenceSections, ...loadProvenanceSections }))
+    for (const table of [
+      schedulePersistenceSections.scheduleRevisions,
+      schedulePersistenceSections.scheduleBaselines,
+      ...Object.values({ ...persistenceSections, ...loadProvenanceSections }),
+    ])
       await database.runAsync(`DELETE FROM ${table} WHERE user_id=?;`, userId);
     await database.runAsync(
       `DELETE FROM sync_outbox

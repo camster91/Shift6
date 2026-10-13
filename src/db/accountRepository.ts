@@ -1,5 +1,6 @@
 import { loadProvenanceSections } from '../domain/loadUnits';
 import { persistenceSections } from '../domain/localPersistence';
+import { schedulePersistenceSections } from '../domain/scheduleSnapshot';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export interface LocalAccountMigrationResult {
@@ -153,7 +154,11 @@ export async function migrateLocalUserToAccount(
     }
     if (!sourceProfile && !sourceDraft && mutations.length === 0) return;
 
-    for (const table of Object.values({ ...persistenceSections, ...loadProvenanceSections })) {
+    for (const table of Object.values({
+      ...persistenceSections,
+      ...loadProvenanceSections,
+      ...schedulePersistenceSections,
+    })) {
       const conflict = await database.getFirstAsync(
         `SELECT user_id FROM ${table} WHERE user_id=? LIMIT 1;`,
         destinationUserId,
@@ -347,7 +352,11 @@ export async function migrateLocalUserToAccount(
       destinationUserId,
       sourceUserId,
     );
-    for (const table of Object.values({ ...persistenceSections, ...loadProvenanceSections }))
+    for (const table of Object.values({
+      ...persistenceSections,
+      ...loadProvenanceSections,
+      ...schedulePersistenceSections,
+    }))
       await database.runAsync(
         `UPDATE ${table} SET user_id=? WHERE user_id=?;`,
         destinationUserId,

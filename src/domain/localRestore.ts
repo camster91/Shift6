@@ -1,5 +1,14 @@
 import { loadProvenanceSections } from './loadUnits';
 import {
+  schedulePersistenceSections,
+  decodeScheduleBaseline,
+  cycleFromScheduleRow,
+  sessionFromScheduleRow,
+  scheduleRevisionFromRow,
+} from './scheduleSnapshot';
+import { projectScheduleRevisions } from './scheduleRevision';
+import type { ProgramVersion } from './types';
+import {
   persistenceSections,
   type BuilderRecoverySnapshot,
   type CoachMemoryValue,
@@ -48,6 +57,7 @@ export const restoreTables = {
   workoutScheduleOverrides: 'workout_schedule_overrides',
   ...persistenceSections,
   ...loadProvenanceSections,
+  ...schedulePersistenceSections,
 } as const;
 export type RestoreSection = keyof typeof restoreTables;
 export type RestoreRow = Record<string, string | number | null>;
@@ -479,14 +489,18 @@ export function validateLocalBackup(serialized: string): RestorePreview {
   }
   check(isRecord(raw), 'file is not an export.');
   check(
-    raw.schemaVersion === 12 || raw.schemaVersion === 13 || raw.schemaVersion === 14,
-    'only export schemas 12, 13 and 14 are supported. Other versions need a compatible app.',
+    raw.schemaVersion === 12 ||
+      raw.schemaVersion === 13 ||
+      raw.schemaVersion === 14 ||
+      raw.schemaVersion === 15,
+    'only export schemas 12, 13, 14 and 15 are supported. Other versions need a compatible app.',
   );
   const sections = Object.keys(restoreTables) as RestoreSection[];
   const sourceSections = sections.filter(
     (key) =>
       (raw.schemaVersion !== 12 || !(key in persistenceSections)) &&
-      (raw.schemaVersion === 14 || !(key in loadProvenanceSections)),
+      (raw.schemaVersion === 14 || raw.schemaVersion === 15 || !(key in loadProvenanceSections)) &&
+      (raw.schemaVersion === 15 || !(key in schedulePersistenceSections)),
   );
   keys(
     raw,
@@ -1157,7 +1171,63 @@ export function validateLocalBackup(serialized: string): RestorePreview {
     'Media files are not included. Custom media links are removed; add your media again on this device.',
     'Identifiers and immutable versions are preserved; owner fields map to the current guest. This is local recovery, not cloud sync.',
   ];
-  data.schemaVersion = 14;
+  unique(data.scheduleBaselines ?? [], ['cycle_id'], 'schedule baseline');
+  unique(data.scheduleBaselines ?? [], ['operation_id'], 'schedule baseline operation');
+  for (const snapshot of data.scheduleBaselines ?? []) {
+    const row = cycles.get(String(snapshot.cycle_id));
+    check(
+      row &&
+        snapshot.id === snapshot.cycle_id &&
+        snapshot.program_version_id === row.program_version_id,
+      'invalid owned schedule baseline binding.',
+    );
+    const cycle = cycleFromScheduleRow(row);
+    const version = versionObjects.get(cycle.programVersionId) as unknown as ProgramVersion;
+    check(
+      Date.parse(String(snapshot.confirmed_at)) >= Date.parse(cycle.startedAt),
+      'schedule baseline precedes cycle creation.',
+    );
+    const matchingSessions = data.workoutSessions.filter(
+      (session) => session.cycle_id === cycle.id,
+    );
+    const sessionsForSchedule = matchingSessions.map(sessionFromScheduleRow);
+    const baseline = decodeScheduleBaseline(
+      String(snapshot.dates_json),
+      cycle,
+      version,
+      String(snapshot.time_zone),
+      String(snapshot.confirmed_at),
+      sessionsForSchedule,
+    );
+    const revisionRows = (data.scheduleRevisions ?? []).filter(
+      (revision) => revision.cycle_id === cycle.id,
+    );
+    for (const revision of revisionRows) {
+      check(
+        revision.program_version_id === cycle.programVersionId &&
+          String(revision.recorded_at) >= String(snapshot.confirmed_at),
+        'schedule revision precedes or disagrees with its baseline.',
+      );
+      for (const session of matchingSessions.filter(
+        (session) =>
+          session.cycle_week === revision.cycle_week && session.workout_id === revision.workout_id,
+      ))
+        check(
+          Date.parse(String(revision.recorded_at)) <= Date.parse(String(session.started_at)),
+          'schedule move rewrites started workout history.',
+        );
+    }
+    projectScheduleRevisions(
+      { cycle, programVersion: version, baseline, sessions: sessionsForSchedule },
+      revisionRows.map(scheduleRevisionFromRow),
+    );
+  }
+  for (const revision of data.scheduleRevisions ?? [])
+    check(
+      (data.scheduleBaselines ?? []).some((snapshot) => snapshot.cycle_id === revision.cycle_id),
+      'orphan schedule revision.',
+    );
+  data.schemaVersion = 15;
   data.summary = buildLocalDataExportSummary(data);
   return { data, recordCount: count, exportedAt: data.exportedAt, warnings };
 }

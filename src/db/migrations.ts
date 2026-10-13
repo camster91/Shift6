@@ -489,6 +489,20 @@ export const MIGRATIONS: readonly Migration[] = [
       `CREATE TRIGGER draft_units_owned_update BEFORE UPDATE ON workout_draft_load_units WHEN NOT EXISTS(SELECT 1 FROM workout_sessions s JOIN training_cycles c ON c.id=s.cycle_id WHERE s.id=NEW.session_id AND c.user_id=NEW.user_id) BEGIN SELECT RAISE(ABORT,'Draft units must belong to the owned session.'); END;`,
     ],
   },
+  {
+    version: 26,
+    name: 'inactive-confirmed-schedule-revisions',
+    statements: [
+      `CREATE TABLE schedule_baselines (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, cycle_id TEXT NOT NULL UNIQUE, program_version_id TEXT NOT NULL, operation_id TEXT NOT NULL, time_zone TEXT NOT NULL, confirmed_at TEXT NOT NULL, dates_json TEXT NOT NULL, UNIQUE(user_id,operation_id), UNIQUE(cycle_id,user_id,program_version_id), FOREIGN KEY(user_id) REFERENCES user_profiles(id) ON UPDATE CASCADE ON DELETE CASCADE, FOREIGN KEY(cycle_id) REFERENCES training_cycles(id) ON DELETE CASCADE);`,
+      `CREATE TABLE schedule_revisions (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, cycle_id TEXT NOT NULL, program_version_id TEXT NOT NULL, cycle_week INTEGER NOT NULL CHECK(cycle_week BETWEEN 1 AND 6), workout_id TEXT NOT NULL, previous_revision_id TEXT, from_date TEXT NOT NULL, to_date TEXT NOT NULL, time_zone TEXT NOT NULL, recorded_at TEXT NOT NULL, effective_date TEXT NOT NULL, UNIQUE(id,user_id,cycle_id), FOREIGN KEY(cycle_id,user_id,program_version_id) REFERENCES schedule_baselines(cycle_id,user_id,program_version_id) ON UPDATE CASCADE ON DELETE CASCADE, FOREIGN KEY(previous_revision_id,user_id,cycle_id) REFERENCES schedule_revisions(id,user_id,cycle_id) ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED);`,
+      `CREATE UNIQUE INDEX schedule_revision_root_once ON schedule_revisions(cycle_id) WHERE previous_revision_id IS NULL;`,
+      `CREATE UNIQUE INDEX schedule_revision_child_once ON schedule_revisions(previous_revision_id) WHERE previous_revision_id IS NOT NULL;`,
+      `CREATE TRIGGER schedule_baseline_owned_insert BEFORE INSERT ON schedule_baselines WHEN NOT EXISTS(SELECT 1 FROM training_cycles WHERE id=NEW.cycle_id AND user_id=NEW.user_id AND program_version_id=NEW.program_version_id) BEGIN SELECT RAISE(ABORT,'Schedule baseline must belong to its exact owned cycle version.'); END;`,
+      `CREATE TRIGGER schedule_baseline_owned_update BEFORE UPDATE ON schedule_baselines WHEN NOT EXISTS(SELECT 1 FROM training_cycles WHERE id=NEW.cycle_id AND user_id=NEW.user_id AND program_version_id=NEW.program_version_id) BEGIN SELECT RAISE(ABORT,'Schedule baseline owner changed.'); END;`,
+      `CREATE TRIGGER schedule_baseline_immutable BEFORE UPDATE OF id,cycle_id,program_version_id,operation_id,time_zone,confirmed_at,dates_json ON schedule_baselines WHEN NEW.id IS NOT OLD.id OR NEW.cycle_id IS NOT OLD.cycle_id OR NEW.program_version_id IS NOT OLD.program_version_id OR NEW.operation_id IS NOT OLD.operation_id OR NEW.time_zone IS NOT OLD.time_zone OR NEW.confirmed_at IS NOT OLD.confirmed_at OR NEW.dates_json IS NOT OLD.dates_json BEGIN SELECT RAISE(ABORT,'Schedule baseline is immutable.'); END;`,
+      `CREATE TRIGGER schedule_revision_immutable BEFORE UPDATE OF id,cycle_id,program_version_id,cycle_week,workout_id,previous_revision_id,from_date,to_date,time_zone,recorded_at,effective_date ON schedule_revisions WHEN NEW.id IS NOT OLD.id OR NEW.cycle_id IS NOT OLD.cycle_id OR NEW.program_version_id IS NOT OLD.program_version_id OR NEW.cycle_week IS NOT OLD.cycle_week OR NEW.workout_id IS NOT OLD.workout_id OR NEW.previous_revision_id IS NOT OLD.previous_revision_id OR NEW.from_date IS NOT OLD.from_date OR NEW.to_date IS NOT OLD.to_date OR NEW.time_zone IS NOT OLD.time_zone OR NEW.recorded_at IS NOT OLD.recorded_at OR NEW.effective_date IS NOT OLD.effective_date BEGIN SELECT RAISE(ABORT,'Schedule revisions are append-only.'); END;`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

@@ -325,7 +325,7 @@ test('explicit legacy return preserves unknown pause timing in schema13 round tr
   expect(() => validateLocalBackup(serialized(data))).toThrow('current cycle status');
 });
 
-test('feedback remains restorable after an actual saved-set edit changes completed_at', async () => {
+test('saved-set corrections preserve occurrence time and feedback still round trips', async () => {
   await restoreLocalBackup(db, 'guest-user', serialized(fixture13()));
   const set = (await getCompletedSets(db, String(fixture().workoutSessions[0]!.id)))[0]!;
   await updateCompletedSet(
@@ -339,15 +339,49 @@ test('feedback remains restorable after an actual saved-set edit changes complet
     set,
   );
   const exported = await exportLocalUserData(db, 'guest-user', stamp);
+  expect(exported.completedSets[0]!.completed_at).toBe(set.completedAt);
+  expect(exported.setFeedbackEvents).toEqual(fixture13().setFeedbackEvents);
+  expect(() => validateLocalBackup(JSON.stringify(exported))).not.toThrow();
+  await deleteLocalUserData(db, 'guest-user');
+  await restoreLocalBackup(db, 'guest-user', JSON.stringify(exported));
+  expect(await getCompletedSets(db, set.sessionId)).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        id: set.id,
+        completedAt: set.completedAt,
+        durationSeconds: (set.durationSeconds ?? 0) + 1,
+      }),
+    ]),
+  );
+  expect((await exportLocalUserData(db, 'guest-user', stamp)).setFeedbackEvents).toEqual(
+    exported.setFeedbackEvents,
+  );
+});
+
+test('legacy overwritten occurrence time remains restorable with earlier feedback and matching units', async () => {
+  await restoreLocalBackup(db, 'guest-user', serialized(fixture13()));
+  const set = (await getCompletedSets(db, String(fixture().workoutSessions[0]!.id)))[0]!;
+  const legacyEditTime = '2026-10-15T04:00:00.000Z';
+  // Reproduce an old build's stored rows without making the current correction API move dates.
+  sqlite
+    .prepare('UPDATE completed_sets SET load=?,completed_at=? WHERE id=?')
+    .run(40, legacyEditTime, set.id);
+  sqlite
+    .prepare('INSERT INTO completed_set_load_provenance VALUES (?,?,?,?,?,?,?)')
+    .run(set.id, set.sessionId, 'guest-user', 'kg', 40, legacyEditTime, legacyEditTime);
+  const exported = await exportLocalUserData(db, 'guest-user', stamp);
   expect(Date.parse(String(exported.setFeedbackEvents![0]!.recorded_at))).toBeLessThan(
     Date.parse(String(exported.completedSets[0]!.completed_at)),
   );
   expect(() => validateLocalBackup(JSON.stringify(exported))).not.toThrow();
   await deleteLocalUserData(db, 'guest-user');
   await restoreLocalBackup(db, 'guest-user', JSON.stringify(exported));
-  expect(await getCompletedSets(db, set.sessionId)).toEqual(
-    expect.arrayContaining([expect.objectContaining({ completedAt: '2026-10-15T04:00:00.000Z' })]),
-  );
+  expect(await getCompletedSets(db, set.sessionId)).toEqual([
+    { ...set, load: 40, loadUnit: 'kg', completedAt: legacyEditTime },
+  ]);
+  const restored = await exportLocalUserData(db, 'guest-user', stamp);
+  expect(restored.setFeedbackEvents).toEqual(exported.setFeedbackEvents);
+  expect(restored.completedSetLoadProvenance).toEqual(exported.completedSetLoadProvenance);
 });
 
 test.each(['future', 'backdated', 'past-review'])(

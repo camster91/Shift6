@@ -21,6 +21,11 @@ import {
 } from '../../src/db/coachRepository';
 import { getCoachPrivacyPreference } from '../../src/db/coachPrivacyRepository';
 import { useLocalDatabase } from '../../src/db/context';
+import {
+  getCoachMemorySnapshot,
+  type CoachMemorySnapshot,
+} from '../../src/db/coachMemoryRepository';
+import { appendConfirmedLocalMemory } from '../../src/services/coachMemory';
 import { getCycleProgressSummary } from '../../src/db/progressRepository';
 import { CoachWorkflowActions } from '../../src/components/CoachWorkflowActions';
 import {
@@ -57,6 +62,7 @@ export default function CoachScreen() {
   const [activeProgram, setActiveProgram] = useState<Program | null>(null);
   const [activeProgramVersion, setActiveProgramVersion] = useState<ProgramVersion | null>(null);
   const [coachContext, setCoachContext] = useState<CoachContext | null>(null);
+  const [memorySnapshot, setMemorySnapshot] = useState<CoachMemorySnapshot | null>(null);
   const [loadedFor, setLoadedFor] = useState<{ database: typeof database; userId: string } | null>(
     null,
   );
@@ -107,6 +113,7 @@ export default function CoachScreen() {
     setActiveProgram(null);
     setActiveProgramVersion(null);
     setCoachContext(null);
+    setMemorySnapshot(null);
     setCoachMessage(null);
     setProposals([]);
     setBusyProposalId(null);
@@ -125,6 +132,8 @@ export default function CoachScreen() {
     void (async () => {
       try {
         const navigation = await loadCoachNavigationSnapshot(database, userId);
+        // Optional memory failure cannot make canonical local explanations unavailable.
+        const memory = await getCoachMemorySnapshot(database, userId).catch(() => null);
         const { cycle, snapshot, profile } = navigation;
         const pending = cycle ? await getPendingCoachProposals(database, userId, cycle.id) : [];
         const summary =
@@ -133,6 +142,7 @@ export default function CoachScreen() {
             : null;
         if (active) {
           setNavigationSnapshot(navigation);
+          setMemorySnapshot(memory);
           setActiveCycle(cycle);
           setActiveProgram(snapshot?.program ?? null);
           setActiveProgramVersion(snapshot?.version ?? null);
@@ -160,10 +170,13 @@ export default function CoachScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      requestId.current += 1;
       // Tabs remain mounted. Immediately invalidate old facts on every return,
       // then hydrate the current record rather than reusing prior session data.
       setLoading(true);
       setCoachContext(null);
+      setMemorySnapshot(null);
+      setCoachMessage(null);
       setNavigationSnapshot(null);
       setReloadIndex((current) => current + 1);
       setProviderCoachEnabled(false);
@@ -180,6 +193,7 @@ export default function CoachScreen() {
 
       return () => {
         active = false;
+        requestId.current += 1;
       };
     }, [database, userId]),
   );
@@ -277,7 +291,9 @@ export default function CoachScreen() {
     }
   };
 
-  const coachNote = contextReady ? buildLocalCoachMessage(coachContext, 'explain-workout') : null;
+  const localNote = contextReady ? buildLocalCoachMessage(coachContext, 'explain-workout') : null;
+  const coachNote =
+    localNote && memorySnapshot ? appendConfirmedLocalMemory(localNote, memorySnapshot) : localNote;
   const askCoach = async (task: CoachTask, prompt = '') => {
     if (!contextReady || coachLoading) return;
     const request = ++requestId.current;
@@ -290,6 +306,11 @@ export default function CoachScreen() {
         task,
         prompt,
       });
+      // Read current local preferences after generation; neither cached memory
+      // nor its identifiers are inserted into the provider context packet.
+      const memory = database
+        ? await getCoachMemorySnapshot(database, userId).catch(() => null)
+        : null;
       if (
         request !== requestId.current ||
         currentIdentity.current.database !== database ||
@@ -297,7 +318,15 @@ export default function CoachScreen() {
       )
         return;
       setCoachSource(response.source);
-      setCoachMessage(response.result);
+      setMemorySnapshot(memory);
+      setCoachMessage(
+        response.source === 'local' && memory
+          ? appendConfirmedLocalMemory(response.result, memory)
+          : response.result,
+      );
+    } catch {
+      if (request === requestId.current)
+        setError('Coach could not refresh local memory. No remembered preference was used.');
     } finally {
       if (request === requestId.current) setCoachLoading(false);
     }
@@ -319,6 +348,13 @@ export default function CoachScreen() {
         <Text variant="display" accessibilityRole="header" style={styles.title}>
           A thoughtful next step.
         </Text>
+        {navigationSnapshot?.hasProfile ? (
+          <Button
+            label="Inspect local Coach memory"
+            variant="ghost"
+            onPress={() => router.push('/coach-memory')}
+          />
+        ) : null}
         {loading ||
         (database &&
           loadedFor !== null &&
@@ -396,6 +432,11 @@ export default function CoachScreen() {
       </Card>
 
       <Card tone="white" style={styles.privacyCard}>
+        <Button
+          label="Inspect local Coach memory"
+          variant="ghost"
+          onPress={() => router.push('/coach-memory')}
+        />
         <View style={styles.privacyHeader}>
           <Ionicons
             name={providerCoachEnabled ? 'cloud-outline' : 'phone-portrait-outline'}

@@ -2,12 +2,18 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import CoachScreen from '../../app/(tabs)/coach';
 import { demoUser, demoProgram, demoProgramVersion } from '../domain/fixtures/home';
 import { createTrainingCycle } from '../domain/cycle';
+import type { CoachMemorySnapshot } from '../db/coachMemoryRepository';
 let mockFocus: (() => void) | null = null;
 let mockCompleted = 0,
   mockPrecycle = false;
 const mockDatabase = {},
   mockRemote = jest.fn();
 const mockNavigation = jest.fn();
+let mockMemorySnapshot: CoachMemorySnapshot;
+let mockPrivacyEnabled = false;
+jest.mock('../db/coachMemoryRepository', () => ({
+  getCoachMemorySnapshot: async () => mockMemorySnapshot,
+}));
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
   useFocusEffect: (callback: () => void) => {
@@ -31,7 +37,7 @@ jest.mock('../services/coachNavigation', () => ({
   resolveCoachNavigation: jest.fn(),
 }));
 jest.mock('../db/coachPrivacyRepository', () => ({
-  getCoachPrivacyPreference: async () => ({ providerCoachEnabled: false }),
+  getCoachPrivacyPreference: async () => ({ providerCoachEnabled: mockPrivacyEnabled }),
 }));
 jest.mock('../db/coachRepository', () => ({ getPendingCoachProposals: async () => [] }));
 jest.mock('../db/progressRepository', () => ({
@@ -49,6 +55,14 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockCompleted = 0;
   mockPrecycle = false;
+  mockPrivacyEnabled = false;
+  mockMemorySnapshot = {
+    owner: 'owner',
+    profile: null,
+    enabled: false,
+    preferenceUpdatedAt: null,
+    facts: [],
+  };
   mockNavigation.mockImplementation(async () => {
     const workout = { ...demoProgramVersion.workouts[0]!, title: 'Actually scheduled session' };
     const version = { ...demoProgramVersion, workouts: [workout] };
@@ -98,4 +112,52 @@ test('pre-cycle Coach offers setup controls without invented training context', 
   expect(screen.getByText('No active plan yet')).toBeTruthy();
   expect(screen.queryByLabelText("Explain today's workout")).toBeNull();
   expect(mockRemote).not.toHaveBeenCalled();
+});
+
+function enablePracticalMemory() {
+  mockMemorySnapshot = {
+    ...mockMemorySnapshot,
+    enabled: true,
+    profile: {
+      user: { ...demoUser, id: 'owner' },
+      coachTone: 'concise',
+      coachIntervention: 'balanced',
+      healthConnection: 'not-now',
+      completedAt: '2026-10-13T12:00:00.000Z',
+    },
+    facts: [
+      {
+        id: 'local-fact',
+        userId: 'owner',
+        value: { kind: 'training-time', value: 'evening' },
+        revision: 1,
+        operationId: 'confirmed',
+        confirmedAt: '2026-10-13T12:00:00.000Z',
+        updatedAt: '2026-10-13T12:00:00.000Z',
+      },
+    ],
+  };
+}
+test('enabled local memory is discarded on a focus refresh after disabling', async () => {
+  enablePracticalMemory();
+  const screen = await render(<CoachScreen />);
+  await waitFor(() => expect(screen.getByText(/Training time: evening/)).toBeTruthy());
+  mockMemorySnapshot = { ...mockMemorySnapshot, enabled: false };
+  await act(async () => {
+    mockFocus?.();
+  });
+  await waitFor(() => expect(screen.getByLabelText("Explain today's workout")).toBeTruthy());
+  expect(screen.queryByText(/Training time: evening/)).toBeNull();
+});
+test('provider context receives no confirmed preference value or local memory identifier', async () => {
+  enablePracticalMemory();
+  mockPrivacyEnabled = true;
+  mockRemote.mockResolvedValue({ kind: 'message', text: 'Synthetic remote note', factsUsed: [] });
+  const screen = await render(<CoachScreen />);
+  await waitFor(() => expect(screen.getByText('Provider-backed Coach enabled')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText("Explain today's workout"));
+  await waitFor(() => expect(screen.getByText('Synthetic remote note')).toBeTruthy());
+  expect(JSON.stringify(mockRemote.mock.calls[0]![0])).not.toMatch(
+    /evening|local-fact|confirmed local practical preferences/,
+  );
 });

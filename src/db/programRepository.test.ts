@@ -5,7 +5,12 @@ import { migrateLocalUserToAccount } from './accountRepository';
 import { demoProgram, demoProgramVersion } from '../domain/fixtures/home';
 import { createCustomExercise } from '../domain/programBuilder';
 import { MIGRATIONS } from './migrations';
-import { getUserExercises, saveCustomExercise, saveProgramVersion } from './programRepository';
+import {
+  getSavedUserPrograms,
+  getUserExercises,
+  saveCustomExercise,
+  saveProgramVersion,
+} from './programRepository';
 
 function fakeDatabase() {
   const calls: string[] = [];
@@ -110,6 +115,61 @@ describe('programRepository', () => {
 });
 
 describe('programRepository ownership in SQLite', () => {
+  it('discovers only the latest owned saved version with workout data after reopening', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      await saveProgramVersion(database, 'guest-user', demoProgram, demoProgramVersion);
+      const latest = {
+        ...demoProgramVersion,
+        id: 'saved-latest-version',
+        version: 2,
+        createdAt: '2026-10-13T12:00:00.000Z',
+        workouts: [{ ...demoProgramVersion.workouts[0]!, title: 'Saved custom session' }],
+      };
+      await saveProgramVersion(
+        database,
+        'guest-user',
+        { ...demoProgram, currentVersionId: latest.id },
+        latest,
+      );
+      await saveProgramVersion(
+        database,
+        'foreign-owner',
+        {
+          ...demoProgram,
+          id: 'foreign-plan',
+          currentVersionId: 'foreign-version',
+        },
+        { ...demoProgramVersion, id: 'foreign-version', programId: 'foreign-plan' },
+      );
+      const discovered = await getSavedUserPrograms(database, 'guest-user');
+      expect(discovered).toHaveLength(1);
+      expect(discovered[0]?.version).toEqual(latest);
+      expect(await getSavedUserPrograms(database, 'guest-user')).toEqual(discovered);
+      expect(await getSavedUserPrograms(database, 'unknown-owner')).toEqual([]);
+    } finally {
+      sqlite.close();
+    }
+  });
+
+  it('refuses a corrupt snapshot instead of showing an empty or foreign plan', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      await saveProgramVersion(database, 'guest-user', demoProgram, demoProgramVersion);
+      sqlite
+        .prepare('UPDATE user_program_versions SET version_json = ? WHERE id = ?')
+        .run(
+          JSON.stringify({ ...demoProgramVersion, programId: 'other-plan' }),
+          demoProgramVersion.id,
+        );
+      await expect(getSavedUserPrograms(database, 'guest-user')).rejects.toThrow(
+        'could not be read',
+      );
+    } finally {
+      sqlite.close();
+    }
+  });
+
   it('rejects a cross-owner program ID collision without rewriting its version or queued payload', async () => {
     const { database, sqlite } = sqliteDatabase();
     try {

@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button, Card, Chip, EmptyState, ProgramCard, Screen, Text } from '../../src/components/ui';
 import { getOnboardingProfile } from '../../src/db/profileRepository';
+import { getSavedUserPrograms, type UserProgramSnapshot } from '../../src/db/programRepository';
 import { useLocalDatabase } from '../../src/db/context';
 import { demoUser } from '../../src/domain/fixtures/home';
 import { recommendPrograms } from '../../src/domain/onboarding';
@@ -30,6 +31,43 @@ export default function ProgramsScreen() {
   const [recommendedOnly, setRecommendedOnly] = useState(true);
   const [daysOnly, setDaysOnly] = useState(false);
   const [minutesOnly, setMinutesOnly] = useState(false);
+  const [savedPlans, setSavedPlans] = useState<UserProgramSnapshot[]>([]);
+  const [savedPlansLoading, setSavedPlansLoading] = useState(false);
+  const [savedPlansError, setSavedPlansError] = useState(false);
+  const [savedPlansContext, setSavedPlansContext] = useState<{
+    database: typeof database;
+    userId: string;
+  } | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      setSavedPlans([]);
+      setSavedPlansError(false);
+      setSavedPlansLoading(Boolean(database));
+      setSavedPlansContext(null);
+      if (!database) return undefined;
+      void getSavedUserPrograms(database, userId)
+        .then((plans) => {
+          if (active) setSavedPlans(plans);
+        })
+        .catch(() => {
+          if (active) setSavedPlansError(true);
+        })
+        .finally(() => {
+          if (active) {
+            setSavedPlansContext({ database, userId });
+            setSavedPlansLoading(false);
+          }
+        });
+      return () => {
+        active = false;
+      };
+    }, [database, userId, reloadToken]),
+  );
+  const savedPlansCurrent =
+    savedPlansContext?.database === database && savedPlansContext?.userId === userId;
 
   useFocusEffect(
     useCallback(() => {
@@ -143,6 +181,59 @@ export default function ProgramsScreen() {
       <Text variant="body" tone="muted" style={styles.subtitle}>
         Start with a clear framework, then make it yours as your training evolves.
       </Text>
+
+      {database ? (
+        <View>
+          <Text variant="h2" accessibilityRole="header" style={styles.sectionTitle}>
+            Your saved private plans
+          </Text>
+          <Text variant="small" tone="muted">
+            Saved on this device, without public content review. Open an editable copy to preserve
+            the saved version and any training history.
+          </Text>
+          {savedPlansLoading || !savedPlansCurrent ? (
+            <Text>Loading your saved plans…</Text>
+          ) : savedPlansError ? (
+            <Card tone="coral">
+              <Text accessibilityRole="alert">
+                Your saved plans could not be loaded. Your records have not changed.
+              </Text>
+              <Button
+                label="Retry saved plans"
+                onPress={() => setReloadToken((value) => value + 1)}
+              />
+            </Card>
+          ) : savedPlans.length === 0 ? (
+            <Text variant="small" tone="muted">
+              No private plans saved yet.
+            </Text>
+          ) : (
+            savedPlans.map(({ program, version }) => (
+              <Card key={program.id} tone="white" style={styles.catalogueCard}>
+                <Text variant="h3" accessibilityRole="header">
+                  {program.title}
+                </Text>
+                <Text variant="small" tone="muted">
+                  Private · {version.workouts.length} workouts · version {version.version}
+                </Text>
+                {version.workouts.map((workout) => (
+                  <Text key={workout.id} variant="small">
+                    {workout.title} · {workout.exercises.length} movements
+                  </Text>
+                ))}
+                <Button
+                  label="Edit or start a copy"
+                  accessibilityLabel={`Edit or start a copy of ${program.title}`}
+                  variant="secondary"
+                  onPress={() =>
+                    router.push({ pathname: '/builder', params: { sourceVersionId: version.id } })
+                  }
+                />
+              </Card>
+            ))
+          )}
+        </View>
+      ) : null}
 
       {recommendations.length > 0 ? (
         <>

@@ -23,3 +23,7 @@ export async function getGrantedPermissions(): Promise<never[]> {
 export async function readRecords(): Promise<{ records: never[] }> {
   return { records: [] };
 }
+
+export async function aggregateRecord(): Promise<{ dataOrigins: string[]; COUNT_TOTAL: number }> {
+  return { dataOrigins: [], COUNT_TOTAL: 0 };
+}

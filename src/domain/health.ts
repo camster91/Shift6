@@ -20,6 +20,12 @@ export interface HealthSummary {
   source: string;
 }
 
+export const HEALTH_CONNECT_DAILY_SOURCE = 'Health Connect · source-priority total';
+export interface HealthImportReplacement {
+  types: readonly HealthDataType[];
+  range: HealthDateRange;
+}
+
 export interface HealthDateRange {
   startAt: string;
   endAt: string;
@@ -67,6 +73,8 @@ export interface HealthTrendPoint {
   unit: string;
   sampleCount: number;
   sourceCount: number;
+  basis?: 'platform-total' | 'source-estimate';
+  sourceLabel?: string;
 }
 
 const additiveHealthTypes: readonly HealthDataType[] = ['steps', 'workouts', 'sleep-duration'];
@@ -169,19 +177,36 @@ export function normalizeHealthSummaries(samples: readonly HealthSummary[]): Hea
 }
 
 function trendKey(sample: HealthSummary): string {
-  return [sample.startAt.slice(0, 10), sample.type, sample.unit].join('\u001f');
+  return [
+    sample.startAt.slice(0, 10),
+    sample.type,
+    sample.unit,
+    additiveHealthTypes.includes(sample.type) ? sample.source : '',
+  ].join('\u001f');
 }
 
 /**
  * Builds deterministic UTC-day points from normalized provider summaries.
- * Samples are grouped by their canonical start day and unit; unit conversion
- * is intentionally outside this boundary because it needs an explicit policy.
+ * Raw additive sources stay separate as estimates; platform daily totals
+ * supersede raw contributions. Units are not silently combined or converted.
  */
 export function buildDailyHealthTrends(samples: readonly HealthSummary[]): HealthTrendPoint[] {
   const normalized = normalizeHealthSummaries(samples);
   const groups = new Map<string, HealthSummary[]>();
+  const totalDays = new Set(
+    normalized
+      .filter((sample) => sample.source === HEALTH_CONNECT_DAILY_SOURCE)
+      .map((sample) => `${sample.type}:${sample.startAt.slice(0, 10)}`),
+  );
 
   for (const sample of normalized) {
+    // Legacy/raw samples never join a platform-reconciled daily total.
+    if (
+      additiveHealthTypes.includes(sample.type) &&
+      sample.source !== HEALTH_CONNECT_DAILY_SOURCE &&
+      totalDays.has(`${sample.type}:${sample.startAt.slice(0, 10)}`)
+    )
+      continue;
     const key = trendKey(sample);
     const group = groups.get(key) ?? [];
     group.push(sample);
@@ -215,6 +240,15 @@ export function buildDailyHealthTrends(samples: readonly HealthSummary[]): Healt
           unit: first.unit,
           sampleCount: group.length,
           sourceCount: new Set(group.map((sample) => sample.source)).size,
+          ...(additiveHealthTypes.includes(first.type)
+            ? {
+                basis:
+                  first.source === HEALTH_CONNECT_DAILY_SOURCE
+                    ? ('platform-total' as const)
+                    : ('source-estimate' as const),
+                sourceLabel: first.source,
+              }
+            : {}),
         } satisfies HealthTrendPoint,
       ];
     })

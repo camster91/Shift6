@@ -1,0 +1,312 @@
+{
+  "source": "d9c5b2e2",
+  "baseline": "b131a9e6",
+  "device": "Android16 API36 Pixel7 x86_64 emulator-5554",
+  "files": [
+    {
+      "file": "fixture-source/MainActivity.java",
+      "bytes": 8793,
+      "sha256": "3e5cbc40e45aef70e87918725189c2162454a946ccde329d1ba350c17de617c4"
+    },
+    {
+      "file": "fixture-source/RationaleActivity.java",
+      "bytes": 763,
+      "sha256": "f5f2eaf63413ab3ccdfb185a4299732e0e22c7515e09f69e28b0c7f96f426f5b"
+    },
+    {
+      "file": "fixture-source/receiver-AndroidManifest.xml",
+      "bytes": 630,
+      "sha256": "ff8e035e0840de78991692e58000a4c6b9bae3841936ca8f753b2630535dc2ec"
+    },
+    {
+      "file": "fixture-source/receiver-Receiver.java",
+      "bytes": 1402,
+      "sha256": "dffff4c35fd7c0e8cbbe27d0d87d0aef6e3d1b01de3835c6a82ff6cc13a0a79d"
+    },
+    {
+      "file": "health-baseline-external-receipt.png",
+      "bytes": 74958,
+      "sha256": "4b7cce6c29b19c815f2025a96f9c5f1c46ad656c3f804d654d339095e751d459"
+    },
+    {
+      "file": "health-baseline-external-receipt.xml",
+      "bytes": 1681,
+      "sha256": "342738658a8a82dfa2be0e725c319cb982c3d4c75e722a58d6da00475ed69e5a"
+    },
+    {
+      "file": "health-baseline-import.png",
+      "bytes": 240739,
+      "sha256": "3707dd79795106ea68eb81fb97f67cf1a9308fc1ac1caf4632196a5610b8c91b"
+    },
+    {
+      "file": "health-baseline-import.xml",
+      "bytes": 16612,
+      "sha256": "ba00783f722b5a91ea53201acaabe97e35048c1fdc2abf3d673fdd69efc7253c"
+    },
+    {
+      "file": "health-candidate-external-receipt.png",
+      "bytes": 75645,
+      "sha256": "ee50ea5de683b342abdb838b80030e75fb5a2dbf92789ef27af1fb2d2bf50408"
+    },
+    {
+      "file": "health-candidate-external-receipt.xml",
+      "bytes": 1681,
+      "sha256": "6fe4bc74c0a06de96a07cc9967ede9e3fd2d28fa620aab04053c34f26869db4c"
+    },
+    {
+      "file": "health-candidate-import-d9c5.png",
+      "bytes": 290970,
+      "sha256": "fbe7ce689504b78b5824f26d770fcd50388de4c3b657ad787eb1b8cb9e73f4d2"
+    },
+    {
+      "file": "health-candidate-import-d9c5.xml",
+      "bytes": 16308,
+      "sha256": "f579e056e665c01359d64191b83f316d3ff0bf5cf56211245415a57ea118481c"
+    },
+    {
+      "file": "health-fixture-a-cleanup.png",
+      "bytes": 137872,
+      "sha256": "5748744edbae43f69889b2166921f30fb3515069f0d48ffacf6c039ae7b17231"
+    },
+    {
+      "file": "health-fixture-a-cleanup.xml",
+      "bytes": 4816,
+      "sha256": "601d1189a984cbcdf7b3cc7b5b1277850f0f032da429b0b956cc2af29f997ecc"
+    },
+    {
+      "file": "health-fixture-b-cleanup.png",
+      "bytes": 137457,
+      "sha256": "89daa717396e9267e013fb3ab36caa1de5a3093fe7f52922716c73d2680bb0e1"
+    },
+    {
+      "file": "health-fixture-b-cleanup.xml",
+      "bytes": 4813,
+      "sha256": "43aa48d34d021e3c532169c0e232c4ef073ebf705f4c3c5fd995504856d638c1"
+    },
+    {
+      "file": "health-fixture-clean-reference.png",
+      "bytes": 147230,
+      "sha256": "90f17c37ef9afd21d1e6e364bc00af21dfc89312ef7d27f9f416609f694edca0"
+    },
+    {
+      "file": "health-fixture-clean-reference.xml",
+      "bytes": 4851,
+      "sha256": "5cd30bd088628da54cb16037ec38ea2ec44f03113f09f5881b0e31779e2265fe"
+    },
+    {
+      "file": "health-platform-reference.png",
+      "bytes": 182040,
+      "sha256": "1e449d1c5c1c2d39bdd7fd2387c1beab7041b703a10d286520088ce2458ebdf0"
+    },
+    {
+      "file": "health-platform-reference.xml",
+      "bytes": 4957,
+      "sha256": "5e083f14f32ba1f26409516b485e498bf0aab9b5b7d6d1a0044b88f903a06864"
+    },
+    {
+      "file": "health-source-a-seeded.png",
+      "bytes": 146904,
+      "sha256": "0406bff1ec677768eccd11406492c3fa2e881ce78e608096b3573422b24df7d1"
+    },
+    {
+      "file": "health-source-a-seeded.xml",
+      "bytes": 4851,
+      "sha256": "9596d906b44c6bc746f64860d9e98ec7a6a79fc13ea0e915f3a8891b6811d7a4"
+    },
+    {
+      "file": "large-restore-readback.json",
+      "bytes": 225,
+      "sha256": "23be3594053e1efdb4b5de3f7554c8292ba5c074189c5c4d96949b05d13f5039"
+    },
+    {
+      "file": "private-plan-copy-d9c5.png",
+      "bytes": 208385,
+      "sha256": "346a2a43198753bf441f2ec435721f2fd7ce8e1511b78373a3c037b10ac5370e"
+    },
+    {
+      "file": "private-plan-copy-d9c5.xml",
+      "bytes": 13936,
+      "sha256": "94aa28ee8e356815fbe6e9961f1c57fb5b75181098d0e4245c3b52e9e1daa515"
+    },
+    {
+      "file": "private-plans-relaunch-d9c5.png",
+      "bytes": 252563,
+      "sha256": "6d4346735add51d80c4cfe31c30292321cf8d4d96d21b5f302f8ec651a3a9ffe"
+    },
+    {
+      "file": "private-plans-relaunch-d9c5.xml",
+      "bytes": 17385,
+      "sha256": "ee9d8f9727cefc86a19eea77f894f6c0061059b08fc7ed228612ac69940c23fc"
+    },
+    {
+      "file": "record-readback.json",
+      "bytes": 1822,
+      "sha256": "56a11710ea848a038a7bdcd88ff62ac9773511c23d519fc7d1fc82e0ff88f2a5"
+    },
+    {
+      "file": "restore-cancel-inert-d9c5.png",
+      "bytes": 220666,
+      "sha256": "6162e1a806ed56e57e36ba491e3dccde7bba566950034aeddb73229ce2295b14"
+    },
+    {
+      "file": "restore-cancel-inert-d9c5.xml",
+      "bytes": 18478,
+      "sha256": "b5d4c5b495d9c46e33d2fe4c58cadfeb8380cdb672b083550836b8a8bc2898b9"
+    },
+    {
+      "file": "restore-confirm-dialog-d9c5.png",
+      "bytes": 301210,
+      "sha256": "70b97eb32ef6495116abb7d7b32819bded2c54d91eaf2ec5dc3596eeffe4a5ab"
+    },
+    {
+      "file": "restore-confirm-dialog-d9c5.xml",
+      "bytes": 6905,
+      "sha256": "23be82b93c66531a5c35b5b29c9b181be08c0f286ad63dbc7b85cc33bfbf83d3"
+    },
+    {
+      "file": "restore-external-readback-d9c5.png",
+      "bytes": 73125,
+      "sha256": "e4245c4e4ecf6a350f6f9a43632399f585b990eb478d6f6f8865c803db6611df"
+    },
+    {
+      "file": "restore-external-readback-d9c5.xml",
+      "bytes": 1678,
+      "sha256": "f9f92fb1b465862086fa03f7b5dbb9f6389a1f8f12323a53aec144630c4ba6be"
+    },
+    {
+      "file": "restore-fresh-entry-d9c5.png",
+      "bytes": 219989,
+      "sha256": "37b334211476ef20989a9019255f20274fa09ceb570662e1c5ebfb2b020a907c"
+    },
+    {
+      "file": "restore-fresh-entry-d9c5.xml",
+      "bytes": 18478,
+      "sha256": "b5d4c5b495d9c46e33d2fe4c58cadfeb8380cdb672b083550836b8a8bc2898b9"
+    },
+    {
+      "file": "restore-future-schema-rejected-d9c5.png",
+      "bytes": 151939,
+      "sha256": "7a228c8c314eb2aab415b4e597b8db7fccfcaf6477eca9bea3ed3b4c583eb828"
+    },
+    {
+      "file": "restore-future-schema-rejected-d9c5.xml",
+      "bytes": 7772,
+      "sha256": "5489dbd5aab85b6e4ab5a9c6819474db515a6b53ac6e5b8728b21c30478e43db"
+    },
+    {
+      "file": "restore-goal-journal-d9c5.png",
+      "bytes": 220144,
+      "sha256": "302747b0367cc12698b1aab6793c88178b94c75ca0903a9b1f0e90a0451e0832"
+    },
+    {
+      "file": "restore-goal-journal-d9c5.xml",
+      "bytes": 14272,
+      "sha256": "e4c259bbd2be5f26424926b9cc0ba371fcd0b7ddb1055783f0c01e7d0517eae1"
+    },
+    {
+      "file": "restore-large-external-readback-d9c5.png",
+      "bytes": 76340,
+      "sha256": "131f2defe67002b78b8fdbc5b7789cfc9e707ff423aa79fd3e11fd5b37ef2480"
+    },
+    {
+      "file": "restore-large-external-readback-d9c5.xml",
+      "bytes": 1681,
+      "sha256": "40ca564c579e2199bd30aa48b9c13ecd279bd532c909c8fcf8a1a06e822854b0"
+    },
+    {
+      "file": "restore-large-in-progress-d9c5.png",
+      "bytes": 137850,
+      "sha256": "6e67a07d7b068931e519c835a1b9dcd78f0e850ce053f0ccbaec7d71721ba181"
+    },
+    {
+      "file": "restore-large-in-progress-d9c5.xml",
+      "bytes": 8460,
+      "sha256": "209c6076c26a115f01b4560a3894c1edf756718887ee6048e7c5016596552447"
+    },
+    {
+      "file": "restore-large-preview-d9c5.png",
+      "bytes": 361784,
+      "sha256": "da6ca40d7f1e2f7d5e797b2c638611227639b6a1374913f5efb0b9a59c4da9a1"
+    },
+    {
+      "file": "restore-large-preview-d9c5.xml",
+      "bytes": 15075,
+      "sha256": "11632117b2d550f626c0f8549cc7cd5a5561d16744d6e4247f158d10110240be"
+    },
+    {
+      "file": "restore-native-picker-d9c5.png",
+      "bytes": 52874,
+      "sha256": "d561f1c5ec6ec6060a112f0bcf8120a93b402eef5265b312102b88148bf60faa"
+    },
+    {
+      "file": "restore-native-picker-d9c5.xml",
+      "bytes": 15536,
+      "sha256": "32fce282af63e2788b6d2501ae330a2482544f7db446e3a6bd210076b3037efd"
+    },
+    {
+      "file": "restore-nonempty-rejection-d9c5.png",
+      "bytes": 145261,
+      "sha256": "dd636796e13289ef16b61f11381bd6fb64cbc3bcfefdcd4d5d16b1d2840161eb"
+    },
+    {
+      "file": "restore-nonempty-rejection-d9c5.xml",
+      "bytes": 7774,
+      "sha256": "c9df5727536585b8774a9fa7deffa6a45ed412e1866f3a77040ef0afa996aa64"
+    },
+    {
+      "file": "restore-preview-d9c5.png",
+      "bytes": 360999,
+      "sha256": "66999d047de89260af0811fcac93844bc5b5ae6ddeb67df2be61f124a00f2ae2"
+    },
+    {
+      "file": "restore-preview-d9c5.xml",
+      "bytes": 15074,
+      "sha256": "526ca9cd38e7c28d6a613bf91b66d8c21b8d822c879729d12d4e1583494c7159"
+    },
+    {
+      "file": "restore-progress-d9c5.png",
+      "bytes": 218037,
+      "sha256": "4c4d6490166f6e536d79b706a4de87a50564aa5e96cdc29b84a8a129a25efea4"
+    },
+    {
+      "file": "restore-progress-d9c5.xml",
+      "bytes": 29412,
+      "sha256": "c6774f567187c9cb9cdd566f5b611d27653179ec098d067a167d617d59c1ad67"
+    },
+    {
+      "file": "restore-success-d9c5.png",
+      "bytes": 137940,
+      "sha256": "ba40220f18a0fd6fdbc4e64d58880bb0148231c4c12a411127397742898e72d6"
+    },
+    {
+      "file": "restore-success-d9c5.xml",
+      "bytes": 8458,
+      "sha256": "b2358046e42ea3adeb239943e377917da165da1fb9e3e1428753850e1273811b"
+    },
+    {
+      "localExternalExport": "candidate-export.json",
+      "bytes": 17474,
+      "sha256": "0b78a49ebc125364aee4a7c7750190b94b64cca12e220a225b9e8d570a2ae9a5"
+    },
+    {
+      "localExternalExport": "health-baseline-export.json",
+      "bytes": 315473,
+      "sha256": "f2569abf143f2a5c128d81518d6ea14cd5076f746162f80dca14994e442cf464"
+    },
+    {
+      "localExternalExport": "health-candidate-export.json",
+      "bytes": 315476,
+      "sha256": "d513380d585f8143f38fdfb1ff444db2be718708c2a25508b0a31c5ef69a6122"
+    },
+    {
+      "localExternalExport": "restored-export-d9c5.json",
+      "bytes": 17467,
+      "sha256": "17f6b6189d7b33b29625e99a747ec9be68b8a7e6c10dbadfbaab657c585edb43"
+    },
+    {
+      "localExternalExport": "restored-large-export-d9c5.json",
+      "bytes": 315469,
+      "sha256": "282cefe64eb5835de24a96c807dff8c06233d2a466e22ba87106b8a72c253693"
+    }
+  ]
+}

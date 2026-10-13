@@ -51,7 +51,12 @@ export async function syncHealthSummaries(input: HealthSyncInput): Promise<Healt
     const summaries = normalizeHealthSummaries(
       await input.provider.readSummaries(permission.grantedTypes, input.range),
     );
-    const saved = await saveHealthSummaries(input.database, input.userId, summaries);
+    const saved = await saveHealthSummaries(
+      input.database,
+      input.userId,
+      summaries,
+      input.provider.replacementCoverage?.(permission.grantedTypes, input.range),
+    );
     return {
       status: 'synced',
       importedCount: saved.length,

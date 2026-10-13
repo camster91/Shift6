@@ -365,6 +365,13 @@ export default function OnboardingScreen() {
       </View>
 
       <ProgressIndicator label="Your setup" value={(step + 1) / stepCount} />
+      {step === 0 && runtimeConfig.releaseMode === 'guest-only' ? (
+        <Button
+          label="Restore a local export instead"
+          variant="secondary"
+          onPress={() => router.push('/restore')}
+        />
+      ) : null}
       {step === 0 && database ? (
         <Text variant="caption" tone="muted" style={{ marginTop: spacing.sm }}>
           Choices save on this device as you go.

@@ -3,14 +3,22 @@ import {
   getGrantedPermissions,
   initialize,
   readRecords,
+  aggregateRecord,
   requestPermission,
   SdkAvailabilityStatus,
   type Permission,
   type RecordType,
 } from 'react-native-health-connect';
 
-import type { HealthDataType, HealthDateRange, HealthSummary } from '../domain/health';
+import {
+  HEALTH_CONNECT_DAILY_SOURCE,
+  type HealthDataType,
+  type HealthDateRange,
+  type HealthSummary,
+} from '../domain/health';
 import type { HealthPermissionResult, HealthProvider } from './health';
+import { readAllHealthPages } from './healthPagination';
+import { utcHealthWindows, utcHealthReplacementRange } from './healthDayWindows';
 
 const recordTypes = {
   steps: 'Steps',
@@ -71,13 +79,22 @@ class AndroidHealthConnectProvider implements HealthProvider {
     return { status, grantedTypes, deniedTypes };
   }
 
+  replacementCoverage(types: readonly HealthDataType[], range: HealthDateRange) {
+    return {
+      types: uniqueTypes(types).filter((type) => type === 'steps' || type === 'sleep-duration'),
+      range: utcHealthReplacementRange(range),
+    };
+  }
+
   async readSummaries(
     types: readonly HealthDataType[],
     range: HealthDateRange,
   ): Promise<HealthSummary[]> {
-    if (!validRange(range) || !(await this.isAvailable())) return [];
-
-    if (!(await initialize())) return [];
+    if (!validRange(range)) throw new Error('Choose a valid health import range.');
+    if (!(await this.isAvailable()))
+      throw new Error('Health Connect became unavailable during import.');
+    if (!(await initialize()))
+      throw new Error('Health Connect could not initialize for this read.');
     const summaries: HealthSummary[] = [];
     for (const type of uniqueTypes(types)) {
       summaries.push(...(await readType(type, range)));
@@ -96,25 +113,18 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
     ascendingOrder: true,
   };
   switch (type) {
-    case 'steps': {
-      const result = await readRecords('Steps', options);
-      return result.records.map((record) => ({
-        id: recordId(
-          record.metadata?.id ?? record.metadata?.clientRecordId,
-          record.startTime,
-          type,
-        ),
-        type,
-        value: record.count,
-        unit: 'count',
-        startAt: record.startTime,
-        endAt: record.endTime,
-        source: sourceName(record.metadata?.dataOrigin),
-      }));
-    }
+    case 'steps':
+    case 'sleep-duration':
+      return readDailyTotal(type, range);
     case 'workouts': {
-      const result = await readRecords('ExerciseSession', options);
-      return result.records.map((record) => ({
+      const records = await readAllHealthPages((pageToken) =>
+        readRecords('ExerciseSession', {
+          ...options,
+          pageSize: 1000,
+          ...(pageToken ? { pageToken } : {}),
+        }),
+      );
+      return records.map((record) => ({
         id: recordId(
           record.metadata?.id ?? record.metadata?.clientRecordId,
           record.startTime,
@@ -129,8 +139,14 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
       }));
     }
     case 'heart-rate': {
-      const result = await readRecords('HeartRate', options);
-      return result.records.flatMap((record) =>
+      const records = await readAllHealthPages((pageToken) =>
+        readRecords('HeartRate', {
+          ...options,
+          pageSize: 1000,
+          ...(pageToken ? { pageToken } : {}),
+        }),
+      );
+      return records.flatMap((record) =>
         record.samples.map((sample, index) => ({
           id: `${recordId(record.metadata?.id ?? record.metadata?.clientRecordId, sample.time, type)}-${index}`,
           type,
@@ -143,8 +159,14 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
       );
     }
     case 'resting-heart-rate': {
-      const result = await readRecords('RestingHeartRate', options);
-      return result.records.map((record) => ({
+      const records = await readAllHealthPages((pageToken) =>
+        readRecords('RestingHeartRate', {
+          ...options,
+          pageSize: 1000,
+          ...(pageToken ? { pageToken } : {}),
+        }),
+      );
+      return records.map((record) => ({
         id: recordId(record.metadata?.id ?? record.metadata?.clientRecordId, record.time, type),
         type,
         value: record.beatsPerMinute,
@@ -154,25 +176,11 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
         source: sourceName(record.metadata?.dataOrigin),
       }));
     }
-    case 'sleep-duration': {
-      const result = await readRecords('SleepSession', options);
-      return result.records.map((record) => ({
-        id: recordId(
-          record.metadata?.id ?? record.metadata?.clientRecordId,
-          record.startTime,
-          type,
-        ),
-        type,
-        value: Math.max(0, (Date.parse(record.endTime) - Date.parse(record.startTime)) / 1000),
-        unit: 'seconds',
-        startAt: record.startTime,
-        endAt: record.endTime,
-        source: sourceName(record.metadata?.dataOrigin),
-      }));
-    }
     case 'weight': {
-      const result = await readRecords('Weight', options);
-      return result.records.map((record) => ({
+      const records = await readAllHealthPages((pageToken) =>
+        readRecords('Weight', { ...options, pageSize: 1000, ...(pageToken ? { pageToken } : {}) }),
+      );
+      return records.map((record) => ({
         id: recordId(record.metadata?.id ?? record.metadata?.clientRecordId, record.time, type),
         type,
         value: record.weight.inKilograms,
@@ -196,9 +204,45 @@ function sourceName(source: string | undefined): string {
 function validRange(range: HealthDateRange): boolean {
   const start = Date.parse(range.startAt);
   const end = Date.parse(range.endAt);
-  return Number.isFinite(start) && Number.isFinite(end) && end >= start;
+  return Number.isFinite(start) && Number.isFinite(end) && end > start;
 }
 
 function uniqueTypes(types: readonly HealthDataType[]): HealthDataType[] {
   return [...new Set(types)];
+}
+
+async function readDailyTotal(
+  type: 'steps' | 'sleep-duration',
+  range: HealthDateRange,
+): Promise<HealthSummary[]> {
+  const summaries: HealthSummary[] = [];
+  for (const window of utcHealthWindows(range)) {
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime: window.startAt,
+      endTime: window.endAt,
+    };
+    const result =
+      type === 'steps'
+        ? await aggregateRecord({ recordType: 'Steps', timeRangeFilter, dataOriginFilter: [] })
+        : await aggregateRecord({
+            recordType: 'SleepSession',
+            timeRangeFilter,
+            dataOriginFilter: [],
+          });
+    // Native bridge defaults missing metrics to zero. Empty origins identify no coverage.
+    if (!Array.isArray(result.dataOrigins) || result.dataOrigins.length === 0) continue;
+    const value = 'COUNT_TOTAL' in result ? result.COUNT_TOTAL : result.SLEEP_DURATION_TOTAL;
+    if (!Number.isFinite(value) || value < 0) throw new Error('Invalid health aggregate result.');
+    summaries.push({
+      id: `utc-total:${type}:${window.startAt.slice(0, 10)}`,
+      type,
+      value,
+      unit: type === 'steps' ? 'count' : 'seconds',
+      startAt: window.startAt,
+      endAt: window.endAt,
+      source: HEALTH_CONNECT_DAILY_SOURCE,
+    });
+  }
+  return summaries;
 }

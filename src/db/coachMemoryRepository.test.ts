@@ -194,6 +194,32 @@ test('owner scope, sensitive/unknown values and invalid operation bounds reject 
   ).rejects.toThrow();
   expect((await getCoachMemorySnapshot(db, owner)).facts).toEqual([]);
 });
+
+test('two owners can confirm the same scoped operation without collision or shared values', async () => {
+  const other = {
+    ...sqlite.prepare('SELECT * FROM user_profiles WHERE id=?').get(owner)!,
+    id: 'other-owner',
+  };
+  const columns = Object.keys(other);
+  sqlite
+    .prepare(
+      `INSERT INTO user_profiles (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`,
+    )
+    .run(...columns.map((key) => other[key as keyof typeof other] as SQLInputValue));
+  const firstOwner = await first();
+  const secondOwner = await confirmCoachMemoryFact(db, {
+    owner: 'other-owner',
+    value: { kind: 'training-time', value: 'morning' },
+    expectedRevision: 0,
+    expectedPreferenceUpdatedAt: null,
+    operationId: 'create',
+    confirmedAt: at,
+  });
+  expect(secondOwner.id).not.toBe(firstOwner.id);
+  expect((await getCoachMemorySnapshot(db, owner)).facts).toEqual([firstOwner]);
+  expect((await getCoachMemorySnapshot(db, 'other-owner')).facts).toEqual([secondOwner]);
+  expect(sqlite.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+});
 test('late failure or changed UI owner/focus rolls back both fact and preference writes', async () => {
   fail = 'INSERT INTO coach_memory_preferences';
   await expect(first()).rejects.toThrow('late failure');

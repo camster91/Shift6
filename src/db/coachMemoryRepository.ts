@@ -155,7 +155,9 @@ export async function confirmCoachMemoryFact(
     )
       conflict();
     const updatedAt = nextStamp(input.confirmedAt, saved?.updated_at ?? null);
-    const id = current?.id ?? `memory-${input.operationId}`;
+    // Operation uniqueness belongs to the owner. Structural tuple encoding
+    // avoids both cross-owner and delimiter collisions without rewriting old IDs.
+    const id = current?.id ?? `memory-${JSON.stringify([input.owner, input.operationId])}`;
     guardCurrent(input.guard);
     if (current) {
       const written = await tx.runAsync(

@@ -33,6 +33,8 @@ operation retries return the currently confirmed fact; conflicting retries
 reject. UI previews are consumed before awaiting writes and bind to the exact
 preview plus owner/focus generation. Edits replace the confirmed value; no
 unconfirmed suggestion or previous value is retained in a history table.
+New fact IDs encode the owner/operation tuple, so two owners can use identical
+operation IDs independently. Existing IDs remain stable during edits.
 
 Forget deletes the fact completely, with no value-bearing tombstone. Repeated
 deletion is harmless. Recreated preferences get a fresh operation-derived ID so
@@ -51,7 +53,7 @@ tests cover disabled values and preserved urgent routes. These tests use synthet
 data and mocked UI routing; native memory navigation, keyboard, large-text,
 force-close, and real participant usability remain pending root integration QA.
 
-All **15 focused tests in four suites**, TypeScript and focused lint passed on
+All **16 focused tests in four suites**, TypeScript and focused lint passed on
 CAM-DESKTOP. The Coach component regressions also verify that a focus return
 removes disabled preference text and a mocked provider receives neither practical
 memory values nor local memory identifiers. No native or real-provider pass is

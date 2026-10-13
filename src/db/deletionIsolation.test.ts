@@ -18,7 +18,6 @@ test('an unrelated same-handle draft save cannot join and survive the local dele
   let intercept = false;
   let rejection: unknown = null;
   let attempted = false;
-  let db: SQLiteDatabase;
   const adapter = (connection: DatabaseSync) => ({
     execAsync: async (sql: string) => connection.exec(sql),
     getFirstAsync: async (sql: string, ...args: SQLInputValue[]) =>
@@ -56,7 +55,7 @@ test('an unrelated same-handle draft save cannot join and survive the local dele
       throw error;
     }
   };
-  db = {
+  const db: SQLiteDatabase = {
     ...adapter(main),
     withTransactionAsync: ambient,
     withExclusiveTransactionAsync: async (fn: (tx: SQLiteDatabase) => Promise<void>) => {

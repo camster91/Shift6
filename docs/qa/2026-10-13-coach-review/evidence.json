@@ -1,5 +1,6 @@
 {
   "sourceCommit": "4ff0edd1",
+  "followUpSourceCommit": "996058d0",
   "device": "Pixel 7 API 36 emulator / Android 16 / x86_64",
   "host": "CAM-DESKTOP / Windows 11 Home 10.0.26300",
   "report": "../../46_LOCAL_COACH_REVIEW_QA.md",
@@ -555,6 +556,11 @@
       "file": "qa.py",
       "bytes": 3614,
       "sha256": "9e9d003775f675992a82532646abbf133b5ccf08cccd5b07ff706b126c74f856"
+    },
+    {
+      "file": "verify-export-feedback-integrated.log",
+      "bytes": 30386,
+      "sha256": "e604119d8006a753d6d0ff60020a201a68f74685e39159a293b52e8455c9ef52"
     }
   ]
 }

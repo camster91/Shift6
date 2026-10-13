@@ -118,6 +118,9 @@ sharing completes. Its three focused tests cover both failure retries and busy
 state while sharing is pending. It does not claim to repair Android's resolver
 or prove delivery from a resolved sharing promise. The frozen/native-tested APK
 above remains `4ff0edd1`; native copy acceptance for the follow-up is pending.
+Full `npm run verify` on `996058d0` passed with **1,019 tests / 138 suites**, lint,
+typecheck, Expo Doctor 21/21 and both mobile bundle exports. Its exact log is
+included alongside the earlier 4ff0 candidate log in the evidence manifest.
 
 The inspected goal screenshot is legible. Native ergonomics follow-ups are
 locale-aware measurement dates (currently UTC ISO text) and promoting the review

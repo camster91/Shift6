@@ -87,6 +87,9 @@ export interface CoachReviewPreview {
   effect: 'keep-current-plan' | 'open-existing-workflow';
 }
 
+const reviewTimeZoneGuidance =
+  'Enter a valid time zone, such as America/Toronto, then review these dates again.';
+
 function identifier(value: string) {
   if (
     typeof value !== 'string' ||
@@ -133,10 +136,21 @@ export function prepareCoachReview(input: CoachReviewInput): CoachReviewSnapshot
     !cycle.weeks.some((week) => week.weekNumber === cycle.currentWeek)
   )
     throw new Error('Review cycle weeks must be bounded and unambiguous.');
-  identifier(window.timeZone);
+  try {
+    identifier(window.timeZone);
+  } catch {
+    throw new Error(reviewTimeZoneGuidance);
+  }
   parseDateKey(window.startDate);
   parseDateKey(window.endDate);
-  const today = lifecycleDate(now, window.timeZone);
+  let today: string;
+  try {
+    today = lifecycleDate(now, window.timeZone);
+  } catch {
+    // Hermes may expose a native Java stack rather than a JavaScript RangeError.
+    // The recorded instant was validated above; keep the explicit zone and refuse it.
+    throw new Error(reviewTimeZoneGuidance);
+  }
   if (
     window.startDate > window.endDate ||
     window.endDate > today ||

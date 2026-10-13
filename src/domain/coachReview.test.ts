@@ -130,6 +130,38 @@ test.each([
   expect(() => prepareCoachReview(input({ window }))).toThrow();
 });
 
+const timeZoneGuidance =
+  'Enter a valid time zone, such as America/Toronto, then review these dates again.';
+
+test.each(['Invalid/Zone', '', '   ', '\t\n'])(
+  'invalid or blank review time zone gives actionable guidance (%j)',
+  (timeZone) => {
+    const source = input({ window: { ...input().window, timeZone } });
+    expect(() => prepareCoachReview(source)).toThrow(timeZoneGuidance);
+  },
+);
+
+test('Hermes multiline time zone failure is replaced with stable guidance without a fallback', () => {
+  const nativeFailure = new Error(
+    'com.facebook.hermes.intl.JSRangeErrorException: Invalid time zone\n' +
+      '\tat com.facebook.hermes.intl.DateTimeFormat.initialize(DateTimeFormat.java:123)\n' +
+      '\tat com.facebook.jni.NativeRunnable.run(Native Method)',
+  );
+  const formatter = jest.spyOn(Intl, 'DateTimeFormat').mockImplementationOnce(() => {
+    throw nativeFailure;
+  });
+  try {
+    expect(() => prepareCoachReview(input())).toThrow(new Error(timeZoneGuidance));
+    expect(formatter).toHaveBeenCalledTimes(1);
+    expect(formatter).toHaveBeenCalledWith(
+      'en',
+      expect.objectContaining({ timeZone: 'America/Toronto' }),
+    );
+  } finally {
+    formatter.mockRestore();
+  }
+});
+
 test('foreign/duplicate/future session evidence and foreign goal observations fail closed', () => {
   expect(() => prepareCoachReview(input({ ownerId: 'another-owner' }))).toThrow();
   expect(() => prepareCoachReview(input({ programVersionId: 'another-version' }))).toThrow();

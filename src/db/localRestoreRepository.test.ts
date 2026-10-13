@@ -135,6 +135,35 @@ test('duplicate restore and a populated installation refuse overwrite', async ()
   expect(await exportLocalUserData(db, 'guest-user', stamp)).toEqual(before);
 });
 
+test('Sunday uses day seven and survives restore and reexport', async () => {
+  const data = fixture();
+  const version = JSON.parse(String(data.userProgramVersions[0]!.version_json));
+  version.workouts[0].dayOfWeek = 7;
+  data.userProgramVersions[0]!.version_json = JSON.stringify(version);
+  await restoreLocalBackup(db, 'guest-user', serialized(data));
+  const exported = await exportLocalUserData(db, 'guest-user', stamp);
+  expect(
+    JSON.parse(String(exported.userProgramVersions[0]!.version_json)).workouts[0].dayOfWeek,
+  ).toBe(7);
+  expect(validateLocalBackup(JSON.stringify(exported)).recordCount).toBe(
+    exported.summary.totalRecordCount,
+  );
+});
+
+test('day zero is rejected before a transaction or write', async () => {
+  const data = fixture();
+  const version = JSON.parse(String(data.userProgramVersions[0]!.version_json));
+  version.workouts[0].dayOfWeek = 0;
+  data.userProgramVersions[0]!.version_json = JSON.stringify(version);
+  const writes = jest.spyOn(db, 'runAsync'),
+    transaction = jest.spyOn(db, 'withExclusiveTransactionAsync');
+  await expect(restoreLocalBackup(db, 'guest-user', serialized(data))).rejects.toThrow(
+    'invalid numeric value',
+  );
+  expect(writes).not.toHaveBeenCalled();
+  expect(transaction).not.toHaveBeenCalled();
+});
+
 test('late write failure rolls back every table', async () => {
   failAt = 'notification_preferences';
   await expect(restoreLocalBackup(db, 'guest-user', serialized(fixture()))).rejects.toThrow(

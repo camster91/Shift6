@@ -314,7 +314,7 @@ function version(value: unknown) {
     id(workout.id);
     check(workout.programVersionId === value.id, 'workout version mismatch.');
     text(workout.title, 'workout title');
-    number(workout.dayOfWeek, 0, 6, true);
+    number(workout.dayOfWeek, 1, 7, true);
     number(workout.estimatedDurationMinutes, 0, 1440);
     strings(workout.equipmentIds);
     choice(workout.focus, ['strength', 'cardio', 'mobility', 'conditioning', 'recovery', 'mixed']);

@@ -22,6 +22,16 @@ question, or returns to review if complete. No additional chat state is stored.
 Saving is single-flight and requires available local storage. The normal private
 plan workflow follows setup; public templates remain subject to qualified review.
 
+Confirmation freezes the displayed choices and Back/Edit controls. Profile,
+equipment and optional preferences are written, read back and recovery is consumed
+in one exclusive transaction. A changed recovery checkpoint fails closed. Owner,
+database, screen focus/mount generation and confirmed choices are checked before
+and after every awaited database operation; cancellation before commit rolls back
+the transaction. A committed confirmed snapshot remains valid if the screen loses
+focus afterward, but its stale completion cannot navigate or display a receipt.
+No newly edited draft is discarded by that continuation. This applies to both
+guided and standard setup, using the same canonical confirmation helper.
+
 Scope still pending for #340: native interrupted-flow and keyboard/accessibility
 QA, participant comparisons against six-step setup (#316), optional language
 extraction with ambiguity handling, and any reviewed-template recommendation

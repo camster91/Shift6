@@ -1,4 +1,4 @@
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import OnboardingScreen, { SetupScreen } from '../../app/onboarding';
 import type { OnboardingRecoveryState } from '../domain/onboardingRecovery';
 import {
@@ -9,6 +9,9 @@ import {
 import type { OnboardingProfile } from '../domain/types';
 
 const mockDatabase = {};
+let mockCurrentDatabase = mockDatabase;
+let mockBlur: () => void;
+let mockFocus: () => void;
 let mockOwner = 'guest-user';
 let mockRecovery: OnboardingRecoveryState | null = null;
 const mockSaveDraft = jest.fn(
@@ -19,17 +22,48 @@ const mockSaveDraft = jest.fn(
 const mockClearDraft = jest.fn(async (_database: unknown, _owner: string) => {
   mockRecovery = null;
 });
-const mockSaveProfile = jest.fn(async (_database: unknown, _profile: unknown) => undefined);
+const mockSaveProfile = jest.fn(
+  async (_database: unknown, _profile: unknown): Promise<void> => undefined,
+);
 const mockGetProfile = jest.fn<Promise<OnboardingProfile | null>, []>(async () => null);
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
+  useFocusEffect: (callback: () => () => void) => {
+    jest.requireActual('react').useEffect(() => {
+      let cleanup = callback();
+      mockBlur = () => cleanup();
+      mockFocus = () => {
+        cleanup = callback();
+      };
+      return () => cleanup();
+    }, [callback]);
+  },
   router: {
     replace: (...args: unknown[]) => mockReplace(...args),
     push: (...args: unknown[]) => mockPush(...args),
   },
 }));
-jest.mock('../db/context', () => ({ useLocalDatabase: () => mockDatabase }));
+jest.mock('../db/context', () => ({ useLocalDatabase: () => mockCurrentDatabase }));
+jest.mock('../db/onboardingConfirmation', () => ({
+  setupChoiceSnapshot: jest.requireActual('../db/onboardingConfirmation').setupChoiceSnapshot,
+  confirmOnboardingSetup: async (
+    database: unknown,
+    owner: string,
+    state: OnboardingRecoveryState,
+    _expected: unknown,
+    date: string,
+    current: () => boolean,
+  ) => {
+    if (!current()) throw new Error('Cancelled');
+    await mockSaveProfile(
+      database,
+      jest.requireActual('../domain/onboarding').toOnboardingProfile(state.draft, date, owner),
+    );
+    if (!current()) throw new Error('Cancelled');
+    await mockClearDraft(database, owner);
+  },
+}));
 jest.mock('../config/env', () => ({ runtimeConfig: { releaseMode: 'guest-only' } }));
 jest.mock('../services/UserIdentityProvider', () => ({ useCurrentUserId: () => mockOwner }));
 jest.mock('../services/AppServicesProvider', () => ({
@@ -60,6 +94,7 @@ jest.mock('../db/onboardingDraftRepository', () => ({
 beforeEach(() => {
   jest.clearAllMocks();
   mockOwner = 'guest-user';
+  mockCurrentDatabase = mockDatabase;
   mockRecovery = null;
   mockGetProfile.mockReset().mockResolvedValue(null);
   mockSaveDraft.mockImplementation(async (_database, _owner, state) => {
@@ -317,4 +352,79 @@ test('late owner load cannot populate guided setup for a different owner', async
   await waitFor(() => expect(screen.queryByText('Name: Sam')).toBeNull());
   expect(mockSaveProfile).not.toHaveBeenCalled();
   expect(mockSaveDraft).not.toHaveBeenCalled();
+});
+
+test.each(['owner', 'database', 'blur', 'unmount'] as const)(
+  'pending confirmed save cannot clear recovery or navigate after %s changes',
+  async (change) => {
+    mockRecovery = guidedRecovery();
+    let finish!: () => void;
+    mockSaveProfile.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const screen = await render(<SetupScreen guided />);
+    await waitFor(() => expect(screen.getByText('Units: Imperial')).toBeTruthy());
+    await fireEvent.press(screen.getByLabelText('Confirm and save reviewed setup'));
+    await waitFor(() => expect(mockSaveProfile).toHaveBeenCalledTimes(1));
+    expect(screen.getByLabelText('Back')).toBeDisabled();
+    expect(screen.getByLabelText('Edit Units')).toBeDisabled();
+    await fireEvent.press(screen.getByLabelText('Back'));
+    expect(screen.queryByText('How should Coach show up?')).toBeNull();
+    if (change === 'owner') {
+      mockOwner = 'second-owner';
+      await screen.rerender(<SetupScreen guided />);
+    }
+    if (change === 'database') {
+      mockCurrentDatabase = {};
+      await screen.rerender(<SetupScreen guided />);
+    }
+    if (change === 'blur')
+      await act(async () => {
+        mockBlur();
+      });
+    if (change === 'unmount') await screen.unmount();
+    await act(async () => {
+      finish();
+    });
+    expect(mockClearDraft).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
+    if (change === 'blur') {
+      await act(async () => {
+        mockFocus();
+      });
+      expect(screen.getByLabelText('Confirm and save reviewed setup')).toBeEnabled();
+    }
+  },
+);
+
+test('pending checkpoint freezes choice controls and retains the confirmed answer', async () => {
+  const screen = await render(<SetupScreen guided />);
+  await waitFor(() => expect(screen.getByText('What do you want to work toward?')).toBeTruthy());
+  await fireEvent.press(
+    screen.getByLabelText('General health. Build a balanced, sustainable routine.'),
+  );
+  await waitFor(() => expect(mockSaveDraft).toHaveBeenCalled());
+  let finish!: () => void;
+  mockSaveDraft.mockImplementationOnce(async (_db, _owner, state) => {
+    await new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    mockRecovery = JSON.parse(JSON.stringify(state));
+  });
+  await fireEvent.press(screen.getByLabelText('Continue'));
+  await waitFor(() =>
+    expect(
+      screen.getByLabelText('Strength. Get stronger with progressive training.'),
+    ).toBeDisabled(),
+  );
+  await fireEvent.press(screen.getByLabelText('Strength. Get stronger with progressive training.'));
+  await act(async () => {
+    finish();
+  });
+  await waitFor(() => expect(screen.getByText('Where are you starting from?')).toBeTruthy());
+  expect(mockRecovery?.draft.goals).toEqual(['general-health']);
+  expect(mockSaveProfile).not.toHaveBeenCalled();
 });

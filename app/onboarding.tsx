@@ -1,18 +1,15 @@
+import { confirmOnboardingSetup, setupChoiceSnapshot } from '../src/db/onboardingConfirmation';
 import {
   nextCoachSetupQuestion,
   coachSetupPrompts,
   coachSetupReview,
 } from '../src/domain/coachOnboarding';
 import { onboardingFlows, type OnboardingRecoveryState } from '../src/domain/onboardingRecovery';
-import {
-  getOnboardingDraft,
-  saveOnboardingDraft,
-  clearOnboardingDraft,
-} from '../src/db/onboardingDraftRepository';
+import { getOnboardingDraft, saveOnboardingDraft } from '../src/db/onboardingDraftRepository';
 import { ShiftArtwork } from '../src/components/artwork/ShiftArtwork';
 import { shiftArtwork } from '../src/design/artwork';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
@@ -39,7 +36,6 @@ import {
   isOnboardingComplete,
   recommendPrograms,
   preferredTrainingTimeOptions,
-  toOnboardingProfile,
   unitOptions,
 } from '../src/domain/onboarding';
 import {
@@ -54,8 +50,8 @@ import { equipmentCatalog } from '../src/domain/equipment';
 import { programLibrary, programLibraryPrograms } from '../src/domain/programLibrary';
 import { isProgramStartAllowed } from '../src/domain/runtimeContentGates';
 import { useLocalDatabase } from '../src/db/context';
-import { getUserConsiderations, saveUserConsiderations } from '../src/db/considerationsRepository';
-import { getOnboardingProfile, saveOnboardingProfile } from '../src/db/profileRepository';
+import { getUserConsiderations } from '../src/db/considerationsRepository';
+import { getOnboardingProfile } from '../src/db/profileRepository';
 import { colors, radii, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
@@ -100,6 +96,40 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
   const draftWrites = useRef<Promise<void>>(Promise.resolve());
   const saved = useRef(false);
   const actionBusy = useRef(false);
+  const screenScope = useRef({ generation: 0, focused: true, mounted: true });
+  const latestContext = useRef({ database, userId, choices: '' });
+  latestContext.current = {
+    database,
+    userId,
+    choices: setupChoiceSnapshot({
+      version: 1,
+      flow: 'detailed',
+      step: 0,
+      draft,
+      movementConsiderations: considerations.movementConsiderations,
+      accessibilityNeeds: considerations.accessibilityNeeds,
+    }),
+  };
+  useFocusEffect(
+    useCallback(() => {
+      screenScope.current.generation++;
+      screenScope.current.focused = true;
+      screenScope.current.mounted = true;
+      actionBusy.current = false;
+      setSaving(false);
+      return () => {
+        screenScope.current.focused = false;
+        screenScope.current.generation++;
+      };
+    }, [database, userId]),
+  );
+  useEffect(
+    () => () => {
+      screenScope.current.mounted = false;
+      screenScope.current.generation++;
+    },
+    [],
+  );
 
   const persistDraft = useCallback(
     (nextStep = step) => {
@@ -221,12 +251,14 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
   }, [draft, guided]);
 
   const updateDraft = <Key extends keyof typeof draft>(key: Key, value: (typeof draft)[Key]) => {
+    if (actionBusy.current || !screenScope.current.focused) return;
     setHasDraftChanges(true);
     setDraft((current) => ({ ...current, [key]: value }));
     setError(null);
   };
 
   const toggleMovementConsideration = (value: MovementConsideration) => {
+    if (actionBusy.current || !screenScope.current.focused) return;
     setHasDraftChanges(true);
     setConsiderations((current) => ({
       ...current,
@@ -239,6 +271,7 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
   };
 
   const toggleAccessibilityNeed = (value: AccessibilityNeed) => {
+    if (actionBusy.current || !screenScope.current.focused) return;
     setHasDraftChanges(true);
     setConsiderations((current) => ({
       ...current,
@@ -250,7 +283,10 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
     setError(null);
   };
 
-  const missingFields = getOnboardingMissingFields(currentStep, draft);
+  const missingFields = [
+    ...getOnboardingMissingFields(currentStep, draft),
+    ...(currentStep === 9 ? getOnboardingMissingFields(3, draft) : []),
+  ];
   const canContinue = missingFields.length === 0;
 
   if (loadingProfile) {
@@ -268,6 +304,31 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
 
   const handleContinue = async () => {
     if (!canContinue || actionBusy.current || loadedOwner !== userId || !database) return;
+    if (!screenScope.current.focused) return;
+    const generation = screenScope.current.generation;
+    const confirmed: OnboardingRecoveryState = JSON.parse(
+      JSON.stringify({
+        version: 1,
+        flow:
+          steps === essentialSteps
+            ? 'essential'
+            : steps === optionalSteps
+              ? 'optional'
+              : 'detailed',
+        step,
+        draft,
+        movementConsiderations: considerations.movementConsiderations,
+        accessibilityNeeds: considerations.accessibilityNeeds,
+      }),
+    );
+    const choices = setupChoiceSnapshot(confirmed);
+    const isCurrent = () =>
+      screenScope.current.mounted &&
+      screenScope.current.focused &&
+      screenScope.current.generation === generation &&
+      latestContext.current.database === database &&
+      latestContext.current.userId === userId &&
+      latestContext.current.choices === choices;
     actionBusy.current = true;
     setError(null);
 
@@ -276,12 +337,14 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
       try {
         const next = guided ? nextCoachSetupQuestion(draft) : step + 1;
         await persistDraft(next);
-        if (currentOwner.current === userId) setStep(next);
+        if (isCurrent()) setStep(next);
       } catch {
-        setError('We could not save your setup progress. Try Continue again.');
+        if (isCurrent()) setError('We could not save your setup progress. Try Continue again.');
       } finally {
-        actionBusy.current = false;
-        setSaving(false);
+        if (isCurrent()) {
+          actionBusy.current = false;
+          setSaving(false);
+        }
       }
       return;
     }
@@ -289,25 +352,18 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
     setSaving(true);
     try {
       await draftWrites.current;
-      if (currentOwner.current !== userId) return;
-      const updatedAt = new Date().toISOString();
-      const profile = toOnboardingProfile(draft, updatedAt, userId);
-      if (database) {
-        await saveOnboardingProfile(database, profile);
-        try {
-          await saveUserConsiderations(database, {
-            ...considerations,
-            userId,
-            updatedAt,
-          });
-        } catch {
-          throw new Error(
-            'Your main setup was saved, but movement and accessibility preferences were not. Retry here or edit them later from Profile.',
-          );
-        }
-      }
-      if (currentOwner.current !== userId) return;
-      if (database) await clearOnboardingDraft(database, userId);
+      if (!isCurrent()) return;
+      const expectedRecovery = await getOnboardingDraft(database, userId);
+      if (!isCurrent()) return;
+      await confirmOnboardingSetup(
+        database,
+        userId,
+        confirmed,
+        expectedRecovery,
+        new Date().toISOString(),
+        isCurrent,
+      );
+      if (!isCurrent()) return;
       saved.current = true;
       trackAnalyticsEvent(analytics, 'onboarding_completed', {
         goalCount: draft.goals.length,
@@ -317,10 +373,13 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
       });
       router.replace('/programs');
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'We could not save your setup.');
+      if (isCurrent())
+        setError(saveError instanceof Error ? saveError.message : 'We could not save your setup.');
     } finally {
-      actionBusy.current = false;
-      setSaving(false);
+      if (isCurrent()) {
+        actionBusy.current = false;
+        setSaving(false);
+      }
     }
   };
 
@@ -386,7 +445,10 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
             label="Back"
             variant="ghost"
             icon={<Ionicons name="arrow-back" size={18} color={colors.ink} />}
-            onPress={() => setStep((current) => Math.max(0, current - 1))}
+            disabled={saving}
+            onPress={() => {
+              if (!actionBusy.current) setStep((current) => Math.max(0, current - 1));
+            }}
             style={styles.backButton}
           />
         ) : (
@@ -405,17 +467,28 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
         disabled={saving || loadedOwner !== userId || !database}
         onPress={() => {
           if (actionBusy.current) return;
+          const generation = screenScope.current.generation;
+          const isCurrent = () =>
+            screenScope.current.mounted &&
+            screenScope.current.focused &&
+            screenScope.current.generation === generation &&
+            latestContext.current.database === database &&
+            latestContext.current.userId === userId;
           actionBusy.current = true;
           setSaving(true);
           void (hasDraftChanges ? persistDraft() : Promise.resolve())
             .then(() => {
-              if (currentOwner.current === userId)
-                router.replace(guided ? '/onboarding' : '/coach-onboarding');
+              if (isCurrent()) router.replace(guided ? '/onboarding' : '/coach-onboarding');
             })
-            .catch(() => setError('Your choices could not be saved. Stay here and try again.'))
+            .catch(() => {
+              if (isCurrent())
+                setError('Your choices could not be saved. Stay here and try again.');
+            })
             .finally(() => {
-              actionBusy.current = false;
-              setSaving(false);
+              if (isCurrent()) {
+                actionBusy.current = false;
+                setSaving(false);
+              }
             });
         }}
       />
@@ -439,7 +512,9 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
                 label={`Edit ${row.name}`}
                 variant="ghost"
                 disabled={saving}
-                onPress={() => setStep(row.question)}
+                onPress={() => {
+                  if (!actionBusy.current) setStep(row.question);
+                }}
               />
             </View>
           ))}
@@ -463,7 +538,9 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
             label="Edit movement and accessibility preferences"
             variant="ghost"
             disabled={saving}
-            onPress={() => setStep(5)}
+            onPress={() => {
+              if (!actionBusy.current) setStep(5);
+            }}
           />
           <Text variant="small">
             Saving setup creates no measured baseline, plan or cycle. Personal goals still require
@@ -476,7 +553,10 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
         <Button
           label="Restore a local export instead"
           variant="secondary"
-          onPress={() => router.push('/restore')}
+          disabled={saving}
+          onPress={() => {
+            if (!actionBusy.current) router.push('/restore');
+          }}
         />
       ) : null}
       {step === 0 && database ? (
@@ -493,6 +573,7 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
         toggleAccessibilityNeed,
         recommendations,
         database !== null,
+        saving,
       )}
 
       {currentStep === 9 ? <ShiftArtwork {...shiftArtwork.journey} /> : null}
@@ -505,7 +586,9 @@ export function SetupScreen({ guided = false }: { guided?: boolean }) {
           <Button
             label="Customize name, movement, accessibility and Coach"
             variant="secondary"
+            disabled={saving}
             onPress={() => {
+              if (actionBusy.current) return;
               setSteps(optionalSteps);
               setStep(5);
             }}
@@ -528,6 +611,7 @@ function renderStep(
   toggleAccessibilityNeed: (value: AccessibilityNeed) => void,
   recommendations: ReturnType<typeof recommendPrograms>,
   hasNativeDatabase: boolean,
+  locked: boolean,
 ) {
   switch (step) {
     case 0:
@@ -563,6 +647,7 @@ function renderStep(
             placeholderTextColor={colors.inkMuted}
             returnKeyType="done"
             style={styles.input}
+            editable={!locked}
             value={draft.displayName}
           />
         </View>
@@ -576,6 +661,7 @@ function renderStep(
         >
           {goalOptions.map((option) => (
             <OptionCard
+              disabled={locked}
               key={option.value}
               label={option.label}
               description={option.description}
@@ -594,6 +680,7 @@ function renderStep(
         >
           {experienceOptions.map((option) => (
             <OptionCard
+              disabled={locked}
               key={option.value}
               label={option.label}
               description={option.description}
@@ -612,6 +699,7 @@ function renderStep(
         >
           {equipmentCatalog.map((equipment) => (
             <OptionCard
+              disabled={locked}
               key={equipment.id}
               label={equipment.name}
               description={equipment.description ?? equipment.aliases.join(' · ')}
@@ -642,6 +730,7 @@ function renderStep(
           <View style={styles.optionGrid}>
             {[2, 3, 4, 5, 6].map((days) => (
               <OptionCard
+                disabled={locked}
                 key={days}
                 label={`${days} days`}
                 selected={draft.trainingDaysPerWeek === days}
@@ -656,6 +745,7 @@ function renderStep(
           <View style={styles.optionGrid}>
             {[20, 30, 45, 60].map((minutes) => (
               <OptionCard
+                disabled={locked}
                 key={minutes}
                 label={`${minutes} min`}
                 selected={draft.preferredSessionMinutes === minutes}
@@ -669,6 +759,7 @@ function renderStep(
           </Text>
           {preferredTrainingTimeOptions.map((option) => (
             <OptionCard
+              disabled={locked}
               key={option.value}
               label={option.label}
               description={option.description}
@@ -690,6 +781,7 @@ function renderStep(
           </Text>
           {movementConsiderationOptions.map((option) => (
             <OptionCard
+              disabled={locked}
               key={option.value}
               label={option.label}
               description={option.description}
@@ -703,6 +795,7 @@ function renderStep(
           </Text>
           {accessibilityNeedOptions.map((option) => (
             <OptionCard
+              disabled={locked}
               key={option.value}
               label={option.label}
               description={option.description}
@@ -729,6 +822,7 @@ function renderStep(
         >
           {unitOptions.map((option) => (
             <OptionCard
+              disabled={locked}
               key={option.value}
               label={option.label}
               description={option.description}
@@ -747,6 +841,7 @@ function renderStep(
         >
           {healthConnectionOptions.map((option) => (
             <OptionCard
+              disabled={locked}
               key={option.value}
               label={option.label}
               description={option.description}
@@ -775,6 +870,7 @@ function renderStep(
           </Text>
           {coachToneOptions.map((option) => (
             <OptionCard
+              disabled={locked}
               key={option.value}
               label={option.label}
               description={option.description}
@@ -787,6 +883,7 @@ function renderStep(
           </Text>
           {coachInterventionOptions.map((option) => (
             <OptionCard
+              disabled={locked}
               key={option.value}
               label={option.label}
               description={option.description}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import type { Exercise, SetTarget } from '../domain/types';
 import { parsePlanText } from '../domain/planTextImport';
@@ -17,6 +17,8 @@ export function PlanTextImport({
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [previewText, setPreviewText] = useState<string | null>(null);
+  const [previewToken, setPreviewToken] = useState(0);
+  const revision = useRef(0);
   const [message, setMessage] = useState('');
   const preview = previewText === null ? null : parsePlanText(previewText, available);
   const ready =
@@ -30,6 +32,7 @@ export function PlanTextImport({
         accessibilityLabel={`${open ? 'Close' : 'Import'} pasted targets for ${workoutTitle}`}
         variant="ghost"
         onPress={() => {
+          revision.current++;
           setOpen(!open);
           setText('');
           setPreviewText(null);
@@ -59,6 +62,7 @@ export function PlanTextImport({
             accessibilityLabel={`User-owned workout text for ${workoutTitle}`}
             value={text}
             onChangeText={(value) => {
+              revision.current++;
               setText(value);
               setPreviewText(null);
               setMessage('');
@@ -75,7 +79,10 @@ export function PlanTextImport({
           <Button
             label="Preview pasted targets"
             variant="secondary"
-            onPress={() => setPreviewText(text)}
+            onPress={() => {
+              setPreviewToken(++revision.current);
+              setPreviewText(text);
+            }}
           />
           {preview ? (
             <View>
@@ -104,6 +111,10 @@ export function PlanTextImport({
                 label="Add reviewed rows to this workout"
                 disabled={!ready}
                 onPress={() => {
+                  if (!ready || previewText === null || previewToken !== revision.current) return;
+                  // Consume synchronously before React updates; duplicate or stale
+                  // callbacks cannot append the same preview a second time.
+                  revision.current++;
                   try {
                     onApply(previewText!);
                     setText('');
@@ -112,6 +123,7 @@ export function PlanTextImport({
                       'Rows added to your unsaved plan. Choose Save draft program to keep them.',
                     );
                   } catch (error) {
+                    setPreviewText(null);
                     setMessage(
                       error instanceof Error ? error.message : 'Import could not be applied.',
                     );

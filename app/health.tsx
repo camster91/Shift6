@@ -18,6 +18,7 @@ import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 import { healthTypesForPreference } from '../src/services/health';
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
+import { healthSyncFeedback } from '../src/services/healthSyncFeedback';
 import { syncHealthSummaries, type HealthSyncStatus } from '../src/services/healthSync';
 
 type HealthSyncUiState = 'idle' | 'syncing' | HealthSyncStatus;
@@ -386,23 +387,6 @@ export default function HealthSettingsScreen() {
       </Text>
     </Screen>
   );
-}
-
-function healthSyncFeedback(state: HealthSyncUiState, importedCount: number): string | null {
-  switch (state) {
-    case 'synced':
-      return `${importedCount} health summar${importedCount === 1 ? 'y was' : 'ies were'} saved on this device.`;
-    case 'unavailable':
-      return 'The native health connector is unavailable on this device.';
-    case 'permission-denied':
-      return 'No health data was imported. You can change access in the platform health settings.';
-    case 'failed':
-      return 'Health import did not finish. Your workout data is unaffected.';
-    case 'syncing':
-      return 'Reading only the summaries you selected…';
-    default:
-      return null;
-  }
 }
 
 function HealthTrendCard({

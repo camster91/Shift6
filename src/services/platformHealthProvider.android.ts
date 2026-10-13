@@ -11,6 +11,7 @@ import {
 
 import type { HealthDataType, HealthDateRange, HealthSummary } from '../domain/health';
 import type { HealthPermissionResult, HealthProvider } from './health';
+import { readAllHealthPages } from './healthPagination';
 
 const recordTypes = {
   steps: 'Steps',
@@ -97,8 +98,10 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
   };
   switch (type) {
     case 'steps': {
-      const result = await readRecords('Steps', options);
-      return result.records.map((record) => ({
+      const records = await readAllHealthPages((pageToken) =>
+        readRecords('Steps', { ...options, pageSize: 1000, ...(pageToken ? { pageToken } : {}) }),
+      );
+      return records.map((record) => ({
         id: recordId(
           record.metadata?.id ?? record.metadata?.clientRecordId,
           record.startTime,
@@ -113,8 +116,14 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
       }));
     }
     case 'workouts': {
-      const result = await readRecords('ExerciseSession', options);
-      return result.records.map((record) => ({
+      const records = await readAllHealthPages((pageToken) =>
+        readRecords('ExerciseSession', {
+          ...options,
+          pageSize: 1000,
+          ...(pageToken ? { pageToken } : {}),
+        }),
+      );
+      return records.map((record) => ({
         id: recordId(
           record.metadata?.id ?? record.metadata?.clientRecordId,
           record.startTime,
@@ -129,8 +138,14 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
       }));
     }
     case 'heart-rate': {
-      const result = await readRecords('HeartRate', options);
-      return result.records.flatMap((record) =>
+      const records = await readAllHealthPages((pageToken) =>
+        readRecords('HeartRate', {
+          ...options,
+          pageSize: 1000,
+          ...(pageToken ? { pageToken } : {}),
+        }),
+      );
+      return records.flatMap((record) =>
         record.samples.map((sample, index) => ({
           id: `${recordId(record.metadata?.id ?? record.metadata?.clientRecordId, sample.time, type)}-${index}`,
           type,
@@ -143,8 +158,14 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
       );
     }
     case 'resting-heart-rate': {
-      const result = await readRecords('RestingHeartRate', options);
-      return result.records.map((record) => ({
+      const records = await readAllHealthPages((pageToken) =>
+        readRecords('RestingHeartRate', {
+          ...options,
+          pageSize: 1000,
+          ...(pageToken ? { pageToken } : {}),
+        }),
+      );
+      return records.map((record) => ({
         id: recordId(record.metadata?.id ?? record.metadata?.clientRecordId, record.time, type),
         type,
         value: record.beatsPerMinute,
@@ -155,8 +176,14 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
       }));
     }
     case 'sleep-duration': {
-      const result = await readRecords('SleepSession', options);
-      return result.records.map((record) => ({
+      const records = await readAllHealthPages((pageToken) =>
+        readRecords('SleepSession', {
+          ...options,
+          pageSize: 1000,
+          ...(pageToken ? { pageToken } : {}),
+        }),
+      );
+      return records.map((record) => ({
         id: recordId(
           record.metadata?.id ?? record.metadata?.clientRecordId,
           record.startTime,
@@ -171,8 +198,10 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
       }));
     }
     case 'weight': {
-      const result = await readRecords('Weight', options);
-      return result.records.map((record) => ({
+      const records = await readAllHealthPages((pageToken) =>
+        readRecords('Weight', { ...options, pageSize: 1000, ...(pageToken ? { pageToken } : {}) }),
+      );
+      return records.map((record) => ({
         id: recordId(record.metadata?.id ?? record.metadata?.clientRecordId, record.time, type),
         type,
         value: record.weight.inKilograms,

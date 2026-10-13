@@ -89,11 +89,51 @@ describe('notification provider boundary', () => {
     await expect(provider.getPermissionStatus()).resolves.toBe('denied');
     expect(mockSetNotificationChannelAsync).not.toHaveBeenCalled();
   });
+
+  it('reports an Android denial even when another permission prompt remains possible', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const denial = { status: 'denied', granted: false, canAskAgain: true };
+    mockGetPermissionsAsync.mockResolvedValue(denial);
+    mockRequestPermissionsAsync.mockResolvedValue(denial);
+    const provider = new ExpoNotificationProvider(loadMockNotifications);
+
+    await expect(provider.getPermissionStatus()).resolves.toBe('denied');
+    expect(mockRequestPermissionsAsync).not.toHaveBeenCalled();
+    // Retrying remains an explicit caller action; mapping must not suppress it.
+    await expect(provider.requestPermission()).resolves.toBe('denied');
+    expect(mockRequestPermissionsAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps an unrequested permission distinct from denial', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    mockGetPermissionsAsync.mockResolvedValue({
+      status: 'undetermined',
+      granted: false,
+      canAskAgain: true,
+    });
+    const provider = new ExpoNotificationProvider(loadMockNotifications);
+    await expect(provider.getPermissionStatus()).resolves.toBe('not-determined');
+    expect(mockRequestPermissionsAsync).not.toHaveBeenCalled();
+  });
+
+  it('recognizes iOS provisional notification delivery without prompting', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    mockGetPermissionsAsync.mockResolvedValue({
+      status: 'undetermined',
+      granted: false,
+      canAskAgain: true,
+      ios: { status: 3 },
+    });
+    const provider = new ExpoNotificationProvider(loadMockNotifications);
+    await expect(provider.getPermissionStatus()).resolves.toBe('granted');
+    expect(mockRequestPermissionsAsync).not.toHaveBeenCalled();
+  });
 });
 
 async function loadMockNotifications(): Promise<NotificationModule> {
   return {
     AndroidImportance: { DEFAULT: 3 },
+    IosAuthorizationStatus: { PROVISIONAL: 3 },
     SchedulableTriggerInputTypes: { DATE: 'date' },
     addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
     cancelScheduledNotificationAsync: jest.fn(),

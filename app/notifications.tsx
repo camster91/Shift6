@@ -26,6 +26,7 @@ import {
   type NotificationRuntimeSnapshot,
 } from '../src/services/NotificationRuntimeProvider';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
+import { runtimeConfig } from '../src/config/env';
 
 const notificationProvider = createExpoNotificationProvider();
 
@@ -187,9 +188,19 @@ export default function NotificationsSettingsScreen() {
           SHIFT6 will not send notifications until you approve device access. Core workout logging
           never depends on notifications.
         </Text>
-        {permissionStatus === 'not-determined' ? (
+        {permissionStatus === 'denied' ? (
+          <Text variant="small" tone="muted" style={styles.cardCopy}>
+            Permission was denied. You can try again, or enable notifications in system settings if
+            the device no longer shows a prompt.
+          </Text>
+        ) : null}
+        {permissionStatus === 'not-determined' || permissionStatus === 'denied' ? (
           <Button
-            label="Allow device notifications"
+            label={
+              permissionStatus === 'denied'
+                ? 'Try allowing device notifications'
+                : 'Allow device notifications'
+            }
             variant="secondary"
             loading={permissionBusy}
             disabled={permissionBusy}
@@ -258,8 +269,10 @@ export default function NotificationsSettingsScreen() {
       ) : null}
       <Text variant="caption" tone="muted" style={styles.previewNote}>
         {database
-          ? 'Saved locally and queued for authenticated sync when an account service is connected.'
-          : 'Web preview: controls are interactive, but native settings are not persisted.'}
+          ? runtimeConfig.releaseMode === 'guest-only'
+            ? 'Notification choices stay on this device. No cloud sync is available in this release.'
+            : 'Saved locally and queued for authenticated sync when an account service is connected.'
+          : 'Local notification settings cannot be saved on this surface.'}
       </Text>
     </Screen>
   );

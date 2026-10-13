@@ -1,0 +1,206 @@
+{
+  "nativeSource": "001ead9d",
+  "device": "Pixel7 Android16 API36 emulator-5554",
+  "files": [
+    {
+      "file": "lifecycle-back-home-returned-list-001e.png",
+      "bytes": 109503,
+      "sha256": "ac2ae3219c5f30a86159045511285291e3e0940a337b194acb2bc0c8fe26ecd8"
+    },
+    {
+      "file": "lifecycle-back-home-returned-list-001e.xml",
+      "bytes": 9089,
+      "sha256": "15feca7a9ff4b26513806f91618f0743650f318da1e19d2c591e329cfae2538e"
+    },
+    {
+      "file": "lifecycle-exact-active-cycle-001e.png",
+      "bytes": 228531,
+      "sha256": "17dfcfe9fdd0e6782426a8fe5178477d3bc78124f6adf1d738f13a0c3ca275f2"
+    },
+    {
+      "file": "lifecycle-exact-active-cycle-001e.xml",
+      "bytes": 21250,
+      "sha256": "3bd39f62b336d4ed099cb2f49e2b15fadb1731b25d557e4757cc1c861f95c8e3"
+    },
+    {
+      "file": "lifecycle-export-001e.json",
+      "bytes": 323970,
+      "sha256": "d42725cba901ab6f7259021503316c66e67f5404a2e774706cab30697f45592c"
+    },
+    {
+      "file": "lifecycle-external-receipt-001e.png",
+      "bytes": 76899,
+      "sha256": "28dc613b6863ab0614ba32025ce26e1ba30b782709c2aa56c693729e2cab98b6"
+    },
+    {
+      "file": "lifecycle-external-receipt-001e.xml",
+      "bytes": 1681,
+      "sha256": "651cc15571d9bf1e8b621deacfe7cfaaa6f87fdb08091c29448c2bfc352834ea"
+    },
+    {
+      "file": "lifecycle-new-cycle-ready-001e.png",
+      "bytes": 171205,
+      "sha256": "26046c745cd8036c731082cdafe706f81514f98433c822db70bf04f39bf8b88c"
+    },
+    {
+      "file": "lifecycle-new-cycle-ready-001e.xml",
+      "bytes": 25484,
+      "sha256": "0081e131f8f77d5a5b4d2533d60b2c23654be3318ba826526f7bcbf434cd380d"
+    },
+    {
+      "file": "lifecycle-new-cycle-started-001e.png",
+      "bytes": 275204,
+      "sha256": "4cadcccb5998e21318d43df4d44e7102cb2d85e801588d5a2f40537c4fc2b5d3"
+    },
+    {
+      "file": "lifecycle-new-cycle-started-001e.xml",
+      "bytes": 20592,
+      "sha256": "81e3b22c59a23d0d5a8764e222d8d494cbc90e994ce0ca95314d4dae50d330c6"
+    },
+    {
+      "file": "lifecycle-other-active-blocks-resume-001e.png",
+      "bytes": 280889,
+      "sha256": "01a2bebd541fbdf5fa9f5f09e4ec1139a7094fec55c39b673f2401ff159e578b"
+    },
+    {
+      "file": "lifecycle-other-active-blocks-resume-001e.xml",
+      "bytes": 18983,
+      "sha256": "67cda31c62b2e136ccb43c8950721edc3c00fa0a33e309e9c353a6bd5ac660d7"
+    },
+    {
+      "file": "lifecycle-pause-cancel-001e.png",
+      "bytes": 202547,
+      "sha256": "1899c939784373c27378c90879891e07cd8dad05c13e2835f91b4f79a6769cc8"
+    },
+    {
+      "file": "lifecycle-pause-cancel-001e.xml",
+      "bytes": 19038,
+      "sha256": "3f8346cb383ff9256961a6fa96e67569f44bb46d8026a804f18b4ce17675e36b"
+    },
+    {
+      "file": "lifecycle-pause-preview-001e.png",
+      "bytes": 194054,
+      "sha256": "bcc843210aef641259ab7a8e86ebe91e67f1d507caba34c7c48c0bbe32656c7d"
+    },
+    {
+      "file": "lifecycle-pause-preview-001e.xml",
+      "bytes": 6856,
+      "sha256": "0ae9b4cd9f6a536f0d4b93838f3c2bf2e881a47c00e2e4fd0a274e167f2520d4"
+    },
+    {
+      "file": "lifecycle-paused-001e.png",
+      "bytes": 229680,
+      "sha256": "d8e2af4e9be42191a4e9a323beeebb5f937893369f2d71e13b7bdd2aff0f502c"
+    },
+    {
+      "file": "lifecycle-paused-001e.xml",
+      "bytes": 21251,
+      "sha256": "a1c2cd8f4b498212fa82be298d961a98e664105a76ea03a877c661ef8c46a5a7"
+    },
+    {
+      "file": "lifecycle-paused-home-relaunch-001e.png",
+      "bytes": 240773,
+      "sha256": "4c856a29519c8670faa11ee96048e259c5fb83f82c0d644b346ae6814482509c"
+    },
+    {
+      "file": "lifecycle-paused-home-relaunch-001e.xml",
+      "bytes": 15862,
+      "sha256": "fdb5f9318ebc7a48886f03059923c87c8fa5671cd4a81b3ab679eaf658716031"
+    },
+    {
+      "file": "lifecycle-private-plan-list-001e.png",
+      "bytes": 271164,
+      "sha256": "ad7c908c04c83479b1cb79fc96c0c7d2fed93398d1133b736fcc9c16e37533fb"
+    },
+    {
+      "file": "lifecycle-private-plan-list-001e.xml",
+      "bytes": 18519,
+      "sha256": "f2c0736406db705277c3b9fb18d872e2f1ab5900cb2684e3f0054a984b4e1b2a"
+    },
+    {
+      "file": "lifecycle-read-only-empty-reflection-001e.png",
+      "bytes": 90018,
+      "sha256": "87015713aee7afd050662de6f8920dd8fe81a63671737ec89ca7f12525ad16f8"
+    },
+    {
+      "file": "lifecycle-read-only-empty-reflection-001e.xml",
+      "bytes": 7625,
+      "sha256": "aea41d23e2066b9257ece85601f7d79a2731e6a634d5a1974d19cab348e54cbf"
+    },
+    {
+      "file": "lifecycle-resume-preview-001e.png",
+      "bytes": 218632,
+      "sha256": "0cce244b87b3f04c70845029e8a17b2866498f072764b0bf1be81221a637d974"
+    },
+    {
+      "file": "lifecycle-resume-preview-001e.xml",
+      "bytes": 6924,
+      "sha256": "b3b454a076b65ed08d11bbe21cd52fa56b4c643205ffb327a0cf68856b951114"
+    },
+    {
+      "file": "lifecycle-resumed-001e.png",
+      "bytes": 230144,
+      "sha256": "1005cefc40b66c24608bb08cf34712fb0a167a7b21235c3f0560beafd458f6f9"
+    },
+    {
+      "file": "lifecycle-resumed-001e.xml",
+      "bytes": 21254,
+      "sha256": "5d15282916d78a4b429ba159b228faac0ef1ed06d683dc896b99309d86649445"
+    },
+    {
+      "file": "lifecycle-review-date-preview-001e.png",
+      "bytes": 216481,
+      "sha256": "31c7a29d959ba10de7636af58ec53195493c2377bc4135d63dee70857eb3accc"
+    },
+    {
+      "file": "lifecycle-review-date-preview-001e.xml",
+      "bytes": 6882,
+      "sha256": "f8298187b89429913b22761a9d0ee802dd4c427d00d9ea7fa3b10a89f0bd1095"
+    },
+    {
+      "file": "lifecycle-review-date-saved-001e.png",
+      "bytes": 237882,
+      "sha256": "96ff743200d40ca91328085a5afc77e707632d4b58463736bf25ffad897c6d60"
+    },
+    {
+      "file": "lifecycle-review-date-saved-001e.xml",
+      "bytes": 19158,
+      "sha256": "af24ff1311055b99073b35dbe130c2fd6abf7981962553ff664fe81c241b32e4"
+    },
+    {
+      "file": "lifecycle-saved-cycle-list-001e.png",
+      "bytes": 110264,
+      "sha256": "6692b187dd0d846a330a4410faa594c26b14970b89c530f3e4ad759e99aee66b"
+    },
+    {
+      "file": "lifecycle-saved-cycle-list-001e.xml",
+      "bytes": 9089,
+      "sha256": "8f62d644f34510f3cd1e39574a02624187656eb3d53c5fadd2a17c0d92cf7650"
+    },
+    {
+      "file": "lifecycle-two-cycles-export-001e.json",
+      "bytes": 330245,
+      "sha256": "289691948348b42971b8398daf828efb26d2c5017f877be31a270a537b4e48fe"
+    },
+    {
+      "file": "lifecycle-two-cycles-external-001e.png",
+      "bytes": 77251,
+      "sha256": "6606797dac0548cedeb52091521d00db877968ba05cf03f0ad780357395ed3a0"
+    },
+    {
+      "file": "lifecycle-two-cycles-external-001e.xml",
+      "bytes": 1681,
+      "sha256": "8fd5889c6f162e6f330845f45bf618c6ccf58c62f54e2048cbacd4cf1d2f3faa"
+    },
+    {
+      "file": "lifecycle-two-cycles-list-001e.png",
+      "bytes": 148980,
+      "sha256": "f296069636ba9d705b5c9d0bee2cfbb05ae3feb93eaa8534909b04456430c2dd"
+    },
+    {
+      "file": "lifecycle-two-cycles-list-001e.xml",
+      "bytes": 10936,
+      "sha256": "83b843bf59a9326e195dcc8eb3d23a2c7bd19d49658b900bb70b89beb4826e85"
+    }
+  ]
+}

@@ -4,6 +4,14 @@
 
 ## Environment and frozen candidates
 
+Changed-binary follow-up: `2fe82a20` APK SHA-256 **683FD0F0CC0A0352857E35FC3C3E58F87FD75094D176CC9F5BD34B3E1CE9BBA7**, built successfully in 2m56s (756 tasks, 30 executed), installed with data preserved. The original pending row below is superseded by the following observed receipts.
+
+**#356 native pass:** explicit Edit → lb preview → Confirm → Save on the fresh QA Layout KG set keeps occurrence time **2026-10-13T20:29:06.376Z**, while provenance records the correction separately at **2026-10-13T20:50:28.208Z**. External `unit-new-correction-export-2fe8.json` contains seven saved sets, equivalent **88.18490487395103 lb**, unchanged ID/idempotency/reps, all other actuals and original programs/versions unchanged. Occurrence/edit sidecars match these distinct times. No historical timestamp repair was attempted.
+
+**#355 native pass after reload:** the next-target card shows **QA KG — 45kg × 5** and **QA LB — 95lb × 5**, preserving the deterministic target results (`unit-progress-readable-target-names-2fe8`). This follows explicit saving of the second synthetic set (92lb × 6) and completing QA Layout; it is not a week-two workout or qualified dose approval.
+
+**#357 observed failure:** returning to a previously mounted Progress tab after completing QA Layout retained its pre-completion zero-workout/one-set totals. Force-close/relaunch shows one completed workout/two sets and correct next targets. `unit-progress-stale-after-completion-2fe8` and reload captures preserve the distinction. Focus refresh/stale-read fixes remain pending; no data loss is inferred. One transient note-save error also appeared on resume without note editing; the cause remains unresolved and is under separate investigation. Subsequent input cleared the error, which does not prove successful note persistence.
+
 Native ADB QA ran on the authorized CAM-DESKTOP, Windows 11 build 26300, Pixel 7 Shift6-QA emulator, Android 16/API 36, x86_64, emulator-5554, hardware-accelerated WHPX/host GPU. Guest-only, offline, empty API URL; unrestricted task filesystem/network permissions and explicit ADB authorization. Synthetic private plans do not grant public fitness content approval.
 
 | Native source | APK SHA-256                                                        | Scope                                                                                                           |

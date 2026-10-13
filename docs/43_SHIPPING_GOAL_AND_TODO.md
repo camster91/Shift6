@@ -2,7 +2,7 @@
 
 13 October 2026. This is the current delivery index for the expanded iOS/Android goal. It supersedes the delivery order in doc 37, while preserving that document's dated audit and evidence. It does not approve content, alter the shipping guest configuration or authorize a release.
 
-Native QA subsequently filed #352–#356 for invalid optional measurements, misleading imported units, compressed set targets, custom movement labels and correction timestamps. The refreshed backlog is **46 open issues**; the original 41-issue reconciliation remains a dated snapshot. All five new defects are mapped below rather than excluded from the shipping TODO.
+Native QA subsequently filed #352–#357 for invalid optional measurements, misleading imported units, compressed set targets, custom movement labels, correction timestamps and stale Progress records after completion. The refreshed backlog is **47 open issues**; the original 41-issue reconciliation remains a dated snapshot. All six new defects are mapped below rather than excluded from the shipping TODO.
 
 ## Goal and product promise
 
@@ -14,7 +14,7 @@ Core training remains free, local and usable offline. Keep deterministic progres
 
 ## Verified starting point
 
-- Initial GitHub reconciliation: **41 open issues**, including umbrella epics; subsequent native findings increased the mapped backlog to **46**. Issue count is not a count of missing features. No issue was closed by this reconciliation.
+- Initial GitHub reconciliation: **41 open issues**, including umbrella epics; subsequent native findings increased the mapped backlog to **47**. Issue count is not a count of missing features. No issue was closed by this reconciliation.
 - `main` contains merged guest release PR #330 (`4e8a2c9b`). Later work remains in reviewable draft PRs, not merged or published.
 - [#344](https://github.com/camster91/Shift6/pull/344): guest guidance/save copy/goal units, native Android QA and earlier iOS CI evidence.
 - [#346](https://github.com/camster91/Shift6/pull/346), stacked on #344: local restore, Health Connect pagination/totals and saved-plan discovery. Native synthetic framework/picker/export evidence is in doc 39.
@@ -70,8 +70,13 @@ Follow-up issue mapping:
 | #354  | Native loaded-set review compressed the target into a narrow column. `61e03f8e` wraps controls below a full-width set header; full verify 874/129 passes. Native normal and 200% text screenshots show readable targets and visible Edit controls. Physical-device and assistive-technology acceptance remain pending. | T03, T09 |
 | #355  | Progress calculates correct targets but shows internal custom IDs. `8353887f` uses existing owned movement labels. Source screen regression passes; native readback remains pending.                                                                                                                                   | T03, T09 |
 | #356  | Native unit correction overwrites completion time. `a013edf3` preserves occurrence time and records edit time separately; `2fe82a20` separates new-correction and legacy-backup tests. Full verify passes 877 tests/130 suites; fresh native timestamp readback is pending. No automatic backdating.                   | T03, T08 |
+| #357  | Native `2fe82a20` retains pre-completion Progress totals on tab return; reload restores actual records. Focus refresh and stale-read guards are being implemented; changed-binary readback remains pending.                                                                                                            | T03, T09 |
 
 ## Ordered TODO and acceptance receipts
+
+Follow-up #357 belongs to T03/T09: mounted Progress retains pre-completion records when returning from a finished workout. Native `2fe82a20` reproduces it; a focus refresh fix and changed-binary record readback are pending. Reload restores the actual totals; no data loss is inferred.
+
+T04 confirmed scheduling source is integrated at `eb6cd6d2`: frozen dates/timezones, atomic baseline plus first move, append-only revisions, shared readers and guarded Start receipts. Full verification passes **942 tests/133 suites** and both mobile exports. Native schema-15 scheduling, restore and reminder acceptance remain pending. This does not complete repeat-week, first-class Shift handover or qualified return prescriptions.
 
 - [x] **T01 — Reconcile scope and live backlog.** Map all 41 open issues, distinguish main from draft work, record goal/score and preserve dated evidence. Publish this index in a reviewable commit and link the master issue; no issue closure implied.
 - [x] **T02 — Stabilize one integrated native candidate.** At `71babfc8`, dependencies/native voice compile, full verify (872/129) and Android APK build pass; source/hash and native regression readback are in doc 42. This is an emulator test candidate, not a signed release. Repeat affected checks after subsequent implementation changes.

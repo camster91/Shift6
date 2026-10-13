@@ -6,3 +6,4 @@
 /*.cjs text eol=lf
 /*.mjs text eol=lf
 /vendor/** -text
+/docs/qa/2026-10-13-ios-ci/** -text

@@ -191,6 +191,20 @@ is partial, not a full journey pass or human usability result. Actual iOS goal
 records, workout recovery, export/deletion and later checks remain pending.
 No identical failed rerun is used as evidence of success.
 
+The corrected harness at `758656f9` subsequently completed its stated journey
+in [run 38355885443](https://github.com/camster91/Shift6/actions/runs/38355885443).
+It reused native source `9f984349` from successful run `38348937795` after the
+source-matching check. Appium's recorded device version was iOS 26.4 on the
+arm64 iPhone 17 Pro simulator (Xcode 26.6). Assertions/captures cover six setup
+steps and recovery, private plan/save/start, Imperial lb label, timed goal
+baseline/measurement/correction/target revision/postponed review, saved 20-second
+set and unsaved 12-second input recovered after force-close, partial save and
+the native JSON share sheet. [Selected evidence and results](qa/2026-10-13-ios-ci/evidence.json)
+are retained with hashes. This is an automated simulator pass at an earlier
+candidate, not a pass for later feature branches. External iOS receipt,
+deletion, permissions, reminders, VoiceOver, physical devices and participant
+acceptance remain unverified. Windows-local iOS testing remains pending.
+
 The repository is public and its workflow uses standard `macos-latest` runners.
 GitHub documents those runners as free for public repositories in its
 [runner reference](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job).

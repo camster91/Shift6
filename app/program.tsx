@@ -67,7 +67,8 @@ export default function ProgramDetailScreen() {
     }, [database, userId, programId]),
   );
   const mounted = useRef(true),
-    pending = useRef(false);
+    pending = useRef<number | null>(null),
+    operationSequence = useRef(0);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -134,7 +135,8 @@ export default function ProgramDetailScreen() {
       setError('The plan or date changed. Review Start again.');
       return;
     }
-    pending.current = true;
+    const operationToken = ++operationSequence.current;
+    pending.current = operationToken;
     setStarting(true);
     setError(null);
     try {
@@ -183,10 +185,15 @@ export default function ProgramDetailScreen() {
       });
       router.replace('/');
     } catch (startError) {
-      setError(startError instanceof Error ? startError.message : 'We could not start this cycle.');
+      if (isCurrent())
+        setError(
+          startError instanceof Error ? startError.message : 'We could not start this cycle.',
+        );
     } finally {
-      pending.current = false;
-      if (isCurrent()) setStarting(false);
+      if (pending.current === operationToken) {
+        pending.current = null;
+        if (mounted.current) setStarting(false);
+      }
     }
   };
 

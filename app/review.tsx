@@ -93,7 +93,8 @@ export default function CycleReviewScreen() {
     }, [database, userId]),
   );
   const repeatMounted = useRef(true),
-    repeatPending = useRef(false);
+    repeatPending = useRef<number | null>(null),
+    repeatSequence = useRef(0);
   useEffect(() => {
     repeatMounted.current = true;
     return () => {
@@ -186,8 +187,12 @@ export default function CycleReviewScreen() {
   const guidance = getWeekSixGuidance(programVersion.cycleModel.weekSixMeaning);
   const isComplete = cycle.status === 'complete';
 
-  const persistReview = async (nextAction?: CycleReviewAction): Promise<boolean> => {
+  const persistReview = async (
+    nextAction?: CycleReviewAction,
+    isCurrent: () => boolean = () => true,
+  ): Promise<boolean> => {
     if (
+      !isCurrent() ||
       reviewBusy ||
       !database ||
       !cycle ||
@@ -213,16 +218,18 @@ export default function CycleReviewScreen() {
     setError(null);
     try {
       await saveCycleReview(database, nextReview);
+      if (!isCurrent()) return false;
       setReview(nextReview);
       setReviewSaved(true);
       return true;
     } catch (saveError) {
-      setError(
-        saveError instanceof Error ? saveError.message : 'We could not save your reflection.',
-      );
+      if (isCurrent())
+        setError(
+          saveError instanceof Error ? saveError.message : 'We could not save your reflection.',
+        );
       return false;
     } finally {
-      setReviewBusy(null);
+      if (isCurrent()) setReviewBusy(null);
     }
   };
 
@@ -271,10 +278,11 @@ export default function CycleReviewScreen() {
       setError('The review, plan or date changed. Review the new cycle again.');
       return;
     }
-    repeatPending.current = true;
+    const operationToken = ++repeatSequence.current;
+    repeatPending.current = operationToken;
     setError(null);
     try {
-      const savedReview = await persistReview('repeat');
+      const savedReview = await persistReview('repeat', isCurrent);
       if (!savedReview || !isCurrent()) return;
 
       setReviewBusy('repeat');
@@ -311,12 +319,15 @@ export default function CycleReviewScreen() {
       });
       router.replace('/');
     } catch (repeatError) {
-      setError(
-        repeatError instanceof Error ? repeatError.message : 'We could not start the next cycle.',
-      );
+      if (isCurrent())
+        setError(
+          repeatError instanceof Error ? repeatError.message : 'We could not start the next cycle.',
+        );
     } finally {
-      repeatPending.current = false;
-      if (isCurrent()) setReviewBusy(null);
+      if (repeatPending.current === operationToken) {
+        repeatPending.current = null;
+        if (repeatMounted.current) setReviewBusy(null);
+      }
     }
   };
 

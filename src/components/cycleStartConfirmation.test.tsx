@@ -1,5 +1,6 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
+import { router } from 'expo-router';
 import ProgramDetailScreen from '../../app/program';
 import CycleReviewScreen from '../../app/review';
 import { programLibrary } from '../domain/programLibrary';
@@ -184,4 +185,92 @@ test('review action explicitly starts a new cycle with the same targets; Cancel 
       ),
     ),
   );
+});
+
+test.each([
+  ['catalogue', ProgramDetailScreen, 'Start six-week cycle', 'Start cycle'],
+  ['review', CycleReviewScreen, 'Start a new cycle with these targets', 'Start new cycle'],
+] as const)(
+  '%s deferred Start releases its spinner after blur/return without stale navigation',
+  async (_name, Component, label, confirmLabel) => {
+    let resolve!: () => void;
+    mockStart.mockImplementationOnce(
+      () =>
+        new Promise<void>((done) => {
+          resolve = done;
+        }),
+    );
+    const screen = await render(<Component />);
+    await waitFor(() => expect(screen.getByLabelText(label)).toBeTruthy());
+    await fireEvent.press(screen.getByLabelText(label));
+    await act(async () =>
+      jest
+        .mocked(Alert.alert)
+        .mock.calls[0]![2]!.find((choice) => choice.text === confirmLabel)
+        ?.onPress?.(),
+    );
+    await waitFor(() => expect(mockStart).toHaveBeenCalledTimes(1));
+    expect(screen.getByLabelText(label).props.accessibilityState.busy).toBe(true);
+    await act(async () => {
+      mockFocusCleanup?.();
+      mockFocusCallback?.();
+    });
+
+    expect(mockStart.mock.calls[0]![5]()).toBe(false);
+    await act(async () => resolve());
+    await waitFor(() =>
+      expect(screen.getByLabelText(label).props.accessibilityState.busy).toBe(false),
+    );
+    expect(router.replace).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText(label));
+    await act(async () =>
+      jest
+        .mocked(Alert.alert)
+        .mock.calls[1]![2]!.find((choice) => choice.text === confirmLabel)
+        ?.onPress?.(),
+    );
+    await waitFor(() => expect(mockStart).toHaveBeenCalledTimes(2));
+    expect(router.replace).toHaveBeenCalledTimes(1);
+  },
+);
+
+test('a deferred reflection from the obsolete Start does not show a stale receipt or block a fresh confirmation', async () => {
+  let resolve!: () => void;
+  mockSaveReview.mockImplementationOnce(
+    () =>
+      new Promise<void>((done) => {
+        resolve = done;
+      }),
+  );
+  const screen = await render(<CycleReviewScreen />);
+  const label = 'Start a new cycle with these targets';
+  await waitFor(() => expect(screen.getByLabelText(label)).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText(label));
+  await act(async () =>
+    jest
+      .mocked(Alert.alert)
+      .mock.calls[0]![2]!.find((choice) => choice.text === 'Start new cycle')
+      ?.onPress?.(),
+  );
+  await waitFor(() => expect(mockSaveReview).toHaveBeenCalledTimes(1));
+  await act(async () => {
+    mockFocusCleanup?.();
+    mockFocusCallback?.();
+    resolve();
+  });
+  await waitFor(() =>
+    expect(screen.getByLabelText(label).props.accessibilityState.busy).toBe(false),
+  );
+  expect(screen.queryByLabelText('Reflection saved')).toBeNull();
+  expect(screen.getByLabelText('Save reflection')).toBeTruthy();
+  expect(mockStart).not.toHaveBeenCalled();
+  expect(router.replace).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText(label));
+  await act(async () =>
+    jest
+      .mocked(Alert.alert)
+      .mock.calls[1]![2]!.find((choice) => choice.text === 'Start new cycle')
+      ?.onPress?.(),
+  );
+  await waitFor(() => expect(mockStart).toHaveBeenCalledTimes(1));
 });

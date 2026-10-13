@@ -212,7 +212,7 @@ export async function appendLocalScheduleMoveInTransaction(
   return result;
 }
 
-/** Read-only shared projection for future calendar/home/reminder integration; no current callers. */
+/** Atomic shared projection used by the mobile calendar, Home, Cycle, Coach and reminders. */
 export async function getLocalScheduleProjection(
   db: SQLiteDatabase,
   owner: string,

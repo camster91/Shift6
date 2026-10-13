@@ -10,6 +10,14 @@ let mockResumed: WorkoutSession | null = null;
 let mockSavedActuals: CompletedSet[] = [];
 let mockPreviousActuals: CompletedSet[] = [];
 let mockRecoveredDraft: WorkoutDraftValues | null = null;
+const mockVoiceAdapter = {
+  capability: jest.fn(async () => ({ available: true })),
+  listen: jest.fn<Promise<string>, unknown[]>(),
+  cancel: jest.fn(),
+};
+jest.mock('../services/localVoice', () => ({
+  createPlatformLocalVoiceAdapter: () => mockVoiceAdapter,
+}));
 const mockDb = {},
   mockSaveSet = jest.fn(),
   mockUpdateSet = jest.fn(),
@@ -84,6 +92,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockUser = demoUser;
   mockRecoveredDraft = null;
+  mockVoiceAdapter.listen.mockResolvedValue('8 reps, 40 pounds');
   mockResumed = null;
   mockSavedActuals = [];
   mockPreviousActuals = [];
@@ -492,3 +501,38 @@ test.each([
     expect(screen.queryByText(/saved units/)).toBeNull();
   },
 );
+test('optional voice review fills declared unsaved actuals and only normal Complete saves', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 load')).toBeTruthy());
+  const actualUnit = screen.getByLabelText('Back squat set 1 load').props.placeholder;
+  expect(screen.queryByLabelText('Speak a set entry')).toBeNull();
+  await fireEvent.press(screen.getByLabelText('Use optional voice set entry'));
+  await fireEvent.press(screen.getByLabelText('Speak a set entry'));
+  expect(mockSaveSet).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Use reviewed values in unsaved set'));
+  expect(screen.getByLabelText('Back squat set 1 reps').props.value).toBe('8');
+  expect(Number(screen.getByLabelText('Back squat set 1 load').props.value)).toBeCloseTo(
+    actualUnit === 'kg' ? 40 * 0.45359237 : 40,
+  );
+  expect(mockSaveSet).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+  await waitFor(() => expect(mockSaveSet).toHaveBeenCalledTimes(1));
+  expect(mockSaveSet.mock.calls[0]?.[1]).toMatchObject({ reps: 8, loadUnit: actualUnit });
+});
+
+test('an old voice review cannot overwrite a newer typed input before its next render', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 load')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText('Use optional voice set entry'));
+  await fireEvent.press(screen.getByLabelText('Speak a set entry'));
+  const staleApply = screen
+    .getByLabelText('Use reviewed values in unsaved set')
+    .props.onStartShouldSetResponder.testOnly_pressabilityConfig().onPress;
+  const type = screen.getByLabelText('Back squat set 1 load').props.onChangeText;
+  await act(async () => {
+    type('55');
+    staleApply();
+  });
+  expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('55');
+  expect(mockSaveSet).not.toHaveBeenCalled();
+});

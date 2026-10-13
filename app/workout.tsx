@@ -1,3 +1,10 @@
+import { VoiceSetEntry } from '../src/components/VoiceSetEntry';
+import {
+  voiceBindingKey,
+  reviewedVoiceValuesAreValid,
+  type VoiceSetBinding,
+  type VoiceNumericField,
+} from '../src/domain/voiceSetDraft';
 import {
   actualLoadUnit,
   convertLoad,
@@ -166,15 +173,26 @@ export default function ActiveWorkoutScreen() {
   const [difficultySaving, setDifficultySaving] = useState(false);
   const feedbackWrite = useRef<Promise<void> | null>(null);
   const feedbackGeneration = useRef(0);
+  const [voiceFocused, setVoiceFocused] = useState(false);
+  const [voiceEntryKey, setVoiceEntryKey] = useState<string | null>(null);
+  const voiceInputRevision = useRef(0);
+  const voiceContext = useRef<{
+    key: string | null;
+    database: typeof database;
+    inputRevision: number;
+    focused: boolean;
+  }>({ key: null, database, inputRevision: 0, focused: false });
   const workoutIsFocused = useRef(false);
   const workoutFocusGeneration = useRef(0);
   const setWrite = useRef<object | null>(null);
   useFocusEffect(
     useCallback(() => {
       workoutIsFocused.current = true;
+      setVoiceFocused(true);
       workoutFocusGeneration.current++;
       return () => {
         workoutIsFocused.current = false;
+        setVoiceFocused(false);
         workoutFocusGeneration.current++;
         feedbackGeneration.current++;
       };
@@ -641,9 +659,106 @@ export default function ActiveWorkoutScreen() {
   const allSetsComplete = completedCount >= totalSets;
   const focus = nextWorkoutSet(activeWorkout, completedSetKeys, editingSetKey);
   const previousResult = focus ? previousComparableSet(focus, previousSets) : undefined;
+  const voiceTarget = focus ? (targetOverrides[focus.exercise.id] ?? focus.set.target) : undefined;
+  const voiceBinding: VoiceSetBinding | null =
+    focus && voiceTarget && values[focus.key]
+      ? {
+          ownerId: userId,
+          sessionId: session.id,
+          programVersionId: activeProgramVersion.id,
+          workoutExerciseId: focus.exercise.id,
+          exerciseId: focus.exercise.exerciseId,
+          variantId: focus.exercise.variantId,
+          setNumber: focus.set.setNumber,
+          loadUnit: actualLoadUnit(values[focus.key]?.loadUnit) ?? 'unknown',
+          contextKey: JSON.stringify([
+            activeCycle.id,
+            activeCycle.currentWeek,
+            activeWorkout.id,
+            workoutFocusGeneration.current,
+            voiceInputRevision.current,
+            values[focus.key],
+            voiceTarget,
+            savedActuals.current.get(focus.key) ?? null,
+            editingSetKey,
+          ]),
+          required: [
+            ...(voiceTarget.reps !== undefined ? ['reps' as const] : []),
+            ...(requiresDuration(
+              getTrackingType(focus.exercise.exerciseId, voiceTarget, availableExercises),
+              voiceTarget,
+            )
+              ? ['duration' as const]
+              : []),
+            ...(requiresDistance(
+              getTrackingType(focus.exercise.exerciseId, voiceTarget, availableExercises),
+              voiceTarget,
+            )
+              ? ['distance' as const]
+              : []),
+          ],
+          allowed: [
+            ...(showsLoad(focus.exercise.exerciseId, voiceTarget, availableExercises)
+              ? ['load' as const]
+              : []),
+            ...(showsReps(focus.exercise.exerciseId, voiceTarget, availableExercises)
+              ? ['reps' as const]
+              : []),
+            ...(showsDuration(focus.exercise.exerciseId, voiceTarget, availableExercises)
+              ? ['duration' as const]
+              : []),
+            ...(showsDistance(focus.exercise.exerciseId, voiceTarget, availableExercises)
+              ? ['distance' as const]
+              : []),
+            'rpe',
+            'rir',
+          ] as VoiceNumericField[],
+        }
+      : null;
+  const voiceBusy = Boolean(
+    savingSetKey ||
+    difficultySaving ||
+    feedbackWrite.current ||
+    revisionSaving ||
+    finishing ||
+    partialFinishing ||
+    readinessSaving,
+  );
+  voiceContext.current = {
+    key: voiceBinding ? voiceBindingKey(voiceBinding) : null,
+    database,
+    inputRevision: voiceInputRevision.current,
+    focused: voiceFocused && canMutate && !voiceBusy,
+  };
+  const applyVoiceValues = (reviewed: Partial<SetInputValues>, expectedKey: string): boolean => {
+    if (
+      !voiceBinding ||
+      !focus ||
+      setWrite.current ||
+      feedbackWrite.current ||
+      !workoutIsFocused.current ||
+      !voiceContext.current.focused ||
+      voiceContext.current.database !== database ||
+      voiceContext.current.key !== expectedKey ||
+      voiceContext.current.inputRevision !== voiceInputRevision.current ||
+      voiceBindingKey(voiceBinding) !== expectedKey ||
+      !reviewedVoiceValuesAreValid(reviewed, voiceBinding) ||
+      (completedSetKeys.has(focus.key) && editingSetKey !== focus.key)
+    )
+      return false;
+    voiceInputRevision.current++;
+    voiceContext.current.focused = false; // Consume the preview before queued state updates.
+    setValues((current) => ({
+      ...current,
+      [focus.key]: { ...(current[focus.key] ?? emptySetInput()), ...reviewed },
+    }));
+    setError(null);
+    return true;
+  };
 
   const updateValue = (key: string, field: keyof SetInputValues, value: string) => {
     if (setWrite.current || !workoutIsFocused.current) return;
+    voiceInputRevision.current++;
     setValues((current) => ({
       ...current,
       [key]: { ...(current[key] ?? emptySetInput()), [field]: value },
@@ -670,6 +785,7 @@ export default function ActiveWorkoutScreen() {
         feedbackContext.current.sessionId !== session.id
       )
         return;
+      voiceInputRevision.current++;
       setValues((latest) => {
         const value = latest[key];
         if (!value || value.load !== current.load || value.loadUnit !== current.loadUnit)
@@ -925,6 +1041,7 @@ export default function ActiveWorkoutScreen() {
     setError(null);
     if (!database) return;
 
+    voiceInputRevision.current++;
     setReadinessSaving(true);
     try {
       const updatedSession = await updateWorkoutSessionReadiness(
@@ -953,6 +1070,7 @@ export default function ActiveWorkoutScreen() {
   ): Promise<boolean> => {
     if (setWrite.current || !canMutate || revisionSaving) return false;
 
+    voiceInputRevision.current++;
     setRevisionSaving(true);
     setError(null);
     try {
@@ -1076,6 +1194,7 @@ export default function ActiveWorkoutScreen() {
     if (setWrite.current || !canMutate || !allSetsComplete || editingSetKey !== null || finishing)
       return;
 
+    voiceInputRevision.current++;
     setFinishing(true);
     setError(null);
     try {
@@ -1134,6 +1253,7 @@ export default function ActiveWorkoutScreen() {
       status === 'partial' ? completedCount > 0 && !allSetsComplete : completedCount === 0;
     if (!canFinish || finishing || partialFinishing) return;
 
+    voiceInputRevision.current++;
     setPartialFinishing(true);
     setError(null);
     try {
@@ -1652,6 +1772,33 @@ export default function ActiveWorkoutScreen() {
                             style={styles.effortInput}
                             value={values[key]?.rir ?? ''}
                           />
+                        ) : null}
+                        {key === focus?.key &&
+                        voiceBinding &&
+                        voiceFocused &&
+                        (!completed || editing) ? (
+                          <View>
+                            <Button
+                              label={
+                                voiceEntryKey === key
+                                  ? 'Hide voice set entry'
+                                  : 'Use optional voice set entry'
+                              }
+                              variant="ghost"
+                              disabled={voiceBusy}
+                              onPress={() => {
+                                if (!setWrite.current)
+                                  setVoiceEntryKey((current) => (current === key ? null : key));
+                              }}
+                            />
+                            {voiceEntryKey === key ? (
+                              <VoiceSetEntry
+                                binding={voiceBinding}
+                                disabled={voiceBusy}
+                                onApply={applyVoiceValues}
+                              />
+                            ) : null}
+                          </View>
                         ) : null}
                         {showAllSets ? (
                           <Button

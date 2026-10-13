@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { AppState, TextInput, View } from 'react-native';
 import { Button, Card, Text } from './ui';
 import { parseVoiceSet, voiceBindingKey, type VoiceSetBinding } from '../domain/voiceSetDraft';
 import type { WorkoutDraftSetValues } from '../domain/types';
@@ -10,10 +10,12 @@ export function VoiceSetEntry({
   binding,
   onApply,
   adapter: suppliedAdapter,
+  disabled = false,
 }: {
   binding: VoiceSetBinding;
   onApply: (values: Partial<WorkoutDraftSetValues>, expectedBindingKey: string) => boolean;
   adapter?: LocalVoiceAdapter;
+  disabled?: boolean;
 }) {
   const adapter = useMemo(
     () => suppliedAdapter ?? createPlatformLocalVoiceAdapter(),
@@ -22,6 +24,8 @@ export function VoiceSetEntry({
   const key = voiceBindingKey(binding);
   const currentKey = useRef(key);
   currentKey.current = key;
+  const currentDisabled = useRef(disabled);
+  currentDisabled.current = disabled;
   const revision = useRef(0);
   const capturing = useRef(false);
   const [listening, setListening] = useState(false);
@@ -40,25 +44,41 @@ export function VoiceSetEntry({
       revision.current++;
       adapter.cancel();
     };
-  }, [adapter, key]);
+  }, [adapter, key, disabled]);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'background') return;
+      revision.current++;
+      capturing.current = false;
+      adapter.cancel();
+      setListening(false);
+      setText('');
+      setPreview(null);
+      setMessage('');
+    });
+    return () => subscription.remove();
+  }, [adapter]);
   const draft = preview ? parseVoiceSet(preview.text, binding) : null;
   return (
     <Card>
       <Text variant="h3">Voice set entry</Text>
       <Text>
         On-device English transcription. Audio and unconfirmed text are not saved. Review the
-        values, then use the usual Save set button.
+        values, then use the usual Complete or Save correction control.
       </Text>
       <Text>
         Say explicit values such as “eight reps, forty kilograms, two reps left”. Holds need
         seconds; distances need meters, kilometers or miles. Load for this set is{' '}
-        {binding.loadUnit === 'metric' ? 'kg' : 'lb'}.
+        {binding.loadUnit === 'unknown'
+          ? 'unknown: report kilograms or pounds explicitly'
+          : binding.loadUnit}
+        .
       </Text>
       <Button
         label={listening ? 'Listening on device…' : 'Speak a set entry'}
-        disabled={listening}
+        disabled={listening || disabled}
         onPress={async () => {
-          if (capturing.current) return;
+          if (capturing.current || currentDisabled.current) return;
           capturing.current = true;
           const token = ++revision.current;
           const capturedKey = key;
@@ -68,14 +88,27 @@ export function VoiceSetEntry({
           setMessage('');
           try {
             const final = await adapter.listen('en-US', (partial) => {
-              if (revision.current === token && currentKey.current === capturedKey)
+              if (
+                !currentDisabled.current &&
+                revision.current === token &&
+                currentKey.current === capturedKey
+              )
                 setText(partial);
             });
-            if (revision.current !== token || currentKey.current !== capturedKey) return;
+            if (
+              currentDisabled.current ||
+              revision.current !== token ||
+              currentKey.current !== capturedKey
+            )
+              return;
             setText(final);
             setPreview({ text: final, token, key: capturedKey });
           } catch (error) {
-            if (revision.current === token && currentKey.current === capturedKey)
+            if (
+              !currentDisabled.current &&
+              revision.current === token &&
+              currentKey.current === capturedKey
+            )
               setMessage(
                 error instanceof Error
                   ? error.message
@@ -107,7 +140,7 @@ export function VoiceSetEntry({
           <TextInput
             accessibilityLabel="Review or correct the spoken set entry"
             value={text}
-            editable={!listening}
+            editable={!listening && !disabled}
             maxLength={500}
             multiline
             onChangeText={(value) => {
@@ -119,9 +152,10 @@ export function VoiceSetEntry({
           />
           <Button
             label="Review corrected values"
-            disabled={listening || !text.trim()}
+            disabled={listening || disabled || !text.trim()}
             variant="secondary"
             onPress={() => {
+              if (currentDisabled.current) return;
               setPreview({ text, token: ++revision.current, key });
             }}
           />
@@ -130,18 +164,20 @@ export function VoiceSetEntry({
       {draft ? (
         <View>
           <Text>Confirm actual results for set {binding.setNumber}:</Text>
-          {Object.entries(draft.values).map(([field, value]) => (
-            <Text key={field}>
-              {field}: {value}
-              {field === 'load'
-                ? ` ${binding.loadUnit === 'metric' ? 'kg' : 'lb'}`
-                : field === 'duration'
-                  ? ' seconds'
-                  : field === 'distance'
-                    ? ' meters'
-                    : ''}
-            </Text>
-          ))}
+          {Object.entries(draft.values)
+            .filter(([field]) => field !== 'loadUnit')
+            .map(([field, value]) => (
+              <Text key={field}>
+                {field}: {value}
+                {field === 'load'
+                  ? ` ${draft.values.loadUnit}`
+                  : field === 'duration'
+                    ? ' seconds'
+                    : field === 'distance'
+                      ? ' meters'
+                      : ''}
+              </Text>
+            ))}
           {draft.unresolved.map((item, index) => (
             <Text key={index} accessibilityRole="alert">
               {item}
@@ -149,10 +185,11 @@ export function VoiceSetEntry({
           ))}
           <Button
             label="Use reviewed values in unsaved set"
-            disabled={draft.unresolved.length > 0}
+            disabled={disabled || draft.unresolved.length > 0}
             onPress={() => {
               if (
                 !preview ||
+                currentDisabled.current ||
                 preview.token !== revision.current ||
                 preview.key !== currentKey.current ||
                 draft.unresolved.length
@@ -165,7 +202,7 @@ export function VoiceSetEntry({
                 const accepted = onApply(draft.values, preview.key);
                 setMessage(
                   accepted
-                    ? 'Values entered. Review the set and choose Save set when ready.'
+                    ? 'Values entered. Review the set and choose Complete or Save correction when ready.'
                     : 'The active set changed. Review a new entry for the current set.',
                 );
               } catch {

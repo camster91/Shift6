@@ -1,4 +1,4 @@
-import { parseVoiceSet, type VoiceSetBinding } from './voiceSetDraft';
+import { parseVoiceSet, reviewedVoiceValuesAreValid, type VoiceSetBinding } from './voiceSetDraft';
 const binding: VoiceSetBinding = {
   ownerId: 'a',
   sessionId: 's',
@@ -6,13 +6,14 @@ const binding: VoiceSetBinding = {
   workoutExerciseId: 'w',
   exerciseId: 'e',
   setNumber: 1,
-  loadUnit: 'metric',
+  loadUnit: 'kg',
+  contextKey: 'snapshot-1',
   required: ['reps'],
   allowed: ['reps', 'load', 'rpe', 'rir'],
 };
 test('explicit results and words, no planned-value inference', () => {
   expect(parseVoiceSet('eight reps, forty kilograms, two reps left', binding)).toEqual({
-    values: { reps: '8', load: '40', rir: '2' },
+    values: { reps: '8', load: '40', loadUnit: 'kg', rir: '2' },
     unresolved: [],
   });
   expect(parseVoiceSet('forty kilograms', binding).unresolved).toContain(
@@ -21,9 +22,38 @@ test('explicit results and words, no planned-value inference', () => {
 });
 test('actual target unit, independent of profile presentation', () => {
   expect(parseVoiceSet('8 reps, 40 pounds', binding).values.load).toBe(String(40 * 0.45359237));
-  expect(
-    parseVoiceSet('8 reps, 40 kilograms', { ...binding, loadUnit: 'imperial' }).values.load,
-  ).toBe(String(40 / 0.45359237));
+  expect(parseVoiceSet('8 reps, 40 kilograms', { ...binding, loadUnit: 'lb' }).values.load).toBe(
+    String(40 / 0.45359237),
+  );
+});
+
+test('unknown actual units require explicit spoken units and retain the declared measurement', () => {
+  const unknown = { ...binding, loadUnit: 'unknown' as const };
+  expect(parseVoiceSet('8 reps, 40 pounds', unknown).values).toEqual({
+    reps: '8',
+    load: '40',
+    loadUnit: 'lb',
+  });
+  expect(parseVoiceSet('8 reps, 40 kilograms', unknown).values).toEqual({
+    reps: '8',
+    load: '40',
+    loadUnit: 'kg',
+  });
+  expect(parseVoiceSet('8 reps, 40', unknown).unresolved.length).toBeGreaterThan(0);
+  expect(parseVoiceSet('8 reps', unknown).values.loadUnit).toBeUndefined();
+});
+
+test('the draft apply boundary rejects extra actions, incompatible units and invalid values', () => {
+  expect(reviewedVoiceValuesAreValid({ reps: '8', load: '40', loadUnit: 'kg' }, binding)).toBe(
+    true,
+  );
+  expect(reviewedVoiceValuesAreValid({ reps: '8', load: '40', loadUnit: 'lb' }, binding)).toBe(
+    false,
+  );
+  expect(reviewedVoiceValuesAreValid({ reps: '8', load: '40' }, binding)).toBe(false);
+  expect(reviewedVoiceValuesAreValid({ reps: '8.5' }, binding)).toBe(false);
+  expect(reviewedVoiceValuesAreValid({ reps: '8', save: 'true' } as never, binding)).toBe(false);
+  expect(reviewedVoiceValuesAreValid({ reps: '8', loadUnit: 'kg' }, binding)).toBe(false);
 });
 test.each([
   '8 reps, 9 reps',

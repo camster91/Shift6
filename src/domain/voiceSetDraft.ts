@@ -1,4 +1,6 @@
-import type { UnitSystem, WorkoutDraftSetValues } from './types';
+import type { WorkoutDraftSetValues } from './types';
+import { convertLoad, type LoadUnit } from './loadUnits';
+export type VoiceNumericField = Exclude<keyof WorkoutDraftSetValues, 'loadUnit'>;
 export interface VoiceSetBinding {
   ownerId: string;
   sessionId: string;
@@ -7,9 +9,10 @@ export interface VoiceSetBinding {
   exerciseId: string;
   variantId?: string;
   setNumber: number;
-  loadUnit: UnitSystem;
-  required: readonly (keyof WorkoutDraftSetValues)[];
-  allowed: readonly (keyof WorkoutDraftSetValues)[];
+  loadUnit: LoadUnit | 'unknown';
+  contextKey: string;
+  required: readonly VoiceNumericField[];
+  allowed: readonly VoiceNumericField[];
 }
 export interface VoiceSetDraft {
   values: Partial<WorkoutDraftSetValues>;
@@ -17,6 +20,42 @@ export interface VoiceSetDraft {
 }
 export function voiceBindingKey(binding: VoiceSetBinding): string {
   return JSON.stringify(binding);
+}
+const maxima: Record<VoiceNumericField, number> = {
+  load: 5000,
+  reps: 1000,
+  duration: 86400,
+  distance: 1000000,
+  rpe: 10,
+  rir: 10,
+};
+
+/** Defense at the UI boundary: reviewed values can fill numeric fields only. */
+export function reviewedVoiceValuesAreValid(
+  values: Partial<WorkoutDraftSetValues>,
+  binding: VoiceSetBinding,
+): boolean {
+  if (!values || typeof values !== 'object' || Array.isArray(values)) return false;
+  for (const [field, value] of Object.entries(values)) {
+    if (field === 'loadUnit') continue;
+    const key = field as VoiceNumericField;
+    if (!binding.allowed.includes(key) || typeof value !== 'string' || !value.trim()) return false;
+    const numeric = Number(value);
+    if (
+      !Number.isFinite(numeric) ||
+      numeric < (key === 'rpe' ? 1 : 0) ||
+      numeric > maxima[key] ||
+      (['reps', 'duration', 'rir'].includes(key) && !Number.isInteger(numeric))
+    )
+      return false;
+  }
+  if (binding.required.some((field) => values[field] === undefined)) return false;
+  if (values.load !== undefined)
+    return (
+      (values.loadUnit === 'kg' || values.loadUnit === 'lb') &&
+      (binding.loadUnit === 'unknown' || values.loadUnit === binding.loadUnit)
+    );
+  return values.loadUnit === undefined;
 }
 const words: Record<string, number> = {
   zero: 0,
@@ -124,16 +163,18 @@ export function parseVoiceSet(text: string, binding: VoiceSetBinding): VoiceSetD
       unit = match?.[2] ?? reversed![1]!;
     const numeric = number(raw);
     rest = rest.slice((match ?? reversed)![0].length);
-    let field: keyof WorkoutDraftSetValues;
+    let field: VoiceNumericField;
+    let declaredUnit: LoadUnit | undefined;
     let value = numeric ?? NaN;
     if (['reps left', 'reps remaining', 'rir'].includes(unit)) field = 'rir';
     else if (unit === 'rpe') field = 'rpe';
     else if (['reps', 'repetitions'].includes(unit)) field = 'reps';
     else if (['kg', 'kilograms', 'lb', 'pounds'].includes(unit)) {
       field = 'load';
-      const spokenMetric = unit === 'kg' || unit === 'kilograms';
-      if (spokenMetric && binding.loadUnit === 'imperial') value /= 0.45359237;
-      if (!spokenMetric && binding.loadUnit === 'metric') value *= 0.45359237;
+      const spokenUnit: LoadUnit = unit === 'kg' || unit === 'kilograms' ? 'kg' : 'lb';
+      declaredUnit = binding.loadUnit === 'unknown' ? spokenUnit : binding.loadUnit;
+      if (Number.isFinite(value) && value >= 0)
+        value = convertLoad(value, spokenUnit, declaredUnit);
     } else if (['s', 'seconds', 'min', 'minutes'].includes(unit)) {
       field = 'duration';
       if (unit === 'min' || unit === 'minutes') value *= 60;
@@ -151,14 +192,7 @@ export function parseVoiceSet(text: string, binding: VoiceSetBinding): VoiceSetD
       result.unresolved.push(`${field} does not belong to this set. Use manual entry.`);
       continue;
     }
-    const maximum = {
-      load: 5000,
-      reps: 1000,
-      duration: 86400,
-      distance: 1000000,
-      rpe: 10,
-      rir: 10,
-    }[field];
+    const maximum = maxima[field];
     if (
       !Number.isFinite(value) ||
       value < (field === 'rpe' ? 1 : 0) ||
@@ -166,7 +200,10 @@ export function parseVoiceSet(text: string, binding: VoiceSetBinding): VoiceSetD
       (['reps', 'duration', 'rir'].includes(field) && !Number.isInteger(value))
     )
       result.unresolved.push(`${field} is invalid or outside the input range.`);
-    else result.values[field] = String(value);
+    else {
+      result.values[field] = String(value);
+      if (field === 'load') result.values.loadUnit = declaredUnit;
+    }
   }
   if (rest && result.unresolved.length === 0)
     result.unresolved.push('Too many values; use a shorter set entry.');

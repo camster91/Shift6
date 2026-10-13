@@ -264,7 +264,9 @@ describe('migrateLocalUserToAccount', () => {
       getFirstAsync: async (sql: string) =>
         sql.includes('FROM user_profiles') && !sql.includes('AS conflict') ? profileRow() : null,
       getAllAsync: async (sql: string) =>
-        sql.includes('builder_recovery_drafts') || sql.includes('SELECT id,program_json')
+        sql.includes('builder_recovery_drafts') ||
+        sql.includes('SELECT id,program_json') ||
+        sql.includes('coach_review_journal')
           ? []
           : [
               {
@@ -328,7 +330,11 @@ describe('migrateLocalUserToAccount', () => {
             ? profileRow()
             : null,
       getAllAsync: async (sql: string) =>
-        sql.includes('builder_recovery_drafts') || sql.includes('SELECT id,program_json') ? [] : [],
+        sql.includes('builder_recovery_drafts') ||
+        sql.includes('SELECT id,program_json') ||
+        sql.includes('coach_review_journal')
+          ? []
+          : [],
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
 
@@ -341,7 +347,11 @@ describe('migrateLocalUserToAccount', () => {
     const database = {
       getFirstAsync: async () => null,
       getAllAsync: async (sql: string) =>
-        sql.includes('builder_recovery_drafts') || sql.includes('SELECT id,program_json') ? [] : [],
+        sql.includes('builder_recovery_drafts') ||
+        sql.includes('SELECT id,program_json') ||
+        sql.includes('coach_review_journal')
+          ? []
+          : [],
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
 
@@ -357,7 +367,9 @@ describe('migrateLocalUserToAccount', () => {
       getFirstAsync: async (sql: string) =>
         sql.includes('FROM user_profiles') && !sql.includes('AS conflict') ? profileRow() : null,
       getAllAsync: async (sql: string) =>
-        sql.includes('builder_recovery_drafts') || sql.includes('SELECT id,program_json')
+        sql.includes('builder_recovery_drafts') ||
+        sql.includes('SELECT id,program_json') ||
+        sql.includes('coach_review_journal')
           ? []
           : [
               {

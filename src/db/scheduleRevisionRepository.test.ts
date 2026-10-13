@@ -126,7 +126,7 @@ test('migration creates inactive empty tables without backfilling or changing ex
   expect(sqlite.prepare('SELECT * FROM schedule_baselines').all()).toEqual([]);
   expect(sqlite.prepare('SELECT * FROM schedule_revisions').all()).toEqual([]);
   await expect(appendLocalScheduleMove(db, intent, stamp)).rejects.toThrow('explicitly confirmed');
-  expect(MIGRATIONS.at(-1)!.version).toBe(26);
+  expect(MIGRATIONS.at(-1)!.version).toBe(27);
 });
 test('baseline requires explicit confirmation, exact legacy CAS, owner and canonical anchor', async () => {
   const before = await exportNow();
@@ -404,8 +404,8 @@ test('schema15 external export validates, deletes and restores exact owned basel
   await ready();
   await appendLocalScheduleMove(db, intent, stamp);
   const before = await exportNow();
-  expect(before.schemaVersion).toBe(15);
-  expect(validateLocalBackup(JSON.stringify(before)).data.schemaVersion).toBe(15);
+  expect(before.schemaVersion).toBe(16);
+  expect(validateLocalBackup(JSON.stringify(before)).data.schemaVersion).toBe(16);
   await deleteLocalUserData(db, 'guest-user');
   expect(sqlite.prepare('SELECT * FROM schedule_baselines').all()).toEqual([]);
   expect(sqlite.prepare('SELECT * FROM schedule_revisions').all()).toEqual([]);
@@ -492,16 +492,17 @@ test('strict graph rejects orphan, foreign, malformed, divergent, prebaseline an
     expect(await exportNow()).toEqual(before);
   }
 });
-test('schema14 normalizes empty schedule sections, rejects future16 and unexpected schedule fields', async () => {
+test('schema14 normalizes empty schedule sections, rejects future17 and unexpected schedule fields', async () => {
   const copy = await exportNow();
   copy.schemaVersion = 14;
   delete copy.scheduleBaselines;
   delete copy.scheduleRevisions;
+  delete copy.coachReviewJournal;
   const normalized = validateLocalBackup(JSON.stringify(copy)).data;
-  expect(normalized.schemaVersion).toBe(15);
+  expect(normalized.schemaVersion).toBe(16);
   expect(normalized.scheduleBaselines).toEqual([]);
   expect(normalized.scheduleRevisions).toEqual([]);
-  expect(() => validateLocalBackup(JSON.stringify({ ...copy, schemaVersion: 16 }))).toThrow();
+  expect(() => validateLocalBackup(JSON.stringify({ ...copy, schemaVersion: 17 }))).toThrow();
   expect(() => validateLocalBackup(JSON.stringify({ ...copy, scheduleBaselines: [] }))).toThrow();
 });
 test('strict restore refuses a move timestamp after the matching workout already started', async () => {

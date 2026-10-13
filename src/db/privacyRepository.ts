@@ -1,6 +1,7 @@
 import { loadProvenanceSections } from '../domain/loadUnits';
 import { persistenceSections } from '../domain/localPersistence';
 import { schedulePersistenceSections } from '../domain/scheduleSnapshot';
+import { coachReviewSections } from '../domain/coachReviewJournal';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export type LocalDataExportSectionKey =
@@ -29,7 +30,8 @@ export interface LocalDataExportSummary {
 }
 
 export interface LocalDataExport {
-  schemaVersion: 12 | 13 | 14 | 15;
+  schemaVersion: 12 | 13 | 14 | 15 | 16;
+  coachReviewJournal?: Record<string, unknown>[];
   scheduleBaselines?: Record<string, unknown>[];
   scheduleRevisions?: Record<string, unknown>[];
   completedSetLoadProvenance?: Record<string, unknown>[];
@@ -92,6 +94,7 @@ async function exportLocalUserDataInTransaction(
     ...persistenceSections,
     ...loadProvenanceSections,
     ...schedulePersistenceSections,
+    ...coachReviewSections,
   }))
     additions[key] = await database.getAllAsync(
       `SELECT * FROM ${table} WHERE user_id=? ORDER BY rowid;`,
@@ -261,7 +264,7 @@ async function exportLocalUserDataInTransaction(
   });
 
   return {
-    schemaVersion: 15,
+    schemaVersion: 16,
     exportedAt,
     userId,
     summary,
@@ -364,12 +367,14 @@ export function buildLocalDataExportSummary(
     {
       key: 'coachAndNotifications',
       title: 'Coach and notification records',
-      description: 'Saved Coach proposals and local notification preferences.',
+      description:
+        'Saved Coach proposals, dated review intents and local notification preferences.',
       recordCount:
         data.coachProposals.length +
         data.notificationPreferences.length +
         (data.coachMemoryPreferences?.length ?? 0) +
-        (data.coachMemoryFacts?.length ?? 0),
+        (data.coachMemoryFacts?.length ?? 0) +
+        (data.coachReviewJournal?.length ?? 0),
     },
   ];
 
@@ -405,6 +410,7 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
   await database.withExclusiveTransactionAsync(async (database) => {
     await assertNoUnsupportedShiftOutboxRows(database);
     for (const table of [
+      coachReviewSections.coachReviewJournal,
       schedulePersistenceSections.scheduleRevisions,
       schedulePersistenceSections.scheduleBaselines,
       ...Object.values({ ...persistenceSections, ...loadProvenanceSections }),

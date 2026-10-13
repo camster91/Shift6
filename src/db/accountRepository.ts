@@ -1,6 +1,7 @@
 import { loadProvenanceSections } from '../domain/loadUnits';
 import { persistenceSections } from '../domain/localPersistence';
 import { schedulePersistenceSections } from '../domain/scheduleSnapshot';
+import { coachReviewSections, remapCoachReviewReceipt } from '../domain/coachReviewJournal';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export interface LocalAccountMigrationResult {
@@ -158,6 +159,7 @@ export async function migrateLocalUserToAccount(
       ...persistenceSections,
       ...loadProvenanceSections,
       ...schedulePersistenceSections,
+      ...coachReviewSections,
     })) {
       const conflict = await database.getFirstAsync(
         `SELECT user_id FROM ${table} WHERE user_id=? LIMIT 1;`,
@@ -356,11 +358,22 @@ export async function migrateLocalUserToAccount(
       ...persistenceSections,
       ...loadProvenanceSections,
       ...schedulePersistenceSections,
+      ...coachReviewSections,
     }))
       await database.runAsync(
         `UPDATE ${table} SET user_id=? WHERE user_id=?;`,
         destinationUserId,
         sourceUserId,
+      );
+    const reviews = await database.getAllAsync<{ id: string; receipt_json: string }>(
+      'SELECT id,receipt_json FROM coach_review_journal WHERE user_id=?;',
+      destinationUserId,
+    );
+    for (const row of reviews)
+      await database.runAsync(
+        'UPDATE coach_review_journal SET receipt_json=? WHERE id=?;',
+        remapCoachReviewReceipt(row.receipt_json, destinationUserId),
+        row.id,
       );
     const recoveries = await database.getAllAsync<{ id: string; snapshot_json: string }>(
       'SELECT id,snapshot_json FROM builder_recovery_drafts WHERE user_id=?;',

@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { runtimeConfig } from '../config/env';
 import { LOCAL_GUEST_USER_ID } from '../domain/userIdentity';
+import { remapCoachReviewReceipt } from '../domain/coachReviewJournal';
 import {
   restoreTables,
   restoreColumns,
@@ -82,6 +83,8 @@ export async function restoreLocalBackup(
             const state = value as { draft: Record<string, unknown> };
             value = { ...state, draft: { ...state.draft, healthConnection: 'not-now' } };
           }
+          if (key === 'coachReviewJournal')
+            value = JSON.parse(remapCoachReviewReceipt(String(row[column.name]), owner));
           row[column.name] = JSON.stringify(value);
         }
         // IDs embedded in strings remain stable. Only explicit owner fields are

@@ -1,4 +1,6 @@
 import { loadProvenanceSections } from './loadUnits';
+import { coachReviewSections, parseCoachReviewReceipt } from './coachReviewJournal';
+import { stableSnapshotJSON } from './programPersistence';
 import {
   schedulePersistenceSections,
   decodeScheduleBaseline,
@@ -59,6 +61,7 @@ export const restoreTables = {
   ...persistenceSections,
   ...loadProvenanceSections,
   ...schedulePersistenceSections,
+  ...coachReviewSections,
 } as const;
 export type RestoreSection = keyof typeof restoreTables;
 export type RestoreRow = Record<string, string | number | null>;
@@ -493,15 +496,22 @@ export function validateLocalBackup(serialized: string): RestorePreview {
     raw.schemaVersion === 12 ||
       raw.schemaVersion === 13 ||
       raw.schemaVersion === 14 ||
-      raw.schemaVersion === 15,
-    'only export schemas 12, 13, 14 and 15 are supported. Other versions need a compatible app.',
+      raw.schemaVersion === 15 ||
+      raw.schemaVersion === 16,
+    'only export schemas 12, 13, 14, 15 and 16 are supported. Other versions need a compatible app.',
   );
   const sections = Object.keys(restoreTables) as RestoreSection[];
   const sourceSections = sections.filter(
     (key) =>
       (raw.schemaVersion !== 12 || !(key in persistenceSections)) &&
-      (raw.schemaVersion === 14 || raw.schemaVersion === 15 || !(key in loadProvenanceSections)) &&
-      (raw.schemaVersion === 15 || !(key in schedulePersistenceSections)),
+      (raw.schemaVersion === 14 ||
+        raw.schemaVersion === 15 ||
+        raw.schemaVersion === 16 ||
+        !(key in loadProvenanceSections)) &&
+      (raw.schemaVersion === 15 ||
+        raw.schemaVersion === 16 ||
+        !(key in schedulePersistenceSections)) &&
+      (raw.schemaVersion === 16 || !(key in coachReviewSections)),
   );
   keys(
     raw,
@@ -1232,7 +1242,113 @@ export function validateLocalBackup(serialized: string): RestorePreview {
       (data.scheduleBaselines ?? []).some((snapshot) => snapshot.cycle_id === revision.cycle_id),
       'orphan schedule revision.',
     );
-  data.schemaVersion = 15;
+  const reviewRows = data.coachReviewJournal ?? [];
+  const reviewIds = new Map(reviewRows.map((row) => [String(row.id), row]));
+  const reviewCounts = new Map<string, number>();
+  for (const row of reviewRows) {
+    const cycleId = String(row.cycle_id);
+    const count = (reviewCounts.get(cycleId) ?? 0) + 1;
+    check(count <= 1000, 'review journal exceeds its cycle bound.');
+    reviewCounts.set(cycleId, count);
+  }
+  unique(
+    reviewRows.filter((row) => row.previous_review_id === null),
+    ['cycle_id'],
+    'review root',
+  );
+  unique(
+    reviewRows.filter((row) => row.previous_review_id !== null),
+    ['previous_review_id'],
+    'review child',
+  );
+  for (const row of reviewRows) {
+    const { receipt, evidence } = parseCoachReviewReceipt(String(row.receipt_json));
+    const cycle = cycles.get(String(row.cycle_id));
+    check(
+      cycle &&
+        receipt.ownerId === owner &&
+        receipt.cycleId === row.cycle_id &&
+        receipt.programVersionId === row.program_version_id &&
+        receipt.confirmedAt === row.confirmed_at &&
+        evidence.cycle.startedAt === cycle.started_at &&
+        versionObjects.has(String(row.program_version_id)),
+      'invalid dated review binding.',
+    );
+    check(receipt.confirmedAt <= data.exportedAt, 'review confirmation follows export time.');
+    const visited = new Set<string>();
+    let cursor: Record<string, unknown> | undefined = row;
+    while (cursor?.previous_review_id !== null) {
+      check(cursor && !visited.has(String(cursor.id)), 'cyclic review journal.');
+      visited.add(String(cursor.id));
+      const parent = reviewIds.get(String(cursor.previous_review_id));
+      check(
+        parent &&
+          parent.cycle_id === row.cycle_id &&
+          parent.user_id === owner &&
+          String(parent.confirmed_at) <= String(cursor.confirmed_at),
+        'invalid review parent.',
+      );
+      cursor = parent;
+      check(visited.size <= 1000, 'review journal exceeds its cycle bound.');
+    }
+    for (const source of evidence.sessions) {
+      const actual = sessions.get(source.id);
+      check(
+        actual &&
+          actual.cycle_id === row.cycle_id &&
+          actual.program_version_id === source.programVersionId &&
+          actual.workout_id === source.workoutId &&
+          actual.started_at === source.startedAt,
+        'missing review source session.',
+      );
+    }
+    if (evidence.goal) {
+      const goal = goals.get(evidence.goal.id);
+      check(
+        goal &&
+          goal.user_id === owner &&
+          goal.cycle_id === row.cycle_id &&
+          goal.program_version_id === evidence.goal.programVersionId,
+        'missing review goal.',
+      );
+      const protocol = data.shiftProtocols.find(
+        (entry) =>
+          entry.shift_id === evidence.goal!.id &&
+          entry.protocol_id === evidence.goal!.protocol.id &&
+          entry.protocol_version === evidence.goal!.protocol.version,
+      );
+      check(
+        protocol &&
+          stableSnapshotJSON(JSON.parse(String(protocol.snapshot_json))) ===
+            stableSnapshotJSON(evidence.goal.protocol),
+        'missing immutable review protocol.',
+      );
+      const baselineId =
+        evidence.goal.baseline.state === 'measured' ? evidence.goal.baseline.observationId : null;
+      if (baselineId)
+        check(
+          evidence.observations.some((entry) => entry.id === baselineId),
+          'missing review baseline source.',
+        );
+    }
+    for (const source of evidence.observations) {
+      const actual = data.shiftObservations.find((entry) => entry.id === source.id);
+      check(
+        actual &&
+          actual.shift_id === source.shiftId &&
+          actual.protocol_id === source.protocolId &&
+          actual.protocol_version === source.protocolVersion &&
+          actual.measured_at === source.measuredAt &&
+          actual.source === source.source &&
+          actual.unit === source.unit &&
+          stableSnapshotJSON(JSON.parse(String(actual.value_json))) ===
+            stableSnapshotJSON(source.value) &&
+          (actual.corrects_observation_id ?? undefined) === source.correctsObservationId,
+        'missing immutable review observation.',
+      );
+    }
+  }
+  data.schemaVersion = 16;
   data.summary = buildLocalDataExportSummary(data);
   return { data, recordCount: count, exportedAt: data.exportedAt, warnings };
 }

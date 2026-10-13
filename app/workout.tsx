@@ -5,8 +5,8 @@ import {
   hydrateWorkoutValues,
 } from '../src/domain/workoutInputs';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState, StyleSheet, TextInput, View } from 'react-native';
 
 import {
@@ -161,9 +161,27 @@ export default function ActiveWorkoutScreen() {
   const [difficultySaving, setDifficultySaving] = useState(false);
   const feedbackWrite = useRef<Promise<void> | null>(null);
   const feedbackGeneration = useRef(0);
-  const feedbackContext = useRef({ database, userId, sessionId: '' });
+  const workoutIsFocused = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      workoutIsFocused.current = true;
+      return () => {
+        workoutIsFocused.current = false;
+        feedbackGeneration.current++;
+      };
+    }, []),
+  );
+  const feedbackContext = useRef({
+    database,
+    userId,
+    sessionId: '',
+    versionId: '',
+    workoutId: '',
+    cycleWeek: 0,
+  });
   const [difficulty, setDifficulty] = useState<SetDifficulty | null>(null);
   const [showEffortDetails, setShowEffortDetails] = useState(false);
+  const savedActuals = useRef(new Map<string, CompletedSet>());
   const [completedSetKeys, setCompletedSetKeys] = useState<Set<string>>(() => new Set());
   const [editingSetKey, setEditingSetKey] = useState<string | null>(null);
   const [substitutionFor, setSubstitutionFor] = useState<string | null>(null);
@@ -226,6 +244,7 @@ export default function ActiveWorkoutScreen() {
     feedbackGeneration.current++;
     feedbackWrite.current = null;
     setDifficultySaving(false);
+    savedActuals.current.clear();
     setCompletedSetKeys(new Set());
     setEditingSetKey(null);
     setSubstitutionFor(null);
@@ -257,7 +276,22 @@ export default function ActiveWorkoutScreen() {
     [activeCycle.id, activeCycle.currentWeek, activeWorkout, connectivity, readiness, startedAt],
   );
   const session = resumedSession ?? proposedSession;
-  feedbackContext.current = { database, userId, sessionId: session.id };
+  feedbackContext.current = {
+    database,
+    userId,
+    sessionId: session.id,
+    versionId: activeProgramVersion.id,
+    workoutId: activeWorkout.id,
+    cycleWeek: activeCycle.currentWeek,
+  };
+  const draftContextGuard = () =>
+    workoutIsFocused.current &&
+    feedbackContext.current.database === database &&
+    feedbackContext.current.userId === userId &&
+    feedbackContext.current.sessionId === session.id &&
+    feedbackContext.current.versionId === activeProgramVersion.id &&
+    feedbackContext.current.workoutId === activeWorkout.id &&
+    feedbackContext.current.cycleWeek === activeCycle.currentWeek;
   const canMutate =
     previewEnabled ||
     (routeReady &&
@@ -425,6 +459,7 @@ export default function ActiveWorkoutScreen() {
           setRestTimerEnabled(restTimerEnabled);
           setReadiness(readiness ?? null);
           setSessionNote(note);
+          savedActuals.current = new Map(completedSets.map((set) => [completedSetKey(set), set]));
           setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
           setPreviousSets(previousSets);
           const nextTargets =
@@ -493,15 +528,20 @@ export default function ActiveWorkoutScreen() {
     if (!database || !canMutate) return;
 
     const timeout = setTimeout(() => {
-      void saveWorkoutDraft(database, session.id, values, new Date().toISOString(), userId).catch(
-        () => {
-          setError('We could not save the unfinished workout locally.');
-        },
-      );
+      void saveWorkoutDraft(
+        database,
+        session.id,
+        values,
+        new Date().toISOString(),
+        userId,
+        draftContextGuard,
+      ).catch(() => {
+        setError('We could not save the unfinished workout locally.');
+      });
     }, 150);
 
     return () => clearTimeout(timeout);
-  }, [canMutate, database, session.id, values]);
+  }, [canMutate, database, session.id, userId, values]);
 
   useEffect(() => {
     if (!database || !canMutate) return;
@@ -520,11 +560,16 @@ export default function ActiveWorkoutScreen() {
     if (!database || !canMutate) return;
 
     const flushDraft = () => {
-      void saveWorkoutDraft(database, session.id, values, new Date().toISOString(), userId).catch(
-        () => {
-          setError('We could not save the unfinished workout locally.');
-        },
-      );
+      void saveWorkoutDraft(
+        database,
+        session.id,
+        values,
+        new Date().toISOString(),
+        userId,
+        draftContextGuard,
+      ).catch(() => {
+        setError('We could not save the unfinished workout locally.');
+      });
     };
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'inactive' || nextState === 'background') {
@@ -599,6 +644,7 @@ export default function ActiveWorkoutScreen() {
     const apply = () => {
       if (
         !canMutate ||
+        !workoutIsFocused.current ||
         feedbackGeneration.current !== generation ||
         feedbackContext.current.database !== database ||
         feedbackContext.current.userId !== userId ||
@@ -681,35 +727,53 @@ export default function ActiveWorkoutScreen() {
       );
       return;
     }
+    const expectedSaved = savedActuals.current.get(key);
     const completedSet: CompletedSet = {
-      id: `completed-${session.id}-${key}`,
+      id: alreadyCompleted && expectedSaved ? expectedSaved.id : `completed-${session.id}-${key}`,
       sessionId: session.id,
       workoutExerciseId: workoutExercise.id,
       exerciseId: workoutExercise.exerciseId,
       setNumber,
       load: parseNumber(input.load),
-      loadUnit: actualLoadUnit(input.loadUnit),
+      loadUnit: parseNumber(input.load) !== undefined ? actualLoadUnit(input.loadUnit) : undefined,
       reps,
       durationSeconds,
       distanceMeters,
       rpe,
       rir,
       completedAt: new Date().toISOString(),
-      idempotencyKey: `${session.id}:${workoutExercise.id}:${setNumber}`,
+      idempotencyKey:
+        alreadyCompleted && expectedSaved
+          ? expectedSaved.idempotencyKey
+          : `${session.id}:${workoutExercise.id}:${setNumber}`,
     };
 
+    if (alreadyCompleted && !expectedSaved) {
+      setError('Reload the saved set before correcting its actual values.');
+      return;
+    }
+    const generation = feedbackGeneration.current;
+    const isCurrent = () =>
+      workoutIsFocused.current &&
+      feedbackGeneration.current === generation &&
+      feedbackContext.current.database === database &&
+      feedbackContext.current.userId === userId &&
+      feedbackContext.current.sessionId === session.id &&
+      draftContextGuard();
     setSavingSetKey(key);
     setError(null);
     try {
       if (database) {
         const result = alreadyCompleted
-          ? await updateCompletedSet(database, completedSet, userId)
+          ? await updateCompletedSet(database, completedSet, userId, expectedSaved!, isCurrent)
           : await saveCompletedSet(database, completedSet, userId);
         if (alreadyCompleted && result === 'missing') {
           throw new Error('This completed set is no longer available locally.');
         }
         void flushNow();
       }
+      if (!isCurrent()) return;
+      savedActuals.current.set(key, completedSet);
       setCompletedSetKeys((current) => new Set(current).add(key));
       feedbackGeneration.current++;
       setLastSavedSet({
@@ -803,7 +867,14 @@ export default function ActiveWorkoutScreen() {
       try {
         await feedbackWrite.current;
         await updateWorkoutSessionNote(database, session.id, sessionNoteRef.current);
-        await saveWorkoutDraft(database, session.id, values, new Date().toISOString(), userId);
+        await saveWorkoutDraft(
+          database,
+          session.id,
+          values,
+          new Date().toISOString(),
+          userId,
+          draftContextGuard,
+        );
         void flushNow();
       } catch {
         setError('We could not save the unfinished workout locally.');

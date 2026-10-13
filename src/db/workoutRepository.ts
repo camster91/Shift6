@@ -1,3 +1,4 @@
+import { stableSnapshotJSON } from '../domain/programPersistence';
 import {
   writeSetLoadProvenance,
   assertOwnedLoadSession,
@@ -400,34 +401,94 @@ export async function updateWorkoutSessionNote(
   return updatedSession;
 }
 
-export async function saveWorkoutDraft(
+const draftWriteQueues = new WeakMap<SQLiteDatabase, Map<string, Promise<void>>>();
+
+export function saveWorkoutDraft(
   database: SQLiteDatabase,
   sessionId: string,
   values: WorkoutDraftValues,
   updatedAt: string,
   ownerId: string,
+  isCurrent: () => boolean = () => true,
 ): Promise<void> {
-  const { plain, units } = splitDraftLoadUnits(values);
-  await database.withExclusiveTransactionAsync(async (database) => {
-    const owner = await assertOwnedLoadSession(database, sessionId, ownerId);
-    await database.runAsync(
-      `INSERT INTO workout_drafts (session_id, values_json, updated_at)
-     VALUES (?, ?, ?)
-     ON CONFLICT(session_id) DO UPDATE SET
-       values_json = excluded.values_json,
-       updated_at = excluded.updated_at;`,
-      sessionId,
-      JSON.stringify(plain),
-      updatedAt,
-    );
-    await database.runAsync(
-      'INSERT INTO workout_draft_load_units (session_id,user_id,load_units_json,updated_at) VALUES (?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET user_id=excluded.user_id,load_units_json=excluded.load_units_json,updated_at=excluded.updated_at;',
-      sessionId,
-      owner,
-      JSON.stringify(units),
-      updatedAt,
-    );
-  });
+  const captured = JSON.parse(stableSnapshotJSON(values)) as WorkoutDraftValues;
+  const { plain, units } = splitDraftLoadUnits(captured);
+  if (!Number.isFinite(Date.parse(updatedAt)))
+    return Promise.reject(new Error('A valid draft save time is required.'));
+  let queues = draftWriteQueues.get(database);
+  if (!queues) {
+    queues = new Map();
+    draftWriteQueues.set(database, queues);
+  }
+  const queue = queues;
+  const previous = queue.get(sessionId) ?? Promise.resolve();
+  const write = previous
+    .catch(() => undefined)
+    .then(async () => {
+      await database.withExclusiveTransactionAsync(async (tx) => {
+        const assertCurrent = () => {
+          if (!isCurrent())
+            throw new Error('The workout context changed. The unfinished input was not replaced.');
+        };
+        assertCurrent();
+        const owner = await assertOwnedLoadSession(tx, sessionId, ownerId);
+        const existing = await tx.getFirstAsync<{
+          values_json: string;
+          updated_at: string;
+          load_units_json: string | null;
+        }>(
+          `SELECT d.values_json,d.updated_at,u.load_units_json FROM workout_drafts d LEFT JOIN workout_draft_load_units u ON u.session_id=d.session_id AND u.updated_at=d.updated_at WHERE d.session_id=?;`,
+          sessionId,
+        );
+        assertCurrent();
+        if (existing) {
+          if (Date.parse(existing.updated_at) > Date.parse(updatedAt))
+            throw new Error(
+              'A newer unfinished workout is already saved. Reload before replacing it.',
+            );
+          if (Date.parse(existing.updated_at) === Date.parse(updatedAt)) {
+            if (
+              stableSnapshotJSON(JSON.parse(existing.values_json)) === stableSnapshotJSON(plain) &&
+              stableSnapshotJSON(JSON.parse(existing.load_units_json ?? '{}')) ===
+                stableSnapshotJSON(units)
+            )
+              return;
+            throw new Error(
+              'The unfinished workout changed at this save time. Reload before replacing it.',
+            );
+          }
+        }
+        const result = await tx.runAsync(
+          `INSERT INTO workout_drafts (session_id, values_json, updated_at) VALUES (?, ?, ?)
+         ON CONFLICT(session_id) DO UPDATE SET values_json=excluded.values_json,updated_at=excluded.updated_at
+         WHERE workout_drafts.updated_at=?;`,
+          sessionId,
+          JSON.stringify(plain),
+          updatedAt,
+          existing?.updated_at ?? null,
+        );
+        assertCurrent();
+        if (result.changes !== 1)
+          throw new Error(
+            'The unfinished workout changed during saving. Reload before replacing it.',
+          );
+        await tx.runAsync(
+          'INSERT INTO workout_draft_load_units (session_id,user_id,load_units_json,updated_at) VALUES (?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET user_id=excluded.user_id,load_units_json=excluded.load_units_json,updated_at=excluded.updated_at;',
+          sessionId,
+          owner,
+          JSON.stringify(units),
+          updatedAt,
+        );
+        assertCurrent();
+      });
+    });
+  queue.set(sessionId, write);
+  void write
+    .finally(() => {
+      if (queue.get(sessionId) === write) queue.delete(sessionId);
+    })
+    .catch(() => undefined);
+  return write;
 }
 
 export async function getWorkoutDraft(
@@ -472,41 +533,84 @@ export async function updateCompletedSet(
   database: SQLiteDatabase,
   completedSet: CompletedSet,
   ownerId: string,
+  expectedSaved: CompletedSet,
+  isCurrent: () => boolean = () => true,
 ): Promise<'updated' | 'missing'> {
+  const expected = JSON.parse(stableSnapshotJSON(expectedSaved)) as CompletedSet;
+  const correction = JSON.parse(stableSnapshotJSON(completedSet)) as CompletedSet;
+  const identity = ['id', 'sessionId', 'workoutExerciseId', 'setNumber', 'idempotencyKey'] as const;
+  if (identity.some((field) => expected[field] !== correction[field]))
+    throw new Error('The set correction must identify the original saved set.');
   let updated = false;
-
-  await database.withExclusiveTransactionAsync(async (database) => {
-    await assertOwnedLoadSession(database, completedSet.sessionId, ownerId);
-    const result = await database.runAsync(
-      `UPDATE completed_sets
-          SET exercise_id = ?, load = ?, reps = ?, duration_seconds = ?, distance_meters = ?,
-              rpe = ?, rir = ?, completed_at = ?
-        WHERE id = ?;`,
-      completedSet.exerciseId ?? null,
-      completedSet.load ?? null,
-      completedSet.reps ?? null,
-      completedSet.durationSeconds ?? null,
-      completedSet.distanceMeters ?? null,
-      completedSet.rpe ?? null,
-      completedSet.rir ?? null,
-      completedSet.completedAt,
-      completedSet.id,
+  await database.withExclusiveTransactionAsync(async (tx) => {
+    const assertCurrent = () => {
+      if (!isCurrent())
+        throw new Error('The workout context changed. Reload before saving this correction.');
+    };
+    assertCurrent();
+    await assertOwnedLoadSession(tx, correction.sessionId, ownerId);
+    const existing = (await getCompletedSets(tx, correction.sessionId)).find(
+      (set) => set.id === correction.id,
     );
-    if (result.changes === 0) return;
-
-    updated = true;
-    await writeSetLoadProvenance(database, completedSet, ownerId);
-    await database.runAsync(
+    assertCurrent();
+    if (!existing) return;
+    if (stableSnapshotJSON(existing) !== stableSnapshotJSON(expected))
+      throw new Error(
+        'This saved set changed. Reload and review its actual values and units before editing.',
+      );
+    const result = await tx.runAsync(
+      `UPDATE completed_sets SET exercise_id=?,load=?,reps=?,duration_seconds=?,distance_meters=?,rpe=?,rir=?,completed_at=?
+       WHERE id=? AND session_id=? AND workout_exercise_id=? AND set_number=? AND idempotency_key=? AND completed_at=?
+       AND load IS ? AND reps IS ? AND duration_seconds IS ? AND distance_meters IS ? AND rpe IS ? AND rir IS ? AND exercise_id IS ?;`,
+      correction.exerciseId ?? null,
+      correction.load ?? null,
+      correction.reps ?? null,
+      correction.durationSeconds ?? null,
+      correction.distanceMeters ?? null,
+      correction.rpe ?? null,
+      correction.rir ?? null,
+      correction.completedAt,
+      expected.id,
+      expected.sessionId,
+      expected.workoutExerciseId,
+      expected.setNumber,
+      expected.idempotencyKey,
+      expected.completedAt,
+      expected.load ?? null,
+      expected.reps ?? null,
+      expected.durationSeconds ?? null,
+      expected.distanceMeters ?? null,
+      expected.rpe ?? null,
+      expected.rir ?? null,
+      expected.exerciseId ?? null,
+    );
+    if (result.changes !== 1)
+      throw new Error('This saved set changed during the correction. Reload before editing.');
+    assertCurrent();
+    await writeSetLoadProvenance(tx, correction, ownerId);
+    const saved = (await getCompletedSets(tx, correction.sessionId)).find(
+      (set) => set.id === correction.id,
+    );
+    assertCurrent();
+    // No numeric load means no unit provenance, even if a stale caller carries a unit field.
+    const confirmed = {
+      ...correction,
+      loadUnit: correction.load === undefined ? undefined : correction.loadUnit,
+    };
+    if (stableSnapshotJSON(saved) !== stableSnapshotJSON(confirmed))
+      throw new Error('The corrected set could not be confirmed locally.');
+    await tx.runAsync(
       SYNC_MUTATION_INSERT_SQL,
-      `outbox-${completedSet.idempotencyKey}`,
-      completedSet.idempotencyKey,
+      `outbox-${correction.idempotencyKey}`,
+      correction.idempotencyKey,
       'completed-set',
-      completedSet.id,
-      JSON.stringify(completedSet),
-      completedSet.completedAt,
+      correction.id,
+      JSON.stringify(confirmed),
+      correction.completedAt,
     );
+    assertCurrent();
+    updated = true;
   });
-
   return updated ? 'updated' : 'missing';
 }
 

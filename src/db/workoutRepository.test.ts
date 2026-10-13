@@ -635,35 +635,52 @@ describe('workout drafts and corrections', () => {
 
   it('updates a completed set and queues a separate correction snapshot', async () => {
     const calls: string[] = [];
+    const previous: CompletedSet = {
+      id: 'set-1',
+      sessionId: 'session-1',
+      workoutExerciseId: 'workout-exercise-1',
+      setNumber: 1,
+      load: 90,
+      loadUnit: 'kg',
+      reps: 5,
+      completedAt: '2026-09-14T11:00:00.000Z',
+      idempotencyKey: 'session-1:workout-exercise-1:1',
+    };
+    const correction = { ...previous, load: 100, completedAt: '2026-09-14T12:00:00.000Z' };
+    let current = previous;
     const database = {
       getFirstAsync: async () => ({ user_id: 'guest-user' }),
+      getAllAsync: async () => [
+        {
+          id: current.id,
+          session_id: current.sessionId,
+          workout_exercise_id: current.workoutExerciseId,
+          exercise_id: null,
+          set_number: current.setNumber,
+          load: current.load,
+          load_unit: current.loadUnit,
+          reps: current.reps,
+          duration_seconds: null,
+          distance_meters: null,
+          rpe: null,
+          rir: null,
+          completed_at: current.completedAt,
+          idempotency_key: current.idempotencyKey,
+        },
+      ],
       withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
         callback(database),
       runAsync: async (sql: string) => {
         calls.push(sql);
+        if (sql.includes('UPDATE completed_sets')) current = correction;
         return { changes: 1, lastInsertRowId: 1 };
       },
-      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
-
-    await expect(
-      updateCompletedSet(
-        database,
-        {
-          id: 'set-1',
-          sessionId: 'session-1',
-          workoutExerciseId: 'workout-exercise-1',
-          setNumber: 1,
-          load: 100,
-          loadUnit: 'kg',
-          reps: 5,
-          completedAt: '2026-09-14T12:00:00.000Z',
-          idempotencyKey: 'session-1:workout-exercise-1:1',
-        },
-        'guest-user',
-      ),
-    ).resolves.toBe('updated');
+    await expect(updateCompletedSet(database, correction, 'guest-user', previous)).resolves.toBe(
+      'updated',
+    );
     expect(calls[0]).toContain('UPDATE completed_sets');
+    expect(calls[0]).toContain('session_id=?');
     expect(calls[1]).toContain('completed_set_load_provenance');
     expect(calls[2]).not.toContain('DO UPDATE');
   });

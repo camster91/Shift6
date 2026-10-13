@@ -136,7 +136,7 @@ const scenarios = [
       await saveCompletedSet(database, completedSet, profile.user.id);
     },
     edit: (database: SQLiteDatabase) =>
-      updateCompletedSet(database, { ...completedSet, reps: 8 }, profile.user.id),
+      updateCompletedSet(database, { ...completedSet, reps: 8 }, profile.user.id, completedSet),
     expectedPayload: { id: completedSet.id, reps: 8 },
   },
 ];

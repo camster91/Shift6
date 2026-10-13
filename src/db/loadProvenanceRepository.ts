@@ -22,10 +22,13 @@ export async function writeSetLoadProvenance(
   set: CompletedSet,
   owner: string | undefined,
 ) {
+  await assertOwnedLoadSession(db, set.sessionId, owner);
   if (set.load === undefined) {
     await db.runAsync(
-      'DELETE FROM completed_set_load_provenance WHERE completed_set_id=?;',
+      'DELETE FROM completed_set_load_provenance WHERE completed_set_id=? AND session_id=? AND user_id=?;',
       set.id,
+      set.sessionId,
+      owner!,
     );
     return;
   }

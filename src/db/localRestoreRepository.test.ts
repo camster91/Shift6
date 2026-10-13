@@ -336,6 +336,7 @@ test('feedback remains restorable after an actual saved-set edit changes complet
       completedAt: '2026-10-15T04:00:00.000Z',
     },
     'guest-user',
+    set,
   );
   const exported = await exportLocalUserData(db, 'guest-user', stamp);
   expect(Date.parse(String(exported.setFeedbackEvents![0]!.recorded_at))).toBeLessThan(

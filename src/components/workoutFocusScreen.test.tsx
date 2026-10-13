@@ -1,11 +1,15 @@
+import type * as ReactModule from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import ActiveWorkoutScreen from '../../app/workout';
 import { demoCycle, demoProgram, demoProgramVersion, demoUser } from '../domain/fixtures/home';
-import type { WorkoutDraftValues } from '../domain/types';
+import type { CompletedSet, WorkoutSession, WorkoutDraftValues } from '../domain/types';
+let mockResumed: WorkoutSession | null = null;
+let mockSavedActuals: CompletedSet[] = [];
 let mockRecoveredDraft: WorkoutDraftValues | null = null;
 const mockDb = {},
   mockSaveSet = jest.fn(),
+  mockUpdateSet = jest.fn(),
   mockSaveNote = jest.fn(),
   mockPartial = jest.fn(),
   mockSkip = jest.fn(),
@@ -16,6 +20,8 @@ jest.mock('expo-network', () => ({
 }));
 jest.mock('../config/env', () => ({ runtimeConfig: { releaseMode: 'guest-only' } }));
 jest.mock('expo-router', () => ({
+  useFocusEffect: (callback: () => () => void) =>
+    jest.requireActual<typeof ReactModule>('react').useEffect(callback, [callback]),
   router: { back: jest.fn(), replace: jest.fn(), push: jest.fn() },
   useLocalSearchParams: () => ({ workoutId: 'workout-barbell-30-strength-a' }),
 }));
@@ -47,13 +53,13 @@ jest.mock('../db/notificationRepository', () => ({
 }));
 jest.mock('../db/progressRepository', () => ({ getLatestCompletedWorkoutSets: async () => [] }));
 jest.mock('../db/workoutRepository', () => ({
-  getInProgressWorkoutSession: async () => null,
+  getInProgressWorkoutSession: async () => mockResumed,
   saveWorkoutSession: async () => undefined,
-  getCompletedSets: async () => [],
+  getCompletedSets: async () => mockSavedActuals,
   getWorkoutDraft: async () => mockRecoveredDraft,
   saveWorkoutDraft: (...args: unknown[]) => mockSaveDraft(...args),
   saveCompletedSet: (...args: unknown[]) => mockSaveSet(...args),
-  updateCompletedSet: jest.fn(),
+  updateCompletedSet: (...args: unknown[]) => mockUpdateSet(...args),
   updateWorkoutSessionNote: (...args: unknown[]) => mockSaveNote(...args),
   updateWorkoutSessionReadiness: jest.fn(),
   saveActiveWorkoutRevision: jest.fn(),
@@ -69,7 +75,10 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockUser = demoUser;
   mockRecoveredDraft = null;
+  mockResumed = null;
+  mockSavedActuals = [];
   mockSaveSet.mockResolvedValue('saved');
+  mockUpdateSet.mockResolvedValue('updated');
   mockSaveNote.mockResolvedValue(undefined);
   mockSaveDraft.mockResolvedValue(undefined);
   mockPartial.mockResolvedValue({ status: 'partial' });
@@ -290,4 +299,73 @@ test('pending feedback stays attached to the saved set and cannot advance or sel
     expect.any(String),
     'Set feeling · Back squat · set 1: Too hard',
   );
+});
+
+test('explicit saved-set correction supplies its original actual snapshot and an invalidated unmount guard', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), '4');
+  await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+  await waitFor(() => expect(mockSaveSet).toHaveBeenCalledTimes(1));
+  const original = mockSaveSet.mock.calls[0]![1];
+  expect(original.loadUnit).toBeUndefined();
+  await fireEvent.press(screen.getByText('Review all sets and adjustments'));
+  await fireEvent.press(screen.getByLabelText('Edit Back squat set 1'));
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), '6');
+  let release!: (value: string) => void;
+  mockUpdateSet.mockImplementationOnce(
+    () =>
+      new Promise<string>((resolve) => {
+        release = resolve;
+      }),
+  );
+  const pending = fireEvent.press(screen.getByLabelText('Save Back squat set 1'));
+  await waitFor(() => expect(mockUpdateSet).toHaveBeenCalledTimes(1));
+  expect(mockUpdateSet.mock.calls[0]![1]).toMatchObject({ reps: 6 });
+  expect(mockUpdateSet.mock.calls[0]![3]).toEqual(original);
+  const isCurrent = mockUpdateSet.mock.calls[0]![4];
+  expect(isCurrent()).toBe(true);
+  await screen.unmount();
+  expect(isCurrent()).toBe(false);
+  release('updated');
+  await pending;
+});
+
+test('correction keeps restored canonical set ID and operation identity rather than generating replacements', async () => {
+  const movement = mockVersion.workouts[0]!.exercises[0]!;
+  mockResumed = {
+    id: 'restored-session',
+    cycleId: mockCycle.id,
+    cycleWeek: mockCycle.currentWeek,
+    workoutId: mockVersion.workouts[0]!.id,
+    programVersionId: mockVersion.id,
+    workoutFocus: 'strength',
+    status: 'in-progress',
+    startedAt: '2026-10-13T12:00:00.000Z',
+    isOffline: true,
+  };
+  const original: CompletedSet = {
+    id: 'restored-original-set',
+    sessionId: mockResumed.id,
+    workoutExerciseId: movement.id,
+    exerciseId: movement.exerciseId,
+    setNumber: 1,
+    reps: 4,
+    completedAt: '2026-10-13T12:01:00.000Z',
+    idempotencyKey: 'restored-original-operation',
+  };
+  mockSavedActuals = [original];
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 2 reps')).toBeTruthy());
+  await fireEvent.press(screen.getByText('Review all sets and adjustments'));
+  await fireEvent.press(screen.getByLabelText('Edit Back squat set 1'));
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), '6');
+  await fireEvent.press(screen.getByLabelText('Save Back squat set 1'));
+  await waitFor(() => expect(mockUpdateSet).toHaveBeenCalledTimes(1));
+  expect(mockUpdateSet.mock.calls[0]![1]).toMatchObject({
+    id: original.id,
+    idempotencyKey: original.idempotencyKey,
+    reps: 6,
+  });
+  expect(mockUpdateSet.mock.calls[0]![3]).toEqual(original);
 });

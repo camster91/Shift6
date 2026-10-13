@@ -1,6 +1,7 @@
 // The retained sprintf-js callback test compares two separate Date.now calls.
 // Pin only that upstream suite's clock; preserve its source/checksum and keep
 // application suites on their own clocks.
+/* global beforeEach, afterEach, expect, jest */
 let clock;
 beforeEach(() => {
   const path = expect.getState().testPath.replaceAll('\\', '/');

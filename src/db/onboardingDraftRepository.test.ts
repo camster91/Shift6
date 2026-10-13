@@ -24,6 +24,16 @@ function memoryDatabase() {
       sqlite.prepare(sql).get(...values) ?? null,
     getAllAsync: async (sql: string, ...values: SQLInputValue[]) =>
       sqlite.prepare(sql).all(...values),
+    withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) => {
+      sqlite.exec('BEGIN');
+      try {
+        await callback(database);
+        sqlite.exec('COMMIT');
+      } catch (error) {
+        sqlite.exec('ROLLBACK');
+        throw error;
+      }
+    },
     withTransactionAsync: async (callback: () => Promise<void>) => {
       sqlite.exec('BEGIN;');
       try {

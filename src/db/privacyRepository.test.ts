@@ -13,6 +13,8 @@ import {
 describe('exportLocalUserData', () => {
   it('returns user-scoped local records with a versioned export envelope', async () => {
     const database = {
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        callback(database),
       getAllAsync: async (sql: string) => {
         if (Object.values(persistenceSections).some((table) => sql.includes(table))) return [];
         if (sql.includes('personal_goal')) return [];
@@ -267,6 +269,16 @@ describe('deleteLocalUserData', () => {
       runAsync: async (sql: string, ...params: unknown[]) => {
         const result = sqlite.prepare(sql).run(...(params as SQLInputValue[]));
         return { changes: Number(result.changes), lastInsertRowId: Number(result.lastInsertRowid) };
+      },
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) => {
+        sqlite.exec('BEGIN');
+        try {
+          await callback(database);
+          sqlite.exec('COMMIT');
+        } catch (error) {
+          sqlite.exec('ROLLBACK');
+          throw error;
+        }
       },
       withTransactionAsync: async (callback: () => Promise<void>) => {
         sqlite.exec('BEGIN TRANSACTION;');

@@ -68,6 +68,19 @@ export async function exportLocalUserData(
   userId: string,
   exportedAt: string,
 ): Promise<LocalDataExport> {
+  let result: LocalDataExport | undefined;
+  await database.withExclusiveTransactionAsync(async (tx) => {
+    result = await exportLocalUserDataInTransaction(tx, userId, exportedAt);
+  });
+  if (!result) throw new Error('The local export transaction did not complete.');
+  return result;
+}
+
+async function exportLocalUserDataInTransaction(
+  database: SQLiteDatabase,
+  userId: string,
+  exportedAt: string,
+): Promise<LocalDataExport> {
   const additions: Record<string, Record<string, unknown>[]> = {};
   for (const [key, table] of Object.entries(persistenceSections))
     additions[key] = await database.getAllAsync(

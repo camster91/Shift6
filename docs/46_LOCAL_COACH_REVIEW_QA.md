@@ -71,15 +71,17 @@ Observed with synthetic records, network disabled and normal text:
    dates on reentry.
 
 Screenshots/trees remain in the task's `shift6-native-qa` folder until packaged.
-External schema-16 readback, deletion/restore, optional question and invalid or
-stale context native cases are still pending in this increment. Repository
+External schema-16 readback and deletion passed after emulator recovery; restore
+saved 1,076 validated records. The final external re-export matches **all 35
+record arrays exactly**, including the receipt (`review-restored-reexport-4ff0.json`). Optional
+question and invalid or stale context native cases are still pending. Repository
 tests cover those contracts; they are not substituted for native observations.
 The schema-16 share attempt encountered Android's **"IntentResolver isn't
 responding"** alert (`review-export-wait-4ff0`). One Wait briefly exposed the
 share sheet, but the alert returned before the QA receiver could be selected;
 the guarded harness refused to tap a missing receiver. Closing the stalled
-component did not immediately dismiss the captured alert. External receipt is
-therefore blocked, not passed. Source inspection found the export path awaits
+component did not immediately dismiss the captured alert. External receipt was
+blocked during that attempt. Source inspection found the export path awaits
 `Sharing.shareAsync` after local SELECTs and JSON-file writing; it does not replay
 review witnesses. This observation establishes a system share-sheet failure,
 not a Shift6 validation loop. Do not infer file receipt from generating a filename.
@@ -87,13 +89,35 @@ The recovered receiver still held **schema 15 / 1,075 records**; the provisional
 `review-final-export-4ff0.json` capture is that older file, not schema-16 proof.
 It is retained to make the rejected evidence explicit. A restart of Shift6 did
 not immediately recover sharing; `dumpsys activity` identified the resumed
-system ChooserActivityLauncher. A data-preserving emulator restart is underway.
+system ChooserActivityLauncher. After a data-preserving emulator restart, the
+share sheet recovered and the receiver opened **schema 16 / 1,076 records**
+(`review-verified-external-export-4ff0.json`). All 34 pre-upgrade arrays matched
+exactly; one new journal row records the explicitly confirmed intent. No goal,
+actual, schedule, plan or consent was changed by confirmation. The receipt's
+canonical event witness includes all five goal events and all three observations.
+Deletion then yielded an externally opened schema-16 file with zero records and
+all 35 record arrays empty (`review-deleted-export-4ff0.json`). The validated
+backup preview and explicit Restore saved 1,076 records again.
+
+During recovery, the harness was hardened to delete its previous UI dump and
+require a successful fresh dump before reading. This caught a transient empty
+dump during file-picker navigation, instead of reusing old nodes. The tap had
+opened the picker; a fresh capture then selected the observed backup. Immediate
+post-restart/post-confirmation captures may show an earlier frame; acceptance
+uses later fresh states and actual JSON, not their filenames alone.
 
 Harness-only errors retained in the local logs: one Python `show()` call omitted
 its argument, one command used curly-quote labels inside PowerShell incorrectly,
 and one export inspection guessed a `records` object instead of reading the
 actual root arrays. Corrected readbacks established the schema-15 facts above.
 None of those failed commands proves a missing or damaged app record.
+
+The source-reviewed follow-up `996058d0` separates local-record preparation errors
+from file/sharing failures and asks users to verify destination receipt after
+sharing completes. Its three focused tests cover both failure retries and busy
+state while sharing is pending. It does not claim to repair Android's resolver
+or prove delivery from a resolved sharing promise. The frozen/native-tested APK
+above remains `4ff0edd1`; native copy acceptance for the follow-up is pending.
 
 The inspected goal screenshot is legible. Native ergonomics follow-ups are
 locale-aware measurement dates (currently UTC ISO text) and promoting the review

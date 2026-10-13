@@ -24,7 +24,7 @@
     "validate:release-ready": "node scripts/validate-release-ready.mjs && node scripts/validate-release-content.mjs && node scripts/validate-release-assets.mjs",
     "validate:release-assets": "node scripts/validate-release-assets.mjs",
     "export:mobile": "expo export --platform ios && expo export --platform android",
-    "test:security": "node --test scripts/vendor-security.test.mjs",
+    "test:security": "node --test scripts/vendor-security.test.mjs scripts/local-voice-native.test.mjs",
     "validate:vendor": "node scripts/validate-vendor.mjs"
   },
   "dependencies": {
@@ -61,7 +61,8 @@
     "react-native-screens": "~4.26.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.10.1",
-    "sprintf-js": "file:./vendor/sprintf-js"
+    "sprintf-js": "file:./vendor/sprintf-js",
+    "expo-speech-recognition": "file:./vendor/expo-speech-recognition"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

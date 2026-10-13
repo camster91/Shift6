@@ -1,0 +1,181 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { TextInput, View } from 'react-native';
+import { Button, Card, Text } from './ui';
+import { parseVoiceSet, voiceBindingKey, type VoiceSetBinding } from '../domain/voiceSetDraft';
+import type { WorkoutDraftSetValues } from '../domain/types';
+import { createPlatformLocalVoiceAdapter, type LocalVoiceAdapter } from '../services/localVoice';
+
+/** Supplies reviewed fields to the current unsaved set; the existing Save set transaction is separate. */
+export function VoiceSetEntry({
+  binding,
+  onApply,
+  adapter: suppliedAdapter,
+}: {
+  binding: VoiceSetBinding;
+  onApply: (values: Partial<WorkoutDraftSetValues>, expectedBindingKey: string) => boolean;
+  adapter?: LocalVoiceAdapter;
+}) {
+  const adapter = useMemo(
+    () => suppliedAdapter ?? createPlatformLocalVoiceAdapter(),
+    [suppliedAdapter],
+  );
+  const key = voiceBindingKey(binding);
+  const currentKey = useRef(key);
+  currentKey.current = key;
+  const revision = useRef(0);
+  const capturing = useRef(false);
+  const [listening, setListening] = useState(false);
+  const [text, setText] = useState('');
+  const [preview, setPreview] = useState<{ text: string; token: number; key: string } | null>(null);
+  const [message, setMessage] = useState('');
+  useEffect(() => {
+    revision.current++;
+    capturing.current = false;
+    adapter.cancel();
+    setListening(false);
+    setText('');
+    setPreview(null);
+    setMessage('');
+    return () => {
+      revision.current++;
+      adapter.cancel();
+    };
+  }, [adapter, key]);
+  const draft = preview ? parseVoiceSet(preview.text, binding) : null;
+  return (
+    <Card>
+      <Text variant="h3">Voice set entry</Text>
+      <Text>
+        On-device English transcription. Audio and unconfirmed text are not saved. Review the
+        values, then use the usual Save set button.
+      </Text>
+      <Text>
+        Say explicit values such as “eight reps, forty kilograms, two reps left”. Holds need
+        seconds; distances need meters, kilometers or miles. Load for this set is{' '}
+        {binding.loadUnit === 'metric' ? 'kg' : 'lb'}.
+      </Text>
+      <Button
+        label={listening ? 'Listening on device…' : 'Speak a set entry'}
+        disabled={listening}
+        onPress={async () => {
+          if (capturing.current) return;
+          capturing.current = true;
+          const token = ++revision.current;
+          const capturedKey = key;
+          setListening(true);
+          setText('');
+          setPreview(null);
+          setMessage('');
+          try {
+            const final = await adapter.listen('en-US', (partial) => {
+              if (revision.current === token && currentKey.current === capturedKey)
+                setText(partial);
+            });
+            if (revision.current !== token || currentKey.current !== capturedKey) return;
+            setText(final);
+            setPreview({ text: final, token, key: capturedKey });
+          } catch (error) {
+            if (revision.current === token && currentKey.current === capturedKey)
+              setMessage(
+                error instanceof Error
+                  ? error.message
+                  : 'Offline voice unavailable. Use manual entry.',
+              );
+          } finally {
+            if (revision.current === token && currentKey.current === capturedKey) {
+              capturing.current = false;
+              setListening(false);
+            }
+          }
+        }}
+      />
+      {listening || text || message ? (
+        <View>
+          <Button
+            label="Dismiss voice entry"
+            variant="ghost"
+            onPress={() => {
+              revision.current++;
+              capturing.current = false;
+              adapter.cancel();
+              setListening(false);
+              setText('');
+              setPreview(null);
+              setMessage('');
+            }}
+          />
+          <TextInput
+            accessibilityLabel="Review or correct the spoken set entry"
+            value={text}
+            editable={!listening}
+            maxLength={500}
+            multiline
+            onChangeText={(value) => {
+              revision.current++;
+              setText(value);
+              setPreview(null);
+              setMessage('');
+            }}
+          />
+          <Button
+            label="Review corrected values"
+            disabled={listening || !text.trim()}
+            variant="secondary"
+            onPress={() => {
+              setPreview({ text, token: ++revision.current, key });
+            }}
+          />
+        </View>
+      ) : null}
+      {draft ? (
+        <View>
+          <Text>Confirm actual results for set {binding.setNumber}:</Text>
+          {Object.entries(draft.values).map(([field, value]) => (
+            <Text key={field}>
+              {field}: {value}
+              {field === 'load'
+                ? ` ${binding.loadUnit === 'metric' ? 'kg' : 'lb'}`
+                : field === 'duration'
+                  ? ' seconds'
+                  : field === 'distance'
+                    ? ' meters'
+                    : ''}
+            </Text>
+          ))}
+          {draft.unresolved.map((item, index) => (
+            <Text key={index} accessibilityRole="alert">
+              {item}
+            </Text>
+          ))}
+          <Button
+            label="Use reviewed values in unsaved set"
+            disabled={draft.unresolved.length > 0}
+            onPress={() => {
+              if (
+                !preview ||
+                preview.token !== revision.current ||
+                preview.key !== currentKey.current ||
+                draft.unresolved.length
+              )
+                return;
+              revision.current++;
+              setPreview(null);
+              setText('');
+              try {
+                const accepted = onApply(draft.values, preview.key);
+                setMessage(
+                  accepted
+                    ? 'Values entered. Review the set and choose Save set when ready.'
+                    : 'The active set changed. Review a new entry for the current set.',
+                );
+              } catch {
+                setMessage('The reviewed values could not be entered. Use manual entry.');
+              }
+            }}
+          />
+        </View>
+      ) : null}
+      {message ? <Text accessibilityRole="alert">{message}</Text> : null}
+    </Card>
+  );
+}

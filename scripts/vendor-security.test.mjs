@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { validateVendorDirectory } from './vendor-inventory.mjs';
 const require = createRequire(import.meta.url);
 const braces = createRequire(require.resolve('micromatch/package.json'))('braces');
 const expoRequire = createRequire(require.resolve('expo/package.json'));
@@ -13,6 +18,67 @@ const { sprintf } = createRequire(require.resolve('argparse/package.json'))('spr
 const splashRequire = createRequire(require.resolve('expo-splash-screen/package.json'));
 const pluginsRequire = createRequire(splashRequire.resolve('@expo/config-plugins/package.json'));
 const uuid = createRequire(pluginsRequire.resolve('xcode/package.json'))('uuid');
+
+async function vendorFixture(t) {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'shift6-vendor-inventory-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const files = {};
+  for (const file of [
+    'expo-speech-recognition/LICENSE',
+    'expo-speech-recognition/build/index.js',
+    'expo-speech-recognition/android/build.gradle',
+    'expo-speech-recognition/src/index.ts',
+  ]) {
+    await mkdir(path.dirname(path.join(root, file)), { recursive: true });
+    await writeFile(path.join(root, file), file);
+    files[file] = createHash('sha256').update(file).digest('hex');
+  }
+  await writeFile(path.join(root, 'manifest.json'), JSON.stringify({ files }));
+  return root;
+}
+
+test('vendor inventory tolerates only the native speech module Gradle output directories', async (t) => {
+  const root = await vendorFixture(t);
+  for (const directory of ['build/intermediates', '.gradle/cache']) {
+    const target = path.join(root, 'expo-speech-recognition/android', directory);
+    await mkdir(target, { recursive: true });
+    await writeFile(path.join(target, 'generated.bin'), 'generated');
+  }
+  assert.equal(await validateVendorDirectory(root), 4);
+  await writeFile(path.join(root, 'expo-speech-recognition/build/index.js'), 'changed JS');
+  await assert.rejects(validateVendorDirectory(root), /build\/index\.js/);
+});
+
+test('vendor inventory rejects unexpected files even in similarly named build paths', async (t) => {
+  for (const file of [
+    'expo-speech-recognition/src/build/unexpected.ts',
+    'expo-speech-recognition/build/unexpected.js',
+    'expo-speech-recognition/android/build-extra/unexpected.bin',
+    'expo-speech-recognition/android/src/build/unexpected.kt',
+    'other-module/android/build/unexpected.bin',
+    'expo-speech-recognition/src/manifest.json',
+  ]) {
+    const root = await vendorFixture(t);
+    await mkdir(path.dirname(path.join(root, file)), { recursive: true });
+    await writeFile(path.join(root, file), 'unexpected');
+    await assert.rejects(
+      validateVendorDirectory(root),
+      /Expected values to be strictly deep-equal/,
+    );
+  }
+});
+
+test('native build exclusions do not suppress source, build.gradle or license hash checks', async (t) => {
+  for (const file of [
+    'expo-speech-recognition/src/index.ts',
+    'expo-speech-recognition/android/build.gradle',
+    'expo-speech-recognition/LICENSE',
+  ]) {
+    const root = await vendorFixture(t);
+    await writeFile(path.join(root, file), 'modified source');
+    await assert.rejects(validateVendorDirectory(root));
+  }
+});
 
 test('braces supports ordinary patterns and rejects deep patterns and externally supplied ASTs', () => {
   assert.deepEqual(braces.expand('a{b,{c,d}}'), ['ab', 'ac', 'ad']);

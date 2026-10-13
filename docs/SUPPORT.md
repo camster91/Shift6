@@ -53,3 +53,15 @@ preferences without changing profile or training records. Restore leaves its
 use off. Legacy loaded sets with missing units remain unknown; current units
 and prescriptions cannot identify an old measurement. New loaded inputs show
 their actual kg/lb unit and require confirmation before conversion.
+
+The optional voice-entry candidate opens from **Use optional voice set entry**
+within a workout. **Speak a set entry** requests microphone access (and iOS speech
+authorization) only when chosen. Review the recognized fields, correct them if
+needed, and apply them to the unsaved draft; **Complete** or **Save correction**
+still records the actual set. Listening alone does not save or complete training.
+
+Voice requires supported, already-installed on-device English recognition.
+Unavailable recognition or declined permission leaves the manual fields working;
+SHIFT6 does not download a model or fall back to cloud transcription. A phone
+model name does not prove recognition availability. Native/device acceptance is
+still pending; see [voice scope and remaining checks](LOCAL_VOICE_SET_INPUT.md).

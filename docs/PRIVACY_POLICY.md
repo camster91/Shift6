@@ -18,6 +18,20 @@ Optional Apple Health or Health Connect access requires your permission. You
 can decline, revoke access in system settings, or disconnect and remove imported
 health records from SHIFT6. Optional reminders use native notification permission.
 
+The optional voice-entry candidate requests microphone access only when you
+choose to speak a set entry; iOS also requires speech authorization. It requires
+available on-device English recognition and has no SHIFT6 cloud transcription
+fallback or automatic language-model download. Manual entry remains available.
+An unconfirmed transcript is held in memory for review and discarded when capture
+ends or the context changes. Applying reviewed numbers fills the existing draft;
+the usual set-save control is still required to record an actual result.
+
+Audio recording persistence is disabled, and SHIFT6 does not deliberately save
+audio or transcripts in its records, logs or JSON exports. Confirmed numeric
+input follows the normal draft/set export and deletion rules. Actual device
+recognizer behavior, permissions and candidate traffic still require native
+verification before final store disclosures. See [voice acceptance scope](LOCAL_VOICE_SET_INPUT.md).
+
 You can export your local records as a JSON file from Profile. SHIFT6 keeps a temporary copy in private app cache so the receiving app can read it. A later export removes copies older than a day, and deleting local records removes the temporary copies for that user. Device storage management may also clear cache files. Choosing a destination in the
 system sharing interface may send that export outside your device; you control
 the destination. Treat exports as private files.

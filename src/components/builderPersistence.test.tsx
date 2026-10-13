@@ -66,12 +66,10 @@ test('a saved source opens an explicit copy with its actual workout and custom m
       },
     ],
   };
-  jest
-    .mocked(getUserProgramVersion)
-    .mockResolvedValue({
-      program: { ...demoProgram, title: 'Saved private plan' },
-      version: sourceVersion,
-    });
+  jest.mocked(getUserProgramVersion).mockResolvedValue({
+    program: { ...demoProgram, title: 'Saved private plan' },
+    version: sourceVersion,
+  });
   jest.mocked(getUserExercises).mockResolvedValue([movement]);
   const screen = await render(<ProgramBuilderScreen />);
   await waitFor(() => expect(screen.getByDisplayValue('Saved private plan copy')).toBeTruthy());

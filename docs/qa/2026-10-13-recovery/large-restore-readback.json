@@ -1,0 +1,11 @@
+{
+  "source": "d9c5b2e2",
+  "recordCount": 1011,
+  "exactHistoricalHealthRows": 1002,
+  "changedSections": [
+    "userProfiles"
+  ],
+  "healthRowsExact": true,
+  "cycleExact": true,
+  "privateVersionExact": true
+}

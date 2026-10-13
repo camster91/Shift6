@@ -1699,160 +1699,164 @@ export default function ActiveWorkoutScreen() {
                             )}
                           </Text>
                         </View>
-                        {showsLoad(
-                          workoutExercise.exerciseId,
-                          workoutSet.target,
-                          availableExercises,
-                        ) ? (
-                          <View>
-                            <Text variant="caption">
-                              Actual load: {values[key]?.loadUnit ?? 'unknown'}
-                            </Text>
-                            <View style={{ flexDirection: 'row' }}>
-                              {(['kg', 'lb'] as const).map((unit) => (
-                                <Button
-                                  key={unit}
-                                  label={unit}
-                                  variant="ghost"
-                                  disabled={savingSetKey !== null || (completed && !editing)}
-                                  onPress={() => chooseActualLoadUnit(key, unit)}
-                                  accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} actual load unit ${unit}`}
-                                />
-                              ))}
+                        <View style={styles.setControls}>
+                          {showsLoad(
+                            workoutExercise.exerciseId,
+                            workoutSet.target,
+                            availableExercises,
+                          ) ? (
+                            <View style={styles.loadControls}>
+                              <Text variant="caption">
+                                Actual load: {values[key]?.loadUnit ?? 'unknown'}
+                              </Text>
+                              <View style={styles.loadUnitControls}>
+                                {(['kg', 'lb'] as const).map((unit) => (
+                                  <Button
+                                    key={unit}
+                                    label={unit}
+                                    variant="ghost"
+                                    disabled={savingSetKey !== null || (completed && !editing)}
+                                    onPress={() => chooseActualLoadUnit(key, unit)}
+                                    accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} actual load unit ${unit}`}
+                                  />
+                                ))}
+                              </View>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} load`}
+                                accessibilityHint={
+                                  actualLoadUnit(values[key]?.loadUnit)
+                                    ? `Enter actual load in ${values[key]?.loadUnit === 'lb' ? 'pounds' : 'kilograms'}`
+                                    : 'The saved unit is unknown. Confirm kg or lb before saving.'
+                                }
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="decimal-pad"
+                                onChangeText={(value) => updateValue(key, 'load', value)}
+                                placeholder={
+                                  actualLoadUnit(values[key]?.loadUnit) ?? 'Unit unknown'
+                                }
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.valueInput, styles.loadInput]}
+                                value={values[key]?.load ?? ''}
+                              />
                             </View>
+                          ) : null}
+                          {showsReps(
+                            workoutExercise.exerciseId,
+                            workoutSet.target,
+                            availableExercises,
+                          ) ? (
                             <TextInput
-                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} load`}
-                              accessibilityHint={
-                                actualLoadUnit(values[key]?.loadUnit)
-                                  ? `Enter actual load in ${values[key]?.loadUnit === 'lb' ? 'pounds' : 'kilograms'}`
-                                  : 'The saved unit is unknown. Confirm kg or lb before saving.'
-                              }
+                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} reps`}
                               editable={savingSetKey === null && (!completed || editing)}
-                              keyboardType="decimal-pad"
-                              onChangeText={(value) => updateValue(key, 'load', value)}
-                              placeholder={actualLoadUnit(values[key]?.loadUnit) ?? 'Unit unknown'}
+                              keyboardType="number-pad"
+                              onChangeText={(value) => updateValue(key, 'reps', value)}
+                              placeholder="Reps"
                               placeholderTextColor={colors.inkMuted}
                               style={styles.valueInput}
-                              value={values[key]?.load ?? ''}
+                              value={values[key]?.reps ?? ''}
                             />
-                          </View>
-                        ) : null}
-                        {showsReps(
-                          workoutExercise.exerciseId,
-                          workoutSet.target,
-                          availableExercises,
-                        ) ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} reps`}
-                            editable={savingSetKey === null && (!completed || editing)}
-                            keyboardType="number-pad"
-                            onChangeText={(value) => updateValue(key, 'reps', value)}
-                            placeholder="Reps"
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.valueInput}
-                            value={values[key]?.reps ?? ''}
-                          />
-                        ) : null}
-                        {showsDuration(
-                          workoutExercise.exerciseId,
-                          workoutSet.target,
-                          availableExercises,
-                        ) ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} duration in seconds`}
-                            editable={savingSetKey === null && (!completed || editing)}
-                            keyboardType="number-pad"
-                            onChangeText={(value) => updateValue(key, 'duration', value)}
-                            placeholder="Seconds"
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.valueInput}
-                            value={values[key]?.duration ?? ''}
-                          />
-                        ) : null}
-                        {showsDistance(
-                          workoutExercise.exerciseId,
-                          workoutSet.target,
-                          availableExercises,
-                        ) ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} distance in meters`}
-                            editable={savingSetKey === null && (!completed || editing)}
-                            keyboardType="decimal-pad"
-                            onChangeText={(value) => updateValue(key, 'distance', value)}
-                            placeholder="Meters"
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.valueInput}
-                            value={values[key]?.distance ?? ''}
-                          />
-                        ) : null}
-                        {showEffortDetails || values[key]?.rpe ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
-                            editable={savingSetKey === null && (!completed || editing)}
-                            keyboardType="decimal-pad"
-                            onChangeText={(value) => updateValue(key, 'rpe', value)}
-                            placeholder="RPE"
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.effortInput}
-                            value={values[key]?.rpe ?? ''}
-                          />
-                        ) : null}
-                        {showEffortDetails || values[key]?.rir ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
-                            editable={savingSetKey === null && (!completed || editing)}
-                            keyboardType="number-pad"
-                            onChangeText={(value) => updateValue(key, 'rir', value)}
-                            placeholder="RIR"
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.effortInput}
-                            value={values[key]?.rir ?? ''}
-                          />
-                        ) : null}
-                        {key === focus?.key &&
-                        voiceBinding &&
-                        voiceFocused &&
-                        (!completed || editing) ? (
-                          <View>
-                            <Button
-                              label={
-                                voiceEntryKey === key
-                                  ? 'Hide voice set entry'
-                                  : 'Use optional voice set entry'
-                              }
-                              variant="ghost"
-                              disabled={voiceBusy}
-                              onPress={() => {
-                                if (!setWrite.current)
-                                  setVoiceEntryKey((current) => (current === key ? null : key));
-                              }}
+                          ) : null}
+                          {showsDuration(
+                            workoutExercise.exerciseId,
+                            workoutSet.target,
+                            availableExercises,
+                          ) ? (
+                            <TextInput
+                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} duration in seconds`}
+                              editable={savingSetKey === null && (!completed || editing)}
+                              keyboardType="number-pad"
+                              onChangeText={(value) => updateValue(key, 'duration', value)}
+                              placeholder="Seconds"
+                              placeholderTextColor={colors.inkMuted}
+                              style={styles.valueInput}
+                              value={values[key]?.duration ?? ''}
                             />
-                            {voiceEntryKey === key ? (
-                              <VoiceSetEntry
-                                binding={voiceBinding}
+                          ) : null}
+                          {showsDistance(
+                            workoutExercise.exerciseId,
+                            workoutSet.target,
+                            availableExercises,
+                          ) ? (
+                            <TextInput
+                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} distance in meters`}
+                              editable={savingSetKey === null && (!completed || editing)}
+                              keyboardType="decimal-pad"
+                              onChangeText={(value) => updateValue(key, 'distance', value)}
+                              placeholder="Meters"
+                              placeholderTextColor={colors.inkMuted}
+                              style={styles.valueInput}
+                              value={values[key]?.distance ?? ''}
+                            />
+                          ) : null}
+                          {showEffortDetails || values[key]?.rpe ? (
+                            <TextInput
+                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
+                              editable={savingSetKey === null && (!completed || editing)}
+                              keyboardType="decimal-pad"
+                              onChangeText={(value) => updateValue(key, 'rpe', value)}
+                              placeholder="RPE"
+                              placeholderTextColor={colors.inkMuted}
+                              style={styles.effortInput}
+                              value={values[key]?.rpe ?? ''}
+                            />
+                          ) : null}
+                          {showEffortDetails || values[key]?.rir ? (
+                            <TextInput
+                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
+                              editable={savingSetKey === null && (!completed || editing)}
+                              keyboardType="number-pad"
+                              onChangeText={(value) => updateValue(key, 'rir', value)}
+                              placeholder="RIR"
+                              placeholderTextColor={colors.inkMuted}
+                              style={styles.effortInput}
+                              value={values[key]?.rir ?? ''}
+                            />
+                          ) : null}
+                          {key === focus?.key &&
+                          voiceBinding &&
+                          voiceFocused &&
+                          (!completed || editing) ? (
+                            <View style={styles.voiceControls}>
+                              <Button
+                                label={
+                                  voiceEntryKey === key
+                                    ? 'Hide voice set entry'
+                                    : 'Use optional voice set entry'
+                                }
+                                variant="ghost"
                                 disabled={voiceBusy}
-                                onApply={applyVoiceValues}
+                                onPress={() => {
+                                  if (!setWrite.current)
+                                    setVoiceEntryKey((current) => (current === key ? null : key));
+                                }}
                               />
-                            ) : null}
-                          </View>
-                        ) : null}
-                        {showAllSets ? (
-                          <Button
-                            label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
-                            accessibilityLabel={`${completed ? (editing ? 'Save' : 'Edit') : 'Complete'} ${exerciseName} set ${workoutSet.setNumber}`}
-                            variant={completed && !editing ? 'secondary' : 'primary'}
-                            disabled={savingSetKey !== null}
-                            loading={savingSetKey === key}
-                            onPress={
-                              completed && !editing
-                                ? () => {
-                                    if (!setWrite.current) setEditingSetKey(key);
-                                  }
-                                : () => handleCompleteSet(workoutExercise, workoutSet.setNumber)
-                            }
-                            style={styles.completeButton}
-                          />
-                        ) : null}
+                              {voiceEntryKey === key ? (
+                                <VoiceSetEntry
+                                  binding={voiceBinding}
+                                  disabled={voiceBusy}
+                                  onApply={applyVoiceValues}
+                                />
+                              ) : null}
+                            </View>
+                          ) : null}
+                          {showAllSets ? (
+                            <Button
+                              label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
+                              accessibilityLabel={`${completed ? (editing ? 'Save' : 'Edit') : 'Complete'} ${exerciseName} set ${workoutSet.setNumber}`}
+                              variant={completed && !editing ? 'secondary' : 'primary'}
+                              disabled={savingSetKey !== null}
+                              loading={savingSetKey === key}
+                              onPress={
+                                completed && !editing
+                                  ? () => {
+                                      if (!setWrite.current) setEditingSetKey(key);
+                                    }
+                                  : () => handleCompleteSet(workoutExercise, workoutSet.setNumber)
+                              }
+                              style={styles.completeButton}
+                            />
+                          ) : null}
+                        </View>
                       </View>
                     );
                   })}
@@ -2453,17 +2457,42 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   setRow: {
+    gap: spacing.sm,
+  },
+  setControls: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: spacing.xs,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
   setLabel: {
-    flex: 1,
+    width: '100%',
     gap: spacing.xxs,
   },
+  loadControls: {
+    flexBasis: 144,
+    flexGrow: 1,
+    minWidth: 144,
+    maxWidth: '100%',
+    gap: spacing.xs,
+  },
+  loadUnitControls: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  loadInput: {
+    width: '100%',
+    flexBasis: 'auto',
+    flexGrow: 0,
+  },
+  voiceControls: {
+    width: '100%',
+  },
   valueInput: {
-    width: 74,
+    flexBasis: 96,
+    flexGrow: 1,
+    minWidth: 96,
+    maxWidth: '100%',
     minHeight: 44,
     paddingVertical: spacing.xs,
     borderWidth: 1,
@@ -2476,7 +2505,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   effortInput: {
-    width: 68,
+    flexBasis: 96,
+    flexGrow: 1,
+    minWidth: 96,
+    maxWidth: '100%',
     minHeight: 44,
     paddingVertical: spacing.xs,
     borderWidth: 1,

@@ -94,7 +94,10 @@ $shift6Adb = 'C:\Users\camst\AppData\Local\Android\Sdk\platform-tools\adb.exe'
 If the emulator is stopped, start the existing AVD first:
 
 ```powershell
-Start-Process -FilePath 'C:\Users\camst\AppData\Local\Android\Sdk\emulator\emulator.exe' -ArgumentList '-avd Shift6-QA -accel on -gpu host -no-snapshot-load' -WindowStyle Hidden
+$env:ANDROID_AVD_HOME = 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\avds'
+Start-Process -FilePath 'C:\Users\camst\AppData\Local\Android\Sdk\emulator\emulator.exe' -ArgumentList '-avd Shift6-QA -no-window -accel on -gpu host -no-audio -no-snapshot -memory 2048' -WindowStyle Hidden
 ```
+
+The custom AVD directory is required: the current SDK's `-list-avds` prints Shift6-QA with that directory set and none under its default home. Startup arguments match the running emulator's command line; the installed SDK's `-help-accel` and `-help-gpu` confirm accelerated x86_64/WHPX and host GPU support. These are the verified exposed CLI controls; no computer/security setting is changed.
 
 This x86_64 APK is for the PC emulator. The S25 Ultra requires a separate ARM64 candidate and physical-device acceptance. No Expo Go is used. Local iOS requires a Mac or signed iPhone build; the latest GitHub runtime attempt stopped before testing for lack of a matching successful native artifact. The corrected iOS harness and four contracts do not establish a simulator pass.

@@ -1,0 +1,321 @@
+{
+  "schemaVersion": 12,
+  "exportedAt": "2026-10-13T03:24:14.290Z",
+  "userId": "guest-user",
+  "summary": {
+    "scope": "local-device",
+    "title": "SHIFT6 local data export",
+    "description": "A structured JSON copy of SHIFT6 data owned by this user and currently stored on this device.",
+    "limitations": "This is a local-device export. It does not claim to include server-only account data or third-party provider records that are not cached in SHIFT6 local storage.",
+    "totalRecordCount": 22,
+    "sections": [
+      {
+        "key": "profile",
+        "title": "Profile and equipment",
+        "description": "Your local profile answers and saved equipment inventory.",
+        "recordCount": 2
+      },
+      {
+        "key": "preferences",
+        "title": "Preferences and accessibility",
+        "description": "Local movement/accessibility preferences and Coach provider privacy preference.",
+        "recordCount": 1
+      },
+      {
+        "key": "bodyAndHealth",
+        "title": "Body metrics and health summaries",
+        "description": "Manual body measurements and health summaries imported onto this device.",
+        "recordCount": 0
+      },
+      {
+        "key": "shiftsAndMeasurements",
+        "title": "Shifts and measurements",
+        "description": "Shift goals, measurement protocols, recorded results, and goal revisions stored on this device.",
+        "recordCount": 12
+      },
+      {
+        "key": "trainingHistory",
+        "title": "Training history",
+        "description": "Cycles, workout sessions, completed sets, in-progress drafts, check-ins, cycle reviews, and schedule overrides.",
+        "recordCount": 3
+      },
+      {
+        "key": "programsAndExercises",
+        "title": "Your programs and exercises",
+        "description": "Private program copies, program versions, and custom exercise records.",
+        "recordCount": 3
+      },
+      {
+        "key": "coachAndNotifications",
+        "title": "Coach and notification records",
+        "description": "Saved Coach proposals and local notification preferences.",
+        "recordCount": 1
+      }
+    ]
+  },
+  "personalGoalEvents": [
+    {
+      "id": "create:personal-1791860496345-btlrtl2d9jo",
+      "user_id": "guest-user",
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "kind": "created",
+      "payload_json": "{\"objective\":\"QA Strength Goal\",\"protocol\":{\"id\":\"personal-1791860496345-btlrtl2d9jo-setup\",\"version\":1,\"exerciseId\":\"QA Strength Goal\",\"variantId\":\"QA Strength Goal\",\"assistance\":\"none\",\"equipmentSetup\":\"none\",\"metric\":\"load-for-reps\",\"canonicalUnit\":\"kg\",\"direction\":\"higher\",\"repCount\":5},\"target\":45.359237,\"cycleId\":\"cycle-guest-user-program-blank-guest-user-1791858377688-1791859214167\",\"replacePrimary\":false}",
+      "recorded_at": "2026-10-13T03:01:36.345Z"
+    },
+    {
+      "id": "measurement:personal-1791860833262-5s5b5rxic7h",
+      "user_id": "guest-user",
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "kind": "measurement",
+      "payload_json": "{\"observation\":{\"id\":\"personal-1791860833262-5s5b5rxic7h\",\"shiftId\":\"personal-1791860496345-btlrtl2d9jo\",\"protocolId\":\"personal-1791860496345-btlrtl2d9jo-setup\",\"protocolVersion\":1,\"measuredAt\":\"2026-10-13T03:07:13.262Z\",\"source\":\"assessment\",\"value\":36.287389600000004,\"unit\":\"kg\"},\"baseline\":true}",
+      "recorded_at": "2026-10-13T03:07:13.262Z"
+    },
+    {
+      "id": "measurement:personal-1791860847414-1fqcize0m6l",
+      "user_id": "guest-user",
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "kind": "measurement",
+      "payload_json": "{\"observation\":{\"id\":\"personal-1791860847414-1fqcize0m6l\",\"shiftId\":\"personal-1791860496345-btlrtl2d9jo\",\"protocolId\":\"personal-1791860496345-btlrtl2d9jo-setup\",\"protocolVersion\":1,\"measuredAt\":\"2026-10-13T03:07:27.414Z\",\"source\":\"assessment\",\"value\":40.8233133,\"unit\":\"kg\"},\"baseline\":false}",
+      "recorded_at": "2026-10-13T03:07:27.414Z"
+    },
+    {
+      "id": "measurement:personal-1791860919658-i4hr8o61j3",
+      "user_id": "guest-user",
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "kind": "measurement",
+      "payload_json": "{\"observation\":{\"id\":\"personal-1791860919658-i4hr8o61j3\",\"shiftId\":\"personal-1791860496345-btlrtl2d9jo\",\"protocolId\":\"personal-1791860496345-btlrtl2d9jo-setup\",\"protocolVersion\":1,\"measuredAt\":\"2026-10-13T03:07:27.414Z\",\"source\":\"historical-entry\",\"value\":39.916128560000004,\"unit\":\"kg\",\"correctsObservationId\":\"personal-1791860847414-1fqcize0m6l\"},\"baseline\":false}",
+      "recorded_at": "2026-10-13T03:08:39.658Z"
+    },
+    {
+      "id": "personal-1791860967683-2izx964zkfb",
+      "user_id": "guest-user",
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "kind": "target-revision",
+      "payload_json": "{\"target\":49.895160700000005,\"reason\":\"Synthetic QA revision\"}",
+      "recorded_at": "2026-10-13T03:09:27.684Z"
+    },
+    {
+      "id": "personal-1791860972275-9uq2pveebz8",
+      "user_id": "guest-user",
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "kind": "review",
+      "payload_json": "{\"state\":\"completed\",\"choice\":\"maintain\",\"target\":49.895160700000005,\"baseline\":{\"state\":\"measured\",\"observationId\":\"personal-1791860833262-5s5b5rxic7h\"},\"protocol\":{\"id\":\"personal-1791860496345-btlrtl2d9jo-setup\",\"version\":1,\"exerciseId\":\"QA Strength Goal\",\"variantId\":\"QA Strength Goal\",\"assistance\":\"none\",\"equipmentSetup\":\"none\",\"metric\":\"load-for-reps\",\"canonicalUnit\":\"kg\",\"direction\":\"higher\",\"repCount\":5}}",
+      "recorded_at": "2026-10-13T03:09:32.275Z"
+    }
+  ],
+  "personalGoalDrafts": [],
+  "onboardingDrafts": [],
+  "userProfiles": [
+    {
+      "id": "guest-user",
+      "display_name": "You",
+      "unit_system": "imperial",
+      "goals_json": "[\"general-health\"]",
+      "experience": "beginner",
+      "training_days_per_week": 3,
+      "preferred_session_minutes": 30,
+      "coach_tone": "supportive",
+      "coach_intervention": "conservative",
+      "health_connection": "health-connect",
+      "completed_at": "2026-10-13T03:17:08.689Z",
+      "created_at": "2026-10-13T02:23:44.359Z",
+      "updated_at": "2026-10-13T03:17:08.689Z",
+      "preferred_training_time": "morning"
+    }
+  ],
+  "userEquipment": [
+    {
+      "user_id": "guest-user",
+      "equipment_id": "equipment-dumbbells"
+    }
+  ],
+  "userConsiderations": [
+    {
+      "user_id": "guest-user",
+      "movement_considerations_json": "[]",
+      "accessibility_needs_json": "[]",
+      "updated_at": "2026-10-13T03:17:08.689Z"
+    }
+  ],
+  "bodyMetrics": [],
+  "coachPrivacyPreferences": [],
+  "trainingCycles": [
+    {
+      "id": "cycle-guest-user-program-blank-guest-user-1791858377688-1791859214167",
+      "user_id": "guest-user",
+      "program_version_id": "program-blank-guest-user-1791858377688-version-1",
+      "status": "active",
+      "current_week": 1,
+      "started_at": "2026-10-13T02:40:14.167Z",
+      "weeks_json": "[{\"weekNumber\":1,\"label\":\"Week 1\",\"phase\":\"Establish\",\"status\":\"current\",\"completedWorkoutCount\":0,\"plannedWorkoutCount\":1},{\"weekNumber\":2,\"label\":\"Week 2\",\"phase\":\"Repeatability\",\"status\":\"upcoming\",\"completedWorkoutCount\":0,\"plannedWorkoutCount\":1},{\"weekNumber\":3,\"label\":\"Week 3\",\"phase\":\"Build\",\"status\":\"upcoming\",\"completedWorkoutCount\":0,\"plannedWorkoutCount\":1},{\"weekNumber\":4,\"label\":\"Week 4\",\"phase\":\"Build\",\"status\":\"upcoming\",\"completedWorkoutCount\":0,\"plannedWorkoutCount\":1},{\"weekNumber\":5,\"label\":\"Week 5\",\"phase\":\"Challenge\",\"status\":\"upcoming\",\"completedWorkoutCount\":0,\"plannedWorkoutCount\":1},{\"weekNumber\":6,\"label\":\"Week 6\",\"phase\":\"Review\",\"status\":\"upcoming\",\"completedWorkoutCount\":0,\"plannedWorkoutCount\":1}]"
+    }
+  ],
+  "shifts": [
+    {
+      "id": "personal-1791860496345-btlrtl2d9jo",
+      "user_id": "guest-user",
+      "cycle_id": "cycle-guest-user-program-blank-guest-user-1791858377688-1791859214167",
+      "program_version_id": "program-blank-guest-user-1791858377688-version-1",
+      "template_id": "personal-entry-v1",
+      "template_version": 1,
+      "block_objective": "QA Strength Goal",
+      "longer_term_aspiration": null,
+      "active_protocol_id": "personal-1791860496345-btlrtl2d9jo-setup",
+      "active_protocol_version": 1,
+      "target_json": "49.895160700000005",
+      "baseline_state": "measured",
+      "baseline_observation_id": "personal-1791860833262-5s5b5rxic7h",
+      "review_state": "completed",
+      "next_choice": "maintain",
+      "is_primary": 1,
+      "created_at": "2026-10-13T03:01:36.345Z"
+    }
+  ],
+  "shiftProtocols": [
+    {
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "user_id": "guest-user",
+      "protocol_id": "personal-1791860496345-btlrtl2d9jo-setup",
+      "protocol_version": 1,
+      "snapshot_json": "{\"id\":\"personal-1791860496345-btlrtl2d9jo-setup\",\"version\":1,\"exerciseId\":\"QA Strength Goal\",\"variantId\":\"QA Strength Goal\",\"assistance\":\"none\",\"equipmentSetup\":\"none\",\"metric\":\"load-for-reps\",\"canonicalUnit\":\"kg\",\"direction\":\"higher\",\"repCount\":5}",
+      "created_at": "2026-10-13T03:01:36.345Z"
+    }
+  ],
+  "shiftObservations": [
+    {
+      "id": "personal-1791860833262-5s5b5rxic7h",
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "user_id": "guest-user",
+      "protocol_id": "personal-1791860496345-btlrtl2d9jo-setup",
+      "protocol_version": 1,
+      "measured_at": "2026-10-13T03:07:13.262Z",
+      "recorded_at": "2026-10-13T03:07:13.262Z",
+      "source": "assessment",
+      "value_json": "36.287389600000004",
+      "unit": "kg",
+      "workout_session_id": null,
+      "corrects_observation_id": null
+    },
+    {
+      "id": "personal-1791860847414-1fqcize0m6l",
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "user_id": "guest-user",
+      "protocol_id": "personal-1791860496345-btlrtl2d9jo-setup",
+      "protocol_version": 1,
+      "measured_at": "2026-10-13T03:07:27.414Z",
+      "recorded_at": "2026-10-13T03:07:27.414Z",
+      "source": "assessment",
+      "value_json": "40.8233133",
+      "unit": "kg",
+      "workout_session_id": null,
+      "corrects_observation_id": null
+    },
+    {
+      "id": "personal-1791860919658-i4hr8o61j3",
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "user_id": "guest-user",
+      "protocol_id": "personal-1791860496345-btlrtl2d9jo-setup",
+      "protocol_version": 1,
+      "measured_at": "2026-10-13T03:07:27.414Z",
+      "recorded_at": "2026-10-13T03:08:39.658Z",
+      "source": "historical-entry",
+      "value_json": "39.916128560000004",
+      "unit": "kg",
+      "workout_session_id": null,
+      "corrects_observation_id": "personal-1791860847414-1fqcize0m6l"
+    }
+  ],
+  "shiftGoalRevisions": [
+    {
+      "id": "personal-1791860967683-2izx964zkfb",
+      "shift_id": "personal-1791860496345-btlrtl2d9jo",
+      "user_id": "guest-user",
+      "previous_revision_id": null,
+      "protocol_id": "personal-1791860496345-btlrtl2d9jo-setup",
+      "protocol_version": 1,
+      "target_json": "49.895160700000005",
+      "block_objective": "QA Strength Goal",
+      "reason": "Synthetic QA revision",
+      "recorded_at": "2026-10-13T03:09:27.684Z"
+    }
+  ],
+  "workoutSessions": [
+    {
+      "id": "session-cycle-guest-user-program-blank-guest-user-1791858377688-1791859214167-week-1-program-blank-guest-user-1791858377688-version-1-workout-extra-1-20261013024234492",
+      "cycle_id": "cycle-guest-user-program-blank-guest-user-1791858377688-1791859214167",
+      "workout_id": "program-blank-guest-user-1791858377688-version-1-workout-extra-1",
+      "program_version_id": "program-blank-guest-user-1791858377688-version-1",
+      "status": "partial",
+      "started_at": "2026-10-13T02:42:34.492Z",
+      "completed_at": "2026-10-13T02:51:01.456Z",
+      "is_offline": 0,
+      "workout_focus": "mixed",
+      "cycle_week": 1,
+      "readiness": "ready",
+      "completion_reason": "time-limited",
+      "note": null
+    }
+  ],
+  "completedSets": [
+    {
+      "id": "completed-session-cycle-guest-user-program-blank-guest-user-1791858377688-1791859214167-week-1-program-blank-guest-user-1791858377688-version-1-workout-extra-1-20261013024234492-program-blank-guest-user-1791858377688-version-1-workout-extra-1-exercise-1:1",
+      "session_id": "session-cycle-guest-user-program-blank-guest-user-1791858377688-1791859214167-week-1-program-blank-guest-user-1791858377688-version-1-workout-extra-1-20261013024234492",
+      "workout_exercise_id": "program-blank-guest-user-1791858377688-version-1-workout-extra-1-exercise-1",
+      "set_number": 1,
+      "load": null,
+      "reps": null,
+      "duration_seconds": 35,
+      "distance_meters": null,
+      "rpe": null,
+      "rir": null,
+      "completed_at": "2026-10-13T02:46:06.922Z",
+      "idempotency_key": "session-cycle-guest-user-program-blank-guest-user-1791858377688-1791859214167-week-1-program-blank-guest-user-1791858377688-version-1-workout-extra-1-20261013024234492:program-blank-guest-user-1791858377688-version-1-workout-extra-1-exercise-1:1",
+      "exercise_id": "program-blank-guest-user-1791858377688-custom-exercise-1"
+    }
+  ],
+  "workoutDrafts": [],
+  "workoutCheckIns": [],
+  "userPrograms": [
+    {
+      "id": "program-blank-guest-user-1791858377688",
+      "user_id": "guest-user",
+      "source_program_id": null,
+      "program_json": "{\"id\":\"program-blank-guest-user-1791858377688\",\"slug\":\"program-blank-guest-user-1791858377688-slug\",\"title\":\"QA Local Plan\",\"description\":\"A private six-week plan built around the way you train.\",\"goals\":[\"general-health\"],\"targetUser\":\"A user-created training plan.\",\"experience\":[\"beginner\",\"intermediate\",\"advanced\"],\"daysPerWeek\":3,\"sessionLengthMinutes\":30,\"requiredEquipmentIds\":[],\"optionalEquipmentIds\":[],\"progressionStrategy\":\"double-progression\",\"currentVersionId\":\"program-blank-guest-user-1791858377688-version-1\",\"isTemplate\":false,\"ownerId\":\"guest-user\"}",
+      "updated_at": "2026-10-13T02:26:17.688Z"
+    }
+  ],
+  "userProgramVersions": [
+    {
+      "id": "program-blank-guest-user-1791858377688-version-1",
+      "program_id": "program-blank-guest-user-1791858377688",
+      "version": 1,
+      "status": "draft",
+      "version_json": "{\"id\":\"program-blank-guest-user-1791858377688-version-1\",\"programId\":\"program-blank-guest-user-1791858377688\",\"version\":1,\"status\":\"draft\",\"cycleModel\":{\"lengthWeeks\":6,\"weekSixMeaning\":\"normal-training\",\"phases\":{\"1\":\"Establish\",\"2\":\"Repeatability\",\"3\":\"Build\",\"4\":\"Build\",\"5\":\"Challenge\",\"6\":\"Review\"}},\"workouts\":[{\"id\":\"program-blank-guest-user-1791858377688-version-1-workout-extra-1\",\"programVersionId\":\"program-blank-guest-user-1791858377688-version-1\",\"title\":\"QA Session\",\"dayOfWeek\":1,\"focus\":\"mixed\",\"estimatedDurationMinutes\":20,\"isOptional\":false,\"equipmentIds\":[\"equipment-bodyweight\"],\"exercises\":[{\"id\":\"program-blank-guest-user-1791858377688-version-1-workout-extra-1-exercise-1\",\"exerciseId\":\"program-blank-guest-user-1791858377688-custom-exercise-1\",\"order\":1,\"section\":\"working\",\"sets\":[{\"id\":\"program-blank-guest-user-1791858377688-version-1-workout-extra-1-exercise-1-set-1\",\"setNumber\":1,\"target\":{\"durationSeconds\":30},\"restSeconds\":20},{\"id\":\"program-blank-guest-user-1791858377688-version-1-workout-extra-1-exercise-1-set-2\",\"setNumber\":2,\"target\":{\"durationSeconds\":30},\"restSeconds\":20},{\"id\":\"program-blank-guest-user-1791858377688-version-1-workout-extra-1-exercise-1-set-3\",\"setNumber\":3,\"target\":{\"durationSeconds\":30},\"restSeconds\":20}]}]}],\"progressionRuleIds\":[],\"createdAt\":\"2026-10-13T02:26:17.688Z\"}",
+      "created_at": "2026-10-13T02:26:17.688Z"
+    }
+  ],
+  "userExercises": [
+    {
+      "id": "program-blank-guest-user-1791858377688-custom-exercise-1",
+      "user_id": "guest-user",
+      "exercise_json": "{\"id\":\"program-blank-guest-user-1791858377688-custom-exercise-1\",\"name\":\"QA Hold\",\"aliases\":[],\"movementPattern\":\"carry\",\"classification\":\"isolation\",\"primaryMuscles\":[\"core\"],\"secondaryMuscles\":[],\"equipmentIds\":[\"equipment-bodyweight\"],\"setup\":\"User-defined setup. Review the movement before adding it to a live plan.\",\"difficulty\":\"beginner\",\"instructions\":[\"Synthetic timed QA record. No physical exercise required.\"],\"techniqueCues\":[\"Breathe steadily and stop if sharp pain occurs.\"],\"commonMistakes\":[],\"safetyNotes\":[\"Choose a variation and load you can control.\"],\"unilateral\":false,\"trackingType\":\"time\",\"tags\":[\"custom\",\"carry\",\"isolation\"],\"media\":[],\"isCustom\":true,\"contentStatus\":\"draft\"}",
+      "created_at": "2026-10-13T02:39:49.908Z",
+      "updated_at": "2026-10-13T02:40:14.167Z"
+    }
+  ],
+  "coachProposals": [],
+  "healthSummaries": [],
+  "notificationPreferences": [
+    {
+      "user_id": "guest-user",
+      "workout_reminders": 1,
+      "rest_timer": 0,
+      "weekly_review": 0,
+      "cycle_review": 0,
+      "coach_messages": 0,
+      "updated_at": "2026-10-13T03:12:27.272Z"
+    }
+  ],
+  "cycleReviews": [],
+  "workoutScheduleOverrides": []
+}

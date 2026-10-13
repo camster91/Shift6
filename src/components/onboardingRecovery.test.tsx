@@ -16,8 +16,12 @@ const mockClearDraft = jest.fn(async (_database: unknown, _owner: string) => {
 });
 const mockSaveProfile = jest.fn(async (_database: unknown, _profile: unknown) => undefined);
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  router: { replace: (...args: unknown[]) => mockReplace(...args) },
+  router: {
+    replace: (...args: unknown[]) => mockReplace(...args),
+    push: (...args: unknown[]) => mockPush(...args),
+  },
 }));
 jest.mock('../db/context', () => ({ useLocalDatabase: () => mockDatabase }));
 jest.mock('../config/env', () => ({ runtimeConfig: { releaseMode: 'guest-only' } }));
@@ -64,6 +68,14 @@ const ready = async () => {
 
 test('does not create phantom guest data just by opening setup', async () => {
   await ready();
+  expect(mockSaveDraft).not.toHaveBeenCalled();
+  expect(mockSaveProfile).not.toHaveBeenCalled();
+});
+
+test('fresh setup restore entry leaves the installation empty until file confirmation', async () => {
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Restore a local export instead'));
+  expect(mockPush).toHaveBeenCalledWith('/restore');
   expect(mockSaveDraft).not.toHaveBeenCalled();
   expect(mockSaveProfile).not.toHaveBeenCalled();
 });

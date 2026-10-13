@@ -408,6 +408,15 @@ export default function ProfileScreen() {
           onPress={() => void handleExport()}
           style={styles.privacyButton}
         />
+        {runtimeConfig.releaseMode === 'guest-only' ? (
+          <Button
+            label="Restore a local export"
+            variant="secondary"
+            disabled={privacyBusy !== null}
+            onPress={() => router.push('/restore')}
+            style={styles.privacyButton}
+          />
+        ) : null}
 
         {identity.kind === 'guest' ? (
           <Button

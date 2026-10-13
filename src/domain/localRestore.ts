@@ -1,0 +1,1150 @@
+import { MIGRATIONS } from '../db/migrations';
+import { buildLocalDataExportSummary, type LocalDataExport } from '../db/privacyRepository';
+import { foundationalExercises } from './fixtures/exercises';
+import { programLibrary } from './programLibrary';
+import { parseOnboardingRecoveryState } from './onboardingRecovery';
+import { equipmentCatalog } from './equipment';
+import { accessibilityNeedOptions, movementConsiderationOptions } from './considerations';
+import {
+  normalizeObservation,
+  validateMeasurementProtocol,
+  type MeasurementProtocol,
+  type ShiftObservation,
+} from './shift';
+
+export const MAX_RESTORE_BYTES = 20 * 1024 * 1024;
+export const MAX_RESTORE_RECORDS = 50000;
+export const restoreTables = {
+  userProfiles: 'user_profiles',
+  userEquipment: 'user_equipment',
+  userConsiderations: 'user_considerations',
+  bodyMetrics: 'body_metrics',
+  coachPrivacyPreferences: 'coach_privacy_preferences',
+  userPrograms: 'user_programs',
+  userProgramVersions: 'user_program_versions',
+  userExercises: 'user_exercises',
+  trainingCycles: 'training_cycles',
+  workoutSessions: 'workout_sessions',
+  completedSets: 'completed_sets',
+  workoutDrafts: 'workout_drafts',
+  workoutCheckIns: 'workout_check_ins',
+  shifts: 'shifts',
+  shiftProtocols: 'shift_protocols',
+  shiftObservations: 'shift_observations',
+  shiftGoalRevisions: 'shift_goal_revisions',
+  personalGoalEvents: 'personal_goal_events',
+  personalGoalDrafts: 'personal_goal_drafts',
+  onboardingDrafts: 'onboarding_drafts',
+  coachProposals: 'coach_proposals',
+  healthSummaries: 'health_summaries',
+  notificationPreferences: 'notification_preferences',
+  cycleReviews: 'cycle_reviews',
+  workoutScheduleOverrides: 'workout_schedule_overrides',
+} as const;
+export type RestoreSection = keyof typeof restoreTables;
+export type RestoreRow = Record<string, string | number | null>;
+type Column = { name: string; type: string; nullable: boolean };
+
+// Only trusted, checked-in migration identifiers participate in SQL generation.
+// A backup cannot provide a table, column, statement or schema migration.
+export function restoreColumns(table: string): Column[] {
+  const columns: Column[] = [];
+  for (const migration of MIGRATIONS)
+    for (const statement of migration.statements) {
+      const create = statement.match(/^CREATE TABLE(?: IF NOT EXISTS)? (\w+) \(([\s\S]*)\);$/i);
+      if (create?.[1] === table) {
+        let depth = 0,
+          part = '';
+        const parts: string[] = [];
+        for (const character of create[2]!) {
+          if (character === '(') depth++;
+          if (character === ')') depth--;
+          if (character === ',' && depth === 0) {
+            parts.push(part);
+            part = '';
+          } else part += character;
+        }
+        parts.push(part);
+        for (const declaration of parts) {
+          const match = declaration.trim().match(/^(\w+) (TEXT|INTEGER|REAL)\b(.*)$/i);
+          if (match)
+            columns.push({
+              name: match[1]!,
+              type: match[2]!,
+              nullable: !/NOT NULL/i.test(match[3]!),
+            });
+        }
+      }
+      const alter = statement.match(
+        /^ALTER TABLE (\w+)\s+ADD COLUMN (\w+) (TEXT|INTEGER|REAL)\b([\s\S]*)/i,
+      );
+      if (alter?.[1] === table)
+        columns.push({ name: alter[2]!, type: alter[3]!, nullable: !/NOT NULL/i.test(alter[4]!) });
+    }
+  if (!columns.length) throw new Error('Unknown restore table.');
+  return columns;
+}
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+function fail(message: string): never {
+  throw new Error(`Backup cannot be restored: ${message}`);
+}
+function check(condition: unknown, message: string): asserts condition {
+  if (!condition) fail(message);
+}
+function text(
+  value: unknown,
+  label: string,
+  max = 10000,
+  nonempty = false,
+): asserts value is string {
+  check(
+    typeof value === 'string' && value.length <= max && (!nonempty || value.trim().length > 0),
+    `invalid ${label}.`,
+  );
+}
+function id(value: unknown): asserts value is string {
+  text(value, 'identifier', 1024, true);
+  check(!/[\u0000-\u001f]/.test(value), 'invalid identifier.');
+}
+function number(value: unknown, min = 0, max = 1e9, integer = false): asserts value is number {
+  check(
+    typeof value === 'number' &&
+      Number.isFinite(value) &&
+      value >= min &&
+      value <= max &&
+      (!integer || Number.isInteger(value)),
+    'invalid numeric value.',
+  );
+}
+function date(value: unknown) {
+  text(value, 'date', 40, true);
+  check(
+    /^\d{4}-\d\d-\d\dT/.test(value) && Number.isFinite(Date.parse(value)),
+    'invalid timestamp.',
+  );
+}
+function keys(
+  value: unknown,
+  required: string[],
+  optional: string[] = [],
+): asserts value is Record<string, unknown> {
+  check(isRecord(value), 'expected an object.');
+  check(
+    Object.keys(value).every((key) => required.includes(key) || optional.includes(key)),
+    'unexpected nested field.',
+  );
+  check(
+    required.every((key) => Object.hasOwn(value, key)),
+    'missing nested field.',
+  );
+}
+function array(value: unknown): asserts value is unknown[] {
+  check(Array.isArray(value) && value.length <= MAX_RESTORE_RECORDS, 'invalid array.');
+}
+function strings(value: unknown) {
+  array(value);
+  value.forEach((item) => text(item, 'list entry'));
+}
+function choice(value: unknown, choices: string[]) {
+  check(typeof value === 'string' && choices.includes(value), 'invalid option.');
+}
+function unique(rows: Record<string, unknown>[], columns: string[], label: string) {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const key = JSON.stringify(columns.map((column) => row[column]));
+    check(!seen.has(key), `duplicate ${label}.`);
+    seen.add(key);
+  }
+}
+function scalar(value: unknown) {
+  if (typeof value !== 'boolean') number(value);
+}
+function target(value: unknown) {
+  keys(value, [], ['reps', 'load', 'durationSeconds', 'distanceMeters', 'rpe', 'rir', 'tempo']);
+  for (const [key, item] of Object.entries(value)) {
+    if (key === 'tempo') text(item, key, 100);
+    else if (key === 'load') {
+      keys(item, ['unit'], ['value', 'percentOfEstimatedOneRepMax']);
+      choice(item.unit, ['metric', 'imperial']);
+      if (item.value !== undefined) number(item.value);
+      if (item.percentOfEstimatedOneRepMax !== undefined)
+        number(item.percentOfEstimatedOneRepMax, 0, 100);
+    } else if (key === 'reps' && isRecord(item)) {
+      keys(item, ['min', 'max']);
+      number(item.min, 0, 10000, true);
+      number(item.max, item.min as number, 10000, true);
+    } else number(item, 0, key === 'rpe' || key === 'rir' ? 10 : 1e9);
+  }
+}
+function protocol(value: unknown): asserts value is MeasurementProtocol {
+  keys(
+    value,
+    [
+      'id',
+      'version',
+      'exerciseId',
+      'variantId',
+      'assistance',
+      'equipmentSetup',
+      'metric',
+      'canonicalUnit',
+      'direction',
+    ],
+    ['repCount', 'fixedDistanceMeters'],
+  );
+  ['id', 'exerciseId', 'variantId'].forEach((key) => id(value[key]));
+  ['assistance', 'equipmentSetup'].forEach((key) => text(value[key], key, 10000, true));
+  number(value.version, 1, 100000, true);
+  const combinations: Record<string, string[]> = {
+    reps: ['reps', 'higher'],
+    'load-for-reps': ['kg', 'higher'],
+    'hold-duration': ['seconds', 'higher'],
+    'fixed-distance-time': ['seconds', 'lower'],
+    distance: ['meters', 'higher'],
+    completion: ['completed', 'complete'],
+  };
+  const combination = combinations[String(value.metric)];
+  check(
+    combination && combination[0] === value.canonicalUnit && combination[1] === value.direction,
+    'invalid measurement protocol.',
+  );
+  if (value.repCount !== undefined) number(value.repCount, 1, 10000, true);
+  if (value.fixedDistanceMeters !== undefined) number(value.fixedDistanceMeters, 0.000001);
+  check(
+    validateMeasurementProtocol(value as unknown as MeasurementProtocol).length === 0,
+    'invalid measurement protocol.',
+  );
+}
+function program(value: unknown, owner: string) {
+  keys(
+    value,
+    [
+      'id',
+      'slug',
+      'title',
+      'description',
+      'goals',
+      'targetUser',
+      'experience',
+      'daysPerWeek',
+      'sessionLengthMinutes',
+      'requiredEquipmentIds',
+      'optionalEquipmentIds',
+      'progressionStrategy',
+      'currentVersionId',
+      'isTemplate',
+    ],
+    ['ownerId', 'sourceProgramId'],
+  );
+  id(value.id);
+  id(value.currentVersionId);
+  ['slug', 'title', 'description', 'targetUser'].forEach((key) => text(value[key], key));
+  ['goals', 'experience', 'requiredEquipmentIds', 'optionalEquipmentIds'].forEach((key) =>
+    strings(value[key]),
+  );
+  number(value.daysPerWeek, 1, 7, true);
+  number(value.sessionLengthMinutes, 1, 1440, true);
+  check(
+    value.isTemplate === false && value.ownerId === owner,
+    'only owned private plans can be restored.',
+  );
+  if (value.sourceProgramId !== undefined) id(value.sourceProgramId);
+  choice(value.progressionStrategy, [
+    'linear-load',
+    'double-progression',
+    'rep-target',
+    'rpe-rir',
+    'volume',
+    'density',
+    'time',
+    'distance',
+    'cardio',
+    'skill',
+  ]);
+}
+function version(value: unknown) {
+  keys(value, [
+    'id',
+    'programId',
+    'version',
+    'status',
+    'cycleModel',
+    'workouts',
+    'progressionRuleIds',
+    'createdAt',
+  ]);
+  id(value.id);
+  id(value.programId);
+  number(value.version, 1, 100000, true);
+  choice(value.status, ['draft', 'published', 'retired']);
+  date(value.createdAt);
+  strings(value.progressionRuleIds);
+  keys(value.cycleModel, ['lengthWeeks', 'weekSixMeaning', 'phases']);
+  check(value.cycleModel.lengthWeeks === 6, 'invalid cycle length.');
+  choice(value.cycleModel.weekSixMeaning, [
+    'evaluation',
+    'consolidation',
+    'reduced-volume',
+    'rep-pr',
+    'technique',
+    'normal-training',
+  ]);
+  keys(value.cycleModel.phases, ['1', '2', '3', '4', '5', '6']);
+  Object.values(value.cycleModel.phases).forEach((item) => text(item, 'phase', 200));
+  array(value.workouts);
+  unique(value.workouts as Record<string, unknown>[], ['id'], 'workout');
+  for (const workout of value.workouts) {
+    keys(
+      workout,
+      [
+        'id',
+        'programVersionId',
+        'title',
+        'dayOfWeek',
+        'focus',
+        'estimatedDurationMinutes',
+        'equipmentIds',
+        'exercises',
+      ],
+      ['sourceWorkoutId', 'isOptional'],
+    );
+    id(workout.id);
+    check(workout.programVersionId === value.id, 'workout version mismatch.');
+    text(workout.title, 'workout title');
+    number(workout.dayOfWeek, 0, 6, true);
+    number(workout.estimatedDurationMinutes, 0, 1440);
+    strings(workout.equipmentIds);
+    choice(workout.focus, ['strength', 'cardio', 'mobility', 'conditioning', 'recovery', 'mixed']);
+    if (workout.isOptional !== undefined)
+      check(typeof workout.isOptional === 'boolean', 'invalid optional workout.');
+    if (workout.sourceWorkoutId !== undefined) id(workout.sourceWorkoutId);
+    array(workout.exercises);
+    unique(workout.exercises as Record<string, unknown>[], ['id'], 'workout movement');
+    for (const movement of workout.exercises) {
+      keys(
+        movement,
+        ['id', 'exerciseId', 'order', 'section', 'sets'],
+        ['variantId', 'supersetGroupId', 'groupType', 'notes'],
+      );
+      id(movement.id);
+      id(movement.exerciseId);
+      number(movement.order, 0, 10000, true);
+      choice(movement.section, ['warm-up', 'working', 'cooldown', 'cardio', 'mobility']);
+      for (const key of ['variantId', 'supersetGroupId'])
+        if (movement[key] !== undefined) id(movement[key]);
+      if (movement.groupType !== undefined) choice(movement.groupType, ['superset', 'circuit']);
+      if (movement.notes !== undefined) text(movement.notes, 'notes');
+      array(movement.sets);
+      unique(movement.sets as Record<string, unknown>[], ['id'], 'set');
+      unique(movement.sets as Record<string, unknown>[], ['setNumber'], 'set number');
+      for (const set of movement.sets) {
+        keys(set, ['id', 'setNumber', 'target'], ['restSeconds']);
+        id(set.id);
+        number(set.setNumber, 1, 1000, true);
+        target(set.target);
+        if (set.restSeconds !== undefined) number(set.restSeconds, 0, 86400);
+      }
+    }
+  }
+}
+function exercise(value: unknown) {
+  keys(
+    value,
+    [
+      'id',
+      'name',
+      'aliases',
+      'movementPattern',
+      'primaryMuscles',
+      'secondaryMuscles',
+      'equipmentIds',
+      'setup',
+      'difficulty',
+      'instructions',
+      'techniqueCues',
+      'commonMistakes',
+      'safetyNotes',
+      'unilateral',
+      'trackingType',
+      'tags',
+      'media',
+      'isCustom',
+      'contentStatus',
+    ],
+    ['classification', 'notes', 'reviewedAt', 'reviewedBy'],
+  );
+  id(value.id);
+  ['name', 'setup'].forEach((key) => text(value[key], key));
+  for (const key of [
+    'aliases',
+    'primaryMuscles',
+    'secondaryMuscles',
+    'equipmentIds',
+    'instructions',
+    'techniqueCues',
+    'commonMistakes',
+    'safetyNotes',
+    'tags',
+  ])
+    strings(value[key]);
+  choice(value.movementPattern, [
+    'squat',
+    'hinge',
+    'horizontal-push',
+    'vertical-push',
+    'horizontal-pull',
+    'vertical-pull',
+    'lunge-split-stance',
+    'carry',
+    'rotation',
+    'anti-rotation',
+    'anti-extension',
+    'locomotion',
+    'cyclical-cardio',
+    'mobility',
+    'power',
+    'balance',
+  ]);
+  choice(value.difficulty, ['beginner', 'intermediate', 'advanced']);
+  choice(value.trackingType, ['reps', 'time', 'distance', 'duration-and-distance', 'custom']);
+  choice(value.contentStatus, ['draft', 'reviewed', 'retired']);
+  check(
+    value.isCustom === true && typeof value.unilateral === 'boolean',
+    'invalid custom movement.',
+  );
+  if (value.classification !== undefined) choice(value.classification, ['compound', 'isolation']);
+  for (const key of ['notes', 'reviewedBy']) if (value[key] !== undefined) text(value[key], key);
+  if (value.reviewedAt !== undefined) date(value.reviewedAt);
+  array(value.media);
+  for (const media of value.media) {
+    keys(media, ['id', 'type', 'uri', 'altText', 'reviewStatus']);
+    id(media.id);
+    choice(media.type, ['image', 'video']);
+    text(media.uri, 'media URI', 4096);
+    text(media.altText, 'media description');
+    choice(media.reviewStatus, ['draft', 'technique-review', 'approved']);
+  }
+}
+
+function safeJSON(value: string): unknown {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    fail('invalid nested JSON.');
+  }
+  let nodes = 0;
+  function walk(item: unknown, depth: number) {
+    check(++nodes <= 200000 && depth <= 24, 'nested data is too large.');
+    if (isRecord(item))
+      for (const [key, child] of Object.entries(item)) {
+        check(!['__proto__', 'prototype', 'constructor'].includes(key), 'unsafe nested field.');
+        walk(child, depth + 1);
+      }
+    else if (Array.isArray(item)) item.forEach((child) => walk(child, depth + 1));
+    else if (typeof item === 'string') text(item, 'nested text', 100000);
+    else if (typeof item === 'number') check(Number.isFinite(item), 'invalid nested number.');
+  }
+  walk(parsed, 0);
+  return parsed;
+}
+export interface RestorePreview {
+  data: LocalDataExport;
+  recordCount: number;
+  exportedAt: string;
+  warnings: string[];
+}
+
+export function validateLocalBackup(serialized: string): RestorePreview {
+  check(
+    new TextEncoder().encode(serialized).byteLength <= MAX_RESTORE_BYTES,
+    'file exceeds 20 MiB.',
+  );
+  let raw: unknown;
+  try {
+    raw = JSON.parse(serialized);
+  } catch {
+    fail('file is not valid JSON.');
+  }
+  check(isRecord(raw), 'file is not an export.');
+  check(
+    raw.schemaVersion === 12,
+    'only export schema 12 is supported. Older or future exports need a compatible app; no automatic migration is attempted.',
+  );
+  const sections = Object.keys(restoreTables) as RestoreSection[];
+  keys(
+    raw,
+    [
+      'schemaVersion',
+      'exportedAt',
+      'userId',
+      'summary',
+      ...sections.filter(
+        (key) => !['personalGoalEvents', 'personalGoalDrafts', 'onboardingDrafts'].includes(key),
+      ),
+    ],
+    ['personalGoalEvents', 'personalGoalDrafts', 'onboardingDrafts'],
+  );
+  id(raw.userId);
+  date(raw.exportedAt);
+  const owner = raw.userId;
+  keys(raw.summary, [
+    'scope',
+    'title',
+    'description',
+    'limitations',
+    'totalRecordCount',
+    'sections',
+  ]);
+  check(raw.summary.scope === 'local-device', 'invalid export scope.');
+  const summary = raw.summary;
+  ['title', 'description', 'limitations'].forEach((key) => text(summary[key], key));
+  number(raw.summary.totalRecordCount, 0, MAX_RESTORE_RECORDS, true);
+  array(raw.summary.sections);
+  for (const section of raw.summary.sections) {
+    keys(section, ['key', 'title', 'description', 'recordCount']);
+    ['key', 'title', 'description'].forEach((key) => text(section[key], key));
+    number(section.recordCount, 0, MAX_RESTORE_RECORDS, true);
+  }
+  const parsed = new Map<string, unknown>();
+  let count = 0;
+  for (const key of sections) {
+    const rows = raw[key] ?? [];
+    array(rows);
+    count += rows.length;
+    check(count <= MAX_RESTORE_RECORDS, 'too many records.');
+    raw[key] = rows;
+    const columns = restoreColumns(restoreTables[key]);
+    for (let index = 0; index < rows.length; index++) {
+      const row = rows[index];
+      keys(
+        row,
+        columns.map((column) => column.name),
+      );
+      for (const column of columns) {
+        const value = row[column.name];
+        if (value === null) {
+          check(column.nullable, `missing ${key}.${column.name}.`);
+          continue;
+        }
+        if (column.type === 'TEXT')
+          text(
+            value,
+            `${key}.${column.name}`,
+            column.name.endsWith('_json') ? MAX_RESTORE_BYTES : 10000,
+          );
+        else number(value, column.name === 'value' ? -1e9 : 0, 1e9, column.type === 'INTEGER');
+        if (column.name === 'user_id' || (key === 'userProfiles' && column.name === 'id'))
+          check(value === owner, 'foreign owner record.');
+        if (column.name.endsWith('_at')) date(value);
+        if (column.name === 'id' || column.name.endsWith('_id')) id(value);
+        if (column.name.endsWith('_json'))
+          parsed.set(`${key}:${index}:${column.name}`, safeJSON(value as string));
+      }
+      const identity =
+        key === 'userEquipment'
+          ? ['user_id', 'equipment_id']
+          : key === 'shiftProtocols'
+            ? ['shift_id', 'protocol_id', 'protocol_version']
+            : key === 'healthSummaries'
+              ? ['user_id', 'source', 'id']
+              : key === 'personalGoalDrafts'
+                ? ['user_id', 'cycle_id']
+                : Object.hasOwn(row, 'id')
+                  ? ['id']
+                  : Object.hasOwn(row, 'session_id')
+                    ? ['session_id']
+                    : ['user_id'];
+      if (index === rows.length - 1) unique(rows as Record<string, unknown>[], identity, key);
+    }
+  }
+  check(count === raw.summary.totalRecordCount, 'record count does not match export.');
+  const data = raw as unknown as LocalDataExport;
+  const get = (key: RestoreSection, index: number, column: string) =>
+    parsed.get(`${key}:${index}:${column}`);
+  const map = (key: RestoreSection) =>
+    new Map((data[key] ?? []).map((row) => [String(row.id), row]));
+  const profiles = map('userProfiles'),
+    plans = map('userPrograms'),
+    versions = map('userProgramVersions'),
+    cycles = map('trainingCycles'),
+    sessions = map('workoutSessions'),
+    goals = map('shifts'),
+    observations = map('shiftObservations'),
+    revisions = map('shiftGoalRevisions');
+  check(profiles.size <= 1, 'multiple profiles.');
+  if (sections.some((key) => key !== 'onboardingDrafts' && (data[key]?.length ?? 0) > 0))
+    check(profiles.has(owner), 'missing owned profile.');
+  const versionObjects = new Map<string, Record<string, unknown>>();
+  const exerciseIds = new Set([
+    ...foundationalExercises.map((item) => item.id),
+    ...data.userExercises.map((row) => String(row.id)),
+  ]);
+  for (const [index, row] of data.userPrograms.entries()) {
+    const value = get('userPrograms', index, 'program_json');
+    program(value, owner);
+    check(
+      isRecord(value) &&
+        value.id === row.id &&
+        value.sourceProgramId === (row.source_program_id ?? undefined),
+      'program identity mismatch.',
+    );
+    check(
+      versions.get(String(value.currentVersionId))?.program_id === row.id,
+      'missing current program version.',
+    );
+  }
+  for (const [index, row] of data.userExercises.entries()) {
+    const value = get('userExercises', index, 'exercise_json');
+    exercise(value);
+    check(isRecord(value) && value.id === row.id, 'movement identity mismatch.');
+  }
+  for (const [index, row] of data.userProgramVersions.entries()) {
+    const value = get('userProgramVersions', index, 'version_json');
+    version(value);
+    check(
+      isRecord(value) &&
+        value.id === row.id &&
+        value.programId === row.program_id &&
+        value.version === row.version &&
+        value.status === row.status &&
+        value.createdAt === row.created_at &&
+        plans.has(String(row.program_id)),
+      'immutable version identity mismatch.',
+    );
+    versionObjects.set(String(row.id), value);
+  }
+  unique(data.userProgramVersions, ['program_id', 'version'], 'program version number');
+  for (const entry of programLibrary)
+    if (entry.version && !versionObjects.has(entry.version.id))
+      versionObjects.set(entry.version.id, entry.version as unknown as Record<string, unknown>);
+  const movements = (versionId: unknown, workoutId?: unknown) => {
+    const value = versionObjects.get(String(versionId));
+    check(value, 'missing immutable program version.');
+    const workouts = value.workouts as Record<string, unknown>[];
+    if (workoutId !== undefined)
+      check(
+        workouts.some((workout) => workout.id === workoutId),
+        'missing workout.',
+      );
+    return workouts
+      .filter((workout) => workoutId === undefined || workout.id === workoutId)
+      .flatMap((workout) => workout.exercises as Record<string, unknown>[]);
+  };
+  for (const value of versionObjects.values())
+    for (const movement of movements(value.id))
+      check(exerciseIds.has(String(movement.exerciseId)), 'missing exercise reference.');
+  for (const [index, row] of data.trainingCycles.entries()) {
+    movements(row.program_version_id);
+    choice(row.status, ['planned', 'active', 'complete', 'paused', 'cancelled']);
+    number(row.current_week, 1, 6, true);
+    const weeks = get('trainingCycles', index, 'weeks_json');
+    array(weeks);
+    check(weeks.length === 6, 'cycle requires six week snapshots.');
+    unique(weeks as Record<string, unknown>[], ['weekNumber'], 'cycle week');
+    for (const week of weeks) {
+      keys(week, [
+        'weekNumber',
+        'label',
+        'phase',
+        'status',
+        'completedWorkoutCount',
+        'plannedWorkoutCount',
+      ]);
+      number(week.weekNumber, 1, 6, true);
+      text(week.label, 'week label');
+      text(week.phase, 'week phase');
+      choice(week.status, ['completed', 'current', 'upcoming', 'missed', 'partial']);
+      number(week.completedWorkoutCount, 0, 10000, true);
+      number(week.plannedWorkoutCount, 0, 10000, true);
+    }
+  }
+  for (const row of data.workoutSessions) {
+    const cycle = cycles.get(String(row.cycle_id));
+    check(
+      cycle && cycle.program_version_id === row.program_version_id,
+      'session cycle/version mismatch.',
+    );
+    movements(row.program_version_id, row.workout_id);
+    number(row.cycle_week, 1, 6, true);
+    choice(row.status, ['planned', 'in-progress', 'complete', 'partial', 'skipped', 'abandoned']);
+    choice(row.workout_focus, [
+      'strength',
+      'cardio',
+      'mobility',
+      'conditioning',
+      'recovery',
+      'mixed',
+    ]);
+    check([0, 1].includes(row.is_offline as number), 'invalid offline flag.');
+    if (row.readiness !== null) choice(row.readiness, ['ready', 'limited', 'rest']);
+    if (row.completion_reason !== null)
+      choice(row.completion_reason, [
+        'all-targets',
+        'time-limited',
+        'readiness',
+        'discomfort',
+        'equipment',
+        'other',
+      ]);
+  }
+  for (const row of data.completedSets) {
+    const session = sessions.get(String(row.session_id));
+    check(session, 'orphan set.');
+    const movement = movements(session.program_version_id, session.workout_id).find(
+      (item) => item.id === row.workout_exercise_id,
+    );
+    check(
+      movement && (row.exercise_id === null || movement.exerciseId === row.exercise_id),
+      'set movement mismatch.',
+    );
+    check(
+      (movement.sets as Record<string, unknown>[]).some((set) => set.setNumber === row.set_number),
+      'set number outside saved prescription.',
+    );
+  }
+  unique(data.completedSets, ['idempotency_key'], 'completed-set operation');
+  unique(data.completedSets, ['session_id', 'workout_exercise_id', 'set_number'], 'completed set');
+  for (const key of ['workoutDrafts', 'workoutCheckIns'] as const)
+    for (const [index, row] of data[key].entries()) {
+      const session = sessions.get(String(row.session_id));
+      check(session, 'orphan workout data.');
+      if (key === 'workoutDrafts') {
+        const value = get(key, index, 'values_json');
+        check(isRecord(value), 'invalid workout draft.');
+        const allowed = new Set(
+          movements(session.program_version_id, session.workout_id).flatMap((item) =>
+            (item.sets as Record<string, unknown>[]).map((set) => `${item.id}:${set.setNumber}`),
+          ),
+        );
+        for (const [entry, fields] of Object.entries(value)) {
+          check(allowed.has(entry), 'orphan draft set.');
+          keys(fields, ['load', 'reps', 'duration', 'distance', 'rpe', 'rir']);
+          Object.values(fields).forEach((field) => text(field, 'draft input', 240));
+        }
+      }
+    }
+  const protocolObjects = new Map<string, MeasurementProtocol>();
+  const protocolKey = (row: Record<string, unknown>) =>
+    JSON.stringify([row.shift_id, row.protocol_id, row.protocol_version]);
+  for (const [index, row] of data.shiftProtocols.entries()) {
+    const value = get('shiftProtocols', index, 'snapshot_json');
+    protocol(value);
+    check(
+      goals.has(String(row.shift_id)) &&
+        value.id === row.protocol_id &&
+        value.version === row.protocol_version,
+      'protocol identity mismatch.',
+    );
+    protocolObjects.set(protocolKey(row), value);
+  }
+  for (const [index, row] of data.shifts.entries()) {
+    const cycle = cycles.get(String(row.cycle_id));
+    check(
+      cycle && cycle.program_version_id === row.program_version_id,
+      'goal prescription mismatch.',
+    );
+    check(
+      protocolObjects.has(
+        JSON.stringify([row.id, row.active_protocol_id, row.active_protocol_version]),
+      ),
+      'missing active protocol.',
+    );
+    scalar(get('shifts', index, 'target_json'));
+    choice(row.baseline_state, ['measured', 'not-yet-able', 'deferred', 'missing']);
+    choice(row.review_state, ['due', 'completed', 'declined', 'postponed', 'missing']);
+    choice(row.next_choice, ['maintain', 'repeat', 'modify', 'new-goal', 'break', 'undecided']);
+    check([0, 1].includes(row.is_primary as number), 'invalid primary goal flag.');
+    number(row.template_version, 1, 100000, true);
+    const active = protocolObjects.get(
+      JSON.stringify([row.id, row.active_protocol_id, row.active_protocol_version]),
+    )!;
+    const goalTarget = get('shifts', index, 'target_json');
+    check(
+      active.metric === 'completion'
+        ? goalTarget === true
+        : typeof goalTarget === 'number' &&
+            goalTarget > 0 &&
+            (active.metric !== 'reps' || Number.isInteger(goalTarget)),
+      'invalid goal target.',
+    );
+    check(
+      (row.baseline_state === 'measured') === (row.baseline_observation_id !== null),
+      'baseline state mismatch.',
+    );
+    if (row.baseline_observation_id !== null)
+      check(
+        observations.get(String(row.baseline_observation_id))?.shift_id === row.id,
+        'missing baseline observation.',
+      );
+  }
+  unique(data.shifts, ['cycle_id'], 'cycle goal');
+  check(data.shifts.filter((row) => row.is_primary === 1).length <= 1, 'multiple primary goals.');
+  for (const [index, row] of data.shiftObservations.entries()) {
+    const savedProtocol = protocolObjects.get(protocolKey(row));
+    check(savedProtocol, 'orphan observation.');
+    const value = get('shiftObservations', index, 'value_json');
+    choice(row.source, ['assessment', 'historical-entry', 'import', 'qualifying-workout']);
+    if (row.source === 'qualifying-workout')
+      check(row.workout_session_id !== null, 'qualifying observation needs a workout.');
+    check(
+      normalizeObservation(savedProtocol, {
+        id: row.id,
+        shiftId: row.shift_id,
+        protocolId: row.protocol_id,
+        protocolVersion: row.protocol_version,
+        measuredAt: row.measured_at,
+        source: row.source,
+        value,
+        unit: row.unit,
+      } as ShiftObservation),
+      'invalid goal observation.',
+    );
+    if (row.workout_session_id !== null)
+      check(sessions.has(String(row.workout_session_id)), 'orphan qualifying workout.');
+    if (row.corrects_observation_id !== null) {
+      const parent = observations.get(String(row.corrects_observation_id));
+      check(
+        parent &&
+          parent.id !== row.id &&
+          parent.shift_id === row.shift_id &&
+          parent.protocol_id === row.protocol_id &&
+          parent.protocol_version === row.protocol_version &&
+          parent.measured_at === row.measured_at,
+        'invalid correction reference.',
+      );
+    }
+  }
+  for (const [index, row] of data.shiftGoalRevisions.entries()) {
+    check(protocolObjects.has(protocolKey(row)), 'orphan revision protocol.');
+    scalar(get('shiftGoalRevisions', index, 'target_json'));
+    if (row.previous_revision_id !== null)
+      check(
+        revisions.get(String(row.previous_revision_id))?.shift_id === row.shift_id &&
+          row.previous_revision_id !== row.id,
+        'invalid revision history.',
+      );
+  }
+  for (const [index, row] of (data.personalGoalEvents ?? []).entries()) {
+    check(goals.has(String(row.shift_id)), 'orphan goal journal.');
+    const value = get('personalGoalEvents', index, 'payload_json');
+    validateEvent(String(row.kind), value);
+    check(isRecord(value), 'invalid goal journal.');
+    if (row.kind === 'created')
+      check(goals.get(String(row.shift_id))?.cycle_id === value.cycleId, 'journal cycle mismatch.');
+    if (row.kind === 'measurement') {
+      const saved = value.observation as Record<string, unknown>;
+      const observed = observations.get(String(saved.id));
+      check(
+        observed &&
+          observed.shift_id === row.shift_id &&
+          saved.shiftId === row.shift_id &&
+          observed.protocol_id === saved.protocolId &&
+          observed.protocol_version === saved.protocolVersion &&
+          observed.measured_at === saved.measuredAt &&
+          observed.source === saved.source &&
+          JSON.parse(String(observed.value_json)) === saved.value &&
+          observed.unit === saved.unit &&
+          (observed.corrects_observation_id ?? undefined) === saved.correctsObservationId,
+        'journal observation mismatch.',
+      );
+    }
+    if (row.kind === 'review') {
+      const baseline = value.baseline as Record<string, unknown>;
+      if (baseline.state === 'measured')
+        check(
+          observations.get(String(baseline.observationId))?.shift_id === row.shift_id,
+          'orphan journal baseline.',
+        );
+    }
+  }
+  for (const [index, row] of (data.personalGoalDrafts ?? []).entries()) {
+    check(cycles.has(String(row.cycle_id)), 'orphan goal draft.');
+    const fields = get('personalGoalDrafts', index, 'fields_json');
+    keys(
+      fields,
+      [],
+      [
+        'objective',
+        'metric',
+        'target',
+        'repCount',
+        'fixedDistance',
+        'assistance',
+        'setup',
+        'inputUnits',
+        'replace',
+      ],
+    );
+    Object.values(fields).forEach((field) => text(field, 'goal draft', 240));
+    if (fields.inputUnits !== undefined) choice(fields.inputUnits, ['metric', 'imperial']);
+  }
+  for (const [index] of (data.onboardingDrafts ?? []).entries()) {
+    const value = get('onboardingDrafts', index, 'state_json');
+    keys(value, [
+      'version',
+      'flow',
+      'step',
+      'draft',
+      'movementConsiderations',
+      'accessibilityNeeds',
+    ]);
+    keys(value.draft, [
+      'displayName',
+      'goals',
+      'experience',
+      'equipmentIds',
+      'trainingDaysPerWeek',
+      'preferredSessionMinutes',
+      'preferredTrainingTime',
+      'unitSystem',
+      'coachTone',
+      'coachIntervention',
+      'healthConnection',
+    ]);
+    check(parseOnboardingRecoveryState(value), 'invalid setup draft.');
+  }
+  for (const key of [
+    'userEquipment',
+    'userConsiderations',
+    'bodyMetrics',
+    'coachPrivacyPreferences',
+    'notificationPreferences',
+    'healthSummaries',
+    'cycleReviews',
+    'workoutScheduleOverrides',
+  ] as const)
+    if (data[key].length) check(profiles.has(owner), 'orphan profile data.');
+  for (const row of [
+    ...data.cycleReviews,
+    ...data.workoutScheduleOverrides,
+    ...data.coachProposals,
+  ])
+    check(cycles.has(String(row.cycle_id)), 'orphan cycle data.');
+  for (const row of data.workoutScheduleOverrides) {
+    const cycle = cycles.get(String(row.cycle_id))!;
+    movements(cycle.program_version_id, row.workout_id);
+    number(row.cycle_week, 1, 6, true);
+  }
+  for (const [index, row] of data.userProfiles.entries()) {
+    choice(row.unit_system, ['metric', 'imperial']);
+    choice(row.experience, ['beginner', 'intermediate', 'advanced']);
+    choice(row.coach_tone, ['concise', 'supportive', 'technical']);
+    choice(row.coach_intervention, ['conservative', 'balanced', 'proactive']);
+    choice(row.health_connection, ['not-now', 'apple-health', 'health-connect']);
+    choice(row.preferred_training_time, ['morning', 'afternoon', 'evening']);
+    number(row.training_days_per_week, 1, 7, true);
+    number(row.preferred_session_minutes, 1, 1440);
+    strings(get('userProfiles', index, 'goals_json'));
+    for (const goal of get('userProfiles', index, 'goals_json') as unknown[])
+      choice(goal, [
+        'general-health',
+        'strength',
+        'muscle',
+        'conditioning',
+        'fat-loss-support',
+        'mobility',
+        'athletic-performance',
+        'healthy-ageing',
+        'consistent-training',
+      ]);
+  }
+  for (const [index] of data.userConsiderations.entries()) {
+    strings(get('userConsiderations', index, 'movement_considerations_json'));
+    strings(get('userConsiderations', index, 'accessibility_needs_json'));
+    for (const item of get(
+      'userConsiderations',
+      index,
+      'movement_considerations_json',
+    ) as unknown[])
+      choice(
+        item,
+        movementConsiderationOptions.map((option) => option.value),
+      );
+    for (const item of get('userConsiderations', index, 'accessibility_needs_json') as unknown[])
+      choice(
+        item,
+        accessibilityNeedOptions.map((option) => option.value),
+      );
+  }
+  for (const [index, row] of data.coachProposals.entries()) {
+    choice(row.confidence, ['low', 'medium', 'high']);
+    choice(row.status, ['pending', 'accepted', 'partially-accepted', 'rejected', 'expired']);
+    strings(get('coachProposals', index, 'evidence_json'));
+    strings(get('coachProposals', index, 'safety_notes_json'));
+    const changes = get('coachProposals', index, 'changes_json');
+    array(changes);
+    for (const change of changes) {
+      keys(
+        change,
+        ['id', 'type', 'field', 'from', 'to', 'requiresUserConfirmation'],
+        ['exerciseId', 'workoutId', 'workoutExerciseId'],
+      );
+      check(change.requiresUserConfirmation === true, 'unsafe proposal confirmation.');
+      choice(change.type, [
+        'target-change',
+        'exercise-substitution',
+        'set-count-change',
+        'schedule-change',
+        'program-change',
+      ]);
+      Object.entries(change)
+        .filter(([key]) => key !== 'requiresUserConfirmation')
+        .forEach(([, item]) => text(item, 'proposal field'));
+    }
+  }
+  for (const row of data.userEquipment)
+    check(
+      equipmentCatalog.some((item) => item.id === row.equipment_id),
+      'unknown equipment.',
+    );
+  for (const row of data.completedSets)
+    for (const field of ['rpe', 'rir']) if (row[field] !== null) number(row[field], 0, 10);
+  for (const row of data.workoutCheckIns) {
+    check([0, 1].includes(row.discomfort_reported as number), 'invalid discomfort flag.');
+    for (const field of ['energy', 'soreness', 'perceived_exertion'])
+      if (row[field] !== null) number(row[field], 1, 5, true);
+  }
+  for (const row of data.notificationPreferences)
+    for (const field of [
+      'workout_reminders',
+      'rest_timer',
+      'weekly_review',
+      'cycle_review',
+      'coach_messages',
+    ])
+      check([0, 1].includes(row[field] as number), 'invalid notification preference.');
+  for (const row of data.coachPrivacyPreferences) {
+    check([0, 1].includes(row.provider_coach_enabled as number), 'invalid consent flag.');
+    number(row.notice_version, 1, 100000, true);
+  }
+  for (const row of data.bodyMetrics) {
+    choice(row.metric_type, ['weight', 'waist', 'body-fat']);
+    choice(row.unit, ['kg', 'lb', 'cm', 'in', 'percent']);
+    number(row.value);
+  }
+  for (const row of data.healthSummaries) {
+    choice(row.health_type, [
+      'steps',
+      'workouts',
+      'heart-rate',
+      'resting-heart-rate',
+      'sleep-duration',
+      'weight',
+    ]);
+    number(row.value);
+    check(
+      Date.parse(String(row.end_at)) >= Date.parse(String(row.start_at)),
+      'invalid health interval.',
+    );
+  }
+  for (const row of data.cycleReviews) {
+    if (row.overall_rating !== null) number(row.overall_rating, 1, 5, true);
+    if (row.focus !== null)
+      choice(row.focus, [
+        'same-course',
+        'more-strength',
+        'more-conditioning',
+        'more-mobility',
+        'improve-consistency',
+        'recover-better',
+      ]);
+    if (row.next_action !== null)
+      choice(row.next_action, [
+        'repeat',
+        'progress',
+        'adjust',
+        'change-exercises',
+        'change-program',
+        'build-new',
+      ]);
+  }
+  unique(data.cycleReviews, ['cycle_id'], 'cycle review');
+  unique(
+    data.workoutScheduleOverrides,
+    ['cycle_id', 'cycle_week', 'workout_id'],
+    'scheduled workout',
+  );
+  for (const row of data.workoutScheduleOverrides)
+    for (const field of ['original_date', 'scheduled_date']) {
+      const value = String(row[field]);
+      check(
+        /^\d{4}-\d\d-\d\d$/.test(value) && new Date(value).toISOString().slice(0, 10) === value,
+        'invalid schedule date.',
+      );
+    }
+  for (const [records, parentField] of [
+    [data.shiftObservations, 'corrects_observation_id'],
+    [data.shiftGoalRevisions, 'previous_revision_id'],
+  ] as const) {
+    const recordById = new Map(records.map((row) => [String(row.id), row]));
+    const done = new Set<string>();
+    for (const row of records) {
+      const visited = new Set<string>();
+      let current: Record<string, unknown> | undefined = row;
+      while (current?.[parentField] !== null && current?.[parentField] !== undefined) {
+        const currentId = String(current.id);
+        if (done.has(currentId)) break;
+        check(!visited.has(currentId), 'cyclic history reference.');
+        visited.add(currentId);
+        current = recordById.get(String(current[parentField]));
+      }
+      visited.forEach((id) => done.add(id));
+    }
+  }
+  const warnings = [
+    'Restore works only on an empty local installation; it does not merge or overwrite existing records.',
+    'Health connections, provider consent and notification choices reset to off. Device permissions are never granted by restore.',
+    'Media files are not included. Custom media links are removed; add your media again on this device.',
+    'Identifiers and immutable versions are preserved; owner fields map to the current guest. This is local recovery, not cloud sync.',
+  ];
+  data.summary = buildLocalDataExportSummary(data);
+  return { data, recordCount: count, exportedAt: data.exportedAt, warnings };
+}
+
+function validateEvent(kind: string, value: unknown) {
+  if (kind === 'created') {
+    keys(value, ['objective', 'protocol', 'target', 'cycleId', 'replacePrimary']);
+    text(value.objective, 'objective');
+    protocol(value.protocol);
+    scalar(value.target);
+    id(value.cycleId);
+    check(typeof value.replacePrimary === 'boolean', 'invalid goal creation journal.');
+  } else if (kind === 'measurement') {
+    keys(value, ['observation', 'baseline']);
+    keys(
+      value.observation,
+      ['id', 'shiftId', 'protocolId', 'protocolVersion', 'measuredAt', 'source', 'value', 'unit'],
+      ['correctsObservationId'],
+    );
+    const observation = value.observation;
+    ['id', 'shiftId', 'protocolId'].forEach((key) => id(observation[key]));
+    number(value.observation.protocolVersion, 1, 100000, true);
+    date(value.observation.measuredAt);
+    scalar(value.observation.value);
+    text(value.observation.source, 'source', 100);
+    text(value.observation.unit, 'unit', 100);
+    if (value.observation.correctsObservationId !== undefined)
+      id(value.observation.correctsObservationId);
+    check(typeof value.baseline === 'boolean', 'invalid baseline journal.');
+  } else if (kind === 'target-revision') {
+    keys(value, ['target', 'reason']);
+    scalar(value.target);
+    text(value.reason, 'reason');
+  } else if (kind === 'baseline-state') {
+    keys(value, ['state']);
+    choice(value.state, ['deferred', 'not-yet-able']);
+  } else if (kind === 'review') {
+    keys(value, ['state', 'choice', 'target', 'baseline', 'protocol']);
+    choice(value.state, ['due', 'completed', 'declined', 'postponed', 'missing']);
+    choice(value.choice, ['maintain', 'repeat', 'modify', 'new-goal', 'break', 'undecided']);
+    scalar(value.target);
+    protocol(value.protocol);
+    keys(value.baseline, ['state'], ['observationId']);
+    choice(value.baseline.state, ['measured', 'not-yet-able', 'deferred', 'missing']);
+    if (value.baseline.observationId !== undefined) id(value.baseline.observationId);
+  } else fail('unknown goal journal event.');
+}

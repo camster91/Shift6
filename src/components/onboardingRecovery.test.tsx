@@ -20,6 +20,7 @@ jest.mock('expo-router', () => ({
   router: { replace: (...args: unknown[]) => mockReplace(...args) },
 }));
 jest.mock('../db/context', () => ({ useLocalDatabase: () => mockDatabase }));
+jest.mock('../config/env', () => ({ runtimeConfig: { releaseMode: 'guest-only' } }));
 jest.mock('../services/UserIdentityProvider', () => ({ useCurrentUserId: () => mockOwner }));
 jest.mock('../services/AppServicesProvider', () => ({
   useAppServices: () => ({ analytics: { track: jest.fn() } }),
@@ -65,6 +66,56 @@ test('does not create phantom guest data just by opening setup', async () => {
   await ready();
   expect(mockSaveDraft).not.toHaveBeenCalled();
   expect(mockSaveProfile).not.toHaveBeenCalled();
+});
+
+test('shows persistent required-choice guidance and clears it after selecting a goal', async () => {
+  const screen = await ready();
+  expect(
+    screen.getByLabelText('Required to continue: primary goal. Scroll to find these choices.'),
+  ).toBeTruthy();
+  expect(screen.getByLabelText('Continue')).toBeDisabled();
+  await fireEvent.press(
+    screen.getByLabelText('General health. Build a balanced, sustainable routine.'),
+  );
+  expect(
+    screen.queryByText('To continue, choose: primary goal. Scroll to find these choices.'),
+  ).toBeNull();
+  expect(screen.getByLabelText('Continue')).toBeEnabled();
+});
+
+test('restores step four and explains the training-time choice until it is saved', async () => {
+  mockRecovery = {
+    version: 1,
+    flow: 'essential',
+    step: 3,
+    draft: {
+      ...createOnboardingDraft('You'),
+      goals: ['general-health'],
+      experience: 'beginner',
+      equipmentIds: ['equipment-bodyweight'],
+      trainingDaysPerWeek: 3,
+      preferredSessionMinutes: 30,
+      coachTone: 'supportive',
+      coachIntervention: 'conservative',
+      healthConnection: 'not-now',
+    },
+    movementConsiderations: [],
+    accessibilityNeeds: [],
+  };
+  const screen = await render(<OnboardingScreen />);
+  const hint =
+    'Required to continue: usual training time (Morning, Afternoon or Evening). Scroll to find these choices.';
+  await waitFor(() => expect(screen.getByLabelText(hint)).toBeTruthy());
+  expect(screen.getByLabelText('Continue')).toBeDisabled();
+  await fireEvent.press(
+    screen.getByLabelText('Evening. Make training part of your wind-down routine.'),
+  );
+  expect(screen.queryByLabelText(hint)).toBeNull();
+  expect(screen.getByLabelText('Continue')).toBeEnabled();
+  await fireEvent.press(screen.getByLabelText('Continue'));
+  await waitFor(() => expect(screen.getByText('Which units feel natural?')).toBeTruthy());
+  expect(mockRecovery?.draft.preferredTrainingTime).toBe('evening');
+  expect(mockRecovery?.step).toBe(4);
 });
 
 test('persists a completed step before advancing and restores it after remount', async () => {
@@ -119,6 +170,8 @@ test('clears recovery only after a successful explicit setup save', async () => 
   };
   const screen = await render(<OnboardingScreen />);
   await waitFor(() => expect(screen.getByLabelText('Save setup')).toBeTruthy());
+  expect(screen.getByText(/No account or cloud backup is available in this release/)).toBeTruthy();
+  expect(screen.queryByText(/can be migrated when you create an account/)).toBeNull();
   await fireEvent.press(screen.getByLabelText('Save setup'));
   await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/programs'));
   expect(mockSaveProfile).toHaveBeenCalledTimes(1);

@@ -1,0 +1,93 @@
+{
+  "nativeSource": "9f984349655e17c48b4141d5dd67e3a56fd7647b",
+  "harnessSource": "758656f9",
+  "runtimeRun": 38355885443,
+  "device": "iPhone17Pro simulator iOS26.4 arm64",
+  "files": [
+    {
+      "file": "results.json",
+      "bytes": 5014,
+      "sha256": "34b779f17364854ddb6234a8ef7793f8b41ee5639460ee6a893b012b07ac8ebe"
+    },
+    {
+      "file": "08-setup-review.png",
+      "bytes": 368670,
+      "sha256": "160fab49ea8d89a9b6c5b4859ecc8a63372abe23c7a26cc6b2411a557965093a"
+    },
+    {
+      "file": "09-setup-recovered-after-force-close.png",
+      "bytes": 368822,
+      "sha256": "7c0668669cfbe84792fa7e27076f2efffbc8a77667614b834f49ed3ef1710424"
+    },
+    {
+      "file": "15-private-draft-saved-copy.png",
+      "bytes": 266403,
+      "sha256": "65026b9934df8a77ab6a462c3344ac148f5ecb9457b24af35c4240b7109d1260"
+    },
+    {
+      "file": "18-goal-imperial-preference-pound-input.png",
+      "bytes": 324734,
+      "sha256": "603fa8ffc397cd7bcffd01a238f0e4dd65b55d45e07a69d1c8933174e1f05426"
+    },
+    {
+      "file": "22-goal-corrected-progress.png",
+      "bytes": 369986,
+      "sha256": "906dc7bed9ba62391ffb85e959dc01ca511e052e2d3f55066044f7f5d0c22936"
+    },
+    {
+      "file": "27-workout-recovered-values.png",
+      "bytes": 359797,
+      "sha256": "d0e10331081741ed9488d6be9eb8374c1597a13435738d8a6b281f8cc3afe358"
+    },
+    {
+      "file": "28-partial-workout-summary.png",
+      "bytes": 385994,
+      "sha256": "235820ba5b03c0c034649d087adae12330ce6077ff3f2b8b268249df37639b3e"
+    },
+    {
+      "file": "30-native-json-export-share-sheet.png",
+      "bytes": 584795,
+      "sha256": "85b1716890b649f761d3ccb63f3103789a4b4d1440789fe6eafca61c89b86d2d"
+    },
+    {
+      "file": "08-setup-review.xml",
+      "bytes": 17016,
+      "sha256": "4f86b772108dd12afe07184e6f3d9330837fef8a213b1751bbcc8d3be1eb63a1"
+    },
+    {
+      "file": "09-setup-recovered-after-force-close.xml",
+      "bytes": 17017,
+      "sha256": "6cec387837055a82364f5c31c836729ef36193046f9bed1595c861f589601a70"
+    },
+    {
+      "file": "15-private-draft-saved-copy.xml",
+      "bytes": 54995,
+      "sha256": "84e4355552f63e673208da692db6ce518861be7efdba0adee7e81cee79078a0e"
+    },
+    {
+      "file": "18-goal-imperial-preference-pound-input.xml",
+      "bytes": 21199,
+      "sha256": "6a1a2f2b22c9cad3ccf59fc3b9a5ddf06060a20f55bb82b317ac33a0b9626d69"
+    },
+    {
+      "file": "22-goal-corrected-progress.xml",
+      "bytes": 32317,
+      "sha256": "6363e614e6d5fd8d497abd9d2f2ed02e4ca7127fecf75cdc9cbf6cdbb31f04b3"
+    },
+    {
+      "file": "27-workout-recovered-values.xml",
+      "bytes": 87892,
+      "sha256": "58f567ea545788ec9e4c96359e7189ee097370f686cc3b616d6815b1adc25408"
+    },
+    {
+      "file": "28-partial-workout-summary.xml",
+      "bytes": 23134,
+      "sha256": "b9fd05fd583adaaba510f0c9896df2a9f6cd7cb63c672fb5ccacb484b4b10909"
+    },
+    {
+      "file": "30-native-json-export-share-sheet.xml",
+      "bytes": 26489,
+      "sha256": "be6d4d6ce3522a88f08b96dc4e9d262808d9e79eb3ded03aa2233b23240d11e8"
+    }
+  ]
+}

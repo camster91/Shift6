@@ -232,6 +232,32 @@ export function isOnboardingComplete(draft: OnboardingDraft): boolean {
   );
 }
 
+/** Required choices for the question, including choices below the current viewport. */
+export function getOnboardingMissingFields(step: number, draft: OnboardingDraft): string[] {
+  const requirements: Record<number, [boolean, string][]> = {
+    0: [[Boolean(draft.displayName.trim()), 'name or nickname']],
+    1: [[draft.goals.length > 0, 'primary goal']],
+    2: [[draft.experience !== null, 'training experience']],
+    3: [[draft.equipmentIds.length > 0, 'available equipment (bodyweight is an option)']],
+    4: [
+      [draft.trainingDaysPerWeek !== null, 'training days per week'],
+      [draft.preferredSessionMinutes !== null, 'typical session length'],
+      [draft.preferredTrainingTime !== null, 'usual training time (Morning, Afternoon or Evening)'],
+    ],
+    5: [],
+    6: [[draft.unitSystem !== null, 'unit preference']],
+    7: [[draft.healthConnection !== null, 'health preference (Not now is an option)']],
+    8: [
+      [draft.coachTone !== null, 'coaching tone'],
+      [draft.coachIntervention !== null, 'when Coach should suggest a review'],
+    ],
+  };
+  if (step === 9) {
+    return [0, 1, 2, 4, 6, 7, 8].flatMap((question) => getOnboardingMissingFields(question, draft));
+  }
+  return (requirements[step] ?? []).filter(([present]) => !present).map(([, label]) => label);
+}
+
 export function toOnboardingProfile(
   draft: OnboardingDraft,
   now: string,

@@ -1,0 +1,9 @@
+/app/** text eol=lf
+/src/** text eol=lf
+/scripts/** text eol=lf
+/*.json text eol=lf
+/*.js text eol=lf
+/*.cjs text eol=lf
+/*.mjs text eol=lf
+/vendor/** -text
+/docs/qa/2026-10-13-ios-ci/** -text

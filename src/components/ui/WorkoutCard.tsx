@@ -80,6 +80,7 @@ const styles = StyleSheet.create({
   },
   copy: {
     flex: 1,
+    minWidth: 0,
     gap: 4,
   },
   footer: {
@@ -88,6 +89,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     paddingTop: spacing.md,
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
     alignItems: 'center',
     justifyContent: 'space-between',
   },

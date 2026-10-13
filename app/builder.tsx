@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import {
   Button,
@@ -71,6 +71,7 @@ import { colors, radii, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
+import { runtimeConfig } from '../src/config/env';
 
 const starterPlank = foundationalExercises.find((exercise) => exercise.id === 'exercise-plank');
 const demoCatalogueEntry = programLibrary.find((entry) => entry.program.id === demoProgram.id);
@@ -445,6 +446,7 @@ export default function ProgramBuilderScreen() {
 
   const handleSave = async () => {
     if (saving) return;
+    setSaved(false);
     if (!canMutateDraft()) {
       setError('Wait for your private draft to finish loading before saving.');
       return;
@@ -453,7 +455,7 @@ export default function ProgramBuilderScreen() {
       setError('This source program is still under content review. Start from blank instead.');
       return;
     }
-    if (!database && !__DEV__) {
+    if (!database) {
       setError('Local training storage is unavailable. Your plan has not been saved.');
       return;
     }
@@ -1192,11 +1194,9 @@ export default function ProgramBuilderScreen() {
         <Card tone="mint" style={styles.savedCard} accessibilityLabel="Program saved">
           <Text variant="smallMedium">Draft saved locally.</Text>
           <Text variant="small" tone="muted">
-            {database
-              ? 'The program version and any custom movement are queued for sync.'
-              : Platform.OS === 'web'
-                ? 'Web preview: local persistence is not active in this surface.'
-                : 'The program will be stored locally before sync.'}
+            {runtimeConfig.releaseMode === 'guest-only'
+              ? 'Your private plan and custom movements are saved on this device. They are not backed up to the cloud. Export your records to keep a separate copy.'
+              : 'The program version and any custom movement are queued for sync.'}
           </Text>
         </Card>
       ) : null}

@@ -13,6 +13,8 @@ coverage/
 .turbo/
 
 # Native build output
+android/
+ios/
 android/.gradle/
 android/app/build/
 ios/Pods/

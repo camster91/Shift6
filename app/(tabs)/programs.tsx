@@ -144,39 +144,55 @@ export default function ProgramsScreen() {
         Start with a clear framework, then make it yours as your training evolves.
       </Text>
 
-      <View style={styles.filterRow}>
-        <Chip
-          label="Recommended"
-          selected={recommendedOnly}
-          onPress={() => setRecommendedOnly((value) => !value)}
-        />
-        <Chip
-          label={`${profilePreferences.trainingDaysPerWeek} days`}
-          selected={daysOnly}
-          onPress={() => setDaysOnly((value) => !value)}
-        />
-        <Chip
-          label={`${profilePreferences.preferredSessionMinutes} min`}
-          selected={minutesOnly}
-          onPress={() => setMinutesOnly((value) => !value)}
-        />
-      </View>
+      {recommendations.length > 0 ? (
+        <>
+          <View style={styles.filterRow}>
+            <Chip
+              label="Recommended"
+              selected={recommendedOnly}
+              onPress={() => setRecommendedOnly((value) => !value)}
+            />
+            <Chip
+              label={`${profilePreferences.trainingDaysPerWeek} days`}
+              selected={daysOnly}
+              onPress={() => setDaysOnly((value) => !value)}
+            />
+            <Chip
+              label={`${profilePreferences.preferredSessionMinutes} min`}
+              selected={minutesOnly}
+              onPress={() => setMinutesOnly((value) => !value)}
+            />
+          </View>
 
-      <Text variant="small" tone="muted" style={styles.recommendationNote}>
-        {profileDisplayName
-          ? 'Recommendations use your goals, experience, schedule, and equipment.'
-          : 'Recommendations use the local demo profile until onboarding is completed.'}
-      </Text>
+          <Text variant="small" tone="muted" style={styles.recommendationNote}>
+            {profileDisplayName
+              ? 'Recommendations use your goals, experience, schedule, and equipment.'
+              : 'Recommendations use the local demo profile until onboarding is completed.'}
+          </Text>
+        </>
+      ) : null}
 
       <Text variant="h2" style={styles.sectionTitle}>
-        For your equipment
+        {recommendations.length === 0 ? 'Start with your own plan' : 'For your equipment'}
       </Text>
       {featuredRecommendations.length === 0 ? (
         <EmptyState
-          title="No programs match these filters"
-          message="Clear a filter to see the full launch catalogue and its equipment requirements."
-          actionLabel="Show all programs"
+          title={
+            recommendations.length === 0
+              ? 'Public programs are under review'
+              : 'No programs match these filters'
+          }
+          message={
+            recommendations.length === 0
+              ? 'Public programs will be available after qualified content review. You can create a private plan with your own workouts and movements now.'
+              : 'Clear a filter to see the available programs and their equipment requirements.'
+          }
+          actionLabel={recommendations.length === 0 ? 'Build a private plan' : 'Show all programs'}
           onAction={() => {
+            if (recommendations.length === 0) {
+              router.push({ pathname: '/builder', params: { mode: 'blank' } });
+              return;
+            }
             setRecommendedOnly(false);
             setDaysOnly(false);
             setMinutesOnly(false);
@@ -230,13 +246,15 @@ export default function ProgramsScreen() {
         style={styles.exerciseLibraryButton}
       />
 
-      <Button
-        label="Create a custom copy"
-        variant="ghost"
-        icon={<Ionicons name="create-outline" size={18} color={colors.ink} />}
-        onPress={() => router.push('/builder')}
-        style={styles.builderButton}
-      />
+      {recommendations.length > 0 ? (
+        <Button
+          label="Create a custom copy"
+          variant="ghost"
+          icon={<Ionicons name="create-outline" size={18} color={colors.ink} />}
+          onPress={() => router.push('/builder')}
+          style={styles.builderButton}
+        />
+      ) : null}
 
       <Button
         label="Build from blank"
@@ -246,31 +264,35 @@ export default function ProgramsScreen() {
         style={styles.builderButton}
       />
 
-      <Text variant="h2" style={styles.moreProgramsTitle}>
-        More ways to train
-      </Text>
-      <Text variant="small" tone="muted" style={styles.libraryNote}>
-        {`${additionalRecommendations.length} more matching launch program${additionalRecommendations.length === 1 ? '' : 's'}. Additional versions are being built and reviewed before they can start a cycle.`}
-      </Text>
-      {additionalRecommendations.map((recommendation) => {
-        const catalogueEntry = catalogueEntryByProgramId.get(recommendation.program.id);
-        return (
-          <ProgramCard
-            key={recommendation.program.id}
-            program={recommendation.program}
-            statusLabel={
-              catalogueEntry ? getProgramRuntimeStatusLabel(catalogueEntry, __DEV__) : undefined
-            }
-            onPress={() =>
-              router.push({
-                pathname: '/program',
-                params: { programId: recommendation.program.id },
-              })
-            }
-            style={styles.catalogueCard}
-          />
-        );
-      })}
+      {recommendations.length > 0 ? (
+        <>
+          <Text variant="h2" style={styles.moreProgramsTitle}>
+            More ways to train
+          </Text>
+          <Text variant="small" tone="muted" style={styles.libraryNote}>
+            {`${additionalRecommendations.length} more matching launch program${additionalRecommendations.length === 1 ? '' : 's'}. Additional versions are being built and reviewed before they can start a cycle.`}
+          </Text>
+          {additionalRecommendations.map((recommendation) => {
+            const catalogueEntry = catalogueEntryByProgramId.get(recommendation.program.id);
+            return (
+              <ProgramCard
+                key={recommendation.program.id}
+                program={recommendation.program}
+                statusLabel={
+                  catalogueEntry ? getProgramRuntimeStatusLabel(catalogueEntry, __DEV__) : undefined
+                }
+                onPress={() =>
+                  router.push({
+                    pathname: '/program',
+                    params: { programId: recommendation.program.id },
+                  })
+                }
+                style={styles.catalogueCard}
+              />
+            );
+          })}
+        </>
+      ) : null}
 
       <Card tone="mint" style={styles.foundationCard}>
         <Ionicons name="construct-outline" size={24} color={colors.ink} />

@@ -1,0 +1,179 @@
+{
+  "startedAt": "2026-10-13T06:18:08.031846+00:00",
+  "sourceSha": "9f984349655e17c48b4141d5dd67e3a56fd7647b",
+  "nativeRun": "38348937795",
+  "scope": "iPhone simulator; synthetic guest records; no physical-device, screen-reader or human-study claim",
+  "steps": [
+    {
+      "step": 1,
+      "name": "setup-goal",
+      "screenshot": "01-setup-goal.png"
+    },
+    {
+      "step": 2,
+      "name": "goal-after-accessibility-tap",
+      "screenshot": "02-goal-after-accessibility-tap.png"
+    },
+    {
+      "step": 3,
+      "name": "setup-experience",
+      "screenshot": "03-setup-experience.png"
+    },
+    {
+      "step": 4,
+      "name": "setup-equipment",
+      "screenshot": "04-setup-equipment.png"
+    },
+    {
+      "step": 5,
+      "name": "setup-rhythm",
+      "screenshot": "05-setup-rhythm.png"
+    },
+    {
+      "step": 6,
+      "name": "setup-rhythm-all-required-choices",
+      "screenshot": "06-setup-rhythm-all-required-choices.png"
+    },
+    {
+      "step": 7,
+      "name": "setup-units",
+      "screenshot": "07-setup-units.png"
+    },
+    {
+      "step": 8,
+      "name": "setup-review",
+      "screenshot": "08-setup-review.png"
+    },
+    {
+      "step": 9,
+      "name": "setup-recovered-after-force-close",
+      "screenshot": "09-setup-recovered-after-force-close.png"
+    },
+    {
+      "step": 10,
+      "name": "programs-public-content-gated",
+      "screenshot": "10-programs-public-content-gated.png"
+    },
+    {
+      "step": 11,
+      "name": "private-builder-entry",
+      "screenshot": "11-private-builder-entry.png"
+    },
+    {
+      "step": 12,
+      "name": "private-builder-workout-name-entered",
+      "screenshot": "12-private-builder-workout-name-entered.png"
+    },
+    {
+      "step": 13,
+      "name": "private-builder-required-workout-added",
+      "screenshot": "13-private-builder-required-workout-added.png"
+    },
+    {
+      "step": 14,
+      "name": "private-builder-custom-movement",
+      "screenshot": "14-private-builder-custom-movement.png"
+    },
+    {
+      "step": 15,
+      "name": "private-draft-saved-copy",
+      "screenshot": "15-private-draft-saved-copy.png"
+    },
+    {
+      "step": 16,
+      "name": "home-active-private-cycle",
+      "screenshot": "16-home-active-private-cycle.png"
+    },
+    {
+      "step": 17,
+      "name": "goal-form-default",
+      "screenshot": "17-goal-form-default.png"
+    },
+    {
+      "step": 18,
+      "name": "goal-imperial-preference-pound-input",
+      "screenshot": "18-goal-imperial-preference-pound-input.png"
+    },
+    {
+      "step": 19,
+      "name": "goal-form-filled",
+      "screenshot": "19-goal-form-filled.png"
+    },
+    {
+      "step": 20,
+      "name": "goal-saved-without-invented-baseline",
+      "screenshot": "20-goal-saved-without-invented-baseline.png"
+    },
+    {
+      "step": 21,
+      "name": "goal-measurements",
+      "screenshot": "21-goal-measurements.png"
+    },
+    {
+      "step": 22,
+      "name": "goal-corrected-progress",
+      "screenshot": "22-goal-corrected-progress.png"
+    },
+    {
+      "step": 23,
+      "name": "goal-target-and-postponed-review",
+      "screenshot": "23-goal-target-and-postponed-review.png"
+    },
+    {
+      "step": 24,
+      "name": "workout-initial",
+      "screenshot": "24-workout-initial.png"
+    },
+    {
+      "step": 25,
+      "name": "workout-saved-set-and-unsaved-draft",
+      "screenshot": "25-workout-saved-set-and-unsaved-draft.png"
+    },
+    {
+      "step": 26,
+      "name": "home-resume-after-force-close",
+      "screenshot": "26-home-resume-after-force-close.png"
+    },
+    {
+      "step": 27,
+      "name": "workout-recovered-values",
+      "screenshot": "27-workout-recovered-values.png"
+    },
+    {
+      "step": 28,
+      "name": "partial-workout-summary",
+      "screenshot": "28-partial-workout-summary.png"
+    },
+    {
+      "step": 29,
+      "name": "guest-profile-local-storage",
+      "screenshot": "29-guest-profile-local-storage.png"
+    },
+    {
+      "step": 30,
+      "name": "native-json-export-share-sheet",
+      "screenshot": "30-native-json-export-share-sheet.png"
+    }
+  ],
+  "device": {
+    "dataPath": "/Users/runner/Library/Developer/CoreSimulator/Devices/4E3A6BB3-F417-4829-8DF5-0EA652541F40/data",
+    "dataPathSize": 18337792,
+    "logPath": "/Users/runner/Library/Logs/CoreSimulator/4E3A6BB3-F417-4829-8DF5-0EA652541F40",
+    "udid": "4E3A6BB3-F417-4829-8DF5-0EA652541F40",
+    "isAvailable": true,
+    "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
+    "state": "Shutdown",
+    "name": "iPhone 17 Pro"
+  },
+  "architecture": "arm64",
+  "status": "pass",
+  "limits": [
+    "No physical-device, VoiceOver/TalkBack, stock-device performance or human-study validation.",
+    "Share-sheet capture is not proof of receipt in a separate app.",
+    "Health/notification permissions, deletion and six-week efficacy remain unverified."
+  ],
+  "syntheticOnboardingRows": {
+    "onboarding_drafts": []
+  },
+  "finishedAt": "2026-10-13T06:34:58.237239+00:00"
+}

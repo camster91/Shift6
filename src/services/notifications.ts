@@ -42,6 +42,7 @@ export const shift6ReminderChannelId = 'shift6-reminders';
 export type NotificationModule = Pick<
   typeof Notifications,
   | 'AndroidImportance'
+  | 'IosAuthorizationStatus'
   | 'SchedulableTriggerInputTypes'
   | 'addNotificationResponseReceivedListener'
   | 'cancelScheduledNotificationAsync'
@@ -108,7 +109,7 @@ export class ExpoNotificationProvider implements NotificationProvider {
     if (!(await this.isAvailable())) return 'unavailable';
     const notifications = await this.notificationsLoader();
     await configureNativeNotifications(notifications);
-    return mapPermissionStatus(await notifications.getPermissionsAsync());
+    return mapPermissionStatus(await notifications.getPermissionsAsync(), notifications);
   }
 
   async requestPermission(): Promise<NotificationPermissionStatus> {
@@ -118,7 +119,7 @@ export class ExpoNotificationProvider implements NotificationProvider {
     const permissions = await notifications.requestPermissionsAsync({
       ios: { allowAlert: true, allowBadge: false, allowSound: false },
     });
-    return mapPermissionStatus(permissions);
+    return mapPermissionStatus(permissions, notifications);
   }
 
   async getScheduledNotifications(): Promise<readonly ScheduledNotification[]> {
@@ -185,8 +186,16 @@ export function createExpoNotificationProvider(): NotificationProvider {
 
 function mapPermissionStatus(
   permissions: Notifications.NotificationPermissionsStatus,
+  notifications: NotificationModule,
 ): NotificationPermissionStatus {
-  if (permissions.granted) return 'granted';
+  if (
+    permissions.granted ||
+    permissions.ios?.status === notifications.IosAuthorizationStatus.PROVISIONAL
+  )
+    return 'granted';
+  // The OS can allow another prompt after a real denial. Retry capability does
+  // not mean permission has never been requested.
+  if (permissions.status === 'denied') return 'denied';
   return permissions.canAskAgain ? 'not-determined' : 'denied';
 }
 

@@ -237,10 +237,18 @@ export function useBuilderRecovery({
           return;
         }
         const cleared = await value.writer.clearIfMatches(savedSnapshot);
-        if (cleared && isCurrent(value)) {
+        if (
+          cleared &&
+          isCurrent(value) &&
+          JSON.stringify(value.latest) === JSON.stringify(savedSnapshot)
+        ) {
           value.baseline = JSON.stringify(value.latest);
           value.committed = true;
           setMessage('Plan saved locally; recovery cleared.');
+        } else if (cleared && isCurrent(value)) {
+          // A new edit may arrive while the exclusive DELETE is pending. Store
+          // that newer snapshot after the delete instead of blessing it saved.
+          await persist(value);
         }
       } catch {
         if (isCurrent(value))

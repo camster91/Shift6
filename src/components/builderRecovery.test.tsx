@@ -254,3 +254,29 @@ test('a delayed previous-owner recovery read cannot populate the next owner edit
   expect(screen.queryByText('Recovered plan')).toBeNull();
   expect(screen.queryByLabelText('Resume private draft')).toBeNull();
 });
+
+test('an edit during delayed recovery deletion is resaved and never inherits the cleared baseline', async () => {
+  const screen = await render(<ProgramBuilderScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Program name')).toBeTruthy());
+  await fireEvent.changeText(screen.getByLabelText('Program name'), 'Original canonical title');
+  let release!: () => void;
+  mockClear.mockImplementationOnce(async (_db, _owner, id, revision) => {
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    if (mockRecord?.id !== id || mockRecord.revision !== revision) throw new Error('Conflict');
+    mockRecord = null;
+  });
+  await act(async () => {
+    void screen
+      .getByLabelText('Save draft program')
+      .props.onStartShouldSetResponder.testOnly_pressabilityConfig()
+      .onPress();
+  });
+  await waitFor(() => expect(mockClear).toHaveBeenCalled());
+  await fireEvent.changeText(screen.getByLabelText('Program name'), 'Edited during delete');
+  await act(async () => release());
+  await waitFor(() => expect(mockRecord?.snapshot.program.title).toBe('Edited during delete'));
+  expect(screen.getByText(/Recovery saved locally/)).toBeTruthy();
+  expect(screen.queryByText('Plan saved locally; recovery cleared.')).toBeNull();
+});

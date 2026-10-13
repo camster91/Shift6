@@ -34,6 +34,35 @@ export interface ScheduleDateSnapshot {
   originalDate: string;
   scheduledDate: string;
 }
+
+/** A baseline freezes the legacy schedule; only later revision rows may introduce moves. */
+export function assertBaselineLegacyDates(
+  baseline: readonly Pick<
+    PlannedWorkoutOccurrence,
+    'cycleWeek' | 'workout' | 'originalDate' | 'scheduledDate'
+  >[],
+  overrides: readonly Record<string, unknown>[],
+): void {
+  for (const saved of overrides) {
+    const date = baseline.find(
+      (entry) => entry.cycleWeek === saved.cycle_week && entry.workout.id === saved.workout_id,
+    );
+    if (
+      !date ||
+      date.originalDate !== saved.original_date ||
+      date.scheduledDate !== saved.scheduled_date
+    )
+      throw new Error('Legacy moved dates must be preserved in the confirmed baseline.');
+  }
+  for (const date of baseline)
+    if (
+      !overrides.some(
+        (saved) => saved.cycle_week === date.cycleWeek && saved.workout_id === date.workout.id,
+      ) &&
+      date.scheduledDate !== date.originalDate
+    )
+      throw new Error('Baseline confirmation cannot introduce new schedule moves.');
+}
 export function decodeScheduleBaseline(
   serialized: string,
   cycle: TrainingCycle,

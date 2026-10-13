@@ -22,6 +22,7 @@ import {
   getLocalScheduleProjection,
 } from './scheduleRevisionRepository';
 import { migrateLocalUserToAccount } from './accountRepository';
+import { saveWorkoutScheduleOverride } from './calendarRepository';
 import type { ScheduleMove } from '../domain/scheduleRevision';
 jest.mock('../config/env', () => ({ runtimeConfig: { releaseMode: 'guest-only' } }));
 let sqlite: DatabaseSync;
@@ -227,6 +228,104 @@ test('migration26 preserves rows of a real migration25 database and creates no b
     old.close();
   }
 });
+test('baseline blocks legacy writer insert atomically with no override, outbox or projection changes', async () => {
+  await ready();
+  const before = await exportNow();
+  const projection = await getLocalScheduleProjection(
+    db,
+    intent.userId,
+    intent.cycleId,
+    stamp,
+    intent.timeZone,
+  );
+  await expect(
+    saveWorkoutScheduleOverride(db, {
+      id: 'legacy-after-baseline',
+      userId: intent.userId,
+      cycleId: intent.cycleId,
+      cycleWeek: 1,
+      workoutId: intent.workoutId,
+      originalDate: intent.fromDate,
+      scheduledDate: intent.toDate,
+      createdAt: stamp,
+      updatedAt: stamp,
+    }),
+  ).rejects.toThrow('confirmed baseline');
+  expect(await exportNow()).toEqual(before);
+  expect(
+    await getLocalScheduleProjection(db, intent.userId, intent.cycleId, stamp, intent.timeZone),
+  ).toEqual(projection);
+  expect(
+    sqlite.prepare("SELECT * FROM sync_outbox WHERE entity_type LIKE '%schedule%'").all(),
+  ).toEqual([]);
+});
+test('baseline blocks legacy updates and deletes while privacy deletion and adoption remain supported', async () => {
+  sqlite
+    .prepare(
+      'INSERT INTO workout_schedule_overrides (id,user_id,cycle_id,cycle_week,workout_id,original_date,scheduled_date,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)',
+    )
+    .run(
+      'legacy-before-baseline',
+      intent.userId,
+      intent.cycleId,
+      1,
+      intent.workoutId,
+      intent.fromDate,
+      intent.toDate,
+      stamp,
+      stamp,
+    );
+  confirmation.expectedOverridesJSON = JSON.stringify(
+    sqlite
+      .prepare(
+        'SELECT * FROM workout_schedule_overrides WHERE user_id=? AND cycle_id=? ORDER BY cycle_week,workout_id;',
+      )
+      .all(intent.userId, intent.cycleId),
+  );
+  const dates = JSON.parse(confirmation.datesJSON);
+  dates[0].scheduledDate = intent.toDate;
+  confirmation.datesJSON = JSON.stringify(dates);
+  await ready();
+  const before = await exportNow();
+  expect(() =>
+    sqlite.exec(
+      "UPDATE workout_schedule_overrides SET scheduled_date='2026-10-15' WHERE id='legacy-before-baseline'",
+    ),
+  ).toThrow('confirmed baseline');
+  expect(() =>
+    sqlite.exec("DELETE FROM workout_schedule_overrides WHERE id='legacy-before-baseline'"),
+  ).toThrow('confirmed baseline');
+  expect(await exportNow()).toEqual(before);
+  const invalid = structuredClone(before);
+  const invalidDates = JSON.parse(String(invalid.scheduleBaselines![0]!.dates_json));
+  invalidDates[0].scheduledDate = '2026-10-15';
+  invalid.scheduleBaselines![0]!.dates_json = JSON.stringify(invalidDates);
+  const write = jest.spyOn(db, 'runAsync');
+  await expect(restoreLocalBackup(db, 'guest-user', JSON.stringify(invalid))).rejects.toThrow(
+    'preserved',
+  );
+  expect(write).not.toHaveBeenCalled();
+  write.mockRestore();
+  await migrateLocalUserToAccount(db, 'guest-user', 'account-user');
+  const adopted = await exportLocalUserData(db, 'account-user', stamp);
+  expect(adopted.workoutScheduleOverrides[0]!.user_id).toBe('account-user');
+  expect(() => validateLocalBackup(JSON.stringify(adopted))).not.toThrow();
+  await deleteLocalUserData(db, 'account-user');
+  expect(sqlite.prepare('SELECT * FROM workout_schedule_overrides').all()).toEqual([]);
+});
+test('strict restore rejects unjournaled baseline moves or mismatched legacy bindings before any write', async () => {
+  await ready();
+  const before = await exportNow();
+  const invalid = structuredClone(before);
+  const dates = JSON.parse(String(invalid.scheduleBaselines![0]!.dates_json));
+  dates[0].scheduledDate = intent.toDate;
+  invalid.scheduleBaselines![0]!.dates_json = JSON.stringify(dates);
+  const write = jest.spyOn(db, 'runAsync');
+  await expect(restoreLocalBackup(db, 'guest-user', JSON.stringify(invalid))).rejects.toThrow(
+    'introduce',
+  );
+  expect(write).not.toHaveBeenCalled();
+});
 test.each(['in-progress', 'partial', 'complete', 'skipped'])(
   'fresh %s session blocks a stale unstarted preview',
   async (status) => {
@@ -309,6 +408,20 @@ test('schema15 external export validates, deletes and restores exact owned basel
   expect(after.scheduleBaselines).toEqual(before.scheduleBaselines);
   expect(after.scheduleRevisions).toEqual(before.scheduleRevisions);
   expect(after.trainingCycles).toEqual(before.trainingCycles);
+  await expect(
+    saveWorkoutScheduleOverride(db, {
+      id: 'restored-legacy-write',
+      userId: intent.userId,
+      cycleId: intent.cycleId,
+      cycleWeek: 1,
+      workoutId: intent.workoutId,
+      originalDate: intent.fromDate,
+      scheduledDate: '2026-10-15',
+      createdAt: stamp,
+      updatedAt: stamp,
+    }),
+  ).rejects.toThrow('confirmed baseline');
+  expect(await exportNow()).toEqual(after);
 });
 test('shared projection uses revised explicit dates and fresh display timezone, preserving all dates on travel', async () => {
   await ready();

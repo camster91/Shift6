@@ -5,6 +5,7 @@ import {
   cycleFromScheduleRow,
   sessionFromScheduleRow,
   scheduleRevisionFromRow,
+  assertBaselineLegacyDates,
 } from './scheduleSnapshot';
 import { projectScheduleRevisions } from './scheduleRevision';
 import type { ProgramVersion } from './types';
@@ -1201,6 +1202,10 @@ export function validateLocalBackup(serialized: string): RestorePreview {
     );
     const revisionRows = (data.scheduleRevisions ?? []).filter(
       (revision) => revision.cycle_id === cycle.id,
+    );
+    assertBaselineLegacyDates(
+      baseline,
+      data.workoutScheduleOverrides.filter((override) => override.cycle_id === cycle.id),
     );
     for (const revision of revisionRows) {
       check(

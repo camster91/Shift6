@@ -11,6 +11,7 @@ import {
   decodeScheduleBaseline,
   sessionFromScheduleRow,
   scheduleRevisionFromRow,
+  assertBaselineLegacyDates,
 } from '../domain/scheduleSnapshot';
 import type { ProgramVersion } from '../domain/types';
 import { lifecycleDate } from '../domain/cycleLifecycle';
@@ -69,6 +70,12 @@ async function readContext(db: SQLiteDatabase, owner: string, cycleId: string, n
     )
   ).map(scheduleRevisionFromRow);
   const context = { cycle, programVersion: version, baseline, sessions };
+  const legacy = await db.getAllAsync<Record<string, unknown>>(
+    'SELECT * FROM workout_schedule_overrides WHERE user_id=? AND cycle_id=?;',
+    owner,
+    cycleId,
+  );
+  assertBaselineLegacyDates(baseline, legacy);
   return { context, revisions };
 }
 
@@ -98,7 +105,13 @@ export async function confirmScheduleBaseline(
     const { cycle, version } = await ownedCycle(tx, input.userId, input.cycleId);
     if (cycle.programVersionId !== input.programVersionId || input.confirmedAt < cycle.startedAt)
       throw new Error('Schedule baseline binding changed.');
-    decodeScheduleBaseline(input.datesJSON, cycle, version, input.timeZone, input.confirmedAt);
+    const baseline = decodeScheduleBaseline(
+      input.datesJSON,
+      cycle,
+      version,
+      input.timeZone,
+      input.confirmedAt,
+    );
     const existing = await tx.getFirstAsync<Record<string, unknown>>(
       'SELECT * FROM schedule_baselines WHERE cycle_id=?;',
       input.cycleId,
@@ -122,32 +135,7 @@ export async function confirmScheduleBaseline(
     );
     if (JSON.stringify(overrides) !== input.expectedOverridesJSON)
       throw new Error('Legacy schedule changed. Review it again before confirmation.');
-    const dates = JSON.parse(input.datesJSON) as {
-      cycleWeek: number;
-      workoutId: string;
-      originalDate: string;
-      scheduledDate: string;
-    }[];
-    for (const row of overrides as Record<string, unknown>[]) {
-      const date = dates.find(
-        (entry) => entry.cycleWeek === row.cycle_week && entry.workoutId === row.workout_id,
-      );
-      if (
-        !date ||
-        date.originalDate !== row.original_date ||
-        date.scheduledDate !== row.scheduled_date
-      )
-        throw new Error('Legacy moved dates must be preserved in the confirmed baseline.');
-    }
-    for (const date of dates)
-      if (
-        !overrides.some((row: unknown) => {
-          const saved = row as Record<string, unknown>;
-          return saved.cycle_week === date.cycleWeek && saved.workout_id === date.workoutId;
-        }) &&
-        date.scheduledDate !== date.originalDate
-      )
-        throw new Error('Baseline confirmation cannot introduce new schedule moves.');
+    assertBaselineLegacyDates(baseline, overrides as Record<string, unknown>[]);
     await tx.runAsync(
       'INSERT INTO schedule_baselines (id,user_id,cycle_id,program_version_id,operation_id,time_zone,confirmed_at,dates_json) VALUES (?,?,?,?,?,?,?,?);',
       input.cycleId,

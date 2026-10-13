@@ -79,6 +79,7 @@ export type CoachNavigationRoute =
   | '/'
   | '/calendar'
   | '/goal'
+  | '/coach-review'
   | '/history'
   | '/health'
   | '/profile'
@@ -116,6 +117,9 @@ export async function resolveCoachNavigation(
       break;
     case 'open-goal':
       route = '/goal';
+      break;
+    case 'open-local-review':
+      route = '/coach-review';
       break;
     case 'open-history':
       route = '/history';

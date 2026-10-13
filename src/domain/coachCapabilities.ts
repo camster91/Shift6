@@ -8,6 +8,7 @@ export const coachNavigationCapabilities = [
   { id: 'open-workout-controls', label: 'Open workout controls' },
   { id: 'open-calendar', label: 'Open your training calendar' },
   { id: 'open-goal', label: 'Open your personal goal' },
+  { id: 'open-local-review', label: 'Review a local date range' },
   { id: 'open-history', label: 'Review saved training history' },
   { id: 'open-guidance', label: 'Open movement guidance' },
   { id: 'open-health-controls', label: 'Open optional health controls' },
@@ -34,7 +35,10 @@ export function availableCoachCapabilities(
     let reason: string | undefined;
     if (capability.id === 'build-private-plan' && !state.hasProfile)
       reason = 'Complete your setup before building a private plan.';
-    if (['open-calendar', 'open-goal'].includes(capability.id) && !state.hasCycle)
+    if (
+      ['open-calendar', 'open-goal', 'open-local-review'].includes(capability.id) &&
+      !state.hasCycle
+    )
       reason = 'Start a private cycle first.';
     if (capability.id === 'open-workout-controls' && !state.selection)
       reason =

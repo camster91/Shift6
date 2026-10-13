@@ -1,5 +1,7 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import CoachScreen from '../../app/(tabs)/coach';
+import { router } from 'expo-router';
+import { resolveCoachNavigation } from '../services/coachNavigation';
 import { demoUser, demoProgram, demoProgramVersion } from '../domain/fixtures/home';
 import { createTrainingCycle } from '../domain/cycle';
 import type { CoachMemorySnapshot } from '../db/coachMemoryRepository';
@@ -54,6 +56,11 @@ jest.mock('../db/progressRepository', () => ({
 }));
 beforeEach(() => {
   jest.clearAllMocks();
+  (resolveCoachNavigation as jest.Mock).mockResolvedValue({
+    status: 'ready-to-open',
+    owner: 'owner',
+    route: '/coach-review',
+  });
   mockCompleted = 0;
   mockPrecycle = false;
   mockPrivacyEnabled = false;
@@ -103,7 +110,8 @@ test('local Coach explains the selected workout and refreshes facts when its tab
   });
   await waitFor(() => expect(screen.getByLabelText('Review my progress')).toBeTruthy());
   await fireEvent.press(screen.getByLabelText('Review my progress'));
-  await waitFor(() => expect(screen.getByText(/2 of 6 workouts are recorded/)).toBeTruthy());
+  await waitFor(() => expect(router.push).toHaveBeenCalledWith('/coach-review'));
+  expect(resolveCoachNavigation).toHaveBeenCalledWith(mockDatabase, 'owner', 'open-local-review');
   expect(mockRemote).not.toHaveBeenCalled();
   expect(mockNavigation.mock.calls.length).toBeGreaterThan(1);
 });
@@ -176,7 +184,8 @@ test('returning to Coach invalidates an old pending request without leaving Ask 
   const screen = await render(<CoachScreen />);
   await waitFor(() => expect(screen.getByText('Provider-backed Coach enabled')).toBeTruthy());
   await fireEvent.press(screen.getByLabelText("Explain today's workout"));
-  await waitFor(() => expect(screen.getByLabelText('Review my progress')).toBeDisabled());
+  await waitFor(() => expect(screen.getByLabelText(/^Coach is thinking/)).toBeDisabled());
+  expect(screen.getByLabelText('Review my progress')).not.toBeDisabled();
   await act(async () => {
     mockFocus?.();
   });

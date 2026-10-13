@@ -39,22 +39,40 @@ export async function saveCycleReview(
   review: CycleReview,
 ): Promise<void> {
   validateCycleReview(review);
-  await database.withTransactionAsync(async () => saveCycleReviewInTransaction(database, review));
+  await database.withExclusiveTransactionAsync(async (tx) =>
+    saveCycleReviewInTransaction(tx, review),
+  );
 }
 
-/** Caller owns the transaction; reflection and outbox remain one atomic write. */
+/** Caller owns an exclusive transaction; fresh ownership and reflection identity are mandatory. */
 export async function saveCycleReviewInTransaction(
   database: SQLiteDatabase,
   review: CycleReview,
 ): Promise<void> {
   validateCycleReview(review);
+  const cycle = await database.getFirstAsync<{ id: string; user_id: string }>(
+    'SELECT id,user_id FROM training_cycles WHERE id=?;',
+    review.cycleId,
+  );
+  if (!cycle || cycle.user_id !== review.userId)
+    throw new Error('A reflection must belong to its current owned cycle.');
+  const existing = await database.getAllAsync<{ id: string; user_id: string; cycle_id: string }>(
+    'SELECT id,user_id,cycle_id FROM cycle_reviews WHERE id=? OR cycle_id=?;',
+    review.id,
+    review.cycleId,
+  );
+  if (
+    existing.some(
+      (row) =>
+        row.id !== review.id || row.user_id !== review.userId || row.cycle_id !== review.cycleId,
+    )
+  )
+    throw new Error('The saved reflection identity changed. Reload before saving.');
   await database.runAsync(
     `INSERT INTO cycle_reviews
       (id, user_id, cycle_id, overall_rating, focus, next_action, note, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(cycle_id) DO UPDATE SET
-       id = excluded.id,
-       user_id = excluded.user_id,
        overall_rating = excluded.overall_rating,
        focus = excluded.focus,
        next_action = excluded.next_action,

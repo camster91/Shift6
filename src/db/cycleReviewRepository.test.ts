@@ -10,7 +10,10 @@ describe('cycle review reflections', () => {
         calls.push({ sql, params });
         return { changes: 1, lastInsertRowId: 1 };
       },
-      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
+      getFirstAsync: async () => ({ id: 'cycle-1', user_id: 'guest-user' }),
+      getAllAsync: async () => [],
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        callback(database),
     } as unknown as SQLiteDatabase;
 
     await saveCycleReview(database, {

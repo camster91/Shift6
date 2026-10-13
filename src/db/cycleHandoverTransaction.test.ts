@@ -10,7 +10,7 @@ import { createNextCycleCopy } from '../domain/programBuilder';
 import { createTrainingCycle } from '../domain/cycle';
 import { saveProgramVersionInTransaction } from './programRepository';
 import { saveTrainingCycleWithScheduleInTransaction } from './cycleRepository';
-import { saveCycleReviewInTransaction } from './cycleReviewRepository';
+import { saveCycleReview, saveCycleReviewInTransaction } from './cycleReviewRepository';
 import {
   createPersonalGoalInTransaction,
   savePersonalReviewInTransaction,
@@ -275,4 +275,139 @@ test('direct personal helper refuses foreign keys disabled before writing', asyn
   expect(
     sqlite.prepare("SELECT count(*) n FROM personal_goal_events WHERE id='unsafe'").get(),
   ).toEqual({ n: 0 });
+});
+
+test.each(['wrapper', 'helper'] as const)(
+  'cycle reflection %s rejects another valid local owner before changing reflection/outbox',
+  async (writer) => {
+    const row = sqlite.prepare('SELECT * FROM user_profiles WHERE id=?').get(owner)!;
+    const keys = Object.keys(row);
+    sqlite
+      .prepare(
+        `INSERT INTO user_profiles (${keys.join(',')}) VALUES (${keys.map(() => '?').join(',')})`,
+      )
+      .run(...keys.map((key) => (key === 'id' ? 'other-owner' : row[key]) as SQLInputValue));
+    const review = {
+      id: 'owned-reflection',
+      userId: owner,
+      cycleId: sourceCycle.id,
+      note: 'My original reflection',
+      createdAt: stamp,
+      updatedAt: stamp,
+    };
+    await saveCycleReview(db, review);
+    const prior = sqlite.prepare('SELECT * FROM cycle_reviews ORDER BY id').all();
+    const beforeOutbox = sqlite.prepare('SELECT * FROM sync_outbox ORDER BY id').all();
+    const wrong = { ...review, userId: 'other-owner', note: 'Wrong owner overwrite' };
+    await expect(
+      writer === 'wrapper'
+        ? saveCycleReview(db, wrong)
+        : db.withExclusiveTransactionAsync((tx) => saveCycleReviewInTransaction(tx, wrong)),
+    ).rejects.toThrow('owned cycle');
+    expect(sqlite.prepare('SELECT * FROM cycle_reviews ORDER BY id').all()).toEqual(prior);
+    expect(sqlite.prepare('SELECT * FROM sync_outbox ORDER BY id').all()).toEqual(beforeOutbox);
+  },
+);
+
+test('cycle reflection helper rejects another reflection ID for an owned cycle without rewriting identity', async () => {
+  const review = {
+    id: 'owned-reflection',
+    userId: owner,
+    cycleId: sourceCycle.id,
+    note: 'Original',
+    createdAt: stamp,
+    updatedAt: stamp,
+  };
+  await saveCycleReview(db, review);
+  await expect(
+    db.withExclusiveTransactionAsync((tx) =>
+      saveCycleReviewInTransaction(tx, { ...review, id: 'replacement-id' }),
+    ),
+  ).rejects.toThrow('reflection identity');
+  expect(
+    await db.getFirstAsync('SELECT id,note FROM cycle_reviews WHERE cycle_id=?;', sourceCycle.id),
+  ).toEqual({ id: review.id, note: 'Original' });
+});
+
+test('same-owner reflection exact retry and edited note preserve entity identity', async () => {
+  const review = {
+    id: 'owned-reflection',
+    userId: owner,
+    cycleId: sourceCycle.id,
+    note: 'Original',
+    createdAt: stamp,
+    updatedAt: stamp,
+  };
+  await saveCycleReview(db, review);
+  await saveCycleReview(db, review);
+  await saveCycleReview(db, { ...review, note: 'Edited', updatedAt: '2026-10-13T12:01:00.000Z' });
+  expect(
+    await db.getFirstAsync(
+      'SELECT id,user_id,cycle_id,note,created_at FROM cycle_reviews WHERE cycle_id=?;',
+      sourceCycle.id,
+    ),
+  ).toEqual({
+    id: review.id,
+    user_id: owner,
+    cycle_id: sourceCycle.id,
+    note: 'Edited',
+    created_at: stamp,
+  });
+  expect(sqlite.prepare('SELECT count(*) n FROM sync_outbox').get()).toEqual({ n: 0 });
+});
+
+test.each(['wrapper', 'helper'] as const)(
+  'cycle reflection %s rejects a new wrong-owner insert even when both profile foreign keys exist',
+  async (writer) => {
+    const row = sqlite.prepare('SELECT * FROM user_profiles WHERE id=?').get(owner)!;
+    const keys = Object.keys(row);
+    sqlite
+      .prepare(
+        `INSERT INTO user_profiles (${keys.join(',')}) VALUES (${keys.map(() => '?').join(',')})`,
+      )
+      .run(...keys.map((key) => (key === 'id' ? 'other-owner' : row[key]) as SQLInputValue));
+    const before = sqlite.prepare('SELECT * FROM cycle_reviews ORDER BY id').all();
+    const wrong = {
+      id: 'new-wrong-reflection',
+      userId: 'other-owner',
+      cycleId: sourceCycle.id,
+      note: 'Must never be inserted',
+      createdAt: stamp,
+      updatedAt: stamp,
+    };
+    await expect(
+      writer === 'wrapper'
+        ? saveCycleReview(db, wrong)
+        : db.withExclusiveTransactionAsync((tx) => saveCycleReviewInTransaction(tx, wrong)),
+    ).rejects.toThrow('owned cycle');
+    expect(sqlite.prepare('SELECT * FROM cycle_reviews ORDER BY id').all()).toEqual(before);
+    expect(sqlite.prepare('SELECT count(*) n FROM sync_outbox').get()).toEqual({ n: 0 });
+  },
+);
+
+test('owned cycle reflection cannot reuse an ID already bound to a different owned cycle', async () => {
+  const review = {
+    id: 'owned-reflection',
+    userId: owner,
+    cycleId: sourceCycle.id,
+    note: 'Original',
+    createdAt: stamp,
+    updatedAt: stamp,
+  };
+  await saveCycleReview(db, review);
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    await saveProgramVersionInTransaction(tx, owner, nextPlan.program, nextPlan.version);
+    await saveTrainingCycleWithScheduleInTransaction(
+      tx,
+      nextCycle,
+      nextPlan.version,
+      'America/Toronto',
+      '2026-10-13',
+    );
+  });
+  const before = sqlite.prepare('SELECT * FROM cycle_reviews ORDER BY id').all();
+  await expect(saveCycleReview(db, { ...review, cycleId: nextCycle.id })).rejects.toThrow(
+    'reflection identity',
+  );
+  expect(sqlite.prepare('SELECT * FROM cycle_reviews ORDER BY id').all()).toEqual(before);
 });

@@ -8,6 +8,45 @@ interface UserProgramVersionRow {
   version_json: string;
 }
 
+export interface UserProgramSnapshot {
+  program: Program;
+  version: ProgramVersion;
+}
+
+/** Latest persisted version per owned private plan; public catalogue approval is unrelated. */
+export async function getSavedUserPrograms(
+  database: SQLiteDatabase,
+  userId: string,
+): Promise<UserProgramSnapshot[]> {
+  const rows = await database.getAllAsync<
+    UserProgramVersionRow & { program_id: string; version_id: string }
+  >(
+    `SELECT p.id AS program_id, v.id AS version_id, p.program_json, v.version_json
+       FROM user_programs p
+       INNER JOIN user_program_versions v ON v.program_id = p.id
+      WHERE p.user_id = ? AND v.id = (
+        SELECT latest.id FROM user_program_versions latest
+         WHERE latest.program_id = p.id
+         ORDER BY latest.version DESC, latest.created_at DESC, latest.id DESC LIMIT 1
+      )
+      ORDER BY p.updated_at DESC, p.id ASC;`,
+    userId,
+  );
+  return rows.map((row) => {
+    const program = JSON.parse(row.program_json) as Program;
+    const version = JSON.parse(row.version_json) as ProgramVersion;
+    if (
+      program.id !== row.program_id ||
+      version.id !== row.version_id ||
+      version.programId !== row.program_id ||
+      typeof program.title !== 'string' ||
+      !Array.isArray(version.workouts)
+    )
+      throw new Error('A saved private plan could not be read. Your records have not changed.');
+    return { program, version };
+  });
+}
+
 export async function saveProgramVersion(
   database: SQLiteDatabase,
   userId: string,

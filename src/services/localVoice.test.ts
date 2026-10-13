@@ -2,6 +2,7 @@ import { createLocalVoiceAdapter, type LocalSpeechModule } from './localVoice';
 function fixture(platform = 'android', sdk = 36) {
   const callbacks = new Map<string, (value: unknown) => void>();
   let background = () => {};
+  let state = 'active';
   const remove = jest.fn();
   const module: LocalSpeechModule = {
     supportsOnDeviceRecognition: jest.fn(() => true),
@@ -21,10 +22,20 @@ function fixture(platform = 'android', sdk = 36) {
     callbacks,
     remove,
     background: () => background(),
-    adapter: createLocalVoiceAdapter(module, platform, sdk, (cb) => {
-      background = cb;
-      return { remove };
-    }),
+    setAppState: (next: string) => {
+      state = next;
+      if (next === 'background') background();
+    },
+    adapter: createLocalVoiceAdapter(
+      module,
+      platform,
+      sdk,
+      (cb) => {
+        background = cb;
+        return { remove };
+      },
+      () => state,
+    ),
   };
 }
 const flush = async () => {
@@ -133,4 +144,68 @@ test('listener registration failure cleans up and allows a later manual retry', 
   await flush();
   f.callbacks.get('result')!({ isFinal: true, results: [{ transcript: 'eight reps' }] });
   await expect(result).resolves.toBe('eight reps');
+});
+
+test('background during a delayed capability query prevents later permission or microphone capture', async () => {
+  const f = fixture();
+  let ready!: (value: { installedLocales: string[] }) => void;
+  f.module.getSupportedLocales = () =>
+    new Promise((resolve) => {
+      ready = resolve;
+    });
+  const result = f.adapter.listen('en-US', jest.fn());
+  await flush();
+  f.setAppState('background');
+  f.setAppState('active');
+  ready({ installedLocales: ['en-US'] });
+  await expect(result).rejects.toThrow('cancelled');
+  expect(f.module.requestMicrophonePermissionsAsync).not.toHaveBeenCalled();
+  expect(f.module.start).not.toHaveBeenCalled();
+});
+test.each(['android', 'ios'])(
+  '%s background during microphone authorization cannot start after returning',
+  async (platform) => {
+    const f = fixture(platform);
+    let permit!: (value: { granted: boolean }) => void;
+    f.module.requestMicrophonePermissionsAsync = () =>
+      new Promise((resolve) => {
+        permit = resolve;
+      });
+    const result = f.adapter.listen('en-US', jest.fn());
+    await flush();
+    f.setAppState('background');
+    f.setAppState('active');
+    permit({ granted: true });
+    await expect(result).rejects.toThrow('cancelled');
+    expect(f.module.start).not.toHaveBeenCalled();
+  },
+);
+test('iOS inactive permission dialog is tolerated but actual active state is required after authorization', async () => {
+  const f = fixture('ios');
+  let permit!: (value: { granted: boolean }) => void;
+  f.module.requestSpeechRecognizerPermissionsAsync = () =>
+    new Promise((resolve) => {
+      permit = resolve;
+    });
+  const result = f.adapter.listen('en-US', jest.fn());
+  await flush();
+  f.setAppState('inactive');
+  permit({ granted: true });
+  await expect(result).rejects.toThrow('Return to the app');
+  expect(f.module.start).not.toHaveBeenCalled();
+});
+test('iOS background during speech authorization cancels even if permission resolves after return', async () => {
+  const f = fixture('ios');
+  let permit!: (value: { granted: boolean }) => void;
+  f.module.requestSpeechRecognizerPermissionsAsync = () =>
+    new Promise((resolve) => {
+      permit = resolve;
+    });
+  const result = f.adapter.listen('en-US', jest.fn());
+  await flush();
+  f.setAppState('background');
+  f.setAppState('active');
+  permit({ granted: true });
+  await expect(result).rejects.toThrow('cancelled');
+  expect(f.module.start).not.toHaveBeenCalled();
 });

@@ -39,11 +39,15 @@ export function createLocalVoiceAdapter(
   sdk: number,
   subscribeBackground: (callback: () => void) => { remove(): void } = (callback) =>
     AppState.addEventListener('change', (state) => {
-      if (state !== 'active') callback();
+      // Permission dialogs can transiently mark iOS inactive. Never cancel merely
+      // for that dialog, but require actual active state before any capture.
+      if (state === 'background') callback();
     }),
+  currentAppState: () => string | null = () => AppState.currentState,
 ): LocalVoiceAdapter {
   let pending: { reject: (error: Error) => void; cleanup: () => void } | null = null;
   let preparing = false;
+  let preparingCleanup: (() => void) | null = null;
   let generation = 0;
   const capability = async (locale: string): Promise<VoiceCapability> => {
     if (!module)
@@ -87,6 +91,8 @@ export function createLocalVoiceAdapter(
   const cancel = () => {
     generation++;
     preparing = false;
+    preparingCleanup?.();
+    preparingCleanup = null;
     const active = pending;
     pending = null;
     if (active) {
@@ -106,10 +112,16 @@ export function createLocalVoiceAdapter(
       if (pending || preparing) throw new Error('Voice entry is already active.');
       const request = ++generation;
       preparing = true;
+      const preparationSubscription = subscribeBackground(cancel);
+      const preparationCleanup = () => preparationSubscription.remove();
+      preparingCleanup = preparationCleanup;
       const checkCurrent = () => {
         if (request !== generation) throw new Error('Voice entry cancelled. Use manual entry.');
+        if (currentAppState() !== 'active')
+          throw new Error('Return to the app before starting voice entry. Use manual entry.');
       };
       try {
+        checkCurrent();
         const supported = await capability(locale);
         checkCurrent();
         if (!supported.available) throw new Error(supported.reason);
@@ -124,11 +136,16 @@ export function createLocalVoiceAdapter(
         const current = await capability(locale);
         checkCurrent();
         if (!current.available) throw new Error(current.reason);
+      } catch (error) {
+        preparationCleanup();
+        if (preparingCleanup === preparationCleanup) preparingCleanup = null;
+        throw error;
       } finally {
         if (request === generation) preparing = false;
       }
       return new Promise<string>((resolve, reject) => {
-        const subscriptions: { remove(): void }[] = [];
+        const subscriptions: { remove(): void }[] = [preparationSubscription];
+        if (preparingCleanup === preparationCleanup) preparingCleanup = null;
         let timeout: ReturnType<typeof setTimeout>;
         const cleanup = () => {
           clearTimeout(timeout);
@@ -182,11 +199,11 @@ export function createLocalVoiceAdapter(
               finish(undefined, new Error('No final set entry was recognized. Use manual entry.')),
             ),
           );
-          subscriptions.push(subscribeBackground(cancel));
           timeout = setTimeout(
             () => finish(undefined, new Error('Voice entry timed out. Use manual entry.')),
             20000,
           );
+          checkCurrent();
           module!.start({
             lang: locale,
             requiresOnDeviceRecognition: true,

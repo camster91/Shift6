@@ -364,7 +364,8 @@ export default function ProgressScreen() {
               <View key={target.workoutExerciseId} style={styles.nextTargetRow}>
                 <View style={styles.nextTargetCopy}>
                   <Text variant="smallMedium" tone="inverse">
-                    {formatExerciseName(target.exerciseId)}
+                    {exerciseChoices.find((choice) => choice.exerciseId === target.exerciseId)
+                      ?.label ?? formatExerciseName(target.exerciseId)}
                   </Text>
                   <Text variant="caption" tone="inverse">
                     {formatTarget(target.decision.nextTarget)}

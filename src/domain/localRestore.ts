@@ -1,5 +1,9 @@
 import { lifecycleDate } from './cycleLifecycle';
-import { cycleHandoverSections, parseCycleHandoverRequest } from './cycleHandover';
+import {
+  cycleHandoverSections,
+  parseCycleHandoverRequest,
+  sortHandoverSessions,
+} from './cycleHandover';
 import { createNextCycleCopy } from './programBuilder';
 import { loadProvenanceSections } from './loadUnits';
 import { coachReviewSections, parseCoachReviewReceipt } from './coachReviewJournal';
@@ -1462,6 +1466,29 @@ export function validateLocalBackup(serialized: string): RestorePreview {
         goals.get(request.source.primaryGoalId)?.user_id === owner,
         'orphan handover primary goal.',
       );
+    // A later real attempt may be appended, but no session already begun at the
+    // reviewed cutoff may disappear from the historical receipt.
+    const historicalSessions = sortHandoverSessions(
+      data.workoutSessions
+        .filter(
+          (entry) =>
+            entry.cycle_id === request.source.cycle.id &&
+            Date.parse(String(entry.started_at)) <= Date.parse(request.preparedAt),
+        )
+        .map((entry) => ({
+          id: String(entry.id),
+          cycle_week: entry.cycle_week,
+          workout_id: entry.workout_id,
+          program_version_id: entry.program_version_id,
+          status: entry.status,
+          started_at: entry.started_at,
+          completed_at: entry.completed_at,
+        })),
+    );
+    check(
+      stableSnapshotJSON(historicalSessions) === stableSnapshotJSON(request.source.sessions),
+      'incomplete handover historical session series.',
+    );
     for (const source of request.source.sessions) {
       const saved = sessions.get(source.id);
       check(

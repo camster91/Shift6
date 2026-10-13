@@ -1,11 +1,15 @@
-import { prepareCycleHandover, confirmCycleHandover } from './cycleHandoverRepository';
+import { appendCycleLifecycleEvent, getCycleLifecycleEvents } from './cycleLifecycleRepository';
+import {
+  prepareCycleHandover,
+  confirmCycleHandover as commitHandover,
+} from './cycleHandoverRepository';
 import { validateLocalBackup } from '../domain/localRestore';
 import { migrateLocalUserToAccount } from './accountRepository';
 import type { CycleHandoverRequest } from '../domain/cycleHandover';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { SQLiteDatabase } from 'expo-sqlite';
+import type { SQLiteDatabase, SQLiteBindValue } from 'expo-sqlite';
 import { MIGRATIONS } from './migrations';
 import { restoreLocalBackup } from './localRestoreRepository';
 import {
@@ -136,10 +140,22 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
+function confirmCycleHandover(
+  database: SQLiteDatabase,
+  caller: string,
+  request: CycleHandoverRequest,
+  isContextCurrent = () => true,
+) {
+  return commitHandover(database, caller, request, {
+    isOwnerCurrent: () => true,
+    isContextCurrent,
+  });
+}
 function prepare(choice: CycleHandoverRequest['choice'] = 'continue-goal') {
+  const preparedAt = new Date().toISOString();
   return prepareCycleHandover(db, owner, sourceCycle.id, {
     operationId: 'handover-op',
-    preparedAt: stamp,
+    preparedAt,
     choice,
     personalReviewState: 'declined',
     reflection: {
@@ -148,15 +164,15 @@ function prepare(choice: CycleHandoverRequest['choice'] = 'continue-goal') {
       cycleId: sourceCycle.id,
       nextAction: 'repeat',
       note: 'Synthetic reflection',
-      createdAt: stamp,
-      updatedAt: stamp,
+      createdAt: preparedAt,
+      updatedAt: preparedAt,
     },
     destination: {
       cycleId: 'next-cycle',
       programId: 'next-plan',
       versionId: 'next-version',
       goalId: choice === 'continue-goal' ? 'next-goal' : null,
-      startedAt: stamp,
+      startedAt: preparedAt,
       startDate: '2026-10-13',
       timeZone: 'America/Toronto',
     },
@@ -439,5 +455,172 @@ test('malformed reflection rating fails before a new handover can write records'
       reflection: { ...request.reflection, overallRating: 9 as 1 },
     }),
   ).rejects.toThrow('rating');
+  expect(await exportNow()).toEqual(before);
+});
+
+function addSourceSession(
+  status: 'complete' | 'partial',
+  id: string,
+  startedAt: string,
+  completedAt: string,
+) {
+  const row = sqlite.prepare('SELECT * FROM workout_sessions LIMIT 1').get()!;
+  Object.assign(row, {
+    id,
+    cycle_id: sourceCycle.id,
+    cycle_week: 1,
+    workout_id: sourcePlan.version.workouts[0]!.id,
+    program_version_id: sourcePlan.version.id,
+    workout_focus: sourcePlan.version.workouts[0]!.focus,
+    status,
+    started_at: startedAt,
+    completed_at: completedAt,
+    completion_reason: status === 'complete' ? 'all-targets' : 'time-limited',
+  });
+  const keys = Object.keys(row);
+  sqlite
+    .prepare(
+      `INSERT INTO workout_sessions (${keys.join(',')}) VALUES (${keys.map(() => '?').join(',')})`,
+    )
+    .run(...keys.map((key) => row[key] as SQLInputValue));
+}
+
+test.each(['complete', 'partial'] as const)(
+  'omitting an older %s source session rejects before restore writes',
+  async (status) => {
+    addSourceSession(
+      status,
+      'source-older-session',
+      '2026-10-13T12:01:00.000Z',
+      '2026-10-13T12:05:00.000Z',
+    );
+    jest.setSystemTime(new Date('2026-10-13T13:00:00.000Z'));
+    await confirmCycleHandover(db, owner, await prepare());
+    const saved = await exportNow();
+    expect(validateLocalBackup(JSON.stringify(saved)).data.cycleHandovers).toHaveLength(1);
+    const request = JSON.parse(String(saved.cycleHandovers![0]!.request_json));
+    request.source.sessions = [];
+    saved.cycleHandovers![0]!.request_json = JSON.stringify(request);
+    await deleteLocalUserData(db, owner);
+    await expect(restoreLocalBackup(db, owner, JSON.stringify(saved))).rejects.toThrow(
+      'historical session series',
+    );
+    expect(sqlite.prepare('SELECT count(*) n FROM user_profiles').get()).toEqual({ n: 0 });
+  },
+);
+
+test('genuinely later source attempts remain restorable after the frozen session cutoff', async () => {
+  addSourceSession(
+    'complete',
+    'source-original-session',
+    '2026-10-13T12:01:00.000Z',
+    '2026-10-13T12:05:00.000Z',
+  );
+  jest.setSystemTime(new Date('2026-10-13T13:00:00.000Z'));
+  await confirmCycleHandover(db, owner, await prepare());
+  jest.setSystemTime(new Date('2026-10-13T14:00:00.000Z'));
+  await appendCycleLifecycleEvent(db, {
+    id: 'pause-next',
+    userId: owner,
+    cycleId: 'next-cycle',
+    kind: 'pause',
+    effectiveDate: '2026-10-13',
+    timeZone: 'America/Toronto',
+    previousEventId: null,
+    operationId: 'pause-next-op',
+    recordedAt: new Date().toISOString(),
+  });
+  const previous = (await getCycleLifecycleEvents(db, owner, sourceCycle.id)).at(-1)!;
+  await appendCycleLifecycleEvent(db, {
+    id: 'resume-source',
+    userId: owner,
+    cycleId: sourceCycle.id,
+    kind: 'resume',
+    effectiveDate: '2026-10-13',
+    timeZone: previous.timeZone,
+    previousEventId: previous.id,
+    operationId: 'resume-source-op',
+    recordedAt: new Date().toISOString(),
+  });
+  addSourceSession(
+    'partial',
+    'source-later-session',
+    '2026-10-13T14:01:00.000Z',
+    '2026-10-13T14:05:00.000Z',
+  );
+  jest.setSystemTime(new Date('2026-10-13T14:06:00.000Z'));
+  const saved = await exportNow();
+  expect(validateLocalBackup(JSON.stringify(saved)).data.cycleHandovers).toHaveLength(1);
+  await deleteLocalUserData(db, owner);
+  await restoreLocalBackup(db, owner, JSON.stringify(saved));
+  expect(
+    sqlite.prepare('SELECT count(*) n FROM workout_sessions WHERE cycle_id=?').get(sourceCycle.id),
+  ).toEqual({ n: 2 });
+});
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
+test('owner change while queued for the transaction rejects a committed private retry', async () => {
+  const request = await prepare();
+  await confirmCycleHandover(db, owner, request);
+  const before = await exportNow();
+  const entered = deferred<void>(),
+    release = deferred<void>();
+  const original = db.withExclusiveTransactionAsync.bind(db);
+  const held = {
+    ...db,
+    withExclusiveTransactionAsync: async (fn: (tx: SQLiteDatabase) => Promise<void>) => {
+      entered.resolve();
+      await release.promise;
+      return original(fn);
+    },
+  } as SQLiteDatabase;
+  let currentOwner = owner;
+  const pending = commitHandover(held, owner, request, {
+    isOwnerCurrent: () => currentOwner === owner,
+    isContextCurrent: () => false,
+  });
+  const rejection = expect(pending).rejects.toThrow('owner changed');
+  await entered.promise;
+  currentOwner = 'other-owner';
+  release.resolve();
+  await rejection;
+  expect(await exportNow()).toEqual(before);
+});
+
+test('owner change during the private receipt read rejects before returning that receipt', async () => {
+  const request = await prepare();
+  await confirmCycleHandover(db, owner, request);
+  const before = await exportNow();
+  const entered = deferred<void>(),
+    release = deferred<void>();
+  const original = db.getFirstAsync.bind(db);
+  let currentOwner = owner;
+  const spy = jest.spyOn(db, 'getFirstAsync').mockImplementation((async (
+    sql: string,
+    ...params: SQLiteBindValue[]
+  ) => {
+    const result = await original(sql, ...params);
+    if (sql.includes('FROM cycle_handovers WHERE user_id=? AND id=?')) {
+      entered.resolve();
+      await release.promise;
+    }
+    return result;
+  }) as typeof db.getFirstAsync);
+  const pending = commitHandover(db, owner, request, {
+    isOwnerCurrent: () => currentOwner === owner,
+  });
+  const rejection = expect(pending).rejects.toThrow('owner changed');
+  await entered.promise;
+  currentOwner = 'other-owner';
+  release.resolve();
+  await rejection;
+  spy.mockRestore();
   expect(await exportNow()).toEqual(before);
 });

@@ -21,6 +21,7 @@ import {
 import { lifecycleDate } from '../domain/cycleLifecycle';
 import {
   parseCycleHandoverRequest,
+  sortHandoverSessions,
   type CycleHandoverRequest,
   type CycleHandoverReceipt,
   type HandoverSource,
@@ -90,7 +91,7 @@ async function sourceSnapshot(
     goalWitness,
     primaryGoalId: primary?.id ?? null,
     activeCycleIds: active.map((row) => row.id),
-    sessions,
+    sessions: sortHandoverSessions(sessions),
     latestGoalRevisionId: revisions.at(-1)?.id ?? null,
     latestReflectionId: reflection?.id ?? null,
   };
@@ -117,22 +118,31 @@ export async function confirmCycleHandover(
   db: SQLiteDatabase,
   owner: string,
   preview: CycleHandoverRequest,
-  isCurrent: () => boolean = () => true,
+  guards: { isOwnerCurrent: () => boolean; isContextCurrent?: () => boolean },
   confirmedAt = new Date().toISOString(),
 ): Promise<CycleHandoverReceipt> {
   guestOnly();
+  if (typeof guards?.isOwnerCurrent !== 'function')
+    throw new Error('A trusted current-owner guard is required.');
+  const assertOwnerCurrent = () => {
+    if (!guards.isOwnerCurrent()) throw new Error('The current handover owner changed.');
+  };
+  const isCurrent = () => guards.isOwnerCurrent() && (guards.isContextCurrent?.() ?? true);
+  assertOwnerCurrent();
   const request = parseCycleHandoverRequest(stableSnapshotJSON(preview));
   if (request.userId !== owner) throw new Error('Handover ownership changed.');
   const requestJSON = stableSnapshotJSON(request);
   let result!: CycleHandoverReceipt;
   await db.withExclusiveTransactionAsync(async (tx) => {
     await ready(tx);
+    assertOwnerCurrent();
     // An exact committed retry is read-only, even when its former source has changed.
     const receipt = await tx.getFirstAsync<{ request_json: string; confirmed_at: string }>(
       'SELECT request_json,confirmed_at FROM cycle_handovers WHERE user_id=? AND id=?;',
       request.userId,
       request.operationId,
     );
+    assertOwnerCurrent();
     if (receipt) {
       if (stableSnapshotJSON(parseCycleHandoverRequest(receipt.request_json)) !== requestJSON)
         throw new Error('This handover operation was already used for different details.');
@@ -140,6 +150,7 @@ export async function confirmCycleHandover(
         request: parseCycleHandoverRequest(receipt.request_json),
         confirmedAt: receipt.confirmed_at,
       };
+      assertOwnerCurrent();
       return;
     }
     if (
@@ -247,5 +258,6 @@ export async function confirmCycleHandover(
       throw new Error('Handover readback failed.');
     result = { request, confirmedAt };
   });
+  assertOwnerCurrent();
   return result;
 }

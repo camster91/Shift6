@@ -15,6 +15,10 @@ export interface HandoverSession {
   started_at: string;
   completed_at: string | null;
 }
+/** Stable code-unit ordering is independent of a phone's locale. */
+export function sortHandoverSessions<T extends { id: string }>(sessions: readonly T[]): T[] {
+  return [...sessions].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
 export interface HandoverSource {
   cycle: TrainingCycle;
   program: Program;
@@ -252,6 +256,12 @@ export function parseCycleHandoverRequest(serialized: string): CycleHandoverRequ
     id(session.program_version_id);
     timestamp(session.started_at);
     if (session.completed_at !== null) timestamp(session.completed_at);
+    if (
+      Date.parse(session.started_at) > Date.parse(request.preparedAt) ||
+      (session.completed_at !== null &&
+        Date.parse(session.completed_at) > Date.parse(request.preparedAt))
+    )
+      throw new Error('Source session clocks need review before handover.');
     if (
       seen.has(session.id) ||
       !Number.isInteger(session.cycle_week) ||

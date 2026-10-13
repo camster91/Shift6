@@ -1,0 +1,301 @@
+{
+  "observed": "2026-10-13",
+  "device": "Pixel7 Android16 API36 emulator-5554 x86_64",
+  "commits": [
+    "56bce412",
+    "aa80f7c7"
+  ],
+  "syntheticOnly": true,
+  "files": [
+    {
+      "file": "convenience-calendar-before-move-56bc.png",
+      "bytes": 230199,
+      "sha256": "1e4e0b935c6fba0b5837c3c76627ca54b03c461a6be8217ccc2ab8a26bbf37e6"
+    },
+    {
+      "file": "convenience-calendar-before-move-56bc.xml",
+      "bytes": 25421,
+      "sha256": "426d31336e2f532390d561fd6ff10376920f059273b75ec7943c49d19dfcc769"
+    },
+    {
+      "file": "convenience-calendar-preview-56bc.png",
+      "bytes": 217245,
+      "sha256": "48cf33c04cbbca116503e4a784cbc28a22a927688a016afe9c15e182b1802858"
+    },
+    {
+      "file": "convenience-calendar-preview-56bc.xml",
+      "bytes": 6891,
+      "sha256": "96ec88d600e5d68bb16adb89d937346ada4e31ab10461a7b352aa2e05ee64a56"
+    },
+    {
+      "file": "convenience-calendar-cancel-56bc.png",
+      "bytes": 230424,
+      "sha256": "cfa77f68ab4942f4acc75e6ff03294c05cd3c916da6dcb1153e3815e52b81d73"
+    },
+    {
+      "file": "convenience-calendar-cancel-56bc.xml",
+      "bytes": 25421,
+      "sha256": "426d31336e2f532390d561fd6ff10376920f059273b75ec7943c49d19dfcc769"
+    },
+    {
+      "file": "convenience-calendar-moved-56bc.png",
+      "bytes": 232148,
+      "sha256": "fc6f3a8071688028a158ab880ad7c6eeb1448071fba8d6992ce0f38f93e43383"
+    },
+    {
+      "file": "convenience-calendar-moved-56bc.xml",
+      "bytes": 25771,
+      "sha256": "f988e297fd729c9bc3f6c0f5a4144f12ab351f859d247a797f3af1cd3a7a5935"
+    },
+    {
+      "file": "convenience-coach-today-56bc.png",
+      "bytes": 275917,
+      "sha256": "1bebd307bd45950dac97037975f3cef367e28d0d516a5837dfa30f306862e194"
+    },
+    {
+      "file": "convenience-coach-today-56bc.xml",
+      "bytes": 18272,
+      "sha256": "b0974acb6b6b8a12fdfaae11bdbb0d802da5699e838a1d5ae098fad901989fd0"
+    },
+    {
+      "file": "convenience-coach-home-controls-56bc.png",
+      "bytes": 273656,
+      "sha256": "039f3cf6e8991dd7d4bb8702267df9df0a51cb5475e1c7393a01b1ca30cf9437"
+    },
+    {
+      "file": "convenience-coach-home-controls-56bc.xml",
+      "bytes": 20590,
+      "sha256": "82b68404fbbdbd08a4c419df1fd5d16f9e215c033e3ae679d9d01a8a1f1da5d9"
+    },
+    {
+      "file": "convenience-navigation-readback-56bc.png",
+      "bytes": 76318,
+      "sha256": "65784e438b09443961a4180cc9b0a5968f5fc6e1f876f3353ef8b816fca0176c"
+    },
+    {
+      "file": "convenience-navigation-readback-56bc.xml",
+      "bytes": 1681,
+      "sha256": "e2a689ed87af2887e563e8003a179e92ec1fce8a8e5b21ea3ab66f6a9765c917"
+    },
+    {
+      "file": "focused-fields-before-layout-fix-56bc.png",
+      "bytes": 194353,
+      "sha256": "5ec3cd7c4085b08dbfc3c70b635c9696a6c3dcda8987138f36b53d8b188b1acf"
+    },
+    {
+      "file": "focused-fields-before-layout-fix-56bc.xml",
+      "bytes": 20327,
+      "sha256": "c6c33070c7f5c37d6600b707509f6adc70140e94a3465f66adcdb14aaedcc64d"
+    },
+    {
+      "file": "focused-unsaved-input-before-upgrade-56bc.png",
+      "bytes": 194231,
+      "sha256": "4793bd617e2e5da8c6c9de7d29fae43b6c48c789be096e335a7c2480cf5406a1"
+    },
+    {
+      "file": "focused-unsaved-input-before-upgrade-56bc.xml",
+      "bytes": 20327,
+      "sha256": "537cb6af8c1aac73a658b471c5696fee0c8ab3b8d2f3934468e4911ee1414c2d"
+    },
+    {
+      "file": "focused-input-first-aa80.png",
+      "bytes": 206132,
+      "sha256": "9b548862ed024a86e4b37b86835cd3c3e60db54d7adf2489abac9d1dbef00ac0"
+    },
+    {
+      "file": "focused-input-first-aa80.xml",
+      "bytes": 19021,
+      "sha256": "06fe5859a0aaf7e19d08924820565aa8c714e030f936894a05af785002883225"
+    },
+    {
+      "file": "focused-save-in-flight-aa80.png",
+      "bytes": 202237,
+      "sha256": "1b692f3d63f7b89bc860c6f89f091c5952bc2518f37857c1bde343f6f26c5540"
+    },
+    {
+      "file": "focused-save-in-flight-aa80.xml",
+      "bytes": 19021,
+      "sha256": "06fe5859a0aaf7e19d08924820565aa8c714e030f936894a05af785002883225"
+    },
+    {
+      "file": "focused-save-readback-aa80.png",
+      "bytes": 217680,
+      "sha256": "b5e1ac4f3af8ace910c3a4d749681a691e40c1f7771b7d68d44e582a75355376"
+    },
+    {
+      "file": "focused-save-readback-aa80.xml",
+      "bytes": 19722,
+      "sha256": "10793a6de449c122714c0a4b143c849707ba415f213fad6eb450b4696f7e1031"
+    },
+    {
+      "file": "focused-difficulty-note-aa80.png",
+      "bytes": 235026,
+      "sha256": "1b211589702adbf04e266ab6d03d31da8e15a059a8ce3e480176c069b2a29147"
+    },
+    {
+      "file": "focused-difficulty-note-aa80.xml",
+      "bytes": 16954,
+      "sha256": "b54d90e1dd885fa4887f472b749d3d4fcd7ba4fb4bc52a7ed8135dae1a2dc361"
+    },
+    {
+      "file": "focused-unsaved-set2-aa80.png",
+      "bytes": 217214,
+      "sha256": "05624291bf89101de05face04dddc3db9ce24152d7b876d3e1da2050f4fffa26"
+    },
+    {
+      "file": "focused-unsaved-set2-aa80.xml",
+      "bytes": 19834,
+      "sha256": "630c05ba6e694dc24c82a100392b091bb4bcfbad0717c09036ddebc146b9faea"
+    },
+    {
+      "file": "focused-recovery-set2-aa80.png",
+      "bytes": 211347,
+      "sha256": "95b0e9d36b2124815ccc997ebf8c4a9563f9c9a58d09130637ae4ed31fd81f55"
+    },
+    {
+      "file": "focused-recovery-set2-aa80.xml",
+      "bytes": 19044,
+      "sha256": "13279b99fb575f0ad954810e850c1344a6e7802a20ddfae08ef5f17c5e247b72"
+    },
+    {
+      "file": "focused-home-large-text-aa80.png",
+      "bytes": 227527,
+      "sha256": "2f87157ce3bff25ac9992669e391e572aa14da4acdc8e6489888f679b650e1b7"
+    },
+    {
+      "file": "focused-home-large-text-aa80.xml",
+      "bytes": 18475,
+      "sha256": "6e18e9ddbac0bcf39f657b9fbf5f717f6c8c09c90f4c4be827eb4cd8def90dff"
+    },
+    {
+      "file": "focused-large-text-aa80.png",
+      "bytes": 260711,
+      "sha256": "4df1013b496dc0fd024ff7d0f2797a594fc7b469a02d2ca3463450828fa88ed1"
+    },
+    {
+      "file": "focused-large-text-aa80.xml",
+      "bytes": 16781,
+      "sha256": "4a1fc0fc0c098df25cbe1e09955cbbab88efdfaf26226aefe898b181b46e90c7"
+    },
+    {
+      "file": "focused-discomfort-confirmation-aa80.png",
+      "bytes": 219453,
+      "sha256": "ed7768ba1cb7d5fa8c81754a94cdc6f5ee7637dcf7cf5247801e9a2099b90d4a"
+    },
+    {
+      "file": "focused-discomfort-confirmation-aa80.xml",
+      "bytes": 6973,
+      "sha256": "108a8aa6d3365a15d56b11a2d1ccc71687f983e6267dd7c608ba469ee6536e21"
+    },
+    {
+      "file": "focused-external-readback-aa80.png",
+      "bytes": 75367,
+      "sha256": "e186348bd077edc5e758f6407768fc1ffb280729193dfc22b16c7fa37c56826e"
+    },
+    {
+      "file": "focused-external-readback-aa80.xml",
+      "bytes": 1681,
+      "sha256": "e1b6e7d392fc3b531e6ad633fec1f62654167391581a804de9a31fd91f4902ec"
+    },
+    {
+      "file": "focused-partial-confirm-aa80.png",
+      "bytes": 241161,
+      "sha256": "e1c0eeebf5a282351331f4074ce7208545219dd0e81a61210ac041e3474a5927"
+    },
+    {
+      "file": "focused-partial-confirm-aa80.xml",
+      "bytes": 14263,
+      "sha256": "7500e54e2b4ce5066053d10bdecf6fd1811293d5ddc2d8fe789b2d9b7a9c2b1b"
+    },
+    {
+      "file": "focused-partial-external-aa80.png",
+      "bytes": 75207,
+      "sha256": "02902f84ae50dfeb5a73407ccb942d09115c20f1fb64dd414324fc1cf0a22f88"
+    },
+    {
+      "file": "focused-partial-external-aa80.xml",
+      "bytes": 1681,
+      "sha256": "3ce0d22bf552f20619da0fd746f45bd130fd5a3e64bb1bc183ce4a2c8d783a24"
+    },
+    {
+      "file": "import-missing-rest-blocked-aa80.png",
+      "bytes": 287799,
+      "sha256": "24d5063086cfda92a70e90f31a92a451750619ad8812b640d473a82b40bfa769"
+    },
+    {
+      "file": "import-missing-rest-blocked-aa80.xml",
+      "bytes": 19042,
+      "sha256": "7819c0665c77399412c9965de9337e367aadb135cc2c29759980fd3d42ac5e79"
+    },
+    {
+      "file": "import-edited-preview-invalidated-aa80.png",
+      "bytes": 259679,
+      "sha256": "3476ee24800d3ada953334c134f7d4266ad9ac5b176f35d8efa7cddb8a813a82"
+    },
+    {
+      "file": "import-edited-preview-invalidated-aa80.xml",
+      "bytes": 23502,
+      "sha256": "d6e23351396d54a4632f9327796fb151ad113035e9485872c02ba43a5a73aebe"
+    },
+    {
+      "file": "import-explicit-preview-aa80.png",
+      "bytes": 276299,
+      "sha256": "714c2fddb7341e4e8267d4d5fbbd4d0ea14296a6cfd058cf50e77c289c2a7040"
+    },
+    {
+      "file": "import-explicit-preview-aa80.xml",
+      "bytes": 19423,
+      "sha256": "ec11a46e6939da382aaa5b489f1d2c8f98fcaec2e3dff2e5336bf304c61d6cf1"
+    },
+    {
+      "file": "import-applied-once-aa80.png",
+      "bytes": 258573,
+      "sha256": "eeab77d3830536c60a2ea4bf386573c3a009ef52786164cf4d15c8d83d6a6450"
+    },
+    {
+      "file": "import-applied-once-aa80.xml",
+      "bytes": 19697,
+      "sha256": "b62ed786c5c85b38dd1ac097443486be9d3fecad34e568ab0a0dc1b5981e58de"
+    },
+    {
+      "file": "import-private-plan-saved-aa80.png",
+      "bytes": 194622,
+      "sha256": "02c6876fd6058397744f345e4267b6e9cb952ec62c8161e2aa81bfa3fb7c81fa"
+    },
+    {
+      "file": "import-private-plan-saved-aa80.xml",
+      "bytes": 18972,
+      "sha256": "413e6184304e4f0f9898aa3f3b57c178ba0a36dbfb2eccff1dda552732eb1f7d"
+    },
+    {
+      "file": "import-saved-external-aa80.png",
+      "bytes": 77206,
+      "sha256": "40fcf63d3276f54f3aac39379453dc298f3f05130e6b8381701f1ec8ee925076"
+    },
+    {
+      "file": "import-saved-external-aa80.xml",
+      "bytes": 1681,
+      "sha256": "75b51ad601606db8c4d11a3b8f87092826c0bb3addae821c8404cff82b05b073"
+    },
+    {
+      "file": "convenience-navigation-export-56bc.json",
+      "bytes": 316057,
+      "sha256": "e28473b70378e01ec5dee440fc8e743b511733eee59db4b601e2b3165d8e5a0b"
+    },
+    {
+      "file": "focused-in-progress-export-aa80.json",
+      "bytes": 318773,
+      "sha256": "29ec61a99b18d7a9125af9ee02aab4b4c69e39b0c9d5ac33d1a0fdd919defd9f"
+    },
+    {
+      "file": "focused-partial-export-aa80.json",
+      "bytes": 317994,
+      "sha256": "b7cb207695cb3d15a3e80fdf9d5e65f28764ef067df2898cc4907d3416b37b40"
+    },
+    {
+      "file": "import-saved-export-aa80.json",
+      "bytes": 321965,
+      "sha256": "fdef9682f58341a5b4567964afe279d97b8ca211a6741d5bd87e5e4b7ecacc8e"
+    }
+  ]
+}

@@ -7,3 +7,4 @@
 /*.mjs text eol=lf
 /vendor/** -text
 /docs/qa/2026-10-13-recovery/** -text
+/docs/qa/2026-10-13-convenience/** -text

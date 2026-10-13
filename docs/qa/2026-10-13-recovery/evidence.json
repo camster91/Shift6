@@ -114,6 +114,11 @@
       "sha256": "9596d906b44c6bc746f64860d9e98ec7a6a79fc13ea0e915f3a8891b6811d7a4"
     },
     {
+      "file": "large-restore-readback.json",
+      "bytes": 225,
+      "sha256": "23be3594053e1efdb4b5de3f7554c8292ba5c074189c5c4d96949b05d13f5039"
+    },
+    {
       "file": "private-plan-copy-d9c5.png",
       "bytes": 208385,
       "sha256": "346a2a43198753bf441f2ec435721f2fd7ce8e1511b78373a3c037b10ac5370e"
@@ -179,6 +184,16 @@
       "sha256": "b5d4c5b495d9c46e33d2fe4c58cadfeb8380cdb672b083550836b8a8bc2898b9"
     },
     {
+      "file": "restore-future-schema-rejected-d9c5.png",
+      "bytes": 151939,
+      "sha256": "7a228c8c314eb2aab415b4e597b8db7fccfcaf6477eca9bea3ed3b4c583eb828"
+    },
+    {
+      "file": "restore-future-schema-rejected-d9c5.xml",
+      "bytes": 7772,
+      "sha256": "5489dbd5aab85b6e4ab5a9c6819474db515a6b53ac6e5b8728b21c30478e43db"
+    },
+    {
       "file": "restore-goal-journal-d9c5.png",
       "bytes": 220144,
       "sha256": "302747b0367cc12698b1aab6793c88178b94c75ca0903a9b1f0e90a0451e0832"
@@ -187,6 +202,36 @@
       "file": "restore-goal-journal-d9c5.xml",
       "bytes": 14272,
       "sha256": "e4c259bbd2be5f26424926b9cc0ba371fcd0b7ddb1055783f0c01e7d0517eae1"
+    },
+    {
+      "file": "restore-large-external-readback-d9c5.png",
+      "bytes": 76340,
+      "sha256": "131f2defe67002b78b8fdbc5b7789cfc9e707ff423aa79fd3e11fd5b37ef2480"
+    },
+    {
+      "file": "restore-large-external-readback-d9c5.xml",
+      "bytes": 1681,
+      "sha256": "40ca564c579e2199bd30aa48b9c13ecd279bd532c909c8fcf8a1a06e822854b0"
+    },
+    {
+      "file": "restore-large-in-progress-d9c5.png",
+      "bytes": 137850,
+      "sha256": "6e67a07d7b068931e519c835a1b9dcd78f0e850ce053f0ccbaec7d71721ba181"
+    },
+    {
+      "file": "restore-large-in-progress-d9c5.xml",
+      "bytes": 8460,
+      "sha256": "209c6076c26a115f01b4560a3894c1edf756718887ee6048e7c5016596552447"
+    },
+    {
+      "file": "restore-large-preview-d9c5.png",
+      "bytes": 361784,
+      "sha256": "da6ca40d7f1e2f7d5e797b2c638611227639b6a1374913f5efb0b9a59c4da9a1"
+    },
+    {
+      "file": "restore-large-preview-d9c5.xml",
+      "bytes": 15075,
+      "sha256": "11632117b2d550f626c0f8549cc7cd5a5561d16744d6e4247f158d10110240be"
     },
     {
       "file": "restore-native-picker-d9c5.png",
@@ -257,6 +302,11 @@
       "localExternalExport": "restored-export-d9c5.json",
       "bytes": 17467,
       "sha256": "17f6b6189d7b33b29625e99a747ec9be68b8a7e6c10dbadfbaab657c585edb43"
+    },
+    {
+      "localExternalExport": "restored-large-export-d9c5.json",
+      "bytes": 315469,
+      "sha256": "282cefe64eb5835de24a96c807dff8c06233d2a466e22ba87106b8a72c253693"
     }
   ]
 }

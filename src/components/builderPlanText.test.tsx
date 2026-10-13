@@ -8,6 +8,18 @@ import { createCustomExercise as mockCreateExercise } from '../domain/programBui
 import type { ProgramVersion } from '../domain/types';
 const mockDatabase = {};
 const mockSave = jest.fn(async (..._args: unknown[]) => undefined);
+jest.mock('../db/builderRecoveryRepository', () => ({
+  getBuilderRecovery: async () => null,
+  saveBuilderRecovery: async (
+    _database: unknown,
+    userId: string,
+    _route: string,
+    snapshot: unknown,
+    revision: number,
+    id: string,
+  ) => ({ id, userId, snapshot, revision: revision + 1 }),
+  clearBuilderRecovery: async () => undefined,
+}));
 jest.mock('expo-router', () => ({
   router: { replace: jest.fn() },
   useLocalSearchParams: () => ({ sourceVersionId: 'saved-source' }),

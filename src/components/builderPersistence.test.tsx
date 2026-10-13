@@ -12,6 +12,18 @@ let mockDatabase: object | null = {};
 let mockReleaseMode = 'guest-only';
 let mockParams: { mode?: string; sourceVersionId?: string } = { mode: 'blank' };
 const mockSaveProgram = jest.fn(async (..._args: unknown[]) => undefined);
+jest.mock('../db/builderRecoveryRepository', () => ({
+  getBuilderRecovery: async () => null,
+  saveBuilderRecovery: async (
+    _database: unknown,
+    userId: string,
+    _route: string,
+    snapshot: unknown,
+    revision: number,
+    id: string,
+  ) => ({ id, userId, snapshot, revision: revision + 1 }),
+  clearBuilderRecovery: async () => undefined,
+}));
 jest.mock('expo-router', () => ({
   router: { replace: jest.fn() },
   useLocalSearchParams: () => mockParams,

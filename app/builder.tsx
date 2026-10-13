@@ -74,6 +74,8 @@ import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 import { runtimeConfig } from '../src/config/env';
 import { PlanTextImport } from '../src/components/PlanTextImport';
 import { appendPlanText } from '../src/domain/planTextImport';
+import { builderRouteKey, type PlanImportRecovery } from '../src/domain/builderRecovery';
+import { useBuilderRecovery } from '../src/services/useBuilderRecovery';
 
 const starterPlank = foundationalExercises.find((exercise) => exercise.id === 'exercise-plank');
 const demoCatalogueEntry = programLibrary.find((entry) => entry.program.id === demoProgram.id);
@@ -137,11 +139,14 @@ export default function ProgramBuilderScreen() {
   const [newWorkoutTitle, setNewWorkoutTitle] = useState('');
   const [newWorkoutSequence, setNewWorkoutSequence] = useState(0);
   const [customExercises, setCustomExercises] = useState<Record<string, Exercise>>({});
+  const [imports, setImports] = useState<Record<string, PlanImportRecovery>>({});
+  const [libraryLoading, setLibraryLoading] = useState(Boolean(database));
   const [exercisePickerWorkoutId, setExercisePickerWorkoutId] = useState<string | null>(null);
   const [exercisePickerQuery, setExercisePickerQuery] = useState('');
   const [substitutionExerciseId, setSubstitutionExerciseId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
+  const canonicalOperation = useRef(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sourceLoading, setSourceLoading] = useState(shouldLoadSource);
@@ -162,7 +167,8 @@ export default function ProgramBuilderScreen() {
   const canMutateDraft = () =>
     sameBuilderContext(currentContextRef.current, currentContext) &&
     draftMatchesContext &&
-    savedSourceReady;
+    savedSourceReady &&
+    recovery.phase === 'editing';
 
   useEffect(() => {
     if (sameBuilderContext(draftContext, currentContext)) return;
@@ -172,6 +178,8 @@ export default function ProgramBuilderScreen() {
     setAvailableEquipmentIds(demoUser.equipmentIds);
     setUnitSystem(demoUser.unitSystem);
     setCustomExercises({});
+    setImports({});
+    setLibraryLoading(Boolean(database));
     setCustomName('');
     setCustomInstructions('');
     setCustomNotes('');
@@ -187,6 +195,7 @@ export default function ProgramBuilderScreen() {
     setSaved(false);
     setSaving(false);
     setStarting(false);
+    canonicalOperation.current = false;
     setError(null);
     trackedProgramCreation.current = false;
   }, [database, mode, sourceVersionId, userId]);
@@ -216,7 +225,11 @@ export default function ProgramBuilderScreen() {
           ...current,
         }));
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (active && sameBuilderContext(currentContextRef.current, currentContext))
+          setLibraryLoading(false);
+      });
 
     return () => {
       active = false;
@@ -353,6 +366,54 @@ export default function ProgramBuilderScreen() {
     setError(null);
   };
 
+  const recoverySnapshot = {
+    program: draft.program,
+    version: draft.version,
+    customExercises: Object.values(customExercises),
+    imports: Object.values(imports).filter((entry) =>
+      draft.version.workouts.some((workout) => workout.id === entry.workoutId),
+    ),
+  };
+  const recoverySnapshotRef = useRef(recoverySnapshot);
+  recoverySnapshotRef.current = recoverySnapshot;
+  const recovery = useBuilderRecovery({
+    database,
+    owner: userId,
+    route: builderRouteKey(mode, sourceVersionId),
+    ready: draftMatchesContext && savedSourceReady && !libraryLoading && defaultDemoCopyAllowed,
+    snapshot: recoverySnapshot,
+    committed: saved,
+    onResume: (snapshot, canonicalExists) => {
+      const copy = canonicalExists
+        ? createProgramDraftFromSource(snapshot.program, snapshot.version, userId)
+        : { program: snapshot.program, version: snapshot.version };
+      const restored = {
+        ...snapshot,
+        ...copy,
+        imports: snapshot.imports.map((entry) => {
+          const index = snapshot.version.workouts.findIndex(
+            (workout) => workout.id === entry.workoutId,
+          );
+          return { ...entry, workoutId: copy.version.workouts[index]!.id };
+        }),
+      };
+      setDraft(copy);
+      setCustomExercises(
+        Object.fromEntries(restored.customExercises.map((exercise) => [exercise.id, exercise])),
+      );
+      setImports(Object.fromEntries(restored.imports.map((entry) => [entry.workoutId, entry])));
+      setSaved(false);
+      setError(null);
+      return restored;
+    },
+  });
+  const contentBlocked = draft.version.workouts.some((workout) =>
+    workout.exercises.some((entry) => {
+      const exercise = exerciseById.get(entry.exerciseId);
+      return !exercise || !isExerciseAvailableToUser(exercise, __DEV__);
+    }),
+  );
+
   const handleAddPlank = (workoutId: string | undefined = firstWorkout?.id) => {
     if (!workoutId) return;
     if (!starterPlank || !isExerciseAvailableToUser(starterPlank, __DEV__)) {
@@ -389,7 +450,13 @@ export default function ProgramBuilderScreen() {
   };
 
   const handleAddWorkout = () => {
-    const nextSequence = newWorkoutSequence + 1;
+    let nextSequence = newWorkoutSequence + 1;
+    while (
+      draft.version.workouts.some(
+        (workout) => workout.id === `${draft.version.id}-workout-extra-${nextSequence}`,
+      )
+    )
+      nextSequence++;
     try {
       const version = addWorkoutToProgram(draft.version, {
         id: `${draft.version.id}-workout-extra-${nextSequence}`,
@@ -447,7 +514,7 @@ export default function ProgramBuilderScreen() {
   };
 
   const handleSave = async () => {
-    if (saving) return;
+    if (saving || starting || canonicalOperation.current) return;
     setSaved(false);
     if (!canMutateDraft()) {
       setError('Wait for your private draft to finish loading before saving.');
@@ -461,7 +528,15 @@ export default function ProgramBuilderScreen() {
       setError('Local training storage is unavailable. Your plan has not been saved.');
       return;
     }
+    if (contentBlocked) {
+      setError(
+        'A movement is unavailable or under content review. Replace or remove it before saving.',
+      );
+      return;
+    }
+    const savedRecoverySnapshot = recoverySnapshot;
 
+    canonicalOperation.current = true;
     setSaving(true);
     setError(null);
     try {
@@ -475,8 +550,14 @@ export default function ProgramBuilderScreen() {
         await saveProgramVersion(database, userId, program, draft.version);
       }
       if (!canMutateDraft()) return;
-      setDraft((current) => ({ ...current, program }));
-      setSaved(true);
+      await recovery.clearAfterCanonical(savedRecoverySnapshot);
+      if (!canMutateDraft()) return;
+      setDraft((current) =>
+        current.program === draft.program ? { ...current, program } : current,
+      );
+      setSaved(
+        JSON.stringify(recoverySnapshotRef.current) === JSON.stringify(savedRecoverySnapshot),
+      );
       trackProgramCreation();
     } catch (saveError) {
       if (canMutateDraft()) {
@@ -485,12 +566,15 @@ export default function ProgramBuilderScreen() {
         );
       }
     } finally {
-      if (sameBuilderContext(currentContextRef.current, currentContext)) setSaving(false);
+      if (sameBuilderContext(currentContextRef.current, currentContext)) {
+        canonicalOperation.current = false;
+        setSaving(false);
+      }
     }
   };
 
   const handleStartCycle = async () => {
-    if (starting || saving) return;
+    if (starting || saving || canonicalOperation.current) return;
     if (!canMutateDraft()) {
       setError('Wait for your private draft to finish loading before starting.');
       return;
@@ -508,7 +592,15 @@ export default function ProgramBuilderScreen() {
       setError('Add at least one required workout before starting a six-week cycle.');
       return;
     }
+    if (contentBlocked) {
+      setError(
+        'A movement is unavailable or under content review. Replace or remove it before starting.',
+      );
+      return;
+    }
+    const savedRecoverySnapshot = recoverySnapshot;
 
+    canonicalOperation.current = true;
     setStarting(true);
     setError(null);
     try {
@@ -531,7 +623,11 @@ export default function ProgramBuilderScreen() {
         await saveTrainingCycle(database, cycle);
       }
       if (!canMutateDraft()) return;
-      setDraft((current) => ({ ...current, program }));
+      await recovery.clearAfterCanonical(savedRecoverySnapshot);
+      if (!canMutateDraft()) return;
+      setDraft((current) =>
+        current.program === draft.program ? { ...current, program } : current,
+      );
       trackProgramCreation();
       router.replace('/');
     } catch (startError) {
@@ -541,7 +637,10 @@ export default function ProgramBuilderScreen() {
         );
       }
     } finally {
-      if (sameBuilderContext(currentContextRef.current, currentContext)) setStarting(false);
+      if (sameBuilderContext(currentContextRef.current, currentContext)) {
+        canonicalOperation.current = false;
+        setStarting(false);
+      }
     }
   };
 
@@ -597,6 +696,63 @@ export default function ProgramBuilderScreen() {
     );
   }
 
+  if (recovery.phase === 'loading')
+    return (
+      <Screen>
+        <Text>Checking private recovery…</Text>
+      </Screen>
+    );
+  if (recovery.phase === 'blocked')
+    return (
+      <Screen>
+        <ErrorState message={recovery.message} onRetry={recovery.retry} />
+        <Button label="Back to Programs" onPress={() => router.back()} />
+      </Screen>
+    );
+  if (recovery.phase === 'choice')
+    return (
+      <Screen>
+        <Card>
+          <Text variant="h2">Resume your private draft?</Text>
+          <Text>
+            {recovery.candidate?.snapshot.program.title || 'Untitled private draft'} ·{' '}
+            {recovery.candidate?.snapshot.version.workouts.length ?? 0} workouts
+          </Text>
+          <Text>
+            This recovery has not been saved as a plan or started. Resume to review it, or discard
+            only this recovery and begin from the current source.
+          </Text>
+          {recovery.canonicalExists ? (
+            <Text>
+              This version has already been saved. Resume makes a new private copy and keeps that
+              saved version and its history unchanged.
+            </Text>
+          ) : null}
+          <Button
+            label={
+              recovery.canonicalExists ? 'Resume as a new private copy' : 'Resume private draft'
+            }
+            disabled={recovery.busy}
+            onPress={recovery.resume}
+          />
+          <Button
+            label="Discard private recovery"
+            variant="secondary"
+            disabled={recovery.busy}
+            onPress={() => void recovery.discard()}
+          />
+          <Button
+            label="Retry recovery load"
+            variant="ghost"
+            disabled={recovery.busy}
+            onPress={recovery.retry}
+          />
+          <Button label="Back to Programs" variant="ghost" onPress={() => router.back()} />
+          {recovery.message ? <Text accessibilityRole="alert">{recovery.message}</Text> : null}
+        </Card>
+      </Screen>
+    );
+
   return (
     <Screen scrollViewProps={{ keyboardShouldPersistTaps: 'handled' }}>
       <View style={styles.header}>
@@ -613,6 +769,12 @@ export default function ProgramBuilderScreen() {
 
       <Text variant="display" accessibilityRole="header" style={styles.title}>
         {builderTitle}
+      </Text>
+      {recovery.message ? <Text accessibilityLiveRegion="polite">{recovery.message}</Text> : null}
+      <Text variant="small" tone="muted">
+        Private recovery keeps added workouts and movements, plan targets, and pasted import text.
+        Finish a field with Done before leaving; the unfinished custom-movement form needs Add
+        custom movement first.
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
         {isBlankBuilder
@@ -707,6 +869,15 @@ export default function ProgramBuilderScreen() {
             }}
           />
           <PlanTextImport
+            recoveryState={imports[workout.id] ?? { text: '', previewText: null }}
+            onRecoveryChange={(value) => {
+              if (!canMutateDraft()) return;
+              setImports((current) => ({
+                ...current,
+                [workout.id]: { workoutId: workout.id, ...value },
+              }));
+              setSaved(false);
+            }}
             available={[...foundationalExercises, ...Object.values(customExercises)].filter(
               (exercise) => isExerciseAvailableToUser(exercise, __DEV__),
             )}

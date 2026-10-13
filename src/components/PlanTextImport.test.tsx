@@ -59,6 +59,42 @@ test('closing or a rejected apply never claims saved records', async () => {
   expect(screen.queryByLabelText('User-owned workout text for My workout')).toBeNull();
 });
 
+test('recovered preview is recomputed against current availability and never auto-applied', async () => {
+  const apply = jest.fn(),
+    change = jest.fn();
+  const text = 'My squat | sets=2 | reps=8 | load=40kg | rest=45s';
+  const screen = await render(
+    <PlanTextImport
+      available={[movement]}
+      workoutTitle="Recovered workout"
+      onApply={apply}
+      recoveryState={{ text, previewText: text }}
+      onRecoveryChange={change}
+    />,
+  );
+  expect(screen.getByLabelText('Add reviewed rows to this workout')).toBeEnabled();
+  expect(apply).not.toHaveBeenCalled();
+  const stale = screen
+    .getByLabelText('Add reviewed rows to this workout')
+    .props.onStartShouldSetResponder.testOnly_pressabilityConfig().onPress;
+  await screen.rerender(
+    <PlanTextImport
+      available={[]}
+      workoutTitle="Recovered workout"
+      onApply={apply}
+      recoveryState={{
+        text: 'Unknown movement | sets=2 | reps=8 | rest=45s',
+        previewText: 'Unknown movement | sets=2 | reps=8 | rest=45s',
+      }}
+      onRecoveryChange={change}
+    />,
+  );
+  await act(async () => stale());
+  expect(apply).not.toHaveBeenCalled();
+  expect(screen.getByLabelText('Add reviewed rows to this workout')).toBeDisabled();
+  expect(screen.getByText(/Movement is not available/)).toBeTruthy();
+});
+
 test('one preview applies once before rerender; editing invalidates stale callbacks and repreview permits a fresh apply', async () => {
   const apply = jest.fn();
   const screen = await render(

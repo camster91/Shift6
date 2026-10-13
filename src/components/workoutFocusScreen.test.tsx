@@ -454,6 +454,56 @@ test('queued draft context stays invalid after blur then same-owner focus return
   expect(oldGuard()).toBe(false);
 });
 
+test('hydrated unchanged session notes do not start an unsolicited note save', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+  });
+  expect(mockSaveNote).not.toHaveBeenCalled();
+});
+
+test('a rejected old note save cannot show an error after blur and same-session reentry', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+  });
+  mockSaveNote.mockClear();
+  let reject!: (error: Error) => void;
+  mockSaveNote.mockImplementationOnce(
+    () =>
+      new Promise<void>((_resolve, fail) => {
+        reject = fail;
+      }),
+  );
+  await fireEvent.press(screen.getByText('Review all sets and adjustments'));
+  await fireEvent.changeText(screen.getByLabelText('Optional session note'), 'Actual changed note');
+  await waitFor(() => expect(mockSaveNote).toHaveBeenCalledTimes(1));
+  await act(async () => {
+    mockFocusLeave?.();
+    mockFocusLeave = mockFocusEnter?.() ?? null;
+    reject(new Error('Synthetic delayed note failure'));
+  });
+  expect(screen.queryByText('We could not save the workout note locally.')).toBeNull();
+  expect(screen.getByLabelText('Optional session note').props.value).toBe('Actual changed note');
+});
+
+test('a current changed note save failure remains visible and retains its input', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+  mockSaveNote.mockRejectedValueOnce(new Error('Synthetic current note failure'));
+  await fireEvent.press(screen.getByText('Review all sets and adjustments'));
+  await fireEvent.changeText(
+    screen.getByLabelText('Optional session note'),
+    'Keep this actual cue',
+  );
+  await waitFor(() =>
+    expect(screen.getByText('We could not save the workout note locally.')).toBeTruthy(),
+  );
+  expect(screen.getByLabelText('Optional session note').props.value).toBe('Keep this actual cue');
+});
+
 test.each(['-5', 'not a number', 'Infinity'])(
   'nonempty invalid actual load %s stays editable and cannot silently save reps only',
   async (value) => {

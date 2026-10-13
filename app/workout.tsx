@@ -235,6 +235,7 @@ export default function ActiveWorkoutScreen() {
   const [readiness, setReadiness] = useState<WorkoutReadiness | null>(null);
   const [sessionNote, setSessionNote] = useState('');
   const sessionNoteRef = useRef(sessionNote);
+  const savedSessionNoteRef = useRef('');
   sessionNoteRef.current = sessionNote;
   const [readinessSaving, setReadinessSaving] = useState(false);
   const [restTimerEnabled, setRestTimerEnabled] = useState(false);
@@ -281,6 +282,7 @@ export default function ActiveWorkoutScreen() {
     setEarlyStopReasonOpen(false);
     setReadiness(null);
     setSessionNote('');
+    savedSessionNoteRef.current = '';
     setLoadingSession(database !== null);
     setHydratedRoute(null);
   }, [activeWorkout.id, database]);
@@ -493,6 +495,7 @@ export default function ActiveWorkoutScreen() {
           setRestTimerEnabled(restTimerEnabled);
           setReadiness(readiness ?? null);
           setSessionNote(note);
+          savedSessionNoteRef.current = note.trim();
           savedActuals.current = new Map(completedSets.map((set) => [completedSetKey(set), set]));
           setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
           setPreviousSets(previousSets);
@@ -581,15 +584,24 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     if (!database || !canMutate) return;
 
+    const note = sessionNote.trim();
+    if (note === savedSessionNoteRef.current) return;
+    const isCurrent = captureDraftContextGuard();
     const timeout = setTimeout(() => {
-      if (feedbackWrite.current) return;
-      void updateWorkoutSessionNote(database, session.id, sessionNoteRef.current).catch(() => {
-        setError('We could not save the workout note locally.');
-      });
+      if (feedbackWrite.current || !isCurrent()) return;
+      void updateWorkoutSessionNote(database, session.id, note)
+        .then(() => {
+          if (isCurrent() && sessionNoteRef.current.trim() === note)
+            savedSessionNoteRef.current = note;
+        })
+        .catch(() => {
+          if (isCurrent() && sessionNoteRef.current.trim() === note)
+            setError('We could not save the workout note locally.');
+        });
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [canMutate, database, session.id, sessionNote]);
+  }, [canMutate, database, session.id, sessionNote, userId]);
 
   useEffect(() => {
     if (!database || !canMutate) return;
@@ -612,15 +624,18 @@ export default function ActiveWorkoutScreen() {
         flushDraft();
         void (async () => {
           await feedbackWrite.current;
-          const current = feedbackContext.current;
-          if (
-            current.database === database &&
-            current.userId === userId &&
-            current.sessionId === session.id
-          )
-            await updateWorkoutSessionNote(database, session.id, sessionNoteRef.current);
+          const note = sessionNoteRef.current.trim();
+          if (!draftGuard() || note === savedSessionNoteRef.current) return;
+          try {
+            await updateWorkoutSessionNote(database, session.id, note);
+            if (draftGuard() && sessionNoteRef.current.trim() === note)
+              savedSessionNoteRef.current = note;
+          } catch {
+            if (draftGuard() && sessionNoteRef.current.trim() === note)
+              setError('We could not save the workout note locally.');
+          }
         })().catch(() => {
-          setError('We could not save the workout note locally.');
+          if (draftGuard()) setError('We could not save the workout note locally.');
         });
       }
     });
@@ -1011,6 +1026,7 @@ export default function ActiveWorkoutScreen() {
           )
             return;
           sessionNoteRef.current = next;
+          savedSessionNoteRef.current = next.trim();
           setSessionNote(next);
           setDifficulty(choice);
         } catch (error) {

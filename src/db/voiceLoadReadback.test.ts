@@ -103,7 +103,7 @@ test.each(['kg', 'lb'] as const)(
           (set) => set.id === 'voice-reviewed-actual',
         ),
       ).toMatchObject({ load: 40, loadUnit: unit, reps: 8 });
-    const exported = await exportLocalUserData(db, 'guest-user', '2026-10-14T12:00:00.000Z');
+      const exported = await exportLocalUserData(db, 'guest-user', '2026-10-14T12:00:00.000Z');
       expect(() => validateLocalBackup(JSON.stringify(exported))).not.toThrow();
     } finally {
       sqlite.close();

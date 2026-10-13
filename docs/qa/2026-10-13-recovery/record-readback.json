@@ -1,0 +1,123 @@
+{
+  "candidate": "d9c5b2e2",
+  "healthBefore": {
+    "workouts": 1000,
+    "steps": 2
+  },
+  "healthAfter": {
+    "workouts": 1001,
+    "steps": 1
+  },
+  "stepsBefore": 2000,
+  "stepsAfter": 1000,
+  "trainingCyclesUnchangedByHealth": true,
+  "privateVersionsUnchangedByHealth": true,
+  "restoreChangedSections": [
+    "userProfiles",
+    "notificationPreferences"
+  ],
+  "restoreCounts": {
+    "personalGoalEvents": [
+      6,
+      6
+    ],
+    "personalGoalDrafts": [
+      0,
+      0
+    ],
+    "onboardingDrafts": [
+      0,
+      0
+    ],
+    "userProfiles": [
+      1,
+      1
+    ],
+    "userEquipment": [
+      1,
+      1
+    ],
+    "userConsiderations": [
+      1,
+      1
+    ],
+    "bodyMetrics": [
+      0,
+      0
+    ],
+    "coachPrivacyPreferences": [
+      0,
+      0
+    ],
+    "trainingCycles": [
+      1,
+      1
+    ],
+    "shifts": [
+      1,
+      1
+    ],
+    "shiftProtocols": [
+      1,
+      1
+    ],
+    "shiftObservations": [
+      3,
+      3
+    ],
+    "shiftGoalRevisions": [
+      1,
+      1
+    ],
+    "workoutSessions": [
+      1,
+      1
+    ],
+    "completedSets": [
+      1,
+      1
+    ],
+    "workoutDrafts": [
+      0,
+      0
+    ],
+    "workoutCheckIns": [
+      0,
+      0
+    ],
+    "userPrograms": [
+      1,
+      1
+    ],
+    "userProgramVersions": [
+      1,
+      1
+    ],
+    "userExercises": [
+      1,
+      1
+    ],
+    "coachProposals": [
+      0,
+      0
+    ],
+    "healthSummaries": [
+      0,
+      0
+    ],
+    "notificationPreferences": [
+      1,
+      1
+    ],
+    "cycleReviews": [
+      0,
+      0
+    ],
+    "workoutScheduleOverrides": [
+      0,
+      0
+    ]
+  },
+  "notificationsAllOff": true,
+  "restoredHealthChoice": "not-now"
+}

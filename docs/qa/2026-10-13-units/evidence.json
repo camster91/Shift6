@@ -5,7 +5,7 @@
   "os": "Windows 11 10.0.26300",
   "device": "Pixel 7 emulator, Android 16/API 36 x86_64, WHPX/host GPU",
   "scope": "Native evidence is attributed per filename/source in doc44; source tests do not prove human or physical-device acceptance.",
-  "report": "../../../44_NATIVE_UNITS_AND_PLAN_HISTORY_QA.md",
+  "report": "../../44_NATIVE_UNITS_AND_PLAN_HISTORY_QA.md",
   "files": [
     {
       "file": "imported-40kg-labelled-kg-after-fix-90d7.png",

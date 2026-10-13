@@ -1,14 +1,38 @@
 # Confirmed local schedule: native QA increment
 
-13 October 2026. Synthetic private plans and records only. Provisional engineering score remains **51/100** under [doc 34](34_HUMAN_USE_ACCEPTANCE.md), with unchanged [doc 40 weights](40_NATIVE_CONVENIENCE_QA.md). This report separates native evidence from source checks and pending acceptance.
+13 October 2026. Synthetic private plans and records only. Current provisional engineering score is **53/100** under [doc 34](34_HUMAN_USE_ACCEPTANCE.md), using the [doc 40 weights](40_NATIVE_CONVENIENCE_QA.md). This restores only the two integrity points deducted there for unresolved actual-unit provenance and private-version history. Native doc44/this report now directly verify those cases. Human-use acceptance remains unverified. This report separates native evidence from source checks and pending acceptance.
+
+| Area                 | Earned / available | Remaining limits                                         |
+| -------------------- | ------------------ | -------------------------------------------------------- |
+| First experience     | 12/20              | Intended-user comprehension and reviewed starter journey |
+| Integrity            | 16/20              | Full edge cases, physical/iOS parity and comprehension   |
+| Reliability          | 9/15               | Physical fault and recovery matrix                       |
+| Accessibility        | 4/15               | TalkBack/VoiceOver and all critical journeys             |
+| Privacy and control  | 6/10               | Exact-candidate traffic audit and user understanding     |
+| Visuals and motion   | 4/5                | Complete state/device audit                              |
+| Fitness content      | 1/5                | Qualified version-bound human review                     |
+| Sustained usefulness | 0/5                | Consented six-week cohort                                |
+| Distribution/support | 1/5                | Signed physical/store acceptance and support rehearsal   |
 
 ## Native candidate and execution environment
+
+Later candidate `7a811baa` has APK SHA-256 **5C0DA24C41FE4E64F7005DF11E2BCAFD6DADB9EDA12E953FBB11C30312CE4479** (1m47s, 756 tasks/30 executed). Its full verification passed **972 tests/134 suites** and both mobile exports. Source `158880e4` adds only the reviewed iOS harness confirmation/Imperial-selector contracts (four offline Python tests pass). A subsequent full rerun timed out one SQLite-backed component case at its unchanged 5-second limit (971 other tests passed); the unchanged 41-test component suite then passed at normal timeout. The unchanged final full retry passed **972/134, exit 0**, all repository checks and both exports (`verify-final-harness-retry.log`). No timeout was increased or assertion removed. The timeout's environmental cause is not established.
+
+Observed on `7a811baa`: a private QA Refresh draft survives upgrade/recovery; the Start preview displays **2026-10-13 · America/New_York**, Cancel returns to editing, and explicit **START CYCLE** creates one new cycle/baseline while pausing the prior cycle. Native UI cancellation alone does not prove zero intermediate writes. The final external export shows the new cycle/baseline, a single active cycle, and all older actuals/private versions preserved.
+
+The entered **QA note retained on return** survives navigation, force-close and the completed workout summary. This verifies ordinary native persistence/recovery; deferred-rejection/pre-debounce re-entry is separately covered by component and real SQLite regressions, not claimed as native injected-fault coverage. The original transient SQLite error cause remains unproven.
+
+**#357 native pass:** the same mounted Progress tab shows zero sets before logging, one saved set on return, then **one completed workout/two sets** after completing QA Refresh, without restarting. Volume is **450**, with unchanged previous-cycle comparison results. See `schedule-progress-before-workout-7a81`, `schedule-progress-one-set-on-return-7a81`, `schedule-progress-completed-on-return-7a81` and `schedule-progress-fresh-volume-7a81`.
+
+**#358 native pass:** the current restore entry says supported SHIFT6 JSON backup, and the native-picked preview displays **1,064 records** without the obsolete schema-12 label. After explicit deletion/restoration, `schedule-current-reexport-7a81.json` matches all **34 record sections** in `schedule-final-export-7a81.json` exactly: **10 saved actuals, six unit-provenance rows, two schedule baselines, one revision and the retained note**. Export time changes normally. This repeats latest-candidate recovery with provider/memory/notifications already off; it does not test enabled-consent reset.
+
+Harness distinctions: stale `Start cycle`, `CONFIRM` and unsaved-set `Save` selectors were refused before acting; fresh native labels were used for explicit actions. An off-screen deletion attempt was refused and the ensuing restore correctly rejected the non-empty installation. Fresh visibility/readback then completed the intended delete/restore. One diagnostic initially used `notes` rather than the exported `note` key; the real key/readback confirmed the note. These are harness failures, not missing app records or successful writes. Preserve the captures instead of crediting failed commands.
 
 Authorized local host CAM-DESKTOP, Windows 11 build 26300; Pixel 7 Shift6-QA emulator, Android 16/API 36, x86_64, emulator-5554, WHPX/host GPU. ADB was expressly authorized. Effective task instructions permit unrestricted filesystem/network access; the app is guest-only, offline, with no API backend configured. This is a native release APK, not Expo Go, a physical Samsung build or a signed store candidate.
 
 Native source: **`eb6cd6d2`**. APK SHA-256: **`6BB8653A697B9610BEB9E1EF90F1C952732044674861BAE10FD031E140EA2061`**. Gradle succeeded in **4m29s**, **756 tasks / 30 executed** (`build-schedule-eb6c.log`). Later source commits are not automatically covered by this APK.
 
-Intended packaged evidence: [schedule inventory](qa/2026-10-13-schedule/evidence.json). The coordinator will copy/hash screenshots, native UI XML and externally received JSON. Evidence stems below refer to matching PNG/XML files. QA workspace exports are synthetic and were opened in the separate native QA JSON Receiver after sharing through Android's native share sheet.
+Packaged evidence: [schedule inventory](qa/2026-10-13-schedule/evidence.json), with copied/hash-verified screenshots, native UI XML and externally received JSON. Evidence stems below refer to matching PNG/XML files. QA workspace exports are synthetic and were opened in the separate native QA JSON Receiver after sharing through Android's native share sheet.
 
 ## Observed native passes
 
@@ -55,4 +79,22 @@ These checks support the scheduling portion of [#315](https://github.com/camster
 - Reminder permission/opt-in, consent-preserving recalculation, actual delivery/actions and source agreement across Calendar/Home/Coach on this candidate remain pending. A saved planning date does not prove a notification was delivered.
 - Physical S25 Ultra/iPhone, current-feature iOS, TalkBack/VoiceOver, complete large-text/keyboard/media acceptance and human participants remain pending. The earlier iOS simulator run belongs to its earlier SHA; Windows-local iOS testing is unavailable.
 
-No live Gemini call, backend activation, public content approval, paid service, merge, publication or store submission. Follow [doc 43's shipping todo](43_SHIPPING_GOAL_AND_TODO.md), [doc 38's store checklist](38_STORE_RELEASE_CHECKLIST.md) and [doc 40's exact ADB launch instructions](40_NATIVE_CONVENIENCE_QA.md#exact-native-run). Measure the generated APK hash before installation because subsequent builds overwrite its path. Keep unknown rubric weight unearned and retain the 51/100 provisional score until additional dated acceptance evidence warrants a change.
+No live Gemini call, backend activation, public content approval, paid service, merge, publication or store submission. Follow [doc 43's shipping todo](43_SHIPPING_GOAL_AND_TODO.md), [doc 38's store checklist](38_STORE_RELEASE_CHECKLIST.md) and [doc 40's exact ADB launch instructions](40_NATIVE_CONVENIENCE_QA.md#exact-native-run). Measure the generated APK hash before installation because subsequent builds overwrite its path. Keep unknown rubric weight unearned; the current 53/100 score restores only the two documented integrity deductions.
+
+## Exact current PC run
+
+A frozen, hash-verified emulator APK is saved outside Git at `C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\app-release-7a811baa-x86_64.apk`. With the existing Shift6-QA emulator running:
+
+```powershell
+$shift6Adb = 'C:\Users\camst\AppData\Local\Android\Sdk\platform-tools\adb.exe'
+& $shift6Adb -s emulator-5554 install -r 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\app-release-7a811baa-x86_64.apk'
+& $shift6Adb -s emulator-5554 shell am start -n com.shift6.app/.MainActivity
+```
+
+If the emulator is stopped, start the existing AVD first:
+
+```powershell
+Start-Process -FilePath 'C:\Users\camst\AppData\Local\Android\Sdk\emulator\emulator.exe' -ArgumentList '-avd Shift6-QA -accel on -gpu host -no-snapshot-load' -WindowStyle Hidden
+```
+
+This x86_64 APK is for the PC emulator. The S25 Ultra requires a separate ARM64 candidate and physical-device acceptance. No Expo Go is used. Local iOS requires a Mac or signed iPhone build; the latest GitHub runtime attempt stopped before testing for lack of a matching successful native artifact. The corrected iOS harness and four contracts do not establish a simulator pass.

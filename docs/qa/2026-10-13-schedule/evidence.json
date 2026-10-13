@@ -1,0 +1,470 @@
+{
+  "date": "2026-10-13",
+  "host": "CAM-DESKTOP",
+  "device": "Pixel 7, Android 16/API 36 x86_64 emulator, WHPX/host GPU",
+  "data": "synthetic only",
+  "report": "../../45_NATIVE_SCHEDULE_QA.md",
+  "scope": "Source/binary attribution and pending acceptance are explicit in doc45.",
+  "files": [
+    {
+      "file": "schedule-after-local-deletion-eb6c.png",
+      "bytes": 201279,
+      "sha256": "1f5bbf7586af78a8a95f155e168776a30b91c710bcf499bb8fd38455ee0a5b5f"
+    },
+    {
+      "file": "schedule-after-local-deletion-eb6c.xml",
+      "bytes": 18560,
+      "sha256": "036998f73c371fe664e1c41df7dc1be6469e3c8e2914120be1ee79551a09ec36"
+    },
+    {
+      "file": "schedule-before-current-deletion-recheck-7a81.png",
+      "bytes": 225272,
+      "sha256": "a440fc6cf0cd39768d992e7a170fbd892abed3df7bd7d23aaed8e0839c9da5b5"
+    },
+    {
+      "file": "schedule-before-current-deletion-recheck-7a81.xml",
+      "bytes": 18600,
+      "sha256": "6556fbc28893d32fefb5bb0534cd35020b2e2016f18af234e7a2217872de5227"
+    },
+    {
+      "file": "schedule-builder-actions-7a81.png",
+      "bytes": 180503,
+      "sha256": "f2e8ebc71ede92295deed946abf7ab55c4ee63186f0ef6e103f6ce5e2750b1b9"
+    },
+    {
+      "file": "schedule-builder-actions-7a81.xml",
+      "bytes": 27560,
+      "sha256": "3719ab3ce0ba24c761af92b64f769dff203de8c8967a2894cbdeda45e9f90144"
+    },
+    {
+      "file": "schedule-builder-bottom-7a81.png",
+      "bytes": 211088,
+      "sha256": "bd31d8dece5b635e7597f779d7b277faca6cfe9e9a8699452fa21043b66fe169"
+    },
+    {
+      "file": "schedule-builder-bottom-7a81.xml",
+      "bytes": 32849,
+      "sha256": "b48e09704175d7a7a23d0cc3f8d9dce0e67da557ee6b1eba396e178a1cd62326"
+    },
+    {
+      "file": "schedule-builder-confirmation-7a81.png",
+      "bytes": 197659,
+      "sha256": "aa510257d396c17bd4e29d16d54201ce87dfc07f3847a177c7dbbfab3bb0ea49"
+    },
+    {
+      "file": "schedule-builder-confirmation-7a81.xml",
+      "bytes": 6972,
+      "sha256": "085408f8fd7134df72d5b9ed0dacb07681d79920d6e0569a3746f367ff165af1"
+    },
+    {
+      "file": "schedule-builder-date-preview-7a81.png",
+      "bytes": 168571,
+      "sha256": "948164b342976ac827e0700a61c5dacb9a4049ce32e0e2be4d962a41a3d275ed"
+    },
+    {
+      "file": "schedule-builder-date-preview-7a81.xml",
+      "bytes": 18194,
+      "sha256": "c54e7380ba3cd2011d4d7e7350137461386650a6b0b7a73c03b328c57d9f2c16"
+    },
+    {
+      "file": "schedule-builder-new-cycle-home-7a81.png",
+      "bytes": 274790,
+      "sha256": "fb67c1b5f01e8eee9d561de752543c4989b92f73dc4d43a51882c812d318ee20"
+    },
+    {
+      "file": "schedule-builder-new-cycle-home-7a81.xml",
+      "bytes": 20592,
+      "sha256": "8dc6a89c4b04f40c59835c7b2e070487f8b146ebb6267ad82705f279e92612da"
+    },
+    {
+      "file": "schedule-builder-start-cancelled-7a81.png",
+      "bytes": 168282,
+      "sha256": "a5cb05adb662526b145e6382943d18d2eb89da80063b4a31f8c986ba3d48044b"
+    },
+    {
+      "file": "schedule-builder-start-cancelled-7a81.xml",
+      "bytes": 18194,
+      "sha256": "c54e7380ba3cd2011d4d7e7350137461386650a6b0b7a73c03b328c57d9f2c16"
+    },
+    {
+      "file": "schedule-builder-start-confirmed-7a81.png",
+      "bytes": 197604,
+      "sha256": "d1b8eb1fd8b88d77cd32c2f54b584e51f202e45c06f3a0d00a399b7299b332b2"
+    },
+    {
+      "file": "schedule-builder-start-confirmed-7a81.xml",
+      "bytes": 6972,
+      "sha256": "085408f8fd7134df72d5b9ed0dacb07681d79920d6e0569a3746f367ff165af1"
+    },
+    {
+      "file": "schedule-builder-start-preview-eb6c.png",
+      "bytes": 263799,
+      "sha256": "b78ed9f3ea669bfafab8d24234905dd41ba13200f98452e43c1ce48d9c12819a"
+    },
+    {
+      "file": "schedule-builder-start-preview-eb6c.xml",
+      "bytes": 11991,
+      "sha256": "0ef6751633f329c18082539fb2a53f9625fa2d7763967c3b98679b0e9359f76e"
+    },
+    {
+      "file": "schedule-cancel-export-eb6c.json",
+      "bytes": 365695,
+      "sha256": "872ad7108042bf90da21ef38b303b231db874de2b9358a6f11093ffac354a853"
+    },
+    {
+      "file": "schedule-cancel-export-received-eb6c.png",
+      "bytes": 78520,
+      "sha256": "0494fbc0570df9d9b8e67fc9bc73c72a6eeebb2a9b2a102a94a96db9dcb949e7"
+    },
+    {
+      "file": "schedule-cancel-export-received-eb6c.xml",
+      "bytes": 1681,
+      "sha256": "6d459eabffa7ee012e387a966e9a0c224cbb26127f4b343b1ad3eadf1e34e8fc"
+    },
+    {
+      "file": "schedule-cancelled-calendar-eb6c.png",
+      "bytes": 193115,
+      "sha256": "90932dbc745553399973a31aa13fea1dc09cf8149be566051e0ce9a771c359e0"
+    },
+    {
+      "file": "schedule-cancelled-calendar-eb6c.xml",
+      "bytes": 28134,
+      "sha256": "a5593bd83d26b65d6028bc2f0ced0995b9026266a8cb50d129ed66fb4833bffa"
+    },
+    {
+      "file": "schedule-confirm-export-eb6c.json",
+      "bytes": 368286,
+      "sha256": "3bcaa44c43fbda1d9575ebb84a0ba47ee06de51de878210d9e9f6d9c047af182"
+    },
+    {
+      "file": "schedule-confirm-export-received-eb6c.png",
+      "bytes": 78249,
+      "sha256": "10f4ad712a855f5e96f7287ee78f0371f5b1d0fa23d5d08aff0b22baf53980d4"
+    },
+    {
+      "file": "schedule-confirm-export-received-eb6c.xml",
+      "bytes": 1681,
+      "sha256": "0b441ba5c563e736e5e5af801ca6aa27b1c04d9f6fb5a61e3e3db188f34b772b"
+    },
+    {
+      "file": "schedule-confirmed-move-recovered-eb6c.png",
+      "bytes": 196184,
+      "sha256": "867b346e3bd8b6ad22b2fb2dbc950cc6573f5084c02737f3ad15809c7bc13408"
+    },
+    {
+      "file": "schedule-confirmed-move-recovered-eb6c.xml",
+      "bytes": 30210,
+      "sha256": "ed023746a5dbd5bf25913d5d2a9479cf84ed4650e41f0ec19cfa44d428132388"
+    },
+    {
+      "file": "schedule-current-data-deleted-7a81.png",
+      "bytes": 201468,
+      "sha256": "8dabd42400b785f47d8708b3a241fcb20a9c3fb06b1ddf25c7723b0592ec7ef4"
+    },
+    {
+      "file": "schedule-current-data-deleted-7a81.xml",
+      "bytes": 18560,
+      "sha256": "036998f73c371fe664e1c41df7dc1be6469e3c8e2914120be1ee79551a09ec36"
+    },
+    {
+      "file": "schedule-current-preview-accepted-7a81.png",
+      "bytes": 362646,
+      "sha256": "0ca283028374811b74a279dd4130d0c8042b9f2a2db3e36e0234c8b5cd4fe8d7"
+    },
+    {
+      "file": "schedule-current-preview-accepted-7a81.xml",
+      "bytes": 15066,
+      "sha256": "550a52ad22e076a52013e8678e9a404924438ace23775f2ba2a35f6f4eedd230"
+    },
+    {
+      "file": "schedule-current-reexport-7a81.json",
+      "bytes": 381837,
+      "sha256": "e767485e3bbb7a6946893a183ceb49676131fc7835fc4b574be748a4091d35e5"
+    },
+    {
+      "file": "schedule-current-reexport-received-7a81.png",
+      "bytes": 77569,
+      "sha256": "6e5216c241dd704bff5c9c0424551f9a6005b82256c286336baa047bf0b511a2"
+    },
+    {
+      "file": "schedule-current-reexport-received-7a81.xml",
+      "bytes": 1681,
+      "sha256": "3b2eef331b1317c09cdf83166bb7504080ee40da42c44f45817e4e1028c1e0be"
+    },
+    {
+      "file": "schedule-current-restore-confirmed-7a81.png",
+      "bytes": 354506,
+      "sha256": "d48c343a7b0b061e13dfd9fb46002277229ff283ac8c93932907b397bf6f35bb"
+    },
+    {
+      "file": "schedule-current-restore-confirmed-7a81.xml",
+      "bytes": 15414,
+      "sha256": "db4eb6375bf74b7456adc449547595ddab1bd08c64398ea2894c32a812b7b716"
+    },
+    {
+      "file": "schedule-current-restore-guidance-7a81.png",
+      "bytes": 102037,
+      "sha256": "59792333fb7684019acc65132b33d7d0fed2d9d3dc2240ec928f5eb3f9f5216e"
+    },
+    {
+      "file": "schedule-current-restore-guidance-7a81.xml",
+      "bytes": 7286,
+      "sha256": "4defb9fc7cbc1c81365fad0340da1998fa788a6dcc15502c8b55895b081d0f95"
+    },
+    {
+      "file": "schedule-current-restore-preview-7a81.png",
+      "bytes": 147889,
+      "sha256": "76a1e2c1e838470c1ee18915c1be4c44855cb4f6532e984fb4f8f3e83e9fde9c"
+    },
+    {
+      "file": "schedule-current-restore-preview-7a81.xml",
+      "bytes": 7774,
+      "sha256": "c54c77cd0223cbeee57d10198cb04939f7e58e6489de813e4b36135764834f59"
+    },
+    {
+      "file": "schedule-current-restore-result-7a81.png",
+      "bytes": 147903,
+      "sha256": "bb626e37c7856b92d025721be73ef121c682b4deeac476241268a71d763225c0"
+    },
+    {
+      "file": "schedule-current-restore-result-7a81.xml",
+      "bytes": 7774,
+      "sha256": "c54c77cd0223cbeee57d10198cb04939f7e58e6489de813e4b36135764834f59"
+    },
+    {
+      "file": "schedule-date-confirmation-preview-eb6c.png",
+      "bytes": 266830,
+      "sha256": "ad50075d9ec692c5382113ad78f0e4678f6af521f7fc85ca85386e6808119820"
+    },
+    {
+      "file": "schedule-date-confirmation-preview-eb6c.xml",
+      "bytes": 21515,
+      "sha256": "647afc7cb53edfdc17d3b4d26ddf595daee0fce5ee0d4fc69cf3281cd80657b4"
+    },
+    {
+      "file": "schedule-delete-confirmation-eb6c.png",
+      "bytes": 210706,
+      "sha256": "0d4d435c82af4266a2da17705c9345e80e4a33f5fbf665da5be7422fc6098128"
+    },
+    {
+      "file": "schedule-delete-confirmation-eb6c.xml",
+      "bytes": 7063,
+      "sha256": "2a97109b0a88994d858efd95061b1f4f16c3f612d75f588c7c4b83cf88204809"
+    },
+    {
+      "file": "schedule-deleted-export-eb6c.json",
+      "bytes": 3029,
+      "sha256": "cb3d7274e11af67d54f8ec02a34bae227836f73c54ee977cbd31f1cf3d06d869"
+    },
+    {
+      "file": "schedule-deleted-export-received-eb6c.png",
+      "bytes": 76202,
+      "sha256": "89239848d2a4f54ac87a28ba76eb0f9806475ad30da351d54eeb49337c31f999"
+    },
+    {
+      "file": "schedule-deleted-export-received-eb6c.xml",
+      "bytes": 1676,
+      "sha256": "87d9d5a288dda9cda1abf807824be80b966c6d30deb11abde627c57a3cec1c75"
+    },
+    {
+      "file": "schedule-draft-recovery-choice-7a81.png",
+      "bytes": 152645,
+      "sha256": "4fda9af6b9a0eacd1cdf95672abef9e0ac4edd1489a60f7999890df71b6ec387"
+    },
+    {
+      "file": "schedule-draft-recovery-choice-7a81.xml",
+      "bytes": 9578,
+      "sha256": "b6bea0619df6c3630293673356b26301e99299e7df92920db00c421eb1f4eec0"
+    },
+    {
+      "file": "schedule-final-export-7a81.json",
+      "bytes": 381837,
+      "sha256": "79c57e4ac7bf735679095fc73b863daab2cae5b5a9c79be46235922db9374ff1"
+    },
+    {
+      "file": "schedule-final-export-received-7a81.png",
+      "bytes": 77407,
+      "sha256": "8f99669b8bb883e6bc5d8a68003b53c04c45a411d76901191460aecf5ca87ea5"
+    },
+    {
+      "file": "schedule-final-export-received-7a81.xml",
+      "bytes": 1681,
+      "sha256": "3b2eef331b1317c09cdf83166bb7504080ee40da42c44f45817e4e1028c1e0be"
+    },
+    {
+      "file": "schedule-first-confirmed-move-eb6c.png",
+      "bytes": 216641,
+      "sha256": "4e47d3bc7ba3647d15cd627c767ec90e1b9ad46e9a7bce9834731853a4894707"
+    },
+    {
+      "file": "schedule-first-confirmed-move-eb6c.xml",
+      "bytes": 27530,
+      "sha256": "66ba39d7fa67a2d3f54c923f2ec43a0aade1e8fff2bca3b32deb4efb56217b95"
+    },
+    {
+      "file": "schedule-first-move-preview-eb6c.png",
+      "bytes": 188134,
+      "sha256": "a4b734bbc5bce0525e0a22cd6b944766dd827cd0532c8216951d9807fe3d3ba3"
+    },
+    {
+      "file": "schedule-first-move-preview-eb6c.xml",
+      "bytes": 23401,
+      "sha256": "bf9558e347cbc2e4f523d8d4bb87f5399634a5280bc22db69e5f9482a8ba55e3"
+    },
+    {
+      "file": "schedule-legacy-calendar-entry-eb6c.png",
+      "bytes": 234966,
+      "sha256": "e88a807ca9aadac656e912a8df331f587908c0562e854b51ed36d7e88cf88e7e"
+    },
+    {
+      "file": "schedule-legacy-calendar-entry-eb6c.xml",
+      "bytes": 25417,
+      "sha256": "0725060d513813f6eb8c7dd33b5e5178dc93771ef31d4a6a30818e95a1d094c2"
+    },
+    {
+      "file": "schedule-native-picker-eb6c.png",
+      "bytes": 103748,
+      "sha256": "fb8532f044aaf646bcf1c4cceff0350b0ed6a7c92b9686384a4f4325d1ec3094"
+    },
+    {
+      "file": "schedule-native-picker-eb6c.xml",
+      "bytes": 40804,
+      "sha256": "f1c3df27fa75ac9b615f2a481295a47d2c483da9346afede1c528b1b00e945e2"
+    },
+    {
+      "file": "schedule-native-restore-entry-eb6c.png",
+      "bytes": 103532,
+      "sha256": "1728753cc03ff7f7b3b7ea48e10c603348c72de12c1cbee8ca32aedec38aeae3"
+    },
+    {
+      "file": "schedule-native-restore-entry-eb6c.xml",
+      "bytes": 7286,
+      "sha256": "7fdd0493012fa76a7e71d26e715b76510dc6d3be768f985e512b29dd694b842f"
+    },
+    {
+      "file": "schedule-new-cycle-private-plans-eb6c.png",
+      "bytes": 270354,
+      "sha256": "7df04be55713185bdd1186facbdf0c17c3e6bd3db4e0005ff339d07069abfa8d"
+    },
+    {
+      "file": "schedule-new-cycle-private-plans-eb6c.xml",
+      "bytes": 18484,
+      "sha256": "8e2aa7d3fa491418ecf686441064b54bd8a2a9f11e6a795922f6e399e1f0adc7"
+    },
+    {
+      "file": "schedule-note-after-navigation-7a81.png",
+      "bytes": 230126,
+      "sha256": "861c11085aaea74e4fc2f090dab82dfa2872df7b144cf0d69a4982a15e7f3ca2"
+    },
+    {
+      "file": "schedule-note-after-navigation-7a81.xml",
+      "bytes": 18770,
+      "sha256": "7da9bc3fcda00d27ad32feb34734e45f5c3acfb5d99b584770613925feb293a5"
+    },
+    {
+      "file": "schedule-note-force-close-recovered-7a81.png",
+      "bytes": 230174,
+      "sha256": "13c31c77998242f0757a18d0ca0a12ddb3cb20ea23a64eccae0b042d5d7bd6db"
+    },
+    {
+      "file": "schedule-note-force-close-recovered-7a81.xml",
+      "bytes": 18770,
+      "sha256": "7da9bc3fcda00d27ad32feb34734e45f5c3acfb5d99b584770613925feb293a5"
+    },
+    {
+      "file": "schedule-progress-before-workout-7a81.png",
+      "bytes": 222293,
+      "sha256": "42d54578cdedb2b9456bc6ba398a92c1dfee031a2742aa8700f7649417c13c72"
+    },
+    {
+      "file": "schedule-progress-before-workout-7a81.xml",
+      "bytes": 29410,
+      "sha256": "a2267dd41ec6e4646461cecf8817600cc434b8342b5bd0f9e46e0802b4e9eafd"
+    },
+    {
+      "file": "schedule-progress-completed-on-return-7a81.png",
+      "bytes": 218226,
+      "sha256": "80c3f4ce4cd44c5e4e848e8346cee21521a1fcd6cb887aa86ec5a4d6ea832734"
+    },
+    {
+      "file": "schedule-progress-completed-on-return-7a81.xml",
+      "bytes": 29753,
+      "sha256": "2feba5b683046df3a4cdb20662c6bdd09849d4cb7cd625816bb70b7d62fe9e23"
+    },
+    {
+      "file": "schedule-progress-fresh-volume-7a81.png",
+      "bytes": 219200,
+      "sha256": "6275298d191253c6cd677ad92cd57b96ee9076679949b385432868585fe760f9"
+    },
+    {
+      "file": "schedule-progress-fresh-volume-7a81.xml",
+      "bytes": 28240,
+      "sha256": "d3bff7c24ce2ec26daf83def143e87b631d1e6ff0ac6d048522b35e4904b4bfb"
+    },
+    {
+      "file": "schedule-progress-one-set-on-return-7a81.png",
+      "bytes": 221163,
+      "sha256": "5fa554b33a9f3c1aaf69a697d0cdbaa94110dc2f6ca4fc1180e3339886ef9a5e"
+    },
+    {
+      "file": "schedule-progress-one-set-on-return-7a81.xml",
+      "bytes": 29410,
+      "sha256": "58171a13f6f5fae3a0e1a7589652f1b766eb547b21a79512f4ccb16d56cfb0d1"
+    },
+    {
+      "file": "schedule-restore-confirm-dialog-eb6c.png",
+      "bytes": 305942,
+      "sha256": "b47f867ba52beb5e3740314b9a248d3e9e42ef93d87264798a68adfdec2a9c8d"
+    },
+    {
+      "file": "schedule-restore-confirm-dialog-eb6c.xml",
+      "bytes": 6907,
+      "sha256": "045e9f6c8d713fdea0d95f17158a97a1949f120137de1dd1108be37d02ce0041"
+    },
+    {
+      "file": "schedule-restore-preview-eb6c.png",
+      "bytes": 366830,
+      "sha256": "3798dcdf234e60e520bd94a4ec3823da03f64c31e640c24a172e5a9d8e93be23"
+    },
+    {
+      "file": "schedule-restore-preview-eb6c.xml",
+      "bytes": 15080,
+      "sha256": "6f875f624db9aa124001ca983f57f2dbd88fddab55a940bf324c8e2a0ed6cbe6"
+    },
+    {
+      "file": "schedule-restore-result-eb6c.png",
+      "bytes": 142542,
+      "sha256": "3fcedb181deba724a3062950a0bd4d95eb7fb2b7a775fee8eb8980b3198307d4"
+    },
+    {
+      "file": "schedule-restore-result-eb6c.xml",
+      "bytes": 8460,
+      "sha256": "610443c7453b34c75b2f96bde37592048174313bfe053a7a927e4f35ecd9a3a0"
+    },
+    {
+      "file": "schedule-restored-calendar-projection-eb6c.png",
+      "bytes": 196579,
+      "sha256": "c4e65aa0ee3e3b8257ea3bbb1f7eb137398df40ba1bf6a94d040850ba3dcdda4"
+    },
+    {
+      "file": "schedule-restored-calendar-projection-eb6c.xml",
+      "bytes": 30215,
+      "sha256": "f15ac350557e0d5cd2b1d49d298c0a8f18879eb4732dd66c52580d70ef43305c"
+    },
+    {
+      "file": "schedule-restored-export-eb6c.json",
+      "bytes": 368286,
+      "sha256": "531cd5b2e8db491774d073f68ae4592a2862ff773fc84e10dda6a22454b6daf2"
+    },
+    {
+      "file": "schedule-restored-export-received-eb6c.png",
+      "bytes": 78234,
+      "sha256": "a03496ada2c6ac226b2c629df2d965a7599e22a8fccc4412be5f38e64eae1c9d"
+    },
+    {
+      "file": "schedule-restored-export-received-eb6c.xml",
+      "bytes": 1681,
+      "sha256": "0b441ba5c563e736e5e5af801ca6aa27b1c04d9f6fb5a61e3e3db188f34b772b"
+    }
+  ]
+}

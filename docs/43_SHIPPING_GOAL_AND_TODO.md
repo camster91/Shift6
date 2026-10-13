@@ -2,19 +2,19 @@
 
 13 October 2026. This is the current delivery index for the expanded iOS/Android goal. It supersedes the delivery order in doc 37, while preserving that document's dated audit and evidence. It does not approve content, alter the shipping guest configuration or authorize a release.
 
-Native QA subsequently filed #352–#357 for invalid optional measurements, misleading imported units, compressed set targets, custom movement labels, correction timestamps and stale Progress records after completion. The refreshed backlog is **47 open issues**; the original 41-issue reconciliation remains a dated snapshot. All six new defects are mapped below rather than excluded from the shipping TODO.
+Native QA subsequently filed #352–#357 for invalid optional measurements, misleading imported units, compressed set targets, custom movement labels, correction timestamps stale Progress records after completion and outdated restore labels. The refreshed backlog is **48 open issues**; the original 41-issue reconciliation remains a dated snapshot. All seven new defects are mapped below rather than excluded from the shipping TODO.
 
 ## Goal and product promise
 
 Build an excellent mobile fitness app that helps a person choose one measurable six-week goal, establish an honest baseline, train with little manual effort, recover interrupted work, understand comparable results and choose their next step. Local Coach should explain and guide these existing workflows. Optional voice and Gemini must reduce effort without guessing achieved results or taking control of training.
 
-Aim for **95+/100 and ultimately full evidenced coverage** under [doc 34](34_HUMAN_USE_ACCEPTANCE.md). The current provisional engineering score is **51/100**, from [doc 40](40_NATIVE_CONVENIENCE_QA.md); human acceptance is unverified. This is an aspiration, not a forecast or a claim to be the best app on the market. Comparative superiority would require a separate, current benchmark with intended users.
+Aim for **95+/100 and ultimately full evidenced coverage** under [doc 34](34_HUMAN_USE_ACCEPTANCE.md). The current provisional engineering score is **53/100**, from [doc 45](45_NATIVE_SCHEDULE_QA.md) using the dated doc 40 weights; human acceptance is unverified. This is an aspiration, not a forecast or a claim to be the best app on the market. Comparative superiority would require a separate, current benchmark with intended users.
 
 Core training remains free, local and usable offline. Keep deterministic progression, immutable history, explicit actual values and units, optional assessments, privacy controls, Higgsfield assets, reduced motion and the qualified public-content allowlist. More features do not automatically earn more points. A critical safety, privacy, data-loss or accessibility failure blocks launch regardless of score.
 
 ## Verified starting point
 
-- Initial GitHub reconciliation: **41 open issues**, including umbrella epics; subsequent native findings increased the mapped backlog to **47**. Issue count is not a count of missing features. No issue was closed by this reconciliation.
+- Initial GitHub reconciliation: **41 open issues**, including umbrella epics; subsequent native findings increased the mapped backlog to **48**. Issue count is not a count of missing features. No issue was closed by this reconciliation.
 - `main` contains merged guest release PR #330 (`4e8a2c9b`). Later work remains in reviewable draft PRs, not merged or published.
 - [#344](https://github.com/camster91/Shift6/pull/344): guest guidance/save copy/goal units, native Android QA and earlier iOS CI evidence.
 - [#346](https://github.com/camster91/Shift6/pull/346), stacked on #344: local restore, Health Connect pagination/totals and saved-plan discovery. Native synthetic framework/picker/export evidence is in doc 39.
@@ -40,7 +40,7 @@ Source implemented means code exists. Native observed means a stated scenario wa
 | #273, #307, #340 | Standard setup/recovery and local guided review exist. Finish new/returning native cases, explicit confirmation/readback and human comparison. Natural-language/provider onboarding is not delivered.                                                                                                               | T03, T11      |
 | #274, #275, #309 | Catalogue/taxonomy/private builders exist; zero public entries are approved. Prepare three exact executable pilot versions and obtain qualified review of every referenced instruction/protocol/return rule before enabling. Twenty programs/300 exercises remain reviewed expansion breadth, not proof of quality. | T04, T10      |
 | #345             | Saved private plans are discoverable; Android relaunch/copy readback observed. Later source and iOS/physical parity still need acceptance.                                                                                                                                                                          | T03, T08      |
-| #348             | Immutable version/idempotency/rollback and explicit new-copy editor implemented with real SQLite regressions. Native copy/save/recovery and old-cycle snapshot proof pending.                                                                                                                                       | T03           |
+| #348             | Immutable versions and new-copy recovery are source-tested and native observed in doc44. Original private versions and prior-cycle actuals remain unchanged in external exports. Physical/iOS and complete acceptance remain pending.                                                                               | T03           |
 | #337             | Strict local pasted-text preview/import implemented and native observed. Photo/OCR extraction remains separate work with rights/privacy/manual correction; no automatic import.                                                                                                                                     | T07           |
 | #276, #310       | Focused logging, recovery, partial completion and reduced manual entry implemented/native observed on earlier binaries. Recheck latest transactions, corrections, rest and saved/draft identity; measure taps and comprehension.                                                                                    | T03, T11      |
 | #347             | Schema-14 actual/draft kg/lb provenance and comparable calculations implemented. New invalid-load refusal and previous-load labels need native proof; legacy unknown units remain unknown.                                                                                                                          | T03           |
@@ -68,15 +68,18 @@ Follow-up issue mapping:
 | #352  | Native `0d54f755` silently dropped invalid RIR. `71babfc8` passes 872 tests and native refusal, retained draft through force-close, zero correction and external single-insert/history readback in doc 42. Other platforms and complete measurement acceptance remain open.                                            | T03, T08 |
 | #353  | Native `90d7128c` corrects the imported 40kg label, recovers kg/lb draft targets and preserves original saved versions. Full verify 874/129 passes; native reverse-profile case and device acceptance remain pending.                                                                                                  | T03, T08 |
 | #354  | Native loaded-set review compressed the target into a narrow column. `61e03f8e` wraps controls below a full-width set header; full verify 874/129 passes. Native normal and 200% text screenshots show readable targets and visible Edit controls. Physical-device and assistive-technology acceptance remain pending. | T03, T09 |
-| #355  | Progress calculates correct targets but shows internal custom IDs. `8353887f` uses existing owned movement labels. Source screen regression passes; native readback remains pending.                                                                                                                                   | T03, T09 |
-| #356  | Native unit correction overwrites completion time. `a013edf3` preserves occurrence time and records edit time separately; `2fe82a20` separates new-correction and legacy-backup tests. Full verify passes 877 tests/130 suites; fresh native timestamp readback is pending. No automatic backdating.                   | T03, T08 |
-| #357  | Native `2fe82a20` retains pre-completion Progress totals on tab return; reload restores actual records. Focus refresh and stale-read guards are being implemented; changed-binary readback remains pending.                                                                                                            | T03, T09 |
+| #355  | Native `2fe82a20` shows owned QA KG/LB names with unchanged 45kg/95lb targets after reload. Separate tab freshness failure is #357. Physical/iOS acceptance pending.                                                                                                                                                   | T03, T09 |
+| #356  | Native `2fe82a20` correction retains occurrence time and separately records edit time; same ID and other actuals/versions unchanged in external JSON. Full 877/130 passes; older incorrect timestamps are not backdated. Physical/iOS acceptance pending.                                                              | T03, T08 |
+| #357  | Native `2fe82a20` retains pre-completion Progress totals on tab return; reload restores records. `84632358` focus refresh and stale-read guards pass focused tests/source review; changed-binary readback pending.                                                                                                     | T03, T09 |
+| #358  | Native `eb6cd6d2` restore labels incorrectly say schema 12 for a schema 15 backup. `05d4cf32` uses supported-backup guidance and actual record count; native 7a811baa preview correctly shows 1,064 records and restores/re-exports all record sections exactly.                                                       | T03, T09 |
 
 ## Ordered TODO and acceptance receipts
 
 Follow-up #357 belongs to T03/T09: mounted Progress retains pre-completion records when returning from a finished workout. Native `2fe82a20` reproduces it; a focus refresh fix and changed-binary record readback are pending. Reload restores the actual totals; no data loss is inferred.
 
-T04 confirmed scheduling source is integrated at `eb6cd6d2`: frozen dates/timezones, atomic baseline plus first move, append-only revisions, shared readers and guarded Start receipts. Full verification passes **942 tests/133 suites** and both mobile exports. Native schema-15 scheduling, restore and reminder acceptance remain pending. This does not complete repeat-week, first-class Shift handover or qualified return prescriptions.
+T04 confirmed scheduling source is integrated at `eb6cd6d2`: frozen dates/timezones, atomic baseline plus first move, append-only revisions, shared readers and guarded Start receipts. Full verification passes **942 tests/133 suites** and both mobile exports. Doc45 observes native Cancel/Confirm, recovery, zero-record deletion and exact 1,054-record restore/re-export. Remaining Start/timezone/grid/reminder acceptance is pending. This does not complete repeat-week, first-class Shift handover or qualified return prescriptions.
+
+Current source `7a811baa` passes full verification with **972 tests/134 suites** and both mobile exports. It adds the Progress refresh, dirty-note retries and corrected restore copy. Its native retests are in progress. The dated Coach review domain is prepared and source-tested; persistence and user interface are not delivered yet.
 
 - [x] **T01 — Reconcile scope and live backlog.** Map all 41 open issues, distinguish main from draft work, record goal/score and preserve dated evidence. Publish this index in a reviewable commit and link the master issue; no issue closure implied.
 - [x] **T02 — Stabilize one integrated native candidate.** At `71babfc8`, dependencies/native voice compile, full verify (872/129) and Android APK build pass; source/hash and native regression readback are in doc 42. This is an emulator test candidate, not a signed release. Repeat affected checks after subsequent implementation changes.
@@ -97,18 +100,18 @@ T04 confirmed scheduling source is integrated at `eb6cd6d2`: frozen dates/timezo
 
 ## Score and evidence priorities
 
-| Doc-34 area                    |  Weight | Current provisional points | Evidence needed to improve                                                              |
-| ------------------------------ | ------: | -------------------------: | --------------------------------------------------------------------------------------- |
-| Useful first experience        |      20 |                         12 | Independently understood setup/private route/goal and reviewed useful public entry      |
-| Training/measurement integrity |      20 |                         14 | Native actual units, immutable history, comparable measurements and user comprehension  |
-| Reliability/recovery           |      15 |                          9 | Exact new candidate and physical offline/upgrade/fault/large-backup matrix              |
-| Accessibility/ergonomics       |      15 |                          4 | Real TalkBack/VoiceOver/largest text and low-burden task success                        |
-| Privacy/control                |      10 |                          6 | Exact candidate traffic/disclosure/control audit and backup/delete understanding        |
-| Visuals/motion                 |       5 |                          4 | Device/state completeness, fallbacks and accessible optional motion                     |
-| Fitness content/expectations   |       5 |                          1 | Qualified version-bound review and understood limits                                    |
-| Sustained usefulness           |       5 |                          0 | Real consented six-week cohort evidence with denominators                               |
-| Distribution/support           |       5 |                          1 | Signed candidates, working support, declarations, accepted stores and support rehearsal |
-| **Total**                      | **100** |                     **51** | No weight redistribution or score increase based only on test count                     |
+| Doc-34 area                    |  Weight | Current provisional points | Evidence needed to improve                                                                      |
+| ------------------------------ | ------: | -------------------------: | ----------------------------------------------------------------------------------------------- |
+| Useful first experience        |      20 |                         12 | Independently understood setup/private route/goal and reviewed useful public entry              |
+| Training/measurement integrity |      20 |                         16 | Native unit/history deductions resolved in doc45; full edge cases and user comprehension remain |
+| Reliability/recovery           |      15 |                          9 | Exact new candidate and physical offline/upgrade/fault/large-backup matrix                      |
+| Accessibility/ergonomics       |      15 |                          4 | Real TalkBack/VoiceOver/largest text and low-burden task success                                |
+| Privacy/control                |      10 |                          6 | Exact candidate traffic/disclosure/control audit and backup/delete understanding                |
+| Visuals/motion                 |       5 |                          4 | Device/state completeness, fallbacks and accessible optional motion                             |
+| Fitness content/expectations   |       5 |                          1 | Qualified version-bound review and understood limits                                            |
+| Sustained usefulness           |       5 |                          0 | Real consented six-week cohort evidence with denominators                                       |
+| Distribution/support           |       5 |                          1 | Signed candidates, working support, declarations, accepted stores and support rehearsal         |
+| **Total**                      | **100** |                     **53** | Restores two documented integrity deductions; no points based only on test count                |
 
 The first engineering priority is integrity/recovery, followed by accessibility and a usable reviewed first experience. Optional AI breadth alone cannot fill the missing 49 points. The goal remains active until actual delivery and acceptance; a completed planning document is not completion of the shipping goal.
 

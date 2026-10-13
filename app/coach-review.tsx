@@ -75,22 +75,37 @@ export default function CoachReviewScreen() {
   const [busy, setBusy] = useState(false),
     [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
-  const context = useRef({ db, owner });
-  context.current = { db, owner };
+  const context = useRef({ db, owner, epoch: 0 });
+  if (context.current.db !== db || context.current.owner !== owner)
+    context.current = { db, owner, epoch: context.current.epoch + 1 };
+  const epoch = context.current.epoch;
+  const [loadedFor, setLoadedFor] = useState<{
+    db: ReturnType<typeof useLocalDatabase>;
+    owner: string;
+    epoch: number;
+    focus: number;
+    cycleId: string | null;
+    programVersionId: string | null;
+  } | null>(null);
   const generation = useRef(0),
     active = useRef(false),
     pending = useRef(false);
+  const visibleState = useRef({ loadedFor, review, preview, receipt, history });
+  visibleState.current = { loadedFor, review, preview, receipt, history };
   const read = useCallback(
     async (window: CoachReviewWindow, focus: number) => {
       const current = () =>
         active.current &&
         generation.current === focus &&
         context.current.db === db &&
-        context.current.owner === owner;
+        context.current.owner === owner &&
+        context.current.epoch === epoch;
       if (!db || !current()) return;
       const cycle = await getActiveTrainingCycle(db, owner);
       if (!current()) return;
       if (!cycle) throw new Error('Start a private cycle before reviewing local training.');
+      if (cycle.userId !== owner)
+        throw new Error('Local review ownership changed. Reload before continuing.');
       const profile = await getOnboardingProfile(db, owner);
       const next = await loadDatedCoachReview(
         db,
@@ -101,6 +116,13 @@ export default function CoachReviewScreen() {
       );
       const saved = await getSavedCoachReviews(db, owner, cycle.id);
       if (!current()) return;
+      if (
+        next.ownerId !== owner ||
+        next.cycleId !== cycle.id ||
+        next.programVersionId !== cycle.programVersionId ||
+        saved.some((item) => item.receipt.ownerId !== owner || item.receipt.cycleId !== cycle.id)
+      )
+        throw new Error('Local review record ownership changed. Reload before continuing.');
       setUnits(profile?.user.unitSystem ?? 'metric');
       setReview(next);
       setHistory(saved);
@@ -108,12 +130,21 @@ export default function CoachReviewScreen() {
       setSkipped(false);
       setPreview(null);
       setReceipt(null);
+      setLoadedFor({
+        db,
+        owner,
+        epoch,
+        focus,
+        cycleId: cycle.id,
+        programVersionId: cycle.programVersionId,
+      });
     },
-    [db, owner],
+    [db, owner, epoch],
   );
   useFocusEffect(
     useCallback(() => {
       const focus = ++generation.current;
+      setLoadedFor(null);
       active.current = true;
       pending.current = true;
       const window = initialWindow();
@@ -131,13 +162,16 @@ export default function CoachReviewScreen() {
         active.current &&
         generation.current === focus &&
         context.current.db === db &&
-        context.current.owner === owner;
+        context.current.owner === owner &&
+        context.current.epoch === epoch;
       void read(window, focus)
         .catch((failure: unknown) => {
-          if (current())
+          if (current()) {
+            setLoadedFor({ db, owner, epoch, focus, cycleId: null, programVersionId: null });
             setError(
               failure instanceof Error ? failure.message : 'Local review could not be read.',
             );
+          }
         })
         .finally(() => {
           if (current()) {
@@ -150,10 +184,53 @@ export default function CoachReviewScreen() {
         active.current = false;
         generation.current += 1;
       };
-    }, [db, owner, read]),
+    }, [db, owner, read, epoch]),
   );
+  const loadMatches = () =>
+    Boolean(
+      loadedFor &&
+      visibleState.current.loadedFor === loadedFor &&
+      active.current &&
+      loadedFor.db === db &&
+      loadedFor.owner === owner &&
+      loadedFor.db === context.current.db &&
+      loadedFor.owner === context.current.owner &&
+      loadedFor.epoch === context.current.epoch &&
+      loadedFor.focus === generation.current,
+    );
+  const reviewMatches = () =>
+    Boolean(
+      loadMatches() &&
+      review &&
+      visibleState.current.review === review &&
+      review.ownerId === owner &&
+      review.cycleId === loadedFor?.cycleId &&
+      review.programVersionId === loadedFor?.programVersionId &&
+      history.every(
+        (item) => item.receipt.ownerId === owner && item.receipt.cycleId === loadedFor?.cycleId,
+      ),
+    );
+  const previewMatches = () =>
+    Boolean(
+      reviewMatches() &&
+      preview &&
+      visibleState.current.preview === preview &&
+      preview.value.ownerId === owner &&
+      preview.value.cycleId === loadedFor?.cycleId &&
+      preview.value.programVersionId === loadedFor?.programVersionId &&
+      preview.value.evidenceFingerprint === review?.evidenceFingerprint,
+    );
+  const receiptMatches = () =>
+    Boolean(
+      loadMatches() &&
+      receipt &&
+      visibleState.current.receipt === receipt &&
+      receipt.receipt.ownerId === owner &&
+      receipt.receipt.cycleId === loadedFor?.cycleId &&
+      receipt.receipt.programVersionId === loadedFor?.programVersionId,
+    );
   const run = async (task: (current: () => boolean) => Promise<void>) => {
-    if (!db || !active.current || pending.current) return;
+    if (!db || !loadMatches() || pending.current) return;
     const focus = generation.current,
       savedDb = db,
       savedOwner = owner;
@@ -161,7 +238,8 @@ export default function CoachReviewScreen() {
       active.current &&
       generation.current === focus &&
       context.current.db === savedDb &&
-      context.current.owner === savedOwner;
+      context.current.owner === savedOwner &&
+      context.current.epoch === epoch;
     pending.current = true;
     setBusy(true);
     setError('');
@@ -182,7 +260,7 @@ export default function CoachReviewScreen() {
     }
   };
   const change = (key: keyof CoachReviewWindow, text: string) => {
-    if (pending.current) return;
+    if (pending.current || !loadMatches()) return;
     setDates((value) => ({ ...value, [key]: text }));
     setReview(null);
     setPreview(null);
@@ -191,7 +269,7 @@ export default function CoachReviewScreen() {
     setSkipped(false);
   };
   const choose = (choice: CoachReviewChoice) => {
-    if (!review || pending.current || !active.current) return;
+    if (!review || pending.current || !reviewMatches()) return;
     setPreview({
       value: previewCoachReviewChoice(review, choice, response),
       id: operationId(),
@@ -202,7 +280,7 @@ export default function CoachReviewScreen() {
   };
   const confirm = () =>
     void run(async (current) => {
-      if (!db || !preview || !review) return;
+      if (!db || !preview || !review || !previewMatches()) return;
       const result = await confirmDatedCoachReview(
         db,
         preview.value,
@@ -213,6 +291,12 @@ export default function CoachReviewScreen() {
         current,
       );
       if (!current()) return;
+      if (
+        result.receipt.ownerId !== owner ||
+        result.receipt.cycleId !== loadedFor?.cycleId ||
+        result.receipt.programVersionId !== loadedFor?.programVersionId
+      )
+        throw new Error('The saved intent belongs to a different review context.');
       setReceipt(result);
       setPreview(null);
       setHistory((items) =>
@@ -221,7 +305,7 @@ export default function CoachReviewScreen() {
     });
   const openNext = () =>
     void run(async (current) => {
-      if (!db || !receipt?.receipt.nextCapability) return;
+      if (!db || !receipt?.receipt.nextCapability || !receiptMatches()) return;
       const cycle = await getActiveTrainingCycle(db, owner);
       if (!current()) return;
       if (
@@ -233,7 +317,18 @@ export default function CoachReviewScreen() {
       const next = await resolveCoachNavigation(db, owner, receipt.receipt.nextCapability);
       if (current()) router.push(next.route);
     });
-  const goal = review ? (JSON.parse(review.evidenceFingerprint).goal as Shift | null) : null;
+  if (!loadMatches())
+    return (
+      <Screen>
+        <Button label="Back" variant="ghost" onPress={() => router.back()} />
+        <Text variant="h2">Local Coach review</Text>
+        <Text accessibilityLiveRegion="polite">Loading the current person's local review…</Text>
+      </Screen>
+    );
+  const goal =
+    reviewMatches() && review
+      ? (JSON.parse(review.evidenceFingerprint).goal as Shift | null)
+      : null;
   const comparison = review?.goal.comparison;
   return (
     <Screen>
@@ -290,7 +385,7 @@ export default function CoachReviewScreen() {
           {error}
         </Text>
       ) : null}
-      {review ? (
+      {reviewMatches() && review ? (
         <>
           <Card style={styles.card}>
             <Text variant="bodyMedium">Sessions started in this date range</Text>
@@ -391,7 +486,7 @@ export default function CoachReviewScreen() {
                     selected={response?.answer === answer}
                     disabled={busy}
                     onPress={() => {
-                      if (pending.current) return;
+                      if (pending.current || !reviewMatches()) return;
                       setResponse({ questionId: review.question!.id, answer });
                       setSkipped(false);
                       setPreview(null);
@@ -404,7 +499,7 @@ export default function CoachReviewScreen() {
                 selected={skipped}
                 disabled={busy}
                 onPress={() => {
-                  if (pending.current) return;
+                  if (pending.current || !reviewMatches()) return;
                   setResponse(null);
                   setSkipped(true);
                   setPreview(null);
@@ -427,7 +522,7 @@ export default function CoachReviewScreen() {
           </Card>
         </>
       ) : null}
-      {preview ? (
+      {previewMatches() && preview ? (
         <Card style={styles.card}>
           <Text variant="bodyMedium">Confirm dated intent: {choices[preview.value.choice]}</Text>
           <Text>
@@ -449,12 +544,12 @@ export default function CoachReviewScreen() {
             variant="ghost"
             disabled={busy}
             onPress={() => {
-              if (!pending.current) setPreview(null);
+              if (!pending.current && previewMatches()) setPreview(null);
             }}
           />
         </Card>
       ) : null}
-      {receipt ? (
+      {receiptMatches() && receipt ? (
         <Card style={styles.card}>
           <Text variant="bodyMedium" accessibilityLiveRegion="polite">
             Dated intent saved locally
@@ -476,7 +571,10 @@ export default function CoachReviewScreen() {
           ) : null}
         </Card>
       ) : null}
-      {history.length ? (
+      {history.length &&
+      history.every(
+        (item) => item.receipt.ownerId === owner && item.receipt.cycleId === loadedFor?.cycleId,
+      ) ? (
         <Card style={styles.card}>
           <Text variant="bodyMedium">Saved dated review history</Text>
           <Text tone="muted">

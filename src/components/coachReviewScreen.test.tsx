@@ -10,11 +10,12 @@ import {
 import type { SavedCoachReview } from '../db/coachReviewRepository';
 import type { Shift } from '../domain/shift';
 import type { ButtonProps } from './ui/Button';
+import type { ScreenProps } from './ui/Screen';
 let mockOwner = 'guest-user';
 let mockBlur: (() => void) | undefined;
 let mockFocus: (() => () => void) | undefined;
-const mockDb = {},
-  mockLoad = jest.fn(),
+let mockDb = {};
+const mockLoad = jest.fn(),
   mockHistory = jest.fn(),
   mockConfirm = jest.fn(),
   mockCycle = jest.fn(),
@@ -25,6 +26,17 @@ let packet: CoachReviewInput;
 // Keep the real Button while capturing the screen's handler before React can
 // commit a disabled state, to exercise two callbacks in the same event.
 const mockButtonHandlers = new Map<string, (() => void) | undefined>();
+const mockRenderFrames: { db: object; owner: string; text: string }[] = [];
+let mockBeforeEffects: (() => void) | undefined;
+function mockVisibleText(node: unknown): string {
+  if (Array.isArray(node)) return node.map(mockVisibleText).join(' ');
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (node && typeof node === 'object' && 'props' in node) {
+    const props = (node as { props: { children?: unknown; label?: string } }).props;
+    return `${props.label ?? ''} ${mockVisibleText(props.children)}`;
+  }
+  return '';
+}
 jest.mock('./ui', () => {
   const actual = jest.requireActual('./ui'),
     React = jest.requireActual('react');
@@ -33,6 +45,15 @@ jest.mock('./ui', () => {
     Button: (props: ButtonProps) => {
       mockButtonHandlers.set(props.label, props.onPress);
       return React.createElement(actual.Button, props);
+    },
+    Screen: (props: ScreenProps) => {
+      mockRenderFrames.push({
+        db: mockDb,
+        owner: mockOwner,
+        text: mockVisibleText(props.children),
+      });
+      mockBeforeEffects?.();
+      return React.createElement(actual.Screen, props);
     },
   };
 });
@@ -66,6 +87,9 @@ jest.mock('../services/coachNavigation', () => ({
 beforeEach(() => {
   jest.resetAllMocks();
   mockButtonHandlers.clear();
+  mockRenderFrames.length = 0;
+  mockBeforeEffects = undefined;
+  mockDb = {};
   mockOwner = 'guest-user';
   mockBlur = undefined;
   mockFocus = undefined;
@@ -121,6 +145,57 @@ beforeEach(() => {
     route: '/onboarding',
   });
 });
+test.each([
+  ['owner', 'preview'],
+  ['database', 'preview'],
+  ['owner', 'receipt'],
+  ['database', 'receipt'],
+] as const)(
+  'a %s transition hides the old %s and private history during the first render and rejects its retained callback before focus effects',
+  async (kind, phase) => {
+    const screen = await ready();
+    await fireEvent.press(screen.getByLabelText('Review availability'));
+    if (phase === 'receipt') {
+      await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+      await waitFor(() => expect(screen.getByText('Saved dated review history')).toBeTruthy());
+    }
+    const retained = mockButtonHandlers.get(
+      phase === 'receipt' ? 'Continue to setup' : 'Confirm and save intent',
+    )!;
+    mockConfirm.mockClear();
+    const oldDb = mockDb;
+    mockLoad.mockImplementation(() => new Promise(() => {}));
+    if (kind === 'owner') {
+      mockOwner = 'other-owner';
+      mockCycle.mockResolvedValue({ ...cycle, userId: mockOwner });
+    } else mockDb = {};
+    const changedDb = mockDb,
+      changedOwner = mockOwner;
+    let tapped = false;
+    mockBeforeEffects = () => {
+      if (!tapped) {
+        tapped = true;
+        retained();
+      }
+    };
+    await screen.rerender(<CoachReviewScreen />);
+    mockBeforeEffects = undefined;
+    const frames = mockRenderFrames.filter(
+      (frame) =>
+        frame.owner === changedOwner &&
+        frame.db === changedDb &&
+        (kind === 'owner' || frame.db !== oldDb),
+    );
+    expect(frames.length).toBeGreaterThan(0);
+    for (const frame of frames)
+      expect(frame.text).not.toMatch(
+        /Sessions started in this date range|Confirm dated intent|Dated intent saved locally|Saved dated review history|One optional question|Keep plan/,
+      );
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+  },
+);
 afterEach(() => jest.useRealTimers());
 async function ready() {
   const screen = await render(<CoachReviewScreen />);

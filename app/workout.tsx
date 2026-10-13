@@ -185,12 +185,14 @@ export default function ActiveWorkoutScreen() {
   }>({ key: null, database, inputRevision: 0, focusGeneration: 0, focused: false });
   const workoutIsFocused = useRef(false);
   const workoutFocusGeneration = useRef(0);
+  const [noteFocusRevision, setNoteFocusRevision] = useState(0);
   const setWrite = useRef<object | null>(null);
   useFocusEffect(
     useCallback(() => {
       workoutIsFocused.current = true;
       setVoiceFocused(true);
       workoutFocusGeneration.current++;
+      setNoteFocusRevision((revision) => revision + 1);
       return () => {
         workoutIsFocused.current = false;
         setVoiceFocused(false);
@@ -582,7 +584,7 @@ export default function ActiveWorkoutScreen() {
   }, [canMutate, database, session.id, userId, values]);
 
   useEffect(() => {
-    if (!database || !canMutate) return;
+    if (!database || !canMutate || !workoutIsFocused.current) return;
 
     const note = sessionNote.trim();
     if (note === savedSessionNoteRef.current) return;
@@ -601,7 +603,7 @@ export default function ActiveWorkoutScreen() {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [canMutate, database, session.id, sessionNote, userId]);
+  }, [canMutate, database, session.id, sessionNote, userId, noteFocusRevision]);
 
   useEffect(() => {
     if (!database || !canMutate) return;
@@ -641,7 +643,7 @@ export default function ActiveWorkoutScreen() {
     });
 
     return () => subscription.remove();
-  }, [canMutate, database, session.id, sessionNote, userId, values]);
+  }, [canMutate, database, session.id, sessionNote, userId, values, noteFocusRevision]);
 
   useEffect(() => {
     if (restEndsAt === null) return;

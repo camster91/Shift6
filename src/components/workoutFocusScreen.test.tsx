@@ -1,4 +1,7 @@
 import type * as ReactModule from 'react';
+import type * as WorkoutRepository from '../db/workoutRepository';
+import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import type { SQLiteDatabase } from 'expo-sqlite';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import ActiveWorkoutScreen from '../../app/workout';
@@ -98,7 +101,7 @@ beforeEach(() => {
   mockPreviousActuals = [];
   mockSaveSet.mockResolvedValue('saved');
   mockUpdateSet.mockResolvedValue('updated');
-  mockSaveNote.mockResolvedValue(undefined);
+  mockSaveNote.mockReset().mockResolvedValue(undefined);
   mockSaveDraft.mockResolvedValue(undefined);
   mockPartial.mockResolvedValue({ status: 'partial' });
   mockSkip.mockResolvedValue({ status: 'skipped' });
@@ -502,6 +505,107 @@ test('a current changed note save failure remains visible and retains its input'
     expect(screen.getByText('We could not save the workout note locally.')).toBeTruthy(),
   );
   expect(screen.getByLabelText('Optional session note').props.value).toBe('Keep this actual cue');
+});
+
+test('dirty note retries with a fresh save after blur drops its debounce', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+  await fireEvent.press(screen.getByText('Review all sets and adjustments'));
+  await fireEvent.changeText(screen.getByLabelText('Optional session note'), 'Persist on return');
+  await act(async () => {
+    mockFocusLeave?.();
+    await new Promise((resolve) => setTimeout(resolve, 350));
+  });
+  expect(mockSaveNote).not.toHaveBeenCalled();
+  await act(async () => {
+    mockFocusLeave = mockFocusEnter?.() ?? null;
+  });
+  await waitFor(() => expect(mockSaveNote).toHaveBeenCalledTimes(1));
+  expect(mockSaveNote.mock.calls[0]![2]).toBe('Persist on return');
+});
+
+test('dirty note retries after an old rejected save and reads back from SQLite on reentry', async () => {
+  const sqlite = new DatabaseSync(':memory:');
+  sqlite.exec(`CREATE TABLE workout_sessions (
+    id TEXT PRIMARY KEY, cycle_id TEXT, cycle_week INTEGER, workout_id TEXT,
+    program_version_id TEXT, workout_focus TEXT, status TEXT, started_at TEXT,
+    completed_at TEXT, completion_reason TEXT, is_offline INTEGER, readiness TEXT, note TEXT);
+    CREATE TABLE sync_outbox (id TEXT, idempotency_key TEXT, entity_type TEXT,
+    entity_id TEXT, payload_json TEXT, created_at TEXT);`);
+  const db = {
+    withTransactionAsync: async (fn: () => Promise<void>) => {
+      sqlite.exec('BEGIN');
+      try {
+        await fn();
+        sqlite.exec('COMMIT');
+      } catch (error) {
+        sqlite.exec('ROLLBACK');
+        throw error;
+      }
+    },
+    runAsync: async (sql: string, ...args: SQLInputValue[]) => {
+      const result = sqlite.prepare(sql).run(...args);
+      return { changes: Number(result.changes), lastInsertRowId: Number(result.lastInsertRowid) };
+    },
+    getFirstAsync: async (sql: string, ...args: SQLInputValue[]) =>
+      sqlite.prepare(sql).get(...args) ?? null,
+  } as unknown as SQLiteDatabase;
+  const actualNotes = jest.requireActual<typeof WorkoutRepository>('../db/workoutRepository');
+  let reject!: (error: Error) => void;
+  mockSaveNote.mockImplementationOnce(
+    () =>
+      new Promise<void>((_resolve, fail) => {
+        reject = fail;
+      }),
+  );
+  mockSaveNote.mockImplementation(async (_db, id: string, note: string) => {
+    sqlite
+      .prepare(
+        `INSERT OR IGNORE INTO workout_sessions
+      (id,cycle_id,cycle_week,workout_id,program_version_id,workout_focus,status,started_at,is_offline)
+      VALUES (?,?,?,?,?,?,?,?,?)`,
+      )
+      .run(
+        id,
+        mockCycle.id,
+        1,
+        mockVersion.workouts[0]!.id,
+        mockVersion.id,
+        'strength',
+        'in-progress',
+        '2026-10-13T12:00:00Z',
+        1,
+      );
+    return actualNotes.updateWorkoutSessionNote(db, id, note);
+  });
+  try {
+    const screen = await render(<ActiveWorkoutScreen />);
+    await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+    await fireEvent.press(screen.getByText('Review all sets and adjustments'));
+    await fireEvent.changeText(screen.getByLabelText('Optional session note'), 'Retry this cue');
+    await waitFor(() => expect(mockSaveNote).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      mockFocusLeave?.();
+      mockFocusLeave = mockFocusEnter?.() ?? null;
+      reject(new Error('Old operation failed'));
+    });
+    await waitFor(() =>
+      expect(sqlite.prepare('SELECT note FROM workout_sessions').get()).toEqual({
+        note: 'Retry this cue',
+      }),
+    );
+    expect(mockSaveNote).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      await mockSaveNote.mock.results[1]!.value;
+    });
+    expect(screen.queryByText('We could not save the workout note locally.')).toBeNull();
+    await screen.unmount();
+    expect(sqlite.prepare('SELECT note FROM workout_sessions').all()).toEqual([
+      { note: 'Retry this cue' },
+    ]);
+  } finally {
+    sqlite.close();
+  }
 });
 
 test.each(['-5', 'not a number', 'Infinity'])(

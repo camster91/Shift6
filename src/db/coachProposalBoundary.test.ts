@@ -203,3 +203,173 @@ describe('confirmed Coach executor boundaries (real SQLite)', () => {
     }
   });
 });
+
+describe('confirmed preview binds stored records', () => {
+  it.each(['proposal', 'version', 'program', 'cycle'])(
+    'rejects same-ID forged %s contents before any writes',
+    async (kind) => {
+      const { database, sqlite } = sqliteDatabase();
+      try {
+        const proposal = { ...demoCoachProposal, changes: [] };
+        const cycle = await setup(database, proposal);
+        const confirmedProposal =
+          kind === 'proposal' ? { ...proposal, summary: 'Forged summary' } : proposal;
+        const confirmedVersion = JSON.parse(JSON.stringify(demoProgramVersion)) as ProgramVersion;
+        if (kind === 'version') confirmedVersion.workouts[0]!.title = 'Forged workout';
+        const confirmedProgram =
+          kind === 'program' ? { ...demoProgram, title: 'Forged plan' } : demoProgram;
+        const confirmedCycle =
+          kind === 'cycle' ? { ...cycle, currentWeek: cycle.currentWeek + 1 } : cycle;
+        const before = records(sqlite);
+        await expect(
+          acceptCoachProposalWithRevision(
+            database,
+            owner,
+            confirmedProposal,
+            confirmedProgram,
+            confirmedVersion,
+            confirmedCycle,
+            now,
+          ),
+        ).rejects.toThrow(/changed|active local plan/);
+        expect(records(sqlite)).toEqual(before);
+      } finally {
+        sqlite.close();
+      }
+    },
+  );
+  it('rejects a forged replacement payload even when both destinations are private and owned', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      await saveCustomExercise(database, owner, custom('private-a'), now);
+      await saveCustomExercise(database, owner, custom('private-b'), now);
+      const stored = substitution('private-a');
+      const cycle = await setup(database, stored);
+      const before = records(sqlite);
+      await expect(
+        acceptCoachProposalWithRevision(
+          database,
+          owner,
+          substitution('private-b'),
+          demoProgram,
+          demoProgramVersion,
+          cycle,
+          now,
+        ),
+      ).rejects.toThrow('confirmed coach proposal changed');
+      expect(records(sqlite)).toEqual(before);
+    } finally {
+      sqlite.close();
+    }
+  });
+  it('rolls back approval and revision if saved snapshot readback cannot confirm persistence', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      await saveCustomExercise(database, owner, custom('private-replacement'), now);
+      const proposal = substitution('private-replacement');
+      const cycle = await setup(database, proposal);
+      const before = records(sqlite);
+      const read = database.getFirstAsync.bind(database);
+      database.getFirstAsync = (async (sql: string, ...params: unknown[]) => {
+        if (
+          sql.includes('FROM user_program_versions') &&
+          !sql.includes('FROM user_program_versions v') &&
+          params[1] !== demoProgramVersion.id
+        )
+          return null;
+        return read(sql, ...(params as never[]));
+      }) as typeof database.getFirstAsync;
+      await expect(
+        acceptCoachProposalWithRevision(
+          database,
+          owner,
+          proposal,
+          demoProgram,
+          demoProgramVersion,
+          cycle,
+          now,
+        ),
+      ).rejects.toThrow('could not be confirmed locally');
+      expect(records(sqlite)).toEqual(before);
+    } finally {
+      sqlite.close();
+    }
+  });
+  it('returns unchanged with no writes for a repeated accepted proposal', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      const proposal = { ...demoCoachProposal, changes: [] };
+      const cycle = await setup(database, proposal);
+      await acceptCoachProposalWithRevision(
+        database,
+        owner,
+        proposal,
+        demoProgram,
+        demoProgramVersion,
+        cycle,
+        now,
+      );
+      const before = records(sqlite);
+      await expect(
+        acceptCoachProposalWithRevision(
+          database,
+          owner,
+          proposal,
+          demoProgram,
+          demoProgramVersion,
+          cycle,
+          now,
+        ),
+      ).resolves.toMatchObject({ status: 'unchanged' });
+      expect(records(sqlite)).toEqual(before);
+    } finally {
+      sqlite.close();
+    }
+  });
+});
+
+it('freezes confirmed preview contents before an asynchronous owner-scoped read', async () => {
+  const { database, sqlite } = sqliteDatabase();
+  try {
+    await saveCustomExercise(database, owner, custom('private-a'), now);
+    await saveCustomExercise(database, owner, custom('private-b'), now);
+    const confirmed = substitution('private-a');
+    const cycle = await setup(database, confirmed);
+    const read = database.getFirstAsync.bind(database);
+    let release!: () => void;
+    const deferred = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let first = true;
+    database.getFirstAsync = (async (sql: string, ...params: unknown[]) => {
+      if (first) {
+        first = false;
+        await deferred;
+      }
+      return read(sql, ...(params as never[]));
+    }) as typeof database.getFirstAsync;
+    const approval = acceptCoachProposalWithRevision(
+      database,
+      owner,
+      confirmed,
+      demoProgram,
+      demoProgramVersion,
+      cycle,
+      now,
+    );
+    confirmed.changes[0]!.to = 'private-b';
+    release();
+    const result = await approval;
+    expect(result.version.workouts[0]!.exercises[0]!.exerciseId).toBe('private-a');
+    expect(
+      JSON.parse(
+        String(
+          sqlite.prepare('SELECT changes_json FROM coach_proposals WHERE id=?').get(confirmed.id)
+            ?.changes_json,
+        ),
+      )[0].to,
+    ).toBe('private-a');
+  } finally {
+    sqlite.close();
+  }
+});

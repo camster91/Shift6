@@ -263,25 +263,28 @@ describe('migrateLocalUserToAccount', () => {
     const database = {
       getFirstAsync: async (sql: string) =>
         sql.includes('FROM user_profiles') && !sql.includes('AS conflict') ? profileRow() : null,
-      getAllAsync: async () => [
-        {
-          id: 'outbox-profile-guest-user',
-          idempotency_key: 'profile:guest-user',
-          entity_type: 'profile',
-          entity_id: 'guest-user',
-          payload_json: JSON.stringify({
-            userId: 'guest-user',
-            profile: { user: { id: 'guest-user' } },
-          }),
-        },
-        {
-          id: 'outbox-cycle-1',
-          idempotency_key: 'training-cycle:cycle-1',
-          entity_type: 'training-cycle',
-          entity_id: 'cycle-1',
-          payload_json: JSON.stringify({ userId: 'guest-user', cycleId: 'cycle-1' }),
-        },
-      ],
+      getAllAsync: async (sql: string) =>
+        sql.includes('builder_recovery_drafts')
+          ? []
+          : [
+              {
+                id: 'outbox-profile-guest-user',
+                idempotency_key: 'profile:guest-user',
+                entity_type: 'profile',
+                entity_id: 'guest-user',
+                payload_json: JSON.stringify({
+                  userId: 'guest-user',
+                  profile: { user: { id: 'guest-user' } },
+                }),
+              },
+              {
+                id: 'outbox-cycle-1',
+                idempotency_key: 'training-cycle:cycle-1',
+                entity_type: 'training-cycle',
+                entity_id: 'cycle-1',
+                payload_json: JSON.stringify({ userId: 'guest-user', cycleId: 'cycle-1' }),
+              },
+            ],
       runAsync: async (sql: string, ...params: unknown[]) => {
         calls.push({ sql, params });
         return { changes: 1, lastInsertRowId: 1 };
@@ -324,7 +327,7 @@ describe('migrateLocalUserToAccount', () => {
           : sql.includes('FROM user_profiles')
             ? profileRow()
             : null,
-      getAllAsync: async () => [],
+      getAllAsync: async (sql: string) => (sql.includes('builder_recovery_drafts') ? [] : []),
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
 
@@ -336,7 +339,7 @@ describe('migrateLocalUserToAccount', () => {
   it('does not mutate an empty guest identity', async () => {
     const database = {
       getFirstAsync: async () => null,
-      getAllAsync: async () => [],
+      getAllAsync: async (sql: string) => (sql.includes('builder_recovery_drafts') ? [] : []),
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
 
@@ -351,15 +354,18 @@ describe('migrateLocalUserToAccount', () => {
     const database = {
       getFirstAsync: async (sql: string) =>
         sql.includes('FROM user_profiles') && !sql.includes('AS conflict') ? profileRow() : null,
-      getAllAsync: async () => [
-        {
-          id: 'bad-mutation',
-          idempotency_key: 'profile:guest-user',
-          entity_type: 'profile',
-          entity_id: 'guest-user',
-          payload_json: '{bad-json',
-        },
-      ],
+      getAllAsync: async (sql: string) =>
+        sql.includes('builder_recovery_drafts')
+          ? []
+          : [
+              {
+                id: 'bad-mutation',
+                idempotency_key: 'profile:guest-user',
+                entity_type: 'profile',
+                entity_id: 'guest-user',
+                payload_json: '{bad-json',
+              },
+            ],
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
 

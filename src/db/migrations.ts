@@ -457,6 +457,26 @@ export const MIGRATIONS: readonly Migration[] = [
       `CREATE TRIGGER cycle_goal_prescription_immutable BEFORE UPDATE OF program_version_id ON training_cycles WHEN NEW.program_version_id != OLD.program_version_id AND EXISTS(SELECT 1 FROM shifts WHERE cycle_id=OLD.id) BEGIN SELECT RAISE(ABORT,'A goal-linked prescription is immutable.'); END;`,
     ],
   },
+  {
+    version: 24,
+    name: 'local-confirmed-recovery-foundation',
+    statements: [
+      `CREATE TABLE cycle_lifecycle_events (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, cycle_id TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('pause','resume','review-date')), effective_date TEXT NOT NULL, time_zone TEXT NOT NULL, previous_event_id TEXT, operation_id TEXT NOT NULL, recorded_at TEXT NOT NULL, UNIQUE(user_id,operation_id), UNIQUE(id,user_id,cycle_id), FOREIGN KEY(cycle_id,user_id) REFERENCES training_cycles(id,user_id) ON UPDATE CASCADE ON DELETE CASCADE, FOREIGN KEY(previous_event_id,user_id,cycle_id) REFERENCES cycle_lifecycle_events(id,user_id,cycle_id) DEFERRABLE INITIALLY DEFERRED);`,
+      `CREATE TRIGGER lifecycle_content_immutable BEFORE UPDATE OF id,cycle_id,kind,effective_date,time_zone,previous_event_id,operation_id,recorded_at ON cycle_lifecycle_events WHEN NEW.id IS NOT OLD.id OR NEW.cycle_id IS NOT OLD.cycle_id OR NEW.kind IS NOT OLD.kind OR NEW.effective_date IS NOT OLD.effective_date OR NEW.time_zone IS NOT OLD.time_zone OR NEW.previous_event_id IS NOT OLD.previous_event_id OR NEW.operation_id IS NOT OLD.operation_id OR NEW.recorded_at IS NOT OLD.recorded_at BEGIN SELECT RAISE(ABORT,'Lifecycle history is append-only.'); END;`,
+      `CREATE UNIQUE INDEX lifecycle_previous_once ON cycle_lifecycle_events(previous_event_id) WHERE previous_event_id IS NOT NULL;`,
+      `CREATE UNIQUE INDEX lifecycle_root_once ON cycle_lifecycle_events(cycle_id) WHERE previous_event_id IS NULL;`,
+      `CREATE TABLE coach_memory_preferences (user_id TEXT PRIMARY KEY NOT NULL, enabled INTEGER NOT NULL CHECK(enabled IN (0,1)), updated_at TEXT NOT NULL, FOREIGN KEY(user_id) REFERENCES user_profiles(id) ON UPDATE CASCADE ON DELETE CASCADE);`,
+      `CREATE TABLE coach_memory_facts (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, value_json TEXT NOT NULL, revision INTEGER NOT NULL CHECK(revision >= 1), operation_id TEXT NOT NULL, confirmed_at TEXT NOT NULL, updated_at TEXT NOT NULL, UNIQUE(user_id,operation_id), FOREIGN KEY(user_id) REFERENCES user_profiles(id) ON UPDATE CASCADE ON DELETE CASCADE);`,
+      `CREATE TABLE builder_recovery_drafts (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, snapshot_json TEXT NOT NULL, revision INTEGER NOT NULL CHECK(revision >= 1), updated_at TEXT NOT NULL, FOREIGN KEY(user_id) REFERENCES user_profiles(id) ON UPDATE CASCADE ON DELETE CASCADE);`,
+      `CREATE UNIQUE INDEX completed_sets_id_session ON completed_sets(id,session_id);`,
+      `CREATE TABLE set_feedback_events (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, session_id TEXT NOT NULL, completed_set_id TEXT NOT NULL, difficulty TEXT NOT NULL CHECK(difficulty IN ('easier-than-expected','about-right','harder-than-expected')), corrects_event_id TEXT, operation_id TEXT NOT NULL, recorded_at TEXT NOT NULL, UNIQUE(user_id,operation_id), UNIQUE(id,user_id,session_id,completed_set_id), FOREIGN KEY(user_id) REFERENCES user_profiles(id) ON UPDATE CASCADE ON DELETE CASCADE, FOREIGN KEY(completed_set_id,session_id) REFERENCES completed_sets(id,session_id) ON DELETE CASCADE, FOREIGN KEY(corrects_event_id,user_id,session_id,completed_set_id) REFERENCES set_feedback_events(id,user_id,session_id,completed_set_id) DEFERRABLE INITIALLY DEFERRED);`,
+      `CREATE TRIGGER set_feedback_content_immutable BEFORE UPDATE OF id,session_id,completed_set_id,difficulty,corrects_event_id,operation_id,recorded_at ON set_feedback_events WHEN NEW.id IS NOT OLD.id OR NEW.session_id IS NOT OLD.session_id OR NEW.completed_set_id IS NOT OLD.completed_set_id OR NEW.difficulty IS NOT OLD.difficulty OR NEW.corrects_event_id IS NOT OLD.corrects_event_id OR NEW.operation_id IS NOT OLD.operation_id OR NEW.recorded_at IS NOT OLD.recorded_at BEGIN SELECT RAISE(ABORT,'Set feedback history is append-only.'); END;`,
+      `CREATE UNIQUE INDEX set_feedback_parent_once ON set_feedback_events(corrects_event_id) WHERE corrects_event_id IS NOT NULL;`,
+      `CREATE UNIQUE INDEX set_feedback_root_once ON set_feedback_events(completed_set_id) WHERE corrects_event_id IS NULL;`,
+      `CREATE TRIGGER set_feedback_owned_insert BEFORE INSERT ON set_feedback_events WHEN NOT EXISTS(SELECT 1 FROM workout_sessions s JOIN training_cycles c ON c.id=s.cycle_id WHERE s.id=NEW.session_id AND c.user_id=NEW.user_id) BEGIN SELECT RAISE(ABORT,'Feedback must belong to an owned saved set.'); END;`,
+      `CREATE TRIGGER set_feedback_owned_update BEFORE UPDATE ON set_feedback_events WHEN NOT EXISTS(SELECT 1 FROM workout_sessions s JOIN training_cycles c ON c.id=s.cycle_id WHERE s.id=NEW.session_id AND c.user_id=NEW.user_id) BEGIN SELECT RAISE(ABORT,'Feedback must belong to an owned saved set.'); END;`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

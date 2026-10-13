@@ -1,3 +1,4 @@
+import { persistenceSections } from '../domain/localPersistence';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export type LocalDataExportSectionKey =
@@ -26,7 +27,12 @@ export interface LocalDataExportSummary {
 }
 
 export interface LocalDataExport {
-  schemaVersion: 12;
+  schemaVersion: 12 | 13;
+  cycleLifecycleEvents?: Record<string, unknown>[];
+  coachMemoryPreferences?: Record<string, unknown>[];
+  coachMemoryFacts?: Record<string, unknown>[];
+  builderRecoveryDrafts?: Record<string, unknown>[];
+  setFeedbackEvents?: Record<string, unknown>[];
   exportedAt: string;
   userId: string;
   summary: LocalDataExportSummary;
@@ -62,6 +68,12 @@ export async function exportLocalUserData(
   userId: string,
   exportedAt: string,
 ): Promise<LocalDataExport> {
+  const additions: Record<string, Record<string, unknown>[]> = {};
+  for (const [key, table] of Object.entries(persistenceSections))
+    additions[key] = await database.getAllAsync(
+      `SELECT * FROM ${table} WHERE user_id=? ORDER BY rowid;`,
+      userId,
+    );
   const personalGoalEvents = await database.getAllAsync<Record<string, unknown>>(
     'SELECT * FROM personal_goal_events WHERE user_id=? ORDER BY rowid;',
     userId,
@@ -197,6 +209,7 @@ export async function exportLocalUserData(
   );
 
   const summary = buildLocalDataExportSummary({
+    ...additions,
     personalGoalEvents,
     personalGoalDrafts,
     onboardingDrafts,
@@ -225,10 +238,11 @@ export async function exportLocalUserData(
   });
 
   return {
-    schemaVersion: 12,
+    schemaVersion: 13,
     exportedAt,
     userId,
     summary,
+    ...additions,
     personalGoalEvents,
     personalGoalDrafts,
     onboardingDrafts,
@@ -306,20 +320,29 @@ export function buildLocalDataExportSummary(
         data.workoutDrafts.length +
         data.workoutCheckIns.length +
         data.cycleReviews.length +
-        data.workoutScheduleOverrides.length,
+        data.workoutScheduleOverrides.length +
+        (data.cycleLifecycleEvents?.length ?? 0) +
+        (data.setFeedbackEvents?.length ?? 0),
     },
     {
       key: 'programsAndExercises',
       title: 'Your programs and exercises',
       description: 'Private program copies, program versions, and custom exercise records.',
       recordCount:
-        data.userPrograms.length + data.userProgramVersions.length + data.userExercises.length,
+        data.userPrograms.length +
+        data.userProgramVersions.length +
+        data.userExercises.length +
+        (data.builderRecoveryDrafts?.length ?? 0),
     },
     {
       key: 'coachAndNotifications',
       title: 'Coach and notification records',
       description: 'Saved Coach proposals and local notification preferences.',
-      recordCount: data.coachProposals.length + data.notificationPreferences.length,
+      recordCount:
+        data.coachProposals.length +
+        data.notificationPreferences.length +
+        (data.coachMemoryPreferences?.length ?? 0) +
+        (data.coachMemoryFacts?.length ?? 0),
     },
   ];
 
@@ -354,6 +377,8 @@ export async function assertNoUnsupportedShiftOutboxRows(database: SQLiteDatabas
 export async function deleteLocalUserData(database: SQLiteDatabase, userId: string): Promise<void> {
   await database.withTransactionAsync(async () => {
     await assertNoUnsupportedShiftOutboxRows(database);
+    for (const table of Object.values(persistenceSections))
+      await database.runAsync(`DELETE FROM ${table} WHERE user_id=?;`, userId);
     await database.runAsync(
       `DELETE FROM sync_outbox
         WHERE (entity_type = 'profile' AND entity_id = ?)

@@ -1,3 +1,4 @@
+import { persistenceSections } from '../domain/localPersistence';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export interface LocalAccountMigrationResult {
@@ -151,6 +152,14 @@ export async function migrateLocalUserToAccount(
     }
     if (!sourceProfile && !sourceDraft && mutations.length === 0) return;
 
+    for (const table of Object.values(persistenceSections)) {
+      const conflict = await database.getFirstAsync(
+        `SELECT user_id FROM ${table} WHERE user_id=? LIMIT 1;`,
+        destinationUserId,
+      );
+      if (conflict)
+        throw new Error('The account already has local data; explicit merge is required.');
+    }
     const destinationConflict = await database.getFirstAsync<{ conflict: 1 }>(
       `SELECT 1 AS conflict
          FROM user_profiles
@@ -317,6 +326,25 @@ export async function migrateLocalUserToAccount(
       destinationUserId,
       sourceUserId,
     );
+    for (const table of Object.values(persistenceSections))
+      await database.runAsync(
+        `UPDATE ${table} SET user_id=? WHERE user_id=?;`,
+        destinationUserId,
+        sourceUserId,
+      );
+    const recoveries = await database.getAllAsync<{ id: string; snapshot_json: string }>(
+      'SELECT id,snapshot_json FROM builder_recovery_drafts WHERE user_id=?;',
+      destinationUserId,
+    );
+    for (const row of recoveries) {
+      const snapshot = JSON.parse(row.snapshot_json);
+      snapshot.program.ownerId = destinationUserId;
+      await database.runAsync(
+        'UPDATE builder_recovery_drafts SET snapshot_json=? WHERE id=?;',
+        JSON.stringify(snapshot),
+        row.id,
+      );
+    }
     if (sourceProfile) {
       await database.runAsync('DELETE FROM user_profiles WHERE id = ?;', sourceUserId);
     }

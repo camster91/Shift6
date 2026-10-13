@@ -1,3 +1,6 @@
+import { persistenceSections } from '../domain/localPersistence';
+import { deleteLocalUserData } from './privacyRepository';
+import { migrateLocalUserToAccount } from './accountRepository';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -20,6 +23,86 @@ const fixture = () =>
   JSON.parse(
     readFileSync(join(__dirname, '../../tests/fixtures/restore-schema12-synthetic.json'), 'utf8'),
   ) as LocalDataExport;
+function fixture13() {
+  const data = fixture();
+  data.schemaVersion = 13;
+  const owner = data.userId;
+  const cycle = data.trainingCycles[0]!;
+  const session = data.workoutSessions[0]!;
+  const saved = data.completedSets[0]!;
+  const program = JSON.parse(String(data.userPrograms[0]!.program_json));
+  const version = JSON.parse(String(data.userProgramVersions[0]!.version_json));
+  version.status = 'draft';
+  data.cycleLifecycleEvents = [
+    {
+      id: 'pause',
+      user_id: owner,
+      cycle_id: cycle.id,
+      kind: 'pause',
+      effective_date: '2026-10-13',
+      time_zone: 'America/Toronto',
+      previous_event_id: null,
+      operation_id: 'pause-op',
+      recorded_at: stamp,
+    },
+    {
+      id: 'resume',
+      user_id: owner,
+      cycle_id: cycle.id,
+      kind: 'resume',
+      effective_date: '2026-10-14',
+      time_zone: 'America/Toronto',
+      previous_event_id: 'pause',
+      operation_id: 'resume-op',
+      recorded_at: stamp,
+    },
+  ];
+  data.coachMemoryPreferences = [{ user_id: owner, enabled: 1, updated_at: stamp }];
+  data.coachMemoryFacts = [
+    {
+      id: 'memory',
+      user_id: owner,
+      value_json: JSON.stringify({ kind: 'training-time', value: 'evening' }),
+      revision: 1,
+      operation_id: 'memory-op',
+      confirmed_at: stamp,
+      updated_at: stamp,
+    },
+  ];
+  data.builderRecoveryDrafts = [
+    {
+      id: 'recovery',
+      user_id: owner,
+      snapshot_json: JSON.stringify({
+        program,
+        version,
+        customExercises: data.userExercises.map((row) => JSON.parse(String(row.exercise_json))),
+        imports: [
+          {
+            workoutId: version.workouts[0].id,
+            text: 'Unresolved original text',
+            previewText: null,
+          },
+        ],
+      }),
+      revision: 1,
+      updated_at: stamp,
+    },
+  ];
+  data.setFeedbackEvents = [
+    {
+      id: 'feedback',
+      user_id: owner,
+      session_id: session.id,
+      completed_set_id: saved.id,
+      difficulty: 'harder-than-expected',
+      corrects_event_id: null,
+      operation_id: 'feedback-op',
+      recorded_at: stamp,
+    },
+  ];
+  return data;
+}
 const serialized = (data: LocalDataExport) => {
   data.summary = buildLocalDataExportSummary(data);
   return JSON.stringify(data);
@@ -40,6 +123,16 @@ beforeEach(() => {
     getFirstAsync: async (sql: string, ...args: SQLInputValue[]) =>
       sqlite.prepare(sql).get(...args) ?? null,
     getAllAsync: async (sql: string, ...args: SQLInputValue[]) => sqlite.prepare(sql).all(...args),
+    withTransactionAsync: async (fn: () => Promise<void>) => {
+      sqlite.exec('BEGIN');
+      try {
+        await fn();
+        sqlite.exec('COMMIT');
+      } catch (error) {
+        sqlite.exec('ROLLBACK');
+        throw error;
+      }
+    },
     withExclusiveTransactionAsync: async (fn: (tx: SQLiteDatabase) => Promise<void>) => {
       sqlite.exec('BEGIN');
       try {
@@ -54,6 +147,190 @@ beforeEach(() => {
   db = adapter as unknown as SQLiteDatabase;
 });
 afterEach(() => sqlite.close());
+
+test('legacy 12 remains strict and normalizes empty schema 13 sections', () => {
+  const legacy = fixture();
+  const preview = validateLocalBackup(serialized(legacy));
+  for (const key of Object.keys(persistenceSections) as (keyof typeof persistenceSections)[])
+    expect(preview.data[key]).toEqual([]);
+  legacy.coachMemoryFacts = [];
+  expect(() => validateLocalBackup(serialized(legacy))).toThrow();
+  const future = fixture13();
+  future.schemaVersion = 14 as 13;
+  expect(() => validateLocalBackup(serialized(future))).toThrow('schemas 12 and 13');
+});
+
+test('schema 13 requires additions and restores all five tables with disabled memory and draft ownership', async () => {
+  const data = fixture13();
+  await restoreLocalBackup(db, 'guest-user', serialized(data));
+  const exported = await exportLocalUserData(db, 'guest-user', stamp);
+  expect(exported.schemaVersion).toBe(13);
+  expect(exported.coachMemoryPreferences?.[0]?.enabled).toBe(0);
+  expect(
+    JSON.parse(String(exported.builderRecoveryDrafts?.[0]?.snapshot_json)).program.ownerId,
+  ).toBe('guest-user');
+  expect(validateLocalBackup(JSON.stringify(exported)).recordCount).toBe(
+    exported.summary.totalRecordCount,
+  );
+  expect(sqlite.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  expect(sqlite.prepare('SELECT count(*) AS n FROM sync_outbox').get()).toEqual({ n: 0 });
+  await deleteLocalUserData(db, 'guest-user');
+  await restoreLocalBackup(db, 'guest-user', JSON.stringify(exported));
+  const again = await exportLocalUserData(db, 'guest-user', stamp);
+  expect(again).toEqual(exported);
+  delete data.coachMemoryFacts;
+  expect(() => validateLocalBackup(serialized(data))).toThrow();
+});
+
+test('additive migration24 preserves actual schema12 rows from a migration23 database', () => {
+  const old = new DatabaseSync(':memory:');
+  try {
+    old.exec('PRAGMA foreign_keys=ON;');
+    for (const migration of MIGRATIONS.filter((entry) => entry.version <= 23))
+      for (const statement of migration.statements) old.exec(statement);
+    old.exec('BEGIN; PRAGMA defer_foreign_keys=ON;');
+    const data = fixture();
+    for (const key of Object.keys(restoreTables) as (keyof typeof restoreTables)[]) {
+      if (key in persistenceSections) continue;
+      const table = restoreTables[key];
+      for (const row of data[key] ?? []) {
+        const columns = Object.keys(row);
+        old
+          .prepare(
+            `INSERT INTO ${table} (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`,
+          )
+          .run(...columns.map((column) => row[column] as SQLInputValue));
+      }
+    }
+    old.exec('COMMIT;');
+    const snapshots = Object.entries(restoreTables)
+      .filter(([key]) => !(key in persistenceSections))
+      .map(([, table]) => [table, old.prepare(`SELECT * FROM ${table}`).all()] as const);
+    for (const statement of MIGRATIONS.find((entry) => entry.version === 24)!.statements)
+      old.exec(statement);
+    for (const [table, rows] of snapshots)
+      expect(old.prepare(`SELECT * FROM ${table}`).all()).toEqual(rows);
+    for (const table of Object.values(persistenceSections))
+      expect(old.prepare(`SELECT count(*) AS n FROM ${table}`).get()).toEqual({ n: 0 });
+    expect(old.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  } finally {
+    old.close();
+  }
+});
+
+test('database enforces owned saved-set references, append-only content and idempotency uniqueness', async () => {
+  await restoreLocalBackup(db, 'guest-user', serialized(fixture13()));
+  expect(() => sqlite.exec("UPDATE set_feedback_events SET difficulty='about-right'")).toThrow(
+    'append-only',
+  );
+  expect(() =>
+    sqlite.exec("UPDATE cycle_lifecycle_events SET effective_date='2026-10-20'"),
+  ).toThrow('append-only');
+  expect(() =>
+    sqlite.exec(
+      "INSERT INTO set_feedback_events SELECT 'again',user_id,session_id,completed_set_id,difficulty,corrects_event_id,operation_id,recorded_at FROM set_feedback_events",
+    ),
+  ).toThrow();
+  const profile = sqlite.prepare('SELECT * FROM user_profiles').get()!;
+  const columns = Object.keys(profile);
+  profile.id = 'other-owner';
+  sqlite
+    .prepare(
+      `INSERT INTO user_profiles (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`,
+    )
+    .run(...columns.map((column) => profile[column]!));
+  const saved = fixture().completedSets[0]!;
+  expect(() =>
+    sqlite
+      .prepare('INSERT INTO set_feedback_events VALUES (?,?,?,?,?,?,?,?)')
+      .run(
+        'foreign',
+        'other-owner',
+        saved.session_id as string,
+        saved.id as string,
+        'about-right',
+        null,
+        'foreign-op',
+        stamp,
+      ),
+  ).toThrow();
+  sqlite
+    .prepare('INSERT INTO coach_memory_facts VALUES (?,?,?,?,?,?,?)')
+    .run(
+      'other-memory',
+      'other-owner',
+      JSON.stringify({ kind: 'coach-style', value: 'concise' }),
+      1,
+      'other-op',
+      stamp,
+      stamp,
+    );
+  await deleteLocalUserData(db, 'guest-user');
+  expect(sqlite.prepare('SELECT id,user_id FROM coach_memory_facts').all()).toEqual([
+    { id: 'other-memory', user_id: 'other-owner' },
+  ]);
+});
+
+test.each([
+  'foreign-owner',
+  'missing-set',
+  'branch',
+  'cycle',
+  'bad-date',
+  'bad-transition',
+  'sensitive-memory',
+  'stale-preview',
+])('schema13 rejects %s before writes', async (fault) => {
+  const data = fixture13();
+  if (fault === 'foreign-owner') data.coachMemoryFacts![0]!.user_id = 'other';
+  if (fault === 'missing-set') data.setFeedbackEvents![0]!.completed_set_id = 'missing';
+  if (fault === 'branch')
+    data.cycleLifecycleEvents!.push({
+      ...data.cycleLifecycleEvents![1],
+      id: 'branch',
+      operation_id: 'branch-op',
+    });
+  if (fault === 'cycle') data.cycleLifecycleEvents![0]!.previous_event_id = 'resume';
+  if (fault === 'bad-date') data.cycleLifecycleEvents![0]!.effective_date = '2026-02-30';
+  if (fault === 'bad-transition') data.cycleLifecycleEvents![0]!.kind = 'resume';
+  if (fault === 'sensitive-memory')
+    data.coachMemoryFacts![0]!.value_json = JSON.stringify({
+      kind: 'health-note',
+      value: 'secret',
+    });
+  if (fault === 'stale-preview') {
+    const row = data.builderRecoveryDrafts![0]!;
+    const value = JSON.parse(String(row.snapshot_json));
+    value.imports[0].previewText = 'other';
+    row.snapshot_json = JSON.stringify(value);
+  }
+  await expect(restoreLocalBackup(db, 'guest-user', serialized(data))).rejects.toThrow();
+  expect(sqlite.prepare('SELECT count(*) AS n FROM user_profiles').get()).toEqual({ n: 0 });
+});
+
+test('late schema13 insertion failure rolls back legacy and new rows', async () => {
+  failAt = 'INSERT INTO set_feedback_events';
+  await expect(restoreLocalBackup(db, 'guest-user', serialized(fixture13()))).rejects.toThrow(
+    'disk failure',
+  );
+  for (const table of Object.values(restoreTables))
+    expect(sqlite.prepare(`SELECT count(*) AS n FROM ${table}`).get()).toEqual({ n: 0 });
+});
+
+test('schema13 adoption remaps owner and recovery JSON without outbox creation; deletion removes all additions', async () => {
+  await restoreLocalBackup(db, 'guest-user', serialized(fixture13()));
+  await migrateLocalUserToAccount(db, 'guest-user', 'new-account');
+  for (const table of Object.values(persistenceSections))
+    expect(sqlite.prepare(`SELECT DISTINCT user_id FROM ${table}`).all()).toEqual([
+      { user_id: 'new-account' },
+    ]);
+  const draft = sqlite.prepare('SELECT snapshot_json FROM builder_recovery_drafts').get()!;
+  expect(JSON.parse(String(draft.snapshot_json)).program.ownerId).toBe('new-account');
+  await deleteLocalUserData(db, 'new-account');
+  for (const table of Object.values(restoreTables))
+    expect(sqlite.prepare(`SELECT count(*) AS n FROM ${table}`).get()).toEqual({ n: 0 });
+  expect(sqlite.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+});
 
 test('real SQLite round trip preserves immutable graph, goal journals/corrections and draft units with no outbox', async () => {
   const data = fixture();

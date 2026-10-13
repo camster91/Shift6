@@ -133,7 +133,7 @@ describe('local onboarding recovery', () => {
       await saveOnboardingDraft(database, 'one', state(1));
       await saveOnboardingDraft(database, 'two', state(2));
       const exported = await exportLocalUserData(database, 'one', 'now');
-      expect(exported.schemaVersion).toBe(12);
+      expect(exported.schemaVersion).toBe(13);
       expect(exported.onboardingDrafts).toHaveLength(1);
       expect(exported.onboardingDrafts?.[0]?.user_id).toBe('one');
       expect(exported.summary.totalRecordCount).toBe(1);

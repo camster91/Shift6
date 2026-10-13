@@ -1,3 +1,8 @@
+import {
+  persistenceSections,
+  type BuilderRecoverySnapshot,
+  type CoachMemoryValue,
+} from './localPersistence';
 import { MIGRATIONS } from '../db/migrations';
 import { buildLocalDataExportSummary, type LocalDataExport } from '../db/privacyRepository';
 import { foundationalExercises } from './fixtures/exercises';
@@ -40,6 +45,7 @@ export const restoreTables = {
   notificationPreferences: 'notification_preferences',
   cycleReviews: 'cycle_reviews',
   workoutScheduleOverrides: 'workout_schedule_overrides',
+  ...persistenceSections,
 } as const;
 export type RestoreSection = keyof typeof restoreTables;
 export type RestoreRow = Record<string, string | number | null>;
@@ -471,10 +477,13 @@ export function validateLocalBackup(serialized: string): RestorePreview {
   }
   check(isRecord(raw), 'file is not an export.');
   check(
-    raw.schemaVersion === 12,
-    'only export schema 12 is supported. Older or future exports need a compatible app; no automatic migration is attempted.',
+    raw.schemaVersion === 12 || raw.schemaVersion === 13,
+    'only export schemas 12 and 13 are supported. Other versions need a compatible app.',
   );
   const sections = Object.keys(restoreTables) as RestoreSection[];
+  const sourceSections = sections.filter(
+    (key) => raw.schemaVersion === 13 || !(key in persistenceSections),
+  );
   keys(
     raw,
     [
@@ -482,7 +491,7 @@ export function validateLocalBackup(serialized: string): RestorePreview {
       'exportedAt',
       'userId',
       'summary',
-      ...sections.filter(
+      ...sourceSections.filter(
         (key) => !['personalGoalEvents', 'personalGoalDrafts', 'onboardingDrafts'].includes(key),
       ),
     ],
@@ -1102,14 +1111,206 @@ export function validateLocalBackup(serialized: string): RestorePreview {
       visited.forEach((id) => done.add(id));
     }
   }
+  validatePersistenceGraph(data);
   const warnings = [
     'Restore works only on an empty local installation; it does not merge or overwrite existing records.',
     'Health connections, provider consent and notification choices reset to off. Device permissions are never granted by restore.',
     'Media files are not included. Custom media links are removed; add your media again on this device.',
     'Identifiers and immutable versions are preserved; owner fields map to the current guest. This is local recovery, not cloud sync.',
   ];
+  data.schemaVersion = 13;
   data.summary = buildLocalDataExportSummary(data);
   return { data, recordCount: count, exportedAt: data.exportedAt, warnings };
+}
+
+export function validateCoachMemoryValue(serialized: string): CoachMemoryValue {
+  const value = safeJSON(serialized);
+  keys(value, ['kind', 'value']);
+  choice(value.kind, ['training-time', 'session-minutes', 'equipment', 'coach-style']);
+  if (value.kind === 'training-time') choice(value.value, ['morning', 'afternoon', 'evening']);
+  if (value.kind === 'coach-style') choice(value.value, ['concise', 'supportive', 'technical']);
+  if (value.kind === 'session-minutes') number(value.value, 1, 1440, true);
+  if (value.kind === 'equipment') {
+    array(value.value);
+    check(value.value.length <= equipmentCatalog.length, 'too many memory equipment entries.');
+    check(new Set(value.value).size === value.value.length, 'duplicate memory equipment.');
+    for (const entry of value.value)
+      check(
+        equipmentCatalog.some((item) => item.id === entry),
+        'unknown memory equipment.',
+      );
+  }
+  return value as unknown as CoachMemoryValue;
+}
+
+/** Recovery remains a private, uncommitted draft; validation never applies it. */
+export function validateBuilderRecoverySnapshot(
+  serialized: string,
+  owner: string,
+): BuilderRecoverySnapshot {
+  check(
+    new TextEncoder().encode(serialized).byteLength <= 1024 * 1024,
+    'builder recovery exceeds 1 MiB.',
+  );
+  const value = safeJSON(serialized);
+  keys(value, ['program', 'version', 'customExercises', 'imports']);
+  program(value.program, owner);
+  version(value.version);
+  check(isRecord(value.program) && isRecord(value.version), 'invalid recovery draft.');
+  check(
+    value.program.id === value.version.programId &&
+      value.program.currentVersionId === value.version.id,
+    'recovery version mismatch.',
+  );
+  check(value.version.status === 'draft', 'recovery must remain a draft.');
+  array(value.customExercises);
+  check(value.customExercises.length <= 100, 'too many recovery movements.');
+  value.customExercises.forEach(exercise);
+  unique(value.customExercises as Record<string, unknown>[], ['id'], 'recovery movement');
+  const exerciseIds = new Set([
+    ...foundationalExercises.map((entry) => entry.id),
+    ...value.customExercises.map((entry) => (entry as Record<string, unknown>).id),
+  ]);
+  const workouts = value.version.workouts as Record<string, unknown>[];
+  check(workouts.length <= 100, 'too many recovery workouts.');
+  for (const workout of workouts)
+    for (const movement of workout.exercises as Record<string, unknown>[])
+      check(exerciseIds.has(movement.exerciseId as string), 'missing recovery movement.');
+  array(value.imports);
+  check(value.imports.length <= workouts.length, 'too many recovery imports.');
+  unique(value.imports as Record<string, unknown>[], ['workoutId'], 'recovery import');
+  for (const entry of value.imports) {
+    keys(entry, ['workoutId', 'text', 'previewText']);
+    check(
+      workouts.some((workout) => workout.id === entry.workoutId),
+      'missing recovery workout.',
+    );
+    text(entry.text, 'original import text', 10000);
+    if (entry.previewText !== null) {
+      text(entry.previewText, 'preview text', 10000);
+      check(entry.previewText === entry.text, 'stale recovery preview.');
+    }
+  }
+  return value as unknown as BuilderRecoverySnapshot;
+}
+
+function validatePersistenceGraph(data: LocalDataExport) {
+  const owner = data.userId;
+  const cycles = new Map(data.trainingCycles.map((row) => [row.id, row]));
+  const sessions = new Map(data.workoutSessions.map((row) => [row.id, row]));
+  const sets = new Map(data.completedSets.map((row) => [row.id, row]));
+  const lifecycle = data.cycleLifecycleEvents ?? [];
+  const feedback = data.setFeedbackEvents ?? [];
+  for (const rows of [lifecycle, feedback, data.coachMemoryFacts ?? []])
+    unique(rows, ['user_id', 'operation_id'], 'local operation');
+  for (const row of data.coachMemoryPreferences ?? []) number(row.enabled, 0, 1, true);
+  const memoryKinds = new Set<string>();
+  for (const row of data.coachMemoryFacts ?? []) {
+    number(row.revision, 1, 1000000, true);
+    const value = validateCoachMemoryValue(String(row.value_json));
+    check(!memoryKinds.has(value.kind), 'duplicate memory preference kind.');
+    memoryKinds.add(value.kind);
+    check(
+      Date.parse(String(row.updated_at)) >= Date.parse(String(row.confirmed_at)),
+      'memory update precedes confirmation.',
+    );
+  }
+  for (const row of data.builderRecoveryDrafts ?? []) {
+    number(row.revision, 1, 1000000, true);
+    validateBuilderRecoverySnapshot(String(row.snapshot_json), owner);
+  }
+  for (const row of lifecycle) {
+    check(cycles.has(row.cycle_id), 'missing lifecycle cycle.');
+    choice(row.kind, ['pause', 'resume', 'review-date']);
+    text(row.time_zone, 'time zone', 100, true);
+    try {
+      new Intl.DateTimeFormat('en', { timeZone: String(row.time_zone) }).format();
+    } catch {
+      fail('invalid lifecycle time zone.');
+    }
+    text(row.effective_date, 'effective date', 10, true);
+    check(
+      /^\d{4}-\d\d-\d\d$/.test(String(row.effective_date)) &&
+        Number.isFinite(Date.parse(String(row.effective_date))) &&
+        new Date(String(row.effective_date)).toISOString().slice(0, 10) === row.effective_date,
+      'invalid lifecycle date.',
+    );
+    const startParts = new Intl.DateTimeFormat('en', {
+      timeZone: String(row.time_zone),
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date(String(cycles.get(row.cycle_id)!.started_at)));
+    const part = (type: string) => startParts.find((item) => item.type === type)!.value;
+    check(
+      String(row.effective_date) >= `${part('year')}-${part('month')}-${part('day')}`,
+      'lifecycle date precedes cycle start.',
+    );
+  }
+  for (const row of feedback) {
+    const session = sessions.get(row.session_id);
+    check(
+      session &&
+        cycles.has(session.cycle_id) &&
+        sets.get(row.completed_set_id)?.session_id === row.session_id,
+      'missing owned feedback set.',
+    );
+    choice(row.difficulty, ['easier-than-expected', 'about-right', 'harder-than-expected']);
+    check(
+      Date.parse(String(row.recorded_at)) >=
+        Date.parse(String(sets.get(row.completed_set_id)!.completed_at)),
+      'feedback precedes saved set.',
+    );
+  }
+  for (const [rows, field, scope] of [
+    [lifecycle, 'previous_event_id', 'cycle_id'],
+    [feedback, 'corrects_event_id', 'completed_set_id'],
+  ] as const) {
+    const records = new Map(rows.map((row) => [row.id, row]));
+    const children = new Map<unknown, Record<string, unknown>>();
+    const roots = new Map<unknown, Record<string, unknown>>();
+    for (const row of rows) {
+      if (row[field] === null) {
+        check(!roots.has(row[scope]), 'duplicate local journal root.');
+        roots.set(row[scope], row);
+      } else {
+        const parent = records.get(row[field]);
+        check(
+          parent &&
+            parent[scope] === row[scope] &&
+            parent.user_id === row.user_id &&
+            (!('session_id' in row) || parent.session_id === row.session_id),
+          'foreign local journal parent.',
+        );
+        check(!children.has(row[field]), 'branched local journal.');
+        check(
+          Date.parse(String(row.recorded_at)) >= Date.parse(String(parent.recorded_at)),
+          'local journal time goes backwards.',
+        );
+        if (field === 'previous_event_id')
+          check(row.time_zone === parent.time_zone, 'lifecycle time zone anchor changed.');
+        children.set(row[field], row);
+      }
+    }
+    const visited = new Set<unknown>();
+    for (const root of roots.values()) {
+      let row: Record<string, unknown> | undefined = root;
+      let paused = false;
+      let lastTransitionDate = '';
+      while (row) {
+        check(!visited.has(row.id), 'cyclic local journal.');
+        visited.add(row.id);
+        if (field === 'previous_event_id' && row.kind !== 'review-date') {
+          check((row.kind === 'pause') !== paused, 'invalid pause/resume sequence.');
+          check(String(row.effective_date) >= lastTransitionDate, 'pause dates go backwards.');
+          paused = row.kind === 'pause';
+          lastTransitionDate = String(row.effective_date);
+        }
+        row = children.get(row.id);
+      }
+    }
+    check(visited.size === rows.length, 'cyclic or disconnected local journal.');
+  }
 }
 
 function validateEvent(kind: string, value: unknown) {

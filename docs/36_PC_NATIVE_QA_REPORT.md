@@ -144,6 +144,27 @@ archive at this endpoint returned 10,420,036 bytes; its checked SHA-256 was
 `5e06070fdad3315f9f3020283d16875395f93e8a59e175be36d8971e64095892`.
 Endpoint reachability does not establish a successful subsequent CI build.
 
+The next [native run 38346899851](https://github.com/camster91/Shift6/actions/runs/38346899851)
+at `88ce95bf` downloaded and checksum-verified both ReactNativeDependencies
+archives, but its iOS CocoaPods preparation then failed downloading
+`reactnative-core-0.86.3-debug.tar.gz`: another `curl (18)` partial transfer after
+about 14 minutes 39 seconds. This repeated dependency-download blocker still
+occurred before compilation or app launch; it supplies no iOS app failure/pass.
+The complete job log is `ios-ci-88ce-job.log` in the sibling evidence directory.
+
+The iOS job now prefetches the installed lockfile's effective stable React Native
+version's debug/release dependencies and core archives into the SDK's existing
+`~/Library/Caches/ReactNative` directory. `rncore.rb`, `rndependencies.rb` and
+`utils.rb` in the installed 0.86.3 SDK establish that normal cache contract.
+Preparation requires a valid Maven SHA-256 sidecar and a matching archive hash
+before atomic promotion. Failed/incomplete transfers remain separate partial
+files; four resumable attempts, connection/transfer/stall bounds and a 15-minute
+step limit prevent another unbounded stall. The SDK's own checksum checks remain
+active. No SDK source, versions, permissions, signing or native/runtime gates
+were changed. [curl's supported resume and timeout controls](https://curl.se/docs/manpage.html)
+were checked on 2026-10-13. The new workflow has not yet produced a verified iOS
+build; a successful matching build and actual runtime journey are still required.
+
 [Runtime run 38344129373](https://github.com/camster91/Shift6/actions/runs/38344129373)
 failed its matching-native-artifact prerequisite; artifact download and simulator
 journey were skipped. No app launch or usability result occurred. Once a new

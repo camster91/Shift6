@@ -1246,6 +1246,21 @@ function validatePersistenceGraph(data: LocalDataExport) {
       String(row.effective_date) >= `${part('year')}-${part('month')}-${part('day')}`,
       'lifecycle date precedes cycle start.',
     );
+    const recordedParts = new Intl.DateTimeFormat('en', {
+      timeZone: String(row.time_zone),
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date(String(row.recorded_at)));
+    const recordedPart = (type: string) =>
+      recordedParts.find((entry) => entry.type === type)!.value;
+    const recordedDate = `${recordedPart('year')}-${recordedPart('month')}-${recordedPart('day')}`;
+    check(
+      row.kind === 'review-date'
+        ? String(row.effective_date) >= recordedDate
+        : row.effective_date === recordedDate,
+      'lifecycle effective date disagrees with its recorded local date.',
+    );
   }
   for (const row of feedback) {
     const session = sessions.get(row.session_id);
@@ -1257,9 +1272,8 @@ function validatePersistenceGraph(data: LocalDataExport) {
     );
     choice(row.difficulty, ['easier-than-expected', 'about-right', 'harder-than-expected']);
     check(
-      Date.parse(String(row.recorded_at)) >=
-        Date.parse(String(sets.get(row.completed_set_id)!.completed_at)),
-      'feedback precedes saved set.',
+      Date.parse(String(row.recorded_at)) >= Date.parse(String(session.started_at)),
+      'feedback precedes its workout session.',
     );
   }
   for (const [rows, field, scope] of [

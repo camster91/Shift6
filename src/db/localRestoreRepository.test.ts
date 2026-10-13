@@ -1,6 +1,7 @@
 import { persistenceSections } from '../domain/localPersistence';
 import { deleteLocalUserData } from './privacyRepository';
 import { migrateLocalUserToAccount } from './accountRepository';
+import { getCompletedSets, updateCompletedSet } from './workoutRepository';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -54,7 +55,7 @@ function fixture13() {
       time_zone: 'America/Toronto',
       previous_event_id: 'pause',
       operation_id: 'resume-op',
-      recorded_at: stamp,
+      recorded_at: '2026-10-14T04:00:00.000Z',
     },
   ];
   data.coachMemoryPreferences = [{ user_id: owner, enabled: 1, updated_at: stamp }];
@@ -321,6 +322,53 @@ test('explicit legacy return preserves unknown pause timing in schema13 round tr
   );
   data.trainingCycles[0]!.status = 'paused';
   expect(() => validateLocalBackup(serialized(data))).toThrow('current cycle status');
+});
+
+test('feedback remains restorable after an actual saved-set edit changes completed_at', async () => {
+  await restoreLocalBackup(db, 'guest-user', serialized(fixture13()));
+  const set = (await getCompletedSets(db, String(fixture().workoutSessions[0]!.id)))[0]!;
+  await updateCompletedSet(db, {
+    ...set,
+    durationSeconds: (set.durationSeconds ?? 0) + 1,
+    completedAt: '2026-10-15T04:00:00.000Z',
+  });
+  const exported = await exportLocalUserData(db, 'guest-user', stamp);
+  expect(Date.parse(String(exported.setFeedbackEvents![0]!.recorded_at))).toBeLessThan(
+    Date.parse(String(exported.completedSets[0]!.completed_at)),
+  );
+  expect(() => validateLocalBackup(JSON.stringify(exported))).not.toThrow();
+  await deleteLocalUserData(db, 'guest-user');
+  await restoreLocalBackup(db, 'guest-user', JSON.stringify(exported));
+  expect(await getCompletedSets(db, set.sessionId)).toEqual(
+    expect.arrayContaining([expect.objectContaining({ completedAt: '2026-10-15T04:00:00.000Z' })]),
+  );
+});
+
+test.each(['future', 'backdated', 'past-review'])(
+  'restore rejects %s lifecycle chronology',
+  (fault) => {
+    const data = fixture13();
+    const event = data.cycleLifecycleEvents![0]!;
+    if (fault === 'future') event.effective_date = '2030-01-01';
+    if (fault === 'backdated') {
+      event.recorded_at = '2026-10-14T04:00:00.000Z';
+    }
+    if (fault === 'past-review') {
+      event.kind = 'review-date';
+      event.recorded_at = '2026-10-14T04:00:00.000Z';
+    }
+    expect(() => validateLocalBackup(serialized(data))).toThrow('recorded local date');
+  },
+);
+
+test('restore validates recorded local midnight across DST, not UTC date', () => {
+  const data = fixture13();
+  const event = data.cycleLifecycleEvents![0]!;
+  // Toronto is still on the prior local date at this UTC instant.
+  event.recorded_at = '2026-10-14T03:30:00.000Z';
+  expect(() => validateLocalBackup(serialized(data))).not.toThrow();
+  event.effective_date = '2026-10-14';
+  expect(() => validateLocalBackup(serialized(data))).toThrow('recorded local date');
 });
 
 test('late schema13 insertion failure rolls back legacy and new rows', async () => {

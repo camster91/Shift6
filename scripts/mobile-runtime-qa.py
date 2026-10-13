@@ -101,8 +101,14 @@ def click(label, last=False):
 
 def fill(label, value):
     control = find(label, editable=True)
+    command('POST', f'/element/{control}/click', {})
+    time.sleep(0.5)
     command('POST', f'/element/{control}/clear', {})
-    command('POST', f'/element/{control}/value', {'text': value, 'value': list(value)})
+    command('POST', f'/element/{control}/value', {'text': value})
+    time.sleep(0.5)
+    observed = command('GET', f'/element/{control}/attribute/value')
+    if observed != value:
+        raise AssertionError(f'Text input {label} contained {observed!r}, expected {value!r}')
     try:
         command('POST', '/hide_keyboard', {})
     except RuntimeError:
@@ -181,12 +187,15 @@ def journey():
     click('Build from blank')
     snapshot('private-builder-entry')
     fill('Required workout name', 'QA Session')
+    snapshot('private-builder-workout-name-entered')
     click('Add required workout')
+    expect('1 workouts · six-week model retained')
+    snapshot('private-builder-required-workout-added')
     fill('Custom exercise name', 'QA Hold')
     click('Add custom movement')
     snapshot('private-builder-custom-movement')
     click('Save draft program')
-    expect('Draft saved locally.')
+    expect('Program saved')
     snapshot('private-draft-saved-copy')
     click('Start this six-week cycle')
     expect('Start workout')

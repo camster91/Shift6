@@ -51,6 +51,9 @@ jobs:
   ios:
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      # Canonical Maven Central endpoint; RN retains its normal SHA verification.
+      ENTERPRISE_REPOSITORY: https://repo.maven.apache.org/maven2
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

@@ -126,6 +126,30 @@ records. An isolated follow-up is adding owner-scoped discovery with explicit
 immutable-copy semantics. [Saved](qa/2026-10-13/candidate-private-draft-saved.png),
 [after relaunch](qa/2026-10-13/candidate-private-draft-after-relaunch.png).
 
+## iOS CI preparation failure, 13 October 2026
+
+[Native run 38344129299](https://github.com/camster91/Shift6/actions/runs/38344129299)
+failed during CocoaPods dependency preparation, before app compilation: React
+Native 0.86.3's release dependency archive from `repo1.maven.org` ended with
+`curl: (18) Transferred a partial file`. This is a download/setup failure, not an
+observed app defect or successful iOS runtime check. The sibling evidence log
+is `qa-native-ios-ci.log`.
+
+The iOS native-validation job now uses React Native's documented-in-source
+`ENTERPRISE_REPOSITORY` override with `https://repo.maven.apache.org/maven2`.
+Both domains are [official Maven Central TLS endpoints](https://central.sonatype.org/faq/ssl/)
+(checked 2026-10-13). Artifact/version selection, checksum verification, caches,
+workflow permissions and signing settings remain unchanged. The same release
+archive at this endpoint returned 10,420,036 bytes; its checked SHA-256 was
+`5e06070fdad3315f9f3020283d16875395f93e8a59e175be36d8971e64095892`.
+Endpoint reachability does not establish a successful subsequent CI build.
+
+[Runtime run 38344129373](https://github.com/camster91/Shift6/actions/runs/38344129373)
+failed its matching-native-artifact prerequisite; artifact download and simulator
+journey were skipped. No app launch or usability result occurred. Once a new
+matching native iOS build succeeds, that runtime workflow can be rerun against
+the matching artifact. Its trigger and source-matching safeguards were not changed.
+
 ## Provisional weighting and coverage
 
 | Doc 34 area | Credit / weight | Engineering evidence and missing acceptance |

@@ -388,7 +388,7 @@ export async function assertNoUnsupportedShiftOutboxRows(database: SQLiteDatabas
 }
 
 export async function deleteLocalUserData(database: SQLiteDatabase, userId: string): Promise<void> {
-  await database.withTransactionAsync(async () => {
+  await database.withExclusiveTransactionAsync(async (database) => {
     await assertNoUnsupportedShiftOutboxRows(database);
     for (const table of Object.values(persistenceSections))
       await database.runAsync(`DELETE FROM ${table} WHERE user_id=?;`, userId);

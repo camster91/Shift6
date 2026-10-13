@@ -210,6 +210,8 @@ describe('deleteLocalUserData', () => {
   it('fails before deleting records when a future Shift child mutation cannot be attributed safely', async () => {
     const runAsync = jest.fn();
     const database = {
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        database.withTransactionAsync(() => callback(database)),
       getFirstAsync: async () => ({ id: 'future-child' }),
       runAsync,
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
@@ -224,6 +226,8 @@ describe('deleteLocalUserData', () => {
   it('clears dependent records and sync mutations in one transaction', async () => {
     const calls: Array<{ sql: string; params: unknown[] }> = [];
     const database = {
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        database.withTransactionAsync(() => callback(database)),
       getFirstAsync: async () => null,
       runAsync: async (sql: string, ...params: unknown[]) => {
         calls.push({ sql, params });
@@ -258,7 +262,7 @@ describe('deleteLocalUserData', () => {
     expect(calls.at(-1)?.sql).toContain('DELETE FROM user_profiles');
   });
 
-  it('exports and deletes one owner’s Shift history while preserving another owner and foreign keys', async () => {
+  it('exports and deletes one owner�s Shift history while preserving another owner and foreign keys', async () => {
     const sqlite = new DatabaseSync(':memory:');
     sqlite.exec('PRAGMA foreign_keys = ON;');
     const database = {

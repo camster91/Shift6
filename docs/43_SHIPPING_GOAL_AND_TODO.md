@@ -2,6 +2,8 @@
 
 13 October 2026. This is the current delivery index for the expanded iOS/Android goal. It supersedes the delivery order in doc 37, while preserving that document's dated audit and evidence. It does not approve content, alter the shipping guest configuration or authorize a release.
 
+Native QA subsequently filed [#352](https://github.com/camster91/Shift6/issues/352) for invalid optional measurements being silently dropped. The refreshed backlog is **42 open issues**; the original 41-issue reconciliation remains a dated snapshot. #352 is mapped below rather than excluded from the shipping TODO.
+
 ## Goal and product promise
 
 Build an excellent mobile fitness app that helps a person choose one measurable six-week goal, establish an honest baseline, train with little manual effort, recover interrupted work, understand comparable results and choose their next step. Local Coach should explain and guide these existing workflows. Optional voice and Gemini must reduce effort without guessing achieved results or taking control of training.
@@ -58,6 +60,12 @@ Source implemented means code exists. Native observed means a stated scenario wa
 | #335             | Nutrition is an evidence/design decision issue. Record pilot need and an included/deferred/no-build decision; any later journal/photo work needs a separate validated scope. Do not silently build calorie or photo claims to satisfy feature breadth.                                                              | T12           |
 | #316             | Moderated and six-week protocol exists; no actual participants/outcomes. Real consented sessions/cohort and denominators are required.                                                                                                                                                                              | T11, T12      |
 | #281             | Identifiers/build profiles and store-package drafts exist. Owner access/signing, physical candidates, public support/privacy URLs, truthful declarations/listings, approved submission and store acceptance remain.                                                                                                 | T13–T16       |
+
+Follow-up issue mapping:
+
+| Issue | Existing delivery / exact remaining work                                                                                                                                                                                                                                                                                      | Queue    |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| #352  | Native source `0d54f755` accepted a 36-second set with RIR `-1` and exported RIR as null. `71babfc8` adds refusal/guidance for invalid nonempty measurements while retaining blanks, zero and existing ranges. Full verification and changed-binary refusal/correction/readback remain pending; preserve the before evidence. | T02, T03 |
 
 ## Ordered TODO and acceptance receipts
 

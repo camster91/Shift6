@@ -50,6 +50,8 @@ jest.mock('expo-file-system', () => {
 });
 async function data(owner = 'guest-user', notes = 'test') {
   const db = {
+    withExclusiveTransactionAsync: async (operation: (tx: SQLiteDatabase) => Promise<void>) =>
+      operation(db as unknown as SQLiteDatabase),
     getAllAsync: async (sql: string) =>
       sql.includes('FROM workout_sessions') ? [{ id: 'session', notes }] : [],
   } as unknown as SQLiteDatabase;

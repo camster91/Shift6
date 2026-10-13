@@ -341,6 +341,7 @@ describe('saveActiveWorkoutRevision', () => {
   it('commits the version, cycle pointer, session pointer, and outbox rows together', async () => {
     const calls: Array<{ sql: string; params: unknown[] }> = [];
     const database = {
+      getAllAsync: async () => [],
       runAsync: async (sql: string, ...params: unknown[]) => {
         calls.push({ sql, params });
         return { changes: 1, lastInsertRowId: 1 };

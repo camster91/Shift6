@@ -133,6 +133,7 @@ describe('acceptCoachProposalWithRevision', () => {
     };
     const calls: string[] = [];
     const database = {
+      getAllAsync: async () => [],
       runAsync: async (sql: string) => {
         calls.push(sql);
         return { changes: 1, lastInsertRowId: 1 };

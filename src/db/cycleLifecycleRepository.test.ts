@@ -15,6 +15,12 @@ import {
 } from './cycleLifecycleRepository';
 import { saveTrainingCycle } from './cycleRepository';
 import { createTrainingCycle } from '../domain/cycle';
+import {
+  getSavedCyclePage,
+  getOwnedCycleReflection,
+  selectDashboardCycle,
+  type CycleHistoryCursor,
+} from './cycleHistoryRepository';
 jest.mock('../config/env', () => ({ runtimeConfig: { releaseMode: 'guest-only' } }));
 let sqlite: DatabaseSync;
 let db: SQLiteDatabase;
@@ -166,4 +172,71 @@ test('actual new cycle save atomically journals previous active cycle pause', as
 test('date projection follows anchored local midnight and DST without advancing training', () => {
   expect(lifecycleDate('2026-03-08T04:30:00Z', 'America/Toronto')).toBe('2026-03-07');
   expect(lifecycleDate('2026-03-08T07:30:00Z', 'America/Toronto')).toBe('2026-03-08');
+});
+
+test('saved-cycle pages include older paused cycles without duplicates or foreign owners', async () => {
+  for (let index = 0; index < 7; index++)
+    sqlite
+      .prepare(
+        "INSERT INTO training_cycles SELECT ?,user_id,program_version_id,'paused',current_week,started_at,weeks_json FROM training_cycles WHERE id=?",
+      )
+      .run(`older-${index}`, cycleId);
+  const profile = sqlite.prepare('SELECT * FROM user_profiles').get()!;
+  const columns = Object.keys(profile);
+  profile.id = 'other';
+  sqlite
+    .prepare(
+      `INSERT INTO user_profiles (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`,
+    )
+    .run(...columns.map((key) => profile[key]!));
+  sqlite
+    .prepare(
+      "INSERT INTO training_cycles SELECT 'foreign',?,program_version_id,'paused',current_week,started_at,weeks_json FROM training_cycles WHERE id=?",
+    )
+    .run('other', cycleId);
+  const collected: string[] = [];
+  let cursor: CycleHistoryCursor | null = null;
+  do {
+    const page = await getSavedCyclePage(db, 'guest-user', cursor, 2);
+    collected.push(...page.entries.map((entry) => entry.cycle.id));
+    cursor = page.nextCursor;
+  } while (cursor);
+  expect(collected).toHaveLength(8);
+  expect(new Set(collected).size).toBe(8);
+  expect(collected).not.toContain('foreign');
+  expect(collected).toContain('older-0');
+  await expect(getSavedCyclePage(db, 'guest-user', null, 101)).rejects.toThrow('page size');
+  expect(await selectDashboardCycle(db, 'guest-user', 'foreign')).toBeNull();
+  expect(await selectDashboardCycle(db, 'guest-user', 'missing')).toBeNull();
+  await expect(selectDashboardCycle(db, 'guest-user', ['older-0'])).rejects.toThrow('invalid');
+  expect((await selectDashboardCycle(db, 'guest-user', 'older-0'))?.status).toBe('paused');
+  expect((await selectDashboardCycle(db, 'guest-user', undefined))?.id).toBe(cycleId);
+});
+
+test('reflection lookup stays on the selected owned cycle when a newer active cycle exists', async () => {
+  sqlite
+    .prepare(
+      "INSERT INTO training_cycles SELECT 'new-active',user_id,program_version_id,'active',current_week,'2026-10-15T12:00:00Z',weeks_json FROM training_cycles WHERE id=?",
+    )
+    .run(cycleId);
+  sqlite
+    .prepare('INSERT INTO cycle_reviews VALUES (?,?,?,?,?,?,?,?,?)')
+    .run(
+      'reflection',
+      'guest-user',
+      cycleId,
+      4,
+      'same-course',
+      'adjust',
+      'Synthetic original cycle reflection',
+      stamp,
+      stamp,
+    );
+  const detail = await getOwnedCycleReflection(db, 'guest-user', cycleId);
+  expect(detail?.cycle.id).toBe(cycleId);
+  expect(detail?.review?.note).toBe('Synthetic original cycle reflection');
+  expect(await getOwnedCycleReflection(db, 'other', cycleId)).toBeNull();
+  await expect(getOwnedCycleReflection(db, 'guest-user', undefined)).rejects.toThrow(
+    'Choose a saved cycle',
+  );
 });

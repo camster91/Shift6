@@ -1,3 +1,4 @@
+import { selectDashboardCycle } from '../src/db/cycleHistoryRepository';
 import {
   getCycleLifecycleEvents,
   appendCycleLifecycleEvent,
@@ -6,7 +7,7 @@ import { lifecycleDate, summarizeLifecycle } from '../src/domain/cycleLifecycle'
 import type { CycleLifecycleEvent } from '../src/domain/localPersistence';
 import { useNotificationRuntime } from '../src/services/NotificationRuntimeProvider';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
@@ -33,32 +34,40 @@ import {
   getWorkoutScheduleOverrides,
   getWorkoutScheduleSessions,
 } from '../src/db/calendarRepository';
-import { getActiveTrainingCycle, getLatestTrainingCycle } from '../src/db/cycleRepository';
+import { getActiveTrainingCycle } from '../src/db/cycleRepository';
 import { getUserProgramVersion } from '../src/db/programRepository';
 import { getCompletedWorkoutIds } from '../src/db/progressRepository';
 import { colors, spacing } from '../src/design/tokens';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function CycleDashboardScreen() {
+  const params = useLocalSearchParams<{ cycleId?: string | string[] }>();
+  const requestedSelection =
+    params.cycleId === undefined || typeof params.cycleId === 'string'
+      ? params.cycleId
+      : '\u0000invalid-cycle';
   const database = useLocalDatabase();
   const userId = useCurrentUserId();
   const { refreshNow } = useNotificationRuntime();
+  const [otherActive, setOtherActive] = useState<TrainingCycle | null>(null);
   const [events, setEvents] = useState<CycleLifecycleEvent[]>([]);
   const [reviewDate, setReviewDate] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
-  const context = useRef({ database, userId });
-  context.current = { database, userId };
+  const context = useRef({ database, userId, requestedSelection });
+  context.current = { database, userId, requestedSelection };
   const focusGeneration = useRef(0);
   const [cycle, setCycle] = useState<TrainingCycle | null>(null);
   const [program, setProgram] = useState<Program | null>(null);
   const [version, setVersion] = useState<ProgramVersion | null>(null);
   const [schedule, setSchedule] = useState<WeeklyScheduleEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loadedFor, setLoadedFor] = useState<{ database: typeof database; userId: string } | null>(
-    null,
-  );
+  const [loadedFor, setLoadedFor] = useState<{
+    database: typeof database;
+    userId: string;
+    requestedSelection: typeof requestedSelection;
+  } | null>(null);
   const [completedWorkoutIds, setCompletedWorkoutIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -81,10 +90,14 @@ export default function CycleDashboardScreen() {
       setProgram(null);
       setVersion(null);
       setLoadedFor(null);
-      void getActiveTrainingCycle(database, userId)
-        .then(async (selected) => {
-          const activeCycle = selected ?? (await getLatestTrainingCycle(database, userId));
+      void selectDashboardCycle(database, userId, requestedSelection)
+        .then(async (activeCycle) => {
           if (!active || !activeCycle) return;
+          const currentActive = await getActiveTrainingCycle(database, userId);
+          if (!active) return;
+          setOtherActive(
+            currentActive && currentActive.id !== activeCycle.id ? currentActive : null,
+          );
           const snapshot = await getUserProgramVersion(
             database,
             userId,
@@ -104,7 +117,7 @@ export default function CycleDashboardScreen() {
           setCompletedWorkoutIds(completedIds);
           setProgram(snapshot.program);
           setVersion(snapshot.version);
-          setLoadedFor({ database, userId });
+          setLoadedFor({ database, userId, requestedSelection });
           setSchedule(
             buildCurrentCycleWeekSchedule(
               activeCycle,
@@ -126,7 +139,7 @@ export default function CycleDashboardScreen() {
         active = false;
         if (focusGeneration.current === generation) focusGeneration.current++;
       };
-    }, [database, userId, reload]),
+    }, [database, userId, reload, requestedSelection]),
   );
 
   const confirmAction = (kind: CycleLifecycleEvent['kind']) => {
@@ -135,7 +148,8 @@ export default function CycleDashboardScreen() {
       !cycle ||
       busy ||
       loadedFor?.userId !== userId ||
-      loadedFor.database !== database
+      loadedFor.database !== database ||
+      loadedFor.requestedSelection !== requestedSelection
     )
       return;
     const summary = summarizeLifecycle(events);
@@ -153,7 +167,8 @@ export default function CycleDashboardScreen() {
     const matches = () =>
       focusGeneration.current === generation &&
       context.current.database === database &&
-      context.current.userId === userId;
+      context.current.userId === userId &&
+      context.current.requestedSelection === requestedSelection;
     let submitted = false;
     Alert.alert(
       kind === 'review-date'
@@ -212,7 +227,12 @@ export default function CycleDashboardScreen() {
     );
   };
 
-  if (loading || (database && cycle && loadedFor?.database !== database)) {
+  if (
+    loading ||
+    (database &&
+      cycle &&
+      (loadedFor?.database !== database || loadedFor.requestedSelection !== requestedSelection))
+  ) {
     return (
       <Screen>
         <LoadingSkeleton height={44} />
@@ -258,6 +278,14 @@ export default function CycleDashboardScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
+      <Button label="All saved cycles" variant="ghost" onPress={() => router.push('/cycles')} />
+      <Button
+        label="Read saved reflection"
+        variant="ghost"
+        onPress={() =>
+          router.push({ pathname: '/cycle-reflection', params: { cycleId: cycle.id } })
+        }
+      />
       <Text variant="display" accessibilityRole="header" style={styles.title}>
         Your next six.
       </Text>
@@ -314,9 +342,22 @@ export default function CycleDashboardScreen() {
         {cycle.status === 'active' || cycle.status === 'paused' ? (
           <Button
             label={cycle.status === 'paused' ? 'Resume cycle' : 'Pause cycle'}
-            disabled={busy}
+            disabled={busy || (cycle.status === 'paused' && otherActive !== null)}
             onPress={() => confirmAction(cycle.status === 'paused' ? 'resume' : 'pause')}
           />
+        ) : null}
+        {cycle.status === 'paused' && otherActive ? (
+          <>
+            <Text variant="small">
+              Another cycle is active. Open and pause it explicitly before resuming this cycle.
+            </Text>
+            <Button
+              label="Open active cycle"
+              onPress={() =>
+                router.push({ pathname: '/cycle', params: { cycleId: otherActive.id } })
+              }
+            />
+          </>
         ) : null}
         <Text variant="smallMedium">Planned review date (YYYY-MM-DD)</Text>
         <TextInput
@@ -460,10 +501,24 @@ export default function CycleDashboardScreen() {
       </Card>
 
       <Button
-        label={isComplete ? 'Open cycle review' : 'Open progress'}
+        label={
+          requestedSelection !== undefined
+            ? 'Read saved reflection'
+            : isComplete
+              ? 'Open cycle review'
+              : 'Open progress'
+        }
         variant="secondary"
         icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
-        onPress={() => router.push(isComplete ? '/review' : '/progress')}
+        onPress={() =>
+          router.push(
+            requestedSelection !== undefined
+              ? { pathname: '/cycle-reflection', params: { cycleId: cycle.id } }
+              : isComplete
+                ? '/review'
+                : '/progress',
+          )
+        }
         style={styles.action}
       />
     </Screen>

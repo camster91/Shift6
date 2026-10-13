@@ -1,5 +1,6 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
+import { router } from 'expo-router';
 import CycleScreen from '../../app/cycle';
 import {
   demoCycle as mockCycle,
@@ -9,10 +10,13 @@ import {
 const mockDb = {};
 let mockOwner = 'guest-user';
 let mockStatus = 'active';
+let mockSelection: string | undefined;
+let mockOtherActive: string | null = null;
 const mockAppend = jest.fn();
 const mockRefresh = jest.fn();
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), replace: jest.fn(), push: jest.fn() },
+  useLocalSearchParams: () => ({ cycleId: mockSelection }),
   useFocusEffect: (callback: () => void) => {
     const React = jest.requireActual('react');
     React.useEffect(callback, [callback]);
@@ -25,8 +29,18 @@ jest.mock('../services/NotificationRuntimeProvider', () => ({
 }));
 jest.mock('../db/cycleRepository', () => ({
   getActiveTrainingCycle: async () =>
-    mockStatus === 'active' ? { ...mockCycle, userId: mockOwner, status: mockStatus } : null,
+    mockOtherActive
+      ? { ...mockCycle, id: mockOtherActive, userId: mockOwner, status: 'active' }
+      : mockStatus === 'active'
+        ? { ...mockCycle, userId: mockOwner, status: mockStatus }
+        : null,
   getLatestTrainingCycle: async () => ({ ...mockCycle, userId: mockOwner, status: mockStatus }),
+}));
+jest.mock('../db/cycleHistoryRepository', () => ({
+  selectDashboardCycle: async () =>
+    mockSelection === 'foreign'
+      ? null
+      : { ...mockCycle, id: mockSelection ?? mockCycle.id, userId: mockOwner, status: mockStatus },
 }));
 jest.mock('../db/programRepository', () => ({
   getUserProgramVersion: async () => ({ program: mockProgram, version: mockVersion }),
@@ -44,6 +58,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockOwner = 'guest-user';
   mockStatus = 'active';
+  mockSelection = undefined;
+  mockOtherActive = null;
   mockAppend.mockResolvedValue({});
   mockRefresh.mockResolvedValue({ status: 'disabled' });
 });
@@ -89,5 +105,34 @@ test('review date confirmation names the exact entered date', async () => {
   await fireEvent.changeText(screen.getByLabelText('Planned review date'), '2026-11-01');
   await fireEvent.press(screen.getByText('Confirm review date'));
   expect(alert.mock.calls[0]![1]).toContain('2026-11-01');
+  expect(mockAppend).not.toHaveBeenCalled();
+});
+test('a foreign requested cycle never falls back to the active cycle', async () => {
+  mockSelection = 'foreign';
+  const screen = await render(<CycleScreen />);
+  await waitFor(() => expect(screen.getByText('Cycle unavailable')).toBeTruthy());
+  expect(screen.queryByText('Pause cycle')).toBeNull();
+  expect(mockAppend).not.toHaveBeenCalled();
+});
+test('changing the selected cycle invalidates a previously opened confirmation', async () => {
+  const alert = jest.spyOn(Alert, 'alert');
+  mockSelection = 'older-a';
+  const screen = await render(<CycleScreen />);
+  await waitFor(() => expect(screen.getByText('Pause cycle')).toBeTruthy());
+  await fireEvent.press(screen.getByText('Pause cycle'));
+  const confirm = alert.mock.calls[0]![2]![1]!.onPress!;
+  mockSelection = 'newer-b';
+  await screen.rerender(<CycleScreen />);
+  await act(async () => confirm());
+  expect(mockAppend).not.toHaveBeenCalled();
+});
+test('an older paused cycle links to the exact other active cycle and cannot silently resume', async () => {
+  mockStatus = 'paused';
+  mockSelection = 'older-a';
+  mockOtherActive = 'newer-b';
+  const screen = await render(<CycleScreen />);
+  await waitFor(() => expect(screen.getByText('Open active cycle')).toBeTruthy());
+  await fireEvent.press(screen.getByText('Open active cycle'));
+  expect(router.push).toHaveBeenCalledWith({ pathname: '/cycle', params: { cycleId: 'newer-b' } });
   expect(mockAppend).not.toHaveBeenCalled();
 });

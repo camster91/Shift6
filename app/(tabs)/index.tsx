@@ -213,9 +213,9 @@ export default function HomeScreen() {
           onAction={() => router.push('/programs')}
         />
         <Button
-          label="Open saved cycle"
+          label="Open saved cycles"
           variant="secondary"
-          onPress={() => router.push('/cycle')}
+          onPress={() => router.push('/cycles')}
         />
       </Screen>
     );
@@ -336,6 +336,7 @@ export default function HomeScreen() {
         onPress={() => router.push('/cycle')}
         style={styles.cycleAction}
       />
+      <Button label="All saved cycles" variant="ghost" onPress={() => router.push('/cycles')} />
       <Button
         label="Open calendar"
         variant="ghost"

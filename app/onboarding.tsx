@@ -1,3 +1,8 @@
+import {
+  nextCoachSetupQuestion,
+  coachSetupPrompts,
+  coachSetupReview,
+} from '../src/domain/coachOnboarding';
 import { onboardingFlows, type OnboardingRecoveryState } from '../src/domain/onboardingRecovery';
 import {
   getOnboardingDraft,
@@ -70,6 +75,10 @@ const initialDraft = () => ({
 });
 
 export default function OnboardingScreen() {
+  return <SetupScreen />;
+}
+
+export function SetupScreen({ guided = false }: { guided?: boolean }) {
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
   const userId = useCurrentUserId();
@@ -90,6 +99,7 @@ export default function OnboardingScreen() {
   currentOwner.current = userId;
   const draftWrites = useRef<Promise<void>>(Promise.resolve());
   const saved = useRef(false);
+  const actionBusy = useRef(false);
 
   const persistDraft = useCallback(
     (nextStep = step) => {
@@ -152,9 +162,21 @@ export default function OnboardingScreen() {
         if (!active) return;
         setDraft(recovery?.draft ?? (profile ? fromOnboardingProfile(profile) : initialDraft()));
         setSteps(
-          recovery ? onboardingFlows[recovery.flow] : profile ? detailedSteps : essentialSteps,
+          guided
+            ? detailedSteps
+            : recovery
+              ? onboardingFlows[recovery.flow]
+              : profile
+                ? detailedSteps
+                : essentialSteps,
         );
-        setStep(recovery?.step ?? 0);
+        setStep(
+          guided
+            ? nextCoachSetupQuestion(
+                recovery?.draft ?? (profile ? fromOnboardingProfile(profile) : initialDraft()),
+              )
+            : (recovery?.step ?? 0),
+        );
         setConsiderations(
           recovery
             ? {
@@ -178,7 +200,7 @@ export default function OnboardingScreen() {
     return () => {
       active = false;
     };
-  }, [database, userId]);
+  }, [database, userId, guided]);
 
   const recommendations = useMemo(() => {
     if (!isOnboardingComplete(draft)) return [];
@@ -186,7 +208,7 @@ export default function OnboardingScreen() {
     return recommendPrograms(
       programLibraryPrograms.filter((program) => {
         const entry = programLibrary.find((candidate) => candidate.program.id === program.id);
-        return entry && isProgramStartAllowed(entry, __DEV__);
+        return entry && isProgramStartAllowed(entry, guided ? false : __DEV__);
       }),
       {
         goals: draft.goals,
@@ -196,7 +218,7 @@ export default function OnboardingScreen() {
         preferredSessionMinutes: draft.preferredSessionMinutes!,
       },
     );
-  }, [draft]);
+  }, [draft, guided]);
 
   const updateDraft = <Key extends keyof typeof draft>(key: Key, value: (typeof draft)[Key]) => {
     setHasDraftChanges(true);
@@ -245,17 +267,20 @@ export default function OnboardingScreen() {
   }
 
   const handleContinue = async () => {
-    if (!canContinue) return;
+    if (!canContinue || actionBusy.current || loadedOwner !== userId || !database) return;
+    actionBusy.current = true;
     setError(null);
 
     if (step < stepCount - 1) {
       setSaving(true);
       try {
-        await persistDraft(step + 1);
-        setStep((current) => current + 1);
+        const next = guided ? nextCoachSetupQuestion(draft) : step + 1;
+        await persistDraft(next);
+        if (currentOwner.current === userId) setStep(next);
       } catch {
         setError('We could not save your setup progress. Try Continue again.');
       } finally {
+        actionBusy.current = false;
         setSaving(false);
       }
       return;
@@ -264,6 +289,7 @@ export default function OnboardingScreen() {
     setSaving(true);
     try {
       await draftWrites.current;
+      if (currentOwner.current !== userId) return;
       const updatedAt = new Date().toISOString();
       const profile = toOnboardingProfile(draft, updatedAt, userId);
       if (database) {
@@ -280,6 +306,7 @@ export default function OnboardingScreen() {
           );
         }
       }
+      if (currentOwner.current !== userId) return;
       if (database) await clearOnboardingDraft(database, userId);
       saved.current = true;
       trackAnalyticsEvent(analytics, 'onboarding_completed', {
@@ -292,6 +319,7 @@ export default function OnboardingScreen() {
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'We could not save your setup.');
     } finally {
+      actionBusy.current = false;
       setSaving(false);
     }
   };
@@ -331,9 +359,15 @@ export default function OnboardingScreen() {
           ) : null}
           <View style={styles.actions}>
             <Button
-              label={step === stepCount - 1 ? 'Save setup' : 'Continue'}
-              onPress={handleContinue}
-              disabled={!canContinue}
+              label={
+                step === stepCount - 1
+                  ? guided
+                    ? 'Confirm and save reviewed setup'
+                    : 'Save setup'
+                  : 'Continue'
+              }
+              onPress={() => void handleContinue()}
+              disabled={!canContinue || !database || loadedOwner !== userId}
               loading={saving}
               icon={
                 step === stepCount - 1 ? undefined : (
@@ -359,12 +393,85 @@ export default function OnboardingScreen() {
           <View style={styles.headerSpacer} />
         )}
         <Text variant="caption" tone="muted">
-          SETUP · {step + 1} OF {stepCount}
+          {guided ? 'LOCAL COACH SETUP' : `SETUP · ${step + 1} OF ${stepCount}`}
         </Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ProgressIndicator label="Your setup" value={(step + 1) / stepCount} />
+      <Button
+        label={guided ? 'Use standard setup' : 'Let local Coach guide setup'}
+        variant="ghost"
+        disabled={saving || loadedOwner !== userId || !database}
+        onPress={() => {
+          if (actionBusy.current) return;
+          actionBusy.current = true;
+          setSaving(true);
+          void (hasDraftChanges ? persistDraft() : Promise.resolve())
+            .then(() => {
+              if (currentOwner.current === userId)
+                router.replace(guided ? '/onboarding' : '/coach-onboarding');
+            })
+            .catch(() => setError('Your choices could not be saved. Stay here and try again.'))
+            .finally(() => {
+              actionBusy.current = false;
+              setSaving(false);
+            });
+        }}
+      />
+      {guided ? (
+        <Card tone="lavender">
+          <Text variant="h3">{coachSetupPrompts[currentStep]}</Text>
+          <Text variant="small">
+            Local choices only. Existing answers are reused; nothing is inferred. No model,
+            microphone or health permission is used.
+          </Text>
+        </Card>
+      ) : null}
+      {guided && currentStep === 9 ? (
+        <Card>
+          {coachSetupReview(draft).map((row) => (
+            <View key={row.question}>
+              <Text variant="smallMedium">
+                {row.name}: {row.value}
+              </Text>
+              <Button
+                label={`Edit ${row.name}`}
+                variant="ghost"
+                disabled={saving}
+                onPress={() => setStep(row.question)}
+              />
+            </View>
+          ))}
+          <Text variant="small">
+            Movement preferences:{' '}
+            {considerations.movementConsiderations
+              .map(
+                (value) =>
+                  movementConsiderationOptions.find((option) => option.value === value)?.label,
+              )
+              .join(', ') || 'None shared'}
+            . Accessibility preferences:{' '}
+            {considerations.accessibilityNeeds
+              .map(
+                (value) => accessibilityNeedOptions.find((option) => option.value === value)?.label,
+              )
+              .join(', ') || 'None shared'}
+            .
+          </Text>
+          <Button
+            label="Edit movement and accessibility preferences"
+            variant="ghost"
+            disabled={saving}
+            onPress={() => setStep(5)}
+          />
+          <Text variant="small">
+            Saving setup creates no measured baseline, plan or cycle. Personal goals still require
+            an explicit baseline. Reviewed public content remains gated; you can build a private
+            plan after saving.
+          </Text>
+        </Card>
+      ) : null}
       {step === 0 && runtimeConfig.releaseMode === 'guest-only' ? (
         <Button
           label="Restore a local export instead"

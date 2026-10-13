@@ -364,6 +364,13 @@ export default function CoachScreen() {
         <Text variant="display" accessibilityRole="header" style={styles.title}>
           A thoughtful next step.
         </Text>
+        {!loading && navigationSnapshot?.owner === userId ? (
+          <Button
+            label="Review setup with local Coach"
+            variant="secondary"
+            onPress={() => router.push('/coach-onboarding')}
+          />
+        ) : null}
         {navigationSnapshot?.hasProfile ? (
           <Button
             label="Inspect local Coach memory"
@@ -419,6 +426,11 @@ export default function CoachScreen() {
       <Text variant="body" tone="muted" style={styles.subtitle}>
         Coach guidance will stay grounded in your saved plan and logged training.
       </Text>
+      <Button
+        label="Review setup with local Coach"
+        variant="ghost"
+        onPress={() => router.push('/coach-onboarding')}
+      />
       {navigationSnapshot ? (
         <CoachWorkflowActions
           state={navigationSnapshot}

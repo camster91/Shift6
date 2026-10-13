@@ -206,8 +206,8 @@ export default function HomeScreen() {
         </Text>
         <ShiftArtwork {...shiftArtwork.journey} />
         <EmptyState
-          title="Your next Shift starts with one goal"
-          message="Choose a goal and a six-week plan. Your sessions and training history will appear here when you start."
+          title="Choose your next training step"
+          message="Start a private plan, or open saved cycles to inspect your history and resume a paused cycle."
           icon={<Ionicons name="compass-outline" size={32} color={colors.ink} />}
           actionLabel="Explore programs"
           onAction={() => router.push('/programs')}

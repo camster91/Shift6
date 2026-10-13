@@ -3,7 +3,14 @@ import tseslint from 'typescript-eslint';
 
 export default [
   {
-    ignores: ['.expo/**', 'coverage/**', 'dist/**', 'node_modules/**', 'vendor/**'],
+    ignores: [
+      '.expo/**',
+      'coverage/**',
+      'dist/**',
+      'node_modules/**',
+      'vendor/**',
+      'server/gemini/build/**',
+    ],
   },
   {
     files: ['**/*.{js,cjs,mjs}'],
@@ -29,6 +36,23 @@ export default [
     },
   },
   ...tseslint.configs.recommended,
+  {
+    files: ['server/gemini/*.mjs'],
+    languageOptions: {
+      globals: {
+        Buffer: 'readonly',
+        URL: 'readonly',
+        process: 'readonly',
+        fetch: 'readonly',
+        structuredClone: 'readonly',
+        AbortSignal: 'readonly',
+        AbortController: 'readonly',
+        Response: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+      },
+    },
+  },
   {
     files: ['**/*.{ts,tsx}'],
     rules: {

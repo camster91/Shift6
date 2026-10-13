@@ -1,0 +1,13 @@
+{
+  "name": "shift6-optional-gemini-service",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.23.2"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs && node --test *.test.mjs",
+    "start": "node build.mjs && node server.mjs"
+  }
+}

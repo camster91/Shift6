@@ -437,6 +437,26 @@ export const MIGRATIONS: readonly Migration[] = [
         ON shift_goal_revisions(user_id, shift_id, recorded_at, id);`,
     ],
   },
+  {
+    version: 22,
+    name: 'local-onboarding-recovery',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS onboarding_drafts (
+        user_id TEXT PRIMARY KEY NOT NULL,
+        state_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );`,
+    ],
+  },
+  {
+    version: 23,
+    name: 'guest-personal-goals',
+    statements: [
+      `CREATE TABLE personal_goal_events (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, shift_id TEXT NOT NULL, kind TEXT NOT NULL, payload_json TEXT NOT NULL, recorded_at TEXT NOT NULL, FOREIGN KEY(shift_id,user_id) REFERENCES shifts(id,user_id) ON UPDATE CASCADE ON DELETE CASCADE);`,
+      `CREATE TABLE personal_goal_drafts (user_id TEXT NOT NULL, cycle_id TEXT NOT NULL, fields_json TEXT NOT NULL, PRIMARY KEY(user_id,cycle_id), FOREIGN KEY(cycle_id,user_id) REFERENCES training_cycles(id,user_id) ON UPDATE CASCADE ON DELETE CASCADE);`,
+      `CREATE TRIGGER cycle_goal_prescription_immutable BEFORE UPDATE OF program_version_id ON training_cycles WHEN NEW.program_version_id != OLD.program_version_id AND EXISTS(SELECT 1 FROM shifts WHERE cycle_id=OLD.id) BEGIN SELECT RAISE(ABORT,'A goal-linked prescription is immutable.'); END;`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

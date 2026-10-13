@@ -1,3 +1,4 @@
+import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { advanceCycleAfterCompletedWorkout } from '../domain/cycle';
@@ -62,7 +63,7 @@ export async function saveWorkoutSession(
   session: WorkoutSession,
 ): Promise<void> {
   await database.withTransactionAsync(async () => {
-    await database.runAsync(
+    const inserted = await database.runAsync(
       `INSERT OR IGNORE INTO workout_sessions
         (id, cycle_id, cycle_week, workout_id, program_version_id, workout_focus, status,
          started_at, completed_at, completion_reason, is_offline, readiness, note)
@@ -81,10 +82,9 @@ export async function saveWorkoutSession(
       session.readiness ?? null,
       session.note ?? null,
     );
+    if (inserted.changes === 0) return;
     await database.runAsync(
-      `INSERT OR IGNORE INTO sync_outbox
-        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-        VALUES (?, ?, ?, ?, ?, ?);`,
+      SYNC_MUTATION_INSERT_SQL,
       `outbox-workout-session-${session.id}`,
       `workout-session:${session.id}`,
       'workout-session',
@@ -130,9 +130,7 @@ export async function saveCompletedSet(
     inserted = true;
 
     await database.runAsync(
-      `INSERT OR IGNORE INTO sync_outbox
-        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-        VALUES (?, ?, ?, ?, ?, ?);`,
+      SYNC_MUTATION_INSERT_SQL,
       `outbox-${completedSet.idempotencyKey}`,
       completedSet.idempotencyKey,
       'completed-set',
@@ -324,8 +322,8 @@ export async function updateWorkoutSessionReadiness(
 }
 
 /**
- * Persists a bounded user note on an unfinished session and replaces its
- * idempotent sync payload. Notes never enter analytics; they remain part of
+ * Persists a bounded user note on an unfinished session and queues an
+ * immutable sync snapshot. Notes never enter analytics; they remain part of
  * the user-owned workout record and local export/delete boundary.
  */
 export async function updateWorkoutSessionNote(
@@ -414,8 +412,8 @@ export async function deleteWorkoutDraft(
 
 /**
  * Corrects a previously completed set without changing its stable identity.
- * The replacement payload overwrites the pending outbox mutation, so a retry
- * cannot create a second set record on the server.
+ * Each correction queues a new immutable operation for the same set entity,
+ * so an earlier in-flight acknowledgement cannot erase the correction.
  */
 export async function updateCompletedSet(
   database: SQLiteDatabase,
@@ -443,12 +441,7 @@ export async function updateCompletedSet(
 
     updated = true;
     await database.runAsync(
-      `INSERT INTO sync_outbox
-        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(idempotency_key) DO UPDATE SET
-         payload_json = excluded.payload_json,
-         last_error = NULL;`,
+      SYNC_MUTATION_INSERT_SQL,
       `outbox-${completedSet.idempotencyKey}`,
       completedSet.idempotencyKey,
       'completed-set',
@@ -673,12 +666,7 @@ async function queueWorkoutSessionSync(
   session: WorkoutSession,
 ): Promise<void> {
   await database.runAsync(
-    `INSERT INTO sync_outbox
-      (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(idempotency_key) DO UPDATE SET
-       payload_json = excluded.payload_json,
-       last_error = NULL;`,
+    SYNC_MUTATION_INSERT_SQL,
     `outbox-workout-session-${session.id}`,
     `workout-session:${session.id}`,
     'workout-session',
@@ -693,13 +681,7 @@ async function queueTrainingCycleSync(
   cycle: TrainingCycle,
 ): Promise<void> {
   await database.runAsync(
-    `INSERT INTO sync_outbox
-      (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(idempotency_key) DO UPDATE SET
-       payload_json = excluded.payload_json,
-       created_at = excluded.created_at,
-       last_error = NULL;`,
+    SYNC_MUTATION_INSERT_SQL,
     `outbox-training-cycle-${cycle.id}`,
     `training-cycle:${cycle.id}`,
     'training-cycle',

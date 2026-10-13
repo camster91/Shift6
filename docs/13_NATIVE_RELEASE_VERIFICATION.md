@@ -1,242 +1,138 @@
-# SHIFT6 native and release verification runbook
+# SHIFT6 mobile guest release verification
 
-> **Canonical scope, 2026-09-23:** [#304](https://github.com/camster91/Shift6/issues/304) defines **Six weeks. One measurable goal.** [The goal-first release contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) and [#305](https://github.com/camster91/Shift6/issues/305) supersede conflicting launch breadth below. Counts of 20 programs and 300+ exercises are future catalogue targets or historical implementation facts, never focused-v1 quotas. Existing technical evidence is not human content, Figma or native release approval.
+Updated: 2026-10-12. Current delivery scope: **iOS and Android, guest-only,
+local storage**. [Doc 33](33_MOBILE_GUEST_RELEASE.md) records implementation and
+build evidence; [doc 34](34_HUMAN_USE_ACCEPTANCE.md) defines human-use acceptance.
+The [goal-first contract](25_GOAL_FIRST_RELEASE_CONTRACT.md) remains the product
+ambition. This runbook does not claim that every ambition is already delivered.
 
-For the focused binary, verify goal/baseline, offline session/recovery, measurement integrity, interruption/re-entry, review choices, accessibility and actual permission/entitlement disclosures on iOS and low/mid-range Android. The current repository verification is not a signed-device test. Follow [the focused scope](25_GOAL_FIRST_RELEASE_CONTRACT.md).
+No backend, account provider, web export, remote Coach or remote telemetry is
+required for this release. Their historical contracts apply only if those
+features are deliberately enabled later. Store submission is a separate action.
 
+## 1. Freeze the candidate and verify engineering
 
-Updated: 2026-09-15
-
-This runbook turns the remaining external release gates into an evidence-based checklist. It does not authorize store submission, production deployment, paid build usage, credential changes, or backend/account changes. Those remain explicit approval actions.
-
-## 1. Repository quality gate
-
-Use a clean checkout of the exact candidate commit with Node 22 and the committed lockfile.
+Use Node 22 and the committed lockfile in a clean checkout:
 
 ```bash
 npm ci
 npm run verify
+npm run validate:release-assets
 ```
 
-`npm run verify` must pass all of the same gates as CI:
+The verify command checks formatting, lint, types, Expo Doctor, assets, secrets,
+release configuration, production dependencies at moderate severity, private
+vendor source integrity, security regressions, Jest, and **iOS/Android** exports.
+Record the SHA and complete results. See doc 33 for existing successful runs.
+Re-run after relevant source/configuration changes, not merely to increase counts.
+Private dependency forks need independent review; zero audit findings is not a
+security certification.
 
-- Prettier check;
-- ESLint with zero warnings;
-- TypeScript `--noEmit`;
-- Expo Doctor;
-- asset-manifest validation;
-- tracked-secret check;
-- release-config validation;
-- production dependency audit at `high` severity;
-- Jest/unit/component tests;
-- static web export smoke test.
+## 2. Build and identify native artifacts
 
-Record the candidate commit SHA and the complete command result. Do not merge PR #282 while this gate is unknown or failing.
+The native-validation workflow compiles a test-signed Android APK and an unsigned
+iOS simulator app. It installs and cold-launches the iOS app. Neither artifact is
+a store distribution build, and a simulator process does not prove usability.
 
-## 2. Native build gate
+For physical iOS testing and store distribution, link the owner's Expo project
+and configure Apple/Google signing. This environment is not logged into EAS.
+Use the owner's accounts and approved build quota; never put credentials in chat
+or the repository. Record build ID, source SHA, artifact hash, signing identity
+and application ID (`com.shift6.app`). Inspect the exact binary's permissions,
+entitlements, dependency contents and network behavior.
 
-A custom native build is required because SHIFT6 uses SQLite, SecureStore, notifications, HealthKit, and Health Connect native capabilities.
+Keep the public manifest empty until qualified review approves exact content
+versions. `npm run validate:release-ready` is a **submission** gate: production
+configuration, real public policy/support URLs, actual network audit evidence,
+content review and final assets are required. Repository verification passing
+does not imply this stricter gate passes.
 
-Before starting a signed EAS preview build, confirm explicit approval because it uses external build infrastructure/account credentials and may consume plan quota.
+## 3. Physical-device matrix
 
-Required evidence:
+Use a small supported iPhone, a current large iPhone, and low/mid-range and current
+Android phones. Record model, OS, build ID, installation method and enabled
+settings. Test both platforms with default and largest accessibility text,
+VoiceOver/TalkBack, reduced motion and keyboard visible. Check a tablet-sized
+layout if distribution permits tablets. Capture each critical state; black,
+loading or cropped screenshots are not accepted evidence.
 
-- iOS preview build identifier and candidate commit SHA;
-- Android preview build identifier and candidate commit SHA;
-- app launches without a migration/bootstrap error;
-- configured bundle/package IDs remain `com.shift6.app`;
-- no secrets are embedded in the client build.
+## 4. End-to-end guest journey
 
-## 3. Representative device matrix
+Use a fresh install and a **private user-authored plan**, or an explicitly
+reviewed enabled public plan. Do not bypass the empty public manifest for testing
+or assume an old public program is startable.
 
-Verify at minimum:
+1. Complete six-step setup, skipping optional health access. Confirm optional
+   permissions and details can be revisited without restarting setup.
+2. Create a simple private plan and start a cycle. Note any guidance required;
+   inability to get to a first session is a product blocker.
+3. Open Personal goal and review. Choose a metric, setup/assistance and target;
+   provide required rep count or fixed distance. Establish or defer a baseline.
+4. Start a workout, log a set, clear an input and make a correction. Confirm
+   suggestions are distinguishable from actual recorded effort and measurements.
+5. Turn off connectivity, continue logging, background, force-close and reopen.
+   Compare every saved value and draft with the pre-interruption record.
+6. Finish partially, then test completed and skipped outcomes separately. They
+   must not become equivalent records or overwrite completed history.
+7. Enter an explicit dated goal measurement. Test zero where valid, invalid
+   values, future dates, and explicit yes/no for completion. Correct a mistake;
+   verify original history remains and the correction date is preserved.
+8. Revise a target with a reason. Review the completed cycle; postpone or decline
+   measurement and select a next choice. A recorded choice must not imply a new
+   plan has been started. Test older-history access and comprehension too.
+9. Return after a missed week. Observe the actual calendar and return controls;
+   do not assume the full pause/re-entry ambition is implemented. Record friction.
+10. Export a large history as a JSON file through native sharing. Open the received
+    file outside SHIFT6 and check completeness. Explain that export is not an
+    in-app restore feature or a cloud backup.
+11. Delete local records and cached export copies. Check that old local records
+    cannot reappear. Recipient copies outside the app remain the user's property.
 
-- a smaller supported iPhone;
-- a larger current iPhone;
-- a smaller Android phone;
-- a larger Android phone;
-- one tablet-sized layout where practical.
+Repeat the critical journey with screen readers and large text. Any lost data,
+unsafe comparison, unusable primary action or inability to reach the first
+workout blocks release. Tests and screenshots supplement observed behavior.
 
-For every device, capture OS version, build ID, and pass/fail evidence.
+## 5. Optional permissions and motion
 
-## 4. Critical end-to-end journey
+Test health skip, deny, grant and OS-level revoke on supported devices. Verify
+read-only declared types, explicit import, duplicate handling, accurate sources,
+disconnect and removal of local summaries. Core logging must remain usable.
 
-On a fresh install:
+Test reminders and timer cues with permission denied and granted; check Android
+13+ channel creation before permission, deep links from cold/background states,
+expired/cancelled reminders and timer behavior through interruptions. Verify no
+permission denial blocks training.
 
-1. Continue as guest.
-2. Complete onboarding without granting health access.
-3. Confirm recommendations reflect goals, schedule, session length, and equipment.
-4. Open Barbell 30 and start a six-week cycle.
-5. Start the first workout while online.
-6. Log at least one set and confirm it is visible immediately.
-7. Disable network access and continue logging.
-8. Background and reopen the app; confirm draft values and completed sets survive.
-9. Force-close and relaunch; confirm the active workout recovers without losing completed sets.
-10. Complete the workout offline; confirm summary/progress remain available.
-11. Restore connectivity; confirm local logging stays usable while sync resolves.
-12. Repeat a workout and confirm completed history is not overwritten.
-13. Exercise partial-session and skipped-session flows and verify they do not incorrectly advance the cycle.
-14. Complete enough synthetic/manual sessions to reach cycle review and verify repeat/progress/adjust/change/build-new paths preserve historical snapshots.
+Higgsfield media must display its poster when playback fails. Test reduced-motion
+changes, backgrounding, navigation away and audio behavior. Optional silent
+playback must not obstruct a task or imply reviewed exercise technique.
 
-Release blocker: any reproducible completed-set or workout-history data loss.
+## 6. Privacy, content and store gates
 
-## 5. Workout-system fault testing
+Inspect traffic from the exact distribution candidate during setup, workout,
+health import, export and deletion. Record destinations and payload categories
+without retaining personal records. Confirm account, sync, provider Coach,
+remote analytics and crash reporting remain disabled. Local SQLite uses OS
+sandboxing, not app-level database encryption. Verify OS backup disclosures.
 
-Verify:
+Use [exercise review](24_EXERCISE_REVIEW_CHECKLIST.md) and program review evidence
+before enabling public content. Review the *enabled* native capabilities and
+third-party behavior before completing Apple privacy, Google Data safety and
+health declarations. Use actual screenshots and a working public policy and
+support destination. Historical store copy in doc 15 is not final guest copy.
+Never advertise cloud backup, approved starter plans or automatic next-plan
+transitions when unavailable.
 
-- local DB bootstrap failure shows a bounded retry state;
-- duplicate sync attempts do not duplicate sets/sessions;
-- network loss never blocks local set completion;
-- sync conflicts remain review-required and do not overwrite local plan/history automatically;
-- exercise substitution is blocked after completed-set history exists for that movement;
-- substitution before completion clears stale draft inputs and explains meaningful differences;
-- rest timers remain correct through foreground/background transitions within platform limits;
-- notification denial never blocks workout logging.
+## 7. Rollout, recovery and evidence
 
-## 6. Accessibility gate
+Before submission, define support ownership, a limited rollout, stop criteria
+and a replacement-build path that preserves local data. With no remote feature
+switch or backend, stopping rollout cannot remotely repair installed copies.
+Test upgrades from the prior supported schema and forward recovery; never use
+local-data deletion as routine rollback. Do not promise in-app export restoration.
 
-Run the critical journey with:
-
-- VoiceOver on iOS;
-- TalkBack on Android;
-- larger accessibility text sizes;
-- reduced-motion enabled at OS level;
-- colour differentiation unavailable as the only status cue.
-
-Confirm:
-
-- interactive controls have useful labels/state;
-- focus order is logical;
-- the active workout can be completed with a screen reader;
-- timers, forms, charts, banners, and errors have text alternatives;
-- primary controls retain usable touch targets;
-- layouts remain operable at large text sizes.
-
-The current UI has no deliberate animated training surface, but reduced-motion mode must still be checked for platform/navigation behaviour before release.
-
-## 7. Health integration gate
-
-Test separately on supported iOS and Android devices.
-
-Verify:
-
-- the app remains fully usable when health access is skipped or denied;
-- only the declared read types are requested;
-- an explicit import stores normalized summaries locally;
-- duplicate imported samples do not create duplicate summaries;
-- source/type/time ranges remain correctly labelled;
-- disconnect stops future SHIFT6 imports;
-- local summary removal deletes only SHIFT6-stored normalized health summaries;
-- OS-level permission revocation is reflected accurately after returning to the app;
-- no raw health samples or health/free-text notes enter analytics or the workout sync outbox.
-
-Store privacy/data-safety declarations must match the verified behaviour before submission.
-
-## 8. Notification gate
-
-Verify opt-in, denial, and disabled states for:
-
-- workout reminders;
-- rest-timer cues;
-- weekly review;
-- cycle review;
-- Coach messages where supported.
-
-Confirm scheduled reminders deep-link to the intended workout without mutating the plan. Verify foreground, background, cold-start, and expired/cancelled reminder behaviour on both platforms.
-
-On Android 13+, confirm the `SHIFT6 reminders` notification channel exists before the permission
-prompt is requested, and confirm workout and rest-timer notifications are scheduled through that
-channel. This ordering is required for Android to display the runtime notification prompt reliably.
-
-## 9. Authentication/backend gate
-
-This gate cannot pass until an auth provider and authenticated backend are deliberately selected and deployed.
-
-When configured, verify:
-
-- guest mode remains usable without an account;
-- guest data adopts transactionally into an empty authenticated identity;
-- provider sign-in persists through SecureStore-backed session recovery;
-- expired/malformed sessions fail safely;
-- sign-out does not silently destroy local training history;
-- sync is row/user scoped server-side;
-- version/ownership/validation conflicts are returned explicitly;
-- remote account deletion is verifiable;
-- server logs redact sensitive payloads;
-- Coach credentials remain server-side only.
-
-Backend/provider selection, deployment, secrets, DNS, billing, and production account changes require explicit approval.
-
-## 10. Observability gate
-
-Select a crash/error-monitoring provider only after privacy and retention settings are reviewed.
-
-Verify on-device that:
-
-- a controlled non-sensitive test error reaches the provider;
-- reports contain only allowlisted technical context;
-- tokens, workout notes, Coach prompts, raw health data, and other sensitive free text are absent;
-- crash-free and sync/auth health can be monitored before rollout;
-- retention/access settings match the published privacy policy.
-
-## 11. Content/design approval gate
-
-Before a public release:
-
-- Figma variables/components/icons and production exports receive final design review;
-- temporary Ionicons fallbacks are either approved or replaced;
-- every public exercise used by launch programs receives human technique/content review;
-- exercise media receives provenance/licence and technique review;
-- all 20 program versions receive fitness-content review;
-- unreviewed draft records remain visibly gated from public startability;
-- store screenshots contain no placeholder/unapproved content.
-
-The 300+ exercise target is a reviewed-content target, not a reason to generate hundreds of unreviewed near-duplicates.
-
-## 12. Store release gate
-
-Prepare but do not submit without explicit approval:
-
-- App Store and Google Play listing copy;
-- screenshots/assets;
-- support/privacy URLs;
-- Apple privacy nutrition/data-use answers;
-- Google Play Data safety answers;
-- health-data declarations;
-- account-deletion instructions;
-- release notes;
-- staged-rollout percentages;
-- rollback/kill-switch plan.
-
-A public release is ready only when the repository gate, native-device gate, content/design approval, privacy/security checks, and store declarations all agree with the same candidate build.
-
-## 13. Rollback requirements
-
-Before rollout, document:
-
-- the prior known-good mobile build;
-- backend compatibility with both the prior and candidate client versions;
-- how a staged rollout is stopped;
-- how a bad client build is replaced without deleting local user data;
-- how migrations remain forward-safe and do not require destructive rollback;
-- which feature/provider integrations can be disabled independently.
-
-Never use local-data deletion as a routine rollback mechanism.
-
-## Evidence package
-
-For the release candidate, retain:
-
-- commit SHA;
-- `npm run verify` result;
-- iOS/Android build IDs;
-- device/OS matrix;
-- critical-journey recordings or screenshots;
-- accessibility results;
-- health/notification permission results;
-- sync/offline/restart fault-test results;
-- content/design approvals;
-- privacy/store declaration review;
-- staged-rollout and rollback approval.
-
-Only evidence-backed gates should be marked complete.
+Retain source SHA, verification logs, binary IDs/hashes, device matrix, journey
+recordings, accessibility and permission results, network review, content
+approvals, final listing/declarations and rollout decisions. Use doc 34 to record
+unverified and failed checks explicitly. No human result or approval is implied
+by a green CI run.

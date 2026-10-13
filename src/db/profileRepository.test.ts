@@ -53,7 +53,7 @@ describe('saveOnboardingProfile', () => {
     expect(calls[2]?.sql).toContain('DELETE FROM user_equipment');
     expect(calls.filter(({ sql }) => sql.includes('INSERT INTO user_equipment'))).toHaveLength(4);
     expect(calls.at(-2)?.sql).toContain('INSERT INTO sync_outbox');
-    expect(calls.at(-2)?.sql).toContain('ON CONFLICT(idempotency_key) DO UPDATE');
+    expect(calls.at(-2)?.sql).not.toContain('DO UPDATE');
     expect(calls.at(-2)?.params).toEqual([
       'outbox-profile-guest-user',
       'profile:guest-user',

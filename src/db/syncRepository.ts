@@ -52,7 +52,7 @@ export async function getPendingSyncMutations(
   const rows = await database.getAllAsync<SyncOutboxRow>(
     `SELECT id, idempotency_key, entity_type, entity_id, payload_json, created_at
        FROM sync_outbox
-      ORDER BY created_at ASC, id ASC
+      ORDER BY rowid ASC
       LIMIT ?;`,
     safeLimit,
   );
@@ -85,7 +85,7 @@ export async function getPendingSyncIssues(
     `SELECT id, entity_type, entity_id, created_at, attempt_count, last_error
        FROM sync_outbox
       WHERE last_error IS NOT NULL OR entity_type NOT IN (${supportedTypes})
-      ORDER BY created_at ASC, id ASC
+      ORDER BY rowid ASC
       LIMIT ?;`,
     ...SYNC_ENTITY_TYPES,
     safeLimit,
@@ -113,7 +113,17 @@ export async function flushSyncOutbox(
   backend: BackendClient,
   limit = 50,
 ): Promise<SyncRunResult> {
-  const pending = await getPendingSyncMutations(database, limit);
+  const queued = await getPendingSyncMutations(database, limit);
+  // Never let a later snapshot overtake an unresolved older snapshot. Sending
+  // at most one operation per entity also avoids partial batch acknowledgements
+  // letting an old retry overwrite a newer server value.
+  const entities = new Set<string>();
+  const pending = queued.filter((mutation) => {
+    const entity = JSON.stringify([mutation.entityType, mutation.entityId]);
+    if (entities.has(entity)) return false;
+    entities.add(entity);
+    return true;
+  });
   const attemptedMutationIds = pending.map((mutation) => mutation.id);
   if (pending.length === 0) {
     return {

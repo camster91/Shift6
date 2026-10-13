@@ -1,3 +1,8 @@
+import {
+  buildInitialValues,
+  emptySetInput,
+  hydrateWorkoutValues,
+} from '../src/domain/workoutInputs';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -135,6 +140,7 @@ export default function ActiveWorkoutScreen() {
     buildInitialValues(activeWorkout),
   );
   const [targetOverrides, setTargetOverrides] = useState<Record<string, SetTarget>>({});
+  const [showEffortDetails, setShowEffortDetails] = useState(false);
   const [completedSetKeys, setCompletedSetKeys] = useState<Set<string>>(() => new Set());
   const [editingSetKey, setEditingSetKey] = useState<string | null>(null);
   const [substitutionFor, setSubstitutionFor] = useState<string | null>(null);
@@ -402,12 +408,12 @@ export default function ActiveWorkoutScreen() {
           );
           setTargetOverrides(overrides);
           setValues((current) =>
-            mergeDraftValues(
-              mergeCompletedSetValues(
-                mergeInitialValues(activeWorkout, overrides, current),
-                completedSets,
-              ),
+            hydrateWorkoutValues(
+              activeWorkout,
+              overrides,
+              completedSets,
               draft,
+              hydratedRoute?.sessionId === sessionId ? current : undefined,
             ),
           );
           setHydratedRoute({
@@ -998,12 +1004,12 @@ export default function ActiveWorkoutScreen() {
             size={22}
             color={colors.ink}
           />
-          <Text variant="smallMedium">{database ? 'Local-first workout' : 'Web preview'}</Text>
+          <Text variant="smallMedium">{database ? 'Saved on this device' : 'Web preview'}</Text>
         </View>
         <Text variant="small" tone="muted" style={styles.localFirstText}>
           {database
-            ? 'Set completion is persisted to SQLite and queued for future sync. Network availability is not required here.'
-            : 'Native SQLite is not active in this preview. Set state is kept in memory for this browser session.'}
+            ? 'Your sets save on this device, even when you are offline.'
+            : 'This preview keeps your entries only while this browser session is open.'}
         </Text>
       </Card>
 
@@ -1053,11 +1059,23 @@ export default function ActiveWorkoutScreen() {
               {formatTimer(restSecondsRemaining)}
             </Text>
           </View>
-          <Button label="Skip rest" variant="ghost" onPress={() => setRestEndsAt(null)} />
+          <Button label="Skip rest" variant="secondary" onPress={() => setRestEndsAt(null)} />
         </Card>
       ) : null}
 
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
+
+      <Button
+        label={showEffortDetails ? 'Hide optional effort fields' : 'Show optional effort fields'}
+        variant="ghost"
+        onPress={() => setShowEffortDetails((current) => !current)}
+      />
+      {showEffortDetails ? (
+        <Text variant="small" tone="muted">
+          RIR means how many more reps you could do. RPE rates how hard the set felt, from 1 to 10.
+          Leave either field blank if you are unsure.
+        </Text>
+      ) : null}
 
       {activeWorkout.exercises.map((workoutExercise) => {
         const exerciseName = formatExerciseName(workoutExercise.exerciseId, availableExercises);
@@ -1284,7 +1302,7 @@ export default function ActiveWorkoutScreen() {
                         value={values[key]?.distance ?? ''}
                       />
                     ) : null}
-                    {showsRpe(workoutSet.target) ? (
+                    {showEffortDetails || values[key]?.rpe ? (
                       <TextInput
                         accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
                         editable={!completed || editing}
@@ -1296,7 +1314,7 @@ export default function ActiveWorkoutScreen() {
                         value={values[key]?.rpe ?? ''}
                       />
                     ) : null}
-                    {showsRir(workoutSet.target) ? (
+                    {showEffortDetails || values[key]?.rir ? (
                       <TextInput
                         accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
                         editable={!completed || editing}
@@ -1474,100 +1492,6 @@ function WorkoutPreflight({
   );
 }
 
-function buildInitialValues(
-  workout: typeof demoWorkout,
-  targetOverrides: Record<string, SetTarget> = {},
-): Record<string, SetInputValues> {
-  return Object.fromEntries(
-    workout.exercises.flatMap((exercise) =>
-      exercise.sets.map((workoutSet) => [
-        setKey(exercise.id, workoutSet.setNumber),
-        emptySetInput(targetOverrides[exercise.id] ?? workoutSet.target),
-      ]),
-    ),
-  );
-}
-
-function mergeInitialValues(
-  workout: typeof demoWorkout,
-  targetOverrides: Record<string, SetTarget>,
-  current: Record<string, SetInputValues>,
-): Record<string, SetInputValues> {
-  const initial = buildInitialValues(workout, targetOverrides);
-  return Object.fromEntries(
-    Object.entries(initial).map(([key, suggested]) => {
-      const existing = current[key];
-      if (!existing) return [key, suggested];
-
-      return [
-        key,
-        {
-          load: existing.load || suggested.load,
-          reps: existing.reps || suggested.reps,
-          duration: existing.duration || suggested.duration,
-          distance: existing.distance || suggested.distance,
-          rpe: existing.rpe || suggested.rpe,
-          rir: existing.rir || suggested.rir,
-        },
-      ];
-    }),
-  );
-}
-
-function mergeCompletedSetValues(
-  initial: Record<string, SetInputValues>,
-  completedSets: readonly CompletedSet[],
-): Record<string, SetInputValues> {
-  const completedByKey = new Map(
-    completedSets.map((completedSet) => [completedSetKey(completedSet), completedSet]),
-  );
-
-  return Object.fromEntries(
-    Object.entries(initial).map(([key, values]) => {
-      const completedSet = completedByKey.get(key);
-      if (!completedSet) return [key, values];
-
-      return [
-        key,
-        {
-          ...values,
-          load: valueOrEmpty(completedSet.load),
-          reps: valueOrEmpty(completedSet.reps),
-          duration: valueOrEmpty(completedSet.durationSeconds),
-          distance: valueOrEmpty(completedSet.distanceMeters),
-          rpe: valueOrEmpty(completedSet.rpe),
-          rir: valueOrEmpty(completedSet.rir),
-        },
-      ];
-    }),
-  );
-}
-
-function mergeDraftValues(
-  initial: Record<string, SetInputValues>,
-  draft: Record<string, SetInputValues> | null,
-): Record<string, SetInputValues> {
-  if (!draft) return initial;
-
-  return Object.fromEntries(
-    Object.entries(initial).map(([key, values]) => [key, { ...values, ...(draft[key] ?? {}) }]),
-  );
-}
-
-function valueOrEmpty(value: number | undefined): string {
-  return value === undefined ? '' : String(value);
-}
-
-function emptySetInput(target?: SetTarget): SetInputValues {
-  const reps = typeof target?.reps === 'number' ? String(target.reps) : '';
-  const load = target?.load?.value !== undefined ? String(target.load.value) : '';
-  const duration = target?.durationSeconds !== undefined ? String(target.durationSeconds) : '';
-  const distance = target?.distanceMeters !== undefined ? String(target.distanceMeters) : '';
-  const rpe = target?.rpe !== undefined ? String(target.rpe) : '';
-  const rir = target?.rir !== undefined ? String(target.rir) : '';
-  return { load, reps, duration, distance, rpe, rir };
-}
-
 function parseNumber(value: string): number | undefined {
   if (!value.trim()) return undefined;
   const parsed = Number(value);
@@ -1687,14 +1611,6 @@ function showsDistance(
     trackingType === 'duration-and-distance' ||
     target.distanceMeters !== undefined
   );
-}
-
-function showsRpe(target: SetTarget): boolean {
-  return target.rpe !== undefined;
-}
-
-function showsRir(target: SetTarget): boolean {
-  return target.rir !== undefined;
 }
 
 function requiresDuration(
@@ -1878,7 +1794,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   substitutionToggle: {
-    minHeight: 40,
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
   },
   substitutionCard: {
@@ -1897,6 +1813,7 @@ const styles = StyleSheet.create({
   },
   setRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: spacing.xs,
   },
@@ -1906,7 +1823,8 @@ const styles = StyleSheet.create({
   },
   valueInput: {
     width: 74,
-    height: 44,
+    minHeight: 44,
+    paddingVertical: spacing.xs,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radii.sm,
@@ -1918,7 +1836,8 @@ const styles = StyleSheet.create({
   },
   effortInput: {
     width: 68,
-    height: 44,
+    minHeight: 44,
+    paddingVertical: spacing.xs,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radii.sm,

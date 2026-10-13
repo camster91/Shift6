@@ -40,13 +40,35 @@ export function normalizeApiBaseUrl(
   return normalized.replace(/\/+$/, '');
 }
 
-const environment = parseAppEnvironment(process.env.EXPO_PUBLIC_ENVIRONMENT);
-const apiBaseUrl = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL, environment);
+export type ReleaseMode = 'guest-only' | 'connected';
 
-export const runtimeConfig = Object.freeze({
-  environment,
-  apiBaseUrl,
-  hasConfiguredBackend: apiBaseUrl !== null,
-});
+export function resolveRuntimeConfiguration(
+  environmentValue: string | undefined,
+  modeValue: string | undefined,
+  urlValue: string | undefined,
+) {
+  const environment = parseAppEnvironment(environmentValue);
+  const releaseMode = modeValue?.trim() || 'guest-only';
+  if (releaseMode !== 'guest-only' && releaseMode !== 'connected')
+    throw new Error('EXPO_PUBLIC_RELEASE_MODE must be guest-only or connected.');
+  const apiBaseUrl = normalizeApiBaseUrl(urlValue, environment);
+  if (releaseMode === 'guest-only' && apiBaseUrl)
+    throw new Error('Guest-only builds cannot configure a backend URL.');
+  if (releaseMode === 'connected' && environment === 'production' && !apiBaseUrl)
+    throw new Error('Connected production builds require a backend URL.');
+  return {
+    environment,
+    releaseMode: releaseMode as ReleaseMode,
+    apiBaseUrl,
+    hasConfiguredBackend: apiBaseUrl !== null,
+  };
+}
 
+export const runtimeConfig = Object.freeze(
+  resolveRuntimeConfiguration(
+    process.env.EXPO_PUBLIC_ENVIRONMENT,
+    process.env.EXPO_PUBLIC_RELEASE_MODE,
+    process.env.EXPO_PUBLIC_API_BASE_URL,
+  ),
+);
 export const isProduction = runtimeConfig.environment === 'production';

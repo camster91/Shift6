@@ -1,3 +1,4 @@
+import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type {
@@ -64,8 +65,8 @@ export async function getWorkoutScheduleSessions(
 }
 
 /**
- * Rescheduling is a replaceable local mutation. The stable occurrence ID
- * makes retries idempotent, and the outbox write happens in the same
+ * Rescheduling updates a stable occurrence and queues an immutable operation.
+ * Its persisted retry key is reused only for that snapshot, in the same
  * transaction as the local schedule update.
  */
 export async function saveWorkoutScheduleOverride(
@@ -95,13 +96,7 @@ export async function saveWorkoutScheduleOverride(
       override.updatedAt,
     );
     await database.runAsync(
-      `INSERT INTO sync_outbox
-        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(idempotency_key) DO UPDATE SET
-         payload_json = excluded.payload_json,
-         created_at = excluded.created_at,
-         last_error = NULL;`,
+      SYNC_MUTATION_INSERT_SQL,
       `outbox-workout-schedule-override-${override.id}`,
       `workout-schedule-override:${override.id}`,
       'workout-schedule-override',

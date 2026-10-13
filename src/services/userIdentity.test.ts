@@ -34,7 +34,13 @@ describe('resolveLocalUserIdentity', () => {
 
   it('fails closed when account adoption would merge existing local data', async () => {
     const database = {
-      getFirstAsync: async () => ({ conflict: 1 }),
+      getFirstAsync: async (sql: string) =>
+        sql.includes('AS conflict')
+          ? { conflict: 1 }
+          : sql.includes('FROM user_profiles')
+            ? { id: 'guest-user' }
+            : null,
+      getAllAsync: async () => [],
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
     const session: AuthSession = {

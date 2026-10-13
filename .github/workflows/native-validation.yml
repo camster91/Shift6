@@ -1,0 +1,101 @@
+name: Native validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - '.env.release.example'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CI: '1'
+  EXPO_PUBLIC_ENVIRONMENT: staging
+  EXPO_PUBLIC_RELEASE_MODE: guest-only
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run validate:release-config
+      - run: npm run validate:release-assets
+      - run: npx expo prebuild --no-install --platform android
+      - name: Compile release-mode APK for testing
+        working-directory: android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64 --no-daemon --max-workers=2
+      - name: Save test-signed APK (not a store submission)
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-test-release
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run validate:release-config
+      - run: npm run validate:release-assets
+      - run: npx expo prebuild --no-install --platform ios
+      - name: Install native pods
+        working-directory: ios
+        run: pod install
+      - name: Compile unsigned Release simulator app
+        run: >-
+          xcodebuild -workspace ios/SHIFT6.xcworkspace -scheme SHIFT6
+          -configuration Release -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath native-build ARCHS="$(uname -m)"
+          ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios-unsigned-simulator-release
+          path: native-build/Build/Products/Release-iphonesimulator/SHIFT6.app
+          if-no-files-found: error
+      - name: Install and cold-launch on iPhone simulator
+        run: |
+          simulator_id=$(python3 - <<'PYTHON'
+          import json, subprocess
+          devices=json.loads(subprocess.check_output(['xcrun','simctl','list','devices','available','--json']))['devices']
+          phones=[d for runtime, rows in devices.items() if 'iOS' in runtime for d in rows if d['name'].startswith('iPhone')]
+          if not phones: raise SystemExit('No available iPhone simulator')
+          print(phones[0]['udid'])
+          PYTHON
+          )
+          xcrun simctl boot "$simulator_id"
+          xcrun simctl bootstatus "$simulator_id" -b
+          xcrun simctl install "$simulator_id" native-build/Build/Products/Release-iphonesimulator/SHIFT6.app
+          xcrun simctl launch "$simulator_id" com.shift6.app
+          sleep 5
+          xcrun simctl io "$simulator_id" screenshot native-build/ios-cold-launch.png
+          xcrun simctl spawn "$simulator_id" launchctl list | awk '$1 ~ /^[0-9]+$/ && $1 != 0 && /com[.]shift6[.]app/ {live=1} END {exit !live}'
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ios-cold-launch
+          path: native-build/ios-cold-launch.png
+          if-no-files-found: warn

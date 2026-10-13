@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { LocalDatabaseProvider } from '../src/db/LocalDatabaseProvider';
+import { useReducedMotion } from '../src/design/useReducedMotion';
 import { colors } from '../src/design/tokens';
 import { AppErrorBoundary } from '../src/services/AppErrorBoundary';
 import { AppServicesProvider } from '../src/services/AppServicesProvider';
@@ -10,6 +11,7 @@ import { SyncRuntimeProvider } from '../src/services/SyncRuntimeProvider';
 import { UserIdentityProvider } from '../src/services/UserIdentityProvider';
 
 export default function RootLayout() {
+  const reducedMotion = useReducedMotion();
   return (
     <AppServicesProvider>
       <AppErrorBoundary>
@@ -21,6 +23,7 @@ export default function RootLayout() {
                 <Stack
                   screenOptions={{
                     headerShown: false,
+                    animation: reducedMotion ? 'none' : 'default',
                     contentStyle: { backgroundColor: colors.canvas },
                   }}
                 >

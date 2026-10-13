@@ -4,6 +4,12 @@
 
 This document records earlier foundation checkpoints, not approval of the #304 Shift implementation. The focused product remains unimplemented on main at #305 start. The checked-in [release manifest](../content/release-manifest.json) has no approved public Shifts and strict release readiness intentionally fails until human review, exact-binary native checks and store claims are verified. Do not infer a focused launch from 20 executable historical entries.
 
+**Local implementation update, 2026-10-11:** reliability and human-use changes are
+recorded in [doc 31](31_HUMAN_USE_IMPROVEMENT_PLAN.md). Custom Higgsfield media,
+native configuration and build/device evidence are recorded in
+[doc 32](32_NATIVE_MEDIA_AND_BUILD_EVIDENCE.md). These local changes have not been
+merged or deployed, and do not close the public-content or native release gates.
+
 
 Updated: 2026-09-19
 

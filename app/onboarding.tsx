@@ -1,7 +1,15 @@
+import { onboardingFlows, type OnboardingRecoveryState } from '../src/domain/onboardingRecovery';
+import {
+  getOnboardingDraft,
+  saveOnboardingDraft,
+  clearOnboardingDraft,
+} from '../src/db/onboardingDraftRepository';
+import { ShiftArtwork } from '../src/components/artwork/ShiftArtwork';
+import { shiftArtwork } from '../src/design/artwork';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import {
@@ -47,20 +55,76 @@ import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
-const stepCount = 10;
+const {
+  essential: essentialSteps,
+  detailed: detailedSteps,
+  optional: optionalSteps,
+} = onboardingFlows;
+const initialDraft = () => ({
+  ...createOnboardingDraft('You'),
+  healthConnection: 'not-now' as const,
+  coachTone: 'supportive' as const,
+  coachIntervention: 'conservative' as const,
+});
 
 export default function OnboardingScreen() {
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
   const userId = useCurrentUserId();
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState(() => createOnboardingDraft());
+  const [steps, setSteps] = useState(essentialSteps);
+  const stepCount = steps.length;
+  const currentStep = steps[step]!;
+  const [draft, setDraft] = useState<ReturnType<typeof createOnboardingDraft>>(initialDraft);
   const [considerations, setConsiderations] = useState<UserConsiderations>(() =>
     createEmptyUserConsiderations(userId, new Date(0).toISOString()),
   );
   const [loadingProfile, setLoadingProfile] = useState(database !== null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadedOwner, setLoadedOwner] = useState<string | null>(null);
+  const [hasDraftChanges, setHasDraftChanges] = useState(false);
+  const currentOwner = useRef(userId);
+  currentOwner.current = userId;
+  const draftWrites = useRef<Promise<void>>(Promise.resolve());
+  const saved = useRef(false);
+
+  const persistDraft = useCallback(
+    (nextStep = step) => {
+      if (!database) return Promise.resolve();
+      const snapshot: OnboardingRecoveryState = {
+        version: 1,
+        flow:
+          steps === essentialSteps
+            ? 'essential'
+            : steps === optionalSteps
+              ? 'optional'
+              : 'detailed',
+        step: nextStep,
+        draft,
+        movementConsiderations: considerations.movementConsiderations,
+        accessibilityNeeds: considerations.accessibilityNeeds,
+      };
+      const write = draftWrites.current.then(async () => {
+        if (currentOwner.current === userId && !saved.current)
+          await saveOnboardingDraft(database, userId, snapshot);
+      });
+      draftWrites.current = write.catch(() => undefined);
+      return write;
+    },
+    [database, userId, steps, step, draft, considerations],
+  );
+
+  useEffect(() => {
+    if (loadingProfile || loadedOwner !== userId || saving || saved.current || !hasDraftChanges)
+      return;
+    void persistDraft().catch(() => {
+      if (currentOwner.current === userId && !saved.current)
+        setError(
+          'Your latest setup choices could not be saved for recovery. Try again before leaving.',
+        );
+    });
+  }, [persistDraft, loadingProfile, loadedOwner, userId, saving, hasDraftChanges]);
 
   useEffect(() => {
     trackAnalyticsEvent(analytics, 'onboarding_started');
@@ -74,14 +138,32 @@ export default function OnboardingScreen() {
     }
 
     let active = true;
+    setLoadingProfile(true);
+    setLoadedOwner(null);
+    saved.current = false;
     void Promise.all([
       getOnboardingProfile(database, userId),
       getUserConsiderations(database, userId),
+      getOnboardingDraft(database, userId),
     ])
-      .then(([profile, savedConsiderations]) => {
+      .then(([profile, savedConsiderations, recovery]) => {
         if (!active) return;
-        if (profile) setDraft(fromOnboardingProfile(profile));
-        setConsiderations(savedConsiderations);
+        setDraft(recovery?.draft ?? (profile ? fromOnboardingProfile(profile) : initialDraft()));
+        setSteps(
+          recovery ? onboardingFlows[recovery.flow] : profile ? detailedSteps : essentialSteps,
+        );
+        setStep(recovery?.step ?? 0);
+        setConsiderations(
+          recovery
+            ? {
+                ...savedConsiderations,
+                movementConsiderations: recovery.movementConsiderations,
+                accessibilityNeeds: recovery.accessibilityNeeds,
+              }
+            : savedConsiderations,
+        );
+        setHasDraftChanges(Boolean(recovery));
+        setLoadedOwner(userId);
       })
       .catch(() => {
         if (active)
@@ -115,11 +197,13 @@ export default function OnboardingScreen() {
   }, [draft]);
 
   const updateDraft = <Key extends keyof typeof draft>(key: Key, value: (typeof draft)[Key]) => {
+    setHasDraftChanges(true);
     setDraft((current) => ({ ...current, [key]: value }));
     setError(null);
   };
 
   const toggleMovementConsideration = (value: MovementConsideration) => {
+    setHasDraftChanges(true);
     setConsiderations((current) => ({
       ...current,
       userId,
@@ -131,6 +215,7 @@ export default function OnboardingScreen() {
   };
 
   const toggleAccessibilityNeed = (value: AccessibilityNeed) => {
+    setHasDraftChanges(true);
     setConsiderations((current) => ({
       ...current,
       userId,
@@ -141,11 +226,11 @@ export default function OnboardingScreen() {
     setError(null);
   };
 
-  const canContinue = getCanContinue(step, draft);
+  const canContinue = getCanContinue(currentStep, draft);
 
   if (loadingProfile) {
     return (
-      <Screen contentContainerStyle={styles.screenContent}>
+      <Screen key={currentStep} contentContainerStyle={styles.screenContent}>
         <Text variant="caption" tone="muted">
           LOADING YOUR SETUP
         </Text>
@@ -161,14 +246,23 @@ export default function OnboardingScreen() {
     setError(null);
 
     if (step < stepCount - 1) {
-      setStep((current) => current + 1);
+      setSaving(true);
+      try {
+        await persistDraft(step + 1);
+        setStep((current) => current + 1);
+      } catch {
+        setError('We could not save your setup progress. Try Continue again.');
+      } finally {
+        setSaving(false);
+      }
       return;
     }
 
     setSaving(true);
     try {
+      await draftWrites.current;
       const updatedAt = new Date().toISOString();
-      const profile = toOnboardingProfile(draft, updatedAt);
+      const profile = toOnboardingProfile(draft, updatedAt, userId);
       if (database) {
         await saveOnboardingProfile(database, profile);
         try {
@@ -183,6 +277,8 @@ export default function OnboardingScreen() {
           );
         }
       }
+      if (database) await clearOnboardingDraft(database, userId);
+      saved.current = true;
       trackAnalyticsEvent(analytics, 'onboarding_completed', {
         goalCount: draft.goals.length,
         equipmentCount: draft.equipmentIds.length,
@@ -199,8 +295,42 @@ export default function OnboardingScreen() {
 
   return (
     <Screen
+      key={currentStep}
       contentContainerStyle={styles.screenContent}
       scrollViewProps={{ keyboardShouldPersistTaps: 'handled' }}
+      footer={
+        <>
+          {error ? (
+            <View
+              accessible
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+              accessibilityLabel={`Setup error. ${error}`}
+            >
+              <Card tone="coral" style={styles.errorCard}>
+                <Text variant="smallMedium">Setup could not be saved</Text>
+                <Text variant="small" tone="muted" style={styles.errorText}>
+                  {error}
+                </Text>
+              </Card>
+            </View>
+          ) : null}
+          <View style={styles.actions}>
+            <Button
+              label={step === stepCount - 1 ? 'Save setup' : 'Continue'}
+              onPress={handleContinue}
+              disabled={!canContinue}
+              loading={saving}
+              icon={
+                step === stepCount - 1 ? undefined : (
+                  <Ionicons name="arrow-forward" size={18} color={colors.white} />
+                )
+              }
+              style={styles.actionButton}
+            />
+          </View>
+        </>
+      }
     >
       <View style={styles.header}>
         {step > 0 ? (
@@ -221,8 +351,13 @@ export default function OnboardingScreen() {
       </View>
 
       <ProgressIndicator label="Your setup" value={(step + 1) / stepCount} />
+      {step === 0 && database ? (
+        <Text variant="caption" tone="muted" style={{ marginTop: spacing.sm }}>
+          Choices save on this device as you go.
+        </Text>
+      ) : null}
       {renderStep(
-        step,
+        currentStep,
         draft,
         updateDraft,
         considerations,
@@ -232,37 +367,23 @@ export default function OnboardingScreen() {
         database !== null,
       )}
 
-      {error ? (
-        <Card tone="coral" style={styles.errorCard} accessibilityLabel={`Setup error. ${error}`}>
-          <Text variant="smallMedium">Setup could not be saved</Text>
-          <Text variant="small" tone="muted" style={styles.errorText}>
-            {error}
+      {currentStep === 9 ? <ShiftArtwork {...shiftArtwork.journey} /> : null}
+      {currentStep === 9 && steps === essentialSteps ? (
+        <>
+          <Text variant="small" tone="muted">
+            Health connections are off. Coach uses a supportive tone and conservative suggestions.
+            You can change these preferences anytime.
           </Text>
-        </Card>
-      ) : null}
-
-      <View style={styles.actions}>
-        {step > 0 ? (
           <Button
-            label="Back"
+            label="Customize name, movement, accessibility and Coach"
             variant="secondary"
-            onPress={() => setStep((current) => Math.max(0, current - 1))}
-            style={styles.actionButton}
+            onPress={() => {
+              setSteps(optionalSteps);
+              setStep(5);
+            }}
           />
-        ) : null}
-        <Button
-          label={step === stepCount - 1 ? 'Save setup' : 'Continue'}
-          onPress={handleContinue}
-          disabled={!canContinue}
-          loading={saving}
-          icon={
-            step === stepCount - 1 ? undefined : (
-              <Ionicons name="arrow-forward" size={18} color={colors.white} />
-            )
-          }
-          style={styles.actionButton}
-        />
-      </View>
+        </>
+      ) : null}
     </Screen>
   );
 }
@@ -339,6 +460,7 @@ function renderStep(
             accessibilityLabel="Your name or nickname"
             autoCapitalize="words"
             autoCorrect={false}
+            maxLength={200}
             onChangeText={(value) => updateDraft('displayName', value)}
             placeholder="Name or nickname"
             placeholderTextColor={colors.inkMuted}
@@ -397,6 +519,7 @@ function renderStep(
               label={equipment.name}
               description={equipment.description ?? equipment.aliases.join(' · ')}
               selected={draft.equipmentIds.includes(equipment.id)}
+              accessibilityRole="checkbox"
               onPress={() =>
                 updateDraft(
                   'equipmentIds',
@@ -608,7 +731,10 @@ function renderStep(
             </>
           ) : (
             <Card tone="white">
-              <Text variant="body">Complete your setup to see a program match.</Text>
+              <Text variant="body">
+                No reviewed program matches your setup yet. Save your preferences, then explore the
+                library or build your own plan.
+              </Text>
             </Card>
           )}
           <Text variant="caption" tone="muted" style={styles.persistenceNote}>
@@ -639,7 +765,7 @@ function OptionStep({ eyebrow, title, subtitle, children }: OptionStepProps) {
       <Text variant="caption" tone="muted">
         {eyebrow}
       </Text>
-      <Text variant="display" accessibilityRole="header" style={styles.title}>
+      <Text variant="h1" accessibilityRole="header" style={styles.title}>
         {title}
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
@@ -662,7 +788,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     paddingHorizontal: 0,
-    minHeight: 44,
+    minHeight: 48,
   },
   headerSpacer: {
     width: 64,
@@ -731,7 +857,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   errorCard: {
-    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
   },
   errorText: {
     marginTop: spacing.xs,
@@ -739,7 +865,6 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginTop: spacing.xxxl,
   },
   actionButton: {
     flex: 1,

@@ -145,7 +145,10 @@ describe('syncRepository', () => {
   it('deletes only acknowledged mutations and retains rejected rows with an error', async () => {
     const calls: Array<{ sql: string; params: unknown[] }> = [];
     const database = {
-      getAllAsync: async () => [pendingRow, { ...pendingRow, id: 'outbox-set-2' }],
+      getAllAsync: async () => [
+        pendingRow,
+        { ...pendingRow, id: 'outbox-set-2', entity_id: 'set-2', idempotency_key: 'set-2' },
+      ],
       runAsync: async (sql: string, ...params: unknown[]) => {
         calls.push({ sql, params });
         return { changes: 1, lastInsertRowId: 1 };

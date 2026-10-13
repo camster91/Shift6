@@ -1,3 +1,4 @@
+import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { CheckInRating, WorkoutCheckIn } from '../domain/types';
@@ -40,12 +41,7 @@ export async function saveWorkoutCheckIn(
       checkIn.updatedAt,
     );
     await database.runAsync(
-      `INSERT INTO sync_outbox
-        (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(idempotency_key) DO UPDATE SET
-         payload_json = excluded.payload_json,
-         last_error = NULL;`,
+      SYNC_MUTATION_INSERT_SQL,
       `outbox-workout-check-in-${checkIn.sessionId}`,
       `workout-check-in:${checkIn.sessionId}`,
       'workout-check-in',

@@ -13,13 +13,38 @@
       "status": "fallback-implemented",
       "sourceFiles": [],
       "implementation": "src/design/iconography.ts",
-      "requiredReview": ["Figma vector family", "outline and selected states", "24px accessibility check"]
+      "requiredReview": [
+        "Figma vector family",
+        "outline and selected states",
+        "24px accessibility check"
+      ]
     },
     {
       "id": "exercise-media",
       "status": "human-review-required",
       "sourceFiles": [],
       "requiredReview": ["technique", "alt text", "licensing", "mobile crop"]
+    },
+    {
+      "id": "higgsfield-decorative-art",
+      "status": "human-review-required",
+      "sourceFiles": [
+        "higgsfield/source/journey-v01.png",
+        "higgsfield/source/return-v01.png",
+        "higgsfield/source/session-saved-v01.png",
+        "higgsfield/source/launcher-v01.png",
+        "higgsfield/source/journey-v01.mp4",
+        "higgsfield/source/session-saved-v01.mp4",
+        "higgsfield/source/adaptive-foreground-v02.png"
+      ],
+      "implementation": "src/components/artwork/ShiftArtwork.tsx",
+      "requiredReview": [
+        "brand direction",
+        "native launcher safe zones",
+        "reduced motion and playback controls",
+        "provenance and licensing",
+        "small and large iOS/Android device review"
+      ]
     }
   ]
 }

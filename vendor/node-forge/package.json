@@ -1,0 +1,14 @@
+{
+  "description": "JavaScript implementations of network transports, cryptography, ciphers, PKI, message digests, and various utilities.",
+  "main": "lib/index.js",
+  "license": "(BSD-3-Clause OR GPL-2.0)",
+  "browser": {
+    "buffer": false,
+    "crypto": false,
+    "process": false
+  },
+  "name": "@shift6/node-forge",
+  "version": "1.4.0-shift6.1",
+  "private": true,
+  "upstreamVersion": "1.4.0"
+}

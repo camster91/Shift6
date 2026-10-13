@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 
 export default [
   {
-    ignores: ['.expo/**', 'coverage/**', 'dist/**', 'node_modules/**'],
+    ignores: ['.expo/**', 'coverage/**', 'dist/**', 'node_modules/**', 'vendor/**'],
   },
   {
     files: ['**/*.{js,cjs,mjs}'],

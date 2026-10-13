@@ -3,10 +3,13 @@ import { createContext, useContext } from 'react';
 
 import { runtimeConfig } from '../config/env';
 import { createAppServices, type AppServices } from './appServices';
-import { createExpoSecureAuthProvider } from './auth';
+import { UnavailableAuthProvider, createExpoSecureAuthProvider } from './auth';
 
 const defaultAppServices = createAppServices({
-  auth: createExpoSecureAuthProvider(),
+  auth:
+    runtimeConfig.releaseMode === 'guest-only'
+      ? new UnavailableAuthProvider()
+      : createExpoSecureAuthProvider(),
   apiBaseUrl: runtimeConfig.apiBaseUrl,
 });
 

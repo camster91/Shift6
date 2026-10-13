@@ -59,7 +59,7 @@ describe('saveCompletedSet', () => {
     await expect(saveCompletedSet(database, completedSet)).resolves.toBe('inserted');
     expect(calls[0]).toBe('BEGIN TRANSACTION');
     expect(calls[1]).toContain('INSERT OR IGNORE INTO completed_sets');
-    expect(calls[2]).toContain('INSERT OR IGNORE INTO sync_outbox');
+    expect(calls[2]).toContain('INSERT INTO sync_outbox');
     expect(calls[3]).toBe('COMMIT TRANSACTION');
   });
 
@@ -282,13 +282,13 @@ describe('saveWorkoutSession', () => {
 
     expect(calls[0]).toBe('BEGIN TRANSACTION');
     expect(calls[1]).toContain('INSERT OR IGNORE INTO workout_sessions');
-    expect(calls[2]).toContain('INSERT OR IGNORE INTO sync_outbox');
+    expect(calls[2]).toContain('INSERT INTO sync_outbox');
     expect(calls[3]).toBe('COMMIT TRANSACTION');
   });
 });
 
 describe('updateWorkoutSessionNote', () => {
-  it('updates only an unfinished session and replaces its queued payload', async () => {
+  it('updates only an unfinished session and queues a separate session snapshot', async () => {
     const calls: Array<{ sql: string; params: unknown[] }> = [];
     const database = {
       runAsync: async (sql: string, ...params: unknown[]) => {
@@ -596,7 +596,7 @@ describe('workout drafts and corrections', () => {
     expect(calls[0]?.sql).toContain('ON CONFLICT(session_id) DO UPDATE');
   });
 
-  it('updates a completed set and replaces its pending outbox payload', async () => {
+  it('updates a completed set and queues a separate correction snapshot', async () => {
     const calls: string[] = [];
     const database = {
       runAsync: async (sql: string) => {
@@ -619,6 +619,6 @@ describe('workout drafts and corrections', () => {
       }),
     ).resolves.toBe('updated');
     expect(calls[0]).toContain('UPDATE completed_sets');
-    expect(calls[1]).toContain('ON CONFLICT(idempotency_key) DO UPDATE');
+    expect(calls[1]).not.toContain('DO UPDATE');
   });
 });

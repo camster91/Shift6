@@ -1,7 +1,8 @@
+import { runtimeConfig } from '../../src/config/env';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Platform, Share, StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import { Button, Card, Chip, OfflineBanner, Screen, Text } from '../../src/components/ui';
 import { equipmentCatalog } from '../../src/domain/equipment';
@@ -12,6 +13,7 @@ import { deleteLocalUserData, exportLocalUserData } from '../../src/db/privacyRe
 import { getOnboardingProfile } from '../../src/db/profileRepository';
 import { colors, radii, spacing } from '../../src/design/tokens';
 import { deleteAuthenticatedAccount } from '../../src/services/accountDeletion';
+import { clearLocalExportFiles, shareLocalDataExport } from '../../src/services/localDataExport';
 import { accountDeletionRecoveryStore } from '../../src/services/accountDeletionRecovery';
 import { useAppServices } from '../../src/services/AppServicesProvider';
 import { useSyncRuntime } from '../../src/services/SyncRuntimeProvider';
@@ -85,19 +87,21 @@ export default function ProfileScreen() {
     preferredTrainingTimeOptions.find((option) => option.value === user.preferredTrainingTime)
       ?.label ?? 'Training time not set';
   const syncStatus =
-    syncRuntime.connectivity === 'offline'
-      ? ('offline' as const)
-      : syncRuntime.state === 'syncing'
-        ? ('syncing' as const)
-        : syncRuntime.state === 'conflict'
-          ? ('sync-conflict' as const)
-          : syncRuntime.state === 'failed' || syncRuntime.state === 'partial'
-            ? ('sync-failed' as const)
-            : null;
+    runtimeConfig.releaseMode === 'guest-only'
+      ? null
+      : syncRuntime.connectivity === 'offline'
+        ? ('offline' as const)
+        : syncRuntime.state === 'syncing'
+          ? ('syncing' as const)
+          : syncRuntime.state === 'conflict'
+            ? ('sync-conflict' as const)
+            : syncRuntime.state === 'failed' || syncRuntime.state === 'partial'
+              ? ('sync-failed' as const)
+              : null;
 
   const handleExport = async () => {
     if (!database) {
-      setPrivacyMessage('Web preview: local data export is available on native builds.');
+      setPrivacyMessage('Local storage is not ready. Reopen the app and try again.');
       return;
     }
 
@@ -105,10 +109,7 @@ export default function ProfileScreen() {
     setPrivacyMessage(null);
     try {
       const data = await exportLocalUserData(database, userId, new Date().toISOString());
-      await Share.share({
-        title: 'SHIFT6 data export',
-        message: JSON.stringify(data, null, 2),
-      });
+      await shareLocalDataExport(data);
       setPrivacyMessage(
         `Your local export includes ${data.summary.totalRecordCount} records across ${data.summary.sections.length} sections and is ready to share.`,
       );
@@ -121,13 +122,13 @@ export default function ProfileScreen() {
 
   const handleLocalDelete = () => {
     if (!database || Platform.OS === 'web') {
-      setPrivacyMessage('Web preview: local deletion is available on native builds.');
+      setPrivacyMessage('Local storage is not ready. Reopen the app and try again.');
       return;
     }
 
     Alert.alert(
       'Delete local data?',
-      'This removes the guest profile, preferences, equipment, body metrics, cycles, workout history, proposals, and pending sync data from this device. It cannot be undone.',
+      'This removes the guest profile, preferences, equipment, body metrics, cycles, workout history, proposals, pending sync data and temporary exports inside SHIFT6 from this device. Copies you saved or shared outside SHIFT6 remain in their destinations. It cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -145,6 +146,7 @@ export default function ProfileScreen() {
     setPrivacyBusy('local-delete');
     setPrivacyMessage(null);
     try {
+      await clearLocalExportFiles(userId);
       await deleteLocalUserData(database, userId);
       resetDisplayedLocalProfile();
       setPrivacyMessage('Local data was deleted from this device.');
@@ -186,6 +188,7 @@ export default function ProfileScreen() {
         userId,
         backend,
         auth,
+        clearAdditionalLocalData: clearLocalExportFiles,
       });
 
       if (!outcome.localDataDeleted) {
@@ -228,6 +231,7 @@ export default function ProfileScreen() {
 
     if (accountCleanupState === 'local-data') {
       try {
+        await clearLocalExportFiles(userId);
         await deleteLocalUserData(database, userId);
         resetDisplayedLocalProfile();
         setAccountCleanupState('sign-out');
@@ -360,12 +364,12 @@ export default function ProfileScreen() {
       <Card tone="blue" style={styles.settingsCard}>
         <Ionicons name="shield-checkmark-outline" size={24} color={colors.ink} />
         <Text variant="h3" style={styles.settingsTitle}>
-          Local-first by default.
+          Saved on this device.
         </Text>
         <Text variant="body" tone="muted">
-          Workout data is designed to remain useful on the device before any account or cloud sync
-          is connected. Movement/accessibility preferences and manual body metrics also stay local
-          until a separate remote privacy policy explicitly opts them in.
+          This release saves your training, preferences and measurements on this device. No account
+          or cloud sync is required. You can export your records below; deleting the app may remove
+          local data.
         </Text>
       </Card>
 

@@ -1,5 +1,6 @@
 module.exports = {
   preset: 'jest-expo',
+  setupFiles: ['<rootDir>/tests/setup-release.cjs'],
   testMatch: ['**/?(*.)+(test).[jt]s?(x)'],
   testPathIgnorePatterns: ['/node_modules/', '/e2e/'],
   moduleNameMapper: {

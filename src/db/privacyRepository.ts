@@ -26,10 +26,13 @@ export interface LocalDataExportSummary {
 }
 
 export interface LocalDataExport {
-  schemaVersion: 10;
+  schemaVersion: 12;
   exportedAt: string;
   userId: string;
   summary: LocalDataExportSummary;
+  personalGoalEvents?: Record<string, unknown>[];
+  personalGoalDrafts?: Record<string, unknown>[];
+  onboardingDrafts?: Record<string, unknown>[];
   userProfiles: Record<string, unknown>[];
   userEquipment: Record<string, unknown>[];
   userConsiderations: Record<string, unknown>[];
@@ -59,6 +62,18 @@ export async function exportLocalUserData(
   userId: string,
   exportedAt: string,
 ): Promise<LocalDataExport> {
+  const personalGoalEvents = await database.getAllAsync<Record<string, unknown>>(
+    'SELECT * FROM personal_goal_events WHERE user_id=? ORDER BY rowid;',
+    userId,
+  );
+  const personalGoalDrafts = await database.getAllAsync<Record<string, unknown>>(
+    'SELECT * FROM personal_goal_drafts WHERE user_id=?;',
+    userId,
+  );
+  const onboardingDrafts = await database.getAllAsync<Record<string, unknown>>(
+    'SELECT * FROM onboarding_drafts WHERE user_id = ?;',
+    userId,
+  );
   const userProfiles = await database.getAllAsync<Record<string, unknown>>(
     'SELECT * FROM user_profiles WHERE id = ?;',
     userId,
@@ -182,6 +197,9 @@ export async function exportLocalUserData(
   );
 
   const summary = buildLocalDataExportSummary({
+    personalGoalEvents,
+    personalGoalDrafts,
+    onboardingDrafts,
     userProfiles,
     userEquipment,
     userConsiderations,
@@ -207,10 +225,13 @@ export async function exportLocalUserData(
   });
 
   return {
-    schemaVersion: 10,
+    schemaVersion: 12,
     exportedAt,
     userId,
     summary,
+    personalGoalEvents,
+    personalGoalDrafts,
+    onboardingDrafts,
     userProfiles,
     userEquipment,
     userConsiderations,
@@ -244,7 +265,8 @@ export function buildLocalDataExportSummary(
       key: 'profile',
       title: 'Profile and equipment',
       description: 'Your local profile answers and saved equipment inventory.',
-      recordCount: data.userProfiles.length + data.userEquipment.length,
+      recordCount:
+        data.userProfiles.length + data.userEquipment.length + (data.onboardingDrafts?.length ?? 0),
     },
     {
       key: 'preferences',
@@ -268,7 +290,9 @@ export function buildLocalDataExportSummary(
         data.shifts.length +
         data.shiftProtocols.length +
         data.shiftObservations.length +
-        data.shiftGoalRevisions.length,
+        data.shiftGoalRevisions.length +
+        (data.personalGoalEvents?.length ?? 0) +
+        (data.personalGoalDrafts?.length ?? 0),
     },
     {
       key: 'trainingHistory',
@@ -448,6 +472,7 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
     await database.runAsync('DELETE FROM user_exercises WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM coach_proposals WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM user_equipment WHERE user_id = ?;', userId);
+    await database.runAsync('DELETE FROM onboarding_drafts WHERE user_id = ?;', userId);
     await database.runAsync('DELETE FROM user_profiles WHERE id = ?;', userId);
   });
 }

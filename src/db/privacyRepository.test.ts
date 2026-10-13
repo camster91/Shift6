@@ -13,6 +13,8 @@ describe('exportLocalUserData', () => {
   it('returns user-scoped local records with a versioned export envelope', async () => {
     const database = {
       getAllAsync: async (sql: string) => {
+        if (sql.includes('personal_goal')) return [];
+        if (sql.includes('onboarding_drafts')) return [];
         if (sql.includes('user_profiles')) return [{ id: 'guest-user', display_name: 'Cameron' }];
         if (sql.includes('user_equipment'))
           return [{ user_id: 'guest-user', equipment_id: 'barbell' }];
@@ -58,7 +60,10 @@ describe('exportLocalUserData', () => {
     await expect(
       exportLocalUserData(database, 'guest-user', '2026-09-14T12:00:00.000Z'),
     ).resolves.toEqual({
-      schemaVersion: 10,
+      schemaVersion: 12,
+      personalGoalEvents: [],
+      personalGoalDrafts: [],
+      onboardingDrafts: [],
       exportedAt: '2026-09-14T12:00:00.000Z',
       userId: 'guest-user',
       summary: {
@@ -222,7 +227,7 @@ describe('deleteLocalUserData', () => {
 
     await expect(deleteLocalUserData(database, 'guest-user')).resolves.toBeUndefined();
 
-    expect(calls).toHaveLength(23);
+    expect(calls).toHaveLength(24);
     expect(calls[0]?.sql).toContain('DELETE FROM sync_outbox');
     expect(calls[0]?.params.every((param) => param === 'guest-user')).toBe(true);
     expect(calls[1]?.sql).toContain('DELETE FROM notification_preferences');
@@ -331,7 +336,7 @@ describe('deleteLocalUserData', () => {
       }
 
       const exportData = await exportLocalUserData(database, 'owner-1', '2026-09-24');
-      expect(exportData.schemaVersion).toBe(10);
+      expect(exportData.schemaVersion).toBe(12);
       expect(exportData.shifts.map((row) => row.id)).toEqual(['shift-owner-1']);
       expect(exportData.shiftProtocols.map((row) => row.shift_id)).toEqual(['shift-owner-1']);
       expect(exportData.shiftObservations.map((row) => row.id)).toEqual(['observation-owner-1']);

@@ -5,12 +5,40 @@
   },
   "build": {
     "development": {
-      "developmentClient": true,
-      "distribution": "internal"
+      "developmentClient": false,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_RELEASE_MODE": "guest-only",
+        "EXPO_PUBLIC_ENVIRONMENT": "development",
+        "EXPO_PUBLIC_API_BASE_URL": ""
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENVIRONMENT": "staging",
+        "EXPO_PUBLIC_RELEASE_MODE": "guest-only",
+        "EXPO_PUBLIC_API_BASE_URL": ""
+      }
     },
-    "production": {}
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_ENVIRONMENT": "production",
+        "EXPO_PUBLIC_RELEASE_MODE": "guest-only",
+        "SHIFT6_RELEASE_MODE": "guest-only",
+        "SHIFT6_ACCOUNT_CREATION_ENABLED": "false",
+        "SHIFT6_REMOTE_COACH_ENABLED": "false",
+        "SHIFT6_ANALYTICS_ENABLED": "false",
+        "SHIFT6_CRASH_REPORTING_ENABLED": "false",
+        "EXPO_PUBLIC_API_BASE_URL": ""
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
   }
 }

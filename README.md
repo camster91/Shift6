@@ -1,6 +1,6 @@
 # SHIFT6
 
-A local-first mobile fitness app for iOS and Android that organizes training into focused six-week cycles: pick one measurable goal, record a baseline, train, and review real change after six weeks.
+A mobile-only, guest-first fitness app for iOS and Android that organizes training into focused six-week cycles: pick one measurable goal, record a baseline, train, and review real change after six weeks.
 
 > Status: in active rebuild. The repository was reset in September 2026 and `main` now holds a new React Native / Expo foundation. It is not released on the App Store or Google Play yet, and no program content has passed human review for public release. The earlier Vite/Capacitor web version is preserved on the `archive/pre-shift6-rebuild-2026-09-13` branch.
 
@@ -10,18 +10,21 @@ Progress is easier to see and sustain when training is organized into short, foc
 
 ## What is built today
 
-- Guest onboarding and profile setup, with an equipment manager that feeds program recommendations and substitutions
-- Versioned six-week programs: a launch catalogue of 20 program definitions with executable versions (Barbell 30 is the startable one; the rest are drafts pending content review)
+- Guest onboarding with six essential setup steps and optional profile details, with an equipment manager that feeds program recommendations and substitutions
+- Versioned six-week programs: 20 historical candidate definitions for development. The focused public release manifest has no approved enabled Shifts; candidate content requires human review.
 - Active workout logging with per-set entry, session notes, exercise reordering, added sets, equipment substitution, and explicit partial or skipped sessions with a reason
 - Deterministic next-session targets from completed set history, with unit-aware load increments (for example 5 lb or 2.5 kg); AI never sets targets
 - Cycle calendar with rescheduling, week transitions, and an end-of-cycle review and reflection
 - Progress views: training volume by exercise, movement pattern and muscle, plus a cycle-level cardio summary
 - Searchable exercise library with filters (equipment, difficulty, stance, focus) and a custom exercise builder
-- Coach surface with a deterministic safety classifier and proposal validator; provider-backed AI is opt-in and off by default, and can never change a plan on its own
+- Coach surface with a deterministic safety classifier and proposal validator; provider-backed AI is disabled in the guest-only build, and can never change a plan on its own
 - Apple Health and Health Connect adapters with explicit disconnect and data-removal controls
-- Local-first SQLite storage with versioned migrations and an idempotent sync outbox that surfaces conflicts for review instead of overwriting data
-- Privacy controls: local export and delete, guest-to-account data adoption, privacy-safe analytics and error reporting that are no-ops by default
-- Plate calculator, body metrics, notifications, accessibility-tested UI components
+- On-device SQLite storage with versioned migrations; guest builds do not enqueue cloud sync
+- Privacy controls: local export and delete; accounts, analytics and remote error reporting are disabled for this release
+- Plate calculator, body metrics, notifications and component accessibility tests; native assistive-technology review remains pending
+- Custom Higgsfield artwork, launcher/splash exports and optional silent animations with reduced-motion and backgrounding support
+
+Personal goals now support self-entered repetitions, load for reps, hold duration, fixed-distance time, distance and completion, an explicit baseline, measured progress, append-only corrections, target revisions and a recorded review. These do not approve or publish the candidate fitness catalogue. See [mobile release status](docs/33_MOBILE_GUEST_RELEASE.md) for current checks and remaining external gates.
 
 ## Tech stack
 
@@ -40,10 +43,10 @@ Requires Node 22.
 npm ci
 cp .env.example .env
 npm start          # Expo dev server
-npm run ios        # or: npm run android / npm run web
+npm run ios        # or: npm run android
 ```
 
-The web target is a UI preview only: it has no persistence because the SQLite web worker is not available there. iOS and Android use the real SQLite provider.
+Only iOS and Android are supported release targets. The ios/android scripts compile native development apps, including health modules; they require Xcode on macOS or the Android SDK respectively. Expo Go cannot verify these native integrations. EAS internal profiles produce standalone test builds. No backend endpoint is needed for this guest release.
 
 ## Quality checks
 
@@ -54,7 +57,11 @@ npm test
 npm run verify     # full CI gate: format, lint, typecheck, expo-doctor, asset and secret checks, audit, tests, export
 ```
 
-CI runs the same steps on every push and pull request, ending with an iOS, Android and web export smoke test.
+CI runs the same steps on every push and pull request, ending with iOS and Android export smoke tests.
+
+The **Native validation** workflow runs on pull requests and can also be started manually. It compiles an Android release-mode test
+APK and an unsigned iOS Release simulator app on macOS. Store signing and physical
+device QA are separate release requirements. Content approval, signing and physical device evidence remain release gates. Dependency patches are source tracked in vendor/ with regression and integrity checks.
 
 ## Project structure
 

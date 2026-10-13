@@ -1,3 +1,4 @@
+import { runtimeConfig } from '../config/env';
 import type { ReactNode } from 'react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
@@ -44,7 +45,7 @@ export function SyncRuntimeProvider({ children, services }: SyncRuntimeProviderP
   });
 
   const performFlush = useCallback(async () => {
-    if (!database) return;
+    if (!database || runtimeConfig.releaseMode === 'guest-only') return;
 
     setSnapshot((current) => ({ ...current, state: 'syncing' }));
     try {
@@ -62,7 +63,7 @@ export function SyncRuntimeProvider({ children, services }: SyncRuntimeProviderP
   const flushNow = useMemo(() => createSingleFlight(performFlush), [performFlush]);
 
   useEffect(() => {
-    if (!database) return;
+    if (!database || runtimeConfig.releaseMode === 'guest-only') return;
 
     void activeServices.connectivity
       .getStatus()

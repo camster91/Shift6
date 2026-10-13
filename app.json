@@ -8,7 +8,11 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.shift6.app"
+      "bundleIdentifier": "com.shift6.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.shift6.app",
@@ -19,16 +23,37 @@
         "android.permission.health.READ_RESTING_HEART_RATE",
         "android.permission.health.READ_SLEEP",
         "android.permission.health.READ_WEIGHT"
+      ],
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/release/shift6-adaptive-foreground-v02.png",
+        "monochromeImage": "./assets/release/shift6-adaptive-monochrome-v02.png",
+        "backgroundColor": "#0D101B"
+      },
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO"
       ]
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static"
     },
     "plugins": [
       "expo-router",
-      "expo-sqlite",
-      "expo-secure-store",
+      [
+        "expo-sqlite",
+        {
+          "customBuildFlags": "-DSQLITE_DEFAULT_FOREIGN_KEYS=1"
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
       "expo-notifications",
       "expo-system-ui",
       [
@@ -49,10 +74,28 @@
             "targetSdkVersion": 36
           }
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/release/shift6-splash-v02.png",
+          "backgroundColor": "#0D101B",
+          "imageWidth": 160,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": false,
+          "supportsPictureInPicture": false
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "icon": "./assets/release/shift6-icon-v01.png",
+    "platforms": ["ios", "android"]
   }
 }

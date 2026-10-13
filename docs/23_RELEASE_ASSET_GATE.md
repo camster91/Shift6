@@ -2,7 +2,7 @@
 
 Updated: 2026-09-19
 
-SHIFT6 currently has SVG brand explorations in `assets/brand/`, but those source files are not final store-ready raster assets and are not wired into Expo release configuration.
+SHIFT6 retains SVG brand explorations in `assets/brand/`. Custom Higgsfield PNG launcher, adaptive, monochrome and splash exports are now wired into Expo configuration and pass structural validation. Brand approval and native launcher/splash QA remain outstanding; see [native media evidence](32_NATIVE_MEDIA_AND_BUILD_EVIDENCE.md).
 
 Expo's current app-config guidance recommends a 1024×1024 PNG for the app icon, supports an Android adaptive foreground image/background configuration, and recommends verifying splash behaviour in a standalone/release build.
 

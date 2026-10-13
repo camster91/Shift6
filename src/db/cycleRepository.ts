@@ -1,3 +1,4 @@
+import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { advanceCycleAfterCompletedWorkout } from '../domain/cycle';
@@ -208,13 +209,7 @@ function mapTrainingCycle(row: TrainingCycleRow): TrainingCycle {
 
 async function queueCycleSync(database: SQLiteDatabase, cycle: TrainingCycle): Promise<void> {
   await database.runAsync(
-    `INSERT INTO sync_outbox
-      (id, idempotency_key, entity_type, entity_id, payload_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(idempotency_key) DO UPDATE SET
-       payload_json = excluded.payload_json,
-       created_at = excluded.created_at,
-       last_error = NULL;`,
+    SYNC_MUTATION_INSERT_SQL,
     `outbox-training-cycle-${cycle.id}`,
     `training-cycle:${cycle.id}`,
     'training-cycle',

@@ -27,7 +27,7 @@ describe('cycle review reflections', () => {
 
     expect(calls[0]?.sql).toContain('INSERT INTO cycle_reviews');
     expect(calls[0]?.sql).toContain('ON CONFLICT(cycle_id) DO UPDATE');
-    expect(calls[1]?.sql).toContain('ON CONFLICT(idempotency_key) DO UPDATE');
+    expect(calls[1]?.sql).not.toContain('DO UPDATE');
     expect(calls[1]?.params).toContain('cycle-review:review-cycle-1');
   });
 

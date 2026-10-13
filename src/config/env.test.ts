@@ -1,6 +1,21 @@
-import { normalizeApiBaseUrl, parseAppEnvironment } from './env';
+import { normalizeApiBaseUrl, parseAppEnvironment, resolveRuntimeConfiguration } from './env';
+import easBuildConfiguration from '../../eas.json';
 
 describe('runtime environment configuration', () => {
+  it.each(Object.entries(easBuildConfiguration.build))(
+    'starts with the environment configured for the %s native build',
+    (_name, profile) => {
+      const configured = 'env' in profile ? profile.env.EXPO_PUBLIC_ENVIRONMENT : undefined;
+      expect(() => parseAppEnvironment(configured)).not.toThrow();
+    },
+  );
+
+  it('uses production release gates in the production native build', () => {
+    expect(
+      parseAppEnvironment(easBuildConfiguration.build.production.env.EXPO_PUBLIC_ENVIRONMENT),
+    ).toBe('production');
+  });
+
   it('defaults an omitted environment to development', () => {
     expect(parseAppEnvironment(undefined)).toBe('development');
     expect(parseAppEnvironment('   ')).toBe('development');
@@ -45,4 +60,21 @@ describe('runtime environment configuration', () => {
       'EXPO_PUBLIC_API_BASE_URL must not contain embedded credentials.',
     );
   });
+});
+
+test('guest-only mobile builds fail closed on a configured backend and default to local data', () => {
+  expect(resolveRuntimeConfiguration('production', undefined, undefined).releaseMode).toBe(
+    'guest-only',
+  );
+  expect(() =>
+    resolveRuntimeConfiguration('production', 'guest-only', 'https://api.invalid'),
+  ).toThrow('cannot configure');
+  expect(() => resolveRuntimeConfiguration('production', 'connected', undefined)).toThrow(
+    'require a backend',
+  );
+  expect(() => resolveRuntimeConfiguration('production', 'typo', undefined)).toThrow(
+    'RELEASE_MODE',
+  );
+  for (const profile of Object.values(easBuildConfiguration.build))
+    expect(profile.env.EXPO_PUBLIC_RELEASE_MODE).toBe('guest-only');
 });

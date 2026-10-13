@@ -164,7 +164,7 @@ export default function ProgramsScreen() {
 
       <Text variant="small" tone="muted" style={styles.recommendationNote}>
         {profileDisplayName
-          ? `Recommendations use ${profileDisplayName}'s goals, experience, schedule, and equipment.`
+          ? 'Recommendations use your goals, experience, schedule, and equipment.'
           : 'Recommendations use the local demo profile until onboarding is completed.'}
       </Text>
 

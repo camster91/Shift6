@@ -264,7 +264,7 @@ describe('migrateLocalUserToAccount', () => {
       getFirstAsync: async (sql: string) =>
         sql.includes('FROM user_profiles') && !sql.includes('AS conflict') ? profileRow() : null,
       getAllAsync: async (sql: string) =>
-        sql.includes('builder_recovery_drafts')
+        sql.includes('builder_recovery_drafts') || sql.includes('SELECT id,program_json')
           ? []
           : [
               {
@@ -327,7 +327,8 @@ describe('migrateLocalUserToAccount', () => {
           : sql.includes('FROM user_profiles')
             ? profileRow()
             : null,
-      getAllAsync: async (sql: string) => (sql.includes('builder_recovery_drafts') ? [] : []),
+      getAllAsync: async (sql: string) =>
+        sql.includes('builder_recovery_drafts') || sql.includes('SELECT id,program_json') ? [] : [],
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
 
@@ -339,7 +340,8 @@ describe('migrateLocalUserToAccount', () => {
   it('does not mutate an empty guest identity', async () => {
     const database = {
       getFirstAsync: async () => null,
-      getAllAsync: async (sql: string) => (sql.includes('builder_recovery_drafts') ? [] : []),
+      getAllAsync: async (sql: string) =>
+        sql.includes('builder_recovery_drafts') || sql.includes('SELECT id,program_json') ? [] : [],
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
 
@@ -355,7 +357,7 @@ describe('migrateLocalUserToAccount', () => {
       getFirstAsync: async (sql: string) =>
         sql.includes('FROM user_profiles') && !sql.includes('AS conflict') ? profileRow() : null,
       getAllAsync: async (sql: string) =>
-        sql.includes('builder_recovery_drafts')
+        sql.includes('builder_recovery_drafts') || sql.includes('SELECT id,program_json')
           ? []
           : [
               {

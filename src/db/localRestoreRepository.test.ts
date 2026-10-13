@@ -5,7 +5,7 @@ import { getCompletedSets, updateCompletedSet } from './workoutRepository';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { SQLiteDatabase } from 'expo-sqlite';
+import type { SQLiteDatabase, SQLiteBindValue } from 'expo-sqlite';
 import { MIGRATIONS } from './migrations';
 import { restoreLocalBackup } from './localRestoreRepository';
 import {
@@ -387,11 +387,36 @@ test('schema13 adoption remaps owner and recovery JSON without outbox creation; 
     expect(sqlite.prepare(`SELECT DISTINCT user_id FROM ${table}`).all()).toEqual([
       { user_id: 'new-account' },
     ]);
+  const exported = await exportLocalUserData(db, 'new-account', stamp);
+  expect(() => validateLocalBackup(JSON.stringify(exported))).not.toThrow();
   const draft = sqlite.prepare('SELECT snapshot_json FROM builder_recovery_drafts').get()!;
   expect(JSON.parse(String(draft.snapshot_json)).program.ownerId).toBe('new-account');
   await deleteLocalUserData(db, 'new-account');
+  await restoreLocalBackup(db, 'guest-user', JSON.stringify(exported));
+  expect(() => validateLocalBackup(JSON.stringify(exported))).not.toThrow();
+  expect(
+    JSON.parse(String(sqlite.prepare('SELECT program_json FROM user_programs').get()!.program_json))
+      .ownerId,
+  ).toBe('guest-user');
+  await deleteLocalUserData(db, 'guest-user');
   for (const table of Object.values(restoreTables))
     expect(sqlite.prepare(`SELECT count(*) AS n FROM ${table}`).get()).toEqual({ n: 0 });
+  expect(sqlite.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+});
+
+test('late adoption failure rolls back canonical and recovery embedded ownership with actual fixture', async () => {
+  await restoreLocalBackup(db, 'guest-user', serialized(fixture13()));
+  const before = await exportLocalUserData(db, 'guest-user', stamp);
+  const run = db.runAsync.bind(db);
+  db.runAsync = (async (sql: string, ...args: SQLInputValue[]) => {
+    if (sql.startsWith('DELETE FROM user_profiles')) throw new Error('late adoption failure');
+    return run(sql, ...(args as SQLiteBindValue[]));
+  }) as SQLiteDatabase['runAsync'];
+  await expect(migrateLocalUserToAccount(db, 'guest-user', 'new-account')).rejects.toThrow(
+    'late adoption failure',
+  );
+  expect(await exportLocalUserData(db, 'guest-user', stamp)).toEqual(before);
+  expect(sqlite.prepare("SELECT id FROM user_profiles WHERE id='new-account'").all()).toEqual([]);
   expect(sqlite.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
 });
 

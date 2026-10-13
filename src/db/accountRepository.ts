@@ -269,6 +269,26 @@ export async function migrateLocalUserToAccount(
       destinationUserId,
       sourceUserId,
     );
+    const programs = await database.getAllAsync<{ id: string; program_json: string }>(
+      'SELECT id,program_json FROM user_programs WHERE user_id=?;',
+      destinationUserId,
+    );
+    for (const row of programs) {
+      const program = JSON.parse(row.program_json);
+      if (
+        !program ||
+        typeof program !== 'object' ||
+        Array.isArray(program) ||
+        program.ownerId !== sourceUserId
+      )
+        throw new Error('Private program ownership cannot be adopted safely.');
+      await database.runAsync(
+        'UPDATE user_programs SET program_json=? WHERE id=? AND user_id=?;',
+        JSON.stringify({ ...program, ownerId: destinationUserId }),
+        row.id,
+        destinationUserId,
+      );
+    }
     await database.runAsync(
       'UPDATE user_exercises SET user_id = ? WHERE user_id = ?;',
       destinationUserId,

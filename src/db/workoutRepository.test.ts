@@ -346,21 +346,24 @@ describe('saveActiveWorkoutRevision', () => {
         calls.push({ sql, params });
         return { changes: 1, lastInsertRowId: 1 };
       },
-      getFirstAsync: async () => ({
-        id: 'session-1',
-        cycle_id: 'cycle-1',
-        cycle_week: 1,
-        workout_id: 'workout-1',
-        program_version_id: 'program-version-2',
-        workout_focus: 'strength',
-        status: 'in-progress',
-        started_at: '2026-09-14T12:00:00.000Z',
-        completed_at: null,
-        completion_reason: null,
-        is_offline: 1,
-        readiness: 'ready',
-        note: null,
-      }),
+      getFirstAsync: async (sql: string) =>
+        sql.includes('FROM user_program_versions v')
+          ? null
+          : {
+              id: 'session-1',
+              cycle_id: 'cycle-1',
+              cycle_week: 1,
+              workout_id: 'workout-1',
+              program_version_id: 'program-version-2',
+              workout_focus: 'strength',
+              status: 'in-progress',
+              started_at: '2026-09-14T12:00:00.000Z',
+              completed_at: null,
+              completion_reason: null,
+              is_offline: 1,
+              readiness: 'ready',
+              note: null,
+            },
       withTransactionAsync: async (callback: () => Promise<void>) => {
         calls.push({ sql: 'BEGIN TRANSACTION', params: [] });
         await callback();

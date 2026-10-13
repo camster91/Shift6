@@ -2,6 +2,7 @@ import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { Exercise, Program, ProgramVersion } from '../domain/types';
+import { ImmutableProgramVersionError, stableSnapshotJSON } from '../domain/programPersistence';
 
 interface UserProgramVersionRow {
   program_json: string;
@@ -64,8 +65,51 @@ export async function saveProgramVersionInTransaction(
   program: Program,
   version: ProgramVersion,
 ): Promise<void> {
+  if (
+    (program.ownerId !== undefined && program.ownerId !== userId) ||
+    (!program.isTemplate && program.ownerId !== userId)
+  )
+    throw new Error('A private program snapshot must belong to its local owner.');
   if (version.programId !== program.id) {
     throw new Error('The program version must belong to the program being saved.');
+  }
+  if (program.currentVersionId !== version.id)
+    throw new Error('The saved program must point to the version being saved.');
+  const existing = await database.getFirstAsync<{
+    program_id: string;
+    version_json: string;
+    user_id: string;
+    program_json: string;
+  }>(
+    `SELECT v.program_id,v.version_json,p.user_id,p.program_json FROM user_program_versions v INNER JOIN user_programs p ON p.id=v.program_id WHERE v.id=?;`,
+    version.id,
+  );
+  if (existing) {
+    if (existing.program_id !== program.id)
+      throw new Error('The program version ID belongs to another program.');
+    if (existing.user_id !== userId)
+      throw new Error('The program ID belongs to another local user.');
+    let storedVersion: unknown;
+    let storedProgram: Program;
+    try {
+      storedVersion = JSON.parse(existing.version_json);
+      storedProgram = JSON.parse(existing.program_json) as Program;
+    } catch {
+      throw new Error('The saved program snapshot could not be read safely.');
+    }
+    if (stableSnapshotJSON(storedVersion) !== stableSnapshotJSON(version))
+      throw new ImmutableProgramVersionError();
+    // An identical retry cannot move the current program pointer backwards or
+    // rewrite metadata/outbox records. At the current version, changed metadata
+    // also needs an explicit copy instead of a misleading successful Save.
+    if (storedProgram.id !== program.id || typeof storedProgram.currentVersionId !== 'string')
+      throw new Error('The saved program snapshot could not be read safely.');
+    if (
+      stableSnapshotJSON(storedProgram) !==
+      stableSnapshotJSON({ ...program, currentVersionId: storedProgram.currentVersionId })
+    )
+      throw new ImmutableProgramVersionError();
+    return;
   }
 
   const programWrite = await database.runAsync(
@@ -91,12 +135,7 @@ export async function saveProgramVersionInTransaction(
     `INSERT INTO user_program_versions
       (id, program_id, version, status, version_json, created_at)
      VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(id) DO UPDATE SET
-       version = excluded.version,
-       status = excluded.status,
-       version_json = excluded.version_json,
-       created_at = excluded.created_at
-     WHERE user_program_versions.program_id = excluded.program_id;`,
+     ON CONFLICT(id) DO NOTHING;`,
     version.id,
     program.id,
     version.version,
@@ -105,7 +144,7 @@ export async function saveProgramVersionInTransaction(
     version.createdAt,
   );
   if (versionWrite.changes !== 1) {
-    throw new Error('The program version ID belongs to another program.');
+    throw new ImmutableProgramVersionError();
   }
   await database.runAsync(
     SYNC_MUTATION_INSERT_SQL,

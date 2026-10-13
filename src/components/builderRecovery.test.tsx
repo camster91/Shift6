@@ -8,6 +8,7 @@ import {
   createCustomExercise,
 } from '../domain/programBuilder';
 import type { BuilderRecoveryDraft, BuilderRecoverySnapshot } from '../domain/localPersistence';
+import { ImmutableProgramVersionError } from '../domain/programPersistence';
 let mockOwner = 'guest-user';
 const mockDatabase = {};
 let mockRecord: BuilderRecoveryDraft | null = null;
@@ -279,4 +280,54 @@ test('an edit during delayed recovery deletion is resaved and never inherits the
   await waitFor(() => expect(mockRecord?.snapshot.program.title).toBe('Edited during delete'));
   expect(screen.getByText(/Recovery saved locally/)).toBeTruthy();
   expect(screen.queryByText('Plan saved locally; recovery cleared.')).toBeNull();
+});
+
+test('staying in the editor after Save offers an explicit copy that preserves added workout and unadded text', async () => {
+  const screen = await render(<ProgramBuilderScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Program name')).toBeTruthy());
+  await fireEvent.changeText(
+    screen.getByLabelText('Required workout name'),
+    'Original private day',
+  );
+  await fireEvent.press(screen.getByLabelText('Add required workout'));
+  await fireEvent.press(screen.getByLabelText('Import pasted targets for Original private day'));
+  const originalText = 'Unresolved original private note';
+  await fireEvent.changeText(
+    screen.getByLabelText('User-owned workout text for Original private day'),
+    originalText,
+  );
+  await fireEvent.press(screen.getByLabelText('Save draft program'));
+  const firstVersion = mockCanonical.mock.calls[0]![3] as BuilderRecoverySnapshot['version'];
+  const firstJSON = JSON.stringify(firstVersion);
+  await fireEvent.changeText(screen.getByLabelText('Program name'), 'Edited after Save');
+  await fireEvent.press(screen.getByLabelText('Continue editing as a new private copy'));
+  expect(screen.getByDisplayValue('Edited after Save copy')).toBeTruthy();
+  expect(screen.getByDisplayValue(originalText)).toBeTruthy();
+  expect(mockCanonical).toHaveBeenCalledTimes(1);
+  await fireEvent.press(screen.getByLabelText('Save draft program'));
+  const nextVersion = mockCanonical.mock.calls[1]![3] as BuilderRecoverySnapshot['version'];
+  expect(nextVersion.id).not.toBe(firstVersion.id);
+  expect(nextVersion.workouts[0]?.title).toBe('Original private day');
+  expect(nextVersion.workouts[0]?.id).not.toBe(firstVersion.workouts[0]?.id);
+  expect(JSON.stringify(firstVersion)).toBe(firstJSON);
+  expect(mockRecord?.snapshot.imports[0]?.text).toBe(originalText);
+  expect(mockRecord?.snapshot.imports[0]?.workoutId).toBe(nextVersion.workouts[0]?.id);
+});
+
+test('an immutable-save rejection offers a copy without silently creating or saving one', async () => {
+  const screen = await render(<ProgramBuilderScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Program name')).toBeTruthy());
+  await fireEvent.changeText(screen.getByLabelText('Program name'), 'Private edit to review');
+  mockCanonical.mockRejectedValueOnce(new ImmutableProgramVersionError());
+  await fireEvent.press(screen.getByLabelText('Save draft program'));
+  const rejected = mockCanonical.mock.calls[0]![3] as BuilderRecoverySnapshot['version'];
+  expect(screen.getByDisplayValue('Private edit to review')).toBeTruthy();
+  expect(screen.getByLabelText('Continue editing as a new private copy')).toBeTruthy();
+  expect(mockCanonical).toHaveBeenCalledTimes(1);
+  expect(mockClear).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Continue editing as a new private copy'));
+  expect(mockCanonical).toHaveBeenCalledTimes(1);
+  await fireEvent.press(screen.getByLabelText('Save draft program'));
+  const copied = mockCanonical.mock.calls[1]![3] as BuilderRecoverySnapshot['version'];
+  expect(copied.id).not.toBe(rejected.id);
 });

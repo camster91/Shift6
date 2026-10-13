@@ -76,6 +76,8 @@ import { PlanTextImport } from '../src/components/PlanTextImport';
 import { appendPlanText } from '../src/domain/planTextImport';
 import { builderRouteKey, type PlanImportRecovery } from '../src/domain/builderRecovery';
 import { useBuilderRecovery } from '../src/services/useBuilderRecovery';
+import { ImmutableProgramVersionError } from '../src/domain/programPersistence';
+import type { BuilderRecoverySnapshot } from '../src/domain/localPersistence';
 
 const starterPlank = foundationalExercises.find((exercise) => exercise.id === 'exercise-plank');
 const demoCatalogueEntry = programLibrary.find((entry) => entry.program.id === demoProgram.id);
@@ -148,6 +150,7 @@ export default function ProgramBuilderScreen() {
   const [starting, setStarting] = useState(false);
   const canonicalOperation = useRef(false);
   const [saved, setSaved] = useState(false);
+  const [copyRequired, setCopyRequired] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sourceLoading, setSourceLoading] = useState(shouldLoadSource);
   const [sourceLoadError, setSourceLoadError] = useState(false);
@@ -193,6 +196,7 @@ export default function ProgramBuilderScreen() {
     setSourceLoading(shouldLoadSource);
     setSourceLoadError(false);
     setSaved(false);
+    setCopyRequired(false);
     setSaving(false);
     setStarting(false);
     canonicalOperation.current = false;
@@ -384,29 +388,28 @@ export default function ProgramBuilderScreen() {
     snapshot: recoverySnapshot,
     committed: saved,
     onResume: (snapshot, canonicalExists) => {
-      const copy = canonicalExists
-        ? createProgramDraftFromSource(snapshot.program, snapshot.version, userId)
-        : { program: snapshot.program, version: snapshot.version };
-      const restored = {
-        ...snapshot,
-        ...copy,
-        imports: snapshot.imports.map((entry) => {
-          const index = snapshot.version.workouts.findIndex(
-            (workout) => workout.id === entry.workoutId,
-          );
-          return { ...entry, workoutId: copy.version.workouts[index]!.id };
-        }),
-      };
-      setDraft(copy);
+      const restored = canonicalExists ? copyRecoveryForEditing(snapshot, userId) : snapshot;
+      setDraft({ program: restored.program, version: restored.version });
       setCustomExercises(
         Object.fromEntries(restored.customExercises.map((exercise) => [exercise.id, exercise])),
       );
       setImports(Object.fromEntries(restored.imports.map((entry) => [entry.workoutId, entry])));
       setSaved(false);
+      setCopyRequired(false);
       setError(null);
       return restored;
     },
   });
+  const continueAsCopy = () => {
+    if (!canMutateDraft() || saving || starting || canonicalOperation.current) return;
+    const copied = copyRecoveryForEditing(recoverySnapshot, userId);
+    setDraft({ program: copied.program, version: copied.version });
+    setImports(Object.fromEntries(copied.imports.map((entry) => [entry.workoutId, entry])));
+    setSaved(false);
+    setCopyRequired(false);
+    setError(null);
+    trackedProgramCreation.current = false;
+  };
   const contentBlocked = draft.version.workouts.some((workout) =>
     workout.exercises.some((entry) => {
       const exercise = exerciseById.get(entry.exerciseId);
@@ -558,9 +561,11 @@ export default function ProgramBuilderScreen() {
       setSaved(
         JSON.stringify(recoverySnapshotRef.current) === JSON.stringify(savedRecoverySnapshot),
       );
+      setCopyRequired(true);
       trackProgramCreation();
     } catch (saveError) {
       if (canMutateDraft()) {
+        if (saveError instanceof ImmutableProgramVersionError) setCopyRequired(true);
         setError(
           saveError instanceof Error ? saveError.message : 'We could not save this program.',
         );
@@ -632,6 +637,7 @@ export default function ProgramBuilderScreen() {
       router.replace('/');
     } catch (startError) {
       if (canMutateDraft()) {
+        if (startError instanceof ImmutableProgramVersionError) setCopyRequired(true);
         setError(
           startError instanceof Error ? startError.message : 'We could not start this cycle.',
         );
@@ -772,6 +778,21 @@ export default function ProgramBuilderScreen() {
         {builderTitle}
       </Text>
       {recovery.message ? <Text accessibilityLiveRegion="polite">{recovery.message}</Text> : null}
+      {copyRequired ? (
+        <Card>
+          <Text>
+            This version has been saved. To keep earlier plans and training history unchanged,
+            continue your edits in a new private copy. Its workouts, targets and pasted text are
+            retained.
+          </Text>
+          <Button
+            label="Continue editing as a new private copy"
+            variant="secondary"
+            disabled={saving || starting}
+            onPress={continueAsCopy}
+          />
+        </Card>
+      ) : null}
       <Text variant="small" tone="muted">
         Private recovery keeps added workouts and movements, plan targets, and pasted import text.
         Finish a field with Done before leaving; the unfinished custom-movement form needs Add
@@ -1450,6 +1471,23 @@ function createProgramDraftFromSource(
     newVersionId: `${copyId}-version-1`,
     createdAt: new Date().toISOString(),
   });
+}
+
+function copyRecoveryForEditing(
+  snapshot: BuilderRecoverySnapshot,
+  userId: string,
+): BuilderRecoverySnapshot {
+  const copy = createProgramDraftFromSource(snapshot.program, snapshot.version, userId);
+  return {
+    ...snapshot,
+    ...copy,
+    imports: snapshot.imports.map((entry) => {
+      const index = snapshot.version.workouts.findIndex(
+        (workout) => workout.id === entry.workoutId,
+      );
+      return { ...entry, workoutId: copy.version.workouts[index]!.id };
+    }),
+  };
 }
 
 function getNextAvailableWorkoutDay(workouts: readonly Workout[]): number {

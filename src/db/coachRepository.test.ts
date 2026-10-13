@@ -139,19 +139,21 @@ describe('acceptCoachProposalWithRevision', () => {
         return { changes: 1, lastInsertRowId: 1 };
       },
       getFirstAsync: async (sql: string) =>
-        sql.includes('FROM training_cycles')
-          ? {
-              user_id: demoCycle.userId,
-              program_version_id: demoProgramVersion.id,
-              status: 'active',
-            }
-          : {
-              ...pendingRow,
-              id: proposal.id,
-              changes_json: JSON.stringify(proposal.changes),
-              status: 'accepted',
-              updated_at: '2026-09-14T12:00:00.000Z',
-            },
+        sql.includes('FROM user_program_versions v')
+          ? null
+          : sql.includes('FROM training_cycles')
+            ? {
+                user_id: demoCycle.userId,
+                program_version_id: demoProgramVersion.id,
+                status: 'active',
+              }
+            : {
+                ...pendingRow,
+                id: proposal.id,
+                changes_json: JSON.stringify(proposal.changes),
+                status: 'accepted',
+                updated_at: '2026-09-14T12:00:00.000Z',
+              },
       withTransactionAsync: async (callback: () => Promise<void>) => {
         calls.push('BEGIN TRANSACTION');
         await callback();

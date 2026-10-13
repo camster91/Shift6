@@ -266,7 +266,8 @@ describe('migrateLocalUserToAccount', () => {
       getAllAsync: async (sql: string) =>
         sql.includes('builder_recovery_drafts') ||
         sql.includes('SELECT id,program_json') ||
-        sql.includes('coach_review_journal')
+        sql.includes('coach_review_journal') ||
+        sql.includes('cycle_handovers')
           ? []
           : [
               {
@@ -332,7 +333,8 @@ describe('migrateLocalUserToAccount', () => {
       getAllAsync: async (sql: string) =>
         sql.includes('builder_recovery_drafts') ||
         sql.includes('SELECT id,program_json') ||
-        sql.includes('coach_review_journal')
+        sql.includes('coach_review_journal') ||
+        sql.includes('cycle_handovers')
           ? []
           : [],
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
@@ -349,7 +351,8 @@ describe('migrateLocalUserToAccount', () => {
       getAllAsync: async (sql: string) =>
         sql.includes('builder_recovery_drafts') ||
         sql.includes('SELECT id,program_json') ||
-        sql.includes('coach_review_journal')
+        sql.includes('coach_review_journal') ||
+        sql.includes('cycle_handovers')
           ? []
           : [],
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
@@ -369,7 +372,8 @@ describe('migrateLocalUserToAccount', () => {
       getAllAsync: async (sql: string) =>
         sql.includes('builder_recovery_drafts') ||
         sql.includes('SELECT id,program_json') ||
-        sql.includes('coach_review_journal')
+        sql.includes('coach_review_journal') ||
+        sql.includes('cycle_handovers')
           ? []
           : [
               {

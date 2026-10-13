@@ -1,3 +1,4 @@
+import { cycleHandoverSections } from '../domain/cycleHandover';
 import { loadProvenanceSections } from '../domain/loadUnits';
 import { persistenceSections } from '../domain/localPersistence';
 import { schedulePersistenceSections } from '../domain/scheduleSnapshot';
@@ -30,7 +31,8 @@ export interface LocalDataExportSummary {
 }
 
 export interface LocalDataExport {
-  schemaVersion: 12 | 13 | 14 | 15 | 16;
+  schemaVersion: 12 | 13 | 14 | 15 | 16 | 17;
+  cycleHandovers?: Record<string, unknown>[];
   coachReviewJournal?: Record<string, unknown>[];
   scheduleBaselines?: Record<string, unknown>[];
   scheduleRevisions?: Record<string, unknown>[];
@@ -95,6 +97,7 @@ async function exportLocalUserDataInTransaction(
     ...loadProvenanceSections,
     ...schedulePersistenceSections,
     ...coachReviewSections,
+    ...cycleHandoverSections,
   }))
     additions[key] = await database.getAllAsync(
       `SELECT * FROM ${table} WHERE user_id=? ORDER BY rowid;`,
@@ -264,7 +267,7 @@ async function exportLocalUserDataInTransaction(
   });
 
   return {
-    schemaVersion: 16,
+    schemaVersion: 17,
     exportedAt,
     userId,
     summary,
@@ -374,7 +377,8 @@ export function buildLocalDataExportSummary(
         data.notificationPreferences.length +
         (data.coachMemoryPreferences?.length ?? 0) +
         (data.coachMemoryFacts?.length ?? 0) +
-        (data.coachReviewJournal?.length ?? 0),
+        (data.coachReviewJournal?.length ?? 0) +
+        (data.cycleHandovers?.length ?? 0),
     },
   ];
 
@@ -410,6 +414,7 @@ export async function deleteLocalUserData(database: SQLiteDatabase, userId: stri
   await database.withExclusiveTransactionAsync(async (database) => {
     await assertNoUnsupportedShiftOutboxRows(database);
     for (const table of [
+      cycleHandoverSections.cycleHandovers,
       coachReviewSections.coachReviewJournal,
       schedulePersistenceSections.scheduleRevisions,
       schedulePersistenceSections.scheduleBaselines,

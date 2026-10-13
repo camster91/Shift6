@@ -1,3 +1,4 @@
+import { remapCycleHandoverRequest } from '../domain/cycleHandover';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { runtimeConfig } from '../config/env';
 import { LOCAL_GUEST_USER_ID } from '../domain/userIdentity';
@@ -83,6 +84,8 @@ export async function restoreLocalBackup(
             const state = value as { draft: Record<string, unknown> };
             value = { ...state, draft: { ...state.draft, healthConnection: 'not-now' } };
           }
+          if (key === 'cycleHandovers')
+            value = JSON.parse(remapCycleHandoverRequest(String(row[column.name]), owner));
           if (key === 'coachReviewJournal')
             value = JSON.parse(remapCoachReviewReceipt(String(row[column.name]), owner));
           row[column.name] = JSON.stringify(value);

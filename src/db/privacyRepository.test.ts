@@ -23,7 +23,7 @@ describe('exportLocalUserData', () => {
           )
         )
           return [];
-        if (sql.includes('coach_review_journal')) return [];
+        if (sql.includes('coach_review_journal') || sql.includes('cycle_handovers')) return [];
         if (sql.includes('personal_goal')) return [];
         if (sql.includes('onboarding_drafts')) return [];
         if (sql.includes('user_profiles')) return [{ id: 'guest-user', display_name: 'Cameron' }];
@@ -72,7 +72,8 @@ describe('exportLocalUserData', () => {
     await expect(
       exportLocalUserData(database, 'guest-user', '2026-09-14T12:00:00.000Z'),
     ).resolves.toEqual({
-      schemaVersion: 16,
+      schemaVersion: 17,
+      cycleHandovers: [],
       coachReviewJournal: [],
       completedSetLoadProvenance: [],
       scheduleBaselines: [],
@@ -254,9 +255,9 @@ describe('deleteLocalUserData', () => {
 
     await expect(deleteLocalUserData(database, 'guest-user')).resolves.toBeUndefined();
 
-    expect(calls).toHaveLength(34);
-    expect(calls.slice(0, 10).every((call) => call.params[0] === 'guest-user')).toBe(true);
-    calls.splice(0, 10);
+    expect(calls).toHaveLength(35);
+    expect(calls.slice(0, 11).every((call) => call.params[0] === 'guest-user')).toBe(true);
+    calls.splice(0, 11);
     expect(calls[0]?.sql).toContain('DELETE FROM sync_outbox');
     expect(calls[0]?.params.every((param) => param === 'guest-user')).toBe(true);
     expect(calls[1]?.sql).toContain('DELETE FROM notification_preferences');
@@ -375,7 +376,7 @@ describe('deleteLocalUserData', () => {
       }
 
       const exportData = await exportLocalUserData(database, 'owner-1', '2026-09-24');
-      expect(exportData.schemaVersion).toBe(16);
+      expect(exportData.schemaVersion).toBe(17);
       expect(exportData.shifts.map((row) => row.id)).toEqual(['shift-owner-1']);
       expect(exportData.shiftProtocols.map((row) => row.shift_id)).toEqual(['shift-owner-1']);
       expect(exportData.shiftObservations.map((row) => row.id)).toEqual(['observation-owner-1']);

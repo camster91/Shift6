@@ -124,9 +124,9 @@ test('schema14 roundtrip and adoption preserve current actual units and unfinish
   await saveCompletedSet(db, next(), 'guest-user');
   await saveWorkoutDraft(db, saved.sessionId, draft(), stamp, 'guest-user');
   const exported = await exportLocalUserData(db, 'guest-user', stamp);
-  expect(exported.schemaVersion).toBe(16);
+  expect(exported.schemaVersion).toBe(17);
   expect(exported.completedSetLoadProvenance).toHaveLength(1);
-  expect(validateLocalBackup(JSON.stringify(exported)).data.schemaVersion).toBe(16);
+  expect(validateLocalBackup(JSON.stringify(exported)).data.schemaVersion).toBe(17);
   expect(
     (await getCompletedSets(db, saved.sessionId)).find((set) => set.id === saved.id)?.loadUnit,
   ).toBeUndefined();
@@ -150,9 +150,9 @@ test('unit/value/timestamp mismatches and foreign metadata reject before restore
       field === 'load_value' ? 41 : field === 'user_id' ? 'other' : '2026-10-15T12:00:00Z';
     expect(() => validateLocalBackup(JSON.stringify(copy))).toThrow();
   }
-  const future = { ...data, schemaVersion: 17 };
+  const future = { ...data, schemaVersion: 18 };
   expect(() => validateLocalBackup(JSON.stringify(future))).toThrow(
-    'schemas 12, 13, 14, 15 and 16',
+    'schemas 12, 13, 14, 15, 16 and 17',
   );
 });
 test('explicit set corrections update provenance atomically and removing load removes its unit', async () => {

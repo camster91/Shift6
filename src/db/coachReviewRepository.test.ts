@@ -270,7 +270,7 @@ test('schema16 journal export, deletion, restore and exact external readback pre
   await save('one');
   await save('two', 'one');
   const before = await exportNow();
-  expect(before.schemaVersion).toBe(16);
+  expect(before.schemaVersion).toBe(17);
   expect(validateLocalBackup(JSON.stringify(before)).data.coachReviewJournal).toEqual(
     before.coachReviewJournal,
   );
@@ -284,8 +284,9 @@ test('legacy15 normalizes an empty journal without pretending reviews occurred',
   const old = await exportNow();
   old.schemaVersion = 15;
   delete old.coachReviewJournal;
+  delete old.cycleHandovers;
   const normalized = validateLocalBackup(JSON.stringify(old)).data;
-  expect(normalized.schemaVersion).toBe(16);
+  expect(normalized.schemaVersion).toBe(17);
   expect(normalized.coachReviewJournal).toEqual([]);
   expect(() => validateLocalBackup(JSON.stringify({ ...old, schemaVersion: 17 }))).toThrow();
 });

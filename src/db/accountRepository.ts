@@ -1,3 +1,4 @@
+import { cycleHandoverSections, remapCycleHandoverRequest } from '../domain/cycleHandover';
 import { loadProvenanceSections } from '../domain/loadUnits';
 import { persistenceSections } from '../domain/localPersistence';
 import { schedulePersistenceSections } from '../domain/scheduleSnapshot';
@@ -160,6 +161,7 @@ export async function migrateLocalUserToAccount(
       ...loadProvenanceSections,
       ...schedulePersistenceSections,
       ...coachReviewSections,
+      ...cycleHandoverSections,
     })) {
       const conflict = await database.getFirstAsync(
         `SELECT user_id FROM ${table} WHERE user_id=? LIMIT 1;`,
@@ -359,6 +361,7 @@ export async function migrateLocalUserToAccount(
       ...loadProvenanceSections,
       ...schedulePersistenceSections,
       ...coachReviewSections,
+      ...cycleHandoverSections,
     }))
       await database.runAsync(
         `UPDATE ${table} SET user_id=? WHERE user_id=?;`,
@@ -373,6 +376,16 @@ export async function migrateLocalUserToAccount(
       await database.runAsync(
         'UPDATE coach_review_journal SET receipt_json=? WHERE id=?;',
         remapCoachReviewReceipt(row.receipt_json, destinationUserId),
+        row.id,
+      );
+    const handovers = await database.getAllAsync<{ id: string; request_json: string }>(
+      'SELECT id,request_json FROM cycle_handovers WHERE user_id=?;',
+      destinationUserId,
+    );
+    for (const row of handovers)
+      await database.runAsync(
+        'UPDATE cycle_handovers SET request_json=? WHERE id=?;',
+        remapCycleHandoverRequest(row.request_json, destinationUserId),
         row.id,
       );
     const recoveries = await database.getAllAsync<{ id: string; snapshot_json: string }>(

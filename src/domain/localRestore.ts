@@ -1,3 +1,6 @@
+import { lifecycleDate } from './cycleLifecycle';
+import { cycleHandoverSections, parseCycleHandoverRequest } from './cycleHandover';
+import { createNextCycleCopy } from './programBuilder';
 import { loadProvenanceSections } from './loadUnits';
 import { coachReviewSections, parseCoachReviewReceipt } from './coachReviewJournal';
 import {
@@ -67,6 +70,7 @@ export const restoreTables = {
   ...loadProvenanceSections,
   ...schedulePersistenceSections,
   ...coachReviewSections,
+  ...cycleHandoverSections,
 } as const;
 export type RestoreSection = keyof typeof restoreTables;
 export type RestoreRow = Record<string, string | number | null>;
@@ -502,8 +506,9 @@ export function validateLocalBackup(serialized: string): RestorePreview {
       raw.schemaVersion === 13 ||
       raw.schemaVersion === 14 ||
       raw.schemaVersion === 15 ||
-      raw.schemaVersion === 16,
-    'only export schemas 12, 13, 14, 15 and 16 are supported. Other versions need a compatible app.',
+      raw.schemaVersion === 16 ||
+      raw.schemaVersion === 17,
+    'only export schemas 12, 13, 14, 15, 16 and 17 are supported. Other versions need a compatible app.',
   );
   const sections = Object.keys(restoreTables) as RestoreSection[];
   const sourceSections = sections.filter(
@@ -512,11 +517,14 @@ export function validateLocalBackup(serialized: string): RestorePreview {
       (raw.schemaVersion === 14 ||
         raw.schemaVersion === 15 ||
         raw.schemaVersion === 16 ||
+        raw.schemaVersion === 17 ||
         !(key in loadProvenanceSections)) &&
       (raw.schemaVersion === 15 ||
         raw.schemaVersion === 16 ||
+        raw.schemaVersion === 17 ||
         !(key in schedulePersistenceSections)) &&
-      (raw.schemaVersion === 16 || !(key in coachReviewSections)),
+      (raw.schemaVersion === 16 || raw.schemaVersion === 17 || !(key in coachReviewSections)) &&
+      (raw.schemaVersion === 17 || !(key in cycleHandoverSections)),
   );
   keys(
     raw,
@@ -1395,7 +1403,158 @@ export function validateLocalBackup(serialized: string): RestorePreview {
       );
     }
   }
-  data.schemaVersion = 16;
+  unique(data.cycleHandovers ?? [], ['destination_cycle_id'], 'handover destination');
+  for (const row of data.cycleHandovers ?? []) {
+    const request = parseCycleHandoverRequest(String(row.request_json));
+    const sourceCycle = cycles.get(String(row.source_cycle_id));
+    const destinationCycle = cycles.get(String(row.destination_cycle_id));
+    const confirmedAt = String(row.confirmed_at);
+    check(
+      request.operationId === row.id &&
+        request.userId === owner &&
+        row.user_id === owner &&
+        request.source.cycle.id === row.source_cycle_id &&
+        request.destination.cycleId === row.destination_cycle_id &&
+        request.source.version.id === row.source_program_version_id &&
+        request.destination.versionId === row.destination_program_version_id &&
+        (request.source.goal?.id ?? null) === row.source_goal_id &&
+        request.destination.goalId === row.destination_goal_id &&
+        sourceCycle?.user_id === owner &&
+        destinationCycle?.user_id === owner &&
+        sourceCycle.started_at === request.source.cycle.startedAt &&
+        destinationCycle.started_at === request.destination.startedAt &&
+        confirmedAt >= request.preparedAt &&
+        confirmedAt <= data.exportedAt &&
+        lifecycleDate(confirmedAt, request.destination.timeZone) === request.destination.startDate,
+      'invalid cycle handover binding.',
+    );
+    check(
+      stableSnapshotJSON(versionObjects.get(request.source.version.id)) ===
+        stableSnapshotJSON(request.source.version),
+      'handover source version changed.',
+    );
+    const expectedCopy = createNextCycleCopy({
+      sourceProgram: request.source.program,
+      sourceVersion: request.source.version,
+      userId: owner,
+      newProgramId: request.destination.programId,
+      newVersionId: request.destination.versionId,
+      createdAt: request.destination.startedAt,
+    });
+    check(
+      stableSnapshotJSON(versionObjects.get(request.destination.versionId)) ===
+        stableSnapshotJSON(expectedCopy.version) &&
+        versions.get(request.destination.versionId)?.program_id === request.destination.programId,
+      'handover destination prescription changed.',
+    );
+    const baseline = (data.scheduleBaselines ?? []).find(
+      (entry) => entry.cycle_id === request.destination.cycleId,
+    );
+    check(
+      baseline &&
+        baseline.program_version_id === request.destination.versionId &&
+        baseline.time_zone === request.destination.timeZone &&
+        String(baseline.confirmed_at) >= confirmedAt,
+      'missing handover schedule baseline.',
+    );
+    if (request.source.primaryGoalId)
+      check(
+        goals.get(request.source.primaryGoalId)?.user_id === owner,
+        'orphan handover primary goal.',
+      );
+    for (const source of request.source.sessions) {
+      const saved = sessions.get(source.id);
+      check(
+        saved &&
+          saved.cycle_id === request.source.cycle.id &&
+          saved.cycle_week === source.cycle_week &&
+          saved.workout_id === source.workout_id &&
+          saved.program_version_id === source.program_version_id &&
+          saved.status === source.status &&
+          saved.started_at === source.started_at &&
+          saved.completed_at === source.completed_at,
+        'missing handover session history.',
+      );
+    }
+    const reflection = data.cycleReviews.find((entry) => entry.id === request.reflection.id);
+    check(
+      reflection?.user_id === owner && reflection.cycle_id === request.source.cycle.id,
+      'orphan handover reflection.',
+    );
+    if (request.source.goal) {
+      const source = request.source.goal;
+      check(
+        goals.get(source.id)?.cycle_id === request.source.cycle.id,
+        'orphan handover source goal.',
+      );
+      corroborateReviewGoal(
+        source,
+        (data.personalGoalEvents ?? []) as unknown as ReviewGoalEvent[],
+        data.shiftGoalRevisions as unknown as ReviewTargetRevision[],
+        request.preparedAt,
+        request.source.goalWitness,
+      );
+      const prefixIds =
+        request.source.goalWitness?.state === 'event-history'
+          ? request.source.goalWitness.eventIds
+          : [];
+      const latestTargetEvent = (data.personalGoalEvents ?? [])
+        .filter((entry) => prefixIds.includes(String(entry.id)) && entry.kind === 'target-revision')
+        .at(-1);
+      check(
+        (latestTargetEvent?.id ?? null) === request.source.latestGoalRevisionId,
+        'handover target revision witness changed.',
+      );
+      const review = (data.personalGoalEvents ?? []).find(
+        (entry) => entry.id === `${request.operationId}-goal-review`,
+      );
+      check(
+        review &&
+          review.user_id === owner &&
+          review.shift_id === source.id &&
+          review.kind === 'review' &&
+          review.recorded_at === confirmedAt,
+        'missing handover personal review.',
+      );
+      check(
+        stableSnapshotJSON(JSON.parse(String(review.payload_json))) ===
+          stableSnapshotJSON({
+            state: request.personalReviewState,
+            choice: request.choice === 'continue-goal' ? 'repeat' : 'undecided',
+            target: source.target,
+            baseline: source.baseline,
+            protocol: source.protocol,
+          }),
+        'handover personal review changed.',
+      );
+      if (request.destination.goalId) {
+        const created = (data.personalGoalEvents ?? []).find(
+          (entry) => entry.id === `create:${request.destination.goalId}`,
+        );
+        check(
+          goals.get(request.destination.goalId)?.cycle_id === request.destination.cycleId &&
+            created &&
+            created.user_id === owner &&
+            created.shift_id === request.destination.goalId &&
+            created.kind === 'created' &&
+            created.recorded_at === confirmedAt,
+          'missing handover destination goal creation.',
+        );
+        check(
+          stableSnapshotJSON(JSON.parse(String(created.payload_json))) ===
+            stableSnapshotJSON({
+              objective: source.blockObjective,
+              protocol: source.protocol,
+              target: source.target,
+              cycleId: request.destination.cycleId,
+              replacePrimary: true,
+            }),
+          'handover destination target or protocol changed.',
+        );
+      }
+    }
+  }
+  data.schemaVersion = 17;
   data.summary = buildLocalDataExportSummary(data);
   return { data, recordCount: count, exportedAt: data.exportedAt, warnings };
 }

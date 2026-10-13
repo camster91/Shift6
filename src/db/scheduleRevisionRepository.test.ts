@@ -126,7 +126,7 @@ test('migration creates inactive empty tables without backfilling or changing ex
   expect(sqlite.prepare('SELECT * FROM schedule_baselines').all()).toEqual([]);
   expect(sqlite.prepare('SELECT * FROM schedule_revisions').all()).toEqual([]);
   await expect(appendLocalScheduleMove(db, intent, stamp)).rejects.toThrow('explicitly confirmed');
-  expect(MIGRATIONS.at(-1)!.version).toBe(27);
+  expect(MIGRATIONS.at(-1)!.version).toBe(28);
 });
 test('baseline requires explicit confirmation, exact legacy CAS, owner and canonical anchor', async () => {
   const before = await exportNow();
@@ -404,8 +404,8 @@ test('schema15 external export validates, deletes and restores exact owned basel
   await ready();
   await appendLocalScheduleMove(db, intent, stamp);
   const before = await exportNow();
-  expect(before.schemaVersion).toBe(16);
-  expect(validateLocalBackup(JSON.stringify(before)).data.schemaVersion).toBe(16);
+  expect(before.schemaVersion).toBe(17);
+  expect(validateLocalBackup(JSON.stringify(before)).data.schemaVersion).toBe(17);
   await deleteLocalUserData(db, 'guest-user');
   expect(sqlite.prepare('SELECT * FROM schedule_baselines').all()).toEqual([]);
   expect(sqlite.prepare('SELECT * FROM schedule_revisions').all()).toEqual([]);
@@ -498,8 +498,9 @@ test('schema14 normalizes empty schedule sections, rejects future17 and unexpect
   delete copy.scheduleBaselines;
   delete copy.scheduleRevisions;
   delete copy.coachReviewJournal;
+  delete copy.cycleHandovers;
   const normalized = validateLocalBackup(JSON.stringify(copy)).data;
-  expect(normalized.schemaVersion).toBe(16);
+  expect(normalized.schemaVersion).toBe(17);
   expect(normalized.scheduleBaselines).toEqual([]);
   expect(normalized.scheduleRevisions).toEqual([]);
   expect(() => validateLocalBackup(JSON.stringify({ ...copy, schemaVersion: 17 }))).toThrow();

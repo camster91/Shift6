@@ -228,7 +228,7 @@ export default function HomeScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerCopy}>
           <Text variant="h3" accessibilityRole="header">
             SHIFT6
           </Text>
@@ -255,7 +255,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.sectionHeader}>
-        <View>
+        <View style={styles.sectionCopy}>
           <Text variant="caption" tone="muted">
             TODAY'S WORKOUT
           </Text>
@@ -352,7 +352,7 @@ export default function HomeScreen() {
       ) : null}
 
       <View style={styles.sectionHeader}>
-        <View>
+        <View style={styles.sectionCopy}>
           <Text variant="caption" tone="muted">
             THIS WEEK
           </Text>
@@ -462,6 +462,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
   },
   intro: {
     marginTop: spacing.xxxl,
@@ -496,9 +501,16 @@ const styles = StyleSheet.create({
   sectionHeader: {
     marginTop: spacing.xxxl,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     gap: spacing.md,
+  },
+  sectionCopy: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 200,
+    minWidth: 0,
   },
   primaryAction: {
     marginTop: spacing.md,

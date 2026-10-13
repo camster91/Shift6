@@ -10,9 +10,15 @@ export interface WorkoutCardProps {
   workout: Workout;
   onPress?: () => void;
   compact?: boolean;
+  actionLabel?: string;
 }
 
-export function WorkoutCard({ workout, onPress, compact = false }: WorkoutCardProps) {
+export function WorkoutCard({
+  workout,
+  onPress,
+  compact = false,
+  actionLabel = 'Start workout',
+}: WorkoutCardProps) {
   const accessibilityLabel = `${workout.title}, ${workout.estimatedDurationMinutes} minutes`;
   const content = (
     <Card
@@ -37,7 +43,7 @@ export function WorkoutCard({ workout, onPress, compact = false }: WorkoutCardPr
           <Text variant="small" tone="muted">
             {workout.focus === 'strength' ? 'Strength session' : `${workout.focus} session`}
           </Text>
-          <Text variant="smallMedium">Start workout</Text>
+          <Text variant="smallMedium">{actionLabel}</Text>
         </View>
       ) : null}
     </Card>

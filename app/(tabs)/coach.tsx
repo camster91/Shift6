@@ -365,7 +365,7 @@ export default function CoachScreen() {
         A thoughtful next step.
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
-        Coach guidance will stay grounded in your approved plan and logged training.
+        Coach guidance will stay grounded in your saved plan and logged training.
       </Text>
       {navigationSnapshot ? (
         <CoachWorkflowActions

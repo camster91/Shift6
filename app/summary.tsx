@@ -1,6 +1,7 @@
 import { ShiftArtwork } from '../src/components/artwork/ShiftArtwork';
 import { shiftArtwork } from '../src/design/artwork';
 import { router, useLocalSearchParams } from 'expo-router';
+import { runtimeConfig } from '../src/config/env';
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
@@ -363,8 +364,11 @@ export default function WorkoutSummaryScreen() {
         style={styles.actionButton}
       />
       <Text variant="caption" tone="muted" style={styles.persistenceNote}>
-        Your check-in is saved on this device and queued for sync when an account backend is
-        connected.
+        {runtimeConfig.releaseMode === 'guest-only'
+          ? saved
+            ? 'Check-in saved on this device. Cloud sync is not enabled.'
+            : 'Save your check-in to keep it on this device. Cloud sync is not enabled.'
+          : 'Your saved check-in is kept on this device and queued for sync when an account backend is connected.'}
       </Text>
     </Screen>
   );

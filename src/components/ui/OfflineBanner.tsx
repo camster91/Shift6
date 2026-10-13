@@ -4,6 +4,7 @@ import type { Shift6IconName } from '../../design/iconography';
 import { colors, radii, spacing } from '../../design/tokens';
 import { Shift6Icon } from './Shift6Icon';
 import { Text } from './Text';
+import { runtimeConfig } from '../../config/env';
 
 export type OfflineStatus = 'offline' | 'syncing' | 'sync-failed' | 'sync-conflict';
 
@@ -35,7 +36,14 @@ const copy: Record<OfflineStatus, { title: string; message: string; icon: Shift6
 };
 
 export function OfflineBanner({ status }: OfflineBannerProps) {
-  const state = copy[status];
+  const state =
+    runtimeConfig.releaseMode === 'guest-only'
+      ? {
+          title: status === 'offline' ? 'Offline mode' : 'Local storage',
+          message: 'Workout logging stays on this device. Cloud sync is not enabled.',
+          icon: 'cloudOffline' as const,
+        }
+      : copy[status];
 
   return (
     <View

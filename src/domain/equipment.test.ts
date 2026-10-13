@@ -9,6 +9,16 @@ import {
 import { foundationalExercises } from './fixtures/exercises';
 
 describe('equipment-aware exercise catalogue', () => {
+  it('treats bodyweight as no gear without dismissing real apparatus requirements', () => {
+    expect(missingEquipment(['equipment-bodyweight'], ['equipment-dumbbells'])).toEqual([]);
+    expect(
+      missingEquipment(['equipment-bodyweight', 'equipment-pull-up-bar'], ['equipment-dumbbells']),
+    ).toEqual(['equipment-pull-up-bar']);
+    expect(isExerciseCompatible({ equipmentIds: ['equipment-bodyweight'] }, [])).toBe(true);
+    expect(
+      isExerciseCompatible({ equipmentIds: ['equipment-bodyweight', 'equipment-pull-up-bar'] }, []),
+    ).toBe(false);
+  });
   it('provides stable taxonomy records and identifies missing requirements', () => {
     expect(equipmentCatalog).toHaveLength(23);
     expect(new Set(equipmentCatalog.map((item) => item.id)).size).toBe(equipmentCatalog.length);

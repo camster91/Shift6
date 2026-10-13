@@ -19,7 +19,11 @@ import {
   Screen,
   Text,
 } from '../src/components/ui';
-import { equipmentCatalog, findExerciseSubstitutions } from '../src/domain/equipment';
+import {
+  equipmentCatalog,
+  findExerciseSubstitutions,
+  missingEquipment,
+} from '../src/domain/equipment';
 import {
   demoCycle,
   demoProgram,
@@ -1073,6 +1077,10 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
+  const missingGearNames = missingEquipment(activeWorkout.equipmentIds, availableEquipmentIds).map(
+    (id) => equipmentCatalog.find((equipment) => equipment.id === id)?.name ?? id,
+  );
+
   return (
     <Screen
       footer={
@@ -1110,94 +1118,26 @@ export default function ActiveWorkoutScreen() {
         <Button label="Pause" variant="ghost" onPress={() => void handlePauseWorkout()} />
       </View>
 
-      <Text variant="display" accessibilityRole="header" style={styles.title}>
+      <Text
+        variant={showAllSets ? 'display' : 'h3'}
+        accessibilityRole="header"
+        style={styles.title}
+      >
         {activeWorkout.title}
       </Text>
-      <Text variant="body" tone="muted" style={styles.subtitle}>
-        Complete each set when it is done. Your device saves the set before the button changes
-        state.
+      <Text variant={showAllSets ? 'body' : 'caption'} tone="muted" style={styles.subtitle}>
+        {showAllSets
+          ? 'Complete each set when it is done. Your device saves the set before the button changes state.'
+          : 'Suggested values are not measurements. Enter your actual result, then tap Complete.'}
       </Text>
 
       {syncStatus ? <OfflineBanner status={syncStatus} /> : null}
-
-      <Card tone="lavender">
-        <Text variant="h2" accessibilityRole="header">
-          {focus
-            ? `${formatExerciseName(focus.exercise.exerciseId, availableExercises)} · set ${focus.set.setNumber} of ${focus.exercise.sets.length}`
-            : 'All planned sets saved'}
+      {!showAllSets && missingGearNames.length ? (
+        <Text variant="small" tone="error" accessibilityRole="alert">
+          Missing {missingGearNames.join(', ')} in your equipment profile. Review adjustments before
+          training if needed.
         </Text>
-        <Text variant="small">
-          {focus
-            ? `Target: ${targetSummary(targetOverrides[focus.exercise.id] ?? focus.set.target)}`
-            : 'Finish when ready, or review your saved results.'}
-        </Text>
-        <Text variant="small" tone="muted">
-          Suggested values are not measurements. Edit the fields to match what you actually did,
-          then tap Complete to confirm that result.
-        </Text>
-        {previousResult ? (
-          <Text variant="small">
-            Previous completed session · set {previousResult.setNumber}:{' '}
-            {targetSummary({
-              reps: previousResult.reps,
-              durationSeconds: previousResult.durationSeconds,
-              distanceMeters: previousResult.distanceMeters,
-            })}
-            {previousResult.load !== undefined
-              ? ` · load ${previousResult.load} (saved units)`
-              : ''}{' '}
-            · {new Date(previousResult.completedAt).toLocaleDateString()}
-          </Text>
-        ) : null}
-        {focus && targetReasons[focus.exercise.id] ? (
-          <>
-            <Button
-              label={showTargetReason ? 'Hide target explanation' : 'Why this target?'}
-              variant="ghost"
-              onPress={() => setShowTargetReason((value) => !value)}
-            />
-            {showTargetReason ? (
-              <Text variant="small">{targetReasons[focus.exercise.id]}</Text>
-            ) : null}
-          </>
-        ) : null}
-        <Button
-          label={showAllSets ? 'Focus on current set' : 'Review all sets and adjustments'}
-          variant="secondary"
-          onPress={() => setShowAllSets((value) => !value)}
-        />
-        {!allSetsComplete ? (
-          <Button
-            label="Discomfort — stop session"
-            variant="ghost"
-            onPress={handleDiscomfortStop}
-          />
-        ) : null}
-      </Card>
-      <WorkoutPreflight
-        workout={activeWorkout}
-        availableEquipmentIds={availableEquipmentIds}
-        hasLocalDatabase={database !== null}
-        readiness={readiness}
-        saving={readinessSaving}
-        onReadinessChange={(nextReadiness) => void handleReadinessChange(nextReadiness)}
-      />
-
-      <Card tone={database ? 'mint' : 'yellow'} style={styles.localFirstCard}>
-        <View style={styles.localFirstHeader}>
-          <Ionicons
-            name={database ? 'phone-portrait-outline' : 'desktop-outline'}
-            size={22}
-            color={colors.ink}
-          />
-          <Text variant="smallMedium">{database ? 'Saved on this device' : 'Web preview'}</Text>
-        </View>
-        <Text variant="small" tone="muted" style={styles.localFirstText}>
-          {database
-            ? 'Your sets save on this device, even when you are offline.'
-            : 'This preview keeps your entries only while this browser session is open.'}
-        </Text>
-      </Card>
+      ) : null}
 
       {showAllSets ? (
         <>
@@ -1260,18 +1200,6 @@ export default function ActiveWorkoutScreen() {
 
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
 
-      <Button
-        label={showEffortDetails ? 'Hide optional effort fields' : 'Show optional effort fields'}
-        variant="ghost"
-        onPress={() => setShowEffortDetails((current) => !current)}
-      />
-      {showEffortDetails ? (
-        <Text variant="small" tone="muted">
-          RIR means how many more reps you could do. RPE rates how hard the set felt, from 1 to 10.
-          Leave either field blank if you are unsure.
-        </Text>
-      ) : null}
-
       {activeWorkout.exercises
         .filter((exercise) => showAllSets || exercise.id === focus?.exercise.id)
         .map((workoutExercise) => {
@@ -1317,15 +1245,17 @@ export default function ActiveWorkoutScreen() {
                   />
                 ) : null}
               </View>
-              <View
-                style={styles.exerciseMetaRow}
-                accessibilityLabel={`${formatSection(workoutExercise.section)}${workoutExercise.groupType ? `. ${formatGroupType(workoutExercise.groupType)}` : ''}`}
-              >
-                <Chip label={formatSection(workoutExercise.section)} />
-                {workoutExercise.groupType ? (
-                  <Chip label={formatGroupType(workoutExercise.groupType)} selected />
-                ) : null}
-              </View>
+              {showAllSets ? (
+                <View
+                  style={styles.exerciseMetaRow}
+                  accessibilityLabel={`${formatSection(workoutExercise.section)}${workoutExercise.groupType ? `. ${formatGroupType(workoutExercise.groupType)}` : ''}`}
+                >
+                  <Chip label={formatSection(workoutExercise.section)} />
+                  {workoutExercise.groupType ? (
+                    <Chip label={formatGroupType(workoutExercise.groupType)} selected />
+                  ) : null}
+                </View>
+              ) : null}
               {showAllSets ? (
                 <View style={styles.exerciseControls}>
                   <Text variant="caption" tone="muted">
@@ -1396,7 +1326,7 @@ export default function ActiveWorkoutScreen() {
                   </View>
                 </View>
               ) : null}
-              {workoutExercise.notes ? (
+              {showAllSets && workoutExercise.notes ? (
                 <Card
                   tone="lavender"
                   style={styles.exerciseNote}
@@ -1564,6 +1494,99 @@ export default function ActiveWorkoutScreen() {
           );
         })}
 
+      {showAllSets ? (
+        <>
+          <Card tone="lavender">
+            <Text variant="h2" accessibilityRole="header">
+              {focus
+                ? `${formatExerciseName(focus.exercise.exerciseId, availableExercises)} · set ${focus.set.setNumber} of ${focus.exercise.sets.length}`
+                : 'All planned sets saved'}
+            </Text>
+            <Text variant="small">
+              {focus
+                ? `Target: ${targetSummary(targetOverrides[focus.exercise.id] ?? focus.set.target)}`
+                : 'Finish when ready, or review your saved results.'}
+            </Text>
+            <Text variant="small" tone="muted">
+              Suggested values are not measurements. Edit the fields to match what you actually did,
+              then tap Complete to confirm that result.
+            </Text>
+            {previousResult ? (
+              <Text variant="small">
+                Previous completed session · set {previousResult.setNumber}:{' '}
+                {targetSummary({
+                  reps: previousResult.reps,
+                  durationSeconds: previousResult.durationSeconds,
+                  distanceMeters: previousResult.distanceMeters,
+                })}
+                {previousResult.load !== undefined
+                  ? ` · load ${previousResult.load} (saved units)`
+                  : ''}{' '}
+                · {new Date(previousResult.completedAt).toLocaleDateString()}
+              </Text>
+            ) : null}
+            {focus && targetReasons[focus.exercise.id] ? (
+              <>
+                <Button
+                  label={showTargetReason ? 'Hide target explanation' : 'Why this target?'}
+                  variant="ghost"
+                  onPress={() => setShowTargetReason((value) => !value)}
+                />
+                {showTargetReason ? (
+                  <Text variant="small">{targetReasons[focus.exercise.id]}</Text>
+                ) : null}
+              </>
+            ) : null}
+          </Card>
+        </>
+      ) : null}
+      <Button
+        label={showAllSets ? 'Focus on current set' : 'Review all sets and adjustments'}
+        variant="secondary"
+        onPress={() => setShowAllSets((value) => !value)}
+      />
+      {!allSetsComplete ? (
+        <Button label="Discomfort — stop session" variant="ghost" onPress={handleDiscomfortStop} />
+      ) : null}
+      {showAllSets ? (
+        <>
+          <WorkoutPreflight
+            workout={activeWorkout}
+            availableEquipmentIds={availableEquipmentIds}
+            hasLocalDatabase={database !== null}
+            readiness={readiness}
+            saving={readinessSaving}
+            onReadinessChange={(nextReadiness) => void handleReadinessChange(nextReadiness)}
+          />
+          <Card tone={database ? 'mint' : 'yellow'} style={styles.localFirstCard}>
+            <View style={styles.localFirstHeader}>
+              <Ionicons
+                name={database ? 'phone-portrait-outline' : 'desktop-outline'}
+                size={22}
+                color={colors.ink}
+              />
+              <Text variant="smallMedium">{database ? 'Saved on this device' : 'Web preview'}</Text>
+            </View>
+            <Text variant="small" tone="muted" style={styles.localFirstText}>
+              {database
+                ? 'Your sets save on this device, even when you are offline.'
+                : 'This preview keeps your entries only while this browser session is open.'}
+            </Text>
+          </Card>
+        </>
+      ) : null}
+      <Button
+        label={showEffortDetails ? 'Hide optional effort fields' : 'Show optional effort fields'}
+        variant="ghost"
+        onPress={() => setShowEffortDetails((current) => !current)}
+      />
+      {showEffortDetails ? (
+        <Text variant="small" tone="muted">
+          RIR means how many more reps you could do. RPE rates how hard the set felt, from 1 to 10.
+          Leave either field blank if you are unsure.
+        </Text>
+      ) : null}
+
       {lastSavedSet ? (
         <Card tone="mint">
           <Text variant="smallMedium">
@@ -1678,12 +1701,12 @@ function WorkoutPreflight({
   saving,
   onReadinessChange,
 }: WorkoutPreflightProps) {
-  const requiredEquipment = equipmentCatalog.filter((equipment) =>
-    workout.equipmentIds.includes(equipment.id),
+  const requiredEquipment = equipmentCatalog.filter(
+    (equipment) =>
+      workout.equipmentIds.includes(equipment.id) && equipment.id !== 'equipment-bodyweight',
   );
-  const missingEquipment = requiredEquipment.filter(
-    (equipment) => !availableEquipmentIds.includes(equipment.id),
-  );
+  const missingIds = missingEquipment(workout.equipmentIds, availableEquipmentIds);
+  const missingGear = requiredEquipment.filter((equipment) => missingIds.includes(equipment.id));
   const readinessOptions: readonly { value: WorkoutReadiness; label: string }[] = [
     { value: 'ready', label: 'Ready to train' },
     { value: 'limited', label: 'Limited today' },
@@ -1712,9 +1735,9 @@ function WorkoutPreflight({
       <Text variant="small" tone="muted">
         {requiredEquipment.length === 0
           ? 'No equipment required.'
-          : missingEquipment.length === 0
+          : missingGear.length === 0
             ? `Ready with ${requiredEquipment.map((equipment) => equipment.name).join(', ')}.`
-            : `Missing ${missingEquipment.map((equipment) => equipment.name).join(', ')}. Use a substitution below if needed.`}
+            : `Missing ${missingGear.map((equipment) => equipment.name).join(', ')}. Use a substitution below if needed.`}
       </Text>
       <Text variant="smallMedium" style={styles.preflightLabel}>
         How are you feeling?

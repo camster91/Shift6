@@ -70,6 +70,9 @@ test('Home and Coach choose newest unfinished workout; opening Home does not sta
   expect(chosen?.workout.id).toBe('second');
   const screen = await render(<HomeScreen />);
   await waitFor(() => expect(screen.getByLabelText('Resume workout')).toBeTruthy());
+  expect(screen.getByText('Continue where you left off.')).toBeTruthy();
+  expect(screen.getAllByText('Resume workout')).toHaveLength(2);
+  expect(screen.queryByText('Start workout')).toBeNull();
   expect(router.push).not.toHaveBeenCalled();
   await fireEvent.press(screen.getByLabelText('Resume workout'));
   expect(router.push).toHaveBeenCalledWith({

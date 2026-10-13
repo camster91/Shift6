@@ -12,6 +12,7 @@ jest.mock('expo-network', () => ({
   getNetworkStateAsync: async () => ({ isConnected: false, isInternetReachable: false }),
   addNetworkStateListener: () => ({ remove: () => undefined }),
 }));
+jest.mock('../config/env', () => ({ runtimeConfig: { releaseMode: 'guest-only' } }));
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), replace: jest.fn(), push: jest.fn() },
   useLocalSearchParams: () => ({ workoutId: 'workout-barbell-30-strength-a' }),
@@ -60,10 +61,11 @@ jest.mock('../db/workoutRepository', () => ({
 }));
 const mockCycle = demoCycle,
   mockProgram = demoProgram,
-  mockVersion = demoProgramVersion,
-  mockUser = demoUser;
+  mockVersion = demoProgramVersion;
+let mockUser = demoUser;
 beforeEach(() => {
   jest.clearAllMocks();
+  mockUser = demoUser;
   mockSaveSet.mockResolvedValue('saved');
   mockSaveNote.mockResolvedValue(undefined);
   mockSaveDraft.mockResolvedValue(undefined);
@@ -72,6 +74,51 @@ beforeEach(() => {
   jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 });
 afterEach(() => jest.restoreAllMocks());
+test('focused fields precede optional details and bodyweight never requires owned gear', async () => {
+  const beforeEquipment = mockVersion.workouts[0]!.equipmentIds;
+  mockVersion.workouts[0]!.equipmentIds = ['equipment-bodyweight'];
+  mockUser = { ...demoUser, equipmentIds: ['equipment-dumbbells'] };
+  try {
+    const screen = await render(<ActiveWorkoutScreen />);
+    await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+    expect(screen.queryByText('WORKOUT PREFLIGHT')).toBeNull();
+    expect(screen.queryByText('Set your context.')).toBeNull();
+    expect(screen.queryByText(/Missing Bodyweight/)).toBeNull();
+    expect(screen.queryByText('Saved on this device')).toBeNull();
+    expect(
+      screen.getByLabelText(
+        'Offline mode. Workout logging stays on this device. Cloud sync is not enabled.',
+      ),
+    ).toBeTruthy();
+    const serialized = JSON.stringify(screen.toJSON());
+    expect(serialized.indexOf('Back squat set 1 reps')).toBeLessThan(
+      serialized.indexOf('Review all sets and adjustments'),
+    );
+    expect(serialized.indexOf('Back squat set 1 reps')).toBeLessThan(
+      serialized.indexOf('Show optional effort fields'),
+    );
+    await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), '4');
+    await fireEvent.press(screen.getByLabelText('Review all sets and adjustments'));
+    expect(screen.getByText('WORKOUT PREFLIGHT')).toBeTruthy();
+    expect(screen.getByText('No equipment required.')).toBeTruthy();
+    expect(screen.getByLabelText('Back squat set 1 reps').props.value).toBe('4');
+    expect(screen.getByRole('radio', { name: 'Ready to train', selected: false })).toBeTruthy();
+    expect(mockSaveSet).not.toHaveBeenCalled();
+  } finally {
+    mockVersion.workouts[0]!.equipmentIds = beforeEquipment;
+  }
+});
+
+test('focused logging keeps a compact real missing-gear cue without opening preflight', async () => {
+  mockUser = { ...demoUser, equipmentIds: ['equipment-dumbbells'] };
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+  expect(
+    screen.getByText(/Missing Barbell, Plates, Rack, Bench in your equipment profile/),
+  ).toBeTruthy();
+  expect(screen.queryByText('WORKOUT PREFLIGHT')).toBeNull();
+  expect(screen.getByText('Discomfort — stop session')).toBeTruthy();
+});
 test('focus saves the actual edited result before revealing the next set, preserving failure state', async () => {
   let release: (value: string) => void = () => undefined;
   mockSaveSet.mockImplementationOnce(

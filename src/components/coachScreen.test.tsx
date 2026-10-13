@@ -73,6 +73,10 @@ beforeEach(() => {
 test('local Coach explains the selected workout and refreshes facts when its tab returns', async () => {
   const screen = await render(<CoachScreen />);
   await waitFor(() => expect(screen.getByLabelText("Explain today's workout")).toBeTruthy());
+  expect(
+    screen.getByText('Coach guidance will stay grounded in your saved plan and logged training.'),
+  ).toBeTruthy();
+  expect(screen.queryByText(/approved plan/)).toBeNull();
   await fireEvent.press(screen.getByLabelText("Explain today's workout"));
   await waitFor(() =>
     expect(screen.getAllByText(/Actually scheduled session is a/).length).toBeGreaterThan(0),

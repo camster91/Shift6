@@ -252,13 +252,16 @@ export default function HomeScreen() {
               <Text variant="caption" tone="muted">
                 TODAY'S WORKOUT
               </Text>
-              <Text variant="h2">Ready when you are.</Text>
+              <Text variant="h2">
+                {hasUnfinishedWorkout ? 'Continue where you left off.' : 'Ready when you are.'}
+              </Text>
             </View>
             <Chip label={`${todayWorkout.estimatedDurationMinutes} min`} selected />
           </View>
 
           <WorkoutCard
             workout={todayWorkout}
+            actionLabel={hasUnfinishedWorkout ? 'Resume workout' : 'Start workout'}
             onPress={() =>
               router.push({ pathname: '/workout', params: { workoutId: todayWorkout.id } })
             }

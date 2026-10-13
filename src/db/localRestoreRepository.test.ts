@@ -308,6 +308,21 @@ test.each([
   expect(sqlite.prepare('SELECT count(*) AS n FROM user_profiles').get()).toEqual({ n: 0 });
 });
 
+test('explicit legacy return preserves unknown pause timing in schema13 round trip', async () => {
+  const data = fixture13();
+  data.cycleLifecycleEvents = [{ ...data.cycleLifecycleEvents![1], previous_event_id: null }];
+  await restoreLocalBackup(db, 'guest-user', serialized(data));
+  const exported = await exportLocalUserData(db, 'guest-user', stamp);
+  expect(exported.cycleLifecycleEvents).toHaveLength(1);
+  expect(exported.cycleLifecycleEvents![0]!.kind).toBe('resume');
+  expect(exported.cycleLifecycleEvents![0]!.previous_event_id).toBeNull();
+  expect(validateLocalBackup(JSON.stringify(exported)).recordCount).toBe(
+    exported.summary.totalRecordCount,
+  );
+  data.trainingCycles[0]!.status = 'paused';
+  expect(() => validateLocalBackup(serialized(data))).toThrow('current cycle status');
+});
+
 test('late schema13 insertion failure rolls back legacy and new rows', async () => {
   failAt = 'INSERT INTO set_feedback_events';
   await expect(restoreLocalBackup(db, 'guest-user', serialized(fixture13()))).rejects.toThrow(

@@ -1301,12 +1301,24 @@ function validatePersistenceGraph(data: LocalDataExport) {
         check(!visited.has(row.id), 'cyclic local journal.');
         visited.add(row.id);
         if (field === 'previous_event_id' && row.kind !== 'review-date') {
-          check((row.kind === 'pause') !== paused, 'invalid pause/resume sequence.');
+          check(
+            (row.kind === 'pause') !== paused || (row === root && row.kind === 'resume'),
+            'invalid pause/resume sequence.',
+          );
           check(String(row.effective_date) >= lastTransitionDate, 'pause dates go backwards.');
           paused = row.kind === 'pause';
           lastTransitionDate = String(row.effective_date);
         }
         row = children.get(row.id);
+      }
+      if (field === 'previous_event_id' && lastTransitionDate) {
+        const status = cycles.get(root.cycle_id)!.status;
+        check(
+          paused
+            ? ['paused', 'cancelled'].includes(String(status))
+            : ['active', 'complete', 'cancelled'].includes(String(status)),
+          'lifecycle history disagrees with current cycle status.',
+        );
       }
     }
     check(visited.size === rows.length, 'cyclic or disconnected local journal.');

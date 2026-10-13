@@ -3,9 +3,14 @@
 Audit date: 2026-10-12. Source base: `4e8a2c9b3ad672b818e6ce9a6fbe02b266573a36`
 (merged PR #330), followed by guest guidance/save-copy/goal-unit fixes at
 `ae303bd8` and generated-native-output exclusion at `d228d46b` on
-`qa/windows-native-guest`. The current QA source is frozen at `d228d46b`;
-new engineering batches must start separately and preserve its evidence.
+`qa/windows-native-guest`. The earlier candidate remains a dated QA snapshot.
+Follow-up documentation is based on primary `88ce95bf`; integrated recovery/
+health/private-plan work is being tested separately in `qa/local-recovery-health`
+through `d9c5b2e2`. Preserve each candidate's SHA and native evidence; integration
+and tests are not a merge, public feature approval or store publication.
 GitHub returned **39 open issues** during this audit.
+Issue #345 was subsequently filed for saved-private-plan discovery. The count
+above remains the original 12 October snapshot, not a current completion count.
 This is a source/backlog reconciliation, not acceptance of all their criteria.
 No issue was closed, app code changed, provider activated or store submission made
 by this audit. Native findings and the provisional score belong in doc 36.
@@ -55,8 +60,8 @@ Issue numbers below refer to https://github.com/camster91/Shift6/issues/NUMBER.
 | #276 workouts; #310 focus mode | Implemented local set/draft persistence, comparable prefill, timer, pause/resume session and partial completion. Current native QA must establish actual records. The #310 fewer-taps expansion still requires focused current-set UX, explicit source cues and ergonomic measurements, not a duplicate logging model. |
 | #277 progression; #311 difficulty | Deterministic target/readiness/plateau/review logic exists. Do not replace it with AI. Audit and implement the specific one-tap ordinary-difficulty UI without conflating pain/discomfort; content-specific thresholds and actual-device proof remain. |
 | #278 Coach; #313 explanation layer | Typed gateway, local explanation, privacy context and confirmed proposals exist. Contextual cross-screen actions and enabled/disabled navigation need acceptance; live provider evaluation/deployment is absent. A standalone Coach tab is not full contextual coaching. |
-| #279 trends | Progress/optional native health/manual metrics exist. #332 and #333 are source-confirmed data-integrity gaps. Physical permissions, multiple-source records and platform parity remain unverified. |
-| #280 privacy/accessibility | Owner checks, export/delete, no-op remote analytics and guest boundaries exist. Restore is absent (#331). Exact-binary traffic, VoiceOver/TalkBack, largest text and permission/deletion tests remain; connected-account server obligations apply only if accounts ship. |
+| #279 trends | Progress/optional native health/manual metrics exist. #332/#333 have follow-up aggregate/pagination implementations in the integration candidate. Physical permissions, multiple-source records and platform parity remain acceptance gates; see exact native results in doc 36. |
+| #280 privacy/accessibility | Owner checks, export/delete, no-op remote analytics and guest boundaries exist. #331 local restore is implemented in the integration candidate, with explicit consent resets/media detachment. Exact-binary traffic, VoiceOver/TalkBack, largest text and permission/deletion/physical restore checks remain; connected-account server obligations apply only if accounts ship. |
 | #281 stores | Partial preparation only: profiles, identifiers and policy/support drafts exist. Signed binaries, actual working public URLs, accurate metadata/declarations, device evidence and owner approval for submission/publication remain. |
 | #305 reconciliation | Contract/manifest/breadth reconciliation implemented. Update dated status documents when exact acceptance is reviewed; do not remove historical evidence. Expanded feature scope needs explicit versioned capability documentation. |
 | #306 goal domain | Typed protocols, observations, comparability, missing-baseline handling and goal persistence implemented. Native lifecycle/migration and exact issue criteria need readback evidence. Personal goals are not automatically reviewed public Shifts. |
@@ -65,9 +70,9 @@ Issue numbers below refer to https://github.com/camster91/Shift6/issues/NUMBER.
 | #314 engagement | Local reminders, limited analytics schema, optional/reduced motion foundations exist. Full versioned event dictionary/denominators, interruption outcomes and device notification proof remain. Remote analytics stays off in guest release. |
 | #315 interruptions | Read-only calendar/pause projection exists (`shiftCalendar.ts`). The issue itself records missing explicit pause/resume/repeat-week transactions, shared UI and reviewed re-entry rules; pausing another active cycle during cycle creation is not this workflow. |
 | #316 pilot | Protocol specified; no actual consented cohort/six-week outcomes established by this audit. Participant recruitment/contact and qualified review require real people and separately instructed external actions. |
-| #331 restore | Specification; profile has export/delete but no restore action. Implement graph validation, preview, owner remapping and atomic empty-install restore before claiming recovery. Include goals, amendments, drafts and reviews; exclude credentials/outbox replay. |
-| #332 health totals | Reproducible/source defect remains: Android maps raw Steps/SleepSession records, domain combines additive summaries. Use platform aggregates and documented overlap/source policy; real multiple-source validation still required. |
-| #333 pagination | Source defect remains: every `readType` case makes one `readRecords` call without page-token continuation. Implement bounded continuation, repeated-token/failure handling, dedup and visible incomplete import; no new background permission. |
+| #331 restore | Implemented follow-up candidate: setup/Profile picker, schema-12 graph validation, inert preview/separate confirmation, owner remapping, exclusive atomic empty-target restore and read errors. Includes goals/drafts/corrections/reviews; credentials/outbox replay excluded. Consent/reminders reset off and custom media links detach. Limits: 20 MiB/50,000 records, no merge/overwrite. Physical iOS/Android picker, large-history/interruption/reexport acceptance remains; implementation/regressions do not close the issue. |
+| #332 health totals | Implemented follow-up candidate: platform step aggregates, documented source/overlap policy, replacement of historical imported ranges and availability failure preserving the cache. Synthetic fixtures/regressions are evidence of bounded behavior; actual native multiple-source totals/source-priority/permission acceptance must be recorded against the installed binary, with physical/platform parity pending. |
+| #333 pagination | Implemented follow-up candidate: bounded raw-record page continuation with repeated-token/failure guards, range retention and incomplete-import handling. No new background permission. Source tests do not prove a real 1001-record import; exact native records/readback and permission-revocation results belong in doc 36, with physical iOS/Android gates remaining. |
 | #334 Gemini | Specification beyond existing generic HTTP seam. Add independently gated optional Coach transport with server-held key, bounded context, quotas, safe typed responses and local fallback; never silently enable general sync/accounts. Live activation requires service access and usage-budget decision. |
 | #335 nutrition | Product/evidence spike, not an agreed food-tracker implementation. Issue acceptance calls for pilot need and a scoped/no-build decision. Full-feature intent does not turn uncertain photo portions into measurements or authorize medical/diet prescribing. |
 | #336 voice | Specification: no native speech adapter/dependency or push-to-talk set flow found. Add deliberate permission/listening, parser and editable confirmed draft through existing set transaction; establish actual on-device/remote behavior per platform. |
@@ -78,6 +83,27 @@ Issue numbers below refer to https://github.com/camster91/Shift6/issues/NUMBER.
 | #341 Coach memory | Specification: bounded context/privacy foundations exist, no inspect/edit/forget memory workflow established. Canonical records remain authoritative; add task-specific retrieval, consent, provenance, invalidation and export/restore/delete support. |
 | #342 coaching reviews | Typed weekly/cycle tasks and deterministic review facts exist. Interactive questions, persisted evidence/decisions and routed confirmed next-step changes are expansion work; no generated adherence/achievement. |
 | #343 proactive prompts | Intervention/reminder preferences exist, bounded local trigger cards do not establish this whole workflow. Add stale-event dedup, quiet/snooze/disable control and useful next action; never background paid AI/uploads by default. |
+| #345 saved private plans | Implemented isolated fix 656a6da6 and integrated candidate: latest owned version per plan, discoverable while public manifest is empty; actual workouts/custom movements open through explicitly labelled editable copy, retaining immutable history. Honest loading/retry and owner-change isolation. Twenty focused tests passed. Android relaunch/source-data retest must match doc 36; iOS remains pending until tested. Public gates unchanged. |
+
+## Combined verification evidence, 13 October
+
+Full `npm run verify` passed at `cc99c873` plus a formatting-only builder-test
+correction (subsequently committed as `7016fe3a`): **588 tests in 96 suites**,
+five security tests, Expo Doctor 21/21, formatting/lint/TypeScript,
+assets/secrets/release configuration, vendor inventory, production audit with
+zero known vulnerabilities, and iOS/Android Hermes exports. The first run stopped
+at formatting; `verify-cc99.log` preserves that failure and
+`verify-cc99-retry.log` records the full successful run. RestoreScreen test
+confirmation callbacks emitted React act() harness warnings; no suite failed.
+This is exact engineering evidence, not physical usability or iOS device proof.
+
+The later `d9c5b2e2` restore weekday validation and `88ce95bf` dependency-endpoint
+change require their own applicable regression/integration evidence; the
+588-test run is not silently reassigned to later commits. Public content readiness
+still fails intentionally because approved enabled Shift IDs are absent.
+Release assets passed their local gate. Qualified review, signed candidates,
+actual support/policy URLs, native accessibility/permissions, participant work
+and store acceptance remain open regardless of repository verification.
 
 ## Reviewable delivery phases
 
@@ -86,12 +112,13 @@ Issue numbers below refer to https://github.com/camster91/Shift6/issues/NUMBER.
    obtain export outside the app plus saved-record recovery/deletion evidence.
    Run focused regression checks and `npm run verify`; record commit, binary,
    device, steps, expected/actual and captures. Prepare a PR, not a release claim.
-2. **Local reliability and truthful health.** Parallel agent ownership may cover
-   #331 and #332/#333 in separate modules. Design export graph/restore policy
-   before writing SQLite data. Health aggregate work and pagination share one
-   provider boundary and must have one implementation owner. Exercise malformed
-   backups, partial grants, repeated pages and cancellation with meaningful tests,
-   then native picker/health scenarios on both platforms. Update privacy copy.
+2. **Accept the local recovery/health increment.** #331 and #332/#333 now have
+   integrated source implementations; do not reimplement them from stale issue
+   descriptions. Confirm graph/restore policy and aggregate/pagination behavior
+   against their exact acceptance criteria. Preserve one owner for the shared
+   health boundary. Exercise malformed backups, partial grants, repeated pages
+   and cancellation, then native picker/health scenarios on both platforms.
+   Updated support/privacy drafts describe the candidate's limits, not launch.
 3. **Effortless deterministic core.** Complete #315 local schedule transactions,
    #310/#311 input/focus/difficulty ergonomics and #312 review/history gaps.
    Build from shared repository/domain workflows. Re-entry prescription thresholds
@@ -120,7 +147,7 @@ unchecked criteria. Parent epics close only after applicable children and their
 external criteria are actually accepted. Never close a specification merely
 because it was documented, or automatically close pilot/store issues after tests.
 
-## Immediate independent agent batches after frozen QA
+## Independent ownership and next acceptance batches
 
 Use a separate branch/managed checkout for the next increment. Agent ownership
 below avoids competing edits in the frozen QA candidate. A coordinator owns shared
@@ -134,8 +161,11 @@ and comments again before coding because the acceptance contract can evolve.
 | B: health correctness #332 and #333 together | Android health provider, normalization/import completeness contract and health tests. One owner handles both because aggregate and raw pagination paths overlap. Apple policy may be specified/tested but needs its platform owner for integration. | Match platform-priority aggregates for overlapping steps; document/test sleep/source overlap; retain distinct activity and idempotent IDs; test empty/partial grants/priority changes; paginate every required raw type across 2+ pages; bound runaway/repeated tokens; report page-two failure/cancellation/revocation as incomplete; retain range/source filters; never turn unknown coverage into zero. Real multiple-source Android records and Apple behavior remain native acceptance gates. |
 | C: lifecycle #315, bounded local transaction slice | Schedule/pause journal design, cycle repository actions, shared calendar projection and tests; coordinate schema migration centrally. UI follows after the transaction contract is integrated. | Owner/version-bound idempotent pause/resume/repeat preview and confirm; revised dates/history; offline interruption recovery; common Home/Calendar/Progress/reminder projection; reminder suppression/rescheduling; DST/timezone/midnight/clock-correction tests; no fabricated completed work or catch-up. Qualified template-specific re-entry/short-session/rebaseline rules and native UI tests remain open; do not invent universal dose reductions to close the issue. |
 
-Run A and B first in parallel. C can begin with a pure domain contract while the
-coordinator reviews persistence changes; integrate migrations serially. For each
+The A/B implementations are now in the integration candidate. Their rows above
+describe ownership and remaining acceptance evidence, not absent functionality.
+Finish candidate-specific native/fault verification and correct any demonstrated
+failures before closing #331/#332/#333. C can begin with a pure domain contract
+while that evidence is collected; integrate migrations serially. For each
 batch, run focused adversarial tests, then `npm run verify` on the integrated
 candidate. Rebuild/install native binaries after native-module/package changes;
 JavaScript-only tests do not establish file-picker, permissions or background

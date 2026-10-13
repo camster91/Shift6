@@ -1,6 +1,8 @@
 # SHIFT6 guest-release privacy policy
 
-Draft for the mobile guest release; updated 12 October 2026.
+Draft for the mobile guest/local-recovery candidate; updated 13 October 2026.
+The app is not yet publicly released. Physical-device recovery and final signed
+build declarations remain under verification.
 
 SHIFT6 saves your profile, training plans, workout entries, personal goal
 measurements, body metrics, preferences and reminders in local app storage.
@@ -19,6 +21,34 @@ health records from SHIFT6. Optional reminders use native notification permissio
 You can export your local records as a JSON file from Profile. SHIFT6 keeps a temporary copy in private app cache so the receiving app can read it. A later export removes copies older than a day, and deleting local records removes the temporary copies for that user. Device storage management may also clear cache files. Choosing a destination in the
 system sharing interface may send that export outside your device; you control
 the destination. Treat exports as private files.
+
+The local-recovery candidate can read a user-selected schema-12 JSON export
+(up to 20 MiB and 50,000 records). File selection and preview are inert; restoring
+requires a separate explicit confirmation. Restore only accepts an empty guest
+installation, including no saved setup draft, and does not merge or overwrite
+existing records. Unsupported schemas or invalid references are rejected.
+Validation and a single transaction protect against partial database writes;
+failed imports do not create an intermediate saved-success state.
+
+The system picker copies the selected file into private app cache for bounded
+reading. That temporary copy is removed after reading, including validation
+failure; the original file in your chosen provider is not deleted. Preview data
+stays in memory until cancellation, navigation or restore. The app does not send
+the raw backup to a server, AI provider or analytics service. Your selected file
+provider may have its own cloud storage behavior outside SHIFT6's control.
+
+Restored records are assigned to the current guest without importing account
+credentials, schema changes or replaying cloud-sync entries. Imported health
+history remains historical. Health connection preferences, provider Coach consent
+and all notification choices reset off, even if Android/iOS retained an earlier
+permission grant. Reconnecting is a separate user action; restore itself neither
+requests nor grants OS permissions and does not apply historical Coach proposals.
+
+JSON exports contain no custom media bytes. Restore removes custom movement
+media links so inaccessible old-device URIs or remote URLs are not opened
+unexpectedly. Add custom media again on this device. The app's installed bundled
+artwork is separate from your backup. These resets are disclosed in the preview
+and confirmation. See [local backup restore](LOCAL_BACKUP_RESTORE.md).
 
 You can delete local records from Profile. Uninstalling may also remove records,
 depending on device backup/restore behavior. This release has no SHIFT6 cloud

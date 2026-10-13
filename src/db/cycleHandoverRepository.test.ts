@@ -151,9 +151,11 @@ function confirmCycleHandover(
     isContextCurrent,
   });
 }
-function prepare(choice: CycleHandoverRequest['choice'] = 'continue-goal') {
+function prepareOptions(
+  choice: CycleHandoverRequest['choice'] = 'continue-goal',
+): Omit<CycleHandoverRequest, 'format' | 'userId' | 'source'> {
   const preparedAt = new Date().toISOString();
-  return prepareCycleHandover(db, owner, sourceCycle.id, {
+  return {
     operationId: 'handover-op',
     preparedAt,
     choice,
@@ -176,7 +178,10 @@ function prepare(choice: CycleHandoverRequest['choice'] = 'continue-goal') {
       startDate: '2026-10-13',
       timeZone: 'America/Toronto',
     },
-  });
+  };
+}
+function prepare(choice: CycleHandoverRequest['choice'] = 'continue-goal') {
+  return prepareCycleHandover(db, owner, sourceCycle.id, prepareOptions(choice));
 }
 const exportNow = () => exportLocalUserData(db, owner, new Date().toISOString());
 
@@ -623,4 +628,42 @@ test('owner change during the private receipt read rejects before returning that
   await rejection;
   spy.mockRestore();
   expect(await exportNow()).toEqual(before);
+});
+
+test.each([
+  ['later-started terminal session', '2026-10-13T12:01:00.000Z'],
+  ['earlier-started session completed later', stamp],
+])('queued preparation rejects a %s beyond the frozen cutoff', async (_case, startedAt) => {
+  const options = prepareOptions();
+  const entered = deferred<void>(),
+    release = deferred<void>();
+  const original = db.withExclusiveTransactionAsync.bind(db);
+  const held = {
+    ...db,
+    withExclusiveTransactionAsync: async (fn: (tx: SQLiteDatabase) => Promise<void>) => {
+      entered.resolve();
+      await release.promise;
+      return original(fn);
+    },
+  } as SQLiteDatabase;
+  const pending = prepareCycleHandover(held, owner, sourceCycle.id, options);
+  const rejection = expect(pending).rejects.toThrow('Source session clocks need review');
+  await entered.promise;
+  addSourceSession('complete', 'source-queued-session', startedAt, '2026-10-13T12:05:00.000Z');
+  jest.setSystemTime(new Date('2026-10-13T13:00:00.000Z'));
+  const before = await exportNow();
+  release.resolve();
+  await rejection;
+  expect(await exportNow()).toEqual(before);
+  expect(before.cycleHandovers).toHaveLength(0);
+
+  const refreshed = await prepare();
+  expect(refreshed.preparedAt).toBe('2026-10-13T13:00:00.000Z');
+  expect(refreshed.source.sessions.map((session) => session.id)).toEqual(['source-queued-session']);
+  await confirmCycleHandover(db, owner, refreshed);
+  const saved = await exportNow();
+  expect(validateLocalBackup(JSON.stringify(saved)).data.cycleHandovers).toHaveLength(1);
+  await deleteLocalUserData(db, owner);
+  await restoreLocalBackup(db, owner, JSON.stringify(saved));
+  expect(await exportNow()).toEqual(saved);
 });

@@ -25,6 +25,11 @@ while retaining inspection/edit/forget controls. Current profile and memory are
 queried again on focus and after an answer, with old responses invalidated.
 Optional memory read failures omit remembered preferences and preserve canonical
 local explanations. There is no feature-level memory cache outside mounted UI.
+Optional reads also cannot delay canonical context, urgent responses, remote
+responses or Ask controls. Local preference notes enrich an already displayed
+local message asynchronously; owner/focus/request checks reject late replies.
+Focus invalidation resets request loading, so leaving during a pending response
+does not leave the next visit disabled.
 
 Writes use exclusive SQLite transactions, owner/profile checks, expected
 revision and expected preference snapshot time. Distinct monotonic snapshot
@@ -53,7 +58,7 @@ tests cover disabled values and preserved urgent routes. These tests use synthet
 data and mocked UI routing; native memory navigation, keyboard, large-text,
 force-close, and real participant usability remain pending root integration QA.
 
-All **16 focused tests in four suites**, TypeScript and focused lint passed on
+All **19 focused tests in four suites**, TypeScript and focused lint passed on
 CAM-DESKTOP. The Coach component regressions also verify that a focus return
 removes disabled preference text and a mocked provider receives neither practical
 memory values nor local memory identifiers. No native or real-provider pass is

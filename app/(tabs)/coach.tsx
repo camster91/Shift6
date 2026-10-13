@@ -129,11 +129,17 @@ export default function CoachScreen() {
 
     let active = true;
     setLoading(true);
+    const hydrationRequest = requestId.current;
+    void getCoachMemorySnapshot(database, userId)
+      .then((memory) => {
+        if (active && hydrationRequest === requestId.current) setMemorySnapshot(memory);
+      })
+      .catch(() => {
+        /* Optional memory cannot block canonical context hydration. */
+      });
     void (async () => {
       try {
         const navigation = await loadCoachNavigationSnapshot(database, userId);
-        // Optional memory failure cannot make canonical local explanations unavailable.
-        const memory = await getCoachMemorySnapshot(database, userId).catch(() => null);
         const { cycle, snapshot, profile } = navigation;
         const pending = cycle ? await getPendingCoachProposals(database, userId, cycle.id) : [];
         const summary =
@@ -142,7 +148,6 @@ export default function CoachScreen() {
             : null;
         if (active) {
           setNavigationSnapshot(navigation);
-          setMemorySnapshot(memory);
           setActiveCycle(cycle);
           setActiveProgram(snapshot?.program ?? null);
           setActiveProgramVersion(snapshot?.version ?? null);
@@ -171,6 +176,7 @@ export default function CoachScreen() {
     useCallback(() => {
       let active = true;
       requestId.current += 1;
+      setCoachLoading(false);
       // Tabs remain mounted. Immediately invalidate old facts on every return,
       // then hydrate the current record rather than reusing prior session data.
       setLoading(true);
@@ -194,6 +200,7 @@ export default function CoachScreen() {
       return () => {
         active = false;
         requestId.current += 1;
+        setCoachLoading(false);
       };
     }, [database, userId]),
   );
@@ -306,11 +313,6 @@ export default function CoachScreen() {
         task,
         prompt,
       });
-      // Read current local preferences after generation; neither cached memory
-      // nor its identifiers are inserted into the provider context packet.
-      const memory = database
-        ? await getCoachMemorySnapshot(database, userId).catch(() => null)
-        : null;
       if (
         request !== requestId.current ||
         currentIdentity.current.database !== database ||
@@ -318,12 +320,26 @@ export default function CoachScreen() {
       )
         return;
       setCoachSource(response.source);
-      setMemorySnapshot(memory);
-      setCoachMessage(
-        response.source === 'local' && memory
-          ? appendConfirmedLocalMemory(response.result, memory)
-          : response.result,
-      );
+      // Publish canonical/urgent guidance immediately. Optional local memory
+      // cannot hold a response or controls hostage to a pending database read.
+      setCoachMessage(response.result);
+      if (response.source === 'local' && response.result.kind === 'message' && database) {
+        setMemorySnapshot(null);
+        void getCoachMemorySnapshot(database, userId)
+          .then((memory) => {
+            if (
+              request !== requestId.current ||
+              currentIdentity.current.database !== database ||
+              currentIdentity.current.userId !== userId
+            )
+              return;
+            setMemorySnapshot(memory);
+            setCoachMessage(appendConfirmedLocalMemory(response.result, memory));
+          })
+          .catch(() => {
+            /* Canonical local guidance remains visible without memory. */
+          });
+      }
     } catch {
       if (request === requestId.current)
         setError('Coach could not refresh local memory. No remembered preference was used.');

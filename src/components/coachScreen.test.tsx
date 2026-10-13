@@ -11,8 +11,9 @@ const mockDatabase = {},
 const mockNavigation = jest.fn();
 let mockMemorySnapshot: CoachMemorySnapshot;
 let mockPrivacyEnabled = false;
+const mockMemoryRead = jest.fn();
 jest.mock('../db/coachMemoryRepository', () => ({
-  getCoachMemorySnapshot: async () => mockMemorySnapshot,
+  getCoachMemorySnapshot: (...args: unknown[]) => mockMemoryRead(...args),
 }));
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
@@ -56,6 +57,7 @@ beforeEach(() => {
   mockCompleted = 0;
   mockPrecycle = false;
   mockPrivacyEnabled = false;
+  mockMemoryRead.mockImplementation(async () => mockMemorySnapshot);
   mockMemorySnapshot = {
     owner: 'owner',
     profile: null,
@@ -160,4 +162,58 @@ test('provider context receives no confirmed preference value or local memory id
   expect(JSON.stringify(mockRemote.mock.calls[0]![0])).not.toMatch(
     /evening|local-fact|confirmed local practical preferences/,
   );
+});
+
+test('returning to Coach invalidates an old pending request without leaving Ask disabled', async () => {
+  mockPrivacyEnabled = true;
+  let release!: (value: unknown) => void;
+  mockRemote.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  const screen = await render(<CoachScreen />);
+  await waitFor(() => expect(screen.getByText('Provider-backed Coach enabled')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText("Explain today's workout"));
+  await waitFor(() => expect(screen.getByLabelText('Review my progress')).toBeDisabled());
+  await act(async () => {
+    mockFocus?.();
+  });
+  await waitFor(() => expect(screen.getByLabelText('Review my progress')).not.toBeDisabled());
+  await act(async () => {
+    release({ kind: 'message', text: 'Stale pending answer', factsUsed: [] });
+  });
+  expect(screen.queryByText('Stale pending answer')).toBeNull();
+  expect(screen.getByLabelText('Review my progress')).not.toBeDisabled();
+});
+
+test('an urgent response never waits for optional memory and immediately releases Ask controls', async () => {
+  mockPrivacyEnabled = true;
+  mockRemote.mockResolvedValue({
+    kind: 'safety-route',
+    text: 'Synthetic urgent guidance: stop exercising.',
+    factsUsed: ['deterministic safety classifier'],
+  });
+  const screen = await render(<CoachScreen />);
+  await waitFor(() => expect(screen.getByText('Provider-backed Coach enabled')).toBeTruthy());
+  const initialReads = mockMemoryRead.mock.calls.length;
+  mockMemoryRead.mockImplementation(() => new Promise(() => {}));
+  await fireEvent.press(screen.getByLabelText("Explain today's workout"));
+  await waitFor(() =>
+    expect(screen.getByText('Synthetic urgent guidance: stop exercising.')).toBeTruthy(),
+  );
+  expect(mockMemoryRead).toHaveBeenCalledTimes(initialReads);
+  expect(screen.getByLabelText('Review my progress')).not.toBeDisabled();
+});
+
+test('initial optional memory read cannot block canonical Coach controls or explanations', async () => {
+  mockMemoryRead.mockImplementation(() => new Promise(() => {}));
+  const screen = await render(<CoachScreen />);
+  await waitFor(() => expect(screen.getByLabelText("Explain today's workout")).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText("Explain today's workout"));
+  await waitFor(() =>
+    expect(screen.getAllByText(/Actually scheduled session is a/).length).toBeGreaterThan(1),
+  );
+  expect(screen.getByLabelText('Review my progress')).not.toBeDisabled();
 });

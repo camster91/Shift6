@@ -1,6 +1,7 @@
 import { demoEquipment, demoProgram } from './fixtures/home';
 import {
   createOnboardingDraft,
+  getOnboardingMissingFields,
   isOnboardingComplete,
   recommendPrograms,
   toOnboardingProfile,
@@ -35,6 +36,23 @@ describe('onboarding domain', () => {
     expect(profile.healthConnection).toBe('not-now');
     expect(profile.user.preferredTrainingTime).toBe('morning');
     expect(profile.completedAt).toBe(profile.user.updatedAt);
+  });
+
+  it('names the remaining training-time choice without repeating answered fields', () => {
+    expect(
+      getOnboardingMissingFields(4, { ...completeDraft, preferredTrainingTime: null }),
+    ).toEqual(['usual training time (Morning, Afternoon or Evening)']);
+    expect(getOnboardingMissingFields(4, completeDraft)).toEqual([]);
+  });
+
+  it('provides guidance for each required question while allowing optional preferences', () => {
+    const empty = createOnboardingDraft();
+    for (const question of [0, 1, 2, 3, 4, 6, 7, 8, 9]) {
+      expect(getOnboardingMissingFields(question, empty).length).toBeGreaterThan(0);
+    }
+    expect(getOnboardingMissingFields(5, empty)).toEqual([]);
+    expect(getOnboardingMissingFields(9, completeDraft)).toEqual([]);
+    expect(getOnboardingMissingFields(7, { ...empty, healthConnection: 'not-now' })).toEqual([]);
   });
 
   it('ranks a compatible Barbell 30 recommendation and explains the fit', () => {

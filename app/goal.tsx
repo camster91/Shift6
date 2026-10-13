@@ -18,10 +18,19 @@ import {
 import { colors, spacing } from '../src/design/tokens';
 import {
   evaluateShift,
+  normalizeObservation,
   type MeasurementProtocol,
   type Shift,
   type ShiftObservation,
 } from '../src/domain/shift';
+import { getOnboardingProfile } from '../src/db/profileRepository';
+import {
+  goalUnit,
+  goalToCanonical,
+  goalFromCanonical,
+  goalValueLabel,
+} from '../src/domain/goalPresentation';
+import type { UnitSystem } from '../src/domain/types';
 import type { TrainingCycle } from '../src/domain/types';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
@@ -51,6 +60,7 @@ const initial = {
   replace: 'no',
   repCount: '',
   fixedDistance: '',
+  inputUnits: 'metric',
 };
 const uid = () => `personal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 function numeric(value: string) {
@@ -63,6 +73,7 @@ function numeric(value: string) {
 export default function PersonalGoalScreen() {
   const db = useLocalDatabase();
   const owner = useCurrentUserId();
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>('metric');
   const [cycle, setCycle] = useState<TrainingCycle | null>(null);
   const [goal, setGoal] = useState<Shift | null>(null);
   const [observations, setObservations] = useState<ShiftObservation[]>([]);
@@ -93,6 +104,11 @@ export default function PersonalGoalScreen() {
       return;
     }
     void (async () => {
+      const profile = await getOnboardingProfile(db, owner);
+      if (!live) return;
+      const preferredUnits = profile?.user.unitSystem ?? 'metric';
+      setUnitSystem(preferredUnits);
+      setFields({ ...initial, inputUnits: preferredUnits });
       const active =
         (await getActiveTrainingCycle(db, owner)) ?? (await getLatestTrainingCycle(db, owner));
       if (!live) return;
@@ -210,7 +226,13 @@ export default function PersonalGoalScreen() {
               : 'higher',
         ...(metric === 'load-for-reps' ? { repCount: numeric(fields.repCount) } : {}),
         ...(metric === 'fixed-distance-time'
-          ? { fixedDistanceMeters: numeric(fields.fixedDistance) }
+          ? {
+              fixedDistanceMeters: goalToCanonical(
+                numeric(fields.fixedDistance),
+                'distance',
+                draftUnits,
+              ),
+            }
           : {}),
       } as MeasurementProtocol;
       await createPersonalGoal(
@@ -221,7 +243,10 @@ export default function PersonalGoalScreen() {
           id,
           objective: fields.objective,
           protocol,
-          target: metric === 'completion' ? true : numeric(fields.target),
+          target:
+            metric === 'completion'
+              ? true
+              : goalToCanonical(numeric(fields.target), metric, draftUnits),
           replacePrimary: fields.replace === 'yes',
         },
         new Date().toISOString(),
@@ -243,7 +268,10 @@ export default function PersonalGoalScreen() {
           protocolVersion: goal.protocol.version,
           measuredAt: correction?.measuredAt ?? at,
           source: correction ? 'historical-entry' : 'assessment',
-          value: goal.protocol.metric === 'completion' ? value === 'true' : numeric(value),
+          value:
+            goal.protocol.metric === 'completion'
+              ? value === 'true'
+              : goalToCanonical(numeric(value), goal.protocol.metric, unitSystem),
           unit: goal.protocol.canonicalUnit,
           ...(correction ? { correctsObservationId: correction.id } : {}),
         },
@@ -254,14 +282,15 @@ export default function PersonalGoalScreen() {
       setCorrection(null);
     });
   const progress = goal && cycle ? evaluateShift(goal, cycle, observations) : null;
+  const draftUnits: UnitSystem = fields.inputUnits === 'imperial' ? 'imperial' : 'metric';
   const display = (v: number | boolean | undefined) =>
-    v === undefined
-      ? 'Not measured'
-      : typeof v === 'boolean'
-        ? v
-          ? 'Completed'
-          : 'Not completed'
-        : String(Math.round(v * 100) / 100);
+    goalValueLabel(v, goal?.protocol.metric ?? 'reps', unitSystem);
+  const metricLabel = (m: Metric) =>
+    m === 'distance'
+      ? `Distance in ${goalUnit(m, draftUnits)}`
+      : m === 'load-for-reps'
+        ? `Load for a fixed rep count (${goalUnit(m, draftUnits)})`
+        : labels[m];
   return (
     <Screen
       footer={
@@ -298,10 +327,16 @@ export default function PersonalGoalScreen() {
         <Card>
           {input('What do you want to track?', fields.objective, (v) => change('objective', v))}
           <Text variant="smallMedium">Measurement</Text>
+          <Text>
+            Enter values in{' '}
+            {draftUnits === 'imperial' ? 'pounds (lb) and miles' : 'kilograms (kg) and meters'}.
+            Saved drafts keep their original units; measurements are stored consistently for
+            comparison.
+          </Text>
           {(Object.keys(labels) as Metric[]).map((m) => (
             <Button
               key={m}
-              label={labels[m]}
+              label={metricLabel(m)}
               variant={fields.metric === m ? 'primary' : 'secondary'}
               selected={fields.metric === m}
               disabled={busy}
@@ -314,7 +349,7 @@ export default function PersonalGoalScreen() {
             : null}
           {fields.metric === 'fixed-distance-time'
             ? input(
-                'Fixed distance (meters)',
+                `Fixed distance (${goalUnit('distance', draftUnits)})`,
                 fields.fixedDistance,
                 (v) => change('fixedDistance', v),
                 true,
@@ -324,7 +359,7 @@ export default function PersonalGoalScreen() {
             <Text>Target: complete this activity.</Text>
           ) : (
             input(
-              `Target (${units[fields.metric as Metric] ?? 'choose measurement'})`,
+              `Target (${goalUnit(fields.metric as Metric, draftUnits)})`,
               fields.target,
               (v) => change('target', v),
               true,
@@ -357,17 +392,15 @@ export default function PersonalGoalScreen() {
           <Card>
             <Text variant="h2">{goal.blockObjective}</Text>
             <Text>
-              Target:{' '}
-              {goal.target === true
-                ? 'Complete this activity'
-                : String(goal.target) + ' ' + goal.protocol.canonicalUnit}
+              Target: {goal.target === true ? 'Complete this activity' : display(goal.target)}
             </Text>
             <Text>
               Setup: {goal.protocol.equipmentSetup}. Assistance: {goal.protocol.assistance}.
               {goal.protocol.metric === 'load-for-reps'
                 ? ' Fixed rep count: ' + goal.protocol.repCount
                 : goal.protocol.metric === 'fixed-distance-time'
-                  ? ' Fixed distance: ' + goal.protocol.fixedDistanceMeters + ' meters'
+                  ? ' Fixed distance: ' +
+                    goalValueLabel(goal.protocol.fixedDistanceMeters, 'distance', unitSystem)
                   : ''}
             </Text>
             <Text>
@@ -407,7 +440,12 @@ export default function PersonalGoalScreen() {
                 ))}
               </View>
             ) : (
-              input(`Actual value (${goal.protocol.canonicalUnit})`, value, setValue, true)
+              input(
+                `Actual value (${goalUnit(goal.protocol.metric, unitSystem)})`,
+                value,
+                setValue,
+                true,
+              )
             )}
             <Button
               label={correction ? 'Save correction' : 'Save measurement'}
@@ -462,7 +500,8 @@ export default function PersonalGoalScreen() {
               observations.map((o) => (
                 <View key={o.id} style={styles.field}>
                   <Text>
-                    {new Date(o.measuredAt).toLocaleString()} · {display(o.value)} {o.unit}
+                    {new Date(o.measuredAt).toLocaleString()} ·{' '}
+                    {display(normalizeObservation(goal.protocol, o)?.canonicalValue)}
                     {o.correctsObservationId ? ' · correction' : ''}
                   </Text>
                   {!observations.some((child) => child.correctsObservationId === o.id) ? (
@@ -472,7 +511,12 @@ export default function PersonalGoalScreen() {
                       disabled={busy}
                       onPress={() => {
                         setCorrection(o);
-                        setValue(String(o.value));
+                        const canonical = normalizeObservation(goal.protocol, o)?.canonicalValue;
+                        setValue(
+                          typeof canonical === 'number'
+                            ? String(goalFromCanonical(canonical, goal.protocol.metric, unitSystem))
+                            : String(canonical ?? ''),
+                        );
                       }}
                     />
                   ) : (
@@ -485,7 +529,12 @@ export default function PersonalGoalScreen() {
           {goal.protocol.metric !== 'completion' ? (
             <Card style={styles.field}>
               <Text variant="h2">Revise target</Text>
-              {input(`New target (${goal.protocol.canonicalUnit})`, newTarget, setNewTarget, true)}
+              {input(
+                `New target (${goalUnit(goal.protocol.metric, unitSystem)})`,
+                newTarget,
+                setNewTarget,
+                true,
+              )}
               {input('Reason for changing target', reason, setReason)}
               <Button
                 label="Save target revision"
@@ -496,7 +545,7 @@ export default function PersonalGoalScreen() {
                       db!,
                       owner,
                       goal.id,
-                      numeric(newTarget),
+                      goalToCanonical(numeric(newTarget), goal.protocol.metric, unitSystem),
                       reason,
                       uid(),
                       new Date().toISOString(),

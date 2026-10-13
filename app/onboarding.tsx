@@ -29,6 +29,7 @@ import {
   experienceOptions,
   fromOnboardingProfile,
   goalOptions,
+  getOnboardingMissingFields,
   healthConnectionOptions,
   isOnboardingComplete,
   recommendPrograms,
@@ -54,6 +55,7 @@ import { colors, radii, spacing } from '../src/design/tokens';
 import { useAppServices } from '../src/services/AppServicesProvider';
 import { trackAnalyticsEvent } from '../src/services/analytics';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
+import { runtimeConfig } from '../src/config/env';
 
 const {
   essential: essentialSteps,
@@ -226,7 +228,8 @@ export default function OnboardingScreen() {
     setError(null);
   };
 
-  const canContinue = getCanContinue(currentStep, draft);
+  const missingFields = getOnboardingMissingFields(currentStep, draft);
+  const canContinue = missingFields.length === 0;
 
   if (loadingProfile) {
     return (
@@ -300,6 +303,17 @@ export default function OnboardingScreen() {
       scrollViewProps={{ keyboardShouldPersistTaps: 'handled' }}
       footer={
         <>
+          {missingFields.length > 0 ? (
+            <Text
+              variant="small"
+              accessibilityLiveRegion="polite"
+              accessibilityLabel={`Required to continue: ${missingFields.join('; ')}. Scroll to find these choices.`}
+              style={styles.requiredHint}
+            >
+              {currentStep === 9 ? 'Go back to choose: ' : 'To continue, choose: '}
+              {missingFields.join('; ')}. Scroll to find these choices.
+            </Text>
+          ) : null}
           {error ? (
             <View
               accessible
@@ -386,37 +400,6 @@ export default function OnboardingScreen() {
       ) : null}
     </Screen>
   );
-}
-
-function getCanContinue(step: number, draft: ReturnType<typeof createOnboardingDraft>): boolean {
-  switch (step) {
-    case 0:
-      return draft.displayName.trim().length > 0;
-    case 1:
-      return draft.goals.length > 0;
-    case 2:
-      return draft.experience !== null;
-    case 3:
-      return draft.equipmentIds.length > 0;
-    case 4:
-      return (
-        draft.trainingDaysPerWeek !== null &&
-        draft.preferredSessionMinutes !== null &&
-        draft.preferredTrainingTime !== null
-      );
-    case 5:
-      return true;
-    case 6:
-      return draft.unitSystem !== null;
-    case 7:
-      return draft.healthConnection !== null;
-    case 8:
-      return draft.coachTone !== null && draft.coachIntervention !== null;
-    case 9:
-      return isOnboardingComplete(draft);
-    default:
-      return false;
-  }
 }
 
 function renderStep(
@@ -739,10 +722,12 @@ function renderStep(
           )}
           <Text variant="caption" tone="muted" style={styles.persistenceNote}>
             {hasNativeDatabase
-              ? 'Your guest setup will be stored on this device and can be migrated when you create an account.'
+              ? runtimeConfig.releaseMode === 'guest-only'
+                ? 'Your setup will be saved on this device. No account or cloud backup is available in this release. You can export your records from Profile.'
+                : 'Your guest setup will be stored on this device and can be migrated when you create an account.'
               : Platform.OS === 'web'
                 ? 'Web preview: native device persistence is not active in this surface.'
-                : 'Your setup will be stored locally before any cloud sync is added.'}
+                : 'Local storage is unavailable. Your setup has not been saved.'}
           </Text>
         </View>
       );
@@ -857,6 +842,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   errorCard: {
+    marginBottom: spacing.sm,
+  },
+  requiredHint: {
     marginBottom: spacing.sm,
   },
   errorText: {

@@ -8,7 +8,9 @@ import {
   getPersonalGoalDraft,
   getPersonalObservations,
   savePersonalGoalDraft,
+  revisePersonalTarget,
 } from '../db/personalGoalRepository';
+import { getOnboardingProfile } from '../db/profileRepository';
 import type { Shift } from '../domain/shift';
 jest.mock('expo-router', () => ({ router: { back: jest.fn(), push: jest.fn() } }));
 jest.mock('../db/context', () => ({ useLocalDatabase: () => mockDb }));
@@ -28,6 +30,7 @@ jest.mock('../db/personalGoalRepository', () => ({
   savePersonalReview: jest.fn(),
   setPersonalBaselineState: jest.fn(),
 }));
+jest.mock('../db/profileRepository', () => ({ getOnboardingProfile: jest.fn() }));
 const mockDb = {};
 const goal: Shift = {
   id: 'goal',
@@ -178,4 +181,163 @@ test('a completed cycle without a goal offers a new plan instead of an unusable 
   const screen = await render(<PersonalGoalScreen />);
   await waitFor(() => expect(screen.getByText('Choose a plan')).toBeTruthy());
   expect(screen.queryByLabelText('What do you want to track?')).toBeNull();
+});
+
+test('imperial load creation stores a canonical target and tags its recoverable draft', async () => {
+  jest
+    .mocked(getOnboardingProfile)
+    .mockResolvedValue({ user: { unitSystem: 'imperial' } } as Awaited<
+      ReturnType<typeof getOnboardingProfile>
+    >);
+  const screen = await render(<PersonalGoalScreen />);
+  await waitFor(() => expect(screen.getByText('Load for a fixed rep count (lb)')).toBeTruthy());
+  await fireEvent.press(screen.getByText('Load for a fixed rep count (lb)'));
+  await fireEvent.changeText(screen.getByLabelText('What do you want to track?'), 'My press');
+  await fireEvent.changeText(screen.getByLabelText('Fixed rep count'), '5');
+  await fireEvent.changeText(screen.getByLabelText('Target (lb)'), '100');
+  await fireEvent.press(screen.getByText('Save personal goal'));
+  await waitFor(() => expect(createPersonalGoal).toHaveBeenCalled());
+  expect(jest.mocked(createPersonalGoal).mock.calls[0]![3]).toEqual(
+    expect.objectContaining({
+      target: 45.359237,
+      protocol: expect.objectContaining({ canonicalUnit: 'kg', repCount: 5 }),
+    }),
+  );
+  expect(savePersonalGoalDraft).toHaveBeenLastCalledWith(
+    mockDb,
+    'owner',
+    'cycle',
+    expect.objectContaining({ inputUnits: 'imperial', target: '100' }),
+  );
+});
+
+test('old canonical drafts keep kg even when the profile prefers imperial', async () => {
+  jest
+    .mocked(getOnboardingProfile)
+    .mockResolvedValue({ user: { unitSystem: 'imperial' } } as Awaited<
+      ReturnType<typeof getOnboardingProfile>
+    >);
+  jest.mocked(getPersonalGoalDraft).mockResolvedValue({
+    objective: 'Old draft',
+    metric: 'load-for-reps',
+    target: '50',
+    repCount: '5',
+  });
+  const screen = await render(<PersonalGoalScreen />);
+  await waitFor(() => expect(screen.getByDisplayValue('Old draft')).toBeTruthy());
+  expect(screen.getByLabelText('Target (kg)').props.value).toBe('50');
+  await fireEvent.press(screen.getByText('Save personal goal'));
+  await waitFor(() => expect(createPersonalGoal).toHaveBeenCalled());
+  expect(jest.mocked(createPersonalGoal).mock.calls[0]![3].target).toBe(50);
+});
+
+test('imperial fixed distance uses miles while measured time remains seconds', async () => {
+  jest
+    .mocked(getOnboardingProfile)
+    .mockResolvedValue({ user: { unitSystem: 'imperial' } } as Awaited<
+      ReturnType<typeof getOnboardingProfile>
+    >);
+  const screen = await render(<PersonalGoalScreen />);
+  await waitFor(() => expect(screen.getByText('Distance in miles')).toBeTruthy());
+  await fireEvent.press(screen.getByText('Time for a fixed distance (seconds)'));
+  await fireEvent.changeText(screen.getByLabelText('Fixed distance (miles)'), '1');
+  await fireEvent.changeText(screen.getByLabelText('Target (seconds)'), '600');
+  await fireEvent.press(screen.getByText('Save personal goal'));
+  await waitFor(() => expect(createPersonalGoal).toHaveBeenCalled());
+  expect(jest.mocked(createPersonalGoal).mock.calls[0]![3]).toEqual(
+    expect.objectContaining({
+      target: 600,
+      protocol: expect.objectContaining({
+        fixedDistanceMeters: 1609.344,
+        canonicalUnit: 'seconds',
+      }),
+    }),
+  );
+});
+
+test('imperial baseline, correction and target revision all persist kilograms', async () => {
+  jest
+    .mocked(getOnboardingProfile)
+    .mockResolvedValue({ user: { unitSystem: 'imperial' } } as Awaited<
+      ReturnType<typeof getOnboardingProfile>
+    >);
+  jest.mocked(getPersonalGoal).mockResolvedValue({
+    ...goal,
+    target: 45.359237,
+    protocol: {
+      ...goal.protocol,
+      metric: 'load-for-reps',
+      canonicalUnit: 'kg',
+      repCount: 5,
+      direction: 'higher',
+    },
+  });
+  jest.mocked(getPersonalObservations).mockResolvedValue([
+    {
+      id: 'old',
+      shiftId: 'goal',
+      protocolId: 'setup',
+      protocolVersion: 1,
+      measuredAt: '2026-10-12T00:00:00Z',
+      source: 'assessment',
+      unit: 'lb',
+      value: 90,
+    },
+  ]);
+  const screen = await render(<PersonalGoalScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Actual value (lb)')).toBeTruthy());
+  expect(screen.getByText('Target: 100 lb')).toBeTruthy();
+  expect(screen.getByText(/Latest: 90 lb/)).toBeTruthy();
+  await fireEvent.changeText(screen.getByLabelText('Actual value (lb)'), '95');
+  await fireEvent.press(screen.getByText('Save as baseline'));
+  await waitFor(() => expect(appendPersonalObservation).toHaveBeenCalled());
+  expect(jest.mocked(appendPersonalObservation).mock.calls[0]![2].value).toBeCloseTo(
+    43.09127515,
+    8,
+  );
+  await fireEvent.press(screen.getByText('Correct this entry'));
+  expect(Number(screen.getByLabelText('Actual value (lb)').props.value)).toBeCloseTo(90, 10);
+  await fireEvent.changeText(screen.getByLabelText('Actual value (lb)'), '100');
+  await fireEvent.press(screen.getByText('Save correction'));
+  await waitFor(() => expect(appendPersonalObservation).toHaveBeenCalledTimes(2));
+  expect(jest.mocked(appendPersonalObservation).mock.calls[1]![2]).toEqual(
+    expect.objectContaining({
+      value: 45.359237,
+      unit: 'kg',
+      correctsObservationId: 'old',
+      measuredAt: '2026-10-12T00:00:00Z',
+    }),
+  );
+  await fireEvent.changeText(screen.getByLabelText('New target (lb)'), '110');
+  await fireEvent.changeText(screen.getByLabelText('Reason for changing target'), 'Next goal');
+  await fireEvent.press(screen.getByText('Save target revision'));
+  await waitFor(() => expect(revisePersonalTarget).toHaveBeenCalled());
+  expect(jest.mocked(revisePersonalTarget).mock.calls[0]![3]).toBeCloseTo(49.8951607, 8);
+});
+
+test('imperial distance targets and measured results share the same conversion', async () => {
+  jest
+    .mocked(getOnboardingProfile)
+    .mockResolvedValue({ user: { unitSystem: 'imperial' } } as Awaited<
+      ReturnType<typeof getOnboardingProfile>
+    >);
+  jest.mocked(getPersonalGoal).mockResolvedValue({
+    ...goal,
+    target: 3218.688,
+    protocol: {
+      ...goal.protocol,
+      metric: 'distance',
+      canonicalUnit: 'meters',
+      direction: 'higher',
+    },
+  });
+  const screen = await render(<PersonalGoalScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Actual value (miles)')).toBeTruthy());
+  expect(screen.getByText('Target: 2 miles')).toBeTruthy();
+  await fireEvent.changeText(screen.getByLabelText('Actual value (miles)'), '1');
+  await fireEvent.press(screen.getByText('Save measurement'));
+  await waitFor(() => expect(appendPersonalObservation).toHaveBeenCalled());
+  expect(jest.mocked(appendPersonalObservation).mock.calls[0]![2]).toEqual(
+    expect.objectContaining({ value: 1609.344, unit: 'meters' }),
+  );
 });

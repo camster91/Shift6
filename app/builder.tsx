@@ -719,8 +719,9 @@ export default function ProgramBuilderScreen() {
             {recovery.candidate?.snapshot.version.workouts.length ?? 0} workouts
           </Text>
           <Text>
-            This recovery has not been saved as a plan or started. Resume to review it, or discard
-            only this recovery and begin from the current source.
+            This private editing recovery is separate from saved plans and existing cycles. Resume
+            to review its edits and text, or discard only this recovery and begin from the current
+            source.
           </Text>
           {recovery.canonicalExists ? (
             <Text>

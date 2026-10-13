@@ -95,6 +95,38 @@ test('recovered preview is recomputed against current availability and never aut
   expect(screen.getByText(/Movement is not available/)).toBeTruthy();
 });
 
+test('Close hides and preserves pending text/preview; only explicit Discard emits empty recovery', async () => {
+  const apply = jest.fn(),
+    change = jest.fn();
+  const text = 'My squat | sets=2 | reps=8 | load=40kg | rest=45s';
+  const screen = await render(
+    <PlanTextImport
+      available={[movement]}
+      workoutTitle="My workout"
+      onApply={apply}
+      recoveryState={{ text, previewText: text }}
+      onRecoveryChange={change}
+    />,
+  );
+  const stale = screen
+    .getByLabelText('Add reviewed rows to this workout')
+    .props.onStartShouldSetResponder.testOnly_pressabilityConfig().onPress;
+  await fireEvent.press(screen.getByLabelText('Close pasted targets for My workout'));
+  expect(screen.queryByLabelText('User-owned workout text for My workout')).toBeNull();
+  expect(change).not.toHaveBeenCalled();
+  expect(apply).not.toHaveBeenCalled();
+  await act(async () => stale());
+  expect(apply).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Import pasted targets for My workout'));
+  expect(screen.getByDisplayValue(text)).toBeTruthy();
+  expect(screen.getByLabelText('Add reviewed rows to this workout')).toBeEnabled();
+  await fireEvent.press(screen.getByLabelText('Discard pasted text and preview'));
+  expect(change).toHaveBeenCalledWith({ text: '', previewText: null });
+  expect(screen.getByLabelText('User-owned workout text for My workout').props.value).toBe('');
+  expect(screen.queryByLabelText('Add reviewed rows to this workout')).toBeNull();
+  expect(apply).not.toHaveBeenCalled();
+});
+
 test('one preview applies once before rerender; editing invalidates stale callbacks and repreview permits a fresh apply', async () => {
   const apply = jest.fn();
   const screen = await render(

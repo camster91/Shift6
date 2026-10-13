@@ -57,11 +57,9 @@ export function PlanTextImport({
         variant="ghost"
         onPress={() => {
           revision.current++;
+          setPreviewToken(revision.current);
           setOpen(!open);
-          setText('');
-          setPreviewText(null);
           setMessage('');
-          onRecoveryChange?.({ text: '', previewText: null });
         }}
       />
       {open ? (
@@ -98,12 +96,27 @@ export function PlanTextImport({
             style={styles.input}
           />
           <Text variant="small">
+            Closing hides your text and preview. Use Discard pasted text and preview to clear them.{' '}
             {onRecoveryChange
               ? 'Private recovery includes this text. Check the recovery status above before leaving. Recovered previews are recomputed and require explicit review.'
               : 'Unsubmitted text is not saved and will be lost if this screen closes.'}{' '}
             After adding reviewed rows, choose Save draft program to keep them in your plan.
             Original lines become private movement notes.
           </Text>
+          <Button
+            label="Discard pasted text and preview"
+            variant="ghost"
+            onPress={() => {
+              revision.current++;
+              setText('');
+              setPreviewText(null);
+              setPreviewToken(0);
+              onRecoveryChange?.({ text: '', previewText: null });
+              setMessage(
+                'Pasted text and preview discarded. Added movements remain in your private plan.',
+              );
+            }}
+          />
           <Button
             label="Preview pasted targets"
             variant="secondary"

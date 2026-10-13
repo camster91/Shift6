@@ -12,6 +12,9 @@ send a provider request, or create an outbox record. The current content gate an
 movement availability are reapplied. Catalogue IDs cannot be shadowed by recovered
 private movements. A recovered preview is parsed again; missing or invalid values
 remain unresolved and block Add reviewed rows.
+Closing pasted-text import hides its text and preview without clearing recovery.
+The separate Discard pasted text and preview action explicitly clears those fields;
+it leaves already added movements and saved plans unchanged.
 If its version already exists in saved plans, the choice explicitly says Resume
 as a new private copy. The copy retains contents and remaps pasted-text workout
 references; it cannot overwrite the saved version or its training history.

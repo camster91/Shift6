@@ -26,6 +26,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -37,15 +39,23 @@ jobs:
       - run: npm ci
       - run: npm run validate:release-config
       - run: npm run validate:release-assets
+      - name: Check native artifact proof rejection cases
+        run: python3 scripts/native_artifact_source_test.py
       - run: npx expo prebuild --no-install --platform android
       - name: Compile release-mode APK for testing
         working-directory: android
         run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64 --no-daemon --max-workers=2
       - name: Save test-signed APK (not a store submission)
+        run: |
+          mkdir -p native-qa-artifact
+          cp android/app/build/outputs/apk/release/app-release.apk native-qa-artifact/app-release.apk
+          python3 scripts/native_artifact_source.py create --platform android --payload native-qa-artifact/app-release.apk --manifest native-qa-artifact/native-source.json
+      - name: Preserve test-signed APK and checkout proof
         uses: actions/upload-artifact@v7
         with:
           name: android-test-release
-          path: android/app/build/outputs/apk/release/*.apk
+          path: native-qa-artifact
+          include-hidden-files: true
           if-no-files-found: error
 
   ios:
@@ -56,6 +66,8 @@ jobs:
       ENTERPRISE_REPOSITORY: https://repo.maven.apache.org/maven2
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -63,6 +75,8 @@ jobs:
       - run: npm ci
       - run: npm run validate:release-config
       - run: npm run validate:release-assets
+      - name: Check native artifact proof rejection cases
+        run: python3 scripts/native_artifact_source_test.py
       - run: npx expo prebuild --no-install --platform ios
       - name: Prefetch checksum-verified React Native archives
         timeout-minutes: 15
@@ -135,13 +149,20 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           -derivedDataPath native-build ARCHS="$(uname -m)"
           ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
+      - name: Bind simulator payload to its actual checkout
+        run: |
+          mkdir -p native-qa-artifact
+          cp -R native-build/Build/Products/Release-iphonesimulator/SHIFT6.app native-qa-artifact/SHIFT6.app
+          python3 scripts/native_artifact_source.py create --platform ios --payload native-qa-artifact/SHIFT6.app --manifest native-qa-artifact/native-source.json
       - uses: actions/upload-artifact@v7
         with:
           name: ios-unsigned-simulator-release
-          path: native-build/Build/Products/Release-iphonesimulator/SHIFT6.app
+          path: native-qa-artifact
+          include-hidden-files: true
           if-no-files-found: error
       - name: Install and cold-launch on iPhone simulator
         run: |
+          python3 scripts/native_artifact_source.py verify --platform ios --manifest native-qa-artifact/native-source.json --expected-source-sha "$(git rev-parse HEAD)"
           simulator_id=$(python3 - <<'PYTHON'
           import json, subprocess
           devices=json.loads(subprocess.check_output(['xcrun','simctl','list','devices','available','--json']))['devices']
@@ -152,7 +173,7 @@ jobs:
           )
           xcrun simctl boot "$simulator_id"
           xcrun simctl bootstatus "$simulator_id" -b
-          xcrun simctl install "$simulator_id" native-build/Build/Products/Release-iphonesimulator/SHIFT6.app
+          xcrun simctl install "$simulator_id" native-qa-artifact/SHIFT6.app
           xcrun simctl launch "$simulator_id" com.shift6.app
           sleep 5
           xcrun simctl io "$simulator_id" screenshot native-build/ios-cold-launch.png

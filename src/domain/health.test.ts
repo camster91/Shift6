@@ -3,6 +3,8 @@ import {
   healthAggregationMode,
   healthDataTypeDetails,
   normalizeHealthSummaries,
+  HEALTH_CONNECT_DAILY_SOURCE,
+  type HealthSummary,
 } from './health';
 
 describe('provider-neutral health normalization', () => {
@@ -141,10 +143,22 @@ describe('provider-neutral health normalization', () => {
       {
         day: '2026-09-01',
         type: 'steps',
-        value: 3500,
+        value: 1000,
         unit: 'count',
-        sampleCount: 2,
-        sourceCount: 2,
+        sampleCount: 1,
+        sourceCount: 1,
+        basis: 'source-estimate',
+        sourceLabel: 'Apple Health',
+      },
+      {
+        day: '2026-09-01',
+        type: 'steps',
+        value: 2500,
+        unit: 'count',
+        sampleCount: 1,
+        sourceCount: 1,
+        basis: 'source-estimate',
+        sourceLabel: 'Health Connect',
       },
       {
         day: '2026-09-01',
@@ -156,4 +170,48 @@ describe('provider-neutral health normalization', () => {
       },
     ]);
   });
+});
+
+const rawStep: HealthSummary = {
+  id: 'phone',
+  type: 'steps',
+  value: 1000,
+  unit: 'count',
+  startAt: '2026-10-12T12:00:00Z',
+  endAt: '2026-10-12T13:00:00Z',
+  source: 'phone',
+};
+test('raw overlapping sources remain separate estimates rather than an inflated combined total', () => {
+  const trends = buildDailyHealthTrends([rawStep, { ...rawStep, id: 'watch', source: 'watch' }]);
+  expect(trends).toHaveLength(2);
+  expect(trends.every((trend) => trend.value === 1000 && trend.basis === 'source-estimate')).toBe(
+    true,
+  );
+});
+test('a platform daily total excludes legacy raw contributions for that day', () => {
+  const total = {
+    ...rawStep,
+    id: 'utc-total:steps:2026-10-12',
+    source: HEALTH_CONNECT_DAILY_SOURCE,
+    value: 1200,
+  };
+  expect(buildDailyHealthTrends([rawStep, { ...rawStep, source: 'watch' }, total])).toEqual([
+    expect.objectContaining({ value: 1200, basis: 'platform-total' }),
+  ]);
+});
+test('distinct intervals from one raw source remain included with an estimate label', () => {
+  expect(
+    buildDailyHealthTrends([
+      rawStep,
+      {
+        ...rawStep,
+        id: 'later',
+        value: 500,
+        startAt: '2026-10-12T15:00:00Z',
+        endAt: '2026-10-12T16:00:00Z',
+      },
+    ]),
+  ).toEqual([
+    expect.objectContaining({ value: 1500, basis: 'source-estimate', sourceLabel: 'phone' }),
+  ]);
 });

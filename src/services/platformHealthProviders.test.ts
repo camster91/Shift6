@@ -102,10 +102,8 @@ describe('native health provider boundaries', () => {
     });
 
     it.each([
-      ['steps', 'Steps'],
       ['workouts', 'ExerciseSession'],
       ['resting-heart-rate', 'RestingHeartRate'],
-      ['sleep-duration', 'SleepSession'],
       ['weight', 'Weight'],
     ] as const)('continues %s reads to the last page', async (type, recordType) => {
       jest
@@ -153,7 +151,7 @@ describe('native health provider boundaries', () => {
         jest.spyOn(HealthConnect, 'requestPermission').mockResolvedValue([]);
         jest
           .spyOn(HealthConnect, 'getGrantedPermissions')
-          .mockResolvedValue([{ accessType: 'read', recordType: 'Steps' }]);
+          .mockResolvedValue([{ accessType: 'read', recordType: 'ExerciseSession' }]);
         const page = {
           records: [
             {
@@ -179,7 +177,7 @@ describe('native health provider boundaries', () => {
             database,
             userId: 'guest',
             provider: createAndroidProvider(),
-            types: ['steps'],
+            types: ['workouts'],
             range: validRange,
           }),
         ).resolves.toMatchObject({ status: 'failed', importedCount: 0 });
@@ -196,7 +194,7 @@ describe('native health provider boundaries', () => {
       jest.spyOn(HealthConnect, 'requestPermission').mockResolvedValue([]);
       jest
         .spyOn(HealthConnect, 'getGrantedPermissions')
-        .mockResolvedValue([{ accessType: 'read', recordType: 'Steps' }]);
+        .mockResolvedValue([{ accessType: 'read', recordType: 'ExerciseSession' }]);
       const record = {
         startTime: validRange.startAt,
         endTime: validRange.endAt,
@@ -222,7 +220,7 @@ describe('native health provider boundaries', () => {
             database,
             userId: 'guest',
             provider: createAndroidProvider(),
-            types: ['steps'],
+            types: ['workouts'],
             range: validRange,
           }),
         ).resolves.toMatchObject({ status: 'synced', importedCount: 1 });

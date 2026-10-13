@@ -86,6 +86,8 @@ describe('local health summary repository', () => {
         type: 'steps',
         value: 2000,
         unit: 'count',
+        basis: 'source-estimate',
+        sourceLabel: 'Apple Health',
         sampleCount: 1,
         sourceCount: 1,
       },

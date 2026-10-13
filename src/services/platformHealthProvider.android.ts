@@ -3,15 +3,22 @@ import {
   getGrantedPermissions,
   initialize,
   readRecords,
+  aggregateRecord,
   requestPermission,
   SdkAvailabilityStatus,
   type Permission,
   type RecordType,
 } from 'react-native-health-connect';
 
-import type { HealthDataType, HealthDateRange, HealthSummary } from '../domain/health';
+import {
+  HEALTH_CONNECT_DAILY_SOURCE,
+  type HealthDataType,
+  type HealthDateRange,
+  type HealthSummary,
+} from '../domain/health';
 import type { HealthPermissionResult, HealthProvider } from './health';
 import { readAllHealthPages } from './healthPagination';
+import { utcHealthWindows, utcHealthReplacementRange } from './healthDayWindows';
 
 const recordTypes = {
   steps: 'Steps',
@@ -72,6 +79,13 @@ class AndroidHealthConnectProvider implements HealthProvider {
     return { status, grantedTypes, deniedTypes };
   }
 
+  replacementCoverage(types: readonly HealthDataType[], range: HealthDateRange) {
+    return {
+      types: uniqueTypes(types).filter((type) => type === 'steps' || type === 'sleep-duration'),
+      range: utcHealthReplacementRange(range),
+    };
+  }
+
   async readSummaries(
     types: readonly HealthDataType[],
     range: HealthDateRange,
@@ -97,24 +111,9 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
     ascendingOrder: true,
   };
   switch (type) {
-    case 'steps': {
-      const records = await readAllHealthPages((pageToken) =>
-        readRecords('Steps', { ...options, pageSize: 1000, ...(pageToken ? { pageToken } : {}) }),
-      );
-      return records.map((record) => ({
-        id: recordId(
-          record.metadata?.id ?? record.metadata?.clientRecordId,
-          record.startTime,
-          type,
-        ),
-        type,
-        value: record.count,
-        unit: 'count',
-        startAt: record.startTime,
-        endAt: record.endTime,
-        source: sourceName(record.metadata?.dataOrigin),
-      }));
-    }
+    case 'steps':
+    case 'sleep-duration':
+      return readDailyTotal(type, range);
     case 'workouts': {
       const records = await readAllHealthPages((pageToken) =>
         readRecords('ExerciseSession', {
@@ -175,28 +174,6 @@ async function readType(type: HealthDataType, range: HealthDateRange): Promise<H
         source: sourceName(record.metadata?.dataOrigin),
       }));
     }
-    case 'sleep-duration': {
-      const records = await readAllHealthPages((pageToken) =>
-        readRecords('SleepSession', {
-          ...options,
-          pageSize: 1000,
-          ...(pageToken ? { pageToken } : {}),
-        }),
-      );
-      return records.map((record) => ({
-        id: recordId(
-          record.metadata?.id ?? record.metadata?.clientRecordId,
-          record.startTime,
-          type,
-        ),
-        type,
-        value: Math.max(0, (Date.parse(record.endTime) - Date.parse(record.startTime)) / 1000),
-        unit: 'seconds',
-        startAt: record.startTime,
-        endAt: record.endTime,
-        source: sourceName(record.metadata?.dataOrigin),
-      }));
-    }
     case 'weight': {
       const records = await readAllHealthPages((pageToken) =>
         readRecords('Weight', { ...options, pageSize: 1000, ...(pageToken ? { pageToken } : {}) }),
@@ -230,4 +207,40 @@ function validRange(range: HealthDateRange): boolean {
 
 function uniqueTypes(types: readonly HealthDataType[]): HealthDataType[] {
   return [...new Set(types)];
+}
+
+async function readDailyTotal(
+  type: 'steps' | 'sleep-duration',
+  range: HealthDateRange,
+): Promise<HealthSummary[]> {
+  const summaries: HealthSummary[] = [];
+  for (const window of utcHealthWindows(range)) {
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime: window.startAt,
+      endTime: window.endAt,
+    };
+    const result =
+      type === 'steps'
+        ? await aggregateRecord({ recordType: 'Steps', timeRangeFilter, dataOriginFilter: [] })
+        : await aggregateRecord({
+            recordType: 'SleepSession',
+            timeRangeFilter,
+            dataOriginFilter: [],
+          });
+    // Native bridge defaults missing metrics to zero. Empty origins identify no coverage.
+    if (!Array.isArray(result.dataOrigins) || result.dataOrigins.length === 0) continue;
+    const value = 'COUNT_TOTAL' in result ? result.COUNT_TOTAL : result.SLEEP_DURATION_TOTAL;
+    if (!Number.isFinite(value) || value < 0) throw new Error('Invalid health aggregate result.');
+    summaries.push({
+      id: `utc-total:${type}:${window.startAt.slice(0, 10)}`,
+      type,
+      value,
+      unit: type === 'steps' ? 'count' : 'seconds',
+      startAt: window.startAt,
+      endAt: window.endAt,
+      source: HEALTH_CONNECT_DAILY_SOURCE,
+    });
+  }
+  return summaries;
 }

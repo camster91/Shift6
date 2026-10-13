@@ -7,6 +7,7 @@ import {
   type HealthDateRange,
   type HealthSummary,
   type HealthTrendPoint,
+  type HealthImportReplacement,
 } from '../domain/health';
 
 interface HealthSummaryRow {
@@ -34,14 +35,34 @@ export async function saveHealthSummaries(
   database: SQLiteDatabase,
   userId: string,
   samples: readonly HealthSummary[],
+  replacement?: HealthImportReplacement,
 ): Promise<HealthSummary[]> {
   const normalizedUserId = userId.trim();
   if (!normalizedUserId) throw new Error('A user ID is required to save health summaries.');
 
   const normalized = normalizeHealthSummaries(samples);
-  await database.withTransactionAsync(async () => {
+  if (
+    replacement &&
+    (!replacement.types.every((type) => type === 'steps' || type === 'sleep-duration') ||
+      !Number.isFinite(Date.parse(replacement.range.startAt)) ||
+      !Number.isFinite(Date.parse(replacement.range.endAt)) ||
+      Date.parse(replacement.range.endAt) <= Date.parse(replacement.range.startAt))
+  )
+    throw new Error('Invalid health replacement coverage.');
+  const write = async (tx: SQLiteDatabase) => {
+    if (replacement?.types.length) {
+      const placeholders = replacement.types.map(() => '?').join(',');
+      await tx.runAsync(
+        `DELETE FROM health_summaries WHERE user_id=? AND health_type IN (${placeholders}) AND start_at < ? AND (end_at > ? OR (end_at=start_at AND start_at >= ?));`,
+        normalizedUserId,
+        ...replacement.types,
+        replacement.range.endAt,
+        replacement.range.startAt,
+        replacement.range.startAt,
+      );
+    }
     for (const sample of normalized) {
-      await database.runAsync(
+      await tx.runAsync(
         `INSERT INTO health_summaries
           (user_id, source, id, health_type, value, unit, start_at, end_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -61,7 +82,12 @@ export async function saveHealthSummaries(
         sample.endAt,
       );
     }
-  });
+  };
+  if (replacement?.types.length) {
+    if (typeof database.withExclusiveTransactionAsync !== 'function')
+      throw new Error('Atomic health replacement is unavailable.');
+    await database.withExclusiveTransactionAsync(write);
+  } else await database.withTransactionAsync(() => write(database));
 
   return normalized;
 }
@@ -86,8 +112,8 @@ export async function getHealthSummaries(
     params.push(...query.types);
   }
   if (query.range) {
-    sql += ' AND end_at >= ? AND start_at <= ?';
-    params.push(query.range.startAt, query.range.endAt);
+    sql += ' AND start_at < ? AND (end_at > ? OR (end_at=start_at AND start_at >= ?))';
+    params.push(query.range.endAt, query.range.startAt, query.range.startAt);
   }
   sql += ' ORDER BY start_at ASC, end_at ASC, source ASC, id ASC;';
 

@@ -4,6 +4,7 @@ import {
   type HealthDataType,
   type HealthDateRange,
   type HealthSummary,
+  type HealthImportReplacement,
 } from '../domain/health';
 import { createPlatformHealthProvider as createPlatformHealthProviderImpl } from './platformHealthProvider';
 
@@ -22,6 +23,10 @@ export interface HealthPermissionResult {
 export interface HealthProvider {
   isAvailable(): Promise<boolean>;
   requestPermissions(types: readonly HealthDataType[]): Promise<HealthPermissionResult>;
+  replacementCoverage?(
+    types: readonly HealthDataType[],
+    range: HealthDateRange,
+  ): HealthImportReplacement;
   readSummaries(types: readonly HealthDataType[], range: HealthDateRange): Promise<HealthSummary[]>;
 }
 

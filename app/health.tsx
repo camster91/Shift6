@@ -413,6 +413,10 @@ function HealthTrendCard({
       <Text variant="h3" style={styles.trendTitle}>
         Context you chose to share.
       </Text>
+      <Text variant="caption" tone="muted">
+        Days use UTC. First and last days may cover only part of the selected range. Source
+        estimates are shown separately and are not reconciled totals. Missing coverage is not zero.
+      </Text>
       {loading ? (
         <Text variant="small" tone="muted" style={styles.trendCopy}>
           Loading local summaries…
@@ -424,11 +428,19 @@ function HealthTrendCard({
       ) : visibleTrends.length > 0 ? (
         <View style={styles.trendList}>
           {visibleTrends.map((trend) => (
-            <View key={`${trend.day}-${trend.type}-${trend.unit}`} style={styles.trendRow}>
+            <View
+              key={`${trend.day}-${trend.type}-${trend.unit}-${trend.sourceLabel ?? 'combined'}`}
+              style={styles.trendRow}
+            >
               <View style={styles.trendRowCopy}>
                 <Text variant="smallMedium">{healthDataTypeDetails[trend.type].label}</Text>
                 <Text variant="caption" tone="muted">
-                  {trend.day} · {trend.sampleCount} sample{trend.sampleCount === 1 ? '' : 's'}
+                  {trend.day} UTC · {trend.sourceLabel ?? `${trend.sampleCount} samples`}{' '}
+                  {trend.basis === 'source-estimate'
+                    ? '· source estimate; overlaps possible'
+                    : trend.basis === 'platform-total'
+                      ? '· selected-range total'
+                      : ''}
                 </Text>
               </View>
               <Text variant="smallMedium">{formatHealthValue(trend)}</Text>
@@ -447,7 +459,7 @@ function HealthTrendCard({
 }
 
 function formatTrendAccessibility(trend: HealthTrendPoint): string {
-  return `${healthDataTypeDetails[trend.type].label} on ${trend.day}: ${formatHealthValue(trend)}`;
+  return `${healthDataTypeDetails[trend.type].label} on ${trend.day}: ${formatHealthValue(trend)}. ${trend.sourceLabel ?? ''} ${trend.basis === 'source-estimate' ? 'Source estimate; overlaps possible' : trend.basis === 'platform-total' ? 'Platform source-priority total for selected range' : ''}`;
 }
 
 function formatHealthValue(trend: HealthTrendPoint): string {

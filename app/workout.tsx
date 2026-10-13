@@ -180,8 +180,9 @@ export default function ActiveWorkoutScreen() {
     key: string | null;
     database: typeof database;
     inputRevision: number;
+    focusGeneration: number;
     focused: boolean;
-  }>({ key: null, database, inputRevision: 0, focused: false });
+  }>({ key: null, database, inputRevision: 0, focusGeneration: 0, focused: false });
   const workoutIsFocused = useRef(false);
   const workoutFocusGeneration = useRef(0);
   const setWrite = useRef<object | null>(null);
@@ -728,6 +729,7 @@ export default function ActiveWorkoutScreen() {
     key: voiceBinding ? voiceBindingKey(voiceBinding) : null,
     database,
     inputRevision: voiceInputRevision.current,
+    focusGeneration: workoutFocusGeneration.current,
     focused: voiceFocused && canMutate && !voiceBusy,
   };
   const applyVoiceValues = (reviewed: Partial<SetInputValues>, expectedKey: string): boolean => {
@@ -741,6 +743,7 @@ export default function ActiveWorkoutScreen() {
       voiceContext.current.database !== database ||
       voiceContext.current.key !== expectedKey ||
       voiceContext.current.inputRevision !== voiceInputRevision.current ||
+      voiceContext.current.focusGeneration !== workoutFocusGeneration.current ||
       voiceBindingKey(voiceBinding) !== expectedKey ||
       !reviewedVoiceValuesAreValid(reviewed, voiceBinding) ||
       (completedSetKeys.has(focus.key) && editingSetKey !== focus.key)

@@ -536,3 +536,21 @@ test('an old voice review cannot overwrite a newer typed input before its next r
   expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('55');
   expect(mockSaveSet).not.toHaveBeenCalled();
 });
+
+test('same-event blur and focus return cannot revive a retained voice apply callback', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 load')).toBeTruthy());
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 load'), '55');
+  await fireEvent.press(screen.getByLabelText('Use optional voice set entry'));
+  await fireEvent.press(screen.getByLabelText('Speak a set entry'));
+  const staleApply = screen
+    .getByLabelText('Use reviewed values in unsaved set')
+    .props.onStartShouldSetResponder.testOnly_pressabilityConfig().onPress;
+  await act(async () => {
+    mockFocusLeave?.();
+    mockFocusLeave = mockFocusEnter?.() ?? null;
+    staleApply();
+  });
+  expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('55');
+  expect(mockSaveSet).not.toHaveBeenCalled();
+});

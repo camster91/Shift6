@@ -1,0 +1,13 @@
+**
+!src/
+!src/services/
+!src/services/contracts.ts
+!src/services/apiProtocol.ts
+!src/services/coachSafety.ts
+!src/services/coach.ts
+!server/
+!server/gemini/
+!server/gemini/build.mjs
+!server/gemini/adapter.mjs
+!server/gemini/server.mjs
+!server/gemini/package.json

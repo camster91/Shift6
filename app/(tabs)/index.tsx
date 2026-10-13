@@ -212,6 +212,11 @@ export default function HomeScreen() {
           actionLabel="Explore programs"
           onAction={() => router.push('/programs')}
         />
+        <Button
+          label="Open saved cycle"
+          variant="secondary"
+          onPress={() => router.push('/cycle')}
+        />
       </Screen>
     );
   }

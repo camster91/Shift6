@@ -1,7 +1,14 @@
+import {
+  getCycleLifecycleEvents,
+  appendCycleLifecycleEvent,
+} from '../src/db/cycleLifecycleRepository';
+import { lifecycleDate, summarizeLifecycle } from '../src/domain/cycleLifecycle';
+import type { CycleLifecycleEvent } from '../src/domain/localPersistence';
+import { useNotificationRuntime } from '../src/services/NotificationRuntimeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import {
   Button,
@@ -26,7 +33,7 @@ import {
   getWorkoutScheduleOverrides,
   getWorkoutScheduleSessions,
 } from '../src/db/calendarRepository';
-import { getActiveTrainingCycle } from '../src/db/cycleRepository';
+import { getActiveTrainingCycle, getLatestTrainingCycle } from '../src/db/cycleRepository';
 import { getUserProgramVersion } from '../src/db/programRepository';
 import { getCompletedWorkoutIds } from '../src/db/progressRepository';
 import { colors, spacing } from '../src/design/tokens';
@@ -35,6 +42,15 @@ import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 export default function CycleDashboardScreen() {
   const database = useLocalDatabase();
   const userId = useCurrentUserId();
+  const { refreshNow } = useNotificationRuntime();
+  const [events, setEvents] = useState<CycleLifecycleEvent[]>([]);
+  const [reviewDate, setReviewDate] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+  const context = useRef({ database, userId });
+  context.current = { database, userId };
+  const focusGeneration = useRef(0);
   const [cycle, setCycle] = useState<TrainingCycle | null>(null);
   const [program, setProgram] = useState<Program | null>(null);
   const [version, setVersion] = useState<ProgramVersion | null>(null);
@@ -55,7 +71,10 @@ export default function CycleDashboardScreen() {
         return undefined;
       }
 
+      const generation = ++focusGeneration.current;
       let active = true;
+      setBusy(false);
+      setEvents([]);
       setLoading(true);
       setError(null);
       setCycle(null);
@@ -63,7 +82,8 @@ export default function CycleDashboardScreen() {
       setVersion(null);
       setLoadedFor(null);
       void getActiveTrainingCycle(database, userId)
-        .then(async (activeCycle) => {
+        .then(async (selected) => {
+          const activeCycle = selected ?? (await getLatestTrainingCycle(database, userId));
           if (!active || !activeCycle) return;
           const snapshot = await getUserProgramVersion(
             database,
@@ -71,12 +91,15 @@ export default function CycleDashboardScreen() {
             activeCycle.programVersionId,
           );
           if (!snapshot) return;
-          const [completedIds, scheduleOverrides, scheduleSessions] = await Promise.all([
+          const [completedIds, scheduleOverrides, scheduleSessions, journal] = await Promise.all([
             getCompletedWorkoutIds(database, activeCycle.id, activeCycle.currentWeek),
             getWorkoutScheduleOverrides(database, userId, activeCycle.id),
             getWorkoutScheduleSessions(database, activeCycle.id),
+            getCycleLifecycleEvents(database, userId, activeCycle.id),
           ]);
           if (!active) return;
+          setEvents(journal);
+          setReviewDate(summarizeLifecycle(journal).reviewDate ?? '');
           setCycle(activeCycle);
           setCompletedWorkoutIds(completedIds);
           setProgram(snapshot.program);
@@ -101,9 +124,93 @@ export default function CycleDashboardScreen() {
 
       return () => {
         active = false;
+        if (focusGeneration.current === generation) focusGeneration.current++;
       };
-    }, [database, userId]),
+    }, [database, userId, reload]),
   );
+
+  const confirmAction = (kind: CycleLifecycleEvent['kind']) => {
+    if (
+      !database ||
+      !cycle ||
+      busy ||
+      loadedFor?.userId !== userId ||
+      loadedFor.database !== database
+    )
+      return;
+    const summary = summarizeLifecycle(events);
+    const timeZone = summary.latest?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const effectiveDate =
+      kind === 'review-date' ? reviewDate : lifecycleDate(new Date().toISOString(), timeZone);
+    const generation = focusGeneration.current;
+    const operationId = `cycle-${kind}-${cycle.id}-${Date.now()}`;
+    const message =
+      kind === 'pause'
+        ? `Pause this cycle today (${effectiveDate})? Saved sets and week ${cycle.currentWeek} stay intact.`
+        : kind === 'resume'
+          ? `Resume this cycle today (${effectiveDate}) at week ${cycle.currentWeek}? Targets stay unchanged. Choose an appropriate return to training; the app does not prescribe one.`
+          : `Use ${effectiveDate} as your planned review date? This does not complete or advance any workout.`;
+    const matches = () =>
+      focusGeneration.current === generation &&
+      context.current.database === database &&
+      context.current.userId === userId;
+    let submitted = false;
+    Alert.alert(
+      kind === 'review-date'
+        ? 'Confirm review date'
+        : kind === 'pause'
+          ? 'Pause cycle?'
+          : 'Resume cycle?',
+      message,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: () => {
+            if (!matches() || submitted) return;
+            submitted = true;
+            setBusy(true);
+            setNotice(null);
+            const event: CycleLifecycleEvent = {
+              id: operationId,
+              userId,
+              cycleId: cycle.id,
+              kind,
+              effectiveDate,
+              timeZone,
+              previousEventId: summary.latest?.id ?? null,
+              operationId,
+              recordedAt: new Date().toISOString(),
+            };
+            void appendCycleLifecycleEvent(database, event)
+              .then(async () => {
+                if (!matches()) return;
+                let reminderMessage = '';
+                try {
+                  const result = await refreshNow();
+                  if (result.status === 'failed')
+                    reminderMessage = ' Reminders could not refresh; reopen reminder settings.';
+                } catch {
+                  reminderMessage = ' Reminders could not refresh; reopen reminder settings.';
+                }
+                if (!matches()) return;
+                setNotice(`Saved on this device.${reminderMessage}`);
+                setReload((value) => value + 1);
+              })
+              .catch((failure: unknown) => {
+                if (matches())
+                  setNotice(
+                    failure instanceof Error ? failure.message : 'This action could not be saved.',
+                  );
+              })
+              .finally(() => {
+                if (matches()) setBusy(false);
+              });
+          },
+        },
+      ],
+    );
+  };
 
   if (loading || (database && cycle && loadedFor?.database !== database)) {
     return (
@@ -169,7 +276,11 @@ export default function CycleDashboardScreen() {
             </Text>
             <Text variant="small" tone="muted">
               {currentWeek?.phase ?? 'In progress'} ·{' '}
-              {cycle.status === 'complete' ? 'Ready for review' : 'In progress'}
+              {cycle.status === 'complete'
+                ? 'Ready for review'
+                : cycle.status === 'paused'
+                  ? 'Paused'
+                  : 'In progress'}
             </Text>
           </View>
           <Chip label={`${completedRequired}/${requiredWorkouts.length} done`} selected />
@@ -182,6 +293,70 @@ export default function CycleDashboardScreen() {
             ? 'Week 6 is an evaluation week.'
             : `Week 6 is ${formatWeekSixMeaning(version.cycleModel.weekSixMeaning)}.`}
         </Text>
+      </Card>
+      <Card style={styles.cycleCard}>
+        <Text variant="h3">Your cycle, your timing.</Text>
+        <Text variant="small" tone="muted">
+          Pausing keeps saved results and prescribed targets. Return-to-training prescriptions need
+          qualified review; this app does not invent them.
+        </Text>
+        {cycle.status === 'paused' && !events.some((event) => event.kind === 'pause') ? (
+          <Text variant="small" tone="muted">
+            The earlier pause start is unknown. Resuming records today�s return without guessing a
+            pause duration.
+          </Text>
+        ) : null}
+        {summarizeLifecycle(events).unknownPriorPause ? (
+          <Text variant="small" tone="muted">
+            An earlier pause interval remains unknown.
+          </Text>
+        ) : null}
+        {cycle.status === 'active' || cycle.status === 'paused' ? (
+          <Button
+            label={cycle.status === 'paused' ? 'Resume cycle' : 'Pause cycle'}
+            disabled={busy}
+            onPress={() => confirmAction(cycle.status === 'paused' ? 'resume' : 'pause')}
+          />
+        ) : null}
+        <Text variant="smallMedium">Planned review date (YYYY-MM-DD)</Text>
+        <TextInput
+          accessibilityLabel="Planned review date"
+          value={reviewDate}
+          onChangeText={setReviewDate}
+          editable={!busy}
+          maxLength={10}
+          placeholder="YYYY-MM-DD"
+          style={{ padding: 12, borderWidth: 1, borderColor: colors.ink, borderRadius: 8 }}
+        />
+        <Button
+          label="Confirm review date"
+          variant="secondary"
+          disabled={busy || !reviewDate}
+          onPress={() => confirmAction('review-date')}
+        />
+        {notice ? (
+          <View>
+            <Text variant="small" accessibilityRole="alert">
+              {notice}
+            </Text>
+            <Button
+              label="Refresh cycle"
+              variant="ghost"
+              disabled={busy}
+              onPress={() => setReload((value) => value + 1)}
+            />
+          </View>
+        ) : null}
+        {summarizeLifecycle(events).ordered.map((event) => (
+          <Text variant="small" key={event.id}>
+            {event.kind === 'review-date'
+              ? 'Review planned'
+              : event.kind === 'pause'
+                ? 'Paused'
+                : 'Resumed'}
+            : {event.effectiveDate} ({event.timeZone})
+          </Text>
+        ))}
       </Card>
       <Button
         label="Open calendar"
@@ -256,6 +431,8 @@ export default function CycleDashboardScreen() {
           return workout ? (
             <Pressable
               key={entry.id}
+              disabled={cycle.status !== 'active'}
+              accessibilityState={{ disabled: cycle.status !== 'active' }}
               accessibilityRole="button"
               accessibilityLabel={`${entry.day}, ${entry.title}${completed ? ', complete' : ''}. Open workout.`}
               onPress={() =>

@@ -1,3 +1,4 @@
+import { pauseOtherCyclesInTransaction } from './cycleLifecycleRepository';
 import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
@@ -18,20 +19,16 @@ export async function saveTrainingCycle(
   database: SQLiteDatabase,
   cycle: TrainingCycle,
 ): Promise<void> {
-  await database.withTransactionAsync(async () => saveTrainingCycleInTransaction(database, cycle));
+  await database.withExclusiveTransactionAsync(async (tx) =>
+    saveTrainingCycleInTransaction(tx, cycle),
+  );
 }
 
 export async function saveTrainingCycleInTransaction(
   database: SQLiteDatabase,
   cycle: TrainingCycle,
 ): Promise<void> {
-  await database.runAsync(
-    `UPDATE training_cycles
-        SET status = 'paused'
-      WHERE user_id = ? AND status = 'active' AND id != ?;`,
-    cycle.userId,
-    cycle.id,
-  );
+  await pauseOtherCyclesInTransaction(database, cycle.userId, cycle.id);
   await database.runAsync(
     `INSERT INTO training_cycles
       (id, user_id, program_version_id, status, current_week, started_at, weeks_json)

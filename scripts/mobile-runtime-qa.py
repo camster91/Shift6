@@ -87,7 +87,8 @@ def find(label, scroll=True, last=False, editable=False):
             return element_id(found[-1] if last else found[0])
         if not scroll:
             break
-        swipe('up')
+        above = any(float(n.get('y', '0')) < 80 for n in nodes)
+        swipe('down' if above else 'up')
     raise RuntimeError(f'No visible native control: {label}')
 
 
@@ -133,20 +134,41 @@ def journey():
     expect('SETUP', timeout=45)
     snapshot('setup-goal')
     click('General health. Build a balanced, sustainable routine.')
+    snapshot('goal-after-accessibility-tap')
+    enabled = command('GET', f'/element/{find("Continue", scroll=False)}/attribute/enabled')
+    if str(enabled).lower() != 'true':
+        tree = source()
+        matching = [n for n in ET.fromstring(tree).iter() if n.get('name') == 'General health. Build a balanced, sustainable routine.' and n.get('visible') == 'true']
+        if len(matching) != 1:
+            raise AssertionError('Expected one visible goal card for coordinate verification')
+        node = matching[0]
+        x = float(node.get('x')) + float(node.get('width')) / 2
+        y = float(node.get('y')) + float(node.get('height')) / 2
+        command('POST', '/execute/sync', {'script': 'mobile: tap', 'args': [{'x': x, 'y': y}]})
+        time.sleep(1)
+        snapshot('goal-after-coordinate-tap')
+        enabled = command('GET', f'/element/{find("Continue", scroll=False)}/attribute/enabled')
+        if str(enabled).lower() != 'true':
+            raise AssertionError('Goal selection did not enable Continue after accessibility and coordinate taps')
     click('Continue')
+    expect('SETUP · 2 OF 6')
     snapshot('setup-experience')
     click('Beginner. I am new to structured training.')
     click('Continue')
+    expect('SETUP · 3 OF 6')
     snapshot('setup-equipment')
     click('Bodyweight. no equipment')
     click('Continue')
+    expect('SETUP · 4 OF 6')
     snapshot('setup-rhythm')
     click('2 days')
     click('30 min')
     click('Continue')
+    expect('SETUP · 5 OF 6')
     snapshot('setup-units')
     click('Imperial. Pounds, miles, and feet.')
     click('Continue')
+    expect('SETUP · 6 OF 6')
     snapshot('setup-review')
     restart()
     expect('SETUP')
@@ -296,6 +318,17 @@ except Exception as error:
             RESULT['captureError'] = str(capture_error)
     raise
 finally:
+    try:
+        subprocess.run(['xcrun', 'simctl', 'spawn', device['udid'], 'log', 'show', '--last', '5m', '--predicate', 'process == "SHIFT6"', '--style', 'compact'], stdout=(OUT / 'app-runtime.log').open('w'), stderr=subprocess.DEVNULL, timeout=30)
+        container = subprocess.check_output(['xcrun', 'simctl', 'get_app_container', device['udid'], 'com.shift6.app', 'data'], timeout=30).decode().strip()
+        import sqlite3
+        for db_path in Path(container).rglob('shift6.db'):
+            with sqlite3.connect(f'file:{db_path}?mode=ro', uri=True) as db:
+                db.row_factory = sqlite3.Row
+                tables = [r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%onboarding%'")]
+                RESULT['syntheticOnboardingRows'] = {t: [dict(r) for r in db.execute('SELECT * FROM "' + t.replace('"', '""') + '" LIMIT 10')] for t in tables}
+    except Exception as diagnostic_error:
+        RESULT['diagnosticError'] = str(diagnostic_error)
     RESULT['finishedAt'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     (OUT / 'results.json').write_text(json.dumps(RESULT, indent=2) + '\n')
     if SESSION:

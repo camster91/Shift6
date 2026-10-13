@@ -162,11 +162,15 @@ export default function ActiveWorkoutScreen() {
   const feedbackWrite = useRef<Promise<void> | null>(null);
   const feedbackGeneration = useRef(0);
   const workoutIsFocused = useRef(false);
+  const workoutFocusGeneration = useRef(0);
+  const setWrite = useRef<object | null>(null);
   useFocusEffect(
     useCallback(() => {
       workoutIsFocused.current = true;
+      workoutFocusGeneration.current++;
       return () => {
         workoutIsFocused.current = false;
+        workoutFocusGeneration.current++;
         feedbackGeneration.current++;
       };
     }, []),
@@ -244,6 +248,8 @@ export default function ActiveWorkoutScreen() {
     feedbackGeneration.current++;
     feedbackWrite.current = null;
     setDifficultySaving(false);
+    setWrite.current = null;
+    setSavingSetKey(null);
     savedActuals.current.clear();
     setCompletedSetKeys(new Set());
     setEditingSetKey(null);
@@ -284,14 +290,18 @@ export default function ActiveWorkoutScreen() {
     workoutId: activeWorkout.id,
     cycleWeek: activeCycle.currentWeek,
   };
-  const draftContextGuard = () =>
-    workoutIsFocused.current &&
-    feedbackContext.current.database === database &&
-    feedbackContext.current.userId === userId &&
-    feedbackContext.current.sessionId === session.id &&
-    feedbackContext.current.versionId === activeProgramVersion.id &&
-    feedbackContext.current.workoutId === activeWorkout.id &&
-    feedbackContext.current.cycleWeek === activeCycle.currentWeek;
+  const captureDraftContextGuard = () => {
+    const generation = workoutFocusGeneration.current;
+    return () =>
+      generation === workoutFocusGeneration.current &&
+      workoutIsFocused.current &&
+      feedbackContext.current.database === database &&
+      feedbackContext.current.userId === userId &&
+      feedbackContext.current.sessionId === session.id &&
+      feedbackContext.current.versionId === activeProgramVersion.id &&
+      feedbackContext.current.workoutId === activeWorkout.id &&
+      feedbackContext.current.cycleWeek === activeCycle.currentWeek;
+  };
   const canMutate =
     previewEnabled ||
     (routeReady &&
@@ -527,6 +537,7 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     if (!database || !canMutate) return;
 
+    const draftGuard = captureDraftContextGuard();
     const timeout = setTimeout(() => {
       void saveWorkoutDraft(
         database,
@@ -534,7 +545,7 @@ export default function ActiveWorkoutScreen() {
         values,
         new Date().toISOString(),
         userId,
-        draftContextGuard,
+        draftGuard,
       ).catch(() => {
         setError('We could not save the unfinished workout locally.');
       });
@@ -559,6 +570,7 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     if (!database || !canMutate) return;
 
+    const draftGuard = captureDraftContextGuard();
     const flushDraft = () => {
       void saveWorkoutDraft(
         database,
@@ -566,7 +578,7 @@ export default function ActiveWorkoutScreen() {
         values,
         new Date().toISOString(),
         userId,
-        draftContextGuard,
+        draftGuard,
       ).catch(() => {
         setError('We could not save the unfinished workout locally.');
       });
@@ -626,6 +638,7 @@ export default function ActiveWorkoutScreen() {
   const previousResult = focus ? previousComparableSet(focus, previousSets) : undefined;
 
   const updateValue = (key: string, field: keyof SetInputValues, value: string) => {
+    if (setWrite.current || !workoutIsFocused.current) return;
     setValues((current) => ({
       ...current,
       [key]: { ...(current[key] ?? emptySetInput()), [field]: value },
@@ -634,7 +647,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const chooseActualLoadUnit = (key: string, unit: LoadUnit) => {
-    if (!canMutate) return;
+    if (setWrite.current || !canMutate) return;
     const current = values[key];
     if (!current) return;
     const prior = actualLoadUnit(current.loadUnit);
@@ -643,6 +656,7 @@ export default function ActiveWorkoutScreen() {
     const generation = feedbackGeneration.current;
     const apply = () => {
       if (
+        setWrite.current ||
         !canMutate ||
         !workoutIsFocused.current ||
         feedbackGeneration.current !== generation ||
@@ -685,7 +699,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleCompleteSet = async (workoutExercise: WorkoutExercise, setNumber: number) => {
-    if (!canMutate || feedbackWrite.current) return;
+    if (setWrite.current || !canMutate || feedbackWrite.current) return;
     const key = setKey(workoutExercise.id, setNumber);
     const alreadyCompleted = completedSetKeys.has(key);
     const editing = editingSetKey === key;
@@ -753,13 +767,16 @@ export default function ActiveWorkoutScreen() {
       return;
     }
     const generation = feedbackGeneration.current;
+    const draftGuard = captureDraftContextGuard();
     const isCurrent = () =>
       workoutIsFocused.current &&
       feedbackGeneration.current === generation &&
       feedbackContext.current.database === database &&
       feedbackContext.current.userId === userId &&
       feedbackContext.current.sessionId === session.id &&
-      draftContextGuard();
+      draftGuard();
+    const write = {};
+    setWrite.current = write;
     setSavingSetKey(key);
     setError(null);
     try {
@@ -799,12 +816,15 @@ export default function ActiveWorkoutScreen() {
         saveError instanceof Error ? saveError.message : 'We could not save this set locally.',
       );
     } finally {
-      setSavingSetKey(null);
+      if (setWrite.current === write) {
+        setWrite.current = null;
+        setSavingSetKey(null);
+      }
     }
   };
 
   const handleDifficulty = (choice: SetDifficulty) => {
-    if (!canMutate || !lastSavedSet || feedbackWrite.current) return;
+    if (setWrite.current || !canMutate || !lastSavedSet || feedbackWrite.current) return;
     const generation = feedbackGeneration.current;
     const context = feedbackContext.current;
     setDifficultySaving(true);
@@ -846,7 +866,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleDiscomfortStop = () => {
-    if (!canMutate || finishing || partialFinishing || allSetsComplete) return;
+    if (setWrite.current || !canMutate || finishing || partialFinishing || allSetsComplete) return;
     Alert.alert(
       'Stop this session for discomfort?',
       'Save only your already completed sets, or record an untouched session as skipped. This does not advance your training week or prescribe work through discomfort.',
@@ -862,7 +882,8 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handlePauseWorkout = async () => {
-    if (!canMutate) return;
+    if (setWrite.current || !canMutate) return;
+    const draftGuard = captureDraftContextGuard();
     if (database) {
       try {
         await feedbackWrite.current;
@@ -873,7 +894,7 @@ export default function ActiveWorkoutScreen() {
           values,
           new Date().toISOString(),
           userId,
-          draftContextGuard,
+          draftGuard,
         );
         void flushNow();
       } catch {
@@ -886,7 +907,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleReadinessChange = async (nextReadiness: WorkoutReadiness) => {
-    if (!canMutate) return;
+    if (setWrite.current || !canMutate) return;
     if (readinessSaving || readiness === nextReadiness) return;
 
     const previousReadiness = readiness;
@@ -920,7 +941,7 @@ export default function ActiveWorkoutScreen() {
     revise: (version: ProgramVersion) => ProgramVersion,
     fallbackMessage: string,
   ): Promise<boolean> => {
-    if (!canMutate || revisionSaving) return false;
+    if (setWrite.current || !canMutate || revisionSaving) return false;
 
     setRevisionSaving(true);
     setError(null);
@@ -1042,7 +1063,8 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleFinishWorkout = async () => {
-    if (!canMutate || !allSetsComplete || editingSetKey !== null || finishing) return;
+    if (setWrite.current || !canMutate || !allSetsComplete || editingSetKey !== null || finishing)
+      return;
 
     setFinishing(true);
     setError(null);
@@ -1097,7 +1119,7 @@ export default function ActiveWorkoutScreen() {
     status: Extract<WorkoutSession['status'], 'partial' | 'skipped'>,
     reason: PartialWorkoutReason,
   ) => {
-    if (!canMutate) return;
+    if (setWrite.current || !canMutate) return;
     const canFinish =
       status === 'partial' ? completedCount > 0 && !allSetsComplete : completedCount === 0;
     if (!canFinish || finishing || partialFinishing) return;
@@ -1526,7 +1548,7 @@ export default function ActiveWorkoutScreen() {
                                   key={unit}
                                   label={unit}
                                   variant="ghost"
-                                  disabled={completed && !editing}
+                                  disabled={savingSetKey !== null || (completed && !editing)}
                                   onPress={() => chooseActualLoadUnit(key, unit)}
                                   accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} actual load unit ${unit}`}
                                 />
@@ -1539,7 +1561,7 @@ export default function ActiveWorkoutScreen() {
                                   ? `Enter actual load in ${values[key]?.loadUnit === 'lb' ? 'pounds' : 'kilograms'}`
                                   : 'The saved unit is unknown. Confirm kg or lb before saving.'
                               }
-                              editable={!completed || editing}
+                              editable={savingSetKey === null && (!completed || editing)}
                               keyboardType="decimal-pad"
                               onChangeText={(value) => updateValue(key, 'load', value)}
                               placeholder={actualLoadUnit(values[key]?.loadUnit) ?? 'Unit unknown'}
@@ -1556,7 +1578,7 @@ export default function ActiveWorkoutScreen() {
                         ) ? (
                           <TextInput
                             accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} reps`}
-                            editable={!completed || editing}
+                            editable={savingSetKey === null && (!completed || editing)}
                             keyboardType="number-pad"
                             onChangeText={(value) => updateValue(key, 'reps', value)}
                             placeholder="Reps"
@@ -1572,7 +1594,7 @@ export default function ActiveWorkoutScreen() {
                         ) ? (
                           <TextInput
                             accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} duration in seconds`}
-                            editable={!completed || editing}
+                            editable={savingSetKey === null && (!completed || editing)}
                             keyboardType="number-pad"
                             onChangeText={(value) => updateValue(key, 'duration', value)}
                             placeholder="Seconds"
@@ -1588,7 +1610,7 @@ export default function ActiveWorkoutScreen() {
                         ) ? (
                           <TextInput
                             accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} distance in meters`}
-                            editable={!completed || editing}
+                            editable={savingSetKey === null && (!completed || editing)}
                             keyboardType="decimal-pad"
                             onChangeText={(value) => updateValue(key, 'distance', value)}
                             placeholder="Meters"
@@ -1600,7 +1622,7 @@ export default function ActiveWorkoutScreen() {
                         {showEffortDetails || values[key]?.rpe ? (
                           <TextInput
                             accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
-                            editable={!completed || editing}
+                            editable={savingSetKey === null && (!completed || editing)}
                             keyboardType="decimal-pad"
                             onChangeText={(value) => updateValue(key, 'rpe', value)}
                             placeholder="RPE"
@@ -1612,7 +1634,7 @@ export default function ActiveWorkoutScreen() {
                         {showEffortDetails || values[key]?.rir ? (
                           <TextInput
                             accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
-                            editable={!completed || editing}
+                            editable={savingSetKey === null && (!completed || editing)}
                             keyboardType="number-pad"
                             onChangeText={(value) => updateValue(key, 'rir', value)}
                             placeholder="RIR"
@@ -1626,10 +1648,13 @@ export default function ActiveWorkoutScreen() {
                             label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
                             accessibilityLabel={`${completed ? (editing ? 'Save' : 'Edit') : 'Complete'} ${exerciseName} set ${workoutSet.setNumber}`}
                             variant={completed && !editing ? 'secondary' : 'primary'}
+                            disabled={savingSetKey !== null}
                             loading={savingSetKey === key}
                             onPress={
                               completed && !editing
-                                ? () => setEditingSetKey(key)
+                                ? () => {
+                                    if (!setWrite.current) setEditingSetKey(key);
+                                  }
                                 : () => handleCompleteSet(workoutExercise, workoutSet.setNumber)
                             }
                             style={styles.completeButton}

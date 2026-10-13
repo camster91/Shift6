@@ -370,6 +370,16 @@ test('restore validates recorded local midnight across DST, not UTC date', () =>
   event.effective_date = '2026-10-14';
   expect(() => validateLocalBackup(serialized(data))).toThrow('recorded local date');
 });
+test('restore preserves anchored local dates through the autumn DST transition', () => {
+  const data = fixture13();
+  data.cycleLifecycleEvents![0]!.effective_date = '2026-10-31';
+  data.cycleLifecycleEvents![0]!.recorded_at = '2026-11-01T03:30:00.000Z';
+  data.cycleLifecycleEvents![1]!.effective_date = '2026-11-01';
+  data.cycleLifecycleEvents![1]!.recorded_at = '2026-11-01T07:30:00.000Z';
+  expect(() => validateLocalBackup(serialized(data))).not.toThrow();
+  data.cycleLifecycleEvents![0]!.effective_date = '2026-11-01';
+  expect(() => validateLocalBackup(serialized(data))).toThrow('recorded local date');
+});
 
 test('late schema13 insertion failure rolls back legacy and new rows', async () => {
   failAt = 'INSERT INTO set_feedback_events';

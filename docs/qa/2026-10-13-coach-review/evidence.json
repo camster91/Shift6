@@ -48,6 +48,16 @@
       "sha256": "7d40918952ba62ef3ac4f4316af0a0cb0b11c1682a575344ff783b7e38fc6d7a"
     },
     {
+      "file": "review-current-ui-after-restore-4ff0.png",
+      "bytes": 244380,
+      "sha256": "25f74839eafc7df3e022d704ead36efbe1426706459b5ba9124878d7acb6eaf1"
+    },
+    {
+      "file": "review-current-ui-after-restore-4ff0.xml",
+      "bytes": 18602,
+      "sha256": "d7e93f68b131050bf221f37041235fb93343aae3f2450627131163c522a08b41"
+    },
+    {
       "file": "review-delete-confirmation-4ff0.png",
       "bytes": 210390,
       "sha256": "c0b7ffb6fec87706ee58606572d69e9b9c275876154316ea9a2df958c313c37a"
@@ -318,6 +328,36 @@
       "sha256": "fde92a279b6e1edf94544b9078ce293c7fa0f0d4bd76d63d45a412f50cd3d0c6"
     },
     {
+      "file": "review-invalid-range-refused-4ff0.png",
+      "bytes": 263646,
+      "sha256": "aa9eda5ac1ff97b6d47abcf88c878ad64c50b919471561012c01cff0d08b0081"
+    },
+    {
+      "file": "review-invalid-range-refused-4ff0.xml",
+      "bytes": 12559,
+      "sha256": "730f7ebedc348b887739f479d5556cbd6cd71534672146c4d565c013340d4211"
+    },
+    {
+      "file": "review-invalid-zone-corrected-4ff0.png",
+      "bytes": 245250,
+      "sha256": "4f9943029e5311b4c9c5ed965b34af5087f15c999c31bab3dcfe48a4712e9a39"
+    },
+    {
+      "file": "review-invalid-zone-corrected-4ff0.xml",
+      "bytes": 12243,
+      "sha256": "81448d145cae29c0fb333e349243ad0a0ad0258c0b84c5946bf0138f74d4233b"
+    },
+    {
+      "file": "review-invalid-zone-refused-4ff0.png",
+      "bytes": 267968,
+      "sha256": "0d37a207f60afac0b287486c8b9138c770ece731f88fa0df12b7159808d4d320"
+    },
+    {
+      "file": "review-invalid-zone-refused-4ff0.xml",
+      "bytes": 11754,
+      "sha256": "793e0ebe657a245c6a567e1fbfddc03c98b044ce0412cbf09164cd3139c22d06"
+    },
+    {
       "file": "review-one-day-counts-4ff0.png",
       "bytes": 245199,
       "sha256": "7385862912c1b740ac562796413c6c6a5b6bf54f23bc41362de88bb897108f04"
@@ -554,8 +594,8 @@
     },
     {
       "file": "qa.py",
-      "bytes": 3614,
-      "sha256": "9e9d003775f675992a82532646abbf133b5ccf08cccd5b07ff706b126c74f856"
+      "bytes": 3615,
+      "sha256": "53c523a4fa96764034f587f180cc00ec630536f80fe1d885941c1bb3e47527a9"
     },
     {
       "file": "verify-export-feedback-integrated.log",

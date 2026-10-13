@@ -2,7 +2,7 @@
 
 13 October 2026. This is the current delivery index for the expanded iOS/Android goal. It supersedes the delivery order in doc 37, while preserving that document's dated audit and evidence. It does not approve content, alter the shipping guest configuration or authorize a release.
 
-Native QA subsequently filed #352–#357 for invalid optional measurements, misleading imported units, compressed set targets, custom movement labels, correction timestamps stale Progress records after completion and outdated restore labels. The refreshed backlog is **48 open issues**; the original 41-issue reconciliation remains a dated snapshot. All seven new defects are mapped below rather than excluded from the shipping TODO.
+Native QA filed #352–#359 for invalid optional measurements, misleading imported units, compressed targets, custom movement labels, correction timestamps, stale Progress, outdated restore labels and raw time-zone errors. The refreshed backlog is **49 open issues**; the original 41-issue reconciliation remains a dated snapshot. All eight new defects are mapped below.
 
 ## Goal and product promise
 
@@ -70,12 +70,13 @@ Follow-up issue mapping:
 | #354  | Native loaded-set review compressed the target into a narrow column. `61e03f8e` wraps controls below a full-width set header; full verify 874/129 passes. Native normal and 200% text screenshots show readable targets and visible Edit controls. Physical-device and assistive-technology acceptance remain pending. | T03, T09 |
 | #355  | Native `2fe82a20` shows owned QA KG/LB names with unchanged 45kg/95lb targets after reload. Separate tab freshness failure is #357. Physical/iOS acceptance pending.                                                                                                                                                   | T03, T09 |
 | #356  | Native `2fe82a20` correction retains occurrence time and separately records edit time; same ID and other actuals/versions unchanged in external JSON. Full 877/130 passes; older incorrect timestamps are not backdated. Physical/iOS acceptance pending.                                                              | T03, T08 |
-| #357  | Native `2fe82a20` retains pre-completion Progress totals on tab return; reload restores records. `84632358` focus refresh and stale-read guards pass focused tests/source review; changed-binary readback pending.                                                                                                     | T03, T09 |
+| #357  | Native `7a811baa` shows zero sets, one saved set on return, then one complete workout/two sets without restarting. Focus refresh and stale-read guards pass regression/source review; external saved records match. Physical/iOS acceptance remains pending. | T03, T09 |
 | #358  | Native `eb6cd6d2` restore labels incorrectly say schema 12 for a schema 15 backup. `05d4cf32` uses supported-backup guidance and actual record count; native 7a811baa preview correctly shows 1,064 records and restores/re-exports all record sections exactly.                                                       | T03, T09 |
+| #359  | Native `4ff0edd1` displays a Hermes/Java exception stack for an invalid review time zone. Replace it with concise guidance and prove correction/recovery without stored mutations; source fix and changed-binary acceptance are pending. | T05, T09 |
 
 ## Ordered TODO and acceptance receipts
 
-Follow-up #357 belongs to T03/T09: mounted Progress retains pre-completion records when returning from a finished workout. Native `2fe82a20` reproduces it; a focus refresh fix and changed-binary record readback are pending. Reload restores the actual totals; no data loss is inferred.
+Follow-up #357 belongs to T03/T09: the earlier mounted Progress failure is reproduced on `2fe82a20` and fixed/observed on `7a811baa` (doc 45). Physical/iOS acceptance remains pending; no data loss was inferred from the stale view.
 
 T04 confirmed scheduling source is integrated at `eb6cd6d2`: frozen dates/timezones, atomic baseline plus first move, append-only revisions, shared readers and guarded Start receipts. Full verification passes **942 tests/133 suites** and both mobile exports. Doc45 observes native Cancel/Confirm, recovery, zero-record deletion and exact 1,054-record restore/re-export. Remaining Start/timezone/grid/reminder acceptance is pending. This does not complete repeat-week, first-class Shift handover or qualified return prescriptions.
 

@@ -126,6 +126,23 @@ The inspected goal screenshot is legible. Native ergonomics follow-ups are
 locale-aware measurement dates (currently UTC ISO text) and promoting the review
 from its buried Coach chip. Participant comprehension is not established.
 
+## Invalid-input native finding
+
+On the same frozen binary, entering start date `2026-10-01` with end date
+`2026-10-13` and selecting Review these dates correctly rejects the over-seven-day
+window. Old current evidence and confirmation are withheld; saved history stays
+available (`review-invalid-range-refused-4ff0`). This is an observed pass.
+
+With a valid date range, entering `Invalid/Zone` and selecting Review these dates
+instead renders `com.facebook.hermes.intl.JSRangeErrorException` and a long native
+stack (`review-invalid-zone-refused-4ff0`). Expected: concise valid-zone guidance
+and a recoverable field. Actual: implementation detail overwhelms the screen.
+This is a reproducible app defect, filed as [#359](https://github.com/camster91/Shift6/issues/359).
+Source fix and changed-binary acceptance are pending; it is not counted as a pass.
+The harness checked the entered text/focus and a fresh UI dump. Its scroll path
+was moved into the observed content margin to avoid swiping inside form inputs;
+earlier failed selectors remain harness failures rather than assumed app defects.
+
 Samsung S25 Ultra, current native iOS, TalkBack/VoiceOver, signed store builds,
 qualified public fitness review and actual participant acceptance remain pending.
 The public catalogue stays gated. Guest-only storage requires no backend.

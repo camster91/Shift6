@@ -58,7 +58,7 @@ if __name__=="__main__":
  elif a[0]=="fill":fill(a[1],a[2],len(a)<4)
  elif a[0]=="capture":capture(a[1])
  elif a[0]=="scroll":
-  dimensions=adb("shell","wm","size").decode();w,h=map(int,re.findall(r"(\d+)x(\d+)",dimensions)[-1]);x=str(w//8)
+  dimensions=adb("shell","wm","size").decode();w,h=map(int,re.findall(r"(\d+)x(\d+)",dimensions)[-1]);x=str(w//32)
   start,end=(str(h*3//4),str(h//4)) if a[1]=="down" else (str(h//4),str(h*3//4))
   nodes();adb("shell","input","swipe",x,start,x,end,"400");show(nodes())
  else:show(nodes())

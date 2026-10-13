@@ -46,13 +46,25 @@ characters; they remain private text and require exact disclosure/consent before
 any future transmission. The current mobile transport omits other private fields,
 but a future opt-in must preview the actual outgoing packet per request.
 
-Output requires completed, bounded structured JSON with exactly message kind,
-text and `factsUsed`. Unknown actions/fields, tool calls, duplicate facts,
-invented fact references, truncation and blocked output are rejected. Facts must
-name supplied structured fact keys; those keys are **not verified local record
-citations**. This binding does not prove that every sentence is factually correct
-or medically safe. Existing deterministic safety classification also runs on
-response text. Real-provider factual/safety evaluation remains a release gate.
+Model output requires completed, bounded structured JSON containing **only a
+task-appropriate template code**. Gemini chooses emphasis, such as workout summary
+or readiness context; it cannot supply final prose, numbers, actions or evidence
+identifiers. Unknown/extra fields, tool calls, truncation and blocked output reject
+the whole result. Server templates generate final text and `factsUsed` directly
+from the required supplied fields. Incomplete task evidence returns unavailable
+before a model call. All final numbers come from the selected source fields;
+model-generated claims such as "I updated your plan" or invented session counts
+are rejected even beside an otherwise valid template code. Private workout titles
+are explicitly quoted as device-supplied titles, not treated as instructions.
+
+Supplied keys are **not verified local record citations**: the service cannot prove
+the device packet's truth or individual-record provenance. Existing deterministic
+safety classification also runs on the source-bound final text. Real-provider
+safety, schema compatibility and useful-emphasis evaluation remain activation
+gates. This design deliberately limits model value: it offers no generative
+conversation or novel coaching advice, and the existing local explainer may be
+equally useful without any cost. Measure that benefit before activation; schema
+validation alone is not evidence of useful AI coaching.
 
 Upstream requests have a 10-second timeout, no automatic retries, 768 output
 tokens and a 32 KiB response limit. Default service limits are 3 requests per
@@ -82,8 +94,9 @@ service on port 8080. `GET /healthz` reports that state without a model request.
 The tests use synthetic tokens and mocked fetch exclusively, with localhost HTTP
 for service boundaries. Do not put a real key/token into test fixtures.
 
-All **16 Node tests passed** on CAM-DESKTOP, Node 22.23.2. Checks cover strict
-context, supplied-key evidence binding, arbitrary action rejection, shared safety
+All **19 Node tests passed** on CAM-DESKTOP, Node 22.23.2. Checks cover strict
+context, server-derived evidence, invented numerical/execution claim rejection,
+task-specific template availability, arbitrary action rejection, shared safety
 routing, blocked/truncated/oversized output, missing/unavailable workout evidence,
 mocked missed-week/limited-readiness context, changed equipment rejection,
 timeouts, generic failures, pairing/expiry/protocol, size limits, concurrency and

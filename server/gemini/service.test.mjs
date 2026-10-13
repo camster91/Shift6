@@ -8,15 +8,21 @@ const packet = () => ({
   context: {
     user: { unitSystem: 'imperial', goals: ['consistent-training'], experience: 'beginner' },
     cycle: { currentWeek: 1, status: 'active' },
-    structuredFacts: { workoutTitle: 'My private hold', currentWeek: 1, readiness: 'ready' },
+    structuredFacts: {
+      workoutTitle: 'My private hold',
+      workoutFocus: 'mobility',
+      estimatedDurationMinutes: 20,
+      currentWeek: 1,
+      readiness: 'ready',
+    },
   },
 });
 const answer = () => ({
   kind: 'message',
-  text: 'Your saved workout is My private hold in week 1.',
-  factsUsed: ['workoutTitle', 'currentWeek'],
+  text: 'The device-supplied workout title is "My private hold". Its saved focus is mobility, with 20 minutes planned. These are supplied plan fields, not measured results. This explanation did not change any training records.',
+  factsUsed: ['workoutTitle', 'workoutFocus', 'estimatedDurationMinutes'],
 });
-const envelope = (value = answer(), reason = 'STOP') =>
+const envelope = (value = { template: 'workout-summary' }, reason = 'STOP') =>
   new Response(
     JSON.stringify({
       candidates: [{ finishReason: reason, content: { parts: [{ text: JSON.stringify(value) }] } }],
@@ -86,10 +92,10 @@ test('model fetch is fixed-host and structured; key is a header and no actions/t
   assert.ok(captured.options.signal instanceof AbortSignal);
   const body = JSON.parse(captured.options.body);
   assert.equal(body.generationConfig.responseFormat.text.mimeType, 'application/json');
-  assert.deepEqual(
-    body.generationConfig.responseFormat.text.schema.properties.factsUsed.items.enum,
-    Object.keys(packet().context.structuredFacts),
-  );
+  assert.deepEqual(body.generationConfig.responseFormat.text.schema.properties.template.enum, [
+    'workout-summary',
+    'readiness-context',
+  ]);
   assert.equal(body.tools, undefined);
   assert.equal(body.contents[0].parts[0].text, JSON.stringify(packet()));
   assert.ok(!captured.options.body.includes('synthetic-server-key'));
@@ -109,10 +115,16 @@ test('invented fact IDs, duplicate evidence, arbitrary changes and empty respons
     );
 });
 
-test('existing deterministic safety classifier routes dangerous generated advice', async () => {
-  const result = await provider(async () =>
-    envelope({ ...answer(), text: 'Keep training through chest pain.' }),
-  )(packet());
+test('raw generated advice is rejected and source-bound text still uses deterministic safety routing', async () => {
+  await assert.rejects(
+    provider(async () => envelope({ ...answer(), text: 'Keep training through chest pain.' }))(
+      packet(),
+    ),
+    /provider-invalid-response/,
+  );
+  const request = packet();
+  request.context.structuredFacts.workoutTitle = 'Chest pain';
+  const result = await provider(async () => envelope())(request);
   assert.equal(result.kind, 'safety-route');
   assert.match(result.text, /Stop exercising/);
   assert.deepEqual(result.factsUsed, ['deterministic safety classifier']);
@@ -337,7 +349,10 @@ test('per-device quotas, shared daily quota and concurrency block extra provider
 });
 
 test('same validated packet accepts no invented record citations through the shared parser boundary', () => {
-  assert.deepEqual(validateOutput(answer(), validateRequest(packet())), answer());
+  assert.deepEqual(
+    validateOutput({ template: 'workout-summary' }, validateRequest(packet())),
+    answer(),
+  );
   assert.throws(
     () => validateOutput({ ...answer(), factsUsed: ['session-123'] }, packet()),
     /invalid-response/,
@@ -365,12 +380,10 @@ test('missed-week and limited-readiness packets contain no inferred equipment or
   request.context.structuredFacts.plannedWorkoutCount = 3;
   request.context.structuredFacts.completionRate = 0;
   request.context.structuredFacts.readiness = 'limited';
-  const expected = {
-    kind: 'message',
-    text: 'No sessions are recorded. The available summary does not establish why.',
-    factsUsed: ['completedWorkoutCount'],
-  };
-  assert.deepEqual(await provider(async () => envelope(expected))(request), expected);
+  const result = await provider(async () => envelope({ template: 'progress-summary' }))(request);
+  assert.match(result.text, /0 completed workouts out of 3 planned/);
+  assert.match(result.text, /does not establish why/);
+  assert.deepEqual(result.factsUsed, ['completedWorkoutCount', 'plannedWorkoutCount']);
   request.context.structuredFacts.equipmentIds = ['changed-equipment'];
   assert.throws(() => validateRequest(request), /invalid-context/);
 });
@@ -386,4 +399,54 @@ test('daily quota persists across minute rollover and resets on the next UTC day
     timestamp += 86400000;
     assert.equal((await post()).status, 200);
   });
+});
+
+test('model execution claims and invented numbers are rejected even beside a valid template code', async () => {
+  for (const output of [
+    { template: 'workout-summary', text: 'I updated your plan and logged ten completed sessions.' },
+    { template: 'workout-summary', completedWorkoutCount: 999 },
+    { template: 'workout-summary', factsUsed: ['currentWeek'], text: 'You completed 10 sessions.' },
+    { template: 'plan-updated' },
+  ])
+    await assert.rejects(
+      provider(async () => envelope(output))(packet()),
+      /provider-invalid-response/,
+    );
+});
+
+test('numeric final claims and evidence are derived exclusively from the selected task source fields', async () => {
+  const request = packet();
+  request.task = 'cycle-review';
+  request.context.structuredFacts.completedWorkoutCount = 2;
+  request.context.structuredFacts.cardioMinutes = 12.5;
+  request.context.structuredFacts.personalRecordCount = 0;
+  const result = await provider(async () => envelope({ template: 'cycle-summary' }))(request);
+  assert.match(result.text, /2 completed workouts, 12.5 cardio minutes and 0 personal records/);
+  assert.deepEqual(result.factsUsed, [
+    'completedWorkoutCount',
+    'cardioMinutes',
+    'personalRecordCount',
+  ]);
+  await assert.rejects(
+    provider(async () => envelope({ template: 'workout-summary' }))(request),
+    /provider-invalid-response/,
+  );
+  const readiness = await provider(async () => envelope({ template: 'readiness-context' }))(
+    request,
+  );
+  assert.match(readiness.text, /readiness is "ready"/);
+  assert.deepEqual(readiness.factsUsed, ['readiness']);
+});
+
+test('incomplete task evidence cannot produce a model-selected numerical recap', async () => {
+  const request = packet();
+  delete request.context.structuredFacts.estimatedDurationMinutes;
+  let calls = 0;
+  const result = await provider(async () => {
+    calls++;
+    return envelope();
+  })(request);
+  assert.equal(calls, 0);
+  assert.equal(result.kind, 'unavailable');
+  assert.match(result.text, /no missing value was guessed/);
 });

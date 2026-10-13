@@ -12,7 +12,8 @@ branch = quote(os.environ['QA_BRANCH'], safe='')
 route = f'repos/{repo}/actions/workflows/native-validation.yml/runs?status=success&branch={branch}&per_page=20'
 runs = json.loads(subprocess.check_output(['gh', 'api', route]))['workflow_runs']
 exclude = [':!docs', ':!README.md', ':!.github', ':!.env.release.example',
-           ':!scripts/mobile-runtime-qa.py', ':!scripts/select-native-qa-artifact.py']
+           ':!scripts/mobile-runtime-qa.py', ':!scripts/mobile-runtime-qa.test.py',
+           ':!scripts/select-native-qa-artifact.py']
 for run in runs:
     sha = run['head_sha']
     if not re.fullmatch(r'[0-9a-f]{40}', sha):

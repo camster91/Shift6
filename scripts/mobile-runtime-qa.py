@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import re
 import subprocess
 import time
 import traceback
@@ -136,6 +137,30 @@ def restart():
     time.sleep(1)
 
 
+def confirm_private_cycle_start():
+    """Confirm only the reviewed private-cycle alert, preserving its explicit date/zone."""
+    expect('Start this six-week cycle?')
+    tree = snapshot('private-cycle-date-timezone-confirmation')
+    alerts = [node for node in ET.fromstring(tree).iter()
+              if node.get('type', node.tag) == 'XCUIElementTypeAlert']
+    if len(alerts) != 1:
+        raise AssertionError('Expected exactly one native private-cycle alert')
+    labels = {value for node in alerts[0].iter()
+              for key in ('name', 'label', 'value') if (value := node.get(key))}
+    if not {'Start this six-week cycle?', 'Cancel', 'Start cycle'}.issubset(labels):
+        raise AssertionError('Expected the private-cycle confirmation title and exact buttons')
+    pattern = (r'Start date (\d{4}-\d{2}-\d{2}) · ([A-Za-z0-9_+/-]+)\. '
+               r'This saves the six-week calendar for your current private plan\. '
+               r'Any current active cycle will be paused; its history stays unchanged\.')
+    previews = [match for label in labels if (match := re.fullmatch(pattern, label))]
+    if len(previews) != 1:
+        raise AssertionError('Expected one explicit private-plan start date/timezone preview')
+    preview = previews[0]
+    datetime.date.fromisoformat(preview.group(1))  # Reject an invalid displayed calendar date.
+    RESULT['privateCycleStartPreview'] = {'date': preview.group(1), 'timeZone': preview.group(2)}
+    click('Start cycle')
+
+
 def journey():
     expect('SETUP', timeout=45)
     snapshot('setup-goal')
@@ -198,12 +223,13 @@ def journey():
     expect('Program saved')
     snapshot('private-draft-saved-copy')
     click('Start this six-week cycle')
+    confirm_private_cycle_start()
     expect('Start workout')
     snapshot('home-active-private-cycle')
     click('Personal goal')
     snapshot('goal-form-default')
-    click('Load for a fixed rep count (kg)')
-    snapshot('goal-imperial-preference-metric-input')
+    click('Load for a fixed rep count (lb)')
+    snapshot('goal-imperial-preference-pound-input')
     click('Hold in seconds')
     fill('What do you want to track?', 'QA hold goal')
     fill('Target (seconds)', '30')

@@ -27,11 +27,11 @@ RESULT = {
 }
 
 
-def request(method, path, body=None):
+def request(method, path, body=None, timeout=240):
     data = None if body is None else json.dumps(body).encode()
     req = Request(BASE + path, data=data, method=method, headers={'Content-Type': 'application/json'})
     try:
-        with urlopen(req, timeout=240) as response:
+        with urlopen(req, timeout=timeout) as response:
             result = json.load(response)
     except HTTPError as error:
         raise RuntimeError(error.read().decode()) from error
@@ -74,11 +74,15 @@ def swipe(direction):
     command('POST', '/execute/sync', {'script': 'mobile: swipe', 'args': [{'direction': direction}]})
 
 
-def find(label, scroll=True, last=False):
+def find(label, scroll=True, last=False, editable=False):
     for attempt in range(14 if scroll else 1):
         tree = source()
         nodes = [n for n in ET.fromstring(tree).iter() if n.get('name') == label or n.get('label') == label]
         found = elements(label)
+        if editable:
+            kinds = {'XCUIElementTypeTextField', 'XCUIElementTypeSecureTextField', 'XCUIElementTypeTextView'}
+            nodes = [n for n in nodes if n.get('type', n.tag) in kinds]
+            found = [e for e in found if command('GET', f'/element/{element_id(e)}/attribute/type') in kinds]
         if found and any(n.get('visible') == 'true' for n in nodes):
             return element_id(found[-1] if last else found[0])
         if not scroll:
@@ -95,7 +99,7 @@ def click(label, last=False):
 
 
 def fill(label, value):
-    control = find(label)
+    control = find(label, editable=True)
     command('POST', f'/element/{control}/clear', {})
     command('POST', f'/element/{control}/value', {'text': value, 'value': list(value)})
     try:
@@ -207,7 +211,14 @@ def journey():
     snapshot('home-resume-after-force-close')
     click('Resume workout')
     expect('Edit QA Hold set 1')
-    expect('12')
+    draft_input = find('QA Hold set 2 duration in seconds', editable=True)
+    draft_value = command('GET', f'/element/{draft_input}/attribute/value')
+    if draft_value != '12':
+        raise AssertionError(f'Recovered set 2 draft was {draft_value!r}, expected 12')
+    saved_input = find('QA Hold set 1 duration in seconds', editable=True)
+    saved_value = command('GET', f'/element/{saved_input}/attribute/value')
+    if saved_value != '20':
+        raise AssertionError(f'Recovered completed set was {saved_value!r}, expected 20')
     snapshot('workout-recovered-values')
     click('Save partial workout')
     click('I ran out of time')
@@ -260,14 +271,18 @@ try:
             time.sleep(1)
     else:
         raise RuntimeError('Appium did not become ready')
+    subprocess.run(['xcrun', 'simctl', 'install', device['udid'], str(app.resolve())], check=True)
+    subprocess.run(['xcrun', 'simctl', 'launch', device['udid'], 'com.shift6.app'], check=True)
+    time.sleep(10)
+    subprocess.run(['xcrun', 'simctl', 'io', device['udid'], 'screenshot', str(OUT / '00-cold-launch.png')], check=True)
     session = request('POST', '/session', {'capabilities': {'alwaysMatch': {
         'platformName': 'iOS', 'appium:automationName': 'XCUITest',
         'appium:udid': device['udid'], 'appium:deviceName': device['name'],
-        'appium:app': str(app.resolve()), 'appium:bundleId': 'com.shift6.app',
-        'appium:noReset': False, 'appium:useNewWDA': True,
-        'appium:wdaLaunchTimeout': 180000, 'appium:wdaConnectionTimeout': 180000,
+        'appium:bundleId': 'com.shift6.app', 'appium:isHeadless': True,
+        'appium:noReset': True, 'appium:useNewWDA': True,
+        'appium:wdaLaunchTimeout': 300000, 'appium:wdaConnectionTimeout': 180000,
         'appium:newCommandTimeout': 300, 'appium:showXcodeLog': True,
-    }}})
+    }}}, timeout=900)
     SESSION = session['sessionId']
     journey()
 except Exception as error:

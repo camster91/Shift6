@@ -46,7 +46,7 @@ jobs:
           QA_NATIVE_RUN: ${{ steps.candidate.outputs.run_id }}
         run: |
           mkdir -p native-qa/evidence
-          appium --log native-qa/evidence/appium.log --log-timestamp > native-qa/evidence/appium-console.log 2>&1 &
+          appium --address 127.0.0.1 --log native-qa/evidence/appium.log --log-timestamp > native-qa/evidence/appium-console.log 2>&1 &
           python3 scripts/mobile-runtime-qa.py
       - name: Preserve screenshots, UI trees and actual results
         if: always()

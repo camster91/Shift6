@@ -6,14 +6,14 @@
 
 The coordinator performed native ADB QA on the authorized local CAM-DESKTOP, Windows 11, Pixel 7 Shift6-QA emulator, Android 16/API 36, x86_64, emulator-5554, hardware acceleration through WHPX/host GPU. Earlier Windows evidence records build 26200; the continuation inventory records build 26300. This is the same selected PC. Task runtime permits unrestricted filesystem/network access; ADB was explicitly authorized. The app runs guest-only with no API backend configured. These are test APKs, not Samsung ARM or signed store releases.
 
-| Native source | APK SHA-256                                                           | Scope in this report                                                                                      |
-| ------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `4871035e`    | `63179A9F8E44842B2D8C2CA007336A1781C4069CA1776390FE608770CEB49A3D`    | Guided setup recovery/confirmation and practical local memory                                             |
-| `5959cccd`    | `A80771943CBEEA229547BB2F15D6D277FF8A65EB58C33E25D2CCDF903634FD84`    | Native voice module compiled; typed transcript review into an unsaved draft, recovery and external export |
-| `0d54f755`    | `CAD04B06CF8CD8308F81676B4CE3000A7ECF9CAAD2D97DCDF0A79F72BD018EA5`    | Timed-set guidance retest; explicit normal save; invalid optional RIR defect                              |
-| `71babfc8`    | Changed-binary retest in progress; add its measured hash with results | Numeric refusal fix passed full source verification; native acceptance pending                            |
+| Native source | APK SHA-256                                                        | Scope in this report                                                                                      |
+| ------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `4871035e`    | `63179A9F8E44842B2D8C2CA007336A1781C4069CA1776390FE608770CEB49A3D` | Guided setup recovery/confirmation and practical local memory                                             |
+| `5959cccd`    | `A80771943CBEEA229547BB2F15D6D277FF8A65EB58C33E25D2CCDF903634FD84` | Native voice module compiled; typed transcript review into an unsaved draft, recovery and external export |
+| `0d54f755`    | `CAD04B06CF8CD8308F81676B4CE3000A7ECF9CAAD2D97DCDF0A79F72BD018EA5` | Timed-set guidance retest; explicit normal save; invalid optional RIR defect                              |
+| `71babfc8`    | `556ACBB91BCE61AE86B1660152EB1BD696696CB1B5348BD1CBC8626C85A3E963` | Numeric refusal and retained-input native retest; corrected-save readback below                           |
 
-The coordinator will package screenshots, UI XML and externally received JSON under [guarded evidence](qa/2026-10-13-guarded/evidence.json). Evidence stems below name the PNG/XML pair unless a JSON file is specified. Each binary retains its own scope; do not attribute a later fix to an earlier APK.
+Screenshots, UI XML and externally received JSON are inventoried under [guarded evidence](qa/2026-10-13-guarded/evidence.json). Evidence stems below name the PNG/XML pair unless a JSON file is specified. Each binary retains its own scope; do not attribute a later fix to an earlier APK.
 
 ## Observed native passes
 
@@ -37,7 +37,9 @@ JSON was shared through Android's native share sheet, received and opened in the
 
 **Invalid optional effort silently omitted, source `0d54f755`.** Enter duration 36 seconds and RIR -1 for QA Hold set 2, then Complete. Expected: retain input, explain the invalid effort and refuse saving. Actual: completion succeeded and external JSON recorded duration_seconds=36 with rir=null; the draft still contained rir="-1". This is a verified app defect, [#352](https://github.com/camster91/Shift6/issues/352), not a focus or missing-control harness failure. Before screenshots are `invalid-rir-entered-before-fix-0d54`, `invalid-rir-final-saved-before-fix-0d54`, and `invalid-rir-before-fix-external-0d54`; records are in `invalid-rir-before-fix-export-0d54.json`.
 
-The fix integrated as `71babfc8` refuses any nonempty measurement that parses as invalid before constructing the completed-set record, with field-specific guidance. Nine source regressions first reproduced negative, nonnumeric and infinite RPE/RIR and optional reps being silently dropped. Blank optional fields, zero RIR, valid fractional effort, existing RPE 1–10/RIR 0–10 and all load-unit/identity/context/pending-save guards remain supported. Changed-binary refusal, retained input, correction and external actual readback are pending the coordinator's native retest. Do not close #352 from source tests alone.
+The fix integrated as `71babfc8` refuses any nonempty measurement that parses as invalid before constructing the completed-set record, with field-specific guidance. Nine source regressions first reproduced negative, nonnumeric and infinite RPE/RIR and optional reps being silently dropped. Blank optional fields, zero RIR, valid fractional effort, existing RPE 1–10/RIR 0–10 and all load-unit/identity/context/pending-save guards remain supported.
+
+**Changed-binary native retest, Windows 26300:** install the identified `71babfc8` APK with existing records retained; resume QA Cycle B, set 3; enter duration 37 and RIR -1; tap Complete. The app explains "Enter a valid RIR from 0 to 10, or clear the field if RIR was not recorded", retains both inputs and stays at 2/5. External `invalid-rir-refused-export-71ba.json` confirms exactly three historical saved sets across both cycles, with no invalid insertion. Force-close/reopen retains 37/-1. Correct RIR to zero and explicitly Complete: `zero-rir-saved-export-71ba.json` confirms exactly one new record, duration 37/RIR 0, total four saved sets, with every prior actual unchanged. The earlier 36-second/RIR-null record is retained honestly. Evidence: `invalid-rir-entered-after-fix-71ba`, `invalid-rir-refused-after-fix-71ba`, `invalid-rir-retained-relaunch-71ba`, `zero-rir-corrected-71ba`, `zero-rir-saved-71ba` and both external receiver captures. This accepts this emulator regression; other platforms/measurement paths remain subject to their own acceptance.
 
 ## Source verification and harness limits
 

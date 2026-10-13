@@ -91,7 +91,7 @@ export function validateRequest(value) {
         typeof value !== 'string' ||
         !value.trim() ||
         value.length > 120 ||
-        /[\u0000-\u001f]/.test(value)
+        Array.from(value).some((character) => character.charCodeAt(0) < 32)
       )
         reject();
     } else if (key === 'workoutAvailable') {

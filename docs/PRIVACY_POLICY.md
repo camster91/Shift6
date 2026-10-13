@@ -22,7 +22,7 @@ You can export your local records as a JSON file from Profile. SHIFT6 keeps a te
 system sharing interface may send that export outside your device; you control
 the destination. Treat exports as private files.
 
-The local-recovery candidate can read a user-selected schema-12 JSON export
+The local-recovery candidate can read user-selected schema-12, 13 or 14 JSON exports
 (up to 20 MiB and 50,000 records). File selection and preview are inert; restoring
 requires a separate explicit confirmation. Restore only accepts an empty guest
 installation, including no saved setup draft, and does not merge or overwrite
@@ -49,6 +49,19 @@ media links so inaccessible old-device URIs or remote URLs are not opened
 unexpectedly. Add custom media again on this device. The app's installed bundled
 artwork is separate from your backup. These resets are disclosed in the preview
 and confirmation. See [local backup restore](LOCAL_BACKUP_RESTORE.md).
+
+Optional local Coach memory stores only practical preferences you explicitly
+confirm. It defaults off; disabling retains inspection and forget controls.
+Forget removes the current local preference, but cannot remove copies in an
+earlier export. Memory does not replace profile or training records and is not
+sent to an AI provider. Restoring a backup leaves memory use off.
+
+Private builder recovery stores committed editor values and unapplied pasted
+text separately from saved plans. A saved indicator appears after its local
+write. Resume or discard is explicit; resuming a previously saved version uses
+a new private copy. Pending custom-movement forms require Add before recovery
+includes them. Load-unit metadata records explicitly declared actual units;
+legacy missing units remain unknown rather than inferred from preferences.
 
 You can delete local records from Profile. Uninstalling may also remove records,
 depending on device backup/restore behavior. This release has no SHIFT6 cloud

@@ -268,8 +268,7 @@ export default function CoachMemoryScreen() {
               {memoryKindLabels[fact.value.kind]}: {memoryValueLabel(fact.value)}
             </Text>
             <Text variant="small">
-              Confirmed {new Date(fact.confirmedAt).toLocaleString()} · revision {fact.revision} ·
-              local record {fact.id}
+              You confirmed this preference {new Date(fact.confirmedAt).toLocaleString()}.
             </Text>
             <Text>{memoryProvenance(fact, snapshot)}</Text>
             <Button

@@ -10,7 +10,8 @@ minutes, equipment preference and Coach style. Each change requires a preview
 and explicit confirmation. Arbitrary chat, transcripts, notes, health prose and
 inferred goals are not accepted by the memory repository.
 
-Confirmed facts show their local record ID, confirmation time and revision.
+Confirmed facts show when you confirmed them. Record IDs and revisions remain
+available in structured exports for inspection.
 The screen compares each preference against the current profile. Differences
 are explained rather than silently resolving them: canonical profile, plan,
 goals and recorded results remain authoritative. Preferences do not rewrite

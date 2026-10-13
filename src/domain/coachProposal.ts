@@ -10,6 +10,8 @@ import type {
   SetTarget,
   WorkoutExercise,
 } from './types';
+import { isExerciseAvailableToUser } from './runtimeContentGates';
+import type { Exercise, UnitSystem } from './types';
 import { isValidCoachProposal } from '../services/coachSafety';
 
 const targetFields = new Set([
@@ -29,15 +31,23 @@ const targetFields = new Set([
 export function applyCoachProposalToProgramVersion(
   sourceVersion: ProgramVersion,
   proposal: CoachProposal,
+  availableExercises: readonly Exercise[] = [],
 ): ProgramVersion {
   if (!isValidCoachProposal(proposal)) {
     throw new Error('Only a validated pending coach proposal can be applied.');
   }
 
-  return proposal.changes.reduce((version, change) => applyChange(version, change), sourceVersion);
+  return proposal.changes.reduce(
+    (version, change) => applyChange(version, change, availableExercises),
+    sourceVersion,
+  );
 }
 
-function applyChange(version: ProgramVersion, change: CoachProposalChange): ProgramVersion {
+function applyChange(
+  version: ProgramVersion,
+  change: CoachProposalChange,
+  availableExercises: readonly Exercise[],
+): ProgramVersion {
   if (change.type === 'target-change') {
     if (!targetFields.has(change.field)) {
       throw new Error(`Coach target field ${change.field} is not supported.`);
@@ -46,6 +56,7 @@ function applyChange(version: ProgramVersion, change: CoachProposalChange): Prog
     const currentTarget = location.workoutExercise.sets[0]?.target;
     if (!currentTarget) throw new Error(`Coach change ${change.id} has no target to update.`);
 
+    if (change.field === 'load') validateLoadChange(currentTarget, change);
     return setWorkoutExerciseTarget(
       version,
       location.workoutId,
@@ -59,6 +70,13 @@ function applyChange(version: ProgramVersion, change: CoachProposalChange): Prog
       throw new Error(`Coach substitution ${change.id} must provide a replacement exercise ID.`);
     }
     const location = resolveWorkoutExercise(version, change);
+    if (change.from.trim() !== location.workoutExercise.exerciseId)
+      throw new Error('The substitution preview no longer matches the current movement.');
+    const replacement = availableExercises.find((item) => item.id === change.to.trim());
+    if (!replacement || !isExerciseAvailableToUser(replacement, false))
+      throw new Error(
+        'The replacement movement is unavailable or awaiting qualified content review.',
+      );
     return replaceExerciseInWorkout(
       version,
       location.workoutId,
@@ -150,7 +168,7 @@ function applyTargetField(currentTarget: SetTarget, field: string, rawValue: str
     case 'load':
       return {
         ...currentTarget,
-        load: { unit: currentTarget.load?.unit ?? 'imperial', value },
+        load: parseLoad(rawValue, currentTarget.load?.unit),
       };
     case 'reps':
       if (!Number.isInteger(value) || value < 1) {
@@ -188,4 +206,36 @@ function parseNumber(rawValue: string): number | undefined {
   if (!match) return undefined;
   const value = Number(match[0]);
   return Number.isFinite(value) && value >= 0 ? value : undefined;
+}
+
+/** Explicit units never become a different unit merely by dropping their suffix. */
+function parseLoad(
+  rawValue: string,
+  currentUnit?: UnitSystem,
+): { value: number; unit: UnitSystem } {
+  const match = rawValue.trim().match(/^(\d+(?:\.\d+)?)\s*(kg|kgs|kilograms?|lb|lbs|pounds?)?$/i);
+  if (!match)
+    throw new Error('Coach load changes need a numeric value and a supported kg or lb unit.');
+  const suffix = match[2]?.toLowerCase();
+  const explicitUnit: UnitSystem | undefined = suffix
+    ? /^(kg|kilogram)/.test(suffix)
+      ? 'metric'
+      : 'imperial'
+    : undefined;
+  if (explicitUnit && currentUnit && explicitUnit !== currentUnit)
+    throw new Error(
+      'Coach load changes must use the current target unit; review a same-unit preview.',
+    );
+  const unit = explicitUnit ?? currentUnit;
+  if (!unit) throw new Error('A new load target needs an explicit kg or lb unit.');
+  return { value: Number(match[1]), unit };
+}
+
+function validateLoadChange(currentTarget: SetTarget, change: CoachProposalChange): void {
+  const proposed = parseLoad(change.to, currentTarget.load?.unit);
+  const before = parseLoad(change.from, currentTarget.load?.unit ?? proposed.unit);
+  if (before.unit !== proposed.unit)
+    throw new Error('Coach load changes must use the same unit in the before and after preview.');
+  if (currentTarget.load && before.value !== currentTarget.load.value)
+    throw new Error('The load preview no longer matches the current target.');
 }

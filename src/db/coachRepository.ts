@@ -7,7 +7,8 @@ import type { CoachProposal, CoachProposalStatus } from '../domain/types';
 import type { Program, ProgramVersion, TrainingCycle } from '../domain/types';
 import { isValidCoachProposal, validateCoachProposal } from '../services/coachSafety';
 import { saveTrainingCycleInTransaction } from './cycleRepository';
-import { saveProgramVersionInTransaction } from './programRepository';
+import { getUserExercises, saveProgramVersionInTransaction } from './programRepository';
+import { foundationalExercises } from '../domain/fixtures/exercises';
 
 interface CoachProposalRow {
   id: string;
@@ -142,23 +143,9 @@ export async function acceptCoachProposalWithRevision(
     throw new Error('The coach proposal context is no longer the active local plan.');
   }
 
-  const changedVersion = applyCoachProposalToProgramVersion(sourceVersion, proposal);
-  const nextVersion =
-    proposal.changes.length === 0
-      ? sourceVersion
-      : createProgramVersionRevision(
-          changedVersion,
-          `${sourceVersion.id}-coach-${Date.now()}`,
-          updatedAt,
-        );
-  const nextProgram =
-    nextVersion.id === sourceVersion.id
-      ? program
-      : { ...program, currentVersionId: nextVersion.id };
-  const nextCycle =
-    nextVersion.id === sourceVersion.id
-      ? sourceCycle
-      : { ...sourceCycle, programVersionId: nextVersion.id };
+  let nextVersion = sourceVersion;
+  let nextProgram = program;
+  let nextCycle = sourceCycle;
 
   let status: AcceptedCoachProposalResult['status'] = 'unchanged';
   await database.withTransactionAsync(async () => {
@@ -177,6 +164,40 @@ export async function acceptCoachProposalWithRevision(
     ) {
       throw new Error('The coach proposal context is no longer the active local plan.');
     }
+
+    // Read the owner-scoped library inside the approval transaction. Never
+    // grant a public catalogue ID a private/custom exemption through shadowing.
+    const custom = proposal.changes.some((change) => change.type === 'exercise-substitution')
+      ? await getUserExercises(database, userId)
+      : [];
+    const availableExercises = [
+      ...foundationalExercises,
+      ...custom.filter(
+        (item) =>
+          item.isCustom && !foundationalExercises.some((publicItem) => publicItem.id === item.id),
+      ),
+    ];
+    const changedVersion = applyCoachProposalToProgramVersion(
+      sourceVersion,
+      proposal,
+      availableExercises,
+    );
+    nextVersion =
+      proposal.changes.length === 0
+        ? sourceVersion
+        : createProgramVersionRevision(
+            changedVersion,
+            `${sourceVersion.id}-coach-${Date.now()}`,
+            updatedAt,
+          );
+    nextProgram =
+      nextVersion.id === sourceVersion.id
+        ? program
+        : { ...program, currentVersionId: nextVersion.id };
+    nextCycle =
+      nextVersion.id === sourceVersion.id
+        ? sourceCycle
+        : { ...sourceCycle, programVersionId: nextVersion.id };
 
     const update = await database.runAsync(
       `UPDATE coach_proposals

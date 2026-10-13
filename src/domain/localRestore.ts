@@ -1,5 +1,10 @@
 import { loadProvenanceSections } from './loadUnits';
 import { coachReviewSections, parseCoachReviewReceipt } from './coachReviewJournal';
+import {
+  corroborateReviewGoal,
+  type ReviewGoalEvent,
+  type ReviewTargetRevision,
+} from './coachReviewGoalWitness';
 import { stableSnapshotJSON } from './programPersistence';
 import {
   schedulePersistenceSections,
@@ -1333,6 +1338,13 @@ export function validateLocalBackup(serialized: string): RestorePreview {
           goal.program_version_id === evidence.goal.programVersionId,
         'missing review goal.',
       );
+      corroborateReviewGoal(
+        evidence.goal,
+        data.personalGoalEvents as unknown as ReviewGoalEvent[],
+        data.shiftGoalRevisions as unknown as ReviewTargetRevision[],
+        receipt.revalidatedAt,
+        receipt.goalWitness,
+      );
       const protocol = data.shiftProtocols.find(
         (entry) =>
           entry.shift_id === evidence.goal!.id &&
@@ -1352,6 +1364,18 @@ export function validateLocalBackup(serialized: string): RestorePreview {
           evidence.observations.some((entry) => entry.id === baselineId),
           'missing review baseline source.',
         );
+    }
+    if (receipt.goalWitness?.state === 'unavailable-legacy-history') {
+      const legacy = goals.get(receipt.goalWitness.goalId);
+      check(
+        legacy &&
+          legacy.user_id === owner &&
+          legacy.cycle_id === row.cycle_id &&
+          !(data.personalGoalEvents ?? []).some(
+            (event) => event.shift_id === receipt.goalWitness!.goalId && event.kind === 'created',
+          ),
+        'invalid unavailable legacy goal witness.',
+      );
     }
     for (const source of evidence.observations) {
       const actual = data.shiftObservations.find((entry) => entry.id === source.id);

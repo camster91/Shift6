@@ -28,7 +28,12 @@ import {
 import { previewCoachReviewChoice } from '../domain/coachReview';
 import { stableSnapshotJSON } from '../domain/programPersistence';
 import { parseCoachReviewReceipt } from '../domain/coachReviewJournal';
-import { createPersonalGoal, appendPersonalObservation } from './personalGoalRepository';
+import {
+  createPersonalGoal,
+  appendPersonalObservation,
+  revisePersonalTarget,
+  savePersonalReview,
+} from './personalGoalRepository';
 import { migrateLocalUserToAccount } from './accountRepository';
 jest.mock('../config/env', () => ({ runtimeConfig: { releaseMode: 'guest-only' } }));
 let sqlite: DatabaseSync;
@@ -111,6 +116,47 @@ async function session(id: string, status: 'complete' | 'partial' | 'skipped' | 
     isOffline: true,
     ...(status === 'partial' ? { completionReason: 'time-limited' as const } : {}),
   });
+}
+async function goalWithBaseline() {
+  await createPersonalGoal(
+    db,
+    'guest-user',
+    'review-cycle',
+    {
+      id: 'review-goal',
+      objective: 'My repetitions',
+      target: 10,
+      replacePrimary: true,
+      protocol: {
+        id: 'review-protocol',
+        version: 1,
+        exerciseId: demoProgramVersion.workouts[0]!.exercises[0]!.exerciseId,
+        variantId: 'own-variant',
+        assistance: 'none',
+        equipmentSetup: 'none',
+        metric: 'reps',
+        canonicalUnit: 'reps',
+        direction: 'higher',
+      },
+    },
+    stamp,
+  );
+  await appendPersonalObservation(
+    db,
+    'guest-user',
+    {
+      id: 'baseline',
+      shiftId: 'review-goal',
+      protocolId: 'review-protocol',
+      protocolVersion: 1,
+      measuredAt: stamp,
+      source: 'assessment',
+      value: 5,
+      unit: 'reps',
+    },
+    true,
+    stamp,
+  );
 }
 test('consistent read is inert and counts only actual sessions, with no planned denominator', async () => {
   for (const status of ['complete', 'partial', 'skipped', 'in-progress'] as const)
@@ -394,4 +440,151 @@ test('partial outcomes remain canonical; a later attempt does not reopen or over
   receipt.evidenceFingerprint = stableSnapshotJSON(evidence);
   row.receipt_json = stableSnapshotJSON(receipt);
   expect(() => validateLocalBackup(JSON.stringify(forged))).toThrow('terminal outcome');
+});
+test('recomputed forged target, objective, baseline and review decisions fail against exact canonical goal event witnesses before restore writes', async () => {
+  await goalWithBaseline();
+  await save();
+  const before = await exportNow();
+  for (const patch of [
+    (goal: Record<string, unknown>) => {
+      goal.target = 1;
+    },
+    (goal: Record<string, unknown>) => {
+      goal.blockObjective = 'Invented objective';
+    },
+    (goal: Record<string, unknown>) => {
+      goal.baseline = { state: 'deferred' };
+    },
+    (goal: Record<string, unknown>) => {
+      goal.reviewState = 'completed';
+      goal.nextChoice = 'repeat';
+    },
+  ]) {
+    const forged = structuredClone(before);
+    const row = forged.coachReviewJournal![0]!;
+    const receipt = JSON.parse(String(row.receipt_json));
+    const evidence = JSON.parse(receipt.evidenceFingerprint);
+    patch(evidence.goal);
+    receipt.evidenceFingerprint = stableSnapshotJSON(evidence);
+    row.receipt_json = stableSnapshotJSON(receipt);
+    await expect(restoreLocalBackup(db, 'guest-user', JSON.stringify(forged))).rejects.toThrow();
+    expect(await exportNow()).toEqual(before);
+  }
+});
+test('old goal receipt restores after later target revision, correction, review and primary handover; equal timestamps use explicit event-prefix IDs', async () => {
+  await goalWithBaseline();
+  await save();
+  const original = (await exportNow()).coachReviewJournal;
+  // Same timestamp, later append: IDs retain the exact earlier prefix.
+  await revisePersonalTarget(
+    db,
+    'guest-user',
+    'review-goal',
+    12,
+    'Synthetic revised target',
+    'target-same-time',
+    stamp,
+  );
+  await appendPersonalObservation(
+    db,
+    'guest-user',
+    {
+      id: 'corrected-baseline',
+      shiftId: 'review-goal',
+      protocolId: 'review-protocol',
+      protocolVersion: 1,
+      measuredAt: stamp,
+      source: 'assessment',
+      value: 6,
+      unit: 'reps',
+      correctsObservationId: 'baseline',
+    },
+    false,
+    '2026-10-13T12:30:00.000Z',
+  );
+  await savePersonalReview(
+    db,
+    'guest-user',
+    'review-goal',
+    'postponed',
+    'modify',
+    'goal-later-review',
+    '2026-10-13T12:31:00.000Z',
+  );
+  const copy = createProgramCopy({
+    sourceProgram: demoProgram,
+    sourceVersion: demoProgramVersion,
+    userId: 'guest-user',
+    newProgramId: 'later-plan',
+    newVersionId: 'later-version',
+    createdAt: '2026-10-13T12:35:00.000Z',
+  });
+  await saveProgramVersion(db, 'guest-user', copy.program, copy.version);
+  await saveTrainingCycle(
+    db,
+    createTrainingCycle({
+      id: 'later-cycle',
+      userId: 'guest-user',
+      programVersion: copy.version,
+      startedAt: '2026-10-13T12:35:00.000Z',
+    }),
+  );
+  await createPersonalGoal(
+    db,
+    'guest-user',
+    'later-cycle',
+    {
+      id: 'later-goal',
+      objective: 'New primary goal',
+      target: 20,
+      replacePrimary: true,
+      protocol: {
+        id: 'later-protocol',
+        version: 1,
+        exerciseId: demoProgramVersion.workouts[0]!.exercises[0]!.exerciseId,
+        variantId: 'same',
+        assistance: 'none',
+        equipmentSetup: 'same',
+        metric: 'reps',
+        canonicalUnit: 'reps',
+        direction: 'higher',
+      },
+    },
+    '2026-10-13T12:36:00.000Z',
+  );
+  const packet = await exportNow();
+  expect(packet.shifts.find((row) => row.id === 'review-goal')?.is_primary).toBe(0);
+  expect(() => validateLocalBackup(JSON.stringify(packet))).not.toThrow();
+  await deleteLocalUserData(db, 'guest-user');
+  await restoreLocalBackup(db, 'guest-user', JSON.stringify(packet));
+  expect((await exportNow()).coachReviewJournal).toEqual(original);
+  const { receipt, evidence } = parseCoachReviewReceipt(String(original![0]!.receipt_json));
+  expect(receipt.goalWitness).toEqual({
+    state: 'event-history',
+    goalId: 'review-goal',
+    eventIds: ['create:review-goal', 'measurement:baseline'],
+  });
+  expect(evidence.goal).toMatchObject({
+    target: 10,
+    baseline: { state: 'measured', observationId: 'baseline' },
+    reviewState: 'missing',
+    nextChoice: 'undecided',
+  });
+});
+test('legacy personal goal without creation ledger remains usable but cannot establish dated goal attainment', async () => {
+  await goalWithBaseline();
+  sqlite.prepare("DELETE FROM personal_goal_events WHERE shift_id='review-goal'").run();
+  const review = await load();
+  expect(review.goalWitness).toEqual({
+    state: 'unavailable-legacy-history',
+    goalId: 'review-goal',
+  });
+  expect(review.goal.comparison).toBeNull();
+  expect(JSON.parse(review.evidenceFingerprint).goal).toBeNull();
+  await save();
+  const packet = await exportNow();
+  expect(() => validateLocalBackup(JSON.stringify(packet))).not.toThrow();
+  await deleteLocalUserData(db, 'guest-user');
+  await restoreLocalBackup(db, 'guest-user', JSON.stringify(packet));
+  expect((await exportNow()).coachReviewJournal).toEqual(packet.coachReviewJournal);
 });

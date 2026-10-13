@@ -12,6 +12,11 @@ import {
 import { parseCoachReviewReceipt, type CoachReviewReceipt } from '../domain/coachReviewJournal';
 import { stableSnapshotJSON } from '../domain/programPersistence';
 import type { WorkoutSession } from '../domain/types';
+import {
+  corroborateReviewGoal,
+  type ReviewGoalEvent,
+  type ReviewTargetRevision,
+} from '../domain/coachReviewGoalWitness';
 
 interface JournalRow {
   id: string;
@@ -74,16 +79,35 @@ async function currentSnapshot(
   if (count && count.count > 1000)
     throw new Error('This review needs a smaller canonical goal packet.');
   const observations = goal ? await getPersonalObservations(tx, owner, goal.id) : [];
-  return prepareCoachReview({
-    ownerId: owner,
-    cycle,
-    programVersionId: cycle.programVersionId,
-    now,
-    window,
-    sessions,
-    goal,
-    observations,
-  });
+  const events = goal
+    ? await tx.getAllAsync<ReviewGoalEvent>(
+        'SELECT * FROM personal_goal_events WHERE user_id=? AND shift_id=? ORDER BY rowid LIMIT 1001;',
+        owner,
+        goal.id,
+      )
+    : [];
+  const revisions = goal
+    ? await tx.getAllAsync<ReviewTargetRevision>(
+        'SELECT * FROM shift_goal_revisions WHERE user_id=? AND shift_id=? ORDER BY rowid LIMIT 1001;',
+        owner,
+        goal.id,
+      )
+    : [];
+  const goalWitness = goal ? corroborateReviewGoal(goal, events, revisions, now) : null;
+  const includedGoal = goalWitness?.state === 'event-history' ? goal : null;
+  return {
+    ...prepareCoachReview({
+      ownerId: owner,
+      cycle,
+      programVersionId: cycle.programVersionId,
+      now,
+      window,
+      sessions,
+      goal: includedGoal,
+      observations: includedGoal ? observations : [],
+    }),
+    goalWitness,
+  };
 }
 function saved(row: JournalRow): SavedCoachReview {
   const { receipt } = parseCoachReviewReceipt(row.receipt_json);
@@ -202,7 +226,10 @@ export async function confirmDatedCoachReview(
       preview.window,
       confirmedAt,
     );
-    const receipt = confirmCoachReviewChoice(preview, fresh, confirmedAt, confirmed);
+    const receipt = {
+      ...confirmCoachReviewChoice(preview, fresh, confirmedAt, confirmed),
+      goalWitness: fresh.goalWitness,
+    };
     const serialized = stableSnapshotJSON(receipt);
     parseCoachReviewReceipt(serialized);
     await tx.runAsync(

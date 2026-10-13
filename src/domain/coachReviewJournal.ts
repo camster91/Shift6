@@ -6,9 +6,12 @@ import {
 } from './coachReview';
 import { stableSnapshotJSON } from './programPersistence';
 import { validateMeasurementProtocol, type MeasurementProtocol } from './shift';
+import type { CoachReviewGoalWitness } from './coachReviewGoalWitness';
 
 export const coachReviewSections = { coachReviewJournal: 'coach_review_journal' } as const;
-export type CoachReviewReceipt = ReturnType<typeof confirmCoachReviewChoice>;
+export type CoachReviewReceipt = ReturnType<typeof confirmCoachReviewChoice> & {
+  goalWitness: CoachReviewGoalWitness;
+};
 export const MAX_REVIEW_RECEIPT_BYTES = 512 * 1024;
 
 function fields(
@@ -66,6 +69,7 @@ export function parseCoachReviewReceipt(serialized: string): {
     'status',
     'nextCapability',
     'requiresWorkflowConfirmation',
+    'goalWitness',
   ]);
   for (const key of [
     'ownerId',
@@ -278,6 +282,29 @@ export function parseCoachReviewReceipt(serialized: string): {
     )
       throw new Error('Unsupported review observation provenance.');
   }
+  if (value.goalWitness !== null) {
+    fields(
+      value.goalWitness,
+      ['state', 'goalId'],
+      value.goalWitness && (value.goalWitness as Record<string, unknown>).state === 'event-history'
+        ? ['eventIds']
+        : [],
+    );
+    bounded(value.goalWitness.goalId);
+    if (value.goalWitness.state === 'event-history') {
+      list(value.goalWitness.eventIds);
+      value.goalWitness.eventIds.forEach((id) => bounded(id));
+      if (
+        !value.goalWitness.eventIds.length ||
+        new Set(value.goalWitness.eventIds).size !== value.goalWitness.eventIds.length ||
+        !evidence.goal ||
+        evidence.goal.id !== value.goalWitness.goalId
+      )
+        throw new Error('Invalid goal review event witness.');
+    } else if (value.goalWitness.state !== 'unavailable-legacy-history' || evidence.goal !== null)
+      throw new Error('Unavailable goal history cannot establish a measured comparison.');
+  } else if (evidence.goal !== null)
+    throw new Error('A goal comparison requires canonical source witnesses.');
   if (stableSnapshotJSON(evidence) !== value.evidenceFingerprint)
     throw new Error('Dated review evidence must retain its canonical exact key.');
   const packet = {
@@ -290,12 +317,15 @@ export function parseCoachReviewReceipt(serialized: string): {
     })),
   } as unknown as CoachReviewInput;
   const fresh = prepareCoachReview(packet);
-  const receipt = confirmCoachReviewChoice(
-    value as unknown as CoachReviewPreview,
-    fresh,
-    String(value.confirmedAt),
-    true,
-  );
+  const receipt = {
+    ...confirmCoachReviewChoice(
+      value as unknown as CoachReviewPreview,
+      fresh,
+      String(value.confirmedAt),
+      true,
+    ),
+    goalWitness: value.goalWitness as CoachReviewGoalWitness,
+  };
   if (stableSnapshotJSON(receipt) !== stableSnapshotJSON(value))
     throw new Error('Dated review receipt disagrees with its deterministic preview.');
   return { receipt, evidence: packet };

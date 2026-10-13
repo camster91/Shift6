@@ -201,7 +201,7 @@ test('export includes private goal journal and drafts only for the requested own
   await createPersonalGoal(db, 'owner', 'cycle', goal, now);
   await savePersonalGoalDraft(db, 'owner', 'cycle', { objective: 'local draft' });
   const data = await exportLocalUserData(db, 'owner', now);
-  expect(data.schemaVersion).toBe(13);
+  expect(data.schemaVersion).toBe(14);
   expect(data.personalGoalEvents).toHaveLength(1);
   expect(data.personalGoalDrafts).toHaveLength(1);
   const other = await exportLocalUserData(db, 'other', now);

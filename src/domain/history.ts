@@ -14,6 +14,7 @@ export interface WorkoutHistoryInput {
   isOffline: boolean;
   completedSetCount: number;
   totalVolume: number;
+  unknownLoadSetCount?: number;
   totalDurationSeconds: number;
   totalDistanceMeters: number;
 }
@@ -32,6 +33,7 @@ export interface WorkoutHistoryEntry {
   isOffline: boolean;
   completedSetCount: number;
   totalVolume: number;
+  unknownLoadSetCount?: number;
   totalDurationSeconds: number;
   totalDistanceMeters: number;
   durationMinutes?: number;
@@ -57,6 +59,7 @@ export function buildWorkoutHistoryEntry(input: WorkoutHistoryInput): WorkoutHis
     isOffline: input.isOffline,
     completedSetCount: Math.max(0, Math.trunc(input.completedSetCount)),
     totalVolume: nonNegativeNumber(input.totalVolume),
+    unknownLoadSetCount: input.unknownLoadSetCount ?? 0,
     totalDurationSeconds: nonNegativeNumber(input.totalDurationSeconds),
     totalDistanceMeters: nonNegativeNumber(input.totalDistanceMeters),
     ...(durationMinutes === undefined ? {} : { durationMinutes }),

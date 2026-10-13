@@ -1,3 +1,9 @@
+import {
+  writeSetLoadProvenance,
+  assertOwnedLoadSession,
+  splitDraftLoadUnits,
+} from './loadProvenanceRepository';
+import type { LoadUnit } from '../domain/loadUnits';
 import { SYNC_MUTATION_INSERT_SQL } from './syncOutbox';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
@@ -49,6 +55,7 @@ interface CompletedSetRow {
   exercise_id: string | null;
   set_number: number;
   load: number | null;
+  load_unit?: LoadUnit | null;
   reps: number | null;
   duration_seconds: number | null;
   distance_meters: number | null;
@@ -102,10 +109,12 @@ export async function saveWorkoutSession(
 export async function saveCompletedSet(
   database: SQLiteDatabase,
   completedSet: CompletedSet,
+  ownerId: string,
 ): Promise<'inserted' | 'duplicate'> {
   let inserted = false;
 
-  await database.withTransactionAsync(async () => {
+  await database.withExclusiveTransactionAsync(async (database) => {
+    await assertOwnedLoadSession(database, completedSet.sessionId, ownerId);
     const result = await database.runAsync(
       `INSERT OR IGNORE INTO completed_sets
         (id, session_id, workout_exercise_id, exercise_id, set_number, load, reps, duration_seconds,
@@ -126,8 +135,36 @@ export async function saveCompletedSet(
       completedSet.idempotencyKey,
     );
 
-    if (result.changes === 0) return;
+    if (result.changes === 0) {
+      const existing = (await getCompletedSets(database, completedSet.sessionId)).find(
+        (saved) =>
+          saved.id === completedSet.id && saved.idempotencyKey === completedSet.idempotencyKey,
+      );
+      if (
+        !existing ||
+        [
+          'load',
+          'loadUnit',
+          'reps',
+          'durationSeconds',
+          'distanceMeters',
+          'rpe',
+          'rir',
+          'workoutExerciseId',
+          'setNumber',
+          'exerciseId',
+        ].some(
+          (field) =>
+            existing[field as keyof CompletedSet] !== completedSet[field as keyof CompletedSet],
+        )
+      )
+        throw new Error(
+          'This saved set has different actual values. Reload and edit it explicitly.',
+        );
+      return;
+    }
     inserted = true;
+    await writeSetLoadProvenance(database, completedSet, ownerId);
 
     await database.runAsync(
       SYNC_MUTATION_INSERT_SQL,
@@ -148,11 +185,8 @@ export async function getCompletedSets(
   sessionId: string,
 ): Promise<CompletedSet[]> {
   const rows = await database.getAllAsync<CompletedSetRow>(
-    `SELECT id, session_id, workout_exercise_id, set_number, load, reps, duration_seconds,
-            exercise_id, distance_meters, rpe, rir, completed_at, idempotency_key
-       FROM completed_sets
-      WHERE session_id = ?
-      ORDER BY workout_exercise_id, set_number;`,
+    `SELECT s.*, p.load_unit FROM completed_sets s LEFT JOIN completed_set_load_provenance p ON p.completed_set_id=s.id AND p.session_id=s.session_id AND p.load_value=s.load AND p.set_completed_at=s.completed_at
+      WHERE s.session_id=? ORDER BY s.workout_exercise_id,s.set_number;`,
     sessionId,
   );
 
@@ -163,6 +197,7 @@ export async function getCompletedSets(
     ...(row.exercise_id ? { exerciseId: row.exercise_id } : {}),
     setNumber: row.set_number,
     load: row.load ?? undefined,
+    ...(row.load_unit ? { loadUnit: row.load_unit } : {}),
     reps: row.reps ?? undefined,
     durationSeconds: row.duration_seconds ?? undefined,
     distanceMeters: row.distance_meters ?? undefined,
@@ -370,34 +405,52 @@ export async function saveWorkoutDraft(
   sessionId: string,
   values: WorkoutDraftValues,
   updatedAt: string,
+  ownerId: string,
 ): Promise<void> {
-  await database.runAsync(
-    `INSERT INTO workout_drafts (session_id, values_json, updated_at)
+  const { plain, units } = splitDraftLoadUnits(values);
+  await database.withExclusiveTransactionAsync(async (database) => {
+    const owner = await assertOwnedLoadSession(database, sessionId, ownerId);
+    await database.runAsync(
+      `INSERT INTO workout_drafts (session_id, values_json, updated_at)
      VALUES (?, ?, ?)
      ON CONFLICT(session_id) DO UPDATE SET
        values_json = excluded.values_json,
        updated_at = excluded.updated_at;`,
-    sessionId,
-    JSON.stringify(values),
-    updatedAt,
-  );
+      sessionId,
+      JSON.stringify(plain),
+      updatedAt,
+    );
+    await database.runAsync(
+      'INSERT INTO workout_draft_load_units (session_id,user_id,load_units_json,updated_at) VALUES (?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET user_id=excluded.user_id,load_units_json=excluded.load_units_json,updated_at=excluded.updated_at;',
+      sessionId,
+      owner,
+      JSON.stringify(units),
+      updatedAt,
+    );
+  });
 }
 
 export async function getWorkoutDraft(
   database: SQLiteDatabase,
   sessionId: string,
 ): Promise<WorkoutDraftValues | null> {
-  const row = await database.getFirstAsync<{ values_json: string }>(
-    `SELECT values_json
-       FROM workout_drafts
-      WHERE session_id = ?
+  const row = await database.getFirstAsync<{ values_json: string; load_units_json: string | null }>(
+    `SELECT d.values_json,u.load_units_json FROM workout_drafts d LEFT JOIN workout_draft_load_units u ON u.session_id=d.session_id AND u.updated_at=d.updated_at
+      WHERE d.session_id = ?
       LIMIT 1;`,
     sessionId,
   );
   if (!row) return null;
 
   try {
-    return JSON.parse(row.values_json) as WorkoutDraftValues;
+    const values = JSON.parse(row.values_json) as WorkoutDraftValues;
+    const units = row.load_units_json ? JSON.parse(row.load_units_json) : {};
+    return Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [
+        key,
+        { ...value, loadUnit: units[key] ?? (value.load.trim() ? 'unknown' : undefined) },
+      ]),
+    );
   } catch {
     return null;
   }
@@ -418,10 +471,12 @@ export async function deleteWorkoutDraft(
 export async function updateCompletedSet(
   database: SQLiteDatabase,
   completedSet: CompletedSet,
+  ownerId: string,
 ): Promise<'updated' | 'missing'> {
   let updated = false;
 
-  await database.withTransactionAsync(async () => {
+  await database.withExclusiveTransactionAsync(async (database) => {
+    await assertOwnedLoadSession(database, completedSet.sessionId, ownerId);
     const result = await database.runAsync(
       `UPDATE completed_sets
           SET exercise_id = ?, load = ?, reps = ?, duration_seconds = ?, distance_meters = ?,
@@ -440,6 +495,7 @@ export async function updateCompletedSet(
     if (result.changes === 0) return;
 
     updated = true;
+    await writeSetLoadProvenance(database, completedSet, ownerId);
     await database.runAsync(
       SYNC_MUTATION_INSERT_SQL,
       `outbox-${completedSet.idempotencyKey}`,

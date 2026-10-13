@@ -21,6 +21,7 @@ describe('deterministic progress history', () => {
         exerciseId: 'exercise-back-squat',
         completedAt: '2026-09-14T12:00:00.000Z',
         load: 190,
+        loadUnit: 'kg',
         reps: 6,
       },
       {
@@ -28,6 +29,7 @@ describe('deterministic progress history', () => {
         exerciseId: 'exercise-back-squat',
         completedAt: '2026-09-13T12:00:00.000Z',
         load: 185,
+        loadUnit: 'kg',
         reps: 5,
       },
       {
@@ -35,6 +37,7 @@ describe('deterministic progress history', () => {
         exerciseId: 'exercise-back-squat',
         completedAt: '2026-09-13T12:01:00.000Z',
         load: 185,
+        loadUnit: 'kg',
         reps: 6,
       },
       {
@@ -42,6 +45,7 @@ describe('deterministic progress history', () => {
         exerciseId: 'exercise-bench-press',
         completedAt: '2026-09-14T12:00:00.000Z',
         load: 200,
+        loadUnit: 'kg',
         reps: 5,
       },
     ]);
@@ -125,6 +129,7 @@ describe('deterministic progress history', () => {
           exerciseId: 'exercise-squat',
           completedAt: '2026-09-14T12:00:00.000Z',
           load: 100,
+          loadUnit: 'kg',
           reps: 5,
         },
         {
@@ -132,6 +137,7 @@ describe('deterministic progress history', () => {
           exerciseId: 'exercise-squat',
           completedAt: '2026-09-14T12:01:00.000Z',
           load: 100,
+          loadUnit: 'kg',
           reps: 5,
         },
         {

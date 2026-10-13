@@ -1,3 +1,4 @@
+import { loadProvenanceSections } from './loadUnits';
 import {
   persistenceSections,
   type BuilderRecoverySnapshot,
@@ -46,6 +47,7 @@ export const restoreTables = {
   cycleReviews: 'cycle_reviews',
   workoutScheduleOverrides: 'workout_schedule_overrides',
   ...persistenceSections,
+  ...loadProvenanceSections,
 } as const;
 export type RestoreSection = keyof typeof restoreTables;
 export type RestoreRow = Record<string, string | number | null>;
@@ -477,12 +479,14 @@ export function validateLocalBackup(serialized: string): RestorePreview {
   }
   check(isRecord(raw), 'file is not an export.');
   check(
-    raw.schemaVersion === 12 || raw.schemaVersion === 13,
-    'only export schemas 12 and 13 are supported. Other versions need a compatible app.',
+    raw.schemaVersion === 12 || raw.schemaVersion === 13 || raw.schemaVersion === 14,
+    'only export schemas 12, 13 and 14 are supported. Other versions need a compatible app.',
   );
   const sections = Object.keys(restoreTables) as RestoreSection[];
   const sourceSections = sections.filter(
-    (key) => raw.schemaVersion === 13 || !(key in persistenceSections),
+    (key) =>
+      (raw.schemaVersion !== 12 || !(key in persistenceSections)) &&
+      (raw.schemaVersion === 14 || !(key in loadProvenanceSections)),
   );
   keys(
     raw,
@@ -554,19 +558,21 @@ export function validateLocalBackup(serialized: string): RestorePreview {
           parsed.set(`${key}:${index}:${column.name}`, safeJSON(value as string));
       }
       const identity =
-        key === 'userEquipment'
-          ? ['user_id', 'equipment_id']
-          : key === 'shiftProtocols'
-            ? ['shift_id', 'protocol_id', 'protocol_version']
-            : key === 'healthSummaries'
-              ? ['user_id', 'source', 'id']
-              : key === 'personalGoalDrafts'
-                ? ['user_id', 'cycle_id']
-                : Object.hasOwn(row, 'id')
-                  ? ['id']
-                  : Object.hasOwn(row, 'session_id')
-                    ? ['session_id']
-                    : ['user_id'];
+        key === 'completedSetLoadProvenance'
+          ? ['completed_set_id']
+          : key === 'userEquipment'
+            ? ['user_id', 'equipment_id']
+            : key === 'shiftProtocols'
+              ? ['shift_id', 'protocol_id', 'protocol_version']
+              : key === 'healthSummaries'
+                ? ['user_id', 'source', 'id']
+                : key === 'personalGoalDrafts'
+                  ? ['user_id', 'cycle_id']
+                  : Object.hasOwn(row, 'id')
+                    ? ['id']
+                    : Object.hasOwn(row, 'session_id')
+                      ? ['session_id']
+                      : ['user_id'];
       if (index === rows.length - 1) unique(rows as Record<string, unknown>[], identity, key);
     }
   }
@@ -1112,13 +1118,46 @@ export function validateLocalBackup(serialized: string): RestorePreview {
     }
   }
   validatePersistenceGraph(data);
+  for (const row of data.completedSetLoadProvenance ?? []) {
+    const saved = data.completedSets.find((set) => set.id === row.completed_set_id);
+    const session = data.workoutSessions.find((entry) => entry.id === row.session_id);
+    check(
+      saved &&
+        session &&
+        saved.session_id === row.session_id &&
+        saved.load !== null &&
+        row.load_value === saved.load &&
+        row.set_completed_at === saved.completed_at,
+      'load provenance does not match its owned current set.',
+    );
+    choice(row.load_unit, ['kg', 'lb']);
+    number(row.load_value, 0);
+    check(
+      Date.parse(String(row.recorded_at)) >= Date.parse(String(session.started_at)),
+      'load provenance precedes its session.',
+    );
+  }
+  for (const row of data.workoutDraftLoadUnits ?? []) {
+    const draft = data.workoutDrafts.find((entry) => entry.session_id === row.session_id);
+    check(
+      draft && draft.updated_at === row.updated_at,
+      'draft unit snapshot does not match its draft.',
+    );
+    const units = safeJSON(String(row.load_units_json));
+    const values = safeJSON(String(draft.values_json));
+    check(isRecord(units) && isRecord(values), 'invalid draft unit map.');
+    for (const [key, unit] of Object.entries(units)) {
+      check(Object.hasOwn(values, key), 'unknown draft unit set.');
+      choice(unit, ['kg', 'lb']);
+    }
+  }
   const warnings = [
     'Restore works only on an empty local installation; it does not merge or overwrite existing records.',
     'Health connections, provider consent and notification choices reset to off. Device permissions are never granted by restore.',
     'Media files are not included. Custom media links are removed; add your media again on this device.',
     'Identifiers and immutable versions are preserved; owner fields map to the current guest. This is local recovery, not cloud sync.',
   ];
-  data.schemaVersion = 13;
+  data.schemaVersion = 14;
   data.summary = buildLocalDataExportSummary(data);
   return { data, recordCount: count, exportedAt: data.exportedAt, warnings };
 }

@@ -279,6 +279,12 @@ export default function CycleReviewScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
+      {summary.unknownLoadSetCount ? (
+        <Text variant="small" tone="muted">
+          {summary.unknownLoadSetCount} sets have unknown load units. Their load is excluded from
+          volume and load records; recorded reps, time and distance remain available.
+        </Text>
+      ) : null}
       <Text variant="display" accessibilityRole="header" style={styles.title}>
         {isComplete ? 'Your training record, reviewed.' : 'Review your training so far.'}
       </Text>

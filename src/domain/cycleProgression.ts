@@ -60,6 +60,7 @@ export function buildCycleProgressionCopy(
         exerciseId: workoutExercise.exerciseId,
         setNumber: index + 1,
         load: set.load,
+        loadUnit: set.loadUnit,
         reps: set.reps,
         durationSeconds: set.durationSeconds,
         distanceMeters: set.distanceMeters,

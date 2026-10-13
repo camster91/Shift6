@@ -477,6 +477,18 @@ export const MIGRATIONS: readonly Migration[] = [
       `CREATE TRIGGER set_feedback_owned_update BEFORE UPDATE ON set_feedback_events WHEN NOT EXISTS(SELECT 1 FROM workout_sessions s JOIN training_cycles c ON c.id=s.cycle_id WHERE s.id=NEW.session_id AND c.user_id=NEW.user_id) BEGIN SELECT RAISE(ABORT,'Feedback must belong to an owned saved set.'); END;`,
     ],
   },
+  {
+    version: 25,
+    name: 'actual-load-unit-provenance',
+    statements: [
+      `CREATE TABLE completed_set_load_provenance (completed_set_id TEXT PRIMARY KEY NOT NULL, session_id TEXT NOT NULL, user_id TEXT NOT NULL, load_unit TEXT NOT NULL CHECK(load_unit IN ('kg','lb')), load_value REAL NOT NULL CHECK(load_value>=0), set_completed_at TEXT NOT NULL, recorded_at TEXT NOT NULL, FOREIGN KEY(completed_set_id,session_id) REFERENCES completed_sets(id,session_id) ON DELETE CASCADE, FOREIGN KEY(user_id) REFERENCES user_profiles(id) ON UPDATE CASCADE ON DELETE CASCADE);`,
+      `CREATE TABLE workout_draft_load_units (session_id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, load_units_json TEXT NOT NULL, updated_at TEXT NOT NULL, FOREIGN KEY(session_id) REFERENCES workout_drafts(session_id) ON DELETE CASCADE, FOREIGN KEY(user_id) REFERENCES user_profiles(id) ON UPDATE CASCADE ON DELETE CASCADE);`,
+      `CREATE TRIGGER load_provenance_owned_insert BEFORE INSERT ON completed_set_load_provenance WHEN NOT EXISTS(SELECT 1 FROM workout_sessions s JOIN training_cycles c ON c.id=s.cycle_id JOIN completed_sets t ON t.session_id=s.id WHERE t.id=NEW.completed_set_id AND c.user_id=NEW.user_id AND t.load=NEW.load_value AND t.completed_at=NEW.set_completed_at) BEGIN SELECT RAISE(ABORT,'Actual load provenance must match its owned set.'); END;`,
+      `CREATE TRIGGER load_provenance_owned_update BEFORE UPDATE ON completed_set_load_provenance WHEN NOT EXISTS(SELECT 1 FROM workout_sessions s JOIN training_cycles c ON c.id=s.cycle_id JOIN completed_sets t ON t.session_id=s.id WHERE t.id=NEW.completed_set_id AND c.user_id=NEW.user_id AND t.load=NEW.load_value AND t.completed_at=NEW.set_completed_at) BEGIN SELECT RAISE(ABORT,'Actual load provenance must match its owned set.'); END;`,
+      `CREATE TRIGGER draft_units_owned_insert BEFORE INSERT ON workout_draft_load_units WHEN NOT EXISTS(SELECT 1 FROM workout_sessions s JOIN training_cycles c ON c.id=s.cycle_id WHERE s.id=NEW.session_id AND c.user_id=NEW.user_id) BEGIN SELECT RAISE(ABORT,'Draft units must belong to the owned session.'); END;`,
+      `CREATE TRIGGER draft_units_owned_update BEFORE UPDATE ON workout_draft_load_units WHEN NOT EXISTS(SELECT 1 FROM workout_sessions s JOIN training_cycles c ON c.id=s.cycle_id WHERE s.id=NEW.session_id AND c.user_id=NEW.user_id) BEGIN SELECT RAISE(ABORT,'Draft units must belong to the owned session.'); END;`,
+    ],
+  },
 ];
 
 export async function migrateDatabase(

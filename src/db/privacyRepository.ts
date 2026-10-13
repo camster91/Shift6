@@ -1,3 +1,4 @@
+import { loadProvenanceSections } from '../domain/loadUnits';
 import { persistenceSections } from '../domain/localPersistence';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
@@ -27,7 +28,9 @@ export interface LocalDataExportSummary {
 }
 
 export interface LocalDataExport {
-  schemaVersion: 12 | 13;
+  schemaVersion: 12 | 13 | 14;
+  completedSetLoadProvenance?: Record<string, unknown>[];
+  workoutDraftLoadUnits?: Record<string, unknown>[];
   cycleLifecycleEvents?: Record<string, unknown>[];
   coachMemoryPreferences?: Record<string, unknown>[];
   coachMemoryFacts?: Record<string, unknown>[];
@@ -82,7 +85,7 @@ async function exportLocalUserDataInTransaction(
   exportedAt: string,
 ): Promise<LocalDataExport> {
   const additions: Record<string, Record<string, unknown>[]> = {};
-  for (const [key, table] of Object.entries(persistenceSections))
+  for (const [key, table] of Object.entries({ ...persistenceSections, ...loadProvenanceSections }))
     additions[key] = await database.getAllAsync(
       `SELECT * FROM ${table} WHERE user_id=? ORDER BY rowid;`,
       userId,
@@ -251,7 +254,7 @@ async function exportLocalUserDataInTransaction(
   });
 
   return {
-    schemaVersion: 13,
+    schemaVersion: 14,
     exportedAt,
     userId,
     summary,
@@ -335,7 +338,9 @@ export function buildLocalDataExportSummary(
         data.cycleReviews.length +
         data.workoutScheduleOverrides.length +
         (data.cycleLifecycleEvents?.length ?? 0) +
-        (data.setFeedbackEvents?.length ?? 0),
+        (data.setFeedbackEvents?.length ?? 0) +
+        (data.completedSetLoadProvenance?.length ?? 0) +
+        (data.workoutDraftLoadUnits?.length ?? 0),
     },
     {
       key: 'programsAndExercises',
@@ -390,7 +395,7 @@ export async function assertNoUnsupportedShiftOutboxRows(database: SQLiteDatabas
 export async function deleteLocalUserData(database: SQLiteDatabase, userId: string): Promise<void> {
   await database.withExclusiveTransactionAsync(async (database) => {
     await assertNoUnsupportedShiftOutboxRows(database);
-    for (const table of Object.values(persistenceSections))
+    for (const table of Object.values({ ...persistenceSections, ...loadProvenanceSections }))
       await database.runAsync(`DELETE FROM ${table} WHERE user_id=?;`, userId);
     await database.runAsync(
       `DELETE FROM sync_outbox

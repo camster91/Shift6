@@ -1,3 +1,4 @@
+import { loadProvenanceSections } from '../domain/loadUnits';
 import { persistenceSections } from '../domain/localPersistence';
 import { deleteLocalUserData } from './privacyRepository';
 import { migrateLocalUserToAccount } from './accountRepository';
@@ -157,15 +158,15 @@ test('legacy 12 remains strict and normalizes empty schema 13 sections', () => {
   legacy.coachMemoryFacts = [];
   expect(() => validateLocalBackup(serialized(legacy))).toThrow();
   const future = fixture13();
-  future.schemaVersion = 14 as 13;
-  expect(() => validateLocalBackup(serialized(future))).toThrow('schemas 12 and 13');
+  future.schemaVersion = 15 as 13;
+  expect(() => validateLocalBackup(serialized(future))).toThrow('schemas 12, 13 and 14');
 });
 
 test('schema 13 requires additions and restores all five tables with disabled memory and draft ownership', async () => {
   const data = fixture13();
   await restoreLocalBackup(db, 'guest-user', serialized(data));
   const exported = await exportLocalUserData(db, 'guest-user', stamp);
-  expect(exported.schemaVersion).toBe(13);
+  expect(exported.schemaVersion).toBe(14);
   expect(exported.coachMemoryPreferences?.[0]?.enabled).toBe(0);
   expect(
     JSON.parse(String(exported.builderRecoveryDrafts?.[0]?.snapshot_json)).program.ownerId,
@@ -192,7 +193,7 @@ test('additive migration24 preserves actual schema12 rows from a migration23 dat
     old.exec('BEGIN; PRAGMA defer_foreign_keys=ON;');
     const data = fixture();
     for (const key of Object.keys(restoreTables) as (keyof typeof restoreTables)[]) {
-      if (key in persistenceSections) continue;
+      if (key in persistenceSections || key in loadProvenanceSections) continue;
       const table = restoreTables[key];
       for (const row of data[key] ?? []) {
         const columns = Object.keys(row);
@@ -205,7 +206,7 @@ test('additive migration24 preserves actual schema12 rows from a migration23 dat
     }
     old.exec('COMMIT;');
     const snapshots = Object.entries(restoreTables)
-      .filter(([key]) => !(key in persistenceSections))
+      .filter(([key]) => !(key in persistenceSections) && !(key in loadProvenanceSections))
       .map(([, table]) => [table, old.prepare(`SELECT * FROM ${table}`).all()] as const);
     for (const statement of MIGRATIONS.find((entry) => entry.version === 24)!.statements)
       old.exec(statement);
@@ -327,11 +328,15 @@ test('explicit legacy return preserves unknown pause timing in schema13 round tr
 test('feedback remains restorable after an actual saved-set edit changes completed_at', async () => {
   await restoreLocalBackup(db, 'guest-user', serialized(fixture13()));
   const set = (await getCompletedSets(db, String(fixture().workoutSessions[0]!.id)))[0]!;
-  await updateCompletedSet(db, {
-    ...set,
-    durationSeconds: (set.durationSeconds ?? 0) + 1,
-    completedAt: '2026-10-15T04:00:00.000Z',
-  });
+  await updateCompletedSet(
+    db,
+    {
+      ...set,
+      durationSeconds: (set.durationSeconds ?? 0) + 1,
+      completedAt: '2026-10-15T04:00:00.000Z',
+    },
+    'guest-user',
+  );
   const exported = await exportLocalUserData(db, 'guest-user', stamp);
   expect(Date.parse(String(exported.setFeedbackEvents![0]!.recorded_at))).toBeLessThan(
     Date.parse(String(exported.completedSets[0]!.completed_at)),

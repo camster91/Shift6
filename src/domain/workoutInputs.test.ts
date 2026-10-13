@@ -50,7 +50,7 @@ test('rehydrating the same session preserves unsaved edits including cleared fie
     null,
     current,
   );
-  expect(result[key]).toEqual(current[key]);
+  expect(result[key]).toEqual({ ...current[key], loadUnit: 'unknown' });
 });
 
 test('resume restores uncompleted draft entries', () => {

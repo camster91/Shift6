@@ -1,3 +1,4 @@
+import { declaredLoad, type LoadUnit } from '../domain/loadUnits';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import {
@@ -37,6 +38,7 @@ interface CompletedSetProgressRow {
   version_json: string | null;
   completed_at: string;
   load: number | null;
+  load_unit?: LoadUnit | null;
   reps: number | null;
   duration_seconds: number | null;
   distance_meters: number | null;
@@ -56,6 +58,7 @@ interface ExerciseProgressRow {
   workout_exercise_id: string;
   completed_at: string;
   load: number | null;
+  load_unit?: LoadUnit | null;
   reps: number | null;
   duration_seconds: number | null;
   distance_meters: number | null;
@@ -91,11 +94,12 @@ export async function getCycleCompletedSetRecords(
   const rows = await database.getAllAsync<ExerciseProgressRow>(
     `SELECT completed_sets.session_id, completed_sets.exercise_id,
             completed_sets.workout_exercise_id, completed_sets.completed_at,
-            completed_sets.load, completed_sets.reps, completed_sets.duration_seconds,
+            completed_sets.load, provenance.load_unit, completed_sets.reps, completed_sets.duration_seconds,
             completed_sets.distance_meters, completed_sets.rpe, completed_sets.rir,
             workout_sessions.workout_id, workout_sessions.readiness,
             workout_check_ins.discomfort_reported, user_program_versions.version_json
        FROM completed_sets
+       LEFT JOIN completed_set_load_provenance provenance ON provenance.completed_set_id=completed_sets.id AND provenance.session_id=completed_sets.session_id AND provenance.load_value=completed_sets.load AND provenance.set_completed_at=completed_sets.completed_at
        INNER JOIN workout_sessions
          ON workout_sessions.id = completed_sets.session_id
        LEFT JOIN workout_check_ins
@@ -119,6 +123,7 @@ export async function getCycleCompletedSetRecords(
         exerciseId,
         completedAt: row.completed_at,
         load: row.load ?? undefined,
+        loadUnit: row.load_unit ?? undefined,
         reps: row.reps ?? undefined,
         durationSeconds: row.duration_seconds ?? undefined,
         distanceMeters: row.distance_meters ?? undefined,
@@ -206,11 +211,12 @@ export async function getExerciseProgress(
   const rows = await database.getAllAsync<ExerciseProgressRow>(
     `SELECT completed_sets.session_id, completed_sets.exercise_id,
             completed_sets.workout_exercise_id, completed_sets.completed_at,
-            completed_sets.load, completed_sets.reps, completed_sets.duration_seconds,
+            completed_sets.load, provenance.load_unit, completed_sets.reps, completed_sets.duration_seconds,
             completed_sets.distance_meters, completed_sets.rpe, completed_sets.rir,
             workout_sessions.workout_id, workout_sessions.readiness,
             workout_check_ins.discomfort_reported, user_program_versions.version_json
        FROM completed_sets
+       LEFT JOIN completed_set_load_provenance provenance ON provenance.completed_set_id=completed_sets.id AND provenance.session_id=completed_sets.session_id AND provenance.load_value=completed_sets.load AND provenance.set_completed_at=completed_sets.completed_at
        INNER JOIN workout_sessions
          ON workout_sessions.id = completed_sets.session_id
        LEFT JOIN workout_check_ins
@@ -236,6 +242,7 @@ export async function getExerciseProgress(
           exerciseId: resolvedExerciseId,
           completedAt: row.completed_at,
           load: row.load ?? undefined,
+          loadUnit: row.load_unit ?? undefined,
           reps: row.reps ?? undefined,
           durationSeconds: row.duration_seconds ?? undefined,
           distanceMeters: row.distance_meters ?? undefined,
@@ -283,12 +290,13 @@ async function getCycleReviewSessions(
   );
   const setRows = await database.getAllAsync<CompletedSetProgressRow>(
     `SELECT completed_sets.session_id, completed_sets.exercise_id,
-            completed_sets.workout_exercise_id, completed_sets.load, completed_sets.reps,
+            completed_sets.workout_exercise_id, completed_sets.load, provenance.load_unit, completed_sets.reps,
             completed_sets.duration_seconds, completed_sets.distance_meters,
             completed_sets.rpe, completed_sets.rir, completed_sets.completed_at,
             workout_sessions.workout_id,
             user_program_versions.version_json
        FROM completed_sets
+       LEFT JOIN completed_set_load_provenance provenance ON provenance.completed_set_id=completed_sets.id AND provenance.session_id=completed_sets.session_id AND provenance.load_value=completed_sets.load AND provenance.set_completed_at=completed_sets.completed_at
        INNER JOIN workout_sessions
          ON workout_sessions.id = completed_sets.session_id
        LEFT JOIN user_program_versions
@@ -312,7 +320,11 @@ async function getCycleReviewSessions(
     const sessionSets = setsBySession.get(row.session_id) ?? [];
     sessionSets.push({
       completed: true,
-      load: row.load ?? undefined,
+      load: declaredLoad(row.load ?? undefined, row.load_unit ?? undefined),
+      loadProvenanceMissing:
+        row.load !== null &&
+        row.load !== undefined &&
+        declaredLoad(row.load, row.load_unit ?? undefined) === undefined,
       reps: row.reps ?? undefined,
       durationSeconds: row.duration_seconds ?? undefined,
       distanceMeters: row.distance_meters ?? undefined,
@@ -375,6 +387,7 @@ function buildCyclePersonalRecords(
       exerciseId: string;
       completedAt: string;
       load?: number;
+      loadUnit?: LoadUnit;
       reps?: number;
       durationSeconds?: number;
       distanceMeters?: number;
@@ -392,6 +405,7 @@ function buildCyclePersonalRecords(
       exerciseId,
       completedAt: row.completed_at ?? new Date(0).toISOString(),
       load: row.load ?? undefined,
+      loadUnit: row.load_unit ?? undefined,
       reps: row.reps ?? undefined,
       durationSeconds: row.duration_seconds ?? undefined,
       distanceMeters: row.distance_meters ?? undefined,

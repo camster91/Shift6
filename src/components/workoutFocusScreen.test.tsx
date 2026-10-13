@@ -2,6 +2,8 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import ActiveWorkoutScreen from '../../app/workout';
 import { demoCycle, demoProgram, demoProgramVersion, demoUser } from '../domain/fixtures/home';
+import type { WorkoutDraftValues } from '../domain/types';
+let mockRecoveredDraft: WorkoutDraftValues | null = null;
 const mockDb = {},
   mockSaveSet = jest.fn(),
   mockSaveNote = jest.fn(),
@@ -48,7 +50,7 @@ jest.mock('../db/workoutRepository', () => ({
   getInProgressWorkoutSession: async () => null,
   saveWorkoutSession: async () => undefined,
   getCompletedSets: async () => [],
-  getWorkoutDraft: async () => null,
+  getWorkoutDraft: async () => mockRecoveredDraft,
   saveWorkoutDraft: (...args: unknown[]) => mockSaveDraft(...args),
   saveCompletedSet: (...args: unknown[]) => mockSaveSet(...args),
   updateCompletedSet: jest.fn(),
@@ -66,6 +68,7 @@ let mockUser = demoUser;
 beforeEach(() => {
   jest.clearAllMocks();
   mockUser = demoUser;
+  mockRecoveredDraft = null;
   mockSaveSet.mockResolvedValue('saved');
   mockSaveNote.mockResolvedValue(undefined);
   mockSaveDraft.mockResolvedValue(undefined);
@@ -74,6 +77,71 @@ beforeEach(() => {
   jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 });
 afterEach(() => jest.restoreAllMocks());
+
+test.each([
+  ['metric', 'imperial', 'kg', 'lb'],
+  ['imperial', 'metric', 'lb', 'kg'],
+] as const)(
+  'actual units follow %s target under %s preferences; unit conversion requires confirmation',
+  async (targetUnit, preference, actualUnit, otherUnit) => {
+    const target = mockVersion.workouts[0]!.exercises[0]!.sets[0]!.target;
+    const oldLoad = target.load;
+    target.load = { value: 40, unit: targetUnit };
+    mockUser = { ...demoUser, unitSystem: preference };
+    try {
+      const screen = await render(<ActiveWorkoutScreen />);
+      await waitFor(() => expect(screen.getByLabelText('Back squat set 1 load')).toBeTruthy());
+      expect(screen.getByLabelText('Back squat set 1 load').props.placeholder).toBe(actualUnit);
+      await fireEvent.changeText(screen.getByLabelText('Back squat set 1 load'), '40');
+      await fireEvent.press(
+        screen.getByLabelText(`Back squat set 1 actual load unit ${otherUnit}`),
+      );
+      expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('40');
+      expect(mockSaveSet).not.toHaveBeenCalled();
+      await act(async () => {
+        jest
+          .mocked(Alert.alert)
+          .mock.calls.at(-1)?.[2]
+          ?.find((button) => button.text === 'Confirm')
+          ?.onPress?.();
+      });
+      expect(Number(screen.getByLabelText('Back squat set 1 load').props.value)).toBeCloseTo(
+        actualUnit === 'kg' ? 40 / 0.45359237 : 40 * 0.45359237,
+      );
+      await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+      await waitFor(() => expect(mockSaveSet).toHaveBeenCalledTimes(1));
+      expect(mockSaveSet.mock.calls[0]?.[1]).toMatchObject({ loadUnit: otherUnit });
+      expect(mockSaveSet.mock.calls[0]?.[2]).toBe('guest-user');
+    } finally {
+      target.load = oldLoad;
+    }
+  },
+);
+
+test('legacy recovered load stays unknown and cannot save until explicitly declared', async () => {
+  const exercise = mockVersion.workouts[0]!.exercises[0]!;
+  mockRecoveredDraft = {
+    [`${exercise.id}:1`]: { load: '35', reps: '8', duration: '', distance: '', rpe: '', rir: '' },
+  };
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() =>
+    expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('35'),
+  );
+  expect(screen.getByLabelText('Back squat set 1 load').props.placeholder).toBe('Unit unknown');
+  await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+  expect(mockSaveSet).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Back squat set 1 actual load unit kg'));
+  await act(async () => {
+    jest
+      .mocked(Alert.alert)
+      .mock.calls.at(-1)?.[2]
+      ?.find((button) => button.text === 'Confirm')
+      ?.onPress?.();
+  });
+  await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+  await waitFor(() => expect(mockSaveSet).toHaveBeenCalledTimes(1));
+  expect(mockSaveSet.mock.calls[0]?.[1]).toMatchObject({ load: 35, loadUnit: 'kg' });
+});
 test('focused fields precede optional details and bodyweight never requires owned gear', async () => {
   const beforeEquipment = mockVersion.workouts[0]!.equipmentIds;
   mockVersion.workouts[0]!.equipmentIds = ['equipment-bodyweight'];

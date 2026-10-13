@@ -690,6 +690,11 @@ function TrainingVolumeCard({ breakdown }: { breakdown: TrainingVolumeBreakdown 
       <Text variant="caption" tone="muted">
         TRAINING VOLUME
       </Text>
+      {breakdown.unknownLoadSetCount ? (
+        <Text variant="small" tone="muted">
+          {breakdown.unknownLoadSetCount} sets have unknown load units; their load is excluded.
+        </Text>
+      ) : null}
       <Text variant="h3" style={styles.volumeTitle}>
         What you trained.
       </Text>
@@ -821,8 +826,8 @@ function formatHistoryValue(point: ProgressPoint | undefined, metric: HistoryMet
   if (metric === 'duration') return formatDuration(value);
   if (metric === 'distance') return formatDistance(value);
   if (metric === 'reps') return `${Math.round(value)} reps`;
-  if (point?.estimatedOneRepMax !== undefined) return `${Math.round(value)} estimated`;
-  if (point?.bestLoad !== undefined) return `${Math.round(value)} load`;
+  if (point?.estimatedOneRepMax !== undefined) return `${Math.round(value)} kg estimated`;
+  if (point?.bestLoad !== undefined) return `${Math.round(value)} kg load`;
   return `${Math.round(value)} reps`;
 }
 

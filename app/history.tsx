@@ -194,8 +194,10 @@ function HistoryCard({ entry }: { entry: WorkoutHistoryEntry }) {
   const statusLabel = formatStatus(entry.status);
   const focusLabel = entry.focus.replace('-', ' ');
   const metricParts = [`${entry.completedSetCount} set${entry.completedSetCount === 1 ? '' : 's'}`];
+  if (entry.unknownLoadSetCount)
+    metricParts.push(`${entry.unknownLoadSetCount} unknown-unit loads excluded`);
   if (entry.totalVolume > 0) {
-    metricParts.push(`${Math.round(entry.totalVolume).toLocaleString()} volume`);
+    metricParts.push(`${Math.round(entry.totalVolume).toLocaleString()} kg-reps`);
   }
   if (entry.totalDurationSeconds > 0) {
     metricParts.push(`${Math.round(entry.totalDurationSeconds / 60)} cardio min`);

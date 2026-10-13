@@ -29,6 +29,7 @@ describe('getCycleProgressSummary', () => {
               version_json: null,
               completed_at: '2026-09-13T12:05:00.000Z',
               load: 185,
+              load_unit: 'kg',
               reps: 5,
               duration_seconds: null,
               distance_meters: null,
@@ -159,6 +160,7 @@ describe('getCycleProgressSummary', () => {
               version_json: null,
               completed_at: '2026-09-14T12:10:00.000Z',
               load: 185,
+              load_unit: 'kg',
               reps: 5,
               duration_seconds: null,
               distance_meters: null,
@@ -204,6 +206,7 @@ describe('getCycleProgressSummary', () => {
           workout_exercise_id: 'workout-exercise-squat',
           completed_at: '2026-09-14T12:05:00.000Z',
           load: 185,
+          load_unit: 'kg',
           reps: 5,
           duration_seconds: null,
           distance_meters: null,
@@ -227,6 +230,7 @@ describe('getCycleProgressSummary', () => {
         exerciseId: 'exercise-squat',
         completedAt: '2026-09-14T12:05:00.000Z',
         load: 185,
+        loadUnit: 'kg',
         reps: 5,
         durationSeconds: undefined,
         distanceMeters: undefined,
@@ -268,6 +272,7 @@ describe('getCycleProgressSummary', () => {
           workout_exercise_id: 'exercise-1',
           set_number: 1,
           load: 185,
+          load_unit: 'kg',
           reps: 5,
           duration_seconds: null,
           distance_meters: null,
@@ -281,7 +286,7 @@ describe('getCycleProgressSummary', () => {
 
     await expect(
       getLatestCompletedWorkoutSets(database, 'cycle-1', 'workout-1'),
-    ).resolves.toMatchObject([{ id: 'set-latest', load: 185, reps: 5 }]);
+    ).resolves.toMatchObject([{ id: 'set-latest', load: 185, loadUnit: 'kg', reps: 5 }]);
   });
 
   it('can scope latest-set lookup to the active immutable program version', async () => {
@@ -308,6 +313,7 @@ describe('getCycleProgressSummary', () => {
           workout_exercise_id: 'workout-exercise-squat',
           completed_at: '2026-09-13T12:05:00.000Z',
           load: 185,
+          load_unit: 'kg',
           reps: 5,
         },
         {
@@ -316,6 +322,7 @@ describe('getCycleProgressSummary', () => {
           workout_exercise_id: 'workout-exercise-squat',
           completed_at: '2026-09-14T12:05:00.000Z',
           load: 190,
+          load_unit: 'kg',
           reps: 5,
         },
       ],
@@ -358,7 +365,7 @@ describe('getCycleProgressSummary', () => {
     await expect(
       getExerciseProgress(database, 'cycle-1', 'exercise-back-squat'),
     ).resolves.toMatchObject({
-      points: [{ sessionId: 'session-legacy', bestLoad: 185 }],
+      points: [{ sessionId: 'session-legacy', bestReps: 5 }],
     });
   });
 

@@ -1,3 +1,4 @@
+import { declaredLoad, type LoadUnit } from './loadUnits';
 import type { CycleProgressSummary } from './progression';
 import type {
   EntityId,
@@ -14,6 +15,7 @@ export interface ProgressSetInput {
   exerciseId: EntityId;
   completedAt: string;
   load?: number;
+  loadUnit?: LoadUnit;
   reps?: number;
   durationSeconds?: number;
   distanceMeters?: number;
@@ -39,6 +41,7 @@ export interface VolumeBucket {
 export interface TrainingVolumeBreakdown {
   totalCompletedSetCount: number;
   totalLoadVolume: number;
+  unknownLoadSetCount: number;
   byMuscle: VolumeBucket[];
   byMovementPattern: VolumeBucket[];
   byExercise: VolumeBucket[];
@@ -147,6 +150,9 @@ export function buildTrainingVolumeBreakdown(
   return {
     totalCompletedSetCount: sets.length,
     totalLoadVolume: sets.reduce((total, set) => total + loadVolume(set), 0),
+    unknownLoadSetCount: sets.filter(
+      (set) => set.load !== undefined && declaredLoad(set.load, set.loadUnit) === undefined,
+    ).length,
     byMuscle: sortBuckets(muscleBuckets),
     byMovementPattern: sortBuckets(movementBuckets),
     byExercise: sortBuckets(exerciseBuckets),
@@ -217,7 +223,12 @@ export function buildExerciseProgress(
   sets: readonly ProgressSetInput[],
 ): ExerciseProgress {
   const grouped = new Map<string, ProgressSetInput[]>();
-  for (const set of sets) {
+  for (const original of sets) {
+    const set = {
+      ...original,
+      load: declaredLoad(original.load, original.loadUnit),
+      loadUnit: 'kg' as const,
+    };
     if (set.exerciseId !== exerciseId) continue;
     const sessionSets = grouped.get(set.sessionId) ?? [];
     sessionSets.push(set);
@@ -258,8 +269,9 @@ function sortBuckets(buckets: Map<string, VolumeBucket>): VolumeBucket[] {
 }
 
 function loadVolume(set: ProgressSetInput): number {
-  return set.load !== undefined && set.reps !== undefined && set.load > 0 && set.reps > 0
-    ? set.load * set.reps
+  const measured = declaredLoad(set.load, set.loadUnit);
+  return measured !== undefined && set.reps !== undefined && measured > 0 && set.reps > 0
+    ? measured * set.reps
     : 0;
 }
 

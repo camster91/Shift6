@@ -1,3 +1,4 @@
+import { actualLoadUnit, convertLoad, type LoadUnit } from '../src/domain/loadUnits';
 import {
   buildInitialValues,
   emptySetInput,
@@ -453,6 +454,7 @@ export default function ActiveWorkoutScreen() {
               completedSets,
               draft,
               hydratedRoute?.sessionId === sessionId ? current : undefined,
+              unitSystem,
             ),
           );
           setHydratedRoute({
@@ -491,9 +493,11 @@ export default function ActiveWorkoutScreen() {
     if (!database || !canMutate) return;
 
     const timeout = setTimeout(() => {
-      void saveWorkoutDraft(database, session.id, values, new Date().toISOString()).catch(() => {
-        setError('We could not save the unfinished workout locally.');
-      });
+      void saveWorkoutDraft(database, session.id, values, new Date().toISOString(), userId).catch(
+        () => {
+          setError('We could not save the unfinished workout locally.');
+        },
+      );
     }, 150);
 
     return () => clearTimeout(timeout);
@@ -516,9 +520,11 @@ export default function ActiveWorkoutScreen() {
     if (!database || !canMutate) return;
 
     const flushDraft = () => {
-      void saveWorkoutDraft(database, session.id, values, new Date().toISOString()).catch(() => {
-        setError('We could not save the unfinished workout locally.');
-      });
+      void saveWorkoutDraft(database, session.id, values, new Date().toISOString(), userId).catch(
+        () => {
+          setError('We could not save the unfinished workout locally.');
+        },
+      );
     };
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'inactive' || nextState === 'background') {
@@ -582,6 +588,56 @@ export default function ActiveWorkoutScreen() {
     setError(null);
   };
 
+  const chooseActualLoadUnit = (key: string, unit: LoadUnit) => {
+    if (!canMutate) return;
+    const current = values[key];
+    if (!current) return;
+    const prior = actualLoadUnit(current.loadUnit);
+    if (prior === unit) return;
+    const measured = parseNumber(current.load);
+    const generation = feedbackGeneration.current;
+    const apply = () => {
+      if (
+        !canMutate ||
+        feedbackGeneration.current !== generation ||
+        feedbackContext.current.database !== database ||
+        feedbackContext.current.userId !== userId ||
+        feedbackContext.current.sessionId !== session.id
+      )
+        return;
+      setValues((latest) => {
+        const value = latest[key];
+        if (!value || value.load !== current.load || value.loadUnit !== current.loadUnit)
+          return latest;
+        return {
+          ...latest,
+          [key]: {
+            ...value,
+            loadUnit: unit,
+            load:
+              measured !== undefined && prior
+                ? String(convertLoad(measured, prior, unit))
+                : value.load,
+          },
+        };
+      });
+    };
+    if (measured === undefined) {
+      apply();
+      return;
+    }
+    Alert.alert(
+      'Confirm actual load unit',
+      prior
+        ? `Convert the entered ${current.load} ${prior} to ${unit}? The entered measurement stays equivalent.`
+        : `Record the currently entered ${current.load} as ${unit}? Its earlier unit is unknown; this confirms only the current edited result.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Confirm', onPress: apply },
+      ],
+    );
+  };
+
   const handleCompleteSet = async (workoutExercise: WorkoutExercise, setNumber: number) => {
     if (!canMutate || feedbackWrite.current) return;
     const key = setKey(workoutExercise.id, setNumber);
@@ -619,6 +675,12 @@ export default function ActiveWorkoutScreen() {
       return;
     }
 
+    if (parseNumber(input.load) !== undefined && !actualLoadUnit(input.loadUnit)) {
+      setError(
+        'The saved load unit is unknown. Confirm kg or lb before saving this actual result.',
+      );
+      return;
+    }
     const completedSet: CompletedSet = {
       id: `completed-${session.id}-${key}`,
       sessionId: session.id,
@@ -626,6 +688,7 @@ export default function ActiveWorkoutScreen() {
       exerciseId: workoutExercise.exerciseId,
       setNumber,
       load: parseNumber(input.load),
+      loadUnit: actualLoadUnit(input.loadUnit),
       reps,
       durationSeconds,
       distanceMeters,
@@ -640,8 +703,8 @@ export default function ActiveWorkoutScreen() {
     try {
       if (database) {
         const result = alreadyCompleted
-          ? await updateCompletedSet(database, completedSet)
-          : await saveCompletedSet(database, completedSet);
+          ? await updateCompletedSet(database, completedSet, userId)
+          : await saveCompletedSet(database, completedSet, userId);
         if (alreadyCompleted && result === 'missing') {
           throw new Error('This completed set is no longer available locally.');
         }
@@ -740,7 +803,7 @@ export default function ActiveWorkoutScreen() {
       try {
         await feedbackWrite.current;
         await updateWorkoutSessionNote(database, session.id, sessionNoteRef.current);
-        await saveWorkoutDraft(database, session.id, values, new Date().toISOString());
+        await saveWorkoutDraft(database, session.id, values, new Date().toISOString(), userId);
         void flushNow();
       } catch {
         setError('We could not save the unfinished workout locally.');
@@ -1382,23 +1445,38 @@ export default function ActiveWorkoutScreen() {
                           workoutSet.target,
                           availableExercises,
                         ) ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} load`}
-                            accessibilityHint={`Enter actual load in ${(targetOverrides[workoutExercise.id]?.load?.unit ?? workoutSet.target.load?.unit ?? unitSystem) === 'imperial' ? 'pounds' : 'kilograms'}`}
-                            editable={!completed || editing}
-                            keyboardType="decimal-pad"
-                            onChangeText={(value) => updateValue(key, 'load', value)}
-                            placeholder={
-                              (targetOverrides[workoutExercise.id]?.load?.unit ??
-                                workoutSet.target.load?.unit ??
-                                unitSystem) === 'imperial'
-                                ? 'lb'
-                                : 'kg'
-                            }
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.valueInput}
-                            value={values[key]?.load ?? ''}
-                          />
+                          <View>
+                            <Text variant="caption">
+                              Actual load: {values[key]?.loadUnit ?? 'unknown'}
+                            </Text>
+                            <View style={{ flexDirection: 'row' }}>
+                              {(['kg', 'lb'] as const).map((unit) => (
+                                <Button
+                                  key={unit}
+                                  label={unit}
+                                  variant="ghost"
+                                  disabled={completed && !editing}
+                                  onPress={() => chooseActualLoadUnit(key, unit)}
+                                  accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} actual load unit ${unit}`}
+                                />
+                              ))}
+                            </View>
+                            <TextInput
+                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} load`}
+                              accessibilityHint={
+                                actualLoadUnit(values[key]?.loadUnit)
+                                  ? `Enter actual load in ${values[key]?.loadUnit === 'lb' ? 'pounds' : 'kilograms'}`
+                                  : 'The saved unit is unknown. Confirm kg or lb before saving.'
+                              }
+                              editable={!completed || editing}
+                              keyboardType="decimal-pad"
+                              onChangeText={(value) => updateValue(key, 'load', value)}
+                              placeholder={actualLoadUnit(values[key]?.loadUnit) ?? 'Unit unknown'}
+                              placeholderTextColor={colors.inkMuted}
+                              style={styles.valueInput}
+                              value={values[key]?.load ?? ''}
+                            />
+                          </View>
                         ) : null}
                         {showsReps(
                           workoutExercise.exerciseId,

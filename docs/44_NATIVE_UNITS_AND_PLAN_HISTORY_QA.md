@@ -15,7 +15,7 @@ Native ADB QA ran on the authorized CAM-DESKTOP, Windows 11 build 26300, Pixel 7
 
 The preceding candidate hash is also recorded in [doc 42](42_GUARDED_LOCAL_WORKFLOWS_QA.md). These x86_64 test APKs do not establish physical Samsung S25 Ultra, iPhone or store-build acceptance.
 
-Intended evidence location: [units evidence inventory](qa/2026-10-13-units/evidence.json). The coordinator will package PNG/XML captures and externally received JSON there. File stems below refer to the PNG/XML pair. Preserve binary-specific findings when later builds overwrite the generated APK path.
+Evidence location: [units evidence inventory](qa/2026-10-13-units/evidence.json), containing PNG/XML captures and externally received JSON with verified SHA-256 hashes. File stems below refer to the PNG/XML pair. Preserve binary-specific findings when later builds overwrite the generated APK path.
 
 ## Reproduced issue #353 and observed correction
 
@@ -63,7 +63,9 @@ Progress shows deterministic next targets **45kg × 5 and 95lb × 5** from the r
 | [#355](https://github.com/camster91/Shift6/issues/355): internal custom IDs in Progress    | Native `90d7128c` computes correct 45kg/95lb targets but labels them with prettified program/custom-exercise IDs. Movement trends already shows QA KG/LB. Expected consistent owned movement names. Capture `unit-progress-next-targets-90d7`.                                                                                                                             | Source `8353887f` uses the already loaded owner's movement labels. Full-screen regression reproduces the fallback and preserves target math. Native name retest remains pending at current source `2fe82a20`.                                                                                                                                           |
 | [#356](https://github.com/camster91/Shift6/issues/356): correction changes occurrence time | The equivalent-unit correction on native `90d7128c` preserves ID/idempotency but changes KG `completed_at` from **2026-10-13T19:35:45.788Z** to **2026-10-13T19:47:37.323Z**. Provenance's `set_completed_at` and `recorded_at` likewise become the edit time. Expected original actual occurrence time retained, edit time separate. Compare both external exports above. | Source `a013edf3`, with test follow-up `2fe82a20`, preserves expected original occurrence time and records correction time separately. Fresh changed-binary correction/readback remains pending. The existing historical timestamp regression is retained honestly; there is no automatic backdating or repair of old records.                          |
 
-Full `npm run verify` also passed at layout source `61e03f8e`: **874 tests / 129 suites**, Doctor 21/21, zero audit vulnerabilities, vendor/security/assets/config checks and both exports (`verify-workout-layout.log`). No current full verification receipt or native timestamp/name acceptance is asserted for `2fe82a20`; the coordinator will append its exact results after completion.
+Full `npm run verify` also passed at layout source `61e03f8e`: **874 tests / 129 suites**, Doctor 21/21, zero audit vulnerabilities, vendor/security/assets/config checks and both exports (`verify-workout-layout.log`). Current source `2fe82a20` subsequently passed full verification with **877 tests / 130 suites** and both mobile exports (`verify-correction-current.log`). Native timestamp/name acceptance remains pending.
+
+Before installing the correction fix, native `61e03f8e` externally exported the fresh QA Layout session: schema 14, 1,052 records and seven saved sets. Its new 40kg × 5 set has completion time **2026-10-13T20:29:06.376Z**, equal to initial provenance occurrence/edit times. `layout-before-correction-export-61e0.json` preserves this baseline for a changed-binary correction test. Font scale was returned to 1.0 after the large-text capture.
 
 ## Harness findings separated from defects
 

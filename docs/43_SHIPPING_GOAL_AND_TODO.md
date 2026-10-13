@@ -2,7 +2,7 @@
 
 13 October 2026. This is the current delivery index for the expanded iOS/Android goal. It supersedes the delivery order in doc 37, while preserving that document's dated audit and evidence. It does not approve content, alter the shipping guest configuration or authorize a release.
 
-Native QA subsequently filed [#352](https://github.com/camster91/Shift6/issues/352) for invalid optional measurements being silently dropped. The refreshed backlog is **42 open issues**; the original 41-issue reconciliation remains a dated snapshot. #352 is mapped below rather than excluded from the shipping TODO.
+Native QA subsequently filed #352–#356 for invalid optional measurements, misleading imported units, compressed set targets, custom movement labels and correction timestamps. The refreshed backlog is **46 open issues**; the original 41-issue reconciliation remains a dated snapshot. All five new defects are mapped below rather than excluded from the shipping TODO.
 
 ## Goal and product promise
 
@@ -14,7 +14,7 @@ Core training remains free, local and usable offline. Keep deterministic progres
 
 ## Verified starting point
 
-- Live GitHub reconciliation: **41 open issues**, including umbrella epics. Issue count is not a count of missing features. No issue was closed by this reconciliation.
+- Initial GitHub reconciliation: **41 open issues**, including umbrella epics; subsequent native findings increased the mapped backlog to **46**. Issue count is not a count of missing features. No issue was closed by this reconciliation.
 - `main` contains merged guest release PR #330 (`4e8a2c9b`). Later work remains in reviewable draft PRs, not merged or published.
 - [#344](https://github.com/camster91/Shift6/pull/344): guest guidance/save copy/goal units, native Android QA and earlier iOS CI evidence.
 - [#346](https://github.com/camster91/Shift6/pull/346), stacked on #344: local restore, Health Connect pagination/totals and saved-plan discovery. Native synthetic framework/picker/export evidence is in doc 39.
@@ -63,9 +63,13 @@ Source implemented means code exists. Native observed means a stated scenario wa
 
 Follow-up issue mapping:
 
-| Issue | Existing delivery / exact remaining work                                                                                                                                                                                                                                    | Queue    |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| #352  | Native `0d54f755` silently dropped invalid RIR. `71babfc8` passes 872 tests and native refusal, retained draft through force-close, zero correction and external single-insert/history readback in doc 42. Other platforms and complete measurement acceptance remain open. | T03, T08 |
+| Issue | Existing delivery / exact remaining work                                                                                                                                                                                                                                                                               | Queue    |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| #352  | Native `0d54f755` silently dropped invalid RIR. `71babfc8` passes 872 tests and native refusal, retained draft through force-close, zero correction and external single-insert/history readback in doc 42. Other platforms and complete measurement acceptance remain open.                                            | T03, T08 |
+| #353  | Native `90d7128c` corrects the imported 40kg label, recovers kg/lb draft targets and preserves original saved versions. Full verify 874/129 passes; native reverse-profile case and device acceptance remain pending.                                                                                                  | T03, T08 |
+| #354  | Native loaded-set review compressed the target into a narrow column. `61e03f8e` wraps controls below a full-width set header; full verify 874/129 passes. Native normal and 200% text screenshots show readable targets and visible Edit controls. Physical-device and assistive-technology acceptance remain pending. | T03, T09 |
+| #355  | Progress calculates correct targets but shows internal custom IDs. `8353887f` uses existing owned movement labels. Source screen regression passes; native readback remains pending.                                                                                                                                   | T03, T09 |
+| #356  | Native unit correction overwrites completion time. `a013edf3` preserves occurrence time and records edit time separately; `2fe82a20` separates new-correction and legacy-backup tests. Full verify passes 877 tests/130 suites; fresh native timestamp readback is pending. No automatic backdating.                   | T03, T08 |
 
 ## Ordered TODO and acceptance receipts
 

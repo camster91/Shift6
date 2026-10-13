@@ -1658,6 +1658,7 @@ function TargetEditor({
   };
   const showsReps = trackingType === 'reps' || trackingType === 'custom';
   const showsLoad = trackingType === 'reps' || trackingType === 'custom';
+  const targetLoadUnitSystem = target.load?.unit ?? unitSystem;
   const showsTime = trackingType === 'time' || trackingType === 'duration-and-distance';
   const showsDistance = trackingType === 'distance' || trackingType === 'duration-and-distance';
   const showsEffort = trackingType === 'reps' || trackingType === 'custom';
@@ -1682,7 +1683,7 @@ function TargetEditor({
         ) : null}
         {showsLoad ? (
           <TargetField
-            label={`Load (${unitSystem === 'metric' ? 'kg' : 'lb'})`}
+            label={`Load (${targetLoadUnitSystem === 'metric' ? 'kg' : 'lb'})`}
             accessibilityLabel={`Load target for ${exerciseName}`}
             value={target.load?.value === undefined ? '' : String(target.load.value)}
             placeholder="Optional"

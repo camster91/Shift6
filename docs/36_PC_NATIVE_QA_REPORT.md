@@ -173,6 +173,29 @@ the matching artifact. Its trigger and source-matching safeguards were not chang
 
 ## Provisional weighting and coverage
 
+### CI follow-up, 13 October 2026
+
+Native validation now passed both Android and iOS build/cold-launch jobs at
+`9f984349` ([run 38348937795](https://github.com/camster91/Shift6/actions/runs/38348937795))
+and recovery `6f13edc8` ([run 38349104045](https://github.com/camster91/Shift6/actions/runs/38349104045)).
+These are existing GitHub Mac-hosted CI checks, separate from local Windows and physical testing.
+
+The recovery runtime rerun found the matching artifact, launched the iPhone
+simulator and captured six setup steps, setup force-close recovery, private
+builder/save/start and the goal form. It then failed because the harness still
+searched for `Load for a fixed rep count (kg)` after choosing Imperial. The
+actual captured UI tree exposes `Load for a fixed rep count (lb)`. The harness
+now uses that exact label and expects `Target (lb)`.
+[Runtime evidence](https://github.com/camster91/Shift6/actions/runs/38349104155)
+is partial, not a full journey pass or human usability result. Actual iOS goal
+records, workout recovery, export/deletion and later checks remain pending.
+No identical failed rerun is used as evidence of success.
+
+The repository is public and its workflow uses standard `macos-latest` runners.
+GitHub documents those runners as free for public repositories in its
+[runner reference](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job).
+No paid service or alternate local execution host was activated.
+
 | Doc 34 area | Credit / weight | Engineering evidence and missing acceptance |
 | --- | ---: | --- |
 | Useful first experience | 12 / 20 | Six steps/private first session reachable; no independent intended-user completion or comprehension evidence |

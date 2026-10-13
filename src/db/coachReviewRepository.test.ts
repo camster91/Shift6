@@ -15,7 +15,11 @@ import { createProgramCopy } from '../domain/programBuilder';
 import { createTrainingCycle } from '../domain/cycle';
 import { saveProgramVersion } from './programRepository';
 import { saveTrainingCycle } from './cycleRepository';
-import { saveWorkoutSession } from './workoutRepository';
+import {
+  saveWorkoutSession,
+  completeWorkoutSession,
+  finishWorkoutSessionPartially,
+} from './workoutRepository';
 import {
   loadDatedCoachReview,
   confirmDatedCoachReview,
@@ -343,4 +347,51 @@ test('explicit owner remapping preserves operation and source IDs through adopti
   const restored = await getSavedCoachReviews(db, 'guest-user', 'review-cycle');
   expect(restored[0]!.id).toBe('guest-user-review-op');
   expect(restored[0]!.receipt.ownerId).toBe('guest-user');
+});
+test('strict backup refuses invented terminal review outcomes while allowing a real later completion', async () => {
+  await session('live', 'in-progress');
+  await save();
+  const before = await exportNow();
+  const forged = structuredClone(before);
+  const row = forged.coachReviewJournal![0]!;
+  const receipt = JSON.parse(String(row.receipt_json));
+  const evidence = JSON.parse(receipt.evidenceFingerprint);
+  evidence.sessions[0].status = 'complete';
+  evidence.sessions[0].completedAt = stamp;
+  receipt.evidenceFingerprint = stableSnapshotJSON(evidence);
+  row.receipt_json = stableSnapshotJSON(receipt);
+  // The deterministic receipt alone is internally valid, but contradicts the
+  // separately exported canonical in-progress record and must fail pre-write.
+  expect(() => parseCoachReviewReceipt(String(row.receipt_json))).not.toThrow();
+  await expect(restoreLocalBackup(db, 'guest-user', JSON.stringify(forged))).rejects.toThrow(
+    'terminal outcome',
+  );
+  expect(await exportNow()).toEqual(before);
+  await completeWorkoutSession(db, 'live', '2026-10-13T12:30:00.000Z');
+  const evolved = await exportNow();
+  expect(() => validateLocalBackup(JSON.stringify(evolved))).not.toThrow();
+  await deleteLocalUserData(db, 'guest-user');
+  await restoreLocalBackup(db, 'guest-user', JSON.stringify(evolved));
+  expect((await exportNow()).coachReviewJournal).toEqual(before.coachReviewJournal);
+});
+test('partial outcomes remain canonical; a later attempt does not reopen or overwrite the original partial receipt', async () => {
+  await session('partial-attempt', 'in-progress');
+  await finishWorkoutSessionPartially(db, 'partial-attempt', stamp, 'time-limited');
+  await save();
+  await completeWorkoutSession(db, 'partial-attempt', '2026-10-13T12:30:00.000Z');
+  await session('next-attempt', 'in-progress');
+  await completeWorkoutSession(db, 'next-attempt', '2026-10-13T12:30:00.000Z');
+  const packet = await exportNow();
+  expect(packet.workoutSessions.find((row) => row.id === 'partial-attempt')?.status).toBe(
+    'partial',
+  );
+  expect(() => validateLocalBackup(JSON.stringify(packet))).not.toThrow();
+  const forged = structuredClone(packet);
+  const row = forged.coachReviewJournal![0]!;
+  const receipt = JSON.parse(String(row.receipt_json));
+  const evidence = JSON.parse(receipt.evidenceFingerprint);
+  evidence.sessions[0].completionReason = 'equipment';
+  receipt.evidenceFingerprint = stableSnapshotJSON(evidence);
+  row.receipt_json = stableSnapshotJSON(receipt);
+  expect(() => validateLocalBackup(JSON.stringify(forged))).toThrow('terminal outcome');
 });

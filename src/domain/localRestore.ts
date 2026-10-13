@@ -1301,6 +1301,28 @@ export function validateLocalBackup(serialized: string): RestorePreview {
           actual.started_at === source.startedAt,
         'missing review source session.',
       );
+      // Terminal outcomes are never reopened by current local writers. A new
+      // attempt has a new ID. Only an in-progress witness can evolve after this
+      // dated review; it cannot be used to invent an earlier completion.
+      if (['complete', 'partial', 'skipped', 'abandoned'].includes(source.status))
+        check(
+          actual.status === source.status &&
+            (actual.completed_at ?? undefined) === source.completedAt &&
+            (actual.completion_reason ?? undefined) === source.completionReason &&
+            (actual.readiness ?? undefined) === source.readiness,
+          'review terminal outcome disagrees with its canonical session.',
+        );
+      else if (source.status === 'in-progress')
+        check(
+          source.completedAt === undefined &&
+            source.completionReason === undefined &&
+            (actual.status === 'in-progress' ||
+              (['complete', 'partial', 'skipped', 'abandoned'].includes(String(actual.status)) &&
+                typeof actual.completed_at === 'string' &&
+                actual.completed_at >= receipt.revalidatedAt)),
+          'review in-progress witness cannot establish an earlier terminal outcome.',
+        );
+      else check(actual.status === source.status, 'review planned witness is unsupported.');
     }
     if (evidence.goal) {
       const goal = goals.get(evidence.goal.id);

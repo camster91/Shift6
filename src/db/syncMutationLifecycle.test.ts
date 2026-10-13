@@ -56,6 +56,8 @@ function createDatabase() {
       sqlite.prepare(sql).all(...params),
     getFirstAsync: async (sql: string, ...params: SQLInputValue[]) =>
       sqlite.prepare(sql).get(...params) ?? null,
+    withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+      database.withTransactionAsync(() => callback(database)),
     withTransactionAsync: async (callback: () => Promise<void>) => {
       sqlite.exec('BEGIN;');
       try {

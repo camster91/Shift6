@@ -588,3 +588,39 @@ test('legacy personal goal without creation ledger remains usable but cannot est
   await restoreLocalBackup(db, 'guest-user', JSON.stringify(packet));
   expect((await exportNow()).coachReviewJournal).toEqual(packet.coachReviewJournal);
 });
+test('a forged omission cannot hide a witnessed correction or select a flattering subset of goal measurements', async () => {
+  await goalWithBaseline();
+  await appendPersonalObservation(
+    db,
+    'guest-user',
+    {
+      id: 'corrected-baseline',
+      shiftId: 'review-goal',
+      protocolId: 'review-protocol',
+      protocolVersion: 1,
+      measuredAt: stamp,
+      source: 'assessment',
+      value: 6,
+      unit: 'reps',
+      correctsObservationId: 'baseline',
+    },
+    false,
+    stamp,
+  );
+  await save();
+  const before = await exportNow();
+  const forged = structuredClone(before);
+  const row = forged.coachReviewJournal![0]!;
+  const receipt = JSON.parse(String(row.receipt_json));
+  const evidence = JSON.parse(receipt.evidenceFingerprint);
+  evidence.observations = evidence.observations.filter(
+    (item: { id: string }) => item.id !== 'corrected-baseline',
+  );
+  receipt.evidenceFingerprint = stableSnapshotJSON(evidence);
+  row.receipt_json = stableSnapshotJSON(receipt);
+  expect(() => parseCoachReviewReceipt(String(row.receipt_json))).not.toThrow();
+  await expect(restoreLocalBackup(db, 'guest-user', JSON.stringify(forged))).rejects.toThrow(
+    'canonical series',
+  );
+  expect(await exportNow()).toEqual(before);
+});

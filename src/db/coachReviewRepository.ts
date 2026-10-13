@@ -93,7 +93,16 @@ async function currentSnapshot(
         goal.id,
       )
     : [];
-  const goalWitness = goal ? corroborateReviewGoal(goal, events, revisions, now) : null;
+  const goalWitness = goal
+    ? corroborateReviewGoal(
+        goal,
+        events,
+        revisions,
+        now,
+        undefined,
+        observations.filter((item) => item.measuredAt <= now),
+      )
+    : null;
   const includedGoal = goalWitness?.state === 'event-history' ? goal : null;
   return {
     ...prepareCoachReview({

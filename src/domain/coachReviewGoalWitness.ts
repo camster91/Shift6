@@ -1,4 +1,4 @@
-import type { Shift } from './shift';
+import type { Shift, ShiftObservation } from './shift';
 import { stableSnapshotJSON } from './programPersistence';
 
 export type CoachReviewGoalWitness =
@@ -34,6 +34,7 @@ export function corroborateReviewGoal(
   revisions: readonly ReviewTargetRevision[],
   at: string,
   witness?: CoachReviewGoalWitness,
+  observations?: readonly ShiftObservation[],
 ): CoachReviewGoalWitness {
   const owned = events.filter(
     (event) => event.shift_id === goal.id && event.user_id === goal.userId,
@@ -74,6 +75,7 @@ export function corroborateReviewGoal(
   let baseline: Shift['baseline'] = { state: 'deferred' };
   let reviewState: unknown = 'missing',
     nextChoice: unknown = 'undecided';
+  const measured: ShiftObservation[] = [];
   for (const [index, event] of selected.entries()) {
     if (event.recorded_at > at) throw new Error('Goal review event follows revalidation time.');
     const payload = JSON.parse(event.payload_json);
@@ -86,6 +88,7 @@ export function corroborateReviewGoal(
         target = payload.target;
         break;
       case 'measurement':
+        if (payload.observation.measuredAt <= at) measured.push(payload.observation);
         if (payload.baseline === true)
           baseline = { state: 'measured', observationId: payload.observation.id };
         break;
@@ -137,5 +140,13 @@ export function corroborateReviewGoal(
     )
   )
     throw new Error('Goal review witness disagrees with canonical dated goal events.');
+  if (
+    observations &&
+    !same(
+      [...observations].sort((a, b) => a.id.localeCompare(b.id)),
+      measured.sort((a, b) => a.id.localeCompare(b.id)),
+    )
+  )
+    throw new Error('Goal review measurements disagree with the witnessed canonical series.');
   return { state: 'event-history', goalId: goal.id, eventIds: selected.map((event) => event.id) };
 }

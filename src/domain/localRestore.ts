@@ -1344,6 +1344,7 @@ export function validateLocalBackup(serialized: string): RestorePreview {
         data.shiftGoalRevisions as unknown as ReviewTargetRevision[],
         receipt.revalidatedAt,
         receipt.goalWitness,
+        evidence.observations,
       );
       const protocol = data.shiftProtocols.find(
         (entry) =>

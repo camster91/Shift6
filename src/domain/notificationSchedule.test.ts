@@ -2,12 +2,7 @@ import { demoCycle, demoProgramVersion } from './fixtures/home';
 import { buildWorkoutReminderSchedule, preferredTrainingTimeClock } from './notificationSchedule';
 
 describe('workout reminder schedule', () => {
-  const cycle = {
-    id: demoCycle.id,
-    programVersionId: demoCycle.programVersionId,
-    currentWeek: demoCycle.currentWeek,
-    status: demoCycle.status,
-  } as const;
+  const cycle = { ...demoCycle, startedAt: new Date(2026, 8, 14, 12).toISOString() };
 
   it('creates stable one-shot reminders for upcoming workouts in the preferred window', () => {
     const reminders = buildWorkoutReminderSchedule({
@@ -92,4 +87,120 @@ describe('workout reminder schedule', () => {
       }),
     ).toThrow('must match the active cycle');
   });
+});
+import { buildCycleSchedule, formatDateKey } from './calendar';
+import type { WorkoutScheduleOverride } from './types';
+
+test('a Wednesday-starting cycle reminders use saved calendar day slots, not Monday weekday matching', () => {
+  const cycle = { ...demoCycle, startedAt: new Date(2026, 9, 14, 12).toISOString() };
+  const now = new Date(2026, 9, 14, 7);
+  const reminders = buildWorkoutReminderSchedule({
+    userId: 'guest-user',
+    preferences: { workoutReminders: true },
+    cycle,
+    programVersion: demoProgramVersion,
+    preferredTrainingTime: 'morning',
+    now,
+  });
+  expect(formatDateKey(new Date(reminders[0]!.scheduledFor))).toBe('2026-10-14');
+  expect(reminders[0]!.workoutId).toBe(demoProgramVersion.workouts[0]!.id);
+  const calendar = buildCycleSchedule(cycle, demoProgramVersion, [], [], now).filter(
+    (o) => o.cycleWeek === 1,
+  );
+  expect(reminders.map((r) => [r.workoutId, formatDateKey(new Date(r.scheduledFor))])).toEqual(
+    calendar.map((o) => [o.workout.id, o.scheduledDate]),
+  );
+});
+test('saved moves determine reminder dates, foreign-owner overrides cannot move them', () => {
+  const cycle = { ...demoCycle, startedAt: new Date(2026, 9, 14, 12).toISOString() };
+  const workout = demoProgramVersion.workouts[0]!;
+  const override: WorkoutScheduleOverride = {
+    id: 'move',
+    userId: 'guest-user',
+    cycleId: cycle.id,
+    cycleWeek: 1,
+    workoutId: workout.id,
+    originalDate: '2026-10-14',
+    scheduledDate: '2026-10-15',
+    createdAt: cycle.startedAt,
+    updatedAt: cycle.startedAt,
+  };
+  const input = {
+    userId: 'guest-user',
+    preferences: { workoutReminders: true },
+    cycle,
+    programVersion: demoProgramVersion,
+    preferredTrainingTime: 'morning' as const,
+    now: new Date(2026, 9, 14, 7),
+  };
+  expect(
+    formatDateKey(
+      new Date(
+        buildWorkoutReminderSchedule({ ...input, overrides: [override] }).find(
+          (r) => r.workoutId === workout.id,
+        )!.scheduledFor,
+      ),
+    ),
+  ).toBe('2026-10-15');
+  expect(
+    formatDateKey(
+      new Date(
+        buildWorkoutReminderSchedule({
+          ...input,
+          overrides: [{ ...override, userId: 'other' }],
+        }).find((r) => r.workoutId === workout.id)!.scheduledFor,
+      ),
+    ),
+  ).toBe('2026-10-14');
+});
+test.each(['complete', 'partial', 'skipped', 'in-progress'] as const)(
+  'does not remind an occurrence already %s',
+  (status) => {
+    const cycle = { ...demoCycle, startedAt: new Date(2026, 9, 14, 12).toISOString() };
+    const workout = demoProgramVersion.workouts[0]!;
+    const reminders = buildWorkoutReminderSchedule({
+      userId: 'guest-user',
+      preferences: { workoutReminders: true },
+      cycle,
+      programVersion: demoProgramVersion,
+      preferredTrainingTime: 'morning',
+      now: new Date(2026, 9, 14, 7),
+      sessions: [{ cycleWeek: 1, workoutId: workout.id, status }],
+    });
+    expect(reminders.some((r) => r.workoutId === workout.id)).toBe(false);
+  },
+);
+test('a missed calendar week does not invent next-week reminders from a frozen prescribed week', () => {
+  const cycle = { ...demoCycle, startedAt: new Date(2026, 9, 1, 12).toISOString() };
+  expect(
+    buildWorkoutReminderSchedule({
+      userId: 'guest-user',
+      preferences: { workoutReminders: true },
+      cycle,
+      programVersion: demoProgramVersion,
+      preferredTrainingTime: 'morning',
+      now: new Date(2026, 9, 14, 7),
+    }),
+  ).toEqual([]);
+});
+test('local DST transition preserves calendar dates and preferred clock time without increasing targets', () => {
+  const cycle = { ...demoCycle, startedAt: new Date(2026, 9, 31, 12).toISOString() };
+  const original = JSON.stringify(demoProgramVersion);
+  const reminders = buildWorkoutReminderSchedule({
+    userId: 'guest-user',
+    preferences: { workoutReminders: true },
+    cycle,
+    programVersion: demoProgramVersion,
+    preferredTrainingTime: 'morning',
+    now: new Date(2026, 9, 31, 7),
+  });
+  expect(reminders.every((r) => new Date(r.scheduledFor).getHours() === 8)).toBe(true);
+  expect(reminders.map((r) => formatDateKey(new Date(r.scheduledFor)))).toEqual([
+    '2026-10-31',
+    '2026-11-01',
+    '2026-11-02',
+    '2026-11-03',
+    '2026-11-04',
+  ]);
+  expect(JSON.stringify(demoProgramVersion)).toBe(original);
 });

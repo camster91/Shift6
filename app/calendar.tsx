@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import {
   Button,
@@ -43,6 +43,7 @@ import {
 import { getActiveTrainingCycle } from '../src/db/cycleRepository';
 import { getUserProgramVersion } from '../src/db/programRepository';
 import { colors, spacing } from '../src/design/tokens';
+import { useNotificationRuntime } from '../src/services/NotificationRuntimeProvider';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 const calendarStatusLabels: Record<WorkoutScheduleStatus, string> = {
@@ -57,6 +58,7 @@ const calendarStatusLabels: Record<WorkoutScheduleStatus, string> = {
 
 export default function CalendarScreen() {
   const database = useLocalDatabase();
+  const notificationRuntime = useNotificationRuntime();
   const userId = useCurrentUserId();
   const currentContext = useRef({ database, userId });
   currentContext.current = { database, userId };
@@ -73,8 +75,9 @@ export default function CalendarScreen() {
   );
   const [movingOccurrenceId, setMovingOccurrenceId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reminderNotice, setReminderNotice] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
-  const todayKey = useMemo(() => formatDateKey(new Date()), []);
+  const todayKey = formatDateKey(new Date());
 
   useFocusEffect(
     useCallback(() => {
@@ -227,11 +230,13 @@ export default function CalendarScreen() {
     occurrences: schedule.filter((occurrence) => occurrence.cycleWeek === week.weekNumber),
   }));
 
-  const handleMove = async (occurrence: PlannedWorkoutOccurrence, dayDelta: number) => {
+  const performMove = async (occurrence: PlannedWorkoutOccurrence, dayDelta: number) => {
     if (
       (!database && !previewEnabled) ||
       movingOccurrenceId ||
-      !canMoveScheduleOccurrence(occurrence, todayKey, dayDelta)
+      currentContext.current.database !== database ||
+      currentContext.current.userId !== userId ||
+      !canMoveScheduleOccurrence(occurrence, formatDateKey(new Date()), dayDelta)
     )
       return;
 
@@ -266,6 +271,7 @@ export default function CalendarScreen() {
     ]);
     setMovingOccurrenceId(occurrence.id);
     setError(null);
+    setReminderNotice(null);
 
     if (!database) {
       setMovingOccurrenceId(null);
@@ -274,6 +280,18 @@ export default function CalendarScreen() {
 
     try {
       await saveWorkoutScheduleOverride(database, nextOverride);
+      // Date persistence is authoritative; reminder availability cannot undo it.
+      try {
+        const result = await notificationRuntime.refreshNow();
+        if (result.status === 'failed')
+          setReminderNotice(
+            'Date saved. Device reminders could not be refreshed; check notification settings.',
+          );
+      } catch {
+        setReminderNotice(
+          'Date saved. Device reminders could not be refreshed; check notification settings.',
+        );
+      }
     } catch (saveError) {
       if (currentContext.current.database !== database || currentContext.current.userId !== userId)
         return;
@@ -287,6 +305,23 @@ export default function CalendarScreen() {
       if (currentContext.current.database === database && currentContext.current.userId === userId)
         setMovingOccurrenceId(null);
     }
+  };
+
+  const handleMove = (occurrence: PlannedWorkoutOccurrence, dayDelta: number) => {
+    if (
+      movingOccurrenceId ||
+      !canMoveScheduleOccurrence(occurrence, formatDateKey(new Date()), dayDelta)
+    )
+      return;
+    const nextDate = addDaysToDateKey(occurrence.scheduledDate, dayDelta);
+    Alert.alert(
+      'Move this session?',
+      `${occurrence.workout.title}: ${getScheduleDateLabel(occurrence.scheduledDate)} → ${getScheduleDateLabel(nextDate)}. Your recorded sets and workout targets stay unchanged.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Move session', onPress: () => void performMove(occurrence, dayDelta) },
+      ],
+    );
   };
 
   return (
@@ -422,6 +457,11 @@ export default function CalendarScreen() {
       </View>
 
       {error ? <ErrorState message={error} /> : null}
+      {reminderNotice ? (
+        <Text accessibilityLiveRegion="polite" variant="small">
+          {reminderNotice}
+        </Text>
+      ) : null}
 
       <Button
         label="Back to cycle dashboard"

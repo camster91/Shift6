@@ -4,6 +4,26 @@
   "device": "Android16 API36 Pixel7 x86_64 emulator-5554",
   "files": [
     {
+      "file": "fixture-source/MainActivity.java",
+      "bytes": 8793,
+      "sha256": "3e5cbc40e45aef70e87918725189c2162454a946ccde329d1ba350c17de617c4"
+    },
+    {
+      "file": "fixture-source/RationaleActivity.java",
+      "bytes": 763,
+      "sha256": "f5f2eaf63413ab3ccdfb185a4299732e0e22c7515e09f69e28b0c7f96f426f5b"
+    },
+    {
+      "file": "fixture-source/receiver-AndroidManifest.xml",
+      "bytes": 630,
+      "sha256": "ff8e035e0840de78991692e58000a4c6b9bae3841936ca8f753b2630535dc2ec"
+    },
+    {
+      "file": "fixture-source/receiver-Receiver.java",
+      "bytes": 1402,
+      "sha256": "dffff4c35fd7c0e8cbbe27d0d87d0aef6e3d1b01de3835c6a82ff6cc13a0a79d"
+    },
+    {
       "file": "health-baseline-external-receipt.png",
       "bytes": 74958,
       "sha256": "4b7cce6c29b19c815f2025a96f9c5f1c46ad656c3f804d654d339095e751d459"
@@ -62,6 +82,16 @@
       "file": "health-fixture-b-cleanup.xml",
       "bytes": 4813,
       "sha256": "43aa48d34d021e3c532169c0e232c4ef073ebf705f4c3c5fd995504856d638c1"
+    },
+    {
+      "file": "health-fixture-clean-reference.png",
+      "bytes": 147230,
+      "sha256": "90f17c37ef9afd21d1e6e364bc00af21dfc89312ef7d27f9f416609f694edca0"
+    },
+    {
+      "file": "health-fixture-clean-reference.xml",
+      "bytes": 4851,
+      "sha256": "5cd30bd088628da54cb16037ec38ea2ec44f03113f09f5881b0e31779e2265fe"
     },
     {
       "file": "health-platform-reference.png",

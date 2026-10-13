@@ -22,6 +22,8 @@ After the APK upgrade, legacy raw steps were explicitly labelled separate source
 
 Evidence: `health-platform-reference`, `health-baseline-import`, `health-baseline-external-receipt`, `health-candidate-import-d9c5`, `health-candidate-external-receipt` in the [evidence inventory](qa/2026-10-13-recovery/evidence.json). Machine readback accompanies the screenshots. Physical source integrations, sleep overlap, all six types with real data, permission revocation during a read and iOS parity remain untested natively. Failure/repeated-token/partial-grant/cache-preservation behavior has regression coverage; this is not substituted for device acceptance.
 
+After testing, each fixture's native scoped-cleanup action removed only its own known client IDs (A: 1,002; B: 1). A fresh independent aggregate returned null with no origins, preserving missing-versus-zero semantics. Cleanup captures and fixture/receiver source are included for review; these tools are excluded from the shipping application.
+
 ### Saved private plans — #345
 
 Baseline saved plans existed in exports but Programs supplied no list after leaving the builder. Expected: discover and reopen an owned saved plan without losing its immutable version/history. After upgrading and relaunching, Programs displayed both `QA Saved Draft` and `My SHIFT6 plan`, including workout/version counts. Selecting “Edit or start a copy of My SHIFT6 plan” opened an editable copy with program name `My SHIFT6 plan copy`, `QA Session`, day 1 and 20 minutes, verified from the actual EditText values. Opening the copy did not mutate the saved source records. Public catalogue approval remained empty and gated.

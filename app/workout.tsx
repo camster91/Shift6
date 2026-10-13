@@ -1,4 +1,9 @@
-import { actualLoadUnit, convertLoad, type LoadUnit } from '../src/domain/loadUnits';
+import {
+  actualLoadUnit,
+  convertLoad,
+  formatActualLoad,
+  type LoadUnit,
+} from '../src/domain/loadUnits';
 import {
   buildInitialValues,
   emptySetInput,
@@ -708,6 +713,11 @@ export default function ActiveWorkoutScreen() {
     const target =
       targetOverrides[workoutExercise.id] ?? workoutExercise.sets[setNumber - 1]?.target;
     const input = values[key] ?? emptySetInput(target);
+    const load = parseNumber(input.load);
+    if (input.load.trim() && load === undefined) {
+      setError('Enter a valid nonnegative load, or clear the field if load was not recorded.');
+      return;
+    }
     const reps = parseNumber(input.reps);
     const durationSeconds = parseNumber(input.duration);
     const distanceMeters = parseNumber(input.distance);
@@ -735,7 +745,7 @@ export default function ActiveWorkoutScreen() {
       return;
     }
 
-    if (parseNumber(input.load) !== undefined && !actualLoadUnit(input.loadUnit)) {
+    if (load !== undefined && !actualLoadUnit(input.loadUnit)) {
       setError(
         'The saved load unit is unknown. Confirm kg or lb before saving this actual result.',
       );
@@ -748,8 +758,8 @@ export default function ActiveWorkoutScreen() {
       workoutExerciseId: workoutExercise.id,
       exerciseId: workoutExercise.exerciseId,
       setNumber,
-      load: parseNumber(input.load),
-      loadUnit: parseNumber(input.load) !== undefined ? actualLoadUnit(input.loadUnit) : undefined,
+      load,
+      loadUnit: load !== undefined ? actualLoadUnit(input.loadUnit) : undefined,
       reps,
       durationSeconds,
       distanceMeters,
@@ -1694,7 +1704,7 @@ export default function ActiveWorkoutScreen() {
                   distanceMeters: previousResult.distanceMeters,
                 })}
                 {previousResult.load !== undefined
-                  ? ` · load ${previousResult.load} (saved units)`
+                  ? ` · load ${formatActualLoad(previousResult.load, previousResult.loadUnit)}`
                   : ''}{' '}
                 · {new Date(previousResult.completedAt).toLocaleDateString()}
               </Text>

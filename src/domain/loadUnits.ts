@@ -26,3 +26,10 @@ export function declaredLoad(
 export function actualLoadUnit(inputUnit: unknown): LoadUnit | undefined {
   return inputUnit === 'kg' || inputUnit === 'lb' ? inputUnit : undefined;
 }
+
+/** Previous actuals keep their declared entry unit; profile/target preferences
+ * cannot supply missing historical provenance. */
+export function formatActualLoad(value: number, unit: LoadUnit | undefined): string {
+  const declared = actualLoadUnit(unit);
+  return declared ? `${value} ${declared}` : `${value} (unit unknown)`;
+}

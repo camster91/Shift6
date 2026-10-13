@@ -1,4 +1,4 @@
-import { declaredLoad, convertLoad } from './loadUnits';
+import { declaredLoad, convertLoad, formatActualLoad } from './loadUnits';
 import { hydrateWorkoutValues } from './workoutInputs';
 import { buildNextSessionTargets } from './nextSession';
 import { buildTrainingVolumeBreakdown, buildExerciseProgress } from './progress';
@@ -111,4 +111,12 @@ test('known mixed units normalize to kg; unknown load rows are excluded from loa
   expect(history.points.find((point) => point.sessionId === 'unknown')?.bestLoad).toBeUndefined();
   expect(history.points.find((point) => point.sessionId === 'lb')?.bestLoad).toBeCloseTo(40);
   expect(summaryVolumeLabel([saved(40, 'kg'), saved(999)])).toContain('unknown-unit sets excluded');
+});
+
+test('actual load labels keep explicit kg/lb and disclose unknown legacy provenance, including zero', () => {
+  expect(formatActualLoad(40, 'kg')).toBe('40 kg');
+  expect(formatActualLoad(40, 'lb')).toBe('40 lb');
+  expect(formatActualLoad(40, undefined)).toBe('40 (unit unknown)');
+  expect(formatActualLoad(0, 'kg')).toBe('0 kg');
+  expect(formatActualLoad(0, undefined)).toBe('0 (unit unknown)');
 });

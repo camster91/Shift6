@@ -8,6 +8,7 @@ let mockFocusEnter: (() => () => void) | null = null;
 let mockFocusLeave: (() => void) | null = null;
 let mockResumed: WorkoutSession | null = null;
 let mockSavedActuals: CompletedSet[] = [];
+let mockPreviousActuals: CompletedSet[] = [];
 let mockRecoveredDraft: WorkoutDraftValues | null = null;
 const mockDb = {},
   mockSaveSet = jest.fn(),
@@ -57,7 +58,9 @@ jest.mock('../db/profileRepository', () => ({
 jest.mock('../db/notificationRepository', () => ({
   getNotificationPreferences: async () => ({ restTimer: false }),
 }));
-jest.mock('../db/progressRepository', () => ({ getLatestCompletedWorkoutSets: async () => [] }));
+jest.mock('../db/progressRepository', () => ({
+  getLatestCompletedWorkoutSets: async () => mockPreviousActuals,
+}));
 jest.mock('../db/workoutRepository', () => ({
   getInProgressWorkoutSession: async () => mockResumed,
   saveWorkoutSession: async () => undefined,
@@ -83,6 +86,7 @@ beforeEach(() => {
   mockRecoveredDraft = null;
   mockResumed = null;
   mockSavedActuals = [];
+  mockPreviousActuals = [];
   mockSaveSet.mockResolvedValue('saved');
   mockUpdateSet.mockResolvedValue('updated');
   mockSaveNote.mockResolvedValue(undefined);
@@ -439,3 +443,52 @@ test('queued draft context stays invalid after blur then same-owner focus return
   });
   expect(oldGuard()).toBe(false);
 });
+
+test.each(['-5', 'not a number', 'Infinity'])(
+  'nonempty invalid actual load %s stays editable and cannot silently save reps only',
+  async (value) => {
+    const screen = await render(<ActiveWorkoutScreen />);
+    await waitFor(() => expect(screen.getByLabelText('Back squat set 1 load')).toBeTruthy());
+    await fireEvent.changeText(screen.getByLabelText('Back squat set 1 load'), value);
+    await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+    expect(mockSaveSet).not.toHaveBeenCalled();
+    expect(mockUpdateSet).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe(value);
+    expect(
+      screen.getByText(
+        'Enter a valid nonnegative load, or clear the field if load was not recorded.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText('Back squat set 2 reps')).toBeNull();
+  },
+);
+
+test.each([
+  ['kg', '40 kg'],
+  ['lb', '40 lb'],
+  [undefined, '40 (unit unknown)'],
+] as const)(
+  'previous actual load %s displays its own provenance beside current preferred inputs',
+  async (unit, label) => {
+    const movement = mockVersion.workouts[0]!.exercises[0]!;
+    mockPreviousActuals = [
+      {
+        id: 'previous',
+        sessionId: 'previous-session',
+        workoutExerciseId: movement.id,
+        exerciseId: movement.exerciseId,
+        setNumber: 1,
+        load: 40,
+        loadUnit: unit,
+        reps: 5,
+        completedAt: '2026-10-12T12:00:00.000Z',
+        idempotencyKey: 'previous',
+      },
+    ];
+    const screen = await render(<ActiveWorkoutScreen />);
+    await waitFor(() => expect(screen.getByLabelText('Back squat set 1 load')).toBeTruthy());
+    await fireEvent.press(screen.getByText('Review all sets and adjustments'));
+    expect(screen.getByText(new RegExp(`load ${label.replace(/[()]/g, '\\$&')}`))).toBeTruthy();
+    expect(screen.queryByText(/saved units/)).toBeNull();
+  },
+);

@@ -1,6 +1,9 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { Keyboard } from 'react-native';
+import type * as ReactNative from 'react-native';
+import type * as ReactModule from 'react';
+import type { KeyboardEvent, ScrollView, TextInput, TextInputProps } from 'react-native';
 import CoachReviewScreen from '../../app/coach-review';
 import { demoCycle } from '../domain/fixtures/home';
 import {
@@ -31,6 +34,29 @@ let packet: CoachReviewInput;
 const mockButtonHandlers = new Map<string, (() => void) | undefined>();
 const mockRenderFrames: { db: object; owner: string; text: string }[] = [];
 let mockBeforeEffects: (() => void) | undefined;
+let mockDateScreenProps: ScreenProps | undefined;
+const mockNativeDateInputs = new Map<string, TextInput>();
+jest.mock('react-native', () => {
+  const actual = jest.requireActual<typeof ReactNative>('react-native');
+  const React = jest.requireActual<typeof ReactModule>('react');
+  return Object.defineProperty(Object.create(actual), 'TextInput', {
+    value: React.forwardRef<TextInput, TextInputProps>((props, ref) => {
+      const label = props.accessibilityLabel;
+      const attach = React.useCallback(
+        (node: TextInput | null) => {
+          if (label) {
+            if (node) mockNativeDateInputs.set(label, node);
+            else mockNativeDateInputs.delete(label);
+          }
+          if (typeof ref === 'function') ref(node);
+          else if (ref) ref.current = node;
+        },
+        [label, ref],
+      );
+      return React.createElement(actual.TextInput, { ...props, ref: attach });
+    }),
+  });
+});
 function mockVisibleText(node: unknown): string {
   if (Array.isArray(node)) return node.map(mockVisibleText).join(' ');
   if (typeof node === 'string' || typeof node === 'number') return String(node);
@@ -50,6 +76,7 @@ jest.mock('./ui', () => {
       return React.createElement(actual.Button, props);
     },
     Screen: (props: ScreenProps) => {
+      if (props.scrollViewRef) mockDateScreenProps = props;
       mockRenderFrames.push({
         db: mockDb,
         owner: mockOwner,
@@ -92,6 +119,8 @@ beforeEach(() => {
   mockButtonHandlers.clear();
   mockRenderFrames.length = 0;
   mockBeforeEffects = undefined;
+  mockDateScreenProps = undefined;
+  mockNativeDateInputs.clear();
   mockDb = {};
   mockOwner = 'guest-user';
   mockBlur = undefined;
@@ -210,6 +239,108 @@ async function ready() {
   await waitFor(() => expect(screen.getByText('Sessions started in this date range')).toBeTruthy());
   return screen;
 }
+
+async function keyboardEditor() {
+  const listeners = new Map<string, (event: KeyboardEvent) => void>();
+  jest.spyOn(Keyboard, 'addListener').mockImplementation((name, callback) => {
+    listeners.set(name, callback);
+    return { remove: jest.fn() } as unknown as ReturnType<typeof Keyboard.addListener>;
+  });
+  jest.spyOn(Keyboard, 'metrics').mockReturnValue(undefined);
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Change review dates'));
+  const input = mockNativeDateInputs.get('Review time zone')!;
+  jest.spyOn(input, 'isFocused').mockReturnValue(true);
+  const inputMeasure = jest.spyOn(input, 'measureInWindow');
+  inputMeasure.mockImplementation((callback) => callback(0, 600, 320, 48));
+  const nativeViewport = {
+    measureInWindow: jest.fn((callback: (x: number, y: number, w: number, h: number) => void) =>
+      callback(0, 80, 400, 500),
+    ),
+  };
+  const viewport = {
+    scrollTo: jest.fn(),
+    getNativeScrollRef: () => nativeViewport,
+  };
+  (mockDateScreenProps!.scrollViewRef as { current: ScrollView | null }).current =
+    viewport as unknown as ScrollView;
+  const content = {
+    measureInWindow: jest.fn((callback: (x: number, y: number, w: number, h: number) => void) =>
+      callback(0, -120, 400, 1000),
+    ),
+  };
+  (mockDateScreenProps!.scrollViewProps!.innerViewRef as { current: unknown }).current = content;
+  await fireEvent(screen.getByLabelText('Review time zone'), 'focus');
+  const show = () =>
+    listeners.get('keyboardDidShow')!({
+      duration: 0,
+      easing: 'keyboard',
+      endCoordinates: { screenX: 0, screenY: 420, width: 400, height: 340 },
+    });
+  return { screen, inputMeasure, viewport, show, listeners };
+}
+
+test('keyboard and content layout measure the focused date field and scroll only its necessary overflow without animation', async () => {
+  const { screen, inputMeasure, viewport, show } = await keyboardEditor();
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  await act(() => show());
+  expect(viewport.scrollTo).toHaveBeenLastCalledWith({ y: 428, animated: false });
+  viewport.scrollTo.mockClear();
+  inputMeasure.mockImplementation((callback) => callback(0, 100, 320, 48));
+  await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'Invalid/Zone');
+  expect(screen.queryByText('Sessions started in this date range')).toBeNull();
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 700);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  inputMeasure.mockImplementation((callback) => callback(0, 40, 320, 48));
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 650);
+  expect(viewport.scrollTo).toHaveBeenLastCalledWith({ y: 160, animated: false });
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+test.each(['blur', 'field blur', 'hide', 'owner', 'database', 'keyboard hidden', 'edit'])(
+  'a delayed keyboard measurement cannot scroll after %s invalidates its context',
+  async (change) => {
+    const { screen, inputMeasure, viewport, show, listeners } = await keyboardEditor();
+    let measured!: (x: number, y: number, width: number, height: number) => void;
+    inputMeasure.mockImplementation((callback) => {
+      measured = callback;
+    });
+    await act(() => show());
+    if (change === 'blur') await act(() => mockBlur?.());
+    if (change === 'field blur') await fireEvent(screen.getByLabelText('Review time zone'), 'blur');
+    if (change === 'hide')
+      await fireEvent.press(screen.getByLabelText('Hide review date controls'));
+    if (change === 'owner') mockOwner = 'new-person';
+    if (change === 'database') mockDb = {};
+    if (change === 'owner' || change === 'database') await screen.rerender(<CoachReviewScreen />);
+    if (change === 'keyboard hidden') listeners.get('keyboardDidHide')!({} as KeyboardEvent);
+    if (change === 'edit')
+      await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'Invalid/Zone');
+    await act(() => measured(0, 600, 320, 48));
+    expect(viewport.scrollTo).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
+  },
+);
+
+test('a newer keyboard layout measurement supersedes an older response and never scrolls an unfocused editor', async () => {
+  const { screen, inputMeasure, viewport, show } = await keyboardEditor();
+  const callbacks: ((x: number, y: number, width: number, height: number) => void)[] = [];
+  inputMeasure.mockImplementation((callback) => {
+    callbacks.push(callback);
+  });
+  await act(() => show());
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 750);
+  expect(callbacks).toHaveLength(2);
+  callbacks[0]!(0, 600, 320, 48);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  callbacks[1]!(0, 100, 320, 48);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  await fireEvent(screen.getByLabelText('Review time zone'), 'blur');
+  viewport.scrollTo.mockClear();
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 600);
+  expect(callbacks).toHaveLength(2);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+});
 test('dated session evidence is explicit, bounded and local with a single skippable question; reading and preview never save', async () => {
   const screen = await ready();
   expect(screen.getByText(/0 complete · 1 partial · 0 skipped · 0 in progress/)).toBeTruthy();

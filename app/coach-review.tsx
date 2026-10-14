@@ -1,6 +1,8 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import { Keyboard, Modal, StyleSheet, TextInput, View } from 'react-native';
+import type { ScrollView } from 'react-native';
 import { Button, Card, Screen, Text } from '../src/components/ui';
 import { useLocalDatabase } from '../src/db/context';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
@@ -77,11 +79,39 @@ export default function CoachReviewScreen() {
     owner = useCurrentUserId();
   const [dates, setDates] = useState(initialWindow);
   const [datesExpanded, setDatesExpanded] = useState(false);
+  const dateScroll = useRef<ScrollView | null>(null);
+  const dateContent = useRef<View | null>(null);
+  const dateInputs = useRef<Partial<Record<keyof CoachReviewWindow, TextInput | null>>>({});
+  const keyboardTop = useRef<number | null>(null);
+  const measurement = useRef(0);
+  const focusedDateInput = useRef<{
+    input: TextInput;
+    current: () => boolean;
+  } | null>(null);
+  const revealFocusedDateInput = useRef<() => void>(() => undefined);
   const dateEditor = useRef({ visible: false, generation: 0 });
   const dateEditorGeneration = dateEditor.current.generation;
   const setDateEditorVisibility = useCallback((visible: boolean) => {
+    measurement.current += 1;
+    focusedDateInput.current = null;
     dateEditor.current = { visible, generation: dateEditor.current.generation + 1 };
     setDatesExpanded(visible);
+  }, []);
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+      keyboardTop.current = event.endCoordinates.screenY;
+      revealFocusedDateInput.current();
+    });
+    const hidden = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardTop.current = null;
+      measurement.current += 1;
+    });
+    return () => {
+      measurement.current += 1;
+      focusedDateInput.current = null;
+      shown.remove();
+      hidden.remove();
+    };
   }, []);
   const [review, setReview] = useState<Awaited<ReturnType<typeof loadDatedCoachReview>> | null>(
     null,
@@ -267,6 +297,71 @@ export default function CoachReviewScreen() {
       receipt.receipt.cycleId === loadedFor?.cycleId &&
       receipt.receipt.programVersionId === loadedFor?.programVersionId,
     );
+  revealFocusedDateInput.current = () => {
+    const field = focusedDateInput.current;
+    const viewport = dateScroll.current;
+    const nativeViewport = viewport?.getNativeScrollRef();
+    const content = dateContent.current;
+    const top = keyboardTop.current ?? Keyboard.metrics()?.screenY;
+    if (!field || !viewport || !nativeViewport || !content || top === undefined || !field.current())
+      return;
+    const request = ++measurement.current;
+    const evidence = evidenceGeneration.current;
+    const current = () =>
+      request === measurement.current &&
+      evidence === evidenceGeneration.current &&
+      keyboardTop.current !== null &&
+      focusedDateInput.current === field &&
+      dateScroll.current === viewport &&
+      viewport.getNativeScrollRef() === nativeViewport &&
+      dateContent.current === content &&
+      field.current();
+    // Measure content too: removing evidence can clamp native scroll position
+    // before a scroll event arrives. Never guess an offset or scroll to the end.
+    nativeViewport.measureInWindow((_x, viewportY, _width, viewportHeight) => {
+      if (!current()) return;
+      content.measureInWindow((_contentX, contentY) => {
+        if (!current()) return;
+        field.input.measureInWindow((_inputX, inputY, _inputWidth, inputHeight) => {
+          if (!current()) return;
+          const bottom = Math.min(viewportY + viewportHeight, top);
+          if (
+            ![viewportY, viewportHeight, contentY, inputY, inputHeight, bottom].every(
+              Number.isFinite,
+            ) ||
+            viewportHeight <= 0 ||
+            inputHeight <= 0 ||
+            bottom <= viewportY
+          )
+            return;
+          const delta =
+            inputY < viewportY || inputHeight > bottom - viewportY
+              ? inputY - viewportY
+              : Math.max(0, inputY + inputHeight - bottom);
+          if (delta !== 0)
+            viewport.scrollTo({ y: Math.max(0, viewportY - contentY + delta), animated: false });
+        });
+      });
+    });
+  };
+  const focusDateInput = (key: keyof CoachReviewWindow, editorGeneration: number) => {
+    const input = dateInputs.current[key];
+    const current = () =>
+      Boolean(
+        input &&
+        dateInputs.current[key] === input &&
+        input.isFocused() &&
+        loadMatches() &&
+        !pending.current &&
+        visibleState.current.preview === null &&
+        dateEditor.current.visible &&
+        dateEditor.current.generation === editorGeneration,
+      );
+    if (!input || !current()) return;
+    focusedDateInput.current = { input, current };
+    keyboardTop.current = Keyboard.metrics()?.screenY ?? keyboardTop.current;
+    revealFocusedDateInput.current();
+  };
   const run = async (task: (current: () => boolean) => Promise<void>) => {
     if (!db || !loadMatches() || pending.current) return;
     const focus = generation.current,
@@ -426,7 +521,18 @@ export default function CoachReviewScreen() {
       : null;
   const comparison = review?.goal.comparison;
   return (
-    <Screen>
+    <Screen
+      scrollViewRef={dateScroll}
+      scrollViewProps={{
+        innerViewRef: dateContent as RefObject<View>,
+        onLayout: () => {
+          if (loadMatches()) revealFocusedDateInput.current();
+        },
+        onContentSizeChange: () => {
+          if (loadMatches()) revealFocusedDateInput.current();
+        },
+      }}
+    >
       <Button label="Back" variant="ghost" onPress={() => router.back()} />
       <Text variant="h2">Local Coach review</Text>
       <Text tone="muted">
@@ -499,6 +605,28 @@ export default function CoachReviewScreen() {
                       : 'Time zone (IANA name)'}
                 </Text>
                 <TextInput
+                  ref={(input) => {
+                    dateInputs.current[key] = input;
+                  }}
+                  onFocus={() => focusDateInput(key, dateEditorGeneration)}
+                  onBlur={() => {
+                    if (
+                      loadMatches() &&
+                      dateEditor.current.generation === dateEditorGeneration &&
+                      focusedDateInput.current?.input === dateInputs.current[key]
+                    ) {
+                      measurement.current += 1;
+                      focusedDateInput.current = null;
+                    }
+                  }}
+                  onLayout={() => {
+                    if (
+                      loadMatches() &&
+                      dateEditor.current.generation === dateEditorGeneration &&
+                      focusedDateInput.current?.input === dateInputs.current[key]
+                    )
+                      revealFocusedDateInput.current();
+                  }}
                   accessibilityLabel={
                     key === 'startDate'
                       ? 'Review start date'

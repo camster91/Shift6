@@ -113,6 +113,8 @@ test('explicit no-goal preview and cancellation never save reflection or cycle',
   expect(mockRequest.choice).toBe('without-goal');
   expect(mockRequest.destination.goalId).toBeNull();
   expect(screen.getByText(/Nothing changes until you confirm/)).toBeTruthy();
+  expect(screen.queryByText(new RegExp(mockRequest.destination.cycleId))).toBeNull();
+  expect(screen.getByText(/New private cycle starting/)).toBeTruthy();
   await fireEvent.press(screen.getByText('Cancel new cycle'));
   expect(mockConfirm).not.toHaveBeenCalled();
   expect(mockSave).not.toHaveBeenCalled();

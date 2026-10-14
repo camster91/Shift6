@@ -604,8 +604,8 @@ export default function CycleReviewScreen() {
                   New cycle saved on this device.
                 </Text>
                 <Text variant="small">
-                  Confirmed {handoverReceipt.confirmedAt}. Your original history stays with{' '}
-                  {handoverReceipt.request.source.cycle.id}.
+                  Confirmed {handoverReceipt.confirmedAt}. Your history stays with the original
+                  completed cycle.
                 </Text>
                 <Button
                   label="Open new cycle"
@@ -625,13 +625,11 @@ export default function CycleReviewScreen() {
               <>
                 <Text variant="smallMedium">Review new cycle before saving</Text>
                 <Text variant="small">
-                  From {handoverPreview.request.source.program.title}, cycle{' '}
-                  {handoverPreview.request.source.cycle.id}, version{' '}
+                  From {handoverPreview.request.source.program.title}, version{' '}
                   {handoverPreview.request.source.version.version}.
                 </Text>
                 <Text variant="small">
-                  New private cycle {handoverPreview.request.destination.cycleId}, starting{' '}
-                  {handoverPreview.request.destination.startDate} ·{' '}
+                  New private cycle starting {handoverPreview.request.destination.startDate} ·{' '}
                   {handoverPreview.request.destination.timeZone}.
                 </Text>
                 <Text variant="small">

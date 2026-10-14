@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import ProgramDetailScreen from '../../app/program';
 import CycleReviewScreen from '../../app/review';
+import type { CycleHandoverRequest } from '../domain/cycleHandover';
 import { programLibrary } from '../domain/programLibrary';
 import {
   demoCycle as mockCycle,
@@ -12,11 +13,14 @@ import {
 const mockDb = {},
   mockStart = jest.fn(),
   mockSaveVersion = jest.fn(),
-  mockSaveReview = jest.fn();
+  mockSaveReview = jest.fn(),
+  mockPrepareHandover = jest.fn(),
+  mockConfirmHandover = jest.fn();
 let mockGate = true;
 let mockOwner = 'guest-user';
 let mockFocusCleanup: (() => void) | void;
 let mockFocusCallback: (() => (() => void) | void) | undefined;
+const mockFocusEntries = new Map<() => (() => void) | void, (() => void) | void>();
 jest.mock('expo-router', () => ({
   useFocusEffect: (callback: () => (() => void) | void) => {
     const React = jest.requireActual('react');
@@ -24,7 +28,11 @@ jest.mock('expo-router', () => ({
       mockFocusCallback = callback;
       const cleanup = callback();
       mockFocusCleanup = cleanup;
-      return cleanup;
+      mockFocusEntries.set(callback, cleanup);
+      return () => {
+        mockFocusEntries.delete(callback);
+        cleanup?.();
+      };
     }, [callback]);
   },
   router: { replace: jest.fn(), push: jest.fn(), back: jest.fn() },
@@ -65,13 +73,35 @@ jest.mock('../db/progressRepository', () => ({
   getCycleProgressSummary: async () =>
     jest.requireActual('../domain/progression').buildCycleProgressSummary(18, []),
 }));
+
+jest.mock('../db/personalGoalRepository', () => ({ getPersonalGoal: async () => null }));
+jest.mock('../db/cycleHandoverRepository', () => ({
+  getCycleHandoverReceipt: async () => null,
+  prepareCycleHandover: (...args: unknown[]) => mockPrepareHandover(...args),
+  confirmCycleHandover: (...args: unknown[]) => mockConfirmHandover(...args),
+}));
 beforeEach(() => {
   jest.clearAllMocks();
+  mockFocusEntries.clear();
   mockGate = true;
   mockOwner = 'guest-user';
   mockStart.mockResolvedValue(undefined);
   mockSaveVersion.mockResolvedValue(undefined);
   mockSaveReview.mockResolvedValue(undefined);
+  mockPrepareHandover.mockImplementation(async (_db, owner, _cycle, options) => ({
+    ...options,
+    userId: owner,
+    source: {
+      cycle: { ...mockCycle, userId: owner, currentWeek: 6, status: 'complete' },
+      program: mockProgram,
+      version: mockVersion,
+      goal: null,
+    },
+  }));
+  mockConfirmHandover.mockImplementation(async (_db, _owner, request) => ({
+    request,
+    confirmedAt: request.preparedAt,
+  }));
   jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 });
 afterEach(() => jest.restoreAllMocks());
@@ -135,62 +165,45 @@ test('blur and return to the same owner permanently invalidates the old Start pr
   expect(mockStart).not.toHaveBeenCalled();
   expect(mockSaveVersion).not.toHaveBeenCalled();
 });
-test('review action explicitly starts a new cycle with the same targets; Cancel does not save reflection or cycle', async () => {
-  const screen = await render(<CycleReviewScreen />);
+async function prepareReview(screen: Awaited<ReturnType<typeof render>>) {
   await waitFor(() =>
     expect(screen.getByLabelText('Start a new cycle with these targets')).toBeTruthy(),
   );
+  await fireEvent.press(screen.getByLabelText('Start without a new personal goal'));
   await fireEvent.press(screen.getByLabelText('Start a new cycle with these targets'));
-  expect(Alert.alert).toHaveBeenCalledWith(
-    'Start a new six-week cycle?',
-    expect.stringContaining('does not repeat a completed week'),
-    expect.any(Array),
-  );
-  await act(async () =>
-    jest
-      .mocked(Alert.alert)
-      .mock.calls[0]![2]!.find((choice) => choice.text === 'Cancel')
-      ?.onPress?.(),
-  );
+  await waitFor(() => expect(screen.getByLabelText('Confirm new cycle')).toBeTruthy());
+}
+async function blurAndReturnReview() {
+  await act(async () => {
+    for (const cleanup of mockFocusEntries.values()) cleanup?.();
+    for (const callback of mockFocusEntries.keys()) mockFocusEntries.set(callback, callback());
+  });
+}
+test('review explicitly previews an atomic new cycle; Cancel saves no reflection or cycle', async () => {
+  const screen = await render(<CycleReviewScreen />);
+  await prepareReview(screen);
+  expect(screen.getByText(/does not repeat a completed week/)).toBeTruthy();
+  expect(
+    screen.getByText(new RegExp(Intl.DateTimeFormat().resolvedOptions().timeZone)),
+  ).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Cancel new cycle'));
+  expect(mockConfirmHandover).not.toHaveBeenCalled();
   expect(mockSaveReview).not.toHaveBeenCalled();
   expect(mockStart).not.toHaveBeenCalled();
-  await fireEvent.press(screen.getByLabelText('Start a new cycle with these targets'));
-  await act(async () =>
-    jest
-      .mocked(Alert.alert)
-      .mock.calls[1]![2]!.find((choice) => choice.text === 'Start new cycle')
-      ?.onPress?.(),
-  );
-  await waitFor(() => expect(mockStart).toHaveBeenCalledTimes(1));
-  expect(mockStart.mock.calls[0]![1]).toMatchObject({ currentWeek: 1, status: 'active' });
-  expect(mockStart.mock.calls[0]![1].id).not.toBe(mockCycle.id);
-  expect(
-    mockStart.mock.calls[0]![2].workouts.map((workout: (typeof mockVersion.workouts)[number]) =>
-      workout.exercises.map((entry) =>
-        entry.sets.map(({ setNumber, target, restSeconds }) => ({
-          setNumber,
-          target,
-          restSeconds,
-        })),
-      ),
-    ),
-  ).toEqual(
-    mockVersion.workouts.map((workout) =>
-      workout.exercises.map((entry) =>
-        entry.sets.map(({ setNumber, target, restSeconds }) => ({
-          setNumber,
-          target,
-          restSeconds,
-        })),
-      ),
-    ),
-  );
+  await prepareReview(screen);
+  await fireEvent.press(screen.getByLabelText('Confirm new cycle'));
+  await waitFor(() => expect(screen.getByLabelText('Open new cycle')).toBeTruthy());
+  const request = mockConfirmHandover.mock.calls[0]![2] as CycleHandoverRequest;
+  expect(request.choice).toBe('without-goal');
+  expect(request.destination.cycleId).not.toBe(mockCycle.id);
+  expect(request.source.version.workouts).toEqual(mockVersion.workouts);
+  expect(mockSaveReview).not.toHaveBeenCalled();
+  expect(mockStart).not.toHaveBeenCalled();
+  expect(mockSaveVersion).not.toHaveBeenCalled();
+  expect(router.replace).not.toHaveBeenCalled();
 });
 
-test.each([
-  ['catalogue', ProgramDetailScreen, 'Start six-week cycle', 'Start cycle'],
-  ['review', CycleReviewScreen, 'Start a new cycle with these targets', 'Start new cycle'],
-] as const)(
+test.each([['catalogue', ProgramDetailScreen, 'Start six-week cycle', 'Start cycle']] as const)(
   '%s deferred Start releases its spinner after blur/return without stale navigation',
   async (_name, Component, label, confirmLabel) => {
     let resolve!: () => void;
@@ -234,43 +247,70 @@ test.each([
   },
 );
 
-test('a deferred reflection from the obsolete Start does not show a stale receipt or block a fresh confirmation', async () => {
-  let resolve!: () => void;
-  mockSaveReview.mockImplementationOnce(
+test('review deferred confirmation releases its spinner after blur/return without a stale receipt', async () => {
+  let resolve!: (value: unknown) => void;
+  mockConfirmHandover.mockImplementationOnce(
     () =>
-      new Promise<void>((done) => {
+      new Promise((done) => {
         resolve = done;
       }),
   );
   const screen = await render(<CycleReviewScreen />);
-  const label = 'Start a new cycle with these targets';
-  await waitFor(() => expect(screen.getByLabelText(label)).toBeTruthy());
-  await fireEvent.press(screen.getByLabelText(label));
-  await act(async () =>
-    jest
-      .mocked(Alert.alert)
-      .mock.calls[0]![2]!.find((choice) => choice.text === 'Start new cycle')
-      ?.onPress?.(),
-  );
-  await waitFor(() => expect(mockSaveReview).toHaveBeenCalledTimes(1));
-  await act(async () => {
-    mockFocusCleanup?.();
-    mockFocusCallback?.();
-    resolve();
-  });
+  await prepareReview(screen);
+  await fireEvent.press(screen.getByLabelText('Confirm new cycle'));
+  await waitFor(() => expect(mockConfirmHandover).toHaveBeenCalledTimes(1));
+  expect(screen.getByLabelText('Confirm new cycle').props.accessibilityState.busy).toBe(true);
+  const call = mockConfirmHandover.mock.calls[0]!;
+  await blurAndReturnReview();
+  expect(call[3].isContextCurrent()).toBe(false);
+  await act(async () => resolve({ request: call[2], confirmedAt: call[2].preparedAt }));
   await waitFor(() =>
-    expect(screen.getByLabelText(label).props.accessibilityState.busy).toBe(false),
+    expect(
+      screen.getByLabelText('Start a new cycle with these targets').props.accessibilityState.busy,
+    ).toBe(false),
   );
-  expect(screen.queryByLabelText('Reflection saved')).toBeNull();
-  expect(screen.getByLabelText('Save reflection')).toBeTruthy();
-  expect(mockStart).not.toHaveBeenCalled();
+  expect(screen.queryByLabelText('Open new cycle')).toBeNull();
   expect(router.replace).not.toHaveBeenCalled();
-  await fireEvent.press(screen.getByLabelText(label));
-  await act(async () =>
-    jest
-      .mocked(Alert.alert)
-      .mock.calls[1]![2]!.find((choice) => choice.text === 'Start new cycle')
-      ?.onPress?.(),
+  await prepareReview(screen);
+  await fireEvent.press(screen.getByLabelText('Confirm new cycle'));
+  await waitFor(() => expect(mockConfirmHandover).toHaveBeenCalledTimes(2));
+  expect(screen.getByLabelText('Open new cycle')).toBeTruthy();
+  expect(mockSaveReview).not.toHaveBeenCalled();
+  expect(mockStart).not.toHaveBeenCalled();
+});
+
+test('obsolete deferred preparation cannot show a preview or block a fresh operation', async () => {
+  const prepare = mockPrepareHandover.getMockImplementation()!;
+  let resolve!: (value: unknown) => void;
+  let pending: unknown;
+  mockPrepareHandover.mockImplementationOnce(async (...args) => {
+    pending = await prepare(...args);
+    return new Promise((done) => {
+      resolve = done;
+    });
+  });
+  const screen = await render(<CycleReviewScreen />);
+  await waitFor(() =>
+    expect(screen.getByLabelText('Start without a new personal goal')).toBeTruthy(),
   );
-  await waitFor(() => expect(mockStart).toHaveBeenCalledTimes(1));
+  await fireEvent.press(screen.getByLabelText('Start without a new personal goal'));
+  await fireEvent.press(screen.getByLabelText('Start a new cycle with these targets'));
+  await waitFor(() => expect(mockPrepareHandover).toHaveBeenCalledTimes(1));
+  expect(
+    screen.getByLabelText('Start a new cycle with these targets').props.accessibilityState.busy,
+  ).toBe(true);
+  await blurAndReturnReview();
+  await act(async () => resolve(pending));
+  await waitFor(() =>
+    expect(
+      screen.getByLabelText('Start a new cycle with these targets').props.accessibilityState.busy,
+    ).toBe(false),
+  );
+  expect(screen.queryByLabelText('Confirm new cycle')).toBeNull();
+  expect(mockConfirmHandover).not.toHaveBeenCalled();
+  expect(mockSaveReview).not.toHaveBeenCalled();
+  expect(mockStart).not.toHaveBeenCalled();
+  await prepareReview(screen);
+  await fireEvent.press(screen.getByLabelText('Confirm new cycle'));
+  await waitFor(() => expect(mockConfirmHandover).toHaveBeenCalledTimes(1));
 });

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Alert, StyleSheet, TextInput, View } from 'react-native';
 
 import {
   Button,
@@ -474,12 +474,11 @@ export default function CycleReviewScreen() {
       });
       if (isCurrent()) setHandoverPreview({ request, snapshot, focusGeneration });
     } catch (prepareError) {
-      if (isCurrent())
-        setError(
-          prepareError instanceof Error
-            ? prepareError.message
-            : 'We could not prepare the new cycle.',
-        );
+      if (isCurrent()) {
+        const message = handoverFailureMessage(prepareError, 'We could not prepare the new cycle.');
+        setError(message);
+        Alert.alert('New cycle not prepared', message, [{ text: 'OK' }]);
+      }
     } finally {
       if (repeatPending.current === operationToken) {
         repeatPending.current = null;
@@ -531,12 +530,15 @@ export default function CycleReviewScreen() {
         programId: receipt.request.source.program.id,
       });
     } catch (confirmError) {
-      if (canShowResult())
-        setError(
-          confirmError instanceof Error
-            ? confirmError.message
-            : 'Confirmation could not be read. Retry this exact confirmation to recover its saved result.',
+      if (canShowResult()) {
+        const message = handoverFailureMessage(
+          confirmError,
+          'Confirmation could not be read. Retry this exact confirmation to recover its saved result.',
         );
+        setError(message);
+        if (isLoadedContextCurrent())
+          Alert.alert('New cycle confirmation needs attention', message, [{ text: 'OK' }]);
+      }
     } finally {
       if (repeatPending.current === operationToken) {
         repeatPending.current = null;
@@ -943,6 +945,13 @@ function Fact({ label, value }: { label: string; value: string }) {
       <Text variant="h2">{value}</Text>
     </View>
   );
+}
+
+function handoverFailureMessage(failure: unknown, fallback: string): string {
+  const message = failure instanceof Error ? failure.message : fallback;
+  return message === 'Finish or save pending sessions before handover.'
+    ? 'Finish the unfinished workout, or end it with Save partial or Skip before starting a new cycle. Pausing saves its draft and keeps it unfinished.'
+    : message;
 }
 
 function getPlannedWorkoutCount(currentCycle: TrainingCycle): number {

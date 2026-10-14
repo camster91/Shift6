@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import ProgramDetailScreen from '../../app/program';
 import CycleReviewScreen from '../../app/review';
+import type { ButtonProps } from './ui/Button';
 import type { CycleHandoverRequest } from '../domain/cycleHandover';
 import { programLibrary } from '../domain/programLibrary';
 import {
@@ -21,6 +22,18 @@ let mockOwner = 'guest-user';
 let mockFocusCleanup: (() => void) | void;
 let mockFocusCallback: (() => (() => void) | void) | undefined;
 const mockFocusEntries = new Map<() => (() => void) | void, (() => void) | void>();
+const mockButtonHandlers = new Map<string, (() => void) | undefined>();
+jest.mock('./ui', () => {
+  const actual = jest.requireActual('./ui'),
+    React = jest.requireActual('react');
+  return {
+    ...actual,
+    Button: (props: ButtonProps) => {
+      mockButtonHandlers.set(props.label, props.onPress);
+      return React.createElement(actual.Button, props);
+    },
+  };
+});
 jest.mock('expo-router', () => ({
   useFocusEffect: (callback: () => (() => void) | void) => {
     const React = jest.requireActual('react');
@@ -82,6 +95,7 @@ jest.mock('../db/cycleHandoverRepository', () => ({
 }));
 beforeEach(() => {
   jest.clearAllMocks();
+  mockButtonHandlers.clear();
   mockFocusEntries.clear();
   mockGate = true;
   mockOwner = 'guest-user';
@@ -179,6 +193,93 @@ async function blurAndReturnReview() {
     for (const callback of mockFocusEntries.keys()) mockFocusEntries.set(callback, callback());
   });
 }
+
+test('pending-session preparation refusal is visible in a native alert and preserves the inline reason', async () => {
+  mockPrepareHandover.mockRejectedValueOnce(
+    new Error('Finish or save pending sessions before handover.'),
+  );
+  const screen = await render(<CycleReviewScreen />);
+  await waitFor(() =>
+    expect(screen.getByLabelText('Start without a new personal goal')).toBeTruthy(),
+  );
+  await fireEvent.press(screen.getByLabelText('Start without a new personal goal'));
+  await fireEvent.press(screen.getByLabelText('Start a new cycle with these targets'));
+  await waitFor(() =>
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'New cycle not prepared',
+      'Finish the unfinished workout, or end it with Save partial or Skip before starting a new cycle. Pausing saves its draft and keeps it unfinished.',
+      [{ text: 'OK' }],
+    ),
+  );
+  expect(screen.getByText(/Pausing saves its draft/)).toBeTruthy();
+  expect(mockConfirmHandover).not.toHaveBeenCalled();
+  expect(mockSaveReview).not.toHaveBeenCalled();
+  expect(mockStart).not.toHaveBeenCalled();
+});
+
+test('confirmation failure alerts without changing the exact retry request', async () => {
+  mockConfirmHandover.mockRejectedValueOnce(new Error('Confirmation readback interrupted'));
+  const screen = await render(<CycleReviewScreen />);
+  await prepareReview(screen);
+  await fireEvent.press(screen.getByLabelText('Confirm new cycle'));
+  await waitFor(() =>
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'New cycle confirmation needs attention',
+      'Confirmation readback interrupted',
+      [{ text: 'OK' }],
+    ),
+  );
+  const request = mockConfirmHandover.mock.calls[0]![2];
+  expect(screen.getByText('Confirmation readback interrupted')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Confirm new cycle'));
+  await waitFor(() => expect(screen.getByLabelText('Open new cycle')).toBeTruthy());
+  expect(mockConfirmHandover.mock.calls[1]![2]).toBe(request);
+  expect(mockPrepareHandover).toHaveBeenCalledTimes(1);
+});
+
+test('retained confirmation invoked after blur cannot raise an inactive-screen alert', async () => {
+  mockConfirmHandover.mockRejectedValueOnce(new Error('Review focus changed'));
+  const screen = await render(<CycleReviewScreen />);
+  await prepareReview(screen);
+  const retained = mockButtonHandlers.get('Confirm new cycle')!;
+  await act(async () => {
+    for (const cleanup of mockFocusEntries.values()) cleanup?.();
+  });
+  await act(async () => retained());
+  await waitFor(() => expect(mockConfirmHandover).toHaveBeenCalledTimes(1));
+  expect(mockConfirmHandover.mock.calls[0]![3].isContextCurrent()).toBe(false);
+  expect(Alert.alert).not.toHaveBeenCalled();
+});
+
+test.each(['prepare', 'confirm'] as const)(
+  'obsolete %s refusal cannot alert after focus has returned to a fresh review',
+  async (phase) => {
+    let reject!: (error: Error) => void;
+    const deferred = () =>
+      new Promise((_resolve, fail) => {
+        reject = fail;
+      });
+    if (phase === 'prepare') mockPrepareHandover.mockImplementationOnce(deferred);
+    else mockConfirmHandover.mockImplementationOnce(deferred);
+    const screen = await render(<CycleReviewScreen />);
+    if (phase === 'confirm') {
+      await prepareReview(screen);
+      await fireEvent.press(screen.getByLabelText('Confirm new cycle'));
+    } else {
+      await waitFor(() =>
+        expect(screen.getByLabelText('Start without a new personal goal')).toBeTruthy(),
+      );
+      await fireEvent.press(screen.getByLabelText('Start without a new personal goal'));
+      await fireEvent.press(screen.getByLabelText('Start a new cycle with these targets'));
+    }
+    await waitFor(() => expect(reject).toBeDefined());
+    await blurAndReturnReview();
+    await act(async () => reject(new Error('Obsolete private refusal')));
+    expect(Alert.alert).not.toHaveBeenCalled();
+    expect(screen.queryByText('Obsolete private refusal')).toBeNull();
+    expect(screen.queryByLabelText('Confirm new cycle')).toBeNull();
+  },
+);
 test('review explicitly previews an atomic new cycle; Cancel saves no reflection or cycle', async () => {
   const screen = await render(<CycleReviewScreen />);
   await prepareReview(screen);

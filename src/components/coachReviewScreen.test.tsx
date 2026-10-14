@@ -1,5 +1,6 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
+import { Keyboard } from 'react-native';
 import CoachReviewScreen from '../../app/coach-review';
 import { demoCycle } from '../domain/fixtures/home';
 import {
@@ -52,7 +53,7 @@ jest.mock('./ui', () => {
       mockRenderFrames.push({
         db: mockDb,
         owner: mockOwner,
-        text: mockVisibleText(props.children),
+        text: `${mockVisibleText(props.children)} ${mockVisibleText(props.footer)}`,
       });
       mockBeforeEffects?.();
       return React.createElement(actual.Screen, props);
@@ -198,7 +199,10 @@ test.each([
     expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
   },
 );
-afterEach(() => jest.useRealTimers());
+afterEach(() => {
+  jest.useRealTimers();
+  jest.restoreAllMocks();
+});
 async function ready() {
   const screen = await render(<CoachReviewScreen />);
   await waitFor(() => expect(screen.getByText('Sessions started in this date range')).toBeTruthy());
@@ -219,6 +223,24 @@ test('dated session evidence is explicit, bounded and local with a single skippa
   await fireEvent.press(screen.getByLabelText('Cancel preview'));
   expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
   expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+test('choosing a current intent opens an immediately actionable preview and native Back cancels without saving', async () => {
+  const dismiss = jest.spyOn(Keyboard, 'dismiss');
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Keep plan'));
+  expect(dismiss).toHaveBeenCalledTimes(1);
+  expect(screen.getByTestId('coach-review-preview-modal')).toBeTruthy();
+  expect(screen.getByLabelText('Confirm and save intent')).not.toBeDisabled();
+  expect(screen.getByLabelText('Cancel preview')).not.toBeDisabled();
+  expect(mockConfirm).not.toHaveBeenCalled();
+  await fireEvent(screen.getByTestId('coach-review-preview-modal'), 'requestClose');
+  expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+  expect(mockConfirm).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Keep plan'));
+  await fireEvent.press(screen.getByLabelText('Cancel preview'));
+  expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+  dismiss.mockRestore();
 });
 test('only confirmation saves the selected intent; optional answer stays in receipt and navigation is a separate action', async () => {
   const screen = await ready();
@@ -254,7 +276,11 @@ test('same-event double confirmation uses one immediate pending mutex and contro
     onPress();
   });
   expect(mockConfirm).toHaveBeenCalledTimes(1);
-  expect(screen.getByLabelText('Review start date').props.editable).toBe(false);
+  expect(screen.queryByLabelText('Review start date')).toBeNull();
+  expect(screen.getByLabelText('Confirm and save intent')).toBeDisabled();
+  expect(screen.getByLabelText('Cancel preview')).toBeDisabled();
+  await fireEvent(screen.getByTestId('coach-review-preview-modal'), 'requestClose');
+  expect(screen.getByTestId('coach-review-preview-modal')).toBeTruthy();
   const [_db, preview, id, parent] = mockConfirm.mock.calls[0]!;
   await act(() =>
     release({

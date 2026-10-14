@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, Modal, StyleSheet, TextInput, View } from 'react-native';
 import { Button, Card, Screen, Text } from '../src/components/ui';
 import { useLocalDatabase } from '../src/db/context';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
@@ -271,6 +271,7 @@ export default function CoachReviewScreen() {
   };
   const choose = (choice: CoachReviewChoice) => {
     if (!review || pending.current || !reviewMatches()) return;
+    Keyboard.dismiss();
     setPreview({
       value: previewCoachReviewChoice(review, choice, response),
       id: operationId(),
@@ -381,7 +382,7 @@ export default function CoachReviewScreen() {
       {busy ? (
         <Text accessibilityLiveRegion="polite">Reading or confirming local evidence…</Text>
       ) : null}
-      {error ? (
+      {error && !previewMatches() ? (
         <Text tone="error" accessibilityRole="alert">
           {error}
         </Text>
@@ -526,31 +527,54 @@ export default function CoachReviewScreen() {
         </>
       ) : null}
       {previewMatches() && preview ? (
-        <Card style={styles.card}>
-          <Text variant="bodyMedium">Confirm dated intent: {choices[preview.value.choice]}</Text>
-          <Text>
-            {preview.value.window.startDate} through {preview.value.window.endDate} ·{' '}
-            {preview.value.window.timeZone}
-          </Text>
-          <Text>
-            {preview.value.choice === 'keep-plan'
-              ? 'Save your choice to keep the current plan.'
-              : 'Save your intention to review an existing workflow. Open it separately after confirmation; any changes require its own confirmation.'}
-          </Text>
-          <Text tone="muted">
-            Saving this receipt does not edit training, schedule, goal, or the end-of-cycle
-            reflection.
-          </Text>
-          <Button label="Confirm and save intent" disabled={busy} onPress={confirm} />
-          <Button
-            label="Cancel preview"
-            variant="ghost"
-            disabled={busy}
-            onPress={() => {
-              if (!pending.current && previewMatches()) setPreview(null);
-            }}
-          />
-        </Card>
+        <Modal
+          testID="coach-review-preview-modal"
+          visible
+          animationType="none"
+          presentationStyle="fullScreen"
+          accessibilityViewIsModal
+          onRequestClose={() => {
+            if (!pending.current && previewMatches()) setPreview(null);
+          }}
+        >
+          <Screen
+            footer={
+              <View style={styles.previewActions}>
+                {error ? (
+                  <Text tone="error" accessibilityRole="alert" accessibilityLiveRegion="polite">
+                    {error}
+                  </Text>
+                ) : null}
+                <Button label="Confirm and save intent" disabled={busy} onPress={confirm} />
+                <Button
+                  label="Cancel preview"
+                  variant="ghost"
+                  disabled={busy}
+                  onPress={() => {
+                    if (!pending.current && previewMatches()) setPreview(null);
+                  }}
+                />
+              </View>
+            }
+          >
+            <Text variant="h2" accessibilityRole="header">
+              Confirm dated intent: {choices[preview.value.choice]}
+            </Text>
+            <Text>
+              {preview.value.window.startDate} through {preview.value.window.endDate} ·{' '}
+              {preview.value.window.timeZone}
+            </Text>
+            <Text>
+              {preview.value.choice === 'keep-plan'
+                ? 'Save your choice to keep the current plan.'
+                : 'Save your intention to review an existing workflow. Open it separately after confirmation; any changes require its own confirmation.'}
+            </Text>
+            <Text tone="muted">
+              Saving this receipt does not edit training, schedule, goal, or the end-of-cycle
+              reflection.
+            </Text>
+          </Screen>
+        </Modal>
       ) : null}
       {receiptMatches() && receipt ? (
         <Card style={styles.card}>
@@ -608,6 +632,7 @@ export default function CoachReviewScreen() {
   );
 }
 const styles = StyleSheet.create({
+  previewActions: { gap: spacing.sm },
   card: { gap: spacing.md },
   field: { gap: spacing.sm },
   input: {

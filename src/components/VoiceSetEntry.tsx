@@ -46,16 +46,34 @@ export function VoiceSetEntry({
   const capturing = useRef(false);
   const [editor, setEditor] = useState<{ key: string; adapter: LocalVoiceAdapter } | null>(null);
   const currentEditor = useRef(editor);
-  const editorMatches = () =>
-    Boolean(
-      editor &&
-      currentEditor.current === editor &&
-      editor.key === currentKey.current &&
-      editor.key === key &&
-      editor.adapter === adapter &&
-      editor.adapter === currentAdapter.current &&
-      !currentDisabled.current,
-    );
+  const editorMatches = useCallback(
+    () =>
+      Boolean(
+        editor &&
+        currentEditor.current === editor &&
+        editor.key === currentKey.current &&
+        editor.key === key &&
+        editor.adapter === adapter &&
+        editor.adapter === currentAdapter.current &&
+        !currentDisabled.current,
+      ),
+    [editor, key, adapter],
+  );
+  const [settledCapture, setSettledCapture] = useState<{
+    editor: NonNullable<typeof editor>;
+    token: number;
+  } | null>(null);
+  useEffect(() => {
+    const input = correctionInput.current;
+    if (
+      settledCapture?.editor === editor &&
+      settledCapture?.token === revision.current &&
+      editorMatches() &&
+      !capturing.current &&
+      input?.isFocused()
+    )
+      geometryCallbacks.current.onCorrectionFocus?.(input, editorMatches);
+  }, [editor, editorMatches, settledCapture]);
   const [listening, setListening] = useState(false);
   const [text, setText] = useState('');
   const currentText = useRef(text);
@@ -157,6 +175,12 @@ export function VoiceSetEntry({
           setEditor(opened);
           const token = ++revision.current;
           const capturedKey = key;
+          const captureMatches = () =>
+            !currentDisabled.current &&
+            revision.current === token &&
+            currentKey.current === capturedKey &&
+            currentAdapter.current === adapter &&
+            currentEditor.current === opened;
           setListening(true);
           currentText.current = '';
           setText('');
@@ -164,39 +188,29 @@ export function VoiceSetEntry({
           setMessage('');
           try {
             const final = await adapter.listen('en-US', (partial) => {
-              if (
-                !currentDisabled.current &&
-                revision.current === token &&
-                currentKey.current === capturedKey
-              ) {
+              if (captureMatches()) {
                 currentText.current = partial;
                 setText(partial);
               }
             });
-            if (
-              currentDisabled.current ||
-              revision.current !== token ||
-              currentKey.current !== capturedKey
-            )
-              return;
+            if (!captureMatches()) return;
             currentText.current = final;
             setText(final);
             setPreview({ text: final, token, key: capturedKey });
           } catch (error) {
-            if (
-              !currentDisabled.current &&
-              revision.current === token &&
-              currentKey.current === capturedKey
-            )
+            if (captureMatches())
               setMessage(
                 error instanceof Error
                   ? error.message
                   : 'Offline voice unavailable. Use manual entry.',
               );
           } finally {
-            if (revision.current === token && currentKey.current === capturedKey) {
+            if (captureMatches()) {
               capturing.current = false;
               setListening(false);
+              // Retry can retain native focus without emitting another onFocus.
+              // Reattach only after this exact capture's editor has committed.
+              setSettledCapture({ editor: opened, token });
             }
           }
         }}

@@ -117,6 +117,119 @@ test('correction focus is bound to the open editor and dismissal releases geomet
   expect(apply).not.toHaveBeenCalled();
 });
 
+test.each(['missing-model', 'success'])(
+  'a second capture settling with %s reattaches the still-focused native correction field without another focus event',
+  async (result) => {
+    const f = fixture(),
+      onFocus = jest.fn(),
+      onBlur = jest.fn(),
+      apply = jest.fn(() => true);
+    const listen = f.adapter.listen as jest.Mock;
+    listen.mockRejectedValueOnce(new Error('Offline model missing. Use manual entry.'));
+    const screen = await render(
+      <VoiceSetEntry
+        binding={binding}
+        adapter={f.adapter}
+        onApply={apply}
+        onCorrectionFocus={onFocus}
+        onCorrectionBlur={onBlur}
+      />,
+    );
+    await fireEvent.press(screen.getByLabelText('Speak a set entry'));
+    await fireEvent(screen.getByLabelText('Review or correct the spoken set entry'), 'focus');
+    const [input, oldCurrent] = onFocus.mock.calls[0]!;
+    const focus = jest.spyOn(input, 'isFocused').mockReturnValue(true);
+    try {
+      if (result === 'missing-model')
+        listen.mockRejectedValueOnce(new Error('Offline model missing. Use manual entry.'));
+      else listen.mockResolvedValueOnce('8 reps, 40 kilograms');
+      await fireEvent.press(screen.getByLabelText('Speak a set entry'));
+      expect(onBlur).toHaveBeenCalledWith(input);
+      expect(oldCurrent()).toBe(false);
+      expect(onFocus).toHaveBeenCalledTimes(2);
+      const [reattached, current] = onFocus.mock.calls[1]!;
+      expect(reattached).toBe(input);
+      expect(current()).toBe(true);
+      if (result === 'missing-model') {
+        expect(screen.getByLabelText('Review or correct the spoken set entry')).toHaveDisplayValue(
+          '',
+        );
+        await fireEvent.changeText(
+          screen.getByLabelText('Review or correct the spoken set entry'),
+          '9 reps, 41 kilograms',
+        );
+        await fireEvent.press(screen.getByLabelText('Review corrected values'));
+        expect(screen.getByText('load: 41 kg')).toBeTruthy();
+      } else expect(screen.getByText('load: 40 kg')).toBeTruthy();
+      expect(apply).not.toHaveBeenCalled();
+    } finally {
+      focus.mockRestore();
+    }
+  },
+);
+
+test.each(['blur', 'dismiss', 'binding', 'disabled', 'adapter', 'background'])(
+  'a delayed retry cannot reattach correction geometry after %s',
+  async (reset) => {
+    const originalImplementation = jest.isMockFunction(AppState.addEventListener)
+      ? jest.mocked(AppState.addEventListener).getMockImplementation()
+      : undefined;
+    let background!: (state: AppStateStatus) => void;
+    const subscription = jest
+      .spyOn(AppState, 'addEventListener')
+      .mockImplementation((_type, callback) => {
+        background = callback;
+        return { remove: jest.fn() };
+      });
+    try {
+      const f = fixture(),
+        onFocus = jest.fn(),
+        apply = jest.fn(() => true);
+      (f.adapter.listen as jest.Mock).mockRejectedValueOnce(new Error('Offline model missing.'));
+      const props = { binding, adapter: f.adapter, onApply: apply, onCorrectionFocus: onFocus };
+      const screen = await render(<VoiceSetEntry {...props} />);
+      await fireEvent.press(screen.getByLabelText('Speak a set entry'));
+      await fireEvent(screen.getByLabelText('Review or correct the spoken set entry'), 'focus');
+      const [input] = onFocus.mock.calls[0]!;
+      const focus = jest.spyOn(input, 'isFocused').mockReturnValue(true);
+      try {
+        const press = screen
+          .getByLabelText('Speak a set entry')
+          .props.onStartShouldSetResponder.testOnly_pressabilityConfig().onPress;
+        let pending!: Promise<void>;
+        await act(() => {
+          pending = press();
+        });
+        if (reset === 'blur') focus.mockReturnValue(false);
+        if (reset === 'dismiss')
+          await fireEvent.press(screen.getByLabelText('Dismiss voice entry'));
+        if (reset === 'binding')
+          await screen.rerender(
+            <VoiceSetEntry {...props} binding={{ ...binding, ownerId: 'other' }} />,
+          );
+        if (reset === 'disabled') await screen.rerender(<VoiceSetEntry {...props} disabled />);
+        if (reset === 'adapter')
+          await screen.rerender(<VoiceSetEntry {...props} adapter={fixture().adapter} />);
+        if (reset === 'background') await act(() => background('background'));
+        await act(async () => {
+          f.resolve('8 reps, 40 kilograms');
+          await pending;
+        });
+        expect(onFocus).toHaveBeenCalledTimes(1);
+        expect(apply).not.toHaveBeenCalled();
+        if (reset !== 'blur')
+          expect(screen.queryByLabelText('Use reviewed values in unsaved set')).toBeNull();
+      } finally {
+        focus.mockRestore();
+      }
+    } finally {
+      subscription.mockRestore();
+      if (originalImplementation)
+        jest.mocked(AppState.addEventListener).mockImplementation(originalImplementation);
+    }
+  },
+);
+
 test.each(['dismiss', 'binding', 'disabled', 'adapter', 'background'])(
   'an empty opened correction editor closes on %s and its retained review cannot recreate a preview',
   async (reset) => {

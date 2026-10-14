@@ -217,6 +217,66 @@ test('legacy recovered load stays unknown and cannot save until explicitly decla
   await waitFor(() => expect(mockSaveSet).toHaveBeenCalledTimes(1));
   expect(mockSaveSet.mock.calls[0]?.[1]).toMatchObject({ load: 35, loadUnit: 'kg' });
 });
+test('recovered populated actuals retain visible field names and canonical units, including zero reps and RIR', async () => {
+  const exercise = mockVersion.workouts[0]!.exercises[0]!;
+  exercise.sets[0]!.target.durationSeconds = 30;
+  exercise.sets[0]!.target.distanceMeters = 500;
+  mockRecoveredDraft = {
+    [`${exercise.id}:1`]: {
+      load: '35',
+      loadUnit: 'kg',
+      reps: '0',
+      duration: '26',
+      distance: '450',
+      rpe: '7',
+      rir: '0',
+    },
+  };
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() =>
+    expect(screen.getByLabelText('Back squat set 1 reps')).toHaveDisplayValue('0'),
+  );
+  for (const [caption, accessibilityLabel, value] of [
+    ['Reps', 'reps', '0'],
+    ['Duration (seconds)', 'duration in seconds', '26'],
+    ['Distance (meters)', 'distance in meters', '450'],
+    ['RPE (1–10)', 'RPE from 1 to 10', '7'],
+    ['RIR (0–10)', 'RIR from 0 to 10', '0'],
+  ]) {
+    expect(screen.getByText(caption!)).toBeTruthy();
+    expect(screen.getByLabelText(`Back squat set 1 ${accessibilityLabel}`)).toHaveDisplayValue(
+      value!,
+    );
+  }
+  expect(screen.getByText('Actual load: kg')).toBeTruthy();
+  expect(screen.getByLabelText('Back squat set 1 load')).toHaveDisplayValue('35');
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 duration in seconds'), '28');
+  expect(screen.getByText('Duration (seconds)')).toBeTruthy();
+  expect(screen.getByLabelText('Back squat set 1 duration in seconds')).toHaveDisplayValue('28');
+  expect(mockSaveSet).not.toHaveBeenCalled();
+  expect(mockUpdateSet).not.toHaveBeenCalled();
+});
+
+test('actual field captions follow existing conditional inputs and remain after manual entry', async () => {
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+  expect(screen.getByText('Reps')).toBeTruthy();
+  expect(screen.queryByText('Duration (seconds)')).toBeNull();
+  expect(screen.queryByText('Distance (meters)')).toBeNull();
+  expect(screen.queryByText('RPE (1–10)')).toBeNull();
+  expect(screen.queryByText('RIR (0–10)')).toBeNull();
+  await fireEvent.press(screen.getByLabelText('Show optional effort fields'));
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), '8');
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 RPE from 1 to 10'), '7.5');
+  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 RIR from 0 to 10'), '0');
+  expect(screen.getByText('Reps')).toBeTruthy();
+  expect(screen.getByText('RPE (1–10)')).toBeTruthy();
+  expect(screen.getByText('RIR (0–10)')).toBeTruthy();
+  expect(screen.getByLabelText('Back squat set 1 reps')).toHaveDisplayValue('8');
+  expect(screen.getByLabelText('Back squat set 1 RIR from 0 to 10')).toHaveDisplayValue('0');
+  expect(mockSaveSet).not.toHaveBeenCalled();
+});
+
 test('focused fields precede optional details and bodyweight never requires owned gear', async () => {
   const workout = mockVersion.workouts[0]!;
   const beforeEquipment = workout.equipmentIds;

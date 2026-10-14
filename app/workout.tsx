@@ -1923,72 +1923,87 @@ export default function ActiveWorkoutScreen() {
                             workoutSet.target,
                             availableExercises,
                           ) ? (
-                            <TextInput
-                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} reps`}
-                              editable={savingSetKey === null && (!completed || editing)}
-                              keyboardType="number-pad"
-                              onChangeText={(value) => updateValue(key, 'reps', value)}
-                              placeholder="Reps"
-                              placeholderTextColor={colors.inkMuted}
-                              style={styles.valueInput}
-                              value={values[key]?.reps ?? ''}
-                            />
+                            <View style={styles.actualField}>
+                              <Text variant="caption">Reps</Text>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} reps`}
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="number-pad"
+                                onChangeText={(value) => updateValue(key, 'reps', value)}
+                                placeholder="Reps"
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.valueInput, styles.labeledInput]}
+                                value={values[key]?.reps ?? ''}
+                              />
+                            </View>
                           ) : null}
                           {showsDuration(
                             workoutExercise.exerciseId,
                             workoutSet.target,
                             availableExercises,
                           ) ? (
-                            <TextInput
-                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} duration in seconds`}
-                              editable={savingSetKey === null && (!completed || editing)}
-                              keyboardType="number-pad"
-                              onChangeText={(value) => updateValue(key, 'duration', value)}
-                              placeholder="Seconds"
-                              placeholderTextColor={colors.inkMuted}
-                              style={styles.valueInput}
-                              value={values[key]?.duration ?? ''}
-                            />
+                            <View style={styles.actualField}>
+                              <Text variant="caption">Duration (seconds)</Text>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} duration in seconds`}
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="number-pad"
+                                onChangeText={(value) => updateValue(key, 'duration', value)}
+                                placeholder="Seconds"
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.valueInput, styles.labeledInput]}
+                                value={values[key]?.duration ?? ''}
+                              />
+                            </View>
                           ) : null}
                           {showsDistance(
                             workoutExercise.exerciseId,
                             workoutSet.target,
                             availableExercises,
                           ) ? (
-                            <TextInput
-                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} distance in meters`}
-                              editable={savingSetKey === null && (!completed || editing)}
-                              keyboardType="decimal-pad"
-                              onChangeText={(value) => updateValue(key, 'distance', value)}
-                              placeholder="Meters"
-                              placeholderTextColor={colors.inkMuted}
-                              style={styles.valueInput}
-                              value={values[key]?.distance ?? ''}
-                            />
+                            <View style={styles.actualField}>
+                              <Text variant="caption">Distance (meters)</Text>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} distance in meters`}
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="decimal-pad"
+                                onChangeText={(value) => updateValue(key, 'distance', value)}
+                                placeholder="Meters"
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.valueInput, styles.labeledInput]}
+                                value={values[key]?.distance ?? ''}
+                              />
+                            </View>
                           ) : null}
                           {showEffortDetails || values[key]?.rpe ? (
-                            <TextInput
-                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
-                              editable={savingSetKey === null && (!completed || editing)}
-                              keyboardType="decimal-pad"
-                              onChangeText={(value) => updateValue(key, 'rpe', value)}
-                              placeholder="RPE"
-                              placeholderTextColor={colors.inkMuted}
-                              style={styles.effortInput}
-                              value={values[key]?.rpe ?? ''}
-                            />
+                            <View style={styles.actualField}>
+                              <Text variant="caption">RPE (1–10)</Text>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="decimal-pad"
+                                onChangeText={(value) => updateValue(key, 'rpe', value)}
+                                placeholder="RPE"
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.effortInput, styles.labeledInput]}
+                                value={values[key]?.rpe ?? ''}
+                              />
+                            </View>
                           ) : null}
                           {showEffortDetails || values[key]?.rir ? (
-                            <TextInput
-                              accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
-                              editable={savingSetKey === null && (!completed || editing)}
-                              keyboardType="number-pad"
-                              onChangeText={(value) => updateValue(key, 'rir', value)}
-                              placeholder="RIR"
-                              placeholderTextColor={colors.inkMuted}
-                              style={styles.effortInput}
-                              value={values[key]?.rir ?? ''}
-                            />
+                            <View style={styles.actualField}>
+                              <Text variant="caption">RIR (0–10)</Text>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="number-pad"
+                                onChangeText={(value) => updateValue(key, 'rir', value)}
+                                placeholder="RIR"
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.effortInput, styles.labeledInput]}
+                                value={values[key]?.rir ?? ''}
+                              />
+                            </View>
                           ) : null}
                           {key === focus?.key &&
                           voiceBinding &&
@@ -2661,6 +2676,18 @@ const styles = StyleSheet.create({
     minWidth: 144,
     maxWidth: '100%',
     gap: spacing.xs,
+  },
+  actualField: {
+    flexBasis: 96,
+    flexGrow: 1,
+    minWidth: 96,
+    maxWidth: '100%',
+    gap: spacing.xs,
+  },
+  labeledInput: {
+    width: '100%',
+    flexBasis: 'auto',
+    flexGrow: 0,
   },
   loadUnitControls: {
     flexDirection: 'row',

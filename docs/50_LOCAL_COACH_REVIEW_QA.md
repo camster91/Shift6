@@ -206,6 +206,25 @@ Fixture preparation and the deliberate earlier draft edit are documented in
 these keyboard cases. This scoped Android pass leaves physical-device, screen
 reader, different keyboards and iOS journeys untested; #363 remains open.
 
+## Notification refusal on the latest native candidate
+
+Same3f1752ed binary/device, font1.0. Notifications initially shows permission
+Denied and every category Off. Try allowing device notifications opens Android's
+actual permission prompt; selecting **Don't allow** dismisses it. The permission
+card still shows Denied and instructions; scrolling reveals the result text
+"Device notifications are denied. You can change this in system settings."
+Native package inspection confirms `POST_NOTIFICATIONS: granted=false`, with
+USER_SET/USER_FIXED after refusal. No category toggle or Save was used.
+See [system prompt](qa/2026-10-14-coach-review/coach-review-reminder-denied-retry-3f1752ed.png)
+and [guidance/all categories off](qa/2026-10-14-coach-review/coach-review-reminder-denied-guidance-3f1752ed.png).
+The immediate result assertion failed because its text was below the fold;
+later fresh scrolling verified the exact message. This is not a missing saved
+permission or a whole-script pass. Export helper also stopped after receiver
+selection on an empty dump; later fresh receiver inspection verified the new
+09:49:51.257Z export: all36 arrays/1,082 records identical to the keyboard export.
+This covers an actual refusal, not opt-in scheduling, delivered reminders,
+notification actions, large-text accessibility or physical/iOS acceptance.
+
 Fresh GitHub readback also confirms native run38534108589 on **a63a3b74** succeeds
 for Android compilation/proof and unsigned iOS simulator compilation, binding,
 installation and cold launch. Quality run38534108570 succeeds. Older quality

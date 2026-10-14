@@ -725,6 +725,11 @@
     "sha256": "92f6271cd5d27b950ea0b9ebec0bb724b540ff0dbc32df69b8e61d1c98127e5a"
   },
   {
+    "file": "coach-review-published-readback-e440.json",
+    "bytes": 6725,
+    "sha256": "0d72e697ab7bbed7f891a4191e917b5ce7e88ff3c6a744de1ad71d201bdf2b19"
+  },
+  {
     "file": "coach-review-recovered-action-7b.png",
     "bytes": 249808,
     "sha256": "81013294b0546b2ab0dfe937804aed3d27c611e44657c9d8a1f21a8a40940869"
@@ -743,6 +748,76 @@
     "file": "coach-review-recovered-entry-7b.xml",
     "bytes": 12243,
     "sha256": "a5651b3eba756d812e955cdddda76dbd3140b1043180744e7eba72099f5d841f"
+  },
+  {
+    "file": "coach-review-reminder-denied-before-3f1752ed.png",
+    "bytes": 270705,
+    "sha256": "cf93e0ed096b9f3011dc1561e45c90c0455377c188ca3ad8734ee5a1699fe303"
+  },
+  {
+    "file": "coach-review-reminder-denied-before-3f1752ed.xml",
+    "bytes": 14126,
+    "sha256": "43e723cde2460c76b0484f4e0774f5c9c02762f3543b94c0973d797f4bff2a7d"
+  },
+  {
+    "file": "coach-review-reminder-denied-comparison-3f1752ed.json",
+    "bytes": 334,
+    "sha256": "8dfbcac0ea98b65aa927eae5980a46e2aede200d64c051b0d6f41ba9c30b6cd3"
+  },
+  {
+    "file": "coach-review-reminder-denied-export-3f1752ed-receiver.png",
+    "bytes": 79514,
+    "sha256": "3dd173804ace6836d4b6cdc037f197470c04e6ba5f67cfc2babe5497d05003d1"
+  },
+  {
+    "file": "coach-review-reminder-denied-export-3f1752ed-receiver.xml",
+    "bytes": 1681,
+    "sha256": "033abb41c78fc5b05889d179a0872114e6ffb7daf3d9c7ad474767726506db30"
+  },
+  {
+    "file": "coach-review-reminder-denied-export-3f1752ed.json",
+    "bytes": 407368,
+    "sha256": "907d8261f2535fa084162b8b991c841b24e092afc0832e93c3dcc6115c4d0bf8"
+  },
+  {
+    "file": "coach-review-reminder-denied-guidance-3f1752ed.png",
+    "bytes": 244798,
+    "sha256": "77d9c84739f31834b59b677f9a2fa84ddce81d0709279543ba157acb7af3875b"
+  },
+  {
+    "file": "coach-review-reminder-denied-guidance-3f1752ed.xml",
+    "bytes": 16261,
+    "sha256": "ac4f6f8852e529804f237bb609a7fdcf4ce0a7c79065f348dfe41cd72da2d35e"
+  },
+  {
+    "file": "coach-review-reminder-denied-result-3f1752ed.png",
+    "bytes": 270661,
+    "sha256": "c4f1c5aee9ff3f667c3c66ccbe60175c056f0944992acd77fefce371487010cd"
+  },
+  {
+    "file": "coach-review-reminder-denied-result-3f1752ed.xml",
+    "bytes": 14126,
+    "sha256": "fa6691ddfee1464f38232212312a51ca4aa309cc3cb15c5736b27b57eb08079c"
+  },
+  {
+    "file": "coach-review-reminder-denied-retry-3f1752ed.png",
+    "bytes": 177443,
+    "sha256": "8ec273a479fc13f732f21ddb28982faa100ee46cc89bcf4d7906fc8bbb5eb502"
+  },
+  {
+    "file": "coach-review-reminder-denied-retry-3f1752ed.xml",
+    "bytes": 5453,
+    "sha256": "4bd5a38806497dc31334daa47527e7ce2d81b4b75c3b965db0b57010ea2d99a6"
+  },
+  {
+    "file": "coach-review-reminder-denied-scrolled-3f1752ed.png",
+    "bytes": 307892,
+    "sha256": "73ed1302bc0060f77ab66adc311d0991fe8c44a99a755694e9ddea3eafa3dd3a"
+  },
+  {
+    "file": "coach-review-reminder-denied-scrolled-3f1752ed.xml",
+    "bytes": 17855,
+    "sha256": "e7ac66cab34a02e7fed5bcf7cb4319fafe333745609b28e36240e9b82e043b4f"
   },
   {
     "file": "coach-review-skip-confirmed-db4.png",

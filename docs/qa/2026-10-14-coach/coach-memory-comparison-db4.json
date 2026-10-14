@@ -1,0 +1,29 @@
+{
+  "sourceCommit": "db4e8c29",
+  "changedSections": [
+    "coachMemoryPreferences",
+    "coachMemoryFacts"
+  ],
+  "unchangedSections": 34,
+  "recordCount": 1077,
+  "canonicalProfileUnchanged": true,
+  "trainingHistoryUnchanged": true,
+  "memoryPreference": [
+    {
+      "user_id": "guest-user",
+      "enabled": 0,
+      "updated_at": "2026-10-14T06:14:19.074Z"
+    }
+  ],
+  "memoryFacts": [
+    {
+      "id": "memory-[\"guest-user\",\"confirmed-1791958384624-40bsiwrzbcb\"]",
+      "user_id": "guest-user",
+      "value_json": "{\"kind\":\"training-time\",\"value\":\"evening\"}",
+      "revision": 1,
+      "operation_id": "confirmed-1791958384624-40bsiwrzbcb",
+      "confirmed_at": "2026-10-14T06:13:27.941Z",
+      "updated_at": "2026-10-14T06:13:27.941Z"
+    }
+  ]
+}

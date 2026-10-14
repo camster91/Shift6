@@ -1,0 +1,250 @@
+{
+  "scope": "Synthetic guest-only db4 native Coach memory and returning setup cases. Other scenarios in the plan are unexecuted. Isolated week-run seam review is inactive preparation, not app activation.",
+  "files": [
+    {
+      "file": "coach-current-entry-db4.png",
+      "bytes": 227864,
+      "sha256": "e72cc209f99e79739639b7f703dbcdc9aff0a8ed315e4acd8e68f71665e5d5b5"
+    },
+    {
+      "file": "coach-current-entry-db4.xml",
+      "bytes": 18163,
+      "sha256": "a84feb5bc8fa9daefbc1317ce4e07a413a401c8aa5c63f5633be815d6012c3c6"
+    },
+    {
+      "file": "coach-guided-comparison-db4.json",
+      "bytes": 723,
+      "sha256": "232ed74a4fe9981a332d34b409efa2b053ff2dab2af9dd8c58e15e853a20acea"
+    },
+    {
+      "file": "coach-guided-draft-export-db4.json",
+      "bytes": 395160,
+      "sha256": "d895ca9ba677d07e858bbc0fb51698b32539687d8ff2121930bf24099a580622"
+    },
+    {
+      "file": "coach-guided-draft-export-receiver-db4.png",
+      "bytes": 77706,
+      "sha256": "f1a11b861f1941862ca06a297bf5f1a410fdbabcc829f90a4ad979d2c042827f"
+    },
+    {
+      "file": "coach-guided-draft-export-receiver-db4.xml",
+      "bytes": 1681,
+      "sha256": "37e46003ebaa083f612d523ce0964c0b48665801ab8621bed745d8a786c4961b"
+    },
+    {
+      "file": "coach-guided-final-export-db4.json",
+      "bytes": 394577,
+      "sha256": "bd446cc24ceae7002b3f699f04952d3d81dfb3eb70cbb07d8dfa8793e918b18a"
+    },
+    {
+      "file": "coach-guided-final-export-receiver-db4.png",
+      "bytes": 77527,
+      "sha256": "341bb7be75ce9718aa7f4c0e1eecd32f48eafda7d2f95b6477879718bb1c4e2e"
+    },
+    {
+      "file": "coach-guided-final-export-receiver-db4.xml",
+      "bytes": 1681,
+      "sha256": "75b09f0710291ef4de896f754666df4ef050d7881de1dfe609b9812be328f5d7"
+    },
+    {
+      "file": "coach-guided-post-save-programs-db4.png",
+      "bytes": 272825,
+      "sha256": "f7f8375d5ae21e3d2ef1451e6afb43a95a0c36f9923c197ac7e6395e0c76e378"
+    },
+    {
+      "file": "coach-guided-post-save-programs-db4.xml",
+      "bytes": 18484,
+      "sha256": "8a3ec34bbc6bd1d83f654b8227c8caf1b79c1ac324b0c9937fbc08b57b1a465e"
+    },
+    {
+      "file": "coach-guided-returning-db4.png",
+      "bytes": 230814,
+      "sha256": "e89d1fa54a850e6a2af1b68661a1a46e70c326d34ec51a4b9e0d86348d1878c4"
+    },
+    {
+      "file": "coach-guided-returning-db4.xml",
+      "bytes": 19450,
+      "sha256": "3069aeb0c64be8628c898af9ac3339f077a95e24a021c1915da8c6875178227f"
+    },
+    {
+      "file": "coach-guided-saved-profile-cold-db4.png",
+      "bytes": 200181,
+      "sha256": "660759c08705429782668f4bb6cac48dea4858f0c3d11b7bed98d5dff627601d"
+    },
+    {
+      "file": "coach-guided-saved-profile-cold-db4.xml",
+      "bytes": 18963,
+      "sha256": "d9f83565f568c5785ae0a6efd8bf680ffb65a86aa931a95762ce650b3feb7abe"
+    },
+    {
+      "file": "coach-guided-schedule-db4.png",
+      "bytes": 234749,
+      "sha256": "5c4647050593c0de46aa5dd8dad64ec34eec74259af00ced2360b9e78961ba17"
+    },
+    {
+      "file": "coach-guided-schedule-db4.xml",
+      "bytes": 18747,
+      "sha256": "0845b7f78b61b883ef8b67dbc8c23d11212e706116a62a4d6feb75a77196d169"
+    },
+    {
+      "file": "coach-guided-sixty-draft-db4.png",
+      "bytes": 230790,
+      "sha256": "ed3a9aa3749210c2ee92a334137ff499aba06492dcd873ba3522af4288371e3f"
+    },
+    {
+      "file": "coach-guided-sixty-draft-db4.xml",
+      "bytes": 19450,
+      "sha256": "9b00da86cd0a75d68e5d8bc097fdaa8d4793a5348f253a140a6e7af070820d32"
+    },
+    {
+      "file": "coach-guided-sixty-recovered-db4.png",
+      "bytes": 230790,
+      "sha256": "ed3a9aa3749210c2ee92a334137ff499aba06492dcd873ba3522af4288371e3f"
+    },
+    {
+      "file": "coach-guided-sixty-recovered-db4.xml",
+      "bytes": 19450,
+      "sha256": "9b00da86cd0a75d68e5d8bc097fdaa8d4793a5348f253a140a6e7af070820d32"
+    },
+    {
+      "file": "coach-guided-unsaved-profile-db4.png",
+      "bytes": 199609,
+      "sha256": "077b936562184247de698a51414e17f65cfa71d8ba40a9fa51b14864ebccb29f"
+    },
+    {
+      "file": "coach-guided-unsaved-profile-db4.xml",
+      "bytes": 18963,
+      "sha256": "8d605b323daee26e1eebf1ad512e38df11bc6f942db7b7fc92a62c98d0dace46"
+    },
+    {
+      "file": "coach-memory-cold-recovered-db4.png",
+      "bytes": 286199,
+      "sha256": "33adb84cfc194154105f3d55cd7727feb2918faf6134a916ba3947957189aee6"
+    },
+    {
+      "file": "coach-memory-cold-recovered-db4.xml",
+      "bytes": 18734,
+      "sha256": "35edc5e10a9efe0b6cdd79783b5e0a20ee177d21c6fd4d041b063e2e7956b620"
+    },
+    {
+      "file": "coach-memory-comparison-db4.json",
+      "bytes": 804,
+      "sha256": "2fa92810c6458fd315aff95508b5886020acfa892d15276b9a9be0615560fb51"
+    },
+    {
+      "file": "coach-memory-disable-cancel-db4.png",
+      "bytes": 249581,
+      "sha256": "58a37f65593dba2df3ad078e7ab3ff2073858aa1684d75d09a3498c924ab29e5"
+    },
+    {
+      "file": "coach-memory-disable-cancel-db4.xml",
+      "bytes": 16122,
+      "sha256": "c8afdd477e5d81cefaf92a91d97a65de08a02c89605842f8b438cbb19811603b"
+    },
+    {
+      "file": "coach-memory-disabled-retained-db4.png",
+      "bytes": 245524,
+      "sha256": "42bbbf77fac1ee97f27e7dca4208dd47733e2a6a8d2ce92fb71a24810b80d5d2"
+    },
+    {
+      "file": "coach-memory-disabled-retained-db4.xml",
+      "bytes": 18798,
+      "sha256": "69d35aaa5da23f170108c6eafcd11cee866bcb8d4061f30aee29b8a5b9bf7a94"
+    },
+    {
+      "file": "coach-memory-enable-cancel-db4.png",
+      "bytes": 215335,
+      "sha256": "eb086e5951b241b075f55b40e4d05d196b829bfab5276bee76473a207430585b"
+    },
+    {
+      "file": "coach-memory-enable-cancel-db4.xml",
+      "bytes": 18363,
+      "sha256": "d105a75faf5678e191a10c1765a24daf8106b8cb8dcb1dc61fc560708f753cf7"
+    },
+    {
+      "file": "coach-memory-enable-preview-db4.png",
+      "bytes": 305829,
+      "sha256": "fe83ca0fb3b1eebc546ca2e7f9e42e2fa58bb8ac5c259236913ae19f12891bfb"
+    },
+    {
+      "file": "coach-memory-enable-preview-db4.xml",
+      "bytes": 18043,
+      "sha256": "16cc2faf85cd0fbca1c02dd72e9ea44671ec34cb5074955278bffcc76ecac4b1"
+    },
+    {
+      "file": "coach-memory-evening-confirmed-db4.png",
+      "bytes": 306239,
+      "sha256": "18a86fa89125c6aaf2bdae882d27b3553638cc96a43eede23ff06445e43df757"
+    },
+    {
+      "file": "coach-memory-evening-confirmed-db4.xml",
+      "bytes": 18070,
+      "sha256": "22ce1eed53601db6aacf4856868a1e20293f9b97b50ff7431930e043fc90b76a"
+    },
+    {
+      "file": "coach-memory-evening-preview-db4.png",
+      "bytes": 226356,
+      "sha256": "d9a31ad0cf7d1d8bdb5e558f4c950c736865f897f4561c77b23d22111f46ff3a"
+    },
+    {
+      "file": "coach-memory-evening-preview-db4.xml",
+      "bytes": 18383,
+      "sha256": "fb89f3a8a320979fd2e4387640537f757376e6ec1a05341e13ebf40c5d7c3a74"
+    },
+    {
+      "file": "coach-memory-export-db4.json",
+      "bytes": 394955,
+      "sha256": "8353bf4d6f2a703d59e3f368da2af26a7e617a488f2aca2193846542d30e0414"
+    },
+    {
+      "file": "coach-memory-export-receiver-db4.png",
+      "bytes": 76408,
+      "sha256": "5f82f956d733591dae1fda34599c2ee8236c54403e8fc455c399617e04d3042d"
+    },
+    {
+      "file": "coach-memory-export-receiver-db4.xml",
+      "bytes": 1681,
+      "sha256": "d46491b6e64545288843325b89965ed730cd9a05316c4cdcdc0172047aa4ebc1"
+    },
+    {
+      "file": "coach-memory-forget-preview-db4.png",
+      "bytes": 210615,
+      "sha256": "956836977520801849e26619dc8a6f7904556bef5ef51f50f765b681f1582779"
+    },
+    {
+      "file": "coach-memory-forget-preview-db4.xml",
+      "bytes": 18500,
+      "sha256": "27c3282d1788510c341c8d313a9c48701a96163324ea9af41f00ff9f3add314f"
+    },
+    {
+      "file": "coach-memory-forgotten-cold-db4.png",
+      "bytes": 249955,
+      "sha256": "76c30b93db597f8f74f58fda6ed263cb29ef06219e13dded0b57c484b45bacaa"
+    },
+    {
+      "file": "coach-memory-forgotten-cold-db4.xml",
+      "bytes": 16121,
+      "sha256": "13252b7ccfca588080a615b8b05e2d10dd010c1dd47a57461997febce37e59ab"
+    },
+    {
+      "file": "coach-memory-initial-db4.png",
+      "bytes": 249303,
+      "sha256": "5bc42400bdedbde3e80e808a254c9d8822dd9ef41023da2dc80c5bf8f739f7e6"
+    },
+    {
+      "file": "coach-memory-initial-db4.xml",
+      "bytes": 16121,
+      "sha256": "13252b7ccfca588080a615b8b05e2d10dd010c1dd47a57461997febce37e59ab"
+    },
+    {
+      "file": "next-coach-native-plan.md",
+      "bytes": 7633,
+      "sha256": "152d78f1b4287fe023e4656ab06ccb09e6128ef50e0300b280afe1ca369f9405"
+    },
+    {
+      "file": "week-run-storage-design-draft.md",
+      "bytes": 9853,
+      "sha256": "ef319c2ea6cdda0e40f4472f6738bb087f423c6de978e4e603ee38dd79b9a91e"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "sourceCommit": "db4e8c290d8a801d5305ca57ffed414ecbd1d2dc",
+  "apkSha256": "4010c8ab7f80187ed80a284c1ca78809b2bb8807a367801ea55d77d7d8c27f7f",
+  "baselineRecords": 1076,
+  "draftRecords": 1077,
+  "finalRecords": 1076,
+  "draftChangedSections": [
+    "coachMemoryPreferences",
+    "onboardingDrafts"
+  ],
+  "finalChangedSections": [
+    "coachMemoryPreferences",
+    "userProfiles",
+    "userConsiderations"
+  ],
+  "finalUnchangedArrays": 33,
+  "profileChangedFields": [
+    "preferred_session_minutes",
+    "completed_at",
+    "updated_at"
+  ],
+  "confirmedMemoryForgotten": true,
+  "memoryDisabled": true,
+  "draftRemovedAfterConfirmation": true,
+  "setsSessionsCyclesGoalsUnchanged": true
+}

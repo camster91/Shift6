@@ -3,7 +3,10 @@ import type * as WorkoutRepository from '../db/workoutRepository';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, Keyboard, Platform } from 'react-native';
+import type { KeyboardEvent, ScrollView, TextInput } from 'react-native';
+import type { ScreenProps } from './ui/Screen';
+import type { VoiceSetEntry } from './VoiceSetEntry';
 import ActiveWorkoutScreen from '../../app/workout';
 import { demoCycle, demoProgram, demoProgramVersion, demoUser } from '../domain/fixtures/home';
 import type { CompletedSet, WorkoutSession, WorkoutDraftValues } from '../domain/types';
@@ -13,6 +16,29 @@ let mockResumed: WorkoutSession | null = null;
 let mockSavedActuals: CompletedSet[] = [];
 let mockPreviousActuals: CompletedSet[] = [];
 let mockRecoveredDraft: WorkoutDraftValues | null = null;
+let mockWorkoutScreenProps: ScreenProps | undefined;
+let mockVoiceProps: Parameters<typeof VoiceSetEntry>[0] | undefined;
+jest.mock('./ui', () => {
+  const actual = jest.requireActual('./ui'),
+    React = jest.requireActual<typeof ReactModule>('react');
+  return {
+    ...actual,
+    Screen: (props: ScreenProps) => {
+      if (props.scrollViewRef) mockWorkoutScreenProps = props;
+      return React.createElement(actual.Screen, props);
+    },
+  };
+});
+jest.mock('./VoiceSetEntry', () => {
+  const actual = jest.requireActual('./VoiceSetEntry'),
+    React = jest.requireActual<typeof ReactModule>('react');
+  return {
+    VoiceSetEntry: (props: Parameters<typeof VoiceSetEntry>[0]) => {
+      mockVoiceProps = props;
+      return React.createElement(actual.VoiceSetEntry, props);
+    },
+  };
+});
 const mockVoiceAdapter = {
   capability: jest.fn(async () => ({ available: true })),
   listen: jest.fn<Promise<string>, unknown[]>(),
@@ -96,6 +122,8 @@ let mockCycle = demoCycle,
   mockVersion = demoProgramVersion;
 let mockUser = demoUser;
 beforeEach(() => {
+  mockWorkoutScreenProps = undefined;
+  mockVoiceProps = undefined;
   jest.clearAllMocks();
   // A timed-out async case may finish after the next case starts. Keep its
   // mutated target reference separate from every later test's fixture graph.
@@ -116,7 +144,14 @@ beforeEach(() => {
   mockSkip.mockResolvedValue({ status: 'skipped' });
   jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 });
-afterEach(() => jest.restoreAllMocks());
+const originalKeyboardSubscribe = jest.isMockFunction(Keyboard.addListener)
+  ? jest.mocked(Keyboard.addListener).getMockImplementation()
+  : undefined;
+afterEach(() => {
+  jest.restoreAllMocks();
+  if (originalKeyboardSubscribe)
+    jest.mocked(Keyboard.addListener).mockImplementation(originalKeyboardSubscribe);
+});
 
 test.each([
   ['metric', 'imperial', 'kg', 'lb'],
@@ -813,5 +848,103 @@ test('same-event blur and focus return cannot revive a retained voice apply call
     staleApply();
   });
   expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('55');
+  expect(mockSaveSet).not.toHaveBeenCalled();
+});
+
+async function voiceGeometry() {
+  jest.replaceProperty(Platform, 'OS', 'android');
+  const events = new Map<string, (event: KeyboardEvent) => void>();
+  jest.spyOn(Keyboard, 'addListener').mockImplementation((name, callback) => {
+    events.set(name, callback);
+    return { remove: jest.fn() } as unknown as ReturnType<typeof Keyboard.addListener>;
+  });
+  jest.spyOn(Keyboard, 'metrics').mockReturnValue(undefined);
+  const screen = await render(<ActiveWorkoutScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Use optional voice set entry')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText('Use optional voice set entry'));
+  const input = {
+    isFocused: jest.fn(() => true),
+    measureInWindow: jest.fn((callback: (x: number, y: number, w: number, h: number) => void) =>
+      callback(0, 600, 320, 80),
+    ),
+  };
+  const nativeViewport = {
+    measureInWindow: jest.fn((callback: (x: number, y: number, w: number, h: number) => void) =>
+      callback(0, 80, 400, 500),
+    ),
+  };
+  const content = {
+    measureInWindow: jest.fn((callback: (x: number, y: number, w: number, h: number) => void) =>
+      callback(0, -120, 400, 1100),
+    ),
+  };
+  const scroll = { getNativeScrollRef: () => nativeViewport, scrollTo: jest.fn() };
+  (mockWorkoutScreenProps!.scrollViewRef as { current: ScrollView | null }).current =
+    scroll as unknown as ScrollView;
+  (mockWorkoutScreenProps!.scrollViewProps!.innerViewRef as { current: unknown }).current = content;
+  const childCurrent = jest.fn(() => true);
+  await act(() => mockVoiceProps!.onCorrectionFocus!(input as unknown as TextInput, childCurrent));
+  const show = () =>
+    events.get('keyboardDidShow')!({
+      duration: 0,
+      easing: 'keyboard',
+      endCoordinates: { screenY: 420, screenX: 0, width: 400, height: 340 },
+    });
+  return { screen, input, nativeViewport, content, scroll, childCurrent, events, show };
+}
+
+test('voice correction reserves measured Android overlap before scrolling its whole edit area; native viewport resizing removes extra space', async () => {
+  const { screen, scroll, nativeViewport, show, events } = await voiceGeometry();
+  const before = screen.getByLabelText('Back squat set 1 reps').props.value;
+  await act(() => show());
+  expect(scroll.scrollTo).not.toHaveBeenCalled();
+  expect(mockWorkoutScreenProps!.contentContainerStyle).toEqual({ paddingBottom: 160 });
+  mockWorkoutScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1260);
+  expect(scroll.scrollTo).toHaveBeenCalledWith({ y: 460, animated: false });
+  await act(() => events.get('keyboardDidHide')!({} as KeyboardEvent));
+  expect(mockWorkoutScreenProps!.contentContainerStyle).toBeUndefined();
+  scroll.scrollTo.mockClear();
+  await act(() => show());
+  expect(mockWorkoutScreenProps!.contentContainerStyle).toEqual({ paddingBottom: 160 });
+  mockWorkoutScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1260);
+  expect(scroll.scrollTo).toHaveBeenCalledWith({ y: 460, animated: false });
+  nativeViewport.measureInWindow.mockImplementation((callback) => callback(0, 80, 400, 340));
+  await act(() => mockWorkoutScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1100));
+  expect(mockWorkoutScreenProps!.contentContainerStyle).toBeUndefined();
+  await act(() => events.get('keyboardDidHide')!({} as KeyboardEvent));
+  expect(mockWorkoutScreenProps!.contentContainerStyle).toBeUndefined();
+  expect(screen.getByLabelText('Back squat set 1 reps').props.value).toBe(before);
+  expect(mockSaveSet).not.toHaveBeenCalled();
+});
+
+test.each([
+  'field blur',
+  'screen blur',
+  'child reset',
+  'set input change',
+  'hide widget',
+  'keyboard hide',
+])('delayed correction geometry refuses %s and never writes an actual set', async (change) => {
+  const { screen, input, scroll, childCurrent, show, events } = await voiceGeometry();
+  let measured!: (x: number, y: number, w: number, h: number) => void;
+  input.measureInWindow.mockImplementation((callback) => {
+    measured = callback;
+  });
+  await act(() => show());
+  mockWorkoutScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1260);
+  if (change === 'field blur')
+    await act(() => mockVoiceProps!.onCorrectionBlur!(input as unknown as TextInput));
+  if (change === 'screen blur') await act(() => mockFocusLeave?.());
+  if (change === 'child reset') childCurrent.mockReturnValue(false);
+  if (change === 'set input change')
+    await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), '6');
+  if (change === 'hide widget')
+    await fireEvent.press(screen.getByLabelText('Hide voice set entry'));
+  if (change === 'keyboard hide')
+    await act(() => events.get('keyboardDidHide')!({} as KeyboardEvent));
+  await act(() => measured(0, 600, 320, 80));
+  expect(scroll.scrollTo).not.toHaveBeenCalled();
+  if (change !== 'child reset')
+    expect(mockWorkoutScreenProps!.contentContainerStyle).toBeUndefined();
   expect(mockSaveSet).not.toHaveBeenCalled();
 });

@@ -19,7 +19,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppState, StyleSheet, TextInput, View } from 'react-native';
+import type { RefObject } from 'react';
+import { Alert, AppState, Keyboard, Platform, StyleSheet, TextInput, View } from 'react-native';
+import type { ScrollView } from 'react-native';
 
 import {
   Button,
@@ -175,6 +177,17 @@ export default function ActiveWorkoutScreen() {
   const feedbackGeneration = useRef(0);
   const [voiceFocused, setVoiceFocused] = useState(false);
   const [voiceEntryKey, setVoiceEntryKey] = useState<string | null>(null);
+  const workoutScroll = useRef<ScrollView | null>(null);
+  const workoutContent = useRef<View | null>(null);
+  const [voiceKeyboardSpace, setVoiceKeyboardSpace] = useState<{
+    key: string;
+    space: number;
+  } | null>(null);
+  const keyboardSpace = useRef(0),
+    keyboardTop = useRef<number | null>(null),
+    keyboardMeasurement = useRef(0);
+  const voiceField = useRef<{ input: TextInput; current: () => boolean } | null>(null);
+  const revealVoiceField = useRef<() => void>(() => undefined);
   const voiceInputRevision = useRef(0);
   const voiceContext = useRef<{
     key: string | null;
@@ -182,11 +195,44 @@ export default function ActiveWorkoutScreen() {
     inputRevision: number;
     focusGeneration: number;
     focused: boolean;
-  }>({ key: null, database, inputRevision: 0, focusGeneration: 0, focused: false });
+    entryVisible: boolean;
+  }>({
+    key: null,
+    database,
+    inputRevision: 0,
+    focusGeneration: 0,
+    focused: false,
+    entryVisible: false,
+  });
   const workoutIsFocused = useRef(false);
   const workoutFocusGeneration = useRef(0);
   const [noteFocusRevision, setNoteFocusRevision] = useState(0);
   const setWrite = useRef<object | null>(null);
+  const clearVoiceGeometry = useCallback(() => {
+    keyboardMeasurement.current++;
+    voiceField.current = null;
+    keyboardSpace.current = 0;
+    setVoiceKeyboardSpace(null);
+  }, []);
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+      keyboardTop.current = event.endCoordinates.screenY;
+      revealVoiceField.current();
+    });
+    const hidden = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardTop.current = null;
+      // Android can hide the IME while this native input retains focus.
+      // Invalidate measurements/inset, but allow a later show to recheck it.
+      keyboardMeasurement.current++;
+      keyboardSpace.current = 0;
+      setVoiceKeyboardSpace(null);
+    });
+    return () => {
+      keyboardMeasurement.current++;
+      shown.remove();
+      hidden.remove();
+    };
+  }, [clearVoiceGeometry]);
   useFocusEffect(
     useCallback(() => {
       workoutIsFocused.current = true;
@@ -194,12 +240,13 @@ export default function ActiveWorkoutScreen() {
       workoutFocusGeneration.current++;
       setNoteFocusRevision((revision) => revision + 1);
       return () => {
+        clearVoiceGeometry();
         workoutIsFocused.current = false;
         setVoiceFocused(false);
         workoutFocusGeneration.current++;
         feedbackGeneration.current++;
       };
-    }, []),
+    }, [clearVoiceGeometry]),
   );
   const feedbackContext = useRef({
     database,
@@ -748,6 +795,104 @@ export default function ActiveWorkoutScreen() {
     inputRevision: voiceInputRevision.current,
     focusGeneration: workoutFocusGeneration.current,
     focused: voiceFocused && canMutate && !voiceBusy,
+    entryVisible: voiceEntryKey === focus?.key,
+  };
+  const currentVoiceKey = voiceBinding ? voiceBindingKey(voiceBinding) : null;
+  useEffect(clearVoiceGeometry, [
+    clearVoiceGeometry,
+    currentVoiceKey,
+    voiceEntryKey,
+    voiceFocused,
+    voiceBusy,
+  ]);
+  revealVoiceField.current = () => {
+    const field = voiceField.current,
+      scroll = workoutScroll.current;
+    const viewport = scroll?.getNativeScrollRef(),
+      content = workoutContent.current;
+    const top = keyboardTop.current ?? Keyboard.metrics()?.screenY;
+    if (!field || !scroll || !viewport || !content || top === undefined || !field.current()) return;
+    if ((voiceKeyboardSpace?.space ?? 0) !== keyboardSpace.current) return;
+    const key = voiceContext.current.key;
+    if (!key) return;
+    const request = ++keyboardMeasurement.current;
+    const current = () =>
+      request === keyboardMeasurement.current &&
+      keyboardTop.current !== null &&
+      voiceField.current === field &&
+      workoutScroll.current === scroll &&
+      scroll.getNativeScrollRef() === viewport &&
+      workoutContent.current === content &&
+      field.current();
+    viewport.measureInWindow((_x, viewportY, _width, viewportHeight) => {
+      if (
+        !current() ||
+        ![viewportY, viewportHeight, top].every(Number.isFinite) ||
+        viewportHeight <= 0
+      )
+        return;
+      const space = Platform.OS === 'android' ? Math.max(0, viewportY + viewportHeight - top) : 0;
+      if (space !== keyboardSpace.current) {
+        keyboardSpace.current = space;
+        keyboardMeasurement.current++;
+        setVoiceKeyboardSpace({ key, space });
+        return;
+      }
+      content.measureInWindow((_contentX, contentY, _contentWidth, contentHeight) => {
+        if (!current()) return;
+        field.input.measureInWindow((_inputX, inputY, _inputWidth, inputHeight) => {
+          if (!current()) return;
+          const bottom = Math.min(viewportY + viewportHeight, top);
+          if (
+            ![
+              viewportY,
+              viewportHeight,
+              contentY,
+              contentHeight,
+              inputY,
+              inputHeight,
+              bottom,
+            ].every(Number.isFinite) ||
+            inputHeight <= 0 ||
+            bottom <= viewportY
+          )
+            return;
+          const delta =
+            inputY < viewportY || inputHeight > bottom - viewportY
+              ? inputY - viewportY
+              : Math.max(0, inputY + inputHeight - bottom);
+          if (delta === 0) return;
+          const targetOffset = Math.max(0, viewportY - contentY + delta);
+          if (
+            Platform.OS === 'android' &&
+            targetOffset > Math.max(0, contentHeight - viewportHeight)
+          )
+            return;
+          scroll.scrollTo({ y: targetOffset, animated: false });
+        });
+      });
+    });
+  };
+  const focusVoiceCorrection = (input: TextInput, childCurrent: () => boolean) => {
+    const key = currentVoiceKey,
+      savedDatabase = database,
+      focusGeneration = workoutFocusGeneration.current;
+    const current = () =>
+      Boolean(
+        key &&
+        voiceContext.current.key === key &&
+        voiceContext.current.database === savedDatabase &&
+        voiceContext.current.focusGeneration === focusGeneration &&
+        voiceContext.current.focused &&
+        voiceContext.current.entryVisible &&
+        workoutIsFocused.current &&
+        input.isFocused() &&
+        childCurrent(),
+      );
+    if (!current()) return;
+    voiceField.current = { input, current };
+    keyboardTop.current = Keyboard.metrics()?.screenY ?? keyboardTop.current;
+    revealVoiceField.current();
   };
   const applyVoiceValues = (reviewed: Partial<SetInputValues>, expectedKey: string): boolean => {
     if (
@@ -1424,6 +1569,20 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <Screen
+      scrollViewRef={workoutScroll}
+      contentContainerStyle={
+        voiceKeyboardSpace?.key === currentVoiceKey &&
+        voiceEntryKey === focus?.key &&
+        voiceContext.current.focused &&
+        voiceKeyboardSpace.space > 0
+          ? { paddingBottom: voiceKeyboardSpace.space }
+          : undefined
+      }
+      scrollViewProps={{
+        innerViewRef: workoutContent as RefObject<View>,
+        onLayout: () => revealVoiceField.current(),
+        onContentSizeChange: () => revealVoiceField.current(),
+      }}
       footer={
         !showAllSets && focus ? (
           <View>
@@ -1851,6 +2010,14 @@ export default function ActiveWorkoutScreen() {
                               />
                               {voiceEntryKey === key ? (
                                 <VoiceSetEntry
+                                  onCorrectionFocus={focusVoiceCorrection}
+                                  onCorrectionBlur={(input) => {
+                                    if (voiceField.current?.input === input) clearVoiceGeometry();
+                                  }}
+                                  onCorrectionLayout={(input) => {
+                                    if (voiceField.current?.input === input)
+                                      revealVoiceField.current();
+                                  }}
                                   binding={voiceBinding}
                                   disabled={voiceBusy}
                                   onApply={applyVoiceValues}

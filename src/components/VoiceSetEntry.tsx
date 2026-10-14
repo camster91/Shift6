@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, StyleSheet, TextInput, View } from 'react-native';
 import { Button, Card, Text } from './ui';
 import { parseVoiceSet, voiceBindingKey, type VoiceSetBinding } from '../domain/voiceSetDraft';
@@ -12,12 +12,25 @@ export function VoiceSetEntry({
   onApply,
   adapter: suppliedAdapter,
   disabled = false,
+  onCorrectionFocus,
+  onCorrectionBlur,
+  onCorrectionLayout,
 }: {
   binding: VoiceSetBinding;
   onApply: (values: Partial<WorkoutDraftSetValues>, expectedBindingKey: string) => boolean;
   adapter?: LocalVoiceAdapter;
   disabled?: boolean;
+  onCorrectionFocus?: (input: TextInput, isCurrent: () => boolean) => void;
+  onCorrectionBlur?: (input: TextInput) => void;
+  onCorrectionLayout?: (input: TextInput) => void;
 }) {
+  const correctionInput = useRef<TextInput | null>(null);
+  const geometryCallbacks = useRef({ onCorrectionFocus, onCorrectionBlur, onCorrectionLayout });
+  geometryCallbacks.current = { onCorrectionFocus, onCorrectionBlur, onCorrectionLayout };
+  const releaseCorrectionFocus = useCallback(() => {
+    const input = correctionInput.current;
+    if (input) geometryCallbacks.current.onCorrectionBlur?.(input);
+  }, []);
   const adapter = useMemo(
     () => suppliedAdapter ?? createPlatformLocalVoiceAdapter(),
     [suppliedAdapter],
@@ -50,6 +63,7 @@ export function VoiceSetEntry({
   const [preview, setPreview] = useState<{ text: string; token: number; key: string } | null>(null);
   const [message, setMessage] = useState('');
   useEffect(() => {
+    releaseCorrectionFocus();
     revision.current++;
     capturing.current = false;
     currentEditor.current = null;
@@ -61,14 +75,16 @@ export function VoiceSetEntry({
     setPreview(null);
     setMessage('');
     return () => {
+      releaseCorrectionFocus();
       revision.current++;
       currentEditor.current = null;
       adapter.cancel();
     };
-  }, [adapter, key, disabled]);
+  }, [adapter, key, disabled, releaseCorrectionFocus]);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
       if (state !== 'background' || currentAdapter.current !== adapter) return;
+      releaseCorrectionFocus();
       revision.current++;
       capturing.current = false;
       currentEditor.current = null;
@@ -81,7 +97,7 @@ export function VoiceSetEntry({
       setMessage('');
     });
     return () => subscription.remove();
-  }, [adapter]);
+  }, [adapter, releaseCorrectionFocus]);
   const draft = editorMatches() && preview ? parseVoiceSet(preview.text, binding) : null;
   const examples = {
     reps: 'eight reps',
@@ -134,6 +150,7 @@ export function VoiceSetEntry({
             currentAdapter.current !== adapter
           )
             return;
+          releaseCorrectionFocus();
           capturing.current = true;
           const opened = { key, adapter };
           currentEditor.current = opened;
@@ -191,6 +208,7 @@ export function VoiceSetEntry({
             variant="ghost"
             onPress={() => {
               if (!editorMatches()) return;
+              releaseCorrectionFocus();
               revision.current++;
               capturing.current = false;
               currentEditor.current = null;
@@ -206,6 +224,19 @@ export function VoiceSetEntry({
           <Text variant="bodyMedium">Correct or type actual results</Text>
           <Text tone="muted">Type actual values with units, then review.</Text>
           <TextInput
+            ref={correctionInput}
+            onFocus={() => {
+              const input = correctionInput.current;
+              if (input && editorMatches() && !capturing.current)
+                geometryCallbacks.current.onCorrectionFocus?.(input, editorMatches);
+            }}
+            onBlur={() => {
+              if (editorMatches()) releaseCorrectionFocus();
+            }}
+            onLayout={() => {
+              const input = correctionInput.current;
+              if (input && editorMatches()) geometryCallbacks.current.onCorrectionLayout?.(input);
+            }}
             accessibilityLabel="Review or correct the spoken set entry"
             placeholder={example ? `e.g. ${example}` : 'Actual results with units'}
             placeholderTextColor={colors.inkMuted}
@@ -218,6 +249,8 @@ export function VoiceSetEntry({
               if (!editorMatches() || capturing.current) return;
               revision.current++;
               currentText.current = value;
+              if (correctionInput.current)
+                geometryCallbacks.current.onCorrectionLayout?.(correctionInput.current);
               setText(value);
               setPreview(null);
               setMessage('');

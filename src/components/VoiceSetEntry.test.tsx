@@ -81,6 +81,42 @@ test('manual correction can delete every character and retype after an offline f
   expect(apply).toHaveBeenCalledWith({ duration: '26', rpe: '7' }, voiceBindingKey(timed));
 });
 
+test('correction focus is bound to the open editor and dismissal releases geometry before a retained focus can revive it', async () => {
+  const f = fixture(),
+    onFocus = jest.fn(),
+    onBlur = jest.fn(),
+    onLayout = jest.fn(),
+    apply = jest.fn(() => true);
+  (f.adapter.listen as jest.Mock).mockRejectedValue(
+    new Error('Offline voice unavailable. Use manual entry.'),
+  );
+  const screen = await render(
+    <VoiceSetEntry
+      binding={binding}
+      adapter={f.adapter}
+      onApply={apply}
+      onCorrectionFocus={onFocus}
+      onCorrectionBlur={onBlur}
+      onCorrectionLayout={onLayout}
+    />,
+  );
+  await fireEvent.press(screen.getByLabelText('Speak a set entry'));
+  const field = screen.getByLabelText('Review or correct the spoken set entry');
+  const oldFocus = field.props.onFocus;
+  await fireEvent(field, 'focus');
+  expect(onFocus).toHaveBeenCalledTimes(1);
+  const [input, current] = onFocus.mock.calls[0]!;
+  expect(current()).toBe(true);
+  await fireEvent.changeText(field, '');
+  expect(onLayout).toHaveBeenCalledWith(input);
+  await fireEvent.press(screen.getByLabelText('Dismiss voice entry'));
+  expect(current()).toBe(false);
+  expect(onBlur).toHaveBeenCalledWith(input);
+  await act(() => oldFocus({ nativeEvent: {} }));
+  expect(onFocus).toHaveBeenCalledTimes(1);
+  expect(apply).not.toHaveBeenCalled();
+});
+
 test.each(['dismiss', 'binding', 'disabled', 'adapter', 'background'])(
   'an empty opened correction editor closes on %s and its retained review cannot recreate a preview',
   async (reset) => {

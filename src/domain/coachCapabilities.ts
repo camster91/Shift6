@@ -8,7 +8,7 @@ export const coachNavigationCapabilities = [
   { id: 'open-workout-controls', label: 'Open workout controls' },
   { id: 'open-calendar', label: 'Open your training calendar' },
   { id: 'open-goal', label: 'Open your personal goal' },
-  { id: 'open-local-review', label: 'Review a local date range' },
+  { id: 'open-local-review', label: 'Review recent training' },
   { id: 'open-history', label: 'Review saved training history' },
   { id: 'open-guidance', label: 'Open movement guidance' },
   { id: 'open-health-controls', label: 'Open optional health controls' },

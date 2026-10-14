@@ -4,6 +4,7 @@ import CoachReviewScreen from '../../app/coach-review';
 import { demoCycle } from '../domain/fixtures/home';
 import {
   prepareCoachReview,
+  previewCoachReviewChoice,
   confirmCoachReviewChoice,
   type CoachReviewInput,
 } from '../domain/coachReview';
@@ -11,6 +12,7 @@ import type { SavedCoachReview } from '../db/coachReviewRepository';
 import type { Shift } from '../domain/shift';
 import type { ButtonProps } from './ui/Button';
 import type { ScreenProps } from './ui/Screen';
+import { formatRecordedDateTime } from '../domain/datePresentation';
 let mockOwner = 'guest-user';
 let mockBlur: (() => void) | undefined;
 let mockFocus: (() => () => void) | undefined;
@@ -326,6 +328,36 @@ test('remount reads confirmed journal history; an old receipt does not imply cur
   expect(restored.queryByLabelText('Confirm and save intent')).toBeNull();
   expect(mockConfirm).toHaveBeenCalledTimes(1);
 });
+
+test('historical confirmation dates use each saved timezone without rewriting receipt data', async () => {
+  const snapshot = prepareCoachReview({
+    ...packet,
+    window: { ...packet.window, timeZone: 'Asia/Tokyo' },
+  });
+  const receipt = {
+    ...confirmCoachReviewChoice(
+      previewCoachReviewChoice(snapshot, 'keep-plan'),
+      snapshot,
+      stamp,
+      true,
+    ),
+    goalWitness: null,
+  };
+  const saved = { id: 'saved-tokyo', previousReviewId: null, receipt };
+  const canonicalBefore = JSON.stringify(saved);
+  mockHistory.mockResolvedValue([saved]);
+  const screen = await ready();
+  expect(
+    screen.getByText(`Keep plan · confirmed ${formatRecordedDateTime(stamp, 'Asia/Tokyo')}`),
+  ).toBeTruthy();
+  expect(
+    screen.queryByText(`Keep plan · confirmed ${formatRecordedDateTime(stamp, 'America/Toronto')}`),
+  ).toBeNull();
+  expect(JSON.stringify(saved)).toBe(canonicalBefore);
+  expect(saved.receipt.confirmedAt).toBe(stamp);
+  expect(saved.receipt.window.timeZone).toBe('Asia/Tokyo');
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
 test('goal baseline-to-latest dates are separate from session window, and Imperial labels preserve canonical load comparison', async () => {
   const goal: Shift = {
     id: 'goal',
@@ -375,8 +407,17 @@ test('goal baseline-to-latest dates are separate from session window, and Imperi
     },
   ];
   const screen = await ready();
-  expect(screen.getByText(/Baseline: 88.184905 lb · measured 2026-10-01/)).toBeTruthy();
-  expect(screen.getByText(/Latest: 99.208018 lb · measured 2026-10-12/)).toBeTruthy();
+  const loadedWindow = mockLoad.mock.calls[0]![3];
+  expect(
+    screen.getByText(
+      `Baseline: 88.184905 lb · measured ${formatRecordedDateTime(packet.observations[0]!.measuredAt, loadedWindow.timeZone)}`,
+    ),
+  ).toBeTruthy();
+  expect(
+    screen.getByText(
+      `Latest: 99.208018 lb · measured ${formatRecordedDateTime(packet.observations[1]!.measuredAt, loadedWindow.timeZone)}`,
+    ),
+  ).toBeTruthy();
   expect(screen.getByText(/separately from the selected session dates/)).toBeTruthy();
   expect(screen.getByText(/Measured change: improved/)).toBeTruthy();
   expect(packet.observations[0]!.value).toBe(40);

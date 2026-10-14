@@ -546,11 +546,6 @@ export default function CoachScreen() {
             onPress={() => void askCoach('explain-workout')}
           />
           <Chip
-            disabled={navigationBusy}
-            label="Review my progress"
-            onPress={() => void openWorkflow('open-local-review')}
-          />
-          <Chip
             disabled={coachLoading}
             label="Shorten this session"
             onPress={() => void askCoach('shorten-workout')}

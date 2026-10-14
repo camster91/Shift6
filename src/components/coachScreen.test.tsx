@@ -108,8 +108,9 @@ test('local Coach explains the selected workout and refreshes facts when its tab
   await act(async () => {
     mockFocus?.();
   });
-  await waitFor(() => expect(screen.getByLabelText('Review my progress')).toBeTruthy());
-  await fireEvent.press(screen.getByLabelText('Review my progress'));
+  await waitFor(() => expect(screen.getByLabelText('Review recent training')).toBeTruthy());
+  expect(screen.queryByLabelText('Review my progress')).toBeNull();
+  await fireEvent.press(screen.getByLabelText('Review recent training'));
   await waitFor(() => expect(router.push).toHaveBeenCalledWith('/coach-review'));
   expect(resolveCoachNavigation).toHaveBeenCalledWith(mockDatabase, 'owner', 'open-local-review');
   expect(mockRemote).not.toHaveBeenCalled();
@@ -185,16 +186,16 @@ test('returning to Coach invalidates an old pending request without leaving Ask 
   await waitFor(() => expect(screen.getByText('Provider-backed Coach enabled')).toBeTruthy());
   await fireEvent.press(screen.getByLabelText("Explain today's workout"));
   await waitFor(() => expect(screen.getByLabelText(/^Coach is thinking/)).toBeDisabled());
-  expect(screen.getByLabelText('Review my progress')).not.toBeDisabled();
+  expect(screen.getByLabelText('Review recent training')).not.toBeDisabled();
   await act(async () => {
     mockFocus?.();
   });
-  await waitFor(() => expect(screen.getByLabelText('Review my progress')).not.toBeDisabled());
+  await waitFor(() => expect(screen.getByLabelText('Review recent training')).not.toBeDisabled());
   await act(async () => {
     release({ kind: 'message', text: 'Stale pending answer', factsUsed: [] });
   });
   expect(screen.queryByText('Stale pending answer')).toBeNull();
-  expect(screen.getByLabelText('Review my progress')).not.toBeDisabled();
+  expect(screen.getByLabelText('Review recent training')).not.toBeDisabled();
 });
 
 test('an urgent response never waits for optional memory and immediately releases Ask controls', async () => {
@@ -213,7 +214,7 @@ test('an urgent response never waits for optional memory and immediately release
     expect(screen.getByText('Synthetic urgent guidance: stop exercising.')).toBeTruthy(),
   );
   expect(mockMemoryRead).toHaveBeenCalledTimes(initialReads);
-  expect(screen.getByLabelText('Review my progress')).not.toBeDisabled();
+  expect(screen.getByLabelText('Review recent training')).not.toBeDisabled();
 });
 
 test('initial optional memory read cannot block canonical Coach controls or explanations', async () => {
@@ -224,5 +225,5 @@ test('initial optional memory read cannot block canonical Coach controls or expl
   await waitFor(() =>
     expect(screen.getAllByText(/Actually scheduled session is a/).length).toBeGreaterThan(1),
   );
-  expect(screen.getByLabelText('Review my progress')).not.toBeDisabled();
+  expect(screen.getByLabelText('Review recent training')).not.toBeDisabled();
 });

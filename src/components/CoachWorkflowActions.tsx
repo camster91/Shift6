@@ -19,7 +19,7 @@ export function CoachWorkflowActions({
 }) {
   const [expanded, setExpanded] = useState(false);
   const primary = state.hasCycle
-    ? ['open-workout-controls', 'open-calendar', 'open-goal']
+    ? ['open-workout-controls', 'open-calendar', 'open-goal', 'open-local-review']
     : state.hasProfile
       ? ['build-private-plan', 'open-setup', 'open-history']
       : ['open-setup', 'open-data-controls', 'open-health-controls'];

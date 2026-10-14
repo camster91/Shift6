@@ -27,6 +27,7 @@ import type { Shift } from '../src/domain/shift';
 import type { UnitSystem } from '../src/domain/types';
 import { resolveCoachNavigation } from '../src/services/coachNavigation';
 import { colors, spacing } from '../src/design/tokens';
+import { formatRecordedDateTime } from '../src/domain/datePresentation';
 
 const choices: Record<CoachReviewChoice, string> = {
   'keep-plan': 'Keep plan',
@@ -449,14 +450,16 @@ export default function CoachReviewScreen() {
               <Text>
                 Baseline:{' '}
                 {goalValueLabel(comparison.baseline.canonicalValue, goal.protocol.metric, units)} ·
-                measured {comparison.baseline.measuredAt}
+                measured{' '}
+                {formatRecordedDateTime(comparison.baseline.measuredAt, review.window.timeZone)}
               </Text>
             ) : null}
             {goal && comparison?.latest ? (
               <Text>
                 Latest:{' '}
                 {goalValueLabel(comparison.latest.canonicalValue, goal.protocol.metric, units)} ·
-                measured {comparison.latest.measuredAt}
+                measured{' '}
+                {formatRecordedDateTime(comparison.latest.measuredAt, review.window.timeZone)}
               </Text>
             ) : null}
             {comparison ? (
@@ -555,7 +558,8 @@ export default function CoachReviewScreen() {
             Dated intent saved locally
           </Text>
           <Text>
-            {choices[receipt.receipt.choice]} · confirmed {receipt.receipt.confirmedAt}
+            {choices[receipt.receipt.choice]} · confirmed{' '}
+            {formatRecordedDateTime(receipt.receipt.confirmedAt, receipt.receipt.window.timeZone)}
           </Text>
           <Text>Your plan was not changed by this receipt.</Text>
           {receipt.receipt.nextCapability ? (
@@ -584,7 +588,8 @@ export default function CoachReviewScreen() {
           {history.map((item) => (
             <View key={item.id} style={styles.field}>
               <Text>
-                {choices[item.receipt.choice]} · confirmed {item.receipt.confirmedAt}
+                {choices[item.receipt.choice]} · confirmed{' '}
+                {formatRecordedDateTime(item.receipt.confirmedAt, item.receipt.window.timeZone)}
               </Text>
               <Text tone="muted">
                 {item.receipt.window.startDate} through {item.receipt.window.endDate} ·{' '}

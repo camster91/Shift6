@@ -116,7 +116,10 @@ beforeEach(async () => {
     timeZone: 'America/Toronto',
   };
 });
-afterEach(() => sqlite.close());
+afterEach(() => {
+  jest.useRealTimers();
+  sqlite.close();
+});
 const exportNow = () => exportLocalUserData(db, 'guest-user', stamp);
 async function ready() {
   await confirmScheduleBaseline(db, confirmation);
@@ -650,6 +653,7 @@ test('schema15 restore immediately supplies replayed dates to shared Calendar/Ho
   expect(await getWorkoutScheduleOverrides(db, intent.userId, intent.cycleId)).toEqual(overrides);
 });
 test('new Start confirmation saves a pinned baseline with its cycle and rejects existing legacy backfill', async () => {
+  jest.useFakeTimers({ now: new Date(stamp) });
   const backup = await exportNow();
   const version = JSON.parse(
     String(
@@ -683,6 +687,34 @@ test('new Start confirmation saves a pinned baseline with its cycle and rejects 
       '2026-10-13',
     ),
   ).rejects.toThrow('already exists');
+});
+
+test('Start crossing local midnight rejects the old preview without creating a cycle or baseline', async () => {
+  const startedAt = '2026-10-14T03:59:59.900Z';
+  jest.useFakeTimers({ now: new Date(startedAt) });
+  const backup = await exportNow();
+  const version = JSON.parse(
+    String(
+      backup.userProgramVersions.find((entry) => entry.id === intent.programVersionId)!
+        .version_json,
+    ),
+  );
+  const cycle = createTrainingCycle({
+    id: 'midnight-new-start',
+    userId: intent.userId,
+    programVersion: version,
+    startedAt,
+  });
+  const oldCycles = sqlite.prepare('SELECT * FROM training_cycles ORDER BY id').all();
+  const oldBaselines = sqlite.prepare('SELECT * FROM schedule_baselines ORDER BY id').all();
+  jest.setSystemTime(new Date('2026-10-14T04:00:00.100Z'));
+  await expect(
+    saveTrainingCycleWithSchedule(db, cycle, version, 'America/Toronto', '2026-10-13'),
+  ).rejects.toThrow('The Start preview changed');
+  expect(sqlite.prepare('SELECT * FROM training_cycles ORDER BY id').all()).toEqual(oldCycles);
+  expect(sqlite.prepare('SELECT * FROM schedule_baselines ORDER BY id').all()).toEqual(
+    oldBaselines,
+  );
 });
 test('new-cycle baseline failure rolls back cycle creation, prior-cycle pause, journal and outbox', async () => {
   const backup = await exportNow();

@@ -77,6 +77,12 @@ export default function CoachReviewScreen() {
     owner = useCurrentUserId();
   const [dates, setDates] = useState(initialWindow);
   const [datesExpanded, setDatesExpanded] = useState(false);
+  const dateEditor = useRef({ visible: false, generation: 0 });
+  const dateEditorGeneration = dateEditor.current.generation;
+  const setDateEditorVisibility = useCallback((visible: boolean) => {
+    dateEditor.current = { visible, generation: dateEditor.current.generation + 1 };
+    setDatesExpanded(visible);
+  }, []);
   const [review, setReview] = useState<Awaited<ReturnType<typeof loadDatedCoachReview>> | null>(
     null,
   );
@@ -107,10 +113,11 @@ export default function CoachReviewScreen() {
     programVersionId: string | null;
   } | null>(null);
   const generation = useRef(0),
+    evidenceGeneration = useRef(0),
     active = useRef(false),
     pending = useRef(false);
-  const visibleState = useRef({ loadedFor, review, preview, receipt, history });
-  visibleState.current = { loadedFor, review, preview, receipt, history };
+  const visibleState = useRef({ loadedFor, review, preview, receipt, history, dates });
+  visibleState.current = { loadedFor, review, preview, receipt, history, dates };
   const read = useCallback(
     async (window: CoachReviewWindow, focus: number) => {
       const current = () =>
@@ -142,9 +149,9 @@ export default function CoachReviewScreen() {
         saved.some((item) => item.receipt.ownerId !== owner || item.receipt.cycleId !== cycle.id)
       )
         throw new Error('Local review record ownership changed. Reload before continuing.');
+      setDateEditorVisibility(false);
       setUnits(profile?.user.unitSystem ?? 'metric');
       setReview(next);
-      setDatesExpanded(false);
       setHistory(saved);
       setResponse(null);
       setSkipped(false);
@@ -167,7 +174,7 @@ export default function CoachReviewScreen() {
         programVersionId: cycle.programVersionId,
       });
     },
-    [db, owner, epoch],
+    [db, owner, epoch, setDateEditorVisibility],
   );
   useFocusEffect(
     useCallback(() => {
@@ -176,8 +183,8 @@ export default function CoachReviewScreen() {
       active.current = true;
       pending.current = true;
       const window = initialWindow();
+      setDateEditorVisibility(false);
       setDates(window);
-      setDatesExpanded(false);
       setReview(null);
       setHistory([]);
       setPreview(null);
@@ -196,7 +203,7 @@ export default function CoachReviewScreen() {
       void read(window, focus)
         .catch((failure: unknown) => {
           if (current()) {
-            setDatesExpanded(true);
+            setDateEditorVisibility(true);
             setLoadedFor({ db, owner, epoch, focus, cycleId: null, programVersionId: null });
             setError(
               failure instanceof Error ? failure.message : 'Local review could not be read.',
@@ -214,7 +221,7 @@ export default function CoachReviewScreen() {
         active.current = false;
         generation.current += 1;
       };
-    }, [db, owner, read, epoch]),
+    }, [db, owner, read, epoch, setDateEditorVisibility]),
   );
   const loadMatches = () =>
     Boolean(
@@ -263,11 +270,13 @@ export default function CoachReviewScreen() {
   const run = async (task: (current: () => boolean) => Promise<void>) => {
     if (!db || !loadMatches() || pending.current) return;
     const focus = generation.current,
+      evidence = evidenceGeneration.current,
       savedDb = db,
       savedOwner = owner;
     const current = () =>
       active.current &&
       generation.current === focus &&
+      evidenceGeneration.current === evidence &&
       context.current.db === savedDb &&
       context.current.owner === savedOwner &&
       context.current.epoch === epoch;
@@ -290,9 +299,22 @@ export default function CoachReviewScreen() {
       }
     }
   };
-  const change = (key: keyof CoachReviewWindow, text: string) => {
-    if (pending.current || !loadMatches()) return;
-    setDates((value) => ({ ...value, [key]: text }));
+  const change = (key: keyof CoachReviewWindow, text: string, editorGeneration: number) => {
+    if (
+      pending.current ||
+      !loadMatches() ||
+      visibleState.current.preview !== null ||
+      !dateEditor.current.visible ||
+      dateEditor.current.generation !== editorGeneration
+    )
+      return;
+    evidenceGeneration.current += 1;
+    const nextDates = { ...visibleState.current.dates, [key]: text };
+    visibleState.current.dates = nextDates;
+    visibleState.current.review = null;
+    visibleState.current.preview = null;
+    visibleState.current.receipt = null;
+    setDates(nextDates);
     setReview(null);
     setPreview(null);
     setReceipt(null);
@@ -454,9 +476,10 @@ export default function CoachReviewScreen() {
           }
           disabled={busy || (datesExpanded && !reviewMatches())}
           onPress={() => {
-            if (pending.current || !loadMatches() || (datesExpanded && !reviewMatches())) return;
-            if (datesExpanded) Keyboard.dismiss();
-            setDatesExpanded(!datesExpanded);
+            const visible = dateEditor.current.visible;
+            if (pending.current || !loadMatches() || (visible && !reviewMatches())) return;
+            if (visible) Keyboard.dismiss();
+            setDateEditorVisibility(!visible);
           }}
         />
         {datesExpanded ? (
@@ -487,7 +510,7 @@ export default function CoachReviewScreen() {
                   maxLength={key === 'timeZone' ? 128 : 10}
                   returnKeyType="done"
                   value={dates[key]}
-                  onChangeText={(text) => change(key, text)}
+                  onChangeText={(text) => change(key, text, dateEditorGeneration)}
                   autoCapitalize="none"
                   autoCorrect={false}
                   style={styles.input}
@@ -497,12 +520,19 @@ export default function CoachReviewScreen() {
             <Button
               label="Review these dates"
               disabled={!loaded || !db || busy}
-              onPress={() =>
+              onPress={() => {
+                if (
+                  !dateEditor.current.visible ||
+                  dateEditor.current.generation !== dateEditorGeneration ||
+                  visibleState.current.preview !== null ||
+                  visibleState.current.dates !== dates
+                )
+                  return;
                 void run(async (current) => {
                   await read(dates, generation.current);
                   if (current()) Keyboard.dismiss();
-                })
-              }
+                });
+              }}
             />
           </>
         ) : null}

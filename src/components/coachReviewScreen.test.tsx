@@ -452,6 +452,110 @@ test('automatic review shows its exact compact window and date controls open exp
   expect(screen.getByLabelText('Keep plan')).toBeTruthy();
 });
 
+test.each(['hide', 'successful reread'])(
+  'a field callback retained before %s cannot invalidate the compact evidence or saved follow-up',
+  async (close) => {
+    const { screen, saved } = await restoredAvailability();
+    const original = JSON.stringify(saved);
+    await fireEvent.press(screen.getByLabelText('Change review dates'));
+    const retained = (
+      screen.getByLabelText('Review start date').props as { onChangeText: (text: string) => void }
+    ).onChangeText;
+    const retainedRead = mockButtonHandlers.get('Review these dates')!;
+    if (close === 'hide') {
+      const hide = mockButtonHandlers.get('Hide review date controls')!;
+      await act(() => {
+        hide();
+        retained('1900-01-01');
+        retainedRead();
+      });
+    } else {
+      await fireEvent.press(screen.getByLabelText('Review these dates'));
+      await waitFor(() => expect(screen.getByLabelText('Change review dates')).toBeTruthy());
+    }
+    const reads = mockLoad.mock.calls.length;
+    await act(() => {
+      retained('1900-01-01');
+      retainedRead();
+    });
+    expect(screen.queryByLabelText('Review start date')).toBeNull();
+    expect(screen.getByText('Sessions started in this date range')).toBeTruthy();
+    expect(screen.getByLabelText('Continue to setup')).toBeTruthy();
+    const window = mockLoad.mock.calls.at(-1)![3];
+    expect(
+      screen.getAllByText(`${window.startDate} through ${window.endDate} · ${window.timeZone}`),
+    ).toHaveLength(2);
+    expect(mockLoad).toHaveBeenCalledTimes(reads);
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(saved)).toBe(original);
+
+    await fireEvent.press(screen.getByLabelText('Change review dates'));
+    await act(() => {
+      retained('1900-01-01');
+      retainedRead();
+    });
+    expect(screen.getByLabelText('Review start date')).toHaveDisplayValue(window.startDate);
+    await fireEvent.changeText(screen.getByLabelText('Review start date'), '2026-10-12');
+    expect(screen.getByLabelText('Review start date')).toHaveDisplayValue('2026-10-12');
+    expect(screen.queryByLabelText('Continue to setup')).toBeNull();
+    expect(screen.queryByText('Sessions started in this date range')).toBeNull();
+  },
+);
+
+test.each(['Keep plan', 'Continue to setup'])(
+  'an accepted date edit synchronously rejects retained %s and read callbacks before render',
+  async (action) => {
+    const { screen } = await restoredAvailability();
+    await fireEvent.press(screen.getByLabelText('Change review dates'));
+    const field = (
+      screen.getByLabelText('Review start date').props as { onChangeText: (text: string) => void }
+    ).onChangeText;
+    const retainedAction = mockButtonHandlers.get(action)!;
+    const retainedRead = mockButtonHandlers.get('Review these dates')!;
+    const reads = mockLoad.mock.calls.length;
+    await act(() => {
+      field('2026-10-12');
+      retainedAction();
+      retainedRead();
+    });
+    expect(screen.getByLabelText('Review start date')).toHaveDisplayValue('2026-10-12');
+    expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+    expect(screen.queryByLabelText('Continue to setup')).toBeNull();
+    expect(screen.queryByText('Sessions started in this date range')).toBeNull();
+    expect(mockLoad).toHaveBeenCalledTimes(reads);
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByLabelText('Review these dates'));
+    await waitFor(() => expect(screen.getByLabelText('Change review dates')).toBeTruthy());
+    expect(mockLoad.mock.calls.at(-1)![3].startDate).toBe('2026-10-12');
+    expect(screen.getByText('Sessions started in this date range')).toBeTruthy();
+    expect(screen.queryByLabelText('Review start date')).toBeNull();
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+  },
+);
+
+test('a retained edit during deferred continuation is rejected by the pending mutex and cannot change its window', async () => {
+  const { screen, saved } = await restoredAvailability();
+  const canonical = JSON.stringify(saved);
+  await fireEvent.press(screen.getByLabelText('Change review dates'));
+  const field = (
+    screen.getByLabelText('Review start date').props as { onChangeText: (text: string) => void }
+  ).onChangeText;
+  const window = mockLoad.mock.calls.at(-1)![3];
+  let resolve!: (value: { route: string }) => void;
+  mockNavigate.mockImplementationOnce(() => new Promise((done) => (resolve = done)));
+  await fireEvent.press(screen.getByLabelText('Continue to setup'));
+  await waitFor(() => expect(mockNavigate).toHaveBeenCalledTimes(1));
+  await act(() => field('1900-01-01'));
+  expect(screen.getByLabelText('Review start date')).toHaveDisplayValue(window.startDate);
+  expect(screen.getByText('Sessions started in this date range')).toBeTruthy();
+  expect(router.push).not.toHaveBeenCalled();
+  await act(() => resolve({ route: '/coach-onboarding' }));
+  expect(router.push).toHaveBeenCalledWith('/coach-onboarding');
+  expect(JSON.stringify(saved)).toBe(canonical);
+  expect(mockConfirm).toHaveBeenCalledTimes(1);
+});
+
 test.each(['', 'Not/A_Zone'])(
   'invalid time zone %p keeps needed fields visible and correction reloads a compact fresh window',
   async (zone) => {

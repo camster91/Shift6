@@ -21,6 +21,9 @@ import { getWorkoutHistory } from '../src/db/historyRepository';
 import { colors, spacing } from '../src/design/tokens';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
+const elapsedTimeExplanation =
+  'Includes time away and pauses. Active training time is not measured.';
+
 type HistoryFilter = 'all' | 'complete' | 'partial' | 'skipped';
 
 const historyFilters: readonly { value: HistoryFilter; label: string }[] = [
@@ -206,13 +209,13 @@ function HistoryCard({ entry }: { entry: WorkoutHistoryEntry }) {
     metricParts.push(`${Math.round(entry.totalDistanceMeters).toLocaleString()} m`);
   }
   if (entry.durationMinutes !== undefined) {
-    metricParts.push(`${Math.round(entry.durationMinutes)} min session`);
+    metricParts.push(`${Math.round(entry.durationMinutes)} min elapsed since start`);
   }
 
   return (
     <Card
       tone={entry.status === 'complete' ? 'white' : 'yellow'}
-      accessibilityLabel={`${entry.title}, ${statusLabel}, week ${entry.cycleWeek}. ${metricParts.join(', ')}.`}
+      accessibilityLabel={`${entry.title}, ${statusLabel}, week ${entry.cycleWeek}. ${metricParts.join(', ')}.${entry.durationMinutes !== undefined ? ` ${elapsedTimeExplanation}` : ''}`}
     >
       <View style={styles.historyHeader}>
         <View style={styles.historyCopy}>
@@ -232,6 +235,11 @@ function HistoryCard({ entry }: { entry: WorkoutHistoryEntry }) {
       <Text variant="smallMedium" style={styles.historyMetrics}>
         {metricParts.join(' · ')}
       </Text>
+      {entry.durationMinutes !== undefined ? (
+        <Text variant="caption" tone="muted">
+          {elapsedTimeExplanation}
+        </Text>
+      ) : null}
       {entry.completionReason ? (
         <Text variant="caption" tone="muted" style={styles.reason}>
           Reason: {formatReason(entry.completionReason)}

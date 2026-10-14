@@ -76,6 +76,7 @@ export default function CoachReviewScreen() {
   const db = useLocalDatabase(),
     owner = useCurrentUserId();
   const [dates, setDates] = useState(initialWindow);
+  const [datesExpanded, setDatesExpanded] = useState(false);
   const [review, setReview] = useState<Awaited<ReturnType<typeof loadDatedCoachReview>> | null>(
     null,
   );
@@ -143,6 +144,7 @@ export default function CoachReviewScreen() {
         throw new Error('Local review record ownership changed. Reload before continuing.');
       setUnits(profile?.user.unitSystem ?? 'metric');
       setReview(next);
+      setDatesExpanded(false);
       setHistory(saved);
       setResponse(null);
       setSkipped(false);
@@ -175,6 +177,7 @@ export default function CoachReviewScreen() {
       pending.current = true;
       const window = initialWindow();
       setDates(window);
+      setDatesExpanded(false);
       setReview(null);
       setHistory([]);
       setPreview(null);
@@ -193,6 +196,7 @@ export default function CoachReviewScreen() {
       void read(window, focus)
         .catch((failure: unknown) => {
           if (current()) {
+            setDatesExpanded(true);
             setLoadedFor({ db, owner, epoch, focus, cycleId: null, programVersionId: null });
             setError(
               failure instanceof Error ? failure.message : 'Local review could not be read.',
@@ -434,44 +438,74 @@ export default function CoachReviewScreen() {
         </Card>
       ) : null}
       <Card style={styles.card}>
-        <Text variant="bodyMedium">Choose up to seven local dates</Text>
-        {(['startDate', 'endDate', 'timeZone'] as const).map((key) => (
-          <View key={key} style={styles.field}>
-            <Text>
-              {key === 'startDate'
-                ? 'Start date (YYYY-MM-DD)'
-                : key === 'endDate'
-                  ? 'End date (YYYY-MM-DD)'
-                  : 'Time zone (IANA name)'}
-            </Text>
-            <TextInput
-              accessibilityLabel={
-                key === 'startDate'
-                  ? 'Review start date'
-                  : key === 'endDate'
-                    ? 'Review end date'
-                    : 'Review time zone'
-              }
-              editable={!busy}
-              maxLength={key === 'timeZone' ? 128 : 10}
-              returnKeyType="done"
-              value={dates[key]}
-              onChangeText={(text) => change(key, text)}
-              autoCapitalize="none"
-              autoCorrect={false}
-              style={styles.input}
-            />
-          </View>
-        ))}
+        <Text variant="bodyMedium">Review date window</Text>
+        {!datesExpanded && reviewMatches() && review ? (
+          <Text>
+            {review.window.startDate} through {review.window.endDate} · {review.window.timeZone}
+          </Text>
+        ) : null}
         <Button
-          label="Review these dates"
-          disabled={!loaded || !db || busy}
-          onPress={() =>
-            void run(async () => {
-              await read(dates, generation.current);
-            })
+          label={datesExpanded ? 'Hide review date controls' : 'Change review dates'}
+          variant="secondary"
+          accessibilityHint={
+            datesExpanded
+              ? 'Closes the date controls after valid dates have been reviewed.'
+              : 'Opens start date, end date and time zone fields for this local review.'
           }
+          disabled={busy || (datesExpanded && !reviewMatches())}
+          onPress={() => {
+            if (pending.current || !loadMatches() || (datesExpanded && !reviewMatches())) return;
+            if (datesExpanded) Keyboard.dismiss();
+            setDatesExpanded(!datesExpanded);
+          }}
         />
+        {datesExpanded ? (
+          <>
+            <Text tone="muted">
+              All three fields are required. Use YYYY-MM-DD dates, at most seven elapsed local
+              dates, and a valid time zone such as America/Toronto. Select Review these dates before
+              closing the controls.
+            </Text>
+            {(['startDate', 'endDate', 'timeZone'] as const).map((key) => (
+              <View key={key} style={styles.field}>
+                <Text>
+                  {key === 'startDate'
+                    ? 'Start date (YYYY-MM-DD)'
+                    : key === 'endDate'
+                      ? 'End date (YYYY-MM-DD)'
+                      : 'Time zone (IANA name)'}
+                </Text>
+                <TextInput
+                  accessibilityLabel={
+                    key === 'startDate'
+                      ? 'Review start date'
+                      : key === 'endDate'
+                        ? 'Review end date'
+                        : 'Review time zone'
+                  }
+                  editable={!busy}
+                  maxLength={key === 'timeZone' ? 128 : 10}
+                  returnKeyType="done"
+                  value={dates[key]}
+                  onChangeText={(text) => change(key, text)}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  style={styles.input}
+                />
+              </View>
+            ))}
+            <Button
+              label="Review these dates"
+              disabled={!loaded || !db || busy}
+              onPress={() =>
+                void run(async (current) => {
+                  await read(dates, generation.current);
+                  if (current()) Keyboard.dismiss();
+                })
+              }
+            />
+          </>
+        ) : null}
       </Card>
       {busy ? (
         <Text accessibilityLiveRegion="polite">Reading or confirming local evidence…</Text>
@@ -485,9 +519,6 @@ export default function CoachReviewScreen() {
         <>
           <Card style={styles.card}>
             <Text variant="bodyMedium">Sessions started in this date range</Text>
-            <Text>
-              {review.window.startDate} through {review.window.endDate} · {review.window.timeZone}
-            </Text>
             <Text>
               {review.training.complete} complete · {review.training.partial} partial ·{' '}
               {review.training.skipped} skipped · {review.training.inProgress} in progress

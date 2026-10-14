@@ -327,10 +327,15 @@ test('focus loss permanently invalidates a pending confirmation even when the sa
 });
 test('nonempty invalid dates produce actionable guidance and no stale evidence or journal mutation', async () => {
   const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Change review dates'));
   await fireEvent.changeText(screen.getByLabelText('Review start date'), '2026-09-01');
   expect(screen.queryByText('Sessions started in this date range')).toBeNull();
   await fireEvent.press(screen.getByLabelText('Review these dates'));
-  await waitFor(() => expect(screen.getByText(/at most seven elapsed local dates/)).toBeTruthy());
+  await waitFor(() =>
+    expect(
+      screen.getByText('Choose an explicit review window of at most seven elapsed local dates.'),
+    ).toBeTruthy(),
+  );
   expect(screen.queryByLabelText('Keep plan')).toBeNull();
   expect(mockConfirm).not.toHaveBeenCalled();
 });
@@ -406,9 +411,7 @@ test.each(['just confirmed', 'cold reopened'])(
     }
     const frame = mockRenderFrames.at(-1)!.text;
     expect(frame.indexOf('Continue to setup')).toBeGreaterThan(-1);
-    expect(frame.indexOf('Continue to setup')).toBeLessThan(
-      frame.indexOf('Choose up to seven local dates'),
-    );
+    expect(frame.indexOf('Continue to setup')).toBeLessThan(frame.indexOf('Review date window'));
     expect(frame.indexOf('Continue to setup')).toBeLessThan(
       frame.indexOf('Sessions started in this date range'),
     );
@@ -424,6 +427,115 @@ test.each(['just confirmed', 'cold reopened'])(
     expect(mockConfirm).toHaveBeenCalledTimes(1);
   },
 );
+
+test('automatic review shows its exact compact window and date controls open explicitly without any write', async () => {
+  const dismiss = jest.spyOn(Keyboard, 'dismiss');
+  const screen = await ready();
+  expect(screen.queryByLabelText('Review start date')).toBeNull();
+  expect(screen.queryByLabelText('Review end date')).toBeNull();
+  expect(screen.queryByLabelText('Review time zone')).toBeNull();
+  expect(screen.queryByLabelText('Review these dates')).toBeNull();
+  const window = mockLoad.mock.calls[0]![3];
+  expect(
+    screen.getByText(`${window.startDate} through ${window.endDate} · ${window.timeZone}`),
+  ).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Change review dates'));
+  expect(screen.getByLabelText('Review start date')).toHaveDisplayValue(window.startDate);
+  expect(screen.getByLabelText('Review end date')).toHaveDisplayValue(window.endDate);
+  expect(screen.getByLabelText('Review time zone')).toHaveDisplayValue(window.timeZone);
+  expect(screen.getByText(/All three fields are required/)).toBeTruthy();
+  expect(mockLoad).toHaveBeenCalledTimes(1);
+  expect(mockConfirm).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Hide review date controls'));
+  expect(dismiss).toHaveBeenCalledTimes(1);
+  expect(screen.queryByLabelText('Review start date')).toBeNull();
+  expect(screen.getByLabelText('Keep plan')).toBeTruthy();
+});
+
+test.each(['', 'Not/A_Zone'])(
+  'invalid time zone %p keeps needed fields visible and correction reloads a compact fresh window',
+  async (zone) => {
+    const screen = await ready();
+    const retained = mockButtonHandlers.get('Keep plan')!;
+    await fireEvent.press(screen.getByLabelText('Change review dates'));
+    await fireEvent.changeText(screen.getByLabelText('Review time zone'), zone);
+    await act(() => retained());
+    expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+    expect(screen.getByLabelText('Hide review date controls')).toBeDisabled();
+    await fireEvent.press(screen.getByLabelText('Review these dates'));
+    await waitFor(() => expect(screen.getByText(/Enter a valid time zone/)).toBeTruthy());
+    expect(screen.getByLabelText('Review time zone')).toHaveDisplayValue(zone);
+    await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'Asia/Tokyo');
+    await fireEvent.press(screen.getByLabelText('Review these dates'));
+    await waitFor(() => expect(screen.getByLabelText('Change review dates')).toBeTruthy());
+    expect(screen.queryByLabelText('Review time zone')).toBeNull();
+    expect(screen.queryByText(/Enter a valid time zone/)).toBeNull();
+    expect(screen.getByText(/through .* · Asia\/Tokyo/)).toBeTruthy();
+    expect(mockConfirm).not.toHaveBeenCalled();
+  },
+);
+
+test.each(['Review start date', 'Review end date'])(
+  'a missing %s cannot hide required fields or leave old evidence actionable',
+  async (field) => {
+    const screen = await ready();
+    await fireEvent.press(screen.getByLabelText('Change review dates'));
+    await fireEvent.changeText(screen.getByLabelText(field), '');
+    expect(screen.queryByLabelText('Keep plan')).toBeNull();
+    expect(screen.getByLabelText('Hide review date controls')).toBeDisabled();
+    await fireEvent.press(screen.getByLabelText('Review these dates'));
+    await waitFor(() => expect(screen.getByText(/Invalid local date key/)).toBeTruthy());
+    expect(screen.getByLabelText(field)).toHaveDisplayValue('');
+    expect(screen.getByText(/All three fields are required/)).toBeTruthy();
+    expect(mockConfirm).not.toHaveBeenCalled();
+  },
+);
+
+test('automatic date read failure reveals controls, and a corrected explicit reread returns to compact evidence', async () => {
+  mockLoad.mockRejectedValueOnce(
+    new Error('Enter a valid time zone, then review these dates again.'),
+  );
+  const screen = await render(<CoachReviewScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Review time zone')).toBeTruthy());
+  expect(screen.getByText(/Enter a valid time zone/)).toBeTruthy();
+  expect(screen.queryByLabelText('Keep plan')).toBeNull();
+  await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'America/Toronto');
+  await fireEvent.press(screen.getByLabelText('Review these dates'));
+  await waitFor(() => expect(screen.getByLabelText('Change review dates')).toBeTruthy());
+  expect(screen.queryByLabelText('Review time zone')).toBeNull();
+  expect(screen.getByLabelText('Keep plan')).toBeTruthy();
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+test('an edited-window read resolving after blur and refocus cannot replace the new automatic compact window', async () => {
+  const screen = await ready();
+  let release!: () => void;
+  mockLoad.mockImplementationOnce(
+    (_db, _owner, _cycle, window, now) =>
+      new Promise((resolve) => {
+        release = () => resolve(prepareCoachReview({ ...packet, window, now }));
+      }),
+  );
+  await fireEvent.press(screen.getByLabelText('Change review dates'));
+  await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'Asia/Tokyo');
+  await fireEvent.press(screen.getByLabelText('Review these dates'));
+  await waitFor(() => expect(mockLoad).toHaveBeenCalledTimes(2));
+  await act(() => {
+    mockBlur?.();
+    mockBlur = mockFocus?.();
+  });
+  await waitFor(() => expect(screen.getByLabelText('Change review dates')).toBeTruthy());
+  const freshWindow = mockLoad.mock.calls[2]![3];
+  await act(() => release());
+  expect(
+    screen.getByText(
+      `${freshWindow.startDate} through ${freshWindow.endDate} · ${freshWindow.timeZone}`,
+    ),
+  ).toBeTruthy();
+  expect(screen.queryByText(/through .* · Asia\/Tokyo/)).toBeNull();
+  expect(screen.queryByLabelText('Review time zone')).toBeNull();
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
 
 test('cold reopen recovers only the latest owned dated next step and separately rechecks its exact head', async () => {
   const { screen, saved } = await restoredAvailability();

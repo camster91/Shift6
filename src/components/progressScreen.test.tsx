@@ -9,7 +9,12 @@ import {
 } from '../domain/fixtures/home';
 import { createCustomExercise } from '../domain/programBuilder';
 import { buildCycleProgressSummary } from '../domain/progression';
-import { buildExerciseProgress, type ProgressPersonalRecord } from '../domain/progress';
+import {
+  buildExerciseProgress,
+  type ProgressPersonalRecord,
+  type ProgressSetInput,
+} from '../domain/progress';
+import { declaredLoad } from '../domain/loadUnits';
 import type { CompletedSet, ProgramVersion } from '../domain/types';
 
 const mockDatabase = {};
@@ -66,6 +71,8 @@ let mockOwner = 'guest-user';
 let mockFocusCleanup: (() => void) | void;
 let mockFocusCallback: (() => (() => void) | void) | undefined;
 const mockLatestCycle = jest.fn();
+const mockPreviousCycle = jest.fn();
+let mockVolumeSets: ProgressSetInput[] = [];
 const mockGetSummary = jest.fn();
 const mockGetExercise = jest.fn();
 jest.mock('expo-router', () => ({
@@ -83,7 +90,7 @@ jest.mock('../db/context', () => ({ useLocalDatabase: () => mockDatabase }));
 jest.mock('../services/UserIdentityProvider', () => ({ useCurrentUserId: () => mockOwner }));
 jest.mock('../db/cycleRepository', () => ({
   getLatestTrainingCycle: (...args: unknown[]) => mockLatestCycle(...args),
-  getPreviousTrainingCycle: async () => null,
+  getPreviousTrainingCycle: (...args: unknown[]) => mockPreviousCycle(...args),
 }));
 jest.mock('../db/profileRepository', () => ({
   getOnboardingProfile: async () => ({ user: mockUser }),
@@ -96,17 +103,71 @@ jest.mock('../db/progressRepository', () => ({
   getCycleProgressSummary: (...args: unknown[]) => mockGetSummary(...args),
   getLatestCompletedWorkoutSets: async () => mockCompleted,
   getExerciseProgress: (...args: unknown[]) => mockGetExercise(...args),
-  getCycleCompletedSetRecords: async () => [],
+  getCycleCompletedSetRecords: async () => mockVolumeSets,
   getCycleCardioRecords: async () => [],
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockOwner = 'guest-user';
+  mockVolumeSets = [];
+  mockPreviousCycle.mockReset().mockResolvedValue(null);
   mockSummary = { ...mockEmptySummary, loggedSetCount: 1 };
   mockLatestCycle.mockReset().mockImplementation(async () => ({ ...mockCycle, userId: mockOwner }));
   mockGetSummary.mockReset().mockImplementation(async () => mockSummary);
   mockGetExercise.mockReset().mockResolvedValue(null);
+});
+
+test('Imperial mixed actuals keep explicit canonical kg × reps throughout volume views and accessibility', async () => {
+  const exerciseId = mockOwnedExercises[0]!.id;
+  mockVolumeSets = [
+    {
+      sessionId: 'kg',
+      exerciseId,
+      completedAt: '2026-10-13T12:00:00Z',
+      load: 40,
+      loadUnit: 'kg',
+      reps: 5,
+    },
+    {
+      sessionId: 'lb',
+      exerciseId,
+      completedAt: '2026-10-13T12:01:00Z',
+      load: 92,
+      loadUnit: 'lb',
+      reps: 6,
+    },
+    { sessionId: 'legacy', exerciseId, completedAt: '2026-10-13T12:02:00Z', load: 999, reps: 6 },
+  ];
+  const volume = 40 * 5 + declaredLoad(92, 'lb')! * 6;
+  expect(volume).toBeCloseTo(450.38298824);
+  const original = JSON.stringify(mockVolumeSets);
+  mockSummary = {
+    ...completedSummary(),
+    unknownLoadSetCount: 1,
+    facts: { ...completedSummary().facts, totalTrainingVolume: volume },
+  };
+  const previous = { ...mockSummary, facts: { ...mockSummary.facts, totalTrainingVolume: 100 } };
+  mockPreviousCycle.mockResolvedValue({ ...mockCycle, id: 'previous', userId: mockOwner });
+  mockGetSummary.mockImplementation(async (_db, cycleId) =>
+    cycleId === 'previous' ? previous : mockSummary,
+  );
+  const screen = await render(<ProgressScreen />);
+  await waitFor(() => expect(screen.getByText('Load volume: 450 kg × reps')).toBeTruthy());
+  expect(screen.getByText('kg × reps')).toBeTruthy();
+  expect(screen.getByLabelText(/Volume 450 kg × reps/)).toBeTruthy();
+  expect(
+    screen.getByLabelText(/Training volume.*450 kg × reps.*1 sets have unknown load units/),
+  ).toBeTruthy();
+  expect(screen.getByText('Previous 100 kg × reps')).toBeTruthy();
+  expect(screen.getByText('+350 kg × reps')).toBeTruthy();
+  expect(
+    screen.getByLabelText(/Cycle comparison.*training volume changed by 350 kg × reps/),
+  ).toBeTruthy();
+  expect(screen.getByText('1 sets have unknown load units; their load is excluded.')).toBeTruthy();
+  expect(JSON.stringify(mockVolumeSets)).toBe(original);
+  expect(mockSummary.facts.totalTrainingVolume).toBe(volume);
+  expect(mockUser.unitSystem).toBe('imperial');
 });
 
 function refocus() {

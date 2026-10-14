@@ -637,7 +637,11 @@ export default function CycleReviewScreen() {
         <Fact label="Workouts" value={String(summary.facts.completedWorkoutCount)} />
         <Fact label="Adherence" value={`${Math.round(summary.facts.completionRate * 100)}%`} />
         <Fact label="Logged sets" value={String(summary.loggedSetCount)} />
-        <Fact label="Volume" value={summary.facts.totalTrainingVolume.toLocaleString()} />
+        <Fact
+          label="Volume (kg × reps)"
+          value={summary.facts.totalTrainingVolume.toLocaleString()}
+          accessibilityLabel={`Volume ${summary.facts.totalTrainingVolume.toLocaleString()} kg × reps`}
+        />
         <Fact label="Training days" value={String(summary.facts.completedTrainingDays)} />
       </View>
 
@@ -936,9 +940,21 @@ export default function CycleReviewScreen() {
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({
+  label,
+  value,
+  accessibilityLabel,
+}: {
+  label: string;
+  value: string;
+  accessibilityLabel?: string;
+}) {
   return (
-    <View style={styles.fact}>
+    <View
+      style={styles.fact}
+      accessible={Boolean(accessibilityLabel)}
+      accessibilityLabel={accessibilityLabel}
+    >
       <Text variant="caption" tone="muted">
         {label}
       </Text>

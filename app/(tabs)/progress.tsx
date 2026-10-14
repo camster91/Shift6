@@ -369,7 +369,8 @@ export default function ProgressScreen() {
           icon="stats-chart-outline"
           label="Volume"
           value={facts.totalTrainingVolume > 0 ? formatVolume(facts.totalTrainingVolume) : '—'}
-          detail={facts.totalTrainingVolume > 0 ? 'load × reps' : 'not enough data'}
+          detail={facts.totalTrainingVolume > 0 ? 'kg × reps' : 'kg × reps · not enough data'}
+          accessibilityLabel={`Volume ${facts.totalTrainingVolume > 0 ? formatVolume(facts.totalTrainingVolume) : 'not enough data'} kg × reps. Known loads are normalized to kilograms; unknown-unit loads are excluded.`}
           tone="yellow"
         />
         <MetricCard
@@ -747,7 +748,7 @@ function TrainingVolumeCard({ breakdown }: { breakdown: TrainingVolumeBreakdown 
     <Card
       tone="white"
       style={styles.volumeCard}
-      accessibilityLabel={`Training volume. ${summary} This is an approximate primary-muscle set count.`}
+      accessibilityLabel={`Training volume. ${summary} ${breakdown.totalLoadVolume > 0 ? `Load volume: ${formatVolume(breakdown.totalLoadVolume)} kg × reps. ` : ''}${breakdown.unknownLoadSetCount ? `${breakdown.unknownLoadSetCount} sets have unknown load units; their load is excluded. ` : ''}This is an approximate primary-muscle set count.`}
     >
       <Text variant="caption" tone="muted">
         TRAINING VOLUME
@@ -793,7 +794,7 @@ function TrainingVolumeCard({ breakdown }: { breakdown: TrainingVolumeBreakdown 
           </View>
           {breakdown.totalLoadVolume > 0 ? (
             <Text variant="caption" tone="muted" style={styles.loadVolume}>
-              Load volume: {formatVolume(breakdown.totalLoadVolume)} load × reps
+              Load volume: {formatVolume(breakdown.totalLoadVolume)} kg × reps
             </Text>
           ) : null}
         </>
@@ -971,7 +972,7 @@ function CycleComparisonCard({ comparison }: { comparison: CycleProgressComparis
         <ComparisonRow
           label="Training volume"
           metric={comparison.totalTrainingVolume}
-          format={formatWhole}
+          format={(value) => `${formatWhole(value)} kg × reps`}
         />
         <ComparisonRow
           label="Cardio minutes"
@@ -1023,7 +1024,7 @@ function formatPercent(value: number): string {
 }
 
 function formatComparisonAccessibilityLabel(comparison: CycleProgressComparison): string {
-  return `Cycle comparison. Completed workouts changed by ${formatWhole(comparison.completedWorkouts.delta)}, adherence changed by ${formatPercent(comparison.completionRate.delta)}, logged sets changed by ${formatWhole(comparison.loggedSets.delta)}, training volume changed by ${formatWhole(comparison.totalTrainingVolume.delta)}, cardio changed by ${formatWhole(comparison.cardioMinutes.delta)} minutes, and personal records changed by ${formatWhole(comparison.personalRecords.delta)}.`;
+  return `Cycle comparison. Completed workouts changed by ${formatWhole(comparison.completedWorkouts.delta)}, adherence changed by ${formatPercent(comparison.completionRate.delta)}, logged sets changed by ${formatWhole(comparison.loggedSets.delta)}, training volume changed by ${formatWhole(comparison.totalTrainingVolume.delta)} kg × reps, cardio changed by ${formatWhole(comparison.cardioMinutes.delta)} minutes, and personal records changed by ${formatWhole(comparison.personalRecords.delta)}.`;
 }
 
 interface MetricCardProps {
@@ -1032,11 +1033,12 @@ interface MetricCardProps {
   value: string;
   detail: string;
   tone: 'lavender' | 'blue' | 'mint' | 'yellow' | 'coral';
+  accessibilityLabel?: string;
 }
 
-function MetricCard({ icon, label, value, detail, tone }: MetricCardProps) {
+function MetricCard({ icon, label, value, detail, tone, accessibilityLabel }: MetricCardProps) {
   return (
-    <Card tone={tone} style={styles.metricCard}>
+    <Card tone={tone} style={styles.metricCard} accessibilityLabel={accessibilityLabel}>
       <Ionicons name={icon} size={20} color={colors.ink} />
       <Text variant="caption" tone="muted" style={styles.metricLabel}>
         {label}

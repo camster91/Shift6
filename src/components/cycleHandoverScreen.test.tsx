@@ -8,12 +8,14 @@ import {
 } from '../domain/fixtures/home';
 import type { CycleHandoverRequest } from '../domain/cycleHandover';
 import type { ButtonProps } from './ui/Button';
+import { declaredLoad } from '../domain/loadUnits';
 let mockDb = {};
 let mockOwner = 'guest-user';
 let mockStatus = 'complete';
 let mockParams: { expectedCycleId?: unknown; expectedProgramVersionId?: unknown } = {};
 const mockLatest = jest.fn(),
   mockReadProgram = jest.fn();
+const mockReviewSummary = jest.fn();
 const mockBlurCallbacks = new Set<() => void>();
 const mockFocusCallbacks = new Set<() => void | (() => void)>();
 let mockRecovery: unknown = null;
@@ -71,17 +73,18 @@ jest.mock('../db/cycleReviewRepository', () => ({
   saveCycleReview: (...args: unknown[]) => mockSave(...args),
 }));
 jest.mock('../db/progressRepository', () => ({
-  getCycleProgressSummary: async () => ({
-    facts: {
-      completedWorkoutCount: 1,
-      completionRate: 1,
-      totalTrainingVolume: 100,
-      completedTrainingDays: 1,
-      readinessCounts: { ready: 1, limited: 0, rest: 0 },
-    },
-    loggedSetCount: 1,
-  }),
+  getCycleProgressSummary: (...args: unknown[]) => mockReviewSummary(...args),
 }));
+const defaultSummary = {
+  facts: {
+    completedWorkoutCount: 1,
+    completionRate: 1,
+    totalTrainingVolume: 100,
+    completedTrainingDays: 1,
+    readinessCounts: { ready: 1, limited: 0, rest: 0 },
+  },
+  loggedSetCount: 1,
+};
 jest.mock('../db/cycleHandoverRepository', () => ({
   prepareCycleHandover: (...args: unknown[]) => mockPrepare(...args),
   confirmCycleHandover: (...args: unknown[]) => mockConfirm(...args),
@@ -89,6 +92,7 @@ jest.mock('../db/cycleHandoverRepository', () => ({
 }));
 beforeEach(() => {
   jest.clearAllMocks();
+  mockReviewSummary.mockReset().mockResolvedValue(defaultSummary);
   mockButtonHandlers.clear();
   mockReadReceipt.mockReset().mockImplementation(async () => mockRecovery);
   mockParams = {};
@@ -128,6 +132,26 @@ beforeEach(() => {
     request,
     confirmedAt: request.preparedAt,
   }));
+});
+
+test('cycle review labels normalized mixed-unit volume as kg × reps without changing the canonical value', async () => {
+  const volume = 40 * 5 + declaredLoad(92, 'lb')! * 6;
+  const summary = {
+    ...defaultSummary,
+    unknownLoadSetCount: 1,
+    facts: { ...defaultSummary.facts, totalTrainingVolume: volume },
+  };
+  const original = JSON.stringify(summary);
+  mockReviewSummary.mockResolvedValue(summary);
+  const screen = await render(<CycleReviewScreen />);
+  await waitFor(() => expect(screen.getByText('Volume (kg × reps)')).toBeTruthy());
+  expect(screen.getByText(volume.toLocaleString())).toBeTruthy();
+  expect(screen.getByLabelText(`Volume ${volume.toLocaleString()} kg × reps`)).toBeTruthy();
+  expect(screen.getByText(/sets have unknown load units/)).toBeTruthy();
+  expect(JSON.stringify(summary)).toBe(original);
+  expect(mockPrepare).not.toHaveBeenCalled();
+  expect(mockConfirm).not.toHaveBeenCalled();
+  expect(mockSave).not.toHaveBeenCalled();
 });
 test.each(['newer-cycle', 'changed-version'])(
   'bound destination rejects changed latest identity before private reads: %s',

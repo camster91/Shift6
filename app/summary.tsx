@@ -253,7 +253,8 @@ export default function WorkoutSummaryScreen() {
           <View style={styles.completeCopy}>
             <Text variant="h2">{workout.title}</Text>
             <Text variant="small" tone="muted">
-              {displayedSetCount} sets logged · {facts.durationLabel}
+              {displayedSetCount} {displayedSetCount === 1 ? 'set' : 'sets'} logged ·{' '}
+              {facts.durationLabel}
             </Text>
           </View>
         </View>

@@ -69,6 +69,7 @@ export default function CycleDashboardScreen() {
     database: typeof database;
     userId: string;
     requestedSelection: typeof requestedSelection;
+    generation: number;
   } | null>(null);
   const [completedWorkoutIds, setCompletedWorkoutIds] = useState<ReadonlySet<string>>(
     () => new Set(),
@@ -125,7 +126,7 @@ export default function CycleDashboardScreen() {
           setCompletedWorkoutIds(completedIds);
           setProgram(snapshot.program);
           setVersion(snapshot.version);
-          setLoadedFor({ database, userId, requestedSelection });
+          setLoadedFor({ database, userId, requestedSelection, generation });
           setSchedule(
             buildCurrentCycleWeekSchedule(
               activeCycle,
@@ -273,8 +274,9 @@ export default function CycleDashboardScreen() {
   const isComplete = cycle.status === 'complete';
   const canOpenReview = isComplete && cycle.id === latestCycleId;
   const openCycleSummary = async () => {
-    const generation = focusGeneration.current;
+    const generation = loadedFor?.generation;
     const matches = () =>
+      generation !== undefined &&
       generation === focusGeneration.current &&
       context.current.database === database &&
       context.current.userId === userId &&
@@ -305,7 +307,10 @@ export default function CycleDashboardScreen() {
         setNotice('Your latest cycle changed. Reload this cycle before opening its review.');
         return;
       }
-      router.push('/review');
+      router.push({
+        pathname: '/review',
+        params: { expectedCycleId: cycle.id, expectedProgramVersionId: cycle.programVersionId },
+      });
     } catch {
       if (matches()) setNotice('We could not verify this cycle. Reload before opening its review.');
     } finally {

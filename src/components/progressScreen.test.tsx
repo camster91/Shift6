@@ -136,7 +136,10 @@ test('completed cycle exposes one six-week review as the first action before agg
   expect(screen.getAllByRole('button')[0]).toHaveProp('accessibilityLabel', 'Open six-week review');
   expect(screen.getByLabelText('Personal goal and review')).toBeTruthy();
   await fireEvent.press(screen.getByLabelText('Open six-week review'));
-  expect(router.push).toHaveBeenCalledWith('/review');
+  expect(router.push).toHaveBeenCalledWith({
+    pathname: '/review',
+    params: { expectedCycleId: mockCycle.id, expectedProgramVersionId: mockCycle.programVersionId },
+  });
 });
 
 test('an active cycle does not advertise end-of-cycle review', async () => {

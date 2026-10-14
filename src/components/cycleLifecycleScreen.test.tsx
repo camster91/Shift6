@@ -98,10 +98,30 @@ test('selected latest completed cycle opens six-week review after a fresh owned 
   const screen = await render(<CycleScreen />);
   await waitFor(() => expect(screen.getByLabelText('Open six-week review')).toBeTruthy());
   await fireEvent.press(screen.getByLabelText('Open six-week review'));
-  await waitFor(() => expect(router.push).toHaveBeenCalledWith('/review'));
+  await waitFor(() =>
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/review',
+      params: {
+        expectedCycleId: mockCycle.id,
+        expectedProgramVersionId: mockCycle.programVersionId,
+      },
+    }),
+  );
   expect(mockLatest).toHaveBeenCalledTimes(2);
   expect(mockLatest).toHaveBeenLastCalledWith(mockDb, 'guest-user');
   expect(mockAppend).not.toHaveBeenCalled();
+});
+
+test('retained review callback invoked only after blur cannot read or navigate', async () => {
+  mockStatus = 'complete';
+  mockSelection = mockCycle.id;
+  const screen = await render(<CycleScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Open six-week review')).toBeTruthy());
+  const retained = mockButtonHandlers.get('Open six-week review')!;
+  await act(async () => mockBlur?.());
+  await act(async () => retained());
+  expect(mockLatest).toHaveBeenCalledTimes(1);
+  expect(router.push).not.toHaveBeenCalled();
 });
 
 test('older selected completed cycle reads only its exact saved reflection', async () => {

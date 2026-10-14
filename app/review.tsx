@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
@@ -46,6 +46,23 @@ import { trackAnalyticsEvent } from '../src/services/analytics';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function CycleReviewScreen() {
+  const params = useLocalSearchParams<{
+    expectedCycleId?: string | string[];
+    expectedProgramVersionId?: string | string[];
+  }>();
+  const expectedCycleId = params.expectedCycleId;
+  const expectedProgramVersionId = params.expectedProgramVersionId;
+  const isDirectReview = expectedCycleId === undefined && expectedProgramVersionId === undefined;
+  const validBinding =
+    isDirectReview ||
+    (typeof expectedCycleId === 'string' &&
+      !!expectedCycleId.trim() &&
+      typeof expectedProgramVersionId === 'string' &&
+      !!expectedProgramVersionId.trim());
+  const bindingKey = stableSnapshotJSON([
+    expectedCycleId ?? null,
+    expectedProgramVersionId ?? null,
+  ]);
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
   const userId = useCurrentUserId();
@@ -69,13 +86,17 @@ export default function CycleReviewScreen() {
   } | null>(null);
   const [handoverReceipt, setHandoverReceipt] = useState<CycleHandoverReceipt | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loadedFor, setLoadedFor] = useState<{ database: typeof database; userId: string } | null>(
-    null,
-  );
+  const [loadedFor, setLoadedFor] = useState<{
+    database: typeof database;
+    userId: string;
+    bindingKey: string;
+    generation: number;
+  } | null>(null);
 
   const repeatContext = useRef({
     database,
     userId,
+    bindingKey,
     snapshot: stableSnapshotJSON({
       cycle,
       program,
@@ -90,6 +111,7 @@ export default function CycleReviewScreen() {
   repeatContext.current = {
     database,
     userId,
+    bindingKey,
     snapshot: stableSnapshotJSON({
       cycle,
       program,
@@ -108,7 +130,7 @@ export default function CycleReviewScreen() {
       return () => {
         if (repeatFocus.current === generation) repeatFocus.current++;
       };
-    }, [database, userId]),
+    }, [database, userId, bindingKey]),
   );
   const repeatMounted = useRef(true),
     repeatPending = useRef<number | null>(null),
@@ -128,6 +150,13 @@ export default function CycleReviewScreen() {
       }
 
       let active = true;
+      const generation = repeatFocus.current;
+      const isCurrent = () =>
+        active &&
+        repeatContext.current.database === database &&
+        repeatContext.current.userId === userId &&
+        repeatContext.current.bindingKey === bindingKey &&
+        repeatFocus.current === generation;
       setLoading(true);
       setError(null);
       setCycle(null);
@@ -141,14 +170,35 @@ export default function CycleReviewScreen() {
       setHandoverReceipt(null);
       void (async () => {
         try {
+          if (!validBinding)
+            throw new Error(
+              'This review link is invalid. Return to its cycle or Progress to open a fresh review.',
+            );
           const latestCycle = await getLatestTrainingCycle(database, userId);
+          if (!isCurrent()) return;
           if (!latestCycle) return;
+          if (
+            latestCycle.userId !== userId ||
+            (!isDirectReview &&
+              (latestCycle.id !== expectedCycleId ||
+                latestCycle.programVersionId !== expectedProgramVersionId))
+          )
+            throw new Error(
+              'The selected cycle changed. Return to its cycle or Progress to open a fresh review.',
+            );
           const snapshot = await getUserProgramVersion(
             database,
             userId,
             latestCycle.programVersionId,
           );
-          if (!snapshot) return;
+          if (!isCurrent() || !snapshot) return;
+          if (
+            snapshot.version.id !== latestCycle.programVersionId ||
+            snapshot.version.programId !== snapshot.program.id
+          )
+            throw new Error(
+              'The selected cycle changed. Return to its cycle or Progress to open a fresh review.',
+            );
           const nextSummary = await getCycleProgressSummary(
             database,
             latestCycle.id,
@@ -157,7 +207,7 @@ export default function CycleReviewScreen() {
           const existingReview = await getCycleReview(database, userId, latestCycle.id);
           const existingGoal = await getPersonalGoal(database, userId, latestCycle.id);
           const recovered = await getCycleHandoverReceipt(database, userId, latestCycle.id);
-          if (!active) return;
+          if (!isCurrent()) return;
           setPersonalGoal(existingGoal);
           // An incoming receipt explains the active destination. Once that cycle
           // completes it must not hide preparation of its own next block.
@@ -171,14 +221,21 @@ export default function CycleReviewScreen() {
           setProgram(snapshot.program);
           setProgramVersion(snapshot.version);
           setSummary(nextSummary);
-          setLoadedFor({ database, userId });
+          setLoadedFor({ database, userId, bindingKey, generation });
           setReview(existingReview);
           setOverallRating(existingReview?.overallRating ?? null);
           setFocus(existingReview?.focus ?? null);
           setReviewNote(existingReview?.note ?? '');
           setReviewSaved(existingReview !== null);
-        } catch {
-          if (active) setError('We could not load the local cycle review.');
+        } catch (loadError) {
+          if (isCurrent())
+            setError(
+              loadError instanceof Error &&
+                (loadError.message.startsWith('This review link is invalid.') ||
+                  loadError.message.startsWith('The selected cycle changed.'))
+                ? loadError.message
+                : 'We could not load the local cycle review.',
+            );
         } finally {
           if (active) setLoading(false);
         }
@@ -187,10 +244,21 @@ export default function CycleReviewScreen() {
       return () => {
         active = false;
       };
-    }, [database, userId]),
+    }, [
+      database,
+      userId,
+      bindingKey,
+      validBinding,
+      isDirectReview,
+      expectedCycleId,
+      expectedProgramVersionId,
+    ]),
   );
 
-  if (loading || (database && cycle && loadedFor?.database !== database)) {
+  if (
+    loading ||
+    (database && cycle && (loadedFor?.database !== database || loadedFor.bindingKey !== bindingKey))
+  ) {
     return (
       <Screen>
         <LoadingSkeleton width="34%" height={14} />
@@ -221,6 +289,14 @@ export default function CycleReviewScreen() {
 
   const guidance = getWeekSixGuidance(programVersion.cycleModel.weekSixMeaning);
   const isComplete = cycle.status === 'complete';
+  const isLoadedContextCurrent = () =>
+    loadedFor?.database === database &&
+    loadedFor.userId === userId &&
+    loadedFor.bindingKey === bindingKey &&
+    loadedFor.generation === repeatFocus.current &&
+    repeatContext.current.database === database &&
+    repeatContext.current.userId === userId &&
+    repeatContext.current.bindingKey === bindingKey;
 
   const persistReview = async (
     nextAction?: CycleReviewAction,
@@ -228,6 +304,7 @@ export default function CycleReviewScreen() {
   ): Promise<boolean> => {
     if (
       !isCurrent() ||
+      !isLoadedContextCurrent() ||
       reviewBusy ||
       !database ||
       !cycle ||
@@ -270,6 +347,7 @@ export default function CycleReviewScreen() {
 
   const prepareNextCycle = async () => {
     if (
+      !isLoadedContextCurrent() ||
       repeatPending.current ||
       reviewBusy ||
       !handoverChoice ||
@@ -284,6 +362,7 @@ export default function CycleReviewScreen() {
       repeatMounted.current &&
       repeatContext.current.database === database &&
       repeatContext.current.userId === userId &&
+      repeatContext.current.bindingKey === bindingKey &&
       repeatFocus.current === focusGeneration &&
       repeatContext.current.snapshot === snapshot;
     const operationToken = ++repeatSequence.current;
@@ -338,13 +417,21 @@ export default function CycleReviewScreen() {
   };
 
   const confirmNextCycle = async () => {
-    if (!handoverPreview || repeatPending.current || reviewBusy) return;
+    if (
+      loadedFor?.bindingKey !== bindingKey ||
+      repeatContext.current.bindingKey !== bindingKey ||
+      !handoverPreview ||
+      repeatPending.current ||
+      reviewBusy
+    )
+      return;
     const preview = handoverPreview;
     const callFocus = repeatFocus.current;
     const isOwnerCurrent = () =>
       repeatMounted.current &&
       repeatContext.current.database === database &&
       repeatContext.current.userId === userId &&
+      repeatContext.current.bindingKey === bindingKey &&
       preview.request.userId === userId &&
       loadedFor?.database === database &&
       loadedFor.userId === userId;

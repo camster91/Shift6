@@ -68,9 +68,11 @@ export default function ProgressScreen() {
   const [exerciseProgressLoading, setExerciseProgressLoading] = useState(false);
   const [loading, setLoading] = useState(database !== null);
   const [error, setError] = useState<string | null>(null);
-  const [loadedFor, setLoadedFor] = useState<{ database: typeof database; userId: string } | null>(
-    null,
-  );
+  const [loadedFor, setLoadedFor] = useState<{
+    database: typeof database;
+    userId: string;
+    generation: number;
+  } | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   const contextRef = useRef({ database, userId });
@@ -183,7 +185,7 @@ export default function ProgressScreen() {
           setCurrentCycle(cycle);
           setCurrentProgram(program);
           setSummary(nextSummary);
-          setLoadedFor({ database, userId });
+          setLoadedFor({ database, userId, generation });
           setNextTargets(latestSets.length > 0 ? nextSessionTargets : []);
           setExerciseChoices(nextExerciseChoices);
           setSelectedExerciseId(nextSelectedExerciseId);
@@ -247,6 +249,25 @@ export default function ProgressScreen() {
   }
 
   const { facts } = summary;
+  const openSixWeekReview = () => {
+    if (
+      loadedFor.database !== database ||
+      loadedFor.userId !== userId ||
+      loadedFor.generation !== generationRef.current ||
+      contextRef.current.database !== database ||
+      contextRef.current.userId !== userId ||
+      currentCycle.userId !== userId ||
+      currentCycle.status !== 'complete'
+    )
+      return;
+    router.push({
+      pathname: '/review',
+      params: {
+        expectedCycleId: currentCycle.id,
+        expectedProgramVersionId: currentCycle.programVersionId,
+      },
+    });
+  };
   const selectedExercise = exerciseChoices.find(
     (choice) => choice.exerciseId === selectedExerciseId,
   );
@@ -302,7 +323,7 @@ export default function ProgressScreen() {
         <Button
           label="Open six-week review"
           variant="secondary"
-          onPress={() => router.push('/review')}
+          onPress={openSixWeekReview}
           icon={<Ionicons name="document-text-outline" size={18} color={colors.ink} />}
           style={styles.reviewButton}
         />

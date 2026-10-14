@@ -10,6 +10,9 @@ import type { CycleHandoverRequest } from '../domain/cycleHandover';
 let mockDb = {};
 let mockOwner = 'guest-user';
 let mockStatus = 'complete';
+let mockParams: { expectedCycleId?: unknown; expectedProgramVersionId?: unknown } = {};
+const mockLatest = jest.fn(),
+  mockReadProgram = jest.fn();
 const mockBlurCallbacks = new Set<() => void>();
 let mockRecovery: unknown = null;
 const mockPrepare = jest.fn(),
@@ -18,6 +21,7 @@ const mockPrepare = jest.fn(),
 let mockRequest: CycleHandoverRequest;
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
+  useLocalSearchParams: () => mockParams,
   useFocusEffect: (callback: () => void | (() => void)) => {
     const React = jest.requireActual('react');
     React.useEffect(() => {
@@ -37,10 +41,10 @@ jest.mock('../services/UserIdentityProvider', () => ({ useCurrentUserId: () => m
 jest.mock('../services/AppServicesProvider', () => ({ useAppServices: () => ({ analytics: {} }) }));
 jest.mock('../services/analytics', () => ({ trackAnalyticsEvent: jest.fn() }));
 jest.mock('../db/cycleRepository', () => ({
-  getLatestTrainingCycle: async () => ({ ...mockCycle, status: mockStatus, userId: mockOwner }),
+  getLatestTrainingCycle: (...args: unknown[]) => mockLatest(...args),
 }));
 jest.mock('../db/programRepository', () => ({
-  getUserProgramVersion: async () => ({ program: mockProgram, version: mockVersion }),
+  getUserProgramVersion: (...args: unknown[]) => mockReadProgram(...args),
 }));
 jest.mock('../db/personalGoalRepository', () => ({
   getPersonalGoal: async () => ({ blockObjective: 'My goal' }),
@@ -68,6 +72,11 @@ jest.mock('../db/cycleHandoverRepository', () => ({
 }));
 beforeEach(() => {
   jest.clearAllMocks();
+  mockParams = {};
+  mockLatest
+    .mockReset()
+    .mockImplementation(async () => ({ ...mockCycle, status: mockStatus, userId: mockOwner }));
+  mockReadProgram.mockReset().mockResolvedValue({ program: mockProgram, version: mockVersion });
   mockBlurCallbacks.clear();
   mockDb = {};
   mockOwner = 'guest-user';
@@ -99,6 +108,112 @@ beforeEach(() => {
     request,
     confirmedAt: request.preparedAt,
   }));
+});
+test.each(['newer-cycle', 'changed-version'])(
+  'bound destination rejects changed latest identity before private reads: %s',
+  async (change) => {
+    mockParams = {
+      expectedCycleId: mockCycle.id,
+      expectedProgramVersionId: mockCycle.programVersionId,
+    };
+    mockLatest.mockResolvedValue({
+      ...mockCycle,
+      userId: mockOwner,
+      status: 'complete',
+      id: change === 'newer-cycle' ? 'newer-cycle' : mockCycle.id,
+      programVersionId:
+        change === 'changed-version' ? 'changed-version' : mockCycle.programVersionId,
+    });
+    const screen = await render(<CycleReviewScreen />);
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          'The selected cycle changed. Return to its cycle or Progress to open a fresh review.',
+        ),
+      ).toBeTruthy(),
+    );
+    expect(mockReadProgram).not.toHaveBeenCalled();
+    expect(mockPrepare).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockSave).not.toHaveBeenCalled();
+  },
+);
+
+test.each([
+  { expectedCycleId: mockCycle.id },
+  { expectedProgramVersionId: mockCycle.programVersionId },
+  { expectedCycleId: [mockCycle.id], expectedProgramVersionId: mockCycle.programVersionId },
+  { expectedCycleId: mockCycle.id, expectedProgramVersionId: [mockCycle.programVersionId] },
+  { expectedCycleId: '', expectedProgramVersionId: mockCycle.programVersionId },
+])('invalid partial or array review binding fails closed (%p)', async (params) => {
+  mockParams = params;
+  const screen = await render(<CycleReviewScreen />);
+  await waitFor(() =>
+    expect(
+      screen.getByText(
+        'This review link is invalid. Return to its cycle or Progress to open a fresh review.',
+      ),
+    ).toBeTruthy(),
+  );
+  expect(mockLatest).not.toHaveBeenCalled();
+  expect(mockReadProgram).not.toHaveBeenCalled();
+  expect(mockPrepare).not.toHaveBeenCalled();
+});
+
+test('matching paired destination binding retains explicit preview without saving', async () => {
+  mockParams = {
+    expectedCycleId: mockCycle.id,
+    expectedProgramVersionId: mockCycle.programVersionId,
+  };
+  await preview();
+  expect(mockPrepare).toHaveBeenCalledTimes(1);
+  expect(mockConfirm).not.toHaveBeenCalled();
+  expect(mockSave).not.toHaveBeenCalled();
+});
+
+test('a destination binding change clears the old private preview and prevents confirmation', async () => {
+  mockParams = {
+    expectedCycleId: mockCycle.id,
+    expectedProgramVersionId: mockCycle.programVersionId,
+  };
+  const screen = await preview();
+  mockParams = {
+    expectedCycleId: 'newer-cycle',
+    expectedProgramVersionId: mockCycle.programVersionId,
+  };
+  await screen.rerender(<CycleReviewScreen />);
+  await waitFor(() => expect(screen.getByText(/The selected cycle changed/)).toBeTruthy());
+  expect(screen.queryByText('Confirm new cycle')).toBeNull();
+  expect(screen.queryByText(/My goal/)).toBeNull();
+  expect(mockConfirm).not.toHaveBeenCalled();
+  expect(mockSave).not.toHaveBeenCalled();
+});
+
+test('pending handover cannot save or display a receipt after the destination binding changes', async () => {
+  mockParams = {
+    expectedCycleId: mockCycle.id,
+    expectedProgramVersionId: mockCycle.programVersionId,
+  };
+  let release!: (value: unknown) => void;
+  mockConfirm.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  const screen = await preview();
+  await fireEvent.press(screen.getByText('Confirm new cycle'));
+  const guards = mockConfirm.mock.calls[0]![3];
+  mockParams = {
+    expectedCycleId: 'newer-cycle',
+    expectedProgramVersionId: mockCycle.programVersionId,
+  };
+  await screen.rerender(<CycleReviewScreen />);
+  expect(guards.isOwnerCurrent()).toBe(false);
+  expect(guards.isContextCurrent()).toBe(false);
+  await act(async () => release({ request: mockRequest, confirmedAt: mockRequest.preparedAt }));
+  expect(screen.queryByText('Open new cycle')).toBeNull();
+  expect(mockSave).not.toHaveBeenCalled();
 });
 async function preview(choice = 'Start without a new personal goal') {
   const screen = await render(<CycleReviewScreen />);

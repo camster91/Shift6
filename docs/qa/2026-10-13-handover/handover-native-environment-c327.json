@@ -1,0 +1,10 @@
+{
+  "fontScale": "1.0",
+  "wifiOn": "0",
+  "mobileData": "0",
+  "airplaneMode": "0",
+  "serial": "emulator-5554",
+  "sourceCommit": "c3270bdf",
+  "androidRelease": "16",
+  "sdk": "36"
+}

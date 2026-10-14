@@ -1,0 +1,56 @@
+{
+  "device": "Shift6-QA Pixel 7 emulator",
+  "os": "Android 16 / API 36 x86_64",
+  "host": "CAM-DESKTOP Windows 11",
+  "sourceCommit": "c3270bdf",
+  "apkSHA256": "746dd68323e2ee27f76510c0c122763feb93643341b54f6cf8e7afd207939314",
+  "syntheticData": true,
+  "observed": [
+    {
+      "check": "Invalid and blank review time zones",
+      "steps": [
+        "Coach > Review my progress",
+        "Replace Review time zone with Invalid/Zone, then blank",
+        "Press Review these dates for each"
+      ],
+      "expected": "Actionable guidance; no exception stack; no current evidence; saved history retained",
+      "actual": "Guidance naming America/Toronto shown, current session count withheld, one saved receipt retained",
+      "screenshots": [
+        "handover-invalid-zone-fixed-c327.png",
+        "handover-blank-zone-fixed-c327.png"
+      ]
+    },
+    {
+      "check": "Valid-zone recovery",
+      "steps": [
+        "Enter America/New_York",
+        "Press Review these dates"
+      ],
+      "expected": "Current evidence recovers without saving new records",
+      "actual": "One complete session shown again",
+      "screenshots": [
+        "handover-valid-zone-recovered-c327.png"
+      ]
+    },
+    {
+      "check": "Schema 16 to 17 upgrade and external export",
+      "steps": [
+        "Install frozen c327 APK with adb install -r",
+        "Profile > Export local data > QA JSON Receiver",
+        "Read received file outside app; compare all prior record sections"
+      ],
+      "expected": "All previous synthetic records preserved; empty new handover section",
+      "actual": "Schema 17, 1076 records, 35 prior sections identical, cycleHandovers empty",
+      "screenshots": [
+        "handover-upgrade-home-c327.png",
+        "handover-receiver-schema17-c327.png"
+      ]
+    }
+  ],
+  "limits": [
+    "Handover UI is absent from this frozen APK",
+    "No physical Samsung or iOS acceptance",
+    "No participant or six-week outcome claim",
+    "No store-ready signing claim"
+  ]
+}

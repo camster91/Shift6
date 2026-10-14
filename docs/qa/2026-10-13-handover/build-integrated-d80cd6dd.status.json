@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "d80cd6dd3b508c4a62e4aeea22459d9fa865951f",
+  "exitCode": 0,
+  "architecture": "x86_64",
+  "environment": "staging",
+  "releaseMode": "guest-only",
+  "apiBaseUrl": "",
+  "dotenvDisabled": true,
+  "finishedAt": "2026-10-14T04:49:06.812702+00:00",
+  "log": "build-integrated-d80cd6dd.log",
+  "apk": "app-release-d80cd6dd-x86_64.apk",
+  "sha256": "4ea86551866325e507c6e61d13af37b994cd22a013d864933a6d9ab22baaa559"
+}

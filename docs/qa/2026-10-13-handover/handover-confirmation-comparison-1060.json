@@ -1,0 +1,29 @@
+{
+  "sourceCommit": "1060a9b8",
+  "schemaVersion": 17,
+  "beforeRecords": 1076,
+  "afterRecords": 1086,
+  "handoverReceipts": 1,
+  "changedOldNonGoalRows": {},
+  "oldGoalChangedFields": [
+    "review_state",
+    "next_choice",
+    "is_primary"
+  ],
+  "newGoalBaseline": "deferred",
+  "newGoalObservationCount": 0,
+  "newCycleSessionCount": 0,
+  "all10ActualSetsPreserved": true,
+  "trainingTargetsPreserved": true,
+  "reflectionNote": "QA confirmed handover",
+  "confirmedAt": "2026-10-14T04:09:27.157Z",
+  "destination": {
+    "cycleId": "cycle-guest-user-cycle-guest-user-program-custom-program-blank-guest-user-1791918797497-slug-copy-guest-1791925884447-1791926121640-1791950960191-1",
+    "goalId": "goal-guest-user-1791950960191-1",
+    "programId": "program-program-blank-guest-user-1791918797497-slug-copy-copy-guest-user-1791950960191-1",
+    "startDate": "2026-10-14",
+    "startedAt": "2026-10-14T04:09:20.190Z",
+    "timeZone": "America/New_York",
+    "versionId": "program-program-blank-guest-user-1791918797497-slug-copy-copy-guest-user-1791950960191-1-version-1"
+  }
+}

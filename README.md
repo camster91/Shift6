@@ -4,7 +4,7 @@ A mobile-only, guest-first fitness app for iOS and Android that organizes traini
 
 > Status: in active rebuild. The repository was reset in September 2026 and `main` now holds a new React Native / Expo foundation. It is not released on the App Store or Google Play yet, and no program content has passed human review for public release. The earlier Vite/Capacitor web version is preserved on the `archive/pre-shift6-rebuild-2026-09-13` branch.
 
-The current [shipping goal and prioritized TODO](docs/43_SHIPPING_GOAL_AND_TODO.md) reconciles all open issues, draft PRs, native evidence and remaining human/store gates. Its provisional 51/100 engineering score is evidence-based; later feature branches and passing automated checks do not establish human acceptance or a published release.
+The current [shipping goal and prioritized TODO](docs/43_SHIPPING_GOAL_AND_TODO.md) reconciles all open issues, draft PRs, native evidence and remaining human/store gates. Its provisional 53/100 engineering score is evidence-based; later feature branches and passing automated checks do not establish human acceptance or a published release. Latest frozen Android handover, backup and large-text evidence is in [doc 47](docs/47_ATOMIC_HANDOVER_QA.md).
 
 ## Why
 

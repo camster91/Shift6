@@ -1,0 +1,29 @@
+{
+  "purpose": "Synthetic completed-state UI fixture only. Not evidence of real six-week training or completion-engine acceptance.",
+  "source": "C:\\Users\\camst\\Documents\\Codex\\2026-10-12\\let-s-install-https-github-com\\shift6-native-qa\\handover-external-schema17-c327.json",
+  "sourceSha256": "561614a807e1e134bed2939f0dbdb410b89f54e2ed1c27f969eb4fd75e6fe8e8",
+  "fixture": "C:\\Users\\camst\\Documents\\Codex\\2026-10-12\\let-s-install-https-github-com\\shift6-native-qa\\handover-synthetic-completed-schema17-c327.json",
+  "fixtureSha256": "5b041b403fa4fd24b137559010ff04c66ebcd24f3dbfac15c3b593b878b20a21",
+  "modifications": [
+    {
+      "section": "trainingCycles",
+      "id": "cycle-guest-user-program-custom-program-blank-guest-user-1791918797497-slug-copy-guest-1791925884447-1791926121640",
+      "field": "status",
+      "before": "active",
+      "after": "complete"
+    }
+  ],
+  "preserved": "All saved sets, measurements, goal events, weeks, timestamps, schedules and every other JSON field. Week 2 and upcoming weeks remain unchanged; no training was fabricated.",
+  "goalId": "personal-1791929299498-6mi2gzrfovc",
+  "goal": "QA review hold",
+  "cycleId": "cycle-guest-user-program-custom-program-blank-guest-user-1791918797497-slug-copy-guest-1791925884447-1791926121640",
+  "route": "/review directly, or /cycle without cycleId -> Open cycle review. /cycle?cycleId=... instead routes Read saved reflection to /cycle-reflection, not the handover screen.",
+  "validation": {
+    "parser": "Existing src/domain/localRestore.ts validateLocalBackup via TypeScript transpile CommonJS read-only loader",
+    "sourceCommit": "832425074e3dd7180a02f3a55ad3af8ddee7f16d",
+    "schemaVersion": 17,
+    "recordCount": 1076,
+    "result": "accepted",
+    "warnings": "Normal empty installation, connections/consent/reminders off, media omitted, owner remap safeguards."
+  }
+}

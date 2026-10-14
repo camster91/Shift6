@@ -7,6 +7,7 @@ import {
   demoProgramVersion as mockVersion,
 } from '../domain/fixtures/home';
 import type { CycleHandoverRequest } from '../domain/cycleHandover';
+import type { ButtonProps } from './ui/Button';
 let mockDb = {};
 let mockOwner = 'guest-user';
 let mockStatus = 'complete';
@@ -14,7 +15,21 @@ let mockParams: { expectedCycleId?: unknown; expectedProgramVersionId?: unknown 
 const mockLatest = jest.fn(),
   mockReadProgram = jest.fn();
 const mockBlurCallbacks = new Set<() => void>();
+const mockFocusCallbacks = new Set<() => void | (() => void)>();
 let mockRecovery: unknown = null;
+const mockReadReceipt = jest.fn();
+const mockButtonHandlers = new Map<string, (() => void) | undefined>();
+jest.mock('./ui', () => {
+  const actual = jest.requireActual('./ui'),
+    React = jest.requireActual('react');
+  return {
+    ...actual,
+    Button: (props: ButtonProps) => {
+      mockButtonHandlers.set(props.label, props.onPress);
+      return React.createElement(actual.Button, props);
+    },
+  };
+});
 const mockPrepare = jest.fn(),
   mockConfirm = jest.fn(),
   mockSave = jest.fn();
@@ -25,9 +40,11 @@ jest.mock('expo-router', () => ({
   useFocusEffect: (callback: () => void | (() => void)) => {
     const React = jest.requireActual('react');
     React.useEffect(() => {
+      mockFocusCallbacks.add(callback);
       const cleanup = callback();
       if (typeof cleanup === 'function') mockBlurCallbacks.add(cleanup);
       return () => {
+        mockFocusCallbacks.delete(callback);
         if (typeof cleanup === 'function') {
           mockBlurCallbacks.delete(cleanup);
           cleanup();
@@ -68,16 +85,19 @@ jest.mock('../db/progressRepository', () => ({
 jest.mock('../db/cycleHandoverRepository', () => ({
   prepareCycleHandover: (...args: unknown[]) => mockPrepare(...args),
   confirmCycleHandover: (...args: unknown[]) => mockConfirm(...args),
-  getCycleHandoverReceipt: async () => mockRecovery,
+  getCycleHandoverReceipt: (...args: unknown[]) => mockReadReceipt(...args),
 }));
 beforeEach(() => {
   jest.clearAllMocks();
+  mockButtonHandlers.clear();
+  mockReadReceipt.mockReset().mockImplementation(async () => mockRecovery);
   mockParams = {};
   mockLatest
     .mockReset()
     .mockImplementation(async () => ({ ...mockCycle, status: mockStatus, userId: mockOwner }));
   mockReadProgram.mockReset().mockResolvedValue({ program: mockProgram, version: mockVersion });
   mockBlurCallbacks.clear();
+  mockFocusCallbacks.clear();
   mockDb = {};
   mockOwner = 'guest-user';
   mockStatus = 'complete';
@@ -87,7 +107,7 @@ beforeEach(() => {
       ...options,
       userId: owner,
       source: {
-        cycle: mockCycle,
+        cycle: { ...mockCycle, userId: owner, status: mockStatus },
         program: mockProgram,
         version: mockVersion,
         goal: {
@@ -399,6 +419,133 @@ test('fresh active destination reload recovers its persisted receipt', async () 
   const fresh = await render(<CycleReviewScreen />);
   await waitFor(() => expect(fresh.getByText('Open new cycle')).toBeTruthy());
   expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+test('bound source review refocus recovers only its committed handover to the actual latest destination', async () => {
+  mockParams = {
+    expectedCycleId: mockCycle.id,
+    expectedProgramVersionId: mockCycle.programVersionId,
+  };
+  const screen = await preview();
+  await fireEvent.press(screen.getByText('Confirm new cycle'));
+  await waitFor(() => expect(screen.getByText('Open new cycle')).toBeTruthy());
+  const saved = { request: mockRequest, confirmedAt: mockRequest.preparedAt };
+  mockRecovery = saved;
+  mockLatest.mockResolvedValue({
+    ...mockCycle,
+    userId: mockOwner,
+    id: mockRequest.destination.cycleId,
+    programVersionId: mockRequest.destination.versionId,
+    status: 'active',
+  });
+  const programReads = mockReadProgram.mock.calls.length;
+  await act(async () => {
+    for (const cleanup of mockBlurCallbacks) cleanup();
+    for (const callback of mockFocusCallbacks) callback();
+  });
+  await waitFor(() => expect(screen.getByText('Open new cycle')).toBeTruthy());
+  expect(screen.queryByLabelText('Save reflection')).toBeNull();
+  expect(screen.queryByText('Start a new cycle with these targets')).toBeNull();
+  expect(screen.getByText(/already saved/)).toBeTruthy();
+  expect(mockReadProgram).toHaveBeenCalledTimes(programReads);
+  expect(mockPrepare).toHaveBeenCalledTimes(1);
+  expect(mockConfirm).toHaveBeenCalledTimes(1);
+  expect(mockSave).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByText('Open new cycle'));
+  expect(router.replace).toHaveBeenCalledWith({
+    pathname: '/cycle',
+    params: { cycleId: mockRequest.destination.cycleId },
+  });
+});
+
+async function prepareRecovery() {
+  mockParams = {
+    expectedCycleId: mockCycle.id,
+    expectedProgramVersionId: mockCycle.programVersionId,
+  };
+  const screen = await preview();
+  await screen.unmount();
+  mockReadProgram.mockClear();
+  mockPrepare.mockClear();
+  mockRecovery = { request: mockRequest, confirmedAt: mockRequest.preparedAt };
+  mockLatest.mockResolvedValue({
+    ...mockCycle,
+    userId: mockOwner,
+    id: mockRequest.destination.cycleId,
+    programVersionId: mockRequest.destination.versionId,
+    status: 'active',
+  });
+}
+
+test.each([
+  'missing',
+  'foreign-owner',
+  'foreign-source-owner',
+  'wrong-source',
+  'wrong-source-version',
+  'wrong-destination',
+  'wrong-destination-version',
+  'unrelated-latest',
+])('bound recovery refuses unrelated or invalid receipt: %s', async (change) => {
+  await prepareRecovery();
+  const request = structuredClone(mockRequest);
+  if (change === 'foreign-owner') request.userId = 'other-owner';
+  if (change === 'foreign-source-owner') request.source.cycle.userId = 'other-owner';
+  if (change === 'wrong-source') request.source.cycle.id = 'other-source';
+  if (change === 'wrong-source-version') request.source.version.id = 'other-source-version';
+  if (change === 'wrong-destination') request.destination.cycleId = 'other-destination';
+  if (change === 'wrong-destination-version')
+    request.destination.versionId = 'other-destination-version';
+  mockRecovery = change === 'missing' ? null : { request, confirmedAt: request.preparedAt };
+  if (change === 'unrelated-latest')
+    mockLatest.mockResolvedValue({
+      ...mockCycle,
+      userId: mockOwner,
+      id: 'unrelated-cycle',
+      programVersionId: 'unrelated-version',
+      status: 'active',
+    });
+  const screen = await render(<CycleReviewScreen />);
+  await waitFor(() => expect(screen.getByText(/The selected cycle changed/)).toBeTruthy());
+  expect(screen.queryByText('Open new cycle')).toBeNull();
+  expect(mockReadProgram).not.toHaveBeenCalled();
+  expect(mockPrepare).not.toHaveBeenCalled();
+  expect(mockConfirm).not.toHaveBeenCalled();
+  expect(mockSave).not.toHaveBeenCalled();
+});
+
+test('retained recovery Open callback after blur cannot navigate', async () => {
+  await prepareRecovery();
+  const screen = await render(<CycleReviewScreen />);
+  await waitFor(() => expect(screen.getByText(/already saved/)).toBeTruthy());
+  const retained = mockButtonHandlers.get('Open new cycle')!;
+  await act(async () => {
+    for (const cleanup of mockBlurCallbacks) cleanup();
+  });
+  await act(async () => retained());
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+test('owner change during receipt read cannot reveal or open an old-owner handover', async () => {
+  await prepareRecovery();
+  const oldReceipt = mockRecovery;
+  let release!: (value: unknown) => void;
+  mockReadReceipt.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  const screen = await render(<CycleReviewScreen />);
+  await waitFor(() => expect(release).toBeDefined());
+  mockOwner = 'other-owner';
+  await screen.rerender(<CycleReviewScreen />);
+  await act(async () => release(oldReceipt));
+  await waitFor(() => expect(screen.getByText(/The selected cycle changed/)).toBeTruthy());
+  expect(screen.queryByText('Open new cycle')).toBeNull();
+  expect(screen.queryByText(/already saved/)).toBeNull();
+  expect(router.replace).not.toHaveBeenCalled();
 });
 
 test('changed reflection leaves the frozen request intact and invalidates context guard', async () => {

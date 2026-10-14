@@ -85,6 +85,7 @@ export default function CycleReviewScreen() {
     focusGeneration: number;
   } | null>(null);
   const [handoverReceipt, setHandoverReceipt] = useState<CycleHandoverReceipt | null>(null);
+  const [receiptRecoveryOnly, setReceiptRecoveryOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadedFor, setLoadedFor] = useState<{
     database: typeof database;
@@ -169,6 +170,7 @@ export default function CycleReviewScreen() {
       setHandoverChoice(null);
       setHandoverPreview(null);
       setHandoverReceipt(null);
+      setReceiptRecoveryOnly(false);
       void (async () => {
         try {
           if (!validBinding)
@@ -178,15 +180,39 @@ export default function CycleReviewScreen() {
           const latestCycle = await getLatestTrainingCycle(database, userId);
           if (!isCurrent()) return;
           if (!latestCycle) return;
+          const changedCycleMessage =
+            'The selected cycle changed. Return to its cycle or Progress to open a fresh review.';
+          if (latestCycle.userId !== userId) throw new Error(changedCycleMessage);
           if (
-            latestCycle.userId !== userId ||
-            (!isDirectReview &&
-              (latestCycle.id !== expectedCycleId ||
-                latestCycle.programVersionId !== expectedProgramVersionId))
-          )
-            throw new Error(
-              'The selected cycle changed. Return to its cycle or Progress to open a fresh review.',
-            );
+            !isDirectReview &&
+            (latestCycle.id !== expectedCycleId ||
+              latestCycle.programVersionId !== expectedProgramVersionId)
+          ) {
+            if (typeof expectedCycleId !== 'string' || typeof expectedProgramVersionId !== 'string')
+              throw new Error(changedCycleMessage);
+            const recovered = await getCycleHandoverReceipt(database, userId, expectedCycleId);
+            if (!isCurrent()) return;
+            if (!recovered) throw new Error(changedCycleMessage);
+            const freshLatest = await getLatestTrainingCycle(database, userId);
+            if (!isCurrent()) return;
+            if (
+              recovered.request.userId !== userId ||
+              recovered.request.source.cycle.userId !== userId ||
+              recovered.request.source.cycle.id !== expectedCycleId ||
+              recovered.request.source.cycle.programVersionId !== expectedProgramVersionId ||
+              recovered.request.source.version.id !== expectedProgramVersionId ||
+              freshLatest?.userId !== userId ||
+              freshLatest.id !== latestCycle.id ||
+              freshLatest.programVersionId !== latestCycle.programVersionId ||
+              recovered.request.destination.cycleId !== freshLatest.id ||
+              recovered.request.destination.versionId !== freshLatest.programVersionId
+            )
+              throw new Error(changedCycleMessage);
+            setHandoverReceipt(recovered);
+            setLoadedFor({ database, userId, bindingKey, generation });
+            setReceiptRecoveryOnly(true);
+            return;
+          }
           const snapshot = await getUserProgramVersion(
             database,
             userId,
@@ -265,6 +291,51 @@ export default function CycleReviewScreen() {
         <LoadingSkeleton width="34%" height={14} />
         <LoadingSkeleton width="80%" height={44} style={styles.loadingTitle} />
         <LoadingSkeleton height={260} style={styles.loadingCard} />
+      </Screen>
+    );
+  }
+
+  if (
+    receiptRecoveryOnly &&
+    handoverReceipt &&
+    database &&
+    loadedFor?.database === database &&
+    loadedFor.userId === userId &&
+    loadedFor.bindingKey === bindingKey &&
+    loadedFor.generation === repeatFocus.current &&
+    repeatContext.current.database === database &&
+    repeatContext.current.userId === userId &&
+    repeatContext.current.bindingKey === bindingKey &&
+    handoverReceipt.request.userId === userId
+  ) {
+    const canOpenReceipt = () =>
+      repeatContext.current.database === database &&
+      repeatContext.current.userId === userId &&
+      repeatContext.current.bindingKey === bindingKey &&
+      repeatFocus.current === loadedFor.generation;
+    return (
+      <Screen>
+        <Text variant="h1" accessibilityRole="header">
+          New cycle saved on this device.
+        </Text>
+        <Text>
+          Your completed cycle's handover is already saved. This receipt does not save another
+          reflection or start another block.
+        </Text>
+        <Text>
+          Confirmed {handoverReceipt.confirmedAt}. Your original training history is preserved.
+        </Text>
+        <Button
+          label="Open new cycle"
+          onPress={() => {
+            if (canOpenReceipt())
+              router.replace({
+                pathname: '/cycle',
+                params: { cycleId: handoverReceipt.request.destination.cycleId },
+              });
+          }}
+        />
+        <Button label="Return Home" variant="ghost" onPress={() => router.replace('/')} />
       </Screen>
     );
   }

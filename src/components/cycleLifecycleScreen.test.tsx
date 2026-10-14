@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import CycleScreen from '../../app/cycle';
 import type { ButtonProps } from './ui/Button';
+import type { ScreenProps } from './ui/Screen';
 import {
   demoCycle as mockCycle,
   demoProgram as mockProgram,
@@ -18,6 +19,19 @@ const mockRefresh = jest.fn();
 const mockLatest = jest.fn();
 let mockBlur: (() => void) | undefined;
 const mockButtonHandlers = new Map<string, (() => void) | undefined>();
+let mockRenderedOrder: string[] = [];
+function mockLabels(node: unknown): string[] {
+  if (Array.isArray(node)) return node.flatMap(mockLabels);
+  if (node && typeof node === 'object' && 'props' in node) {
+    const props = (
+      node as { props: { label?: string; accessibilityLabel?: string; children?: unknown } }
+    ).props;
+    return [props.label, props.accessibilityLabel]
+      .filter((label): label is string => !!label)
+      .concat(mockLabels(props.children));
+  }
+  return [];
+}
 jest.mock('./ui', () => {
   const actual = jest.requireActual('./ui'),
     React = jest.requireActual('react');
@@ -26,6 +40,10 @@ jest.mock('./ui', () => {
     Button: (props: ButtonProps) => {
       mockButtonHandlers.set(props.label, props.onPress);
       return React.createElement(actual.Button, props);
+    },
+    Screen: (props: ScreenProps) => {
+      mockRenderedOrder = mockLabels(props.children);
+      return React.createElement(actual.Screen, props);
     },
   };
 });
@@ -75,6 +93,7 @@ jest.mock('../db/cycleLifecycleRepository', () => ({
 beforeEach(() => {
   jest.clearAllMocks();
   mockButtonHandlers.clear();
+  mockRenderedOrder = [];
   mockOwner = 'guest-user';
   mockStatus = 'active';
   mockSelection = undefined;
@@ -112,6 +131,25 @@ test('selected latest completed cycle opens six-week review after a fresh owned 
   expect(mockAppend).not.toHaveBeenCalled();
 });
 
+test('latest completed review appears once before the cycle card and timing form', async () => {
+  mockStatus = 'complete';
+  mockSelection = mockCycle.id;
+  const screen = await render(<CycleScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Open six-week review')).toBeTruthy());
+  expect(screen.getAllByLabelText('Open six-week review')).toHaveLength(1);
+  expect(mockRenderedOrder).toContain('Current six-week cycle');
+  expect(mockRenderedOrder).toContain('Planned review date');
+  expect(mockRenderedOrder.indexOf('Open six-week review')).toBeLessThan(
+    mockRenderedOrder.indexOf('Current six-week cycle'),
+  );
+  expect(mockRenderedOrder.indexOf('Open six-week review')).toBeLessThan(
+    mockRenderedOrder.indexOf('Planned review date'),
+  );
+  expect(mockRenderedOrder.indexOf('Open six-week review')).toBeLessThan(
+    mockRenderedOrder.indexOf('Read saved reflection'),
+  );
+});
+
 test('retained review callback invoked only after blur cannot read or navigate', async () => {
   mockStatus = 'complete';
   mockSelection = mockCycle.id;
@@ -128,9 +166,9 @@ test('older selected completed cycle reads only its exact saved reflection', asy
   mockStatus = 'complete';
   mockSelection = 'older-complete';
   const screen = await render(<CycleScreen />);
-  await waitFor(() => expect(screen.getAllByLabelText('Read saved reflection')).toHaveLength(2));
+  await waitFor(() => expect(screen.getAllByLabelText('Read saved reflection')).toHaveLength(1));
   expect(screen.queryByLabelText('Open six-week review')).toBeNull();
-  await fireEvent.press(screen.getAllByLabelText('Read saved reflection')[1]!);
+  await fireEvent.press(screen.getByLabelText('Read saved reflection'));
   expect(router.push).toHaveBeenCalledWith({
     pathname: '/cycle-reflection',
     params: { cycleId: 'older-complete' },
@@ -138,6 +176,22 @@ test('older selected completed cycle reads only its exact saved reflection', asy
   expect(mockLatest).toHaveBeenCalledTimes(1);
   expect(mockAppend).not.toHaveBeenCalled();
 });
+
+test.each(['active', 'paused'])(
+  'default %s cycle keeps progress and one history link without an end-of-cycle action',
+  async (status) => {
+    mockStatus = status;
+    const screen = await render(<CycleScreen />);
+    await waitFor(() => expect(screen.getByLabelText('Open progress')).toBeTruthy());
+    expect(screen.getAllByLabelText('Open progress')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Read saved reflection')).toHaveLength(1);
+    expect(screen.queryByLabelText('Open six-week review')).toBeNull();
+    expect(screen.queryByLabelText('Open cycle review')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Open progress'));
+    expect(router.push).toHaveBeenCalledWith('/progress');
+    expect(mockAppend).not.toHaveBeenCalled();
+  },
+);
 
 test.each(['newer-cycle', 'active', 'different-version', 'foreign-owner'])(
   'fresh review identity mismatch refuses another cycle: %s',

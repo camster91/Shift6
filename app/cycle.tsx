@@ -336,12 +336,23 @@ export default function CycleDashboardScreen() {
       </View>
 
       <Button label="All saved cycles" variant="ghost" onPress={() => router.push('/cycles')} />
+      {canOpenReview ? (
+        <Button
+          label={requestedSelection !== undefined ? 'Open six-week review' : 'Open cycle review'}
+          variant="secondary"
+          icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
+          disabled={busy}
+          onPress={() => void openCycleSummary()}
+          style={styles.action}
+        />
+      ) : null}
       <Button
         label="Read saved reflection"
         variant="ghost"
-        onPress={() =>
-          router.push({ pathname: '/cycle-reflection', params: { cycleId: cycle.id } })
-        }
+        onPress={() => {
+          if (requestedSelection !== undefined && !canOpenReview) void openCycleSummary();
+          else router.push({ pathname: '/cycle-reflection', params: { cycleId: cycle.id } });
+        }}
       />
       <Text variant="display" accessibilityRole="header" style={styles.title}>
         Your next six.
@@ -557,22 +568,16 @@ export default function CycleDashboardScreen() {
         </Text>
       </Card>
 
-      <Button
-        label={
-          canOpenReview
-            ? requestedSelection !== undefined
-              ? 'Open six-week review'
-              : 'Open cycle review'
-            : requestedSelection !== undefined
-              ? 'Read saved reflection'
-              : 'Open progress'
-        }
-        variant="secondary"
-        icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
-        disabled={busy}
-        onPress={() => void openCycleSummary()}
-        style={styles.action}
-      />
+      {!canOpenReview && requestedSelection === undefined ? (
+        <Button
+          label="Open progress"
+          variant="secondary"
+          icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
+          disabled={busy}
+          onPress={() => void openCycleSummary()}
+          style={styles.action}
+        />
+      ) : null}
     </Screen>
   );
 }

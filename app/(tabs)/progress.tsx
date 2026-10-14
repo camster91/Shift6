@@ -887,7 +887,9 @@ function formatRecordMetric(metric: PersonalRecord['metric']): string {
   }
 }
 
-function formatRecordValue(record: PersonalRecord): string {
+function formatRecordValue(record: ExerciseProgress['personalRecords'][number]): string {
+  const recordedUnit =
+    record.loadUnit === 'kg' || record.loadUnit === 'lb' ? record.loadUnit : '(unit unknown)';
   switch (record.metric) {
     case 'duration':
       return formatDuration(record.value);
@@ -896,9 +898,9 @@ function formatRecordValue(record: PersonalRecord): string {
     case 'reps':
       return `${Math.round(record.value)} reps`;
     case 'estimated-one-rep-max':
-      return `${Math.round(record.value)} estimated`;
+      return `${Math.round(record.value)} ${recordedUnit} estimated`;
     case 'load':
-      return `${Math.round(record.value)} load`;
+      return `${Math.round(record.value)} ${recordedUnit}`;
   }
 }
 

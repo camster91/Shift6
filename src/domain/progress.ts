@@ -28,7 +28,12 @@ export interface ProgressSetInput {
 export interface ExerciseProgress {
   exerciseId: EntityId;
   points: ProgressPoint[];
-  personalRecords: PersonalRecord[];
+  personalRecords: ProgressPersonalRecord[];
+}
+
+/** Derived records declare their normalized unit; legacy records can remain unknown. */
+export interface ProgressPersonalRecord extends PersonalRecord {
+  loadUnit?: LoadUnit;
 }
 
 export interface VolumeBucket {
@@ -323,8 +328,8 @@ function buildPoint(exerciseId: EntityId, sets: readonly ProgressSetInput[]): Pr
 function buildPersonalRecords(
   exerciseId: EntityId,
   points: readonly ProgressPoint[],
-): PersonalRecord[] {
-  const records: PersonalRecord[] = [];
+): ProgressPersonalRecord[] {
+  const records: ProgressPersonalRecord[] = [];
   const previous: Partial<Record<PersonalRecord['metric'], number>> = {};
 
   for (const point of points) {
@@ -347,6 +352,10 @@ function buildPersonalRecords(
         value,
         sessionId: point.sessionId,
         achievedAt: point.completedAt,
+        // These points come only from buildExerciseProgress's declared-load normalization.
+        ...(metric === 'load' || metric === 'estimated-one-rep-max'
+          ? { loadUnit: 'kg' as const }
+          : {}),
       });
     }
   }

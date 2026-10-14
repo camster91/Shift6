@@ -9,6 +9,7 @@ import {
 } from '../domain/fixtures/home';
 import { createCustomExercise } from '../domain/programBuilder';
 import { buildCycleProgressSummary } from '../domain/progression';
+import { buildExerciseProgress, type ProgressPersonalRecord } from '../domain/progress';
 import type { CompletedSet, ProgramVersion } from '../domain/types';
 
 const mockDatabase = {};
@@ -186,6 +187,68 @@ test('next-session targets use owned custom movement names already used by movem
   expect(screen.getByText('45 kg · 5 reps')).toBeTruthy();
   expect(screen.getByText('95 lb · 5 reps')).toBeTruthy();
 });
+
+test('Imperial profile shows known derived canonical kg records rather than unlabeled load values', async () => {
+  expect(mockUser.unitSystem).toBe('imperial');
+  const exerciseId = mockOwnedExercises[0]!.id;
+  mockGetExercise.mockResolvedValue(
+    buildExerciseProgress(exerciseId, [
+      {
+        sessionId: 'known-kg',
+        exerciseId,
+        completedAt: '2026-10-13T12:00:00Z',
+        load: 40,
+        loadUnit: 'kg',
+        reps: 5,
+      },
+    ]),
+  );
+  const screen = await render(<ProgressScreen />);
+  await waitFor(() => expect(screen.getByText('RECENT RECORDS')).toBeTruthy());
+  expect(screen.getByText('40 kg')).toBeTruthy();
+  expect(screen.getByText('47 kg estimated')).toBeTruthy();
+  expect(screen.queryByText('40 load')).toBeNull();
+  expect(screen.queryByText('47 estimated')).toBeNull();
+});
+
+test.each(['lb', undefined] as const)(
+  'record labels use explicit provenance or unknown, never the current profile (%s)',
+  async (loadUnit) => {
+    const exerciseId = mockOwnedExercises[0]!.id;
+    const records: ProgressPersonalRecord[] = ['load', 'estimated-one-rep-max'].map(
+      (metric, i) => ({
+        id: `record-${i}`,
+        exerciseId,
+        metric: metric as 'load' | 'estimated-one-rep-max',
+        value: i === 0 ? 90 : 105,
+        sessionId: 'legacy',
+        achievedAt: '2020-01-01T12:00:00Z',
+        ...(loadUnit ? { loadUnit } : {}),
+      }),
+    );
+    const original = JSON.stringify(records);
+    mockGetExercise.mockResolvedValue({
+      exerciseId,
+      points: [
+        {
+          sessionId: 'legacy',
+          exerciseId,
+          completedAt: '2020-01-01T12:00:00Z',
+          bestReps: 5,
+          volume: 0,
+        },
+      ],
+      personalRecords: records,
+    });
+    const screen = await render(<ProgressScreen />);
+    await waitFor(() => expect(screen.getByText('RECENT RECORDS')).toBeTruthy());
+    expect(screen.getByText(loadUnit ? '90 lb' : '90 (unit unknown)')).toBeTruthy();
+    expect(
+      screen.getByText(loadUnit ? '105 lb estimated' : '105 (unit unknown) estimated'),
+    ).toBeTruthy();
+    expect(JSON.stringify(records)).toBe(original);
+  },
+);
 
 test('returning to mounted Progress after workout completion reloads saved counts and volume', async () => {
   const screen = await render(<ProgressScreen />);

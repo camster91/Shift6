@@ -1,5 +1,6 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import ProgressScreen from '../../app/(tabs)/progress';
+import { router } from 'expo-router';
 import {
   demoCycle as mockCycle,
   demoProgram as mockProgram,
@@ -99,6 +100,7 @@ jest.mock('../db/progressRepository', () => ({
 }));
 
 beforeEach(() => {
+  jest.clearAllMocks();
   mockOwner = 'guest-user';
   mockSummary = { ...mockEmptySummary, loggedSetCount: 1 };
   mockLatestCycle.mockReset().mockImplementation(async () => ({ ...mockCycle, userId: mockOwner }));
@@ -125,6 +127,54 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
+test('completed cycle exposes one six-week review as the first action before aggregate charts', async () => {
+  mockLatestCycle.mockResolvedValue({ ...mockCycle, userId: mockOwner, status: 'complete' });
+  const screen = await render(<ProgressScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Open six-week review')).toBeTruthy());
+  expect(screen.getAllByLabelText('Open six-week review')).toHaveLength(1);
+  expect(screen.getAllByRole('button')[0]).toHaveProp('accessibilityLabel', 'Open six-week review');
+  expect(screen.getByLabelText('Personal goal and review')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Open six-week review'));
+  expect(router.push).toHaveBeenCalledWith('/review');
+});
+
+test('an active cycle does not advertise end-of-cycle review', async () => {
+  const screen = await render(<ProgressScreen />);
+  await waitFor(() => expect(screen.getByText('NEXT SESSION TARGETS')).toBeTruthy());
+  expect(screen.queryByLabelText('Open six-week review')).toBeNull();
+  expect(screen.getByLabelText('Personal goal and review')).toBeTruthy();
+});
+
+test('completed-cycle review action disappears when ownership changes without a saved cycle', async () => {
+  mockLatestCycle.mockResolvedValue({ ...mockCycle, userId: mockOwner, status: 'complete' });
+  const screen = await render(<ProgressScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Open six-week review')).toBeTruthy());
+  mockOwner = 'new-owner';
+  mockLatestCycle.mockResolvedValue(null);
+  await screen.rerender(<ProgressScreen />);
+  await waitFor(() => expect(screen.getByText('Progress unavailable')).toBeTruthy());
+  expect(screen.queryByLabelText('Open six-week review')).toBeNull();
+  expect(router.push).not.toHaveBeenCalled();
+});
+
+test.each([1, 2])(
+  'saved workout count keeps correct singular/plural wording (%s)',
+  async (count) => {
+    mockSummary = {
+      ...completedSummary(),
+      facts: { ...completedSummary().facts, completedWorkoutCount: count },
+    };
+    const screen = await render(<ProgressScreen />);
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          `${count} completed workout${count === 1 ? ' is' : 's are'} reflected from local records.`,
+        ),
+      ).toBeTruthy(),
+    );
+  },
+);
+
 test('next-session targets use owned custom movement names already used by movement trends', async () => {
   const screen = await render(<ProgressScreen />);
   await waitFor(() => expect(screen.getByText('NEXT SESSION TARGETS')).toBeTruthy());
@@ -148,7 +198,7 @@ test('returning to mounted Progress after workout completion reloads saved count
   mockSummary = completedSummary();
   await act(async () => refocus());
   await waitFor(() =>
-    expect(screen.getByText('1 completed workout are reflected from local records.')).toBeTruthy(),
+    expect(screen.getByText('1 completed workout is reflected from local records.')).toBeTruthy(),
   );
   expect(screen.getByText('552')).toBeTruthy();
   expect(screen.getAllByText('2')).toHaveLength(priorTwos + 1);
@@ -169,7 +219,7 @@ test('obsolete focus refresh resolving after a newer refresh cannot replace curr
   await waitFor(() => expect(screen.getByText('552')).toBeTruthy());
   await act(async () => old.resolve(mockEmptySummary));
   expect(screen.getByText('552')).toBeTruthy();
-  expect(screen.getByText('1 completed workout are reflected from local records.')).toBeTruthy();
+  expect(screen.getByText('1 completed workout is reflected from local records.')).toBeTruthy();
 });
 
 test('old owner refresh resolving after an identity change cannot display private old-owner data', async () => {

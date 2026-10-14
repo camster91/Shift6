@@ -298,6 +298,16 @@ export default function ProgressScreen() {
         Progress starts with a trustworthy baseline, not a perfect streak.
       </Text>
 
+      {currentCycle.status === 'complete' ? (
+        <Button
+          label="Open six-week review"
+          variant="secondary"
+          onPress={() => router.push('/review')}
+          icon={<Ionicons name="document-text-outline" size={18} color={colors.ink} />}
+          style={styles.reviewButton}
+        />
+      ) : null}
+
       <Card tone="white" style={styles.cycleCard}>
         <View style={styles.cardHeader}>
           <View>
@@ -314,7 +324,7 @@ export default function ProgressScreen() {
         <ProgressIndicator label="Adherence" value={facts.completionRate} />
         <Text variant="small" tone="muted" style={styles.helper}>
           {facts.completedWorkoutCount > 0
-            ? `${facts.completedWorkoutCount} completed workout${facts.completedWorkoutCount === 1 ? '' : 's'} are reflected from local records.`
+            ? `${facts.completedWorkoutCount} completed workout${facts.completedWorkoutCount === 1 ? ' is' : 's are'} reflected from local records.`
             : 'Your first completed sessions will populate this cycle scorecard.'}
         </Text>
       </Card>
@@ -431,16 +441,6 @@ export default function ProgressScreen() {
           progress={exerciseProgress}
           label={selectedExercise?.label}
           trackingType={selectedExercise?.trackingType}
-        />
-      ) : null}
-
-      {currentCycle.status === 'complete' ? (
-        <Button
-          label="Open six-week review"
-          variant="secondary"
-          onPress={() => router.push('/review')}
-          icon={<Ionicons name="document-text-outline" size={18} color={colors.ink} />}
-          style={styles.reviewButton}
         />
       ) : null}
 

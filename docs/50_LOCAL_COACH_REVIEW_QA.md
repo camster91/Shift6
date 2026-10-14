@@ -99,8 +99,8 @@ as app defects. Saved-record comparisons establish actual storage outcomes.
 
 ## Remaining work and launch gates
 
-Compact default date controls are still a separate source proposal, not part of
-this binary. Native keyboard/focus coverage for that proposal remains pending.
+Compact default date controls are not part of b00; the subsequent candidate and
+its keyboard failure are recorded below.
 Voice recognition, natural-language onboarding, complete capability interaction,
 screen readers, one-handed use, physical S25 Ultra, current iOS journeys and
 signed candidates remain unverified. Windows cannot establish local iOS results.
@@ -116,7 +116,7 @@ Use the already running `emulator-5554`. In PowerShell:
 
 ```powershell
 $Shift6Sdk = 'C:\Users\camst\AppData\Local\Android\Sdk'
-$Shift6Apk = 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\app-release-b00e62ac-x86_64.apk'
+$Shift6Apk = 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\app-release-de0711b0-x86_64.apk'
 & "$Shift6Sdk\platform-tools\adb.exe" -s emulator-5554 install -r $Shift6Apk
 & "$Shift6Sdk\platform-tools\adb.exe" -s emulator-5554 shell am start -n com.shift6.app/.MainActivity
 ```
@@ -126,3 +126,41 @@ artifact, not a Samsung ARM or store-signed build. For starting the stopped AVD,
 use the existing instructions in [doc 47](47_ATOMIC_HANDOVER_QA.md); do not start
 a duplicate emulator instance. To repeat source checks, run `npm run verify`
 from the repo with Node 22 configured as in the dated verification receipt.
+
+## Subsequent compact editor candidate and keyboard finding
+
+Same emulator/OS, source `de0711b08757be2b9e3443350ebabccd33ae937c`, native APK
+SHA-256 `69e6431ef8aef784572f44d735dc4e661a375003497f39fd72de3983c32929b5`.
+Full verify passes **1,185 tests / 144 suites**, Doctor 21/21 and both exports;
+standalone native release build/install passed. Independent review additionally
+ran 46 focused tests for retained editor callbacks and same-event invalidation.
+
+Observed: cold review shows the exact default date window and Change review dates
+instead of three always-open inputs, at normal and 200% text. Change review dates
+opens required-field instructions. Entering `Invalid/Zone` and selecting Review
+these dates keeps the editor visible, disables Hide, and shows concise guidance.
+Correcting to `America/New_York` and rereading collapses the fields. The fresh
+external receiver export preserves all 36 arrays / **1,080 records** against the
+prior Keep plan export. See the [comparison](qa/2026-10-14-coach-review/coach-review-compact-comparison-de0711b0.json),
+[normal layout](qa/2026-10-14-coach-review/coach-review-compact-normal-de0711b0.png),
+[large layout](qa/2026-10-14-coach-review/coach-review-compact-large-de0711b0.png),
+and [guidance](qa/2026-10-14-coach-review/coach-review-compact-invalid-de0711b0.png).
+
+**Observed failure, issue #363:** Change review dates > focus Review time zone >
+enter `Invalid/Zone`, leaving the keyboard open. Expected: focused field/text
+visible above the keyboard, including after evidence removal changes content
+height. Actual, twice: the viewport shows Start date while the correctly focused
+time-zone field lies beneath the IME. Exact focus and entered-value readback
+succeeded. Dismissing the keyboard exposes the field; this is a visibility defect,
+not failed text entry. See [first capture](qa/2026-10-14-coach-review/coach-review-compact-keyboard-de0711b0.png)
+and [independent repeat](qa/2026-10-14-coach-review/coach-review-keyboard-repeat-de0711b0.png).
+Fix and native retest are pending. No keyboard usability pass is claimed.
+
+The scripted sequence stopped after valid reread when a fresh UI dump returned
+empty during the font transition. A later stable Home observation enabled the
+separate large-text route/capture. The first export attempt after font reset also
+missed its route; the later fresh Profile/share/receiver sequence succeeded. These
+are retained harness interruptions; the original script exited 1 and is not a
+whole-run pass. Font scale ends at 1.0. The export comparison precedes the second
+keyboard reproduction and proves the first main editor case, not an additional
+post-repeat export. Physical/iOS and screen-reader acceptance remain unverified.

@@ -1,5 +1,10 @@
 [
   {
+    "file": ".gitattributes",
+    "bytes": 55,
+    "sha256": "3118009e6713fdaddb5708d19cbd129d2a5331520371aaa9dc90a512c23e8b71"
+  },
+  {
     "file": "build-integrated-7b93db48.log",
     "bytes": 65554,
     "sha256": "718d06c431970a0e5851c08c7bce7fd8135646ecdfeab063ce2533e25e2abe76"
@@ -18,6 +23,16 @@
     "file": "build-integrated-b00e62ac.status.json",
     "bytes": 446,
     "sha256": "0bc97e45c035644544ae8f43f2f6e1313b1df8f551deafcea3eb4c07f2f00a3b"
+  },
+  {
+    "file": "build-integrated-de0711b0.log",
+    "bytes": 65555,
+    "sha256": "3f7aa0fc40e18f035675519929c8424198cd2286ccdd197ada6b3b058a4ea90e"
+  },
+  {
+    "file": "build-integrated-de0711b0.status.json",
+    "bytes": 446,
+    "sha256": "b935a2290aa923af2a969456a9fab3ba8c83a11ca6233aa9770ad90cd7a7a607"
   },
   {
     "file": "coach-review-active-entry-db4.png",
@@ -118,6 +133,86 @@
     "file": "coach-review-cold-recovered-export-db4.json",
     "bytes": 402328,
     "sha256": "d1f656ef5bfb8ab4b7f3902090bd9cb5b7bcff659e96a23fb4fc4ea9a6c78f8c"
+  },
+  {
+    "file": "coach-review-compact-comparison-de0711b0.json",
+    "bytes": 777,
+    "sha256": "671c6073438021cc81355682674e55d4f29fd5b8b2a024d2544b4b56b9bad1a7"
+  },
+  {
+    "file": "coach-review-compact-editor-de0711b0.png",
+    "bytes": 243468,
+    "sha256": "aec659d1fec83ce23d91242582734c324aa33580d3f8529e750bc05084617419"
+  },
+  {
+    "file": "coach-review-compact-editor-de0711b0.xml",
+    "bytes": 12196,
+    "sha256": "403d4705d5a625ebe5fcddb2e55cdd0fbe6ff6949f13e387575001c9241b82b5"
+  },
+  {
+    "file": "coach-review-compact-export-de0711b0-receiver.png",
+    "bytes": 77387,
+    "sha256": "a36ae5b70c93c4ab2338b74ef8b93b811a4902a3f5e0ee6a0ccbb7d55eb9eda3"
+  },
+  {
+    "file": "coach-review-compact-export-de0711b0-receiver.xml",
+    "bytes": 1681,
+    "sha256": "20cb67194844ad7618f6539e0c859f4d87718cb50bce7a15dd5501106c2d492b"
+  },
+  {
+    "file": "coach-review-compact-export-de0711b0.json",
+    "bytes": 405801,
+    "sha256": "3d88203195e0ccd750fea963d99cbcb94280e15a8afef5549d31841b9d8efa2c"
+  },
+  {
+    "file": "coach-review-compact-invalid-de0711b0.png",
+    "bytes": 254071,
+    "sha256": "b5a11a733bd3ec7a41cac955b87314b86ee7ac55d835fee0f087d1ff8e8a4da6"
+  },
+  {
+    "file": "coach-review-compact-invalid-de0711b0.xml",
+    "bytes": 12227,
+    "sha256": "8353950038f4fd1f930bac408e697c6a02386bb606c7ff443ff31900fe1fa2a2"
+  },
+  {
+    "file": "coach-review-compact-keyboard-de0711b0.png",
+    "bytes": 241928,
+    "sha256": "ac23bf2584b2945c6ce3f6e4b052788e40244dc2cf2f9cd88a2d8c11974fbbbe"
+  },
+  {
+    "file": "coach-review-compact-keyboard-de0711b0.xml",
+    "bytes": 12183,
+    "sha256": "c622ff8fd648b41bbd2a6869fae2b7d38f2eef810d2ae414ce15c3a9e17f5eaa"
+  },
+  {
+    "file": "coach-review-compact-large-de0711b0.png",
+    "bytes": 290018,
+    "sha256": "7effe2fa02cfb0a92a0eec9576a6fbb4e2eb953dc0683cbfa7296e9d3ebbadab"
+  },
+  {
+    "file": "coach-review-compact-large-de0711b0.xml",
+    "bytes": 10015,
+    "sha256": "5d25a65369e757c90bbf25c9c546ead99a379c6fc7246ef175281231a31aa81c"
+  },
+  {
+    "file": "coach-review-compact-normal-de0711b0.png",
+    "bytes": 297123,
+    "sha256": "fc85d5cded33c6fa58f35e634dbf0ac14623f29f8b84d7fc72c36be46256b9c0"
+  },
+  {
+    "file": "coach-review-compact-normal-de0711b0.xml",
+    "bytes": 11981,
+    "sha256": "ff55f3a6e720faf46ace611ddaa6083d50bbbb3b9bb532d1fabc3e8a76bd1abb"
+  },
+  {
+    "file": "coach-review-compact-reread-de0711b0.png",
+    "bytes": 296903,
+    "sha256": "f59d9e538c9e20b544712950f9cf43f6c59a9d8b32b405b9aeda59b92e866727"
+  },
+  {
+    "file": "coach-review-compact-reread-de0711b0.xml",
+    "bytes": 11981,
+    "sha256": "ff55f3a6e720faf46ace611ddaa6083d50bbbb3b9bb532d1fabc3e8a76bd1abb"
   },
   {
     "file": "coach-review-conditional-comparison-db4.json",
@@ -330,6 +425,16 @@
     "sha256": "8ad4fc8db4e6b6ac9132364fa04973c54613e337be8965b123eecbd98151e790"
   },
   {
+    "file": "coach-review-keyboard-repeat-de0711b0.png",
+    "bytes": 240916,
+    "sha256": "f2f6e6c598505cc8faca401aa1ffa219d0ef600d14b4cbdd0126399dcead3161"
+  },
+  {
+    "file": "coach-review-keyboard-repeat-de0711b0.xml",
+    "bytes": 12183,
+    "sha256": "c622ff8fd648b41bbd2a6869fae2b7d38f2eef810d2ae414ce15c3a9e17f5eaa"
+  },
+  {
     "file": "coach-review-large-question-b00.png",
     "bytes": 303201,
     "sha256": "aaeaec4f6c5c7c2f217437ca011d677122ecd099f81e8bff91bbc9d92faf80d9"
@@ -463,6 +568,11 @@
     "file": "coach-review-promoted-large-entry-b00.xml",
     "bytes": 9904,
     "sha256": "880de79c74e38c157f9d8c66818954b52dd0f4447312236d57428aa15f52dcf4"
+  },
+  {
+    "file": "coach-review-published-readback-e3.json",
+    "bytes": 4408,
+    "sha256": "92f6271cd5d27b950ea0b9ebec0bb724b540ff0dbc32df69b8e61d1c98127e5a"
   },
   {
     "file": "coach-review-recovered-action-7b.png",
@@ -645,6 +755,11 @@
     "sha256": "3cbaa2c9ae0038e3b09a19ab16c49ba61b76fb94cef9e3945a72141d1f034c45"
   },
   {
+    "file": "test-compact-review-de0711b0.py",
+    "bytes": 2572,
+    "sha256": "24c4ea7fb5ae520d7b0460e837e52ebf4a4ecf2257c8c2eeef1ef822b3ececf2"
+  },
+  {
     "file": "verify-integrated-7b93db48.log",
     "bytes": 28916,
     "sha256": "2415c2844d2256b0d3cf141c8bfec40f9a6514108729d52223d84fc814a0d7e3"
@@ -663,5 +778,15 @@
     "file": "verify-integrated-b00e62ac.status.json",
     "bytes": 215,
     "sha256": "371b6ddaee265b00a511193d9fc8f8dc24ba8bbb9090574eacfbb2ffdf222495"
+  },
+  {
+    "file": "verify-integrated-de0711b0.log",
+    "bytes": 28991,
+    "sha256": "5b42a838d03b73adce70abc7c0a301e6206c27820ea4bc6128d6efc953648eb9"
+  },
+  {
+    "file": "verify-integrated-de0711b0.status.json",
+    "bytes": 215,
+    "sha256": "2ed025ff386f3f82f3cda95e08d80cc60371d94e6dfd95a8a820b9f4ceba7b11"
   }
 ]

@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "de0711b08757be2b9e3443350ebabccd33ae937c",
+  "records": 1080,
+  "identicalArrays": 36,
+  "normalCompact": true,
+  "invalidZoneGuidance": true,
+  "validRereadCollapsedEditor": true,
+  "largeTextSeparateCheck": true,
+  "keyboardResult": "FAIL: focused time-zone field hidden beneath IME in two separate captures despite exact focus and value readback. Fix pending.",
+  "harnessInterruptions": [
+    "Single fresh UI dump unavailable during font change; later stable Home observed, separate large route/capture passed. Original script exit1, not whole-run pass.",
+    "First export route unavailable after font reset; later stable receiver observed, subsequent fresh profile/share/receiver export verified."
+  ],
+  "fontScaleRestored": "1.0"
+}

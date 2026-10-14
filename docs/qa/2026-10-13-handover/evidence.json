@@ -1,5 +1,5 @@
 {
-  "scope": "Frozen c3270bdf, 1060a9b8, 29adf0af, d80cd6dd, d60daf0a and 0d705bac observations each identify their own commits and APK hashes. Synthetic completed-state fixture is UI-only and not six-week or completion-engine evidence. The unmatched goal route is classified as a harness error; unrelated-app private capture is excluded.",
+  "scope": "Frozen c3270bdf, 1060a9b8, 29adf0af, d80cd6dd, d60daf0a, 0d705bac, 501be370 and db4e8c29 observations each identify their own commits and APK hashes. Separately dated iOS CI 71f2b4fe proves compile/install/cold-launch smoke, not later source or full iOS journeys. Synthetic completed-state fixture is UI-only and not six-week or completion-engine evidence. The unmatched goal route is classified as a harness error; unrelated-app private capture is excluded.",
   "files": [
     {
       "file": "build-handover-zone-c327.log",
@@ -42,6 +42,16 @@
       "sha256": "c0afec16d8b59cb426b7e4739302c716972f1188aa263d88f788cd54fdad5e0b"
     },
     {
+      "file": "build-integrated-501be370.log",
+      "bytes": 65547,
+      "sha256": "6e67e850ac319db2132be4eb07403e2c1ff0e3438025da5ee2c793e75b12ee48"
+    },
+    {
+      "file": "build-integrated-501be370.status.json",
+      "bytes": 446,
+      "sha256": "3d07cb2d1aa33b891dc6961f54b5233577ef6dc455663e3801bebe6ffd436d2b"
+    },
+    {
       "file": "build-integrated-candidate.py",
       "bytes": 2180,
       "sha256": "d3506552322f6b49280f73ca5ad1ec4f3fd0546fc53bf66aa9e81a49969b6008"
@@ -65,6 +75,16 @@
       "file": "build-integrated-d80cd6dd.status.json",
       "bytes": 446,
       "sha256": "893940c10e7c39c43aba6bf406c4ef7ac9c92049495f013a7183ed6c71103e65"
+    },
+    {
+      "file": "build-integrated-db4e8c29.log",
+      "bytes": 65555,
+      "sha256": "bf642c7a6afa612392acd630afe441e1814e7c7c229d04e522ae810b137f63f4"
+    },
+    {
+      "file": "build-integrated-db4e8c29.status.json",
+      "bytes": 446,
+      "sha256": "98f4e184a67943ad3dae7b65b87f3815700602f8c5ba924f0266a913b74602ea"
     },
     {
       "file": "handover-after-partial-home-1060.png",
@@ -165,6 +185,26 @@
       "file": "handover-completed-dashboard-1060.xml",
       "bytes": 21278,
       "sha256": "deb8b03d237d4c389193a7577668fad828e004c26ce54567c3834e689a35529a"
+    },
+    {
+      "file": "handover-completed-dashboard-action-0d.png",
+      "bytes": 238629,
+      "sha256": "55213f9df05056491ff0abcb97d17fb2b215d05d5a8443b397699f27f284aba8"
+    },
+    {
+      "file": "handover-completed-dashboard-action-0d.xml",
+      "bytes": 21278,
+      "sha256": "deb8b03d237d4c389193a7577668fad828e004c26ce54567c3834e689a35529a"
+    },
+    {
+      "file": "handover-completed-dashboard-review-below-fold-0d.png",
+      "bytes": 161379,
+      "sha256": "6c3aa66a99894cbe2d133c36e686d0c1feb4e8056489fb5d202b2cc5612f6631"
+    },
+    {
+      "file": "handover-completed-dashboard-review-below-fold-0d.xml",
+      "bytes": 16041,
+      "sha256": "cc1db79037e9004199cdfd457d2aacad4bcc81035d96b2afd5b6b25395d294fd"
     },
     {
       "file": "handover-completed-progress-review-entry-29ad.png",
@@ -305,6 +345,141 @@
       "file": "handover-current-c327.xml",
       "bytes": 18196,
       "sha256": "68afc3fdd1a60cfcbbde17e2fdf8bc41b166a5b6a942ab778fbaefa7ff2fd63c"
+    },
+    {
+      "file": "handover-dashboard-final-comparison-501.json",
+      "bytes": 358,
+      "sha256": "c049b6d3cced21f086970def72d1d20531a7df1e97a11a3cd50f00f134b63e0d"
+    },
+    {
+      "file": "handover-dashboard-final-comparison-db4.json",
+      "bytes": 384,
+      "sha256": "2044e9b7c3a3d33fb44e296ed0367efcee997fabaaaf6c4b4be33b9e58b7d52d"
+    },
+    {
+      "file": "handover-dashboard-final-export-501.json",
+      "bytes": 394577,
+      "sha256": "5cd9d606e26a9e2daddd1ceb5855a583dd950483673fee68c0657948ebe18363"
+    },
+    {
+      "file": "handover-dashboard-final-export-db4.json",
+      "bytes": 394577,
+      "sha256": "83f8f83c51d1281f0db99d804324bcadf20557a6f0ba737a1820f0915c70ede1"
+    },
+    {
+      "file": "handover-dashboard-final-export-receiver-501.png",
+      "bytes": 77427,
+      "sha256": "b0bed50df8b976684d8ef5aaaf368ee3b4c122e531c751d3ae1a5426e94f66f0"
+    },
+    {
+      "file": "handover-dashboard-final-export-receiver-501.xml",
+      "bytes": 1681,
+      "sha256": "75b09f0710291ef4de896f754666df4ef050d7881de1dfe609b9812be328f5d7"
+    },
+    {
+      "file": "handover-dashboard-final-export-receiver-db4.png",
+      "bytes": 77590,
+      "sha256": "fe9681e2c5cff9d577039d8e5605d77120465db5eada8b4dc7cfa3f2ab46cb5b"
+    },
+    {
+      "file": "handover-dashboard-final-export-receiver-db4.xml",
+      "bytes": 1681,
+      "sha256": "75b09f0710291ef4de896f754666df4ef050d7881de1dfe609b9812be328f5d7"
+    },
+    {
+      "file": "handover-dashboard-large-header-db4.png",
+      "bytes": 237175,
+      "sha256": "a99938c2b05fcaba285e403618bb3c2010f30a5d715ae288022d546d86012904"
+    },
+    {
+      "file": "handover-dashboard-large-header-db4.xml",
+      "bytes": 19643,
+      "sha256": "1508cb7621720dd63681d82355d774f071c7c2ba69c0db1500d4b44bbe5ae22b"
+    },
+    {
+      "file": "handover-dashboard-large-review-db4.png",
+      "bytes": 245761,
+      "sha256": "f94491c939bffab4578bb9cd46e6a6ea78ec9652c943d143c24f96aa992cf690"
+    },
+    {
+      "file": "handover-dashboard-large-review-db4.xml",
+      "bytes": 17179,
+      "sha256": "fde9156f9843dbde666a15bf99e5f813e19981d61b31bcba9a9dca2655bf765c"
+    },
+    {
+      "file": "handover-dashboard-normal-db4.png",
+      "bytes": 234234,
+      "sha256": "78fb893f359c649a047cf0d85ded4b86397173148b12ba6fc7cc619be095033b"
+    },
+    {
+      "file": "handover-dashboard-normal-db4.xml",
+      "bytes": 21604,
+      "sha256": "825a564e12d4a9e9e7047bdbeda776c64ab1433945064fc81d4a0d386bbf1cf8"
+    },
+    {
+      "file": "handover-dashboard-normal-review-db4.png",
+      "bytes": 198336,
+      "sha256": "786613db4bb9ad86f59a264ebbd17b64e503c1f3c0587e01a48e1f745116def4"
+    },
+    {
+      "file": "handover-dashboard-normal-review-db4.xml",
+      "bytes": 20738,
+      "sha256": "7f41629ab621250f29ffe49031cd51e5c999d4c9f2f1c8f6d9b6a447f67b2705"
+    },
+    {
+      "file": "handover-dashboard-older-paused-501.png",
+      "bytes": 236744,
+      "sha256": "8b562ca5157b45ad2877550ed5c74f4ea77cfec1f66e6cbe8ad67a7fc62bbf6d"
+    },
+    {
+      "file": "handover-dashboard-older-paused-501.xml",
+      "bytes": 21252,
+      "sha256": "43218fb92e87fb38bf1eca3e166000aa69fb93d29e1cdc4448c1a2a52eeb033c"
+    },
+    {
+      "file": "handover-dashboard-older-reflection-501.png",
+      "bytes": 95326,
+      "sha256": "3184c5c4a72d2720b270b51da7f6a8becde0b3e6cdd78ce77b4dc8a8a2f2b884"
+    },
+    {
+      "file": "handover-dashboard-older-reflection-501.xml",
+      "bytes": 7625,
+      "sha256": "1ff3a11f895b09816099a51c091838113c795e342dd6f02e54aa87a1d41666d8"
+    },
+    {
+      "file": "handover-dashboard-older-selection-501.json",
+      "bytes": 241,
+      "sha256": "2bb7f143a15851ea604283ade9bdcf0524907574e17020408d778d3052c74766"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-501.png",
+      "bytes": 234198,
+      "sha256": "795cd589a27f799a1bd9c992c7bee4f55eb329307bf8e64c6efa83842a5733da"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-501.xml",
+      "bytes": 21243,
+      "sha256": "90d915a06c140a3cc35b88f745f29ffa29bb71e9d5639fef4bb41a11ab06aa2f"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-destination-501.png",
+      "bytes": 198225,
+      "sha256": "99411e5b6a2f364599848750f66d958e94d810ff1fd7c40b270dd11e81ad199d"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-destination-501.xml",
+      "bytes": 20738,
+      "sha256": "7f41629ab621250f29ffe49031cd51e5c999d4c9f2f1c8f6d9b6a447f67b2705"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-large-text-501.png",
+      "bytes": 221844,
+      "sha256": "6e69039063abed4ef2e33bfb6990c2d8826a0b5735a5d7db6745f136e8ca5c04"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-large-text-501.xml",
+      "bytes": 18203,
+      "sha256": "fc56d2717111f1f75aaf99a848b8cbf29df6bc316168ad0cb360d40af5bf0489"
     },
     {
       "file": "handover-deferred-goal-confirmed-1060.png",
@@ -452,6 +627,11 @@
       "sha256": "77835e46bc262c26557a060c5f3c77c160e7270517acaaa655c36155e20de616"
     },
     {
+      "file": "handover-github-comment-readback.json",
+      "bytes": 1442,
+      "sha256": "16b869daca23b19fe17fd5e72fc4d9ea3b39cc19ebe9ef84d2b74dd4e6a2f847"
+    },
+    {
       "file": "handover-history-elapsed-details-large-text-d60.png",
       "bytes": 276538,
       "sha256": "ba901b0ae1406b913d0feb0e5375c487001c68a83f0606858bcdee79d0190f62"
@@ -485,6 +665,16 @@
       "file": "handover-native-checks-c327.json",
       "bytes": 2063,
       "sha256": "26cc2795113f74e3d6ed6897cae426533d1d3648b48292b8b0816334f8b51596"
+    },
+    {
+      "file": "handover-native-compile-ios-71f2.json",
+      "bytes": 8243,
+      "sha256": "9582d62c0864eaca519d3c63f7f3a3981cfe790a554b520b34c5badddc24b37c"
+    },
+    {
+      "file": "handover-native-compile-ios-71f2.txt",
+      "bytes": 8975370,
+      "sha256": "6506e3905b1f832059117a8aa877f28e18b277896d853bb616e3a57772c0dc45"
     },
     {
       "file": "handover-native-environment-c327.json",
@@ -1122,6 +1312,16 @@
       "sha256": "8eb1bf9efc15af7a9f1e9ab241c9663cdc02c5ecf5dda65609f94e0e1cc1e35e"
     },
     {
+      "file": "verify-integrated-501be370.log",
+      "bytes": 28903,
+      "sha256": "6160bdb070a961f9f408b8307ea69b40aaefc4cda4dec803ad10bae551d9a72a"
+    },
+    {
+      "file": "verify-integrated-501be370.status.json",
+      "bytes": 215,
+      "sha256": "b17068beaa5823bfe5ffc52491d3b5b78e8c38ec98391c53341e6823949fb9e4"
+    },
+    {
       "file": "verify-integrated-63bdf057.log",
       "bytes": 26251,
       "sha256": "c5592e455aecac2c162aaca74a40a8cf41d092efe08072422bcd7308a5b74422"
@@ -1155,6 +1355,16 @@
       "file": "verify-integrated-d80cd6dd.status.json",
       "bytes": 215,
       "sha256": "8d1f8aa7a5db93f8ccb4b34c5af850f91656b2c6d9947d3a9d4a3caccf1baebf"
+    },
+    {
+      "file": "verify-integrated-db4e8c29.log",
+      "bytes": 28905,
+      "sha256": "44afb8881803d44bd86ad61ca1892c67e067ee8210eb617088358a2d7ad60c88"
+    },
+    {
+      "file": "verify-integrated-db4e8c29.status.json",
+      "bytes": 215,
+      "sha256": "f6bdd6e3cd1e455432a0930f0e43dc013659c0f9819851b2cbedf84cdedbb730"
     },
     {
       "file": "verify-integrated-f14e28cb.log",

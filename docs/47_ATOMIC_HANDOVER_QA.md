@@ -112,20 +112,71 @@ Remaining native handover checks: exact interrupted confirmation retry without a
 
 Completed-week repetition still requires attempt-aware readers and confirmation. Qualified return prescriptions, actual participant work, physical iOS/Android, signing, support URLs and approved store submission remain separate gates. No issue is closed from these source checks and no merge or submission is authorized here.
 
+# Completed-cycle dashboard entry: 501 native supplement
+
+14 October 2026. CAM-DESKTOP Windows 11; Shift6-QA Pixel 7 emulator, Android 16 / API 36, x86_64. Synthetic data and the existing qualified public-content gate are preserved. Provisional engineering score remains **53/100**; open backlog **52**. This supplement records a specific dashboard improvement, not whole-app or human-use acceptance.
+
+## Exact source and binary
+
+Source `501be3704dd9aaa7813f541ad27e56d3409c195d` passes `npm run verify`, exit 0: **1,142 tests / 142 suites**, Doctor 21/21, configured checks and both mobile exports. Receipt [verify-integrated-501be370.status.json](qa/2026-10-13-handover/verify-integrated-501be370.status.json) completed `2026-10-14T05:25:56.851688+00:00`; full log retained.
+
+Native build exited 0; `adb install -r` returned Success. Frozen APK `app-release-501be370-x86_64.apk` SHA-256 `118b5d81033a7eb093e9cd7c7b99e9fffbd97a7d92a81d2bdbe96311e7dbb932`. Build receipt [build-integrated-501be370.status.json](qa/2026-10-13-handover/build-integrated-501be370.status.json) completed `2026-10-14T05:27:49.250387+00:00`, explicitly x86_64, staging, guest-only, API URL empty and dotenv disabled. No backend activation, signing or publication is implied.
+
+## Observed native checks
+
+| Check                    | Reproduction and expected behavior                                                                                                                                      | Actual and evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Genuine earlier friction | On frozen 0d, navigate from Home through Saved cycles and inspect the latest synthetic completed cycle. Review should be discoverable.                                  | Review existed, but required four scrolls below dashboard/timing content. [handover-completed-dashboard-action-0d.png](qa/2026-10-13-handover/handover-completed-dashboard-action-0d.png) / [handover-completed-dashboard-action-0d.xml](qa/2026-10-13-handover/handover-completed-dashboard-action-0d.xml) and [handover-completed-dashboard-review-below-fold-0d.png](qa/2026-10-13-handover/handover-completed-dashboard-review-below-fold-0d.png) / [handover-completed-dashboard-review-below-fold-0d.xml](qa/2026-10-13-handover/handover-completed-dashboard-review-below-fold-0d.xml) record discoverability friction, not a missing route.                                                                           |
+| Normal-text entry        | On 501, Profile > Home > Saved cycles > Inspect latest completed cycle. Expect a visible Review action before detailed content, with correct cycle/version destination. | One Open six-week review action is visible near the top; tapping opens its bound Six-week Review. [handover-dashboard-promoted-review-501.png](qa/2026-10-13-handover/handover-dashboard-promoted-review-501.png) / [handover-dashboard-promoted-review-501.xml](qa/2026-10-13-handover/handover-dashboard-promoted-review-501.xml) and [handover-dashboard-promoted-review-destination-501.png](qa/2026-10-13-handover/handover-dashboard-promoted-review-destination-501.png) / [handover-dashboard-promoted-review-destination-501.xml](qa/2026-10-13-handover/handover-dashboard-promoted-review-destination-501.xml).                                                                                                    |
+| Large-text entry         | At font scale 2.0, open the exact selected completed-cycle route and tap Review. Expect readable access without scrolling through the timing form.                      | Promoted action is fully visible and legible; correct review destination observed. [handover-dashboard-promoted-review-large-text-501.png](qa/2026-10-13-handover/handover-dashboard-promoted-review-large-text-501.png) / [handover-dashboard-promoted-review-large-text-501.xml](qa/2026-10-13-handover/handover-dashboard-promoted-review-large-text-501.xml) is independently visually inspected. This large-text case begins from an exact selected route; it does not substitute for testing the whole Saved cycles navigation at 200%.                                                                                                                                                                                 |
+| Older paused cycle       | Open the selected QA Layout cycle, then Read saved reflection. Expect that exact cycle's history, no latest-cycle handover and no activation/switch.                    | One reflection link; QA Layout shows Paused. Reflection says no reflection is saved and explicitly says it does not start or switch a cycle. [handover-dashboard-older-paused-501.png](qa/2026-10-13-handover/handover-dashboard-older-paused-501.png) / [handover-dashboard-older-paused-501.xml](qa/2026-10-13-handover/handover-dashboard-older-paused-501.xml), [handover-dashboard-older-reflection-501.png](qa/2026-10-13-handover/handover-dashboard-older-reflection-501.png) / [handover-dashboard-older-reflection-501.xml](qa/2026-10-13-handover/handover-dashboard-older-reflection-501.xml), [handover-dashboard-older-selection-501.json](qa/2026-10-13-handover/handover-dashboard-older-selection-501.json). |
+| Saved-record integrity   | After the views, share and receive JSON outside SHIFT6; compare all record arrays against the pending synthetic fixture.                                                | **1,076 records, all 36 arrays identical**, font reset to **1.0**. Independently rechecked [handover-dashboard-final-export-501.json](qa/2026-10-13-handover/handover-dashboard-final-export-501.json); comparison [handover-dashboard-final-comparison-501.json](qa/2026-10-13-handover/handover-dashboard-final-comparison-501.json) and receiver screenshot/XML retained.                                                                                                                                                                                                                                                                                                                                                  |
+
+The completed-state fixture deliberately changes one saved cycle's status while retaining its original Week 2 and subsequent week records. It validates UI routing and handover entry only; it proves neither six weeks of actual use nor completion-engine acceptance.
+
+## Observed presentation concern and remaining checks
+
+The font-scale-2.0 screenshot visibly splits the phase word **Repeatability** between “Repeatabil” and “ity” in the narrow cycle-header column. The primary Review action remains legible, but phase-text presentation needs a T09 follow-up. No participant comprehension or screen-reader result is inferred. Older completed-cycle navigation, stale owner/database/selection/focus native callbacks, broader large-text layout, TalkBack, physical Samsung/iPhone and current iOS journeys remain pending.
+
+## Separately dated iOS CI evidence
+
+At remote PR head `71f2b4fe8a0f6fd51a6bccf32e0bf5bd51ba7f62`, GitHub Native validation run `38515606180`, iOS job `115693590649`, completed SUCCESS. Retrieved logs confirm that exact checkout, unsigned Release simulator compilation and in-job source/payload proof creation and verification, with payload tree SHA-256 `5aa9459e300182c868b8f330f51f0f391149a954043c8a4045bc8bb2fa10d3f6`. Job metadata also records successful simulator install/cold-launch smoke. Read-only audit receipt/log: [handover-native-compile-ios-71f2.json](qa/2026-10-13-handover/handover-native-compile-ios-71f2.json) and `.txt`.
+
+The 0d-to-71 Git comparison changed README/docs/evidence only, but **501 adds dashboard application code**. This CI result therefore remains dated 71f2 evidence; it does not prove 501 iOS compilation or dashboard runtime acceptance. No full Native runtime QA journey, independently downloaded consumer payload, signed physical iPhone, VoiceOver, human participants or store acceptance was verified. Windows-local iOS UI testing remains pending.
+
+Earlier carry/without-goal confirmations, nonempty receipt backup roundtrip, refusal alert, elapsed-time copy and volume-label results retain their frozen 1060/29ad/d80/d60/0d scope in the main handover report. This supplement neither re-runs those complete journeys on 501 nor closes their remaining issue criteria.
+
+## Large-text header acceptance — db4e8c29
+
+Device: CAM-DESKTOP, Shift6-QA Pixel 7 emulator, Android 16/API 36 x86_64, hardware acceleration; ADB controls, synthetic data. Source `db4e8c290d8a801d5305ca57ffed414ecbd1d2dc`, guest-only release APK SHA-256 `4010c8ab7f80187ed80a284c1ca78809b2bb8807a367801ea55d77d7d8c27f7f`. Full `npm run verify` passes **1,143 tests/142 suites**, Doctor 21/21 and both mobile exports. Native build and installation succeed.
+
+Reproduction: on earlier 501, set Android font scale to 2.0 and inspect the selected completed QA Refresh dashboard. Expected: the phase label remains readable without splitting its word. Actual: the narrow heading column broke “Repeatability” mid-word. The db4 layout stacks the full-width heading above its intrinsic badge at large text sizes. On the new binary, the inspected PNG shows “Repeatability · Ready for review” wrapping between words, with the badge underneath. Normal size retains the existing row. These are presentation checks on this emulator, not screen-reader or human acceptance.
+
+Native normal route `Home > Open saved cycles > Inspect cycle started 2026-10-13, complete > Open six-week review` reaches the selected Review. At font scale 2.0 the exact selected-cycle route exposes the same top action and reaches Review. Following an Android font-setting recreation, the first immediate intent showed Profile; a fresh quoted route and fresh UI dump reached the requested dashboard. That initial capture was not used as header proof. Reset font scale to 1.0, export through the actual Android share sheet to QA JSON Receiver and open the JSON outside SHIFT6: **1,076 records, all 36 arrays identical**, zero handover receipts. This completed-state fixture remains UI-only, not real six-week use or completion-engine acceptance.
+
+Evidence:
+
+- [Normal dashboard](qa/2026-10-13-handover/handover-dashboard-normal-db4.png) / [UI XML](qa/2026-10-13-handover/handover-dashboard-normal-db4.xml) and [normal Review](qa/2026-10-13-handover/handover-dashboard-normal-review-db4.png).
+- [Large-text header](qa/2026-10-13-handover/handover-dashboard-large-header-db4.png) / [UI XML](qa/2026-10-13-handover/handover-dashboard-large-header-db4.xml) and [large-text Review](qa/2026-10-13-handover/handover-dashboard-large-review-db4.png).
+- [External receiver](qa/2026-10-13-handover/handover-dashboard-final-export-receiver-db4.png), [opened JSON](qa/2026-10-13-handover/handover-dashboard-final-export-db4.json) and [comparison](qa/2026-10-13-handover/handover-dashboard-final-comparison-db4.json).
+- [Full verification](qa/2026-10-13-handover/verify-integrated-db4e8c29.status.json) / [log](qa/2026-10-13-handover/verify-integrated-db4e8c29.log); [native build receipt](qa/2026-10-13-handover/build-integrated-db4e8c29.status.json) / [log](qa/2026-10-13-handover/build-integrated-db4e8c29.log).
+
+The provisional score remains **53/100**. Physical Android, current iOS journeys, assistive technology, participants and approved distribution remain pending. The repeat-week storage seam is disabled and independent review requested stronger validation of the canonical owned session graph before acceptance; it is not integrated or claimed as delivered.
+
 ## Run the verified native app on this PC
 
-The frozen `0d705bac` APK is for the x86_64 Android emulator. It is not an ARM phone build or a signed store candidate. The tested emulator currently contains synthetic QA records.
+The frozen `db4e8c29` APK is for the x86_64 Android emulator. It is not an ARM phone build or a signed store candidate. The tested emulator currently contains synthetic QA records.
 
 With the existing Shift6-QA emulator running, use PowerShell:
 
 ```powershell
 $Shift6Sdk = 'C:\Users\camst\AppData\Local\Android\Sdk'
-$Shift6Apk = 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\app-release-0d705bac-x86_64.apk'
+$Shift6Apk = 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\app-release-db4e8c29-x86_64.apk'
 & "$Shift6Sdk\platform-tools\adb.exe" -s emulator-5554 install -r $Shift6Apk
 & "$Shift6Sdk\platform-tools\adb.exe" -s emulator-5554 shell am start -n com.shift6.app/.MainActivity
 ```
 
-Expected install result: `Success`. APK SHA-256 is `f29a6a728aefa2d8a09f51e2d244ce3a53194f38c7230d6c37dc1be2e05a2ef9`. This is a standalone native release; no Expo Go, Metro or backend is required to run it.
+Expected install result: `Success`. APK SHA-256 is `4010c8ab7f80187ed80a284c1ca78809b2bb8807a367801ea55d77d7d8c27f7f`. This is a standalone native release; no Expo Go, Metro or backend is required to run it.
 
 If the existing emulator is stopped, launch the already-created AVD in a separate PowerShell terminal before installing:
 
@@ -137,4 +188,4 @@ $env:ANDROID_AVD_HOME = 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install
 
 The QA run used this AVD with `-no-window`; omitting that flag displays the emulator. Do not launch a second instance while it is already running. A fresh setup can be tested after explicitly using Profile > Delete local data; keep any wanted external backup first. Current physical Samsung S25 Ultra/ARM, iPhone/iPad and iOS checks remain pending.
 
-The code checkpoint is `C:\Users\camst\s6qa` on `feat/confirmed-local-lifecycle`. Full `npm run verify` passed at `0d705bac`; subsequent report/evidence changes do not change that tested application code. Build logs, exit receipts and per-file evidence hashes are in `docs/qa/2026-10-13-handover/`.
+The code checkpoint is `C:\Users\camst\s6qa` on `feat/confirmed-local-lifecycle`. Full `npm run verify` passed at `db4e8c29`; subsequent report/evidence changes do not change that tested application code. Build logs, exit receipts and per-file evidence hashes are in `docs/qa/2026-10-13-handover/`.

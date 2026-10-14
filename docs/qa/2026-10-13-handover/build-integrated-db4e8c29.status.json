@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "db4e8c290d8a801d5305ca57ffed414ecbd1d2dc",
+  "exitCode": 0,
+  "architecture": "x86_64",
+  "environment": "staging",
+  "releaseMode": "guest-only",
+  "apiBaseUrl": "",
+  "dotenvDisabled": true,
+  "finishedAt": "2026-10-14T06:03:57.481244+00:00",
+  "log": "build-integrated-db4e8c29.log",
+  "apk": "app-release-db4e8c29-x86_64.apk",
+  "sha256": "4010c8ab7f80187ed80a284c1ca78809b2bb8807a367801ea55d77d7d8c27f7f"
+}

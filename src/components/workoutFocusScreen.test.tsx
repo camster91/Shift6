@@ -87,12 +87,17 @@ jest.mock('../db/workoutRepository', () => ({
   finishWorkoutSessionPartially: (...args: unknown[]) => mockPartial(...args),
   finishWorkoutSessionSkipped: (...args: unknown[]) => mockSkip(...args),
 }));
-const mockCycle = demoCycle,
+let mockCycle = demoCycle,
   mockProgram = demoProgram,
   mockVersion = demoProgramVersion;
 let mockUser = demoUser;
 beforeEach(() => {
   jest.clearAllMocks();
+  // A timed-out async case may finish after the next case starts. Keep its
+  // mutated target reference separate from every later test's fixture graph.
+  mockCycle = JSON.parse(JSON.stringify(demoCycle)) as typeof demoCycle;
+  mockProgram = JSON.parse(JSON.stringify(demoProgram)) as typeof demoProgram;
+  mockVersion = JSON.parse(JSON.stringify(demoProgramVersion)) as typeof demoProgramVersion;
   mockUser = demoUser;
   mockRecoveredDraft = null;
   mockVoiceAdapter.listen.mockResolvedValue('8 reps, 40 pounds');

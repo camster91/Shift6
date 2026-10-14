@@ -9,7 +9,7 @@ import { useNotificationRuntime } from '../src/services/NotificationRuntimeProvi
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 
 import {
   Button,
@@ -41,6 +41,8 @@ import { colors, spacing } from '../src/design/tokens';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function CycleDashboardScreen() {
+  const { fontScale } = useWindowDimensions();
+  const stackCycleHeader = fontScale >= 1.5;
   const params = useLocalSearchParams<{ cycleId?: string | string[] }>();
   const requestedSelection =
     params.cycleId === undefined || typeof params.cycleId === 'string'
@@ -362,8 +364,11 @@ export default function CycleDashboardScreen() {
       </Text>
 
       <Card tone="lavender" style={styles.cycleCard} accessibilityLabel="Current six-week cycle">
-        <View style={styles.cycleHeader}>
-          <View style={styles.cycleHeaderCopy}>
+        <View style={[styles.cycleHeader, stackCycleHeader && styles.cycleHeaderStacked]}>
+          <View
+            testID="cycle-heading"
+            style={[styles.cycleHeaderCopy, stackCycleHeader && styles.cycleHeaderCopyStacked]}
+          >
             <Text variant="caption" tone="muted">
               {program.title.toUpperCase()}
             </Text>
@@ -379,7 +384,9 @@ export default function CycleDashboardScreen() {
                   : 'In progress'}
             </Text>
           </View>
-          <Chip label={`${completedRequired}/${requiredWorkouts.length} done`} selected />
+          <View style={stackCycleHeader && styles.cycleBadgeStacked}>
+            <Chip label={`${completedRequired}/${requiredWorkouts.length} done`} selected />
+          </View>
         </View>
         <View style={styles.indicator}>
           <SixWeekIndicator weeks={cycle.weeks} />
@@ -629,6 +636,17 @@ const styles = StyleSheet.create({
   },
   cycleHeaderCopy: {
     flex: 1,
+  },
+  cycleHeaderStacked: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  cycleHeaderCopyStacked: {
+    flex: 0,
+    width: '100%',
+  },
+  cycleBadgeStacked: {
+    alignSelf: 'flex-start',
   },
   weekTitle: {
     marginTop: spacing.xs,

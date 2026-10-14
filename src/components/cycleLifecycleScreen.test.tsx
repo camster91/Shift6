@@ -1,5 +1,5 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import CycleScreen from '../../app/cycle';
 import type { ButtonProps } from './ui/Button';
@@ -12,6 +12,8 @@ import {
 let mockDb = {};
 let mockOwner = 'guest-user';
 let mockStatus = 'active';
+const originalWindow = Dimensions.get('window');
+const originalScreen = Dimensions.get('screen');
 let mockSelection: string | undefined;
 let mockOtherActive: string | null = null;
 const mockAppend = jest.fn();
@@ -109,7 +111,57 @@ beforeEach(() => {
   mockAppend.mockResolvedValue({});
   mockRefresh.mockResolvedValue({ status: 'disabled' });
 });
-afterEach(() => jest.restoreAllMocks());
+afterEach(async () => {
+  await act(async () => Dimensions.set({ window: originalWindow, screen: originalScreen }));
+  jest.restoreAllMocks();
+});
+
+test('large-text preference widens the cycle heading without changing phase, badge, or review navigation', async () => {
+  await act(async () =>
+    Dimensions.set({
+      window: { ...originalWindow, fontScale: 1 },
+      screen: { ...originalScreen, fontScale: 1 },
+    }),
+  );
+  mockStatus = 'complete';
+  mockSelection = mockCycle.id;
+  const screen = await render(<CycleScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Open six-week review')).toBeTruthy());
+  const phase = mockCycle.weeks[mockCycle.currentWeek - 1]!.phase;
+  expect(screen.getByText(`${phase} · Ready for review`)).toBeTruthy();
+  const badge = screen.getByText(/✓ \d+\/\d+ done/).props.children;
+  expect(screen.getByTestId('cycle-heading')).toHaveStyle({ flex: 1 });
+  await act(async () =>
+    Dimensions.set({
+      window: { ...originalWindow, fontScale: 2 },
+      screen: { ...originalScreen, fontScale: 2 },
+    }),
+  );
+  expect(screen.getByTestId('cycle-heading')).toHaveStyle({ width: '100%' });
+  expect(screen.getByText(`${phase} · Ready for review`)).toBeTruthy();
+  expect(screen.getByText(/✓ \d+\/\d+ done/).props.children).toEqual(badge);
+  expect(mockLatest).toHaveBeenCalledTimes(1);
+  expect(mockAppend).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Open six-week review'));
+  await waitFor(() =>
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/review',
+      params: {
+        expectedCycleId: mockCycle.id,
+        expectedProgramVersionId: mockCycle.programVersionId,
+      },
+    }),
+  );
+  await act(async () =>
+    Dimensions.set({
+      window: { ...originalWindow, fontScale: 1 },
+      screen: { ...originalScreen, fontScale: 1 },
+    }),
+  );
+  expect(screen.getByTestId('cycle-heading')).toHaveStyle({ flex: 1 });
+  expect(screen.getByTestId('cycle-heading')).not.toHaveStyle({ width: '100%' });
+  expect(mockLatest).toHaveBeenCalledTimes(2);
+});
 
 test('selected latest completed cycle opens six-week review after a fresh owned identity read', async () => {
   mockStatus = 'complete';

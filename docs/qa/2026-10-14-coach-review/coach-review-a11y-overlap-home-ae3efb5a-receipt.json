@@ -1,0 +1,14 @@
+{
+  "probeApkSha256": "208ec08942c629233e7c924ff8a771bfb8ed2e118e8a42faafecd2cf75d667d7",
+  "startedAt": "2026-10-14T12:24:46.607527+00:00",
+  "capturedAtEpochMillis": 1791980692234,
+  "success": true,
+  "complete": true,
+  "limitations": [],
+  "nodeCount": 317,
+  "connectedStatusObserved": true,
+  "talkBackEnabledBeforeAfter": true,
+  "talkBackBoundDuring": true,
+  "uiAutomationMentionDuring": true,
+  "snapshotIsSequentialNotAtomic": true
+}

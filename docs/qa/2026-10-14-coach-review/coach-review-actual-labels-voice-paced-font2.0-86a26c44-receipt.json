@@ -1,0 +1,23 @@
+{
+  "sourceCommit": "86a26c44",
+  "fontScale": 2.0,
+  "tutorialDismissedViaObservedCancel": true,
+  "exactSteps": [
+    {
+      "expected": "26",
+      "actual": "26",
+      "focused": "true"
+    },
+    {
+      "expected": "26 seconds",
+      "actual": "26 seconds",
+      "focused": "true"
+    },
+    {
+      "expected": "26 seconds, RPE seven",
+      "actual": "26 seconds, RPE seven",
+      "focused": "true"
+    }
+  ],
+  "noReviewApplyComplete": true
+}

@@ -1,0 +1,16 @@
+{
+  "sourceCommit": "86a26c4490ab091f865e20773151a0443a9f2b8c",
+  "exportedAt": "2026-10-14T14:40:49.874Z",
+  "records": 1082,
+  "arrays": 36,
+  "changedArrays": [
+    "workoutDraftLoadUnits",
+    "workoutDrafts"
+  ],
+  "actualPayloadsUnchanged": true,
+  "draftPayloadsUnchanged": true,
+  "onlyDraftAutosaveTimestampsChanged": true,
+  "receiverOpenedOutsideApp": true,
+  "fontScaleRestored": "1.0",
+  "enabledServices": ""
+}

@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "ae3efb5a3542e585cee459640831e22d786060f5",
+  "exportedAt": "2026-10-14T12:51:07.594Z",
+  "records": 1082,
+  "arrays": 36,
+  "changedArrays": [
+    "workoutDraftLoadUnits",
+    "workoutDrafts"
+  ],
+  "actualPayloadsUnchanged": true,
+  "draftPayloadsUnchanged": true,
+  "onlyDraftAutosaveTimestampsChanged": true
+}

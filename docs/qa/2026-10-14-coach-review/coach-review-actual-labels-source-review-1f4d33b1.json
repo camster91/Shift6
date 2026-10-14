@@ -1,0 +1,12 @@
+{
+  "reviewScope": "Independent scoped source review by actual_field_labels",
+  "sourceCommit": "1f4d33b15d6fa523a7137623822d3dbf8e70c7fc",
+  "accepted": true,
+  "callbacksAndConditionalRenderingPreserved": true,
+  "loadProvenanceUnchanged": true,
+  "zeroValuesPreserved": true,
+  "captionsWrapAndInheritFontScaling": true,
+  "nativeLayoutAcceptancePending": true,
+  "fullVerificationFirstRun": "1218 passed; 2 existing test timeouts; failed receipt retained",
+  "notWholeAppAcceptance": true
+}

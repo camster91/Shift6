@@ -2,7 +2,7 @@
 
 14 October 2026. This is the current delivery index for the expanded iOS/Android goal. It supersedes the delivery order in doc 37, while preserving that document's dated audit and evidence. It does not approve content, alter the shipping guest configuration or authorize a release.
 
-Native QA filed #352–#364 for reproducible validation, units, presentation, recovery, feedback, keyboard and correction-editor concerns. The refreshed backlog is **54 open issues**, all mapped below; the original 41-issue reconciliation remains a dated snapshot. No issue is closed from source tests or scoped emulator evidence.
+Native QA filed #352–#365 for reproducible validation, units, presentation, recovery, feedback, keyboard and correction-editor concerns. The refreshed backlog is **55 open issues**, all mapped below; the original 41-issue reconciliation remains a dated snapshot. No issue is closed from source tests or scoped emulator evidence.
 
 ## Goal and product promise
 
@@ -13,6 +13,18 @@ Aim for **95+/100 and ultimately full evidenced coverage** under [doc 34](34_HUM
 Core training remains free, local and usable offline. Keep deterministic progression, immutable history, explicit actual values and units, optional assessments, privacy controls, Higgsfield assets, reduced motion and the qualified public-content allowlist. More features do not automatically earn more points. A critical safety, privacy, data-loss or accessibility failure blocks launch regardless of score.
 
 ## Verified starting point
+
+[Doc52](52_NATIVE_ACCESSIBILITY_AND_LABELS_QA.md) records latest source
+`86a26c44`: full verify **1,220 tests/144 suites**, standalone native guest build
+and update install. Normal/200% text shows persistent actual-field captions and
+restored26seconds/RPE7. The large-text voice editor accepts exact paced text
+after dismissing Gboard's observed stylus tutorial. Fresh outside-app JSON
+preserves every actual/draft value across36arrays/1,082records; font1.0 and
+TalkBack Off are restored. Earlier harness interruptions remain explicit.
+The earlier ae TalkBack observer proves service coexistence and injected resume,
+not spoken traversal. Native/quality CI atf5f3e9c4 succeeds for ae app source;
+current-head remote CI, physical/iOS and participant acceptance remain pending.
+No source test or scoped emulator check upgrades the53/100 score.
 
 Newest source `ae3efb5a` passes full verify **1,218 tests/144 suites**, Doctor21/21,
 both exports and a standalone Android guest build. The optional voice correction
@@ -47,7 +59,7 @@ native forced-failure warm retry, physical devices, current iOS journeys and hum
 acceptance remain pending. This updates T03/T05/T09 evidence, not their completion
 or the 53/100 provisional score. Older bullets below retain their dated scope.
 
-- Initial GitHub reconciliation: **41 open issues**, including umbrella epics; subsequent native findings increased the mapped backlog to **54**. Issue count is not a count of missing features. All remain open pending their individual acceptance criteria.
+- Initial GitHub reconciliation: **41 open issues**, including umbrella epics; subsequent native findings increased the mapped backlog to **55**. Issue count is not a count of missing features. All remain open pending their individual acceptance criteria.
 - `main` contains merged guest release PR #330 (`4e8a2c9b`). Later work remains in reviewable draft PRs, not merged or published.
 - [#344](https://github.com/camster91/Shift6/pull/344): guest guidance/save copy/goal units, native Android QA and earlier iOS CI evidence.
 - [#346](https://github.com/camster91/Shift6/pull/346), stacked on #344: local restore, Health Connect pagination/totals and saved-plan discovery. Native synthetic framework/picker/export evidence is in doc 39.
@@ -112,6 +124,8 @@ Follow-up issue mapping:
 | #363  | Native de0711b0 and057d5936 hide the focused edited time-zone field. Revised3f1752ed passes normal/200% text keyboard visibility and preserves all36 arrays; doc50 retains failures and exact retest. Physical/iOS, different keyboards and assistive-technology acceptance remain.                                    | T05, T09 |
 | #364  | Native de0711b0 unmounts the emptied voice editor. Explicit-open-state fix057d5936 passes native clear/retype/background reset; actual payloads unchanged. Doc51 distinguishes deliberate unsaved draft application and blocked recognition. Physical/iOS and broader acceptance remain.                               | T03, T09 |
 
+| #365 | Persistent actual-field captions preserve units and zero values in1f4d33b1. Exact86a26c44 full verify1,220/144 passes; normal/200% Android screenshots retain26seconds/RPE7 and fresh external export preserves all1,082records. Doc52 retains harness/IME limitations. Broader fields, physical/iOS and human acceptance remain open. | T03, T09 |
+
 ## Ordered TODO and acceptance receipts
 
 Follow-up #363 belongs to T05/T09 and #364 to T03/T09. Docs50–51 retain the actual
@@ -126,7 +140,7 @@ T04 confirmed scheduling source is integrated at `eb6cd6d2`: frozen dates/timezo
 
 The dated `996058d0` source passed 1,019 tests/138 suites. Subsequent `d60daf0a` passed full `npm run verify`: **1,137 tests/142 suites**, Doctor 21/21 and both mobile exports. Dated code `0d705bac` passes full verification: **1,139 tests/142 suites**, Doctor 21/21 and both mobile exports. Its standalone Android build/install and canonical volume labels are native observed; all 36 exported arrays remain identical. [Doc47](47_ATOMIC_HANDOVER_QA.md) identifies every frozen source, APK hash, failed and passing check, native handover/receipt recovery, exact backup roundtrip and large-text refusal/elapsed-copy observations. Native proofs use synthetic records; the completed-state fixture proves neither six-week use nor completion-engine acceptance. Earlier dated source/binary results remain in docs45–46. Latest code `501be370` passes full verify **1,142/142**, Doctor 21/21 and both mobile exports; native dashboard Review is above the fold at normal/font2 and older paused reflection remains scoped. All 36 exported arrays remain unchanged. iOS CI compile/install/cold-launch at documentation-only `71f2b4fe` is separately dated, not acceptance of later source or full iOS journeys.
 
-- [x] **T01 — Reconcile scope and live backlog.** Map all 54 currently open issues, retain the original 41-issue snapshot, record goal/score and dated evidence. Keep the index reviewable and linked from the master; no issue closure implied.
+- [x] **T01 — Reconcile scope and live backlog.** Map all 55 currently open issues, retain the original 41-issue snapshot, record goal/score and dated evidence. Keep the index reviewable and linked from the master; no issue closure implied.
 - [x] **T02 — Stabilize one integrated native candidate.** At `71babfc8`, dependencies/native voice compile, full verify (872/129) and Android APK build pass; source/hash and native regression readback are in doc 42. This is an emulator test candidate, not a signed release. Repeat affected checks after subsequent implementation changes.
 - [ ] **T03 — Finish the six native acceptance journeys.** Use ADB on the same PC emulator, synthetic records and a separate receiving app. Verify latest setup/guided recovery, private builder/import/recovery/new-copy, goals/baselines/units/corrections/review, sets/drafts/mixed units/partial/resume, external backup/export/restore/delete at the exact candidate schema, including confirmed schema-17 handover receipts, and offline/keyboard/navigation/permissions/reminders/health/media. Capture device/OS/SHA, steps, expected/actual, screenshots and actual exported records. Retest defects in the changed binary.
 - [ ] **T04 — Unify the goal/cycle/return contract.** Canonical local handover ownership, immutable source/version capture, atomic storage and durable receipt are implemented. Doc47 observes Cancel, both goal choices, unchanged actuals, deferred carried baseline, cold receipt recovery and confirmed-journal backup. Interrupted exact retry, stale/older-cycle native cases, completed-week occurrence readers, travel/missed-week decisions and qualified return prescriptions remain. Reconcile PR #327 without a second authority; preserve legacy records without invented baselines.

@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\test-actual-labels-86a26c44.py", line 53, in <module>
+    assert any(n.get('text')=='Duration (seconds)' for n in qa.nodes())
+AssertionError

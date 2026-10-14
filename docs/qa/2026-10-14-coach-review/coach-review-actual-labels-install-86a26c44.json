@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "86a26c4490ab091f865e20773151a0443a9f2b8c",
+  "apkSha256": "a13dd04bae2cae236fd9eb8f2c6e2e49da9b26c7d85aefa84e47e85d222d9a1e",
+  "installReplace": true,
+  "appDataCleared": false,
+  "serial": "emulator-5554",
+  "android": "16",
+  "package": "com.shift6.app",
+  "installResult": "Performing Streamed Install\r\nSuccess"
+}

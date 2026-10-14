@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\test-labels-voice-font2-86a26c44.py", line 24, in <module>
+    with contextlib.redirect_stdout(io.StringIO()):qa.fill(label,'26 seconds, RPE seven',hide=False)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 69, in fill
+    if len(values)!=1 or values[0].get("text")!=value:raise RuntimeError("Text readback differs from requested value")
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Text readback differs from requested value

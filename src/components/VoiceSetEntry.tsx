@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, TextInput, View } from 'react-native';
+import { AppState, StyleSheet, TextInput, View } from 'react-native';
 import { Button, Card, Text } from './ui';
 import { parseVoiceSet, voiceBindingKey, type VoiceSetBinding } from '../domain/voiceSetDraft';
 import type { WorkoutDraftSetValues } from '../domain/types';
 import { createPlatformLocalVoiceAdapter, type LocalVoiceAdapter } from '../services/localVoice';
+import { colors, radii, spacing, touchTargets, typography } from '../design/tokens';
 
 /** Supplies reviewed fields to the current unsaved set; the existing Save set transaction is separate. */
 export function VoiceSetEntry({
@@ -184,7 +185,7 @@ export function VoiceSetEntry({
         }}
       />
       {editorMatches() ? (
-        <View>
+        <View style={styles.editor}>
           <Button
             label="Dismiss voice entry"
             variant="ghost"
@@ -202,8 +203,13 @@ export function VoiceSetEntry({
               setMessage('');
             }}
           />
+          <Text variant="bodyMedium">Correct or type actual results</Text>
+          <Text tone="muted">Type actual values with units, then review.</Text>
           <TextInput
             accessibilityLabel="Review or correct the spoken set entry"
+            placeholder={example ? `e.g. ${example}` : 'Actual results with units'}
+            placeholderTextColor={colors.inkMuted}
+            style={styles.input}
             value={text}
             editable={!listening && !disabled}
             maxLength={500}
@@ -291,3 +297,18 @@ export function VoiceSetEntry({
     </Card>
   );
 }
+
+const styles = StyleSheet.create({
+  editor: { gap: spacing.sm },
+  input: {
+    ...typography.body,
+    minHeight: touchTargets.standard + spacing.xxl,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    backgroundColor: colors.canvas,
+    color: colors.ink,
+    textAlignVertical: 'top',
+  },
+});

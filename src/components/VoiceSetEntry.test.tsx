@@ -47,6 +47,8 @@ test('manual correction can delete every character and retype after an offline f
     <VoiceSetEntry binding={timed} adapter={f.adapter} onApply={apply} />,
   );
   await fireEvent.press(screen.getByLabelText('Speak a set entry'));
+  expect(screen.getByText('Correct or type actual results')).toBeTruthy();
+  expect(screen.getByPlaceholderText('e.g. thirty seconds')).toBeTruthy();
   await fireEvent.changeText(
     screen.getByLabelText('Review or correct the spoken set entry'),
     '40 pounds, 8 reps',
@@ -62,6 +64,8 @@ test('manual correction can delete every character and retype after an offline f
     oldReview();
   });
   expect(screen.getByLabelText('Review or correct the spoken set entry')).toHaveDisplayValue('');
+  expect(screen.getByText('Type actual values with units, then review.')).toBeTruthy();
+  expect(screen.getByPlaceholderText('e.g. thirty seconds')).toHaveDisplayValue('');
   expect(screen.getByLabelText('Review corrected values')).toBeDisabled();
   expect(screen.queryByLabelText('Use reviewed values in unsaved set')).toBeNull();
   expect(apply).not.toHaveBeenCalled();

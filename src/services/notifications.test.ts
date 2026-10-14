@@ -12,8 +12,44 @@ const mockRequestPermissionsAsync = jest.fn();
 const mockSetNotificationChannelAsync = jest.fn();
 const mockScheduleNotificationAsync = jest.fn();
 const mockSetNotificationHandler = jest.fn();
+const mockResponseListener = jest.fn();
+const mockLastResponse = jest.fn();
 
 describe('notification provider boundary', () => {
+  it('preserves native action, request and delivery identity for cached and live responses', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const native = {
+      actionIdentifier: 'expo.modules.notifications.actions.DEFAULT',
+      notification: {
+        date: 1792022400000,
+        request: {
+          identifier: 'shift6:rest-timer:session',
+          content: {
+            data: {
+              source: 'shift6',
+              kind: 'shift6-rest-timer',
+              sessionId: 'session',
+              workoutId: 'workout',
+            },
+          },
+        },
+      },
+    };
+    mockLastResponse.mockResolvedValue(native);
+    const provider = new ExpoNotificationProvider(loadMockNotifications);
+    const received = jest.fn();
+    await provider.subscribeToResponses(received);
+    mockResponseListener.mock.calls[0]![0](native);
+    const expected = {
+      requestIdentifier: native.notification.request.identifier,
+      deliveredAt: native.notification.date,
+      actionIdentifier: native.actionIdentifier,
+      defaultActionIdentifier: native.actionIdentifier,
+      data: native.notification.request.content.data,
+    };
+    expect(received).toHaveBeenCalledWith(expected);
+    await expect(provider.getLastResponse()).resolves.toEqual(expected);
+  });
   afterEach(() => {
     jest.restoreAllMocks();
     jest.clearAllMocks();
@@ -132,13 +168,17 @@ describe('notification provider boundary', () => {
 
 async function loadMockNotifications(): Promise<NotificationModule> {
   return {
+    DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
     AndroidImportance: { DEFAULT: 3 },
     IosAuthorizationStatus: { PROVISIONAL: 3 },
     SchedulableTriggerInputTypes: { DATE: 'date' },
-    addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+    addNotificationResponseReceivedListener: (...args: unknown[]) => {
+      mockResponseListener(...args);
+      return { remove: jest.fn() };
+    },
     cancelScheduledNotificationAsync: jest.fn(),
     getAllScheduledNotificationsAsync: jest.fn(async () => []),
-    getLastNotificationResponseAsync: jest.fn(async () => null),
+    getLastNotificationResponseAsync: (...args: unknown[]) => mockLastResponse(...args),
     getPermissionsAsync: (...args: unknown[]) => mockGetPermissionsAsync(...args),
     requestPermissionsAsync: (...args: unknown[]) => mockRequestPermissionsAsync(...args),
     scheduleNotificationAsync: (...args: unknown[]) => mockScheduleNotificationAsync(...args),

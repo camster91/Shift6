@@ -54,7 +54,10 @@ const mockDb = {},
   mockSaveNote = jest.fn(),
   mockPartial = jest.fn(),
   mockSkip = jest.fn(),
+  mockCancelRest = jest.fn(),
   mockSaveDraft = jest.fn();
+let mockDatabaseInstance = mockDb;
+let mockOwnerId = 'guest-user';
 jest.mock('expo-network', () => ({
   getNetworkStateAsync: async () => ({ isConnected: false, isInternetReachable: false }),
   addNetworkStateListener: () => ({ remove: () => undefined }),
@@ -76,11 +79,11 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('../services/notifications', () => ({ createExpoNotificationProvider: () => ({}) }));
 jest.mock('../services/notificationScheduler', () => ({
-  cancelRestTimerCue: async () => undefined,
+  cancelRestTimerCue: (...args: unknown[]) => mockCancelRest(...args),
   refreshRestTimerCue: async () => ({ outcome: 'disabled' }),
 }));
-jest.mock('../db/context', () => ({ useLocalDatabase: () => mockDb }));
-jest.mock('../services/UserIdentityProvider', () => ({ useCurrentUserId: () => 'guest-user' }));
+jest.mock('../db/context', () => ({ useLocalDatabase: () => mockDatabaseInstance }));
+jest.mock('../services/UserIdentityProvider', () => ({ useCurrentUserId: () => mockOwnerId }));
 jest.mock('../services/AppServicesProvider', () => ({
   useAppServices: () => ({ analytics: { track: jest.fn() } }),
 }));
@@ -124,6 +127,8 @@ let mockCycle = demoCycle,
 let mockUser = demoUser;
 beforeEach(() => {
   mockWorkoutScreenProps = undefined;
+  mockDatabaseInstance = mockDb;
+  mockOwnerId = 'guest-user';
   mockVoiceProps = undefined;
   jest.clearAllMocks();
   // A timed-out async case may finish after the next case starts. Keep its
@@ -143,6 +148,7 @@ beforeEach(() => {
   mockSaveDraft.mockResolvedValue(undefined);
   mockPartial.mockResolvedValue({ status: 'partial' });
   mockSkip.mockResolvedValue({ status: 'skipped' });
+  mockCancelRest.mockReset().mockResolvedValue(undefined);
   jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 });
 const originalKeyboardSubscribe = jest.isMockFunction(Keyboard.addListener)
@@ -196,6 +202,66 @@ test.each([
     }
   },
   15000,
+);
+
+test.each([false, true])(
+  'Skip rest clears the local timer and cancels its cue, native rejection=%s',
+  async (reject) => {
+    const screen = await render(<ActiveWorkoutScreen />);
+    await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+    await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+    await waitFor(() => expect(screen.getByText('REST TIMER')).toBeTruthy());
+    const saved = mockSaveSet.mock.calls[0]?.[1];
+    expect(saved?.sessionId).toBeTruthy();
+    if (reject) mockCancelRest.mockRejectedValueOnce(new Error('native cancel unavailable'));
+    mockCancelRest.mockClear();
+    await fireEvent.press(screen.getByText('Skip rest'));
+    await waitFor(() => expect(screen.queryByText('REST TIMER')).toBeNull());
+    expect(mockCancelRest).toHaveBeenCalledWith(expect.anything(), saved.sessionId);
+    expect(mockSaveSet).toHaveBeenCalledTimes(1);
+    expect(mockPartial).not.toHaveBeenCalled();
+    if (reject)
+      expect(
+        screen.getByText('Rest skipped here. The device cue could not be cancelled.'),
+      ).toBeTruthy();
+    await screen.unmount();
+  },
+);
+
+test.each(['database', 'owner', 'focus'])(
+  'retained Skip rest callback refuses a changed %s generation',
+  async (change) => {
+    const screen = await render(<ActiveWorkoutScreen />);
+    await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+    await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+    await waitFor(() => expect(screen.getByText('REST TIMER')).toBeTruthy());
+    const skip = screen
+      .getByLabelText('Skip rest')
+      .props.onStartShouldSetResponder.testOnly_pressabilityConfig().onPress;
+    if (change === 'focus') {
+      await act(async () => {
+        mockFocusLeave?.();
+        mockFocusEnter?.();
+      });
+    } else {
+      if (change === 'database') mockDatabaseInstance = {};
+      else mockOwnerId = 'different-owner';
+      await screen.rerender(<ActiveWorkoutScreen />);
+    }
+    mockCancelRest.mockClear();
+    await act(async () => {
+      skip();
+    });
+    expect(mockCancelRest).not.toHaveBeenCalled();
+    if (change !== 'focus') {
+      mockDatabaseInstance = mockDb;
+      mockOwnerId = 'guest-user';
+      await screen.rerender(<ActiveWorkoutScreen />);
+    }
+    await waitFor(() => expect(screen.getByText('REST TIMER')).toBeTruthy());
+    expect(mockSaveSet).toHaveBeenCalledTimes(1);
+    await screen.unmount();
+  },
 );
 
 test('legacy recovered load stays unknown and cannot save until explicitly declared', async () => {

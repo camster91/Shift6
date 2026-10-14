@@ -104,8 +104,8 @@ export function buildWorkoutReminderSchedule({
       cycleId: cycle.id,
       cycleWeek: occurrence.cycleWeek,
       workoutId: workout.id,
-      title: `${workout.title} is coming up`,
-      body: `Training week ${occurrence.cycleWeek} · ${workout.estimatedDurationMinutes} min · Tap to view your session.`,
+      title: 'SHIFT6 reminder',
+      body: 'Open SHIFT6 when you are ready.',
       deepLink: `/workout?workoutId=${encodeURIComponent(workout.id)}`,
       scheduledFor: scheduledDate.toISOString(),
     });

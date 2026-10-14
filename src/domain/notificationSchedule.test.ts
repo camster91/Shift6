@@ -4,6 +4,30 @@ import { buildWorkoutReminderSchedule, preferredTrainingTimeClock } from './noti
 describe('workout reminder schedule', () => {
   const cycle = { ...demoCycle, startedAt: new Date(2026, 8, 14, 12).toISOString() };
 
+  it('keeps private plan names, dates, weeks and durations out of visible reminder text', () => {
+    const version = {
+      ...demoProgramVersion,
+      workouts: demoProgramVersion.workouts.map((workout) => ({
+        ...workout,
+        title: 'Private injury recovery for Alex',
+        estimatedDurationMinutes: 47,
+      })),
+    };
+    const reminders = buildWorkoutReminderSchedule({
+      userId: 'guest-user',
+      preferences: { workoutReminders: true },
+      cycle,
+      programVersion: version,
+      preferredTrainingTime: 'morning',
+      now: new Date(2026, 8, 14, 7, 30),
+    });
+    expect(reminders.length).toBeGreaterThan(0);
+    for (const reminder of reminders) {
+      expect(reminder.title).toBe('SHIFT6 reminder');
+      expect(reminder.body).toBe('Open SHIFT6 when you are ready.');
+    }
+  });
+
   it('creates stable one-shot reminders for upcoming workouts in the preferred window', () => {
     const reminders = buildWorkoutReminderSchedule({
       userId: 'guest-user',

@@ -420,7 +420,7 @@ export default function ActiveWorkoutScreen() {
 
   useEffect(() => {
     return () => {
-      void cancelRestTimerCue(notificationProvider, session.id);
+      void cancelRestTimerCue(notificationProvider, session.id).catch(() => undefined);
     };
   }, [session.id]);
 
@@ -1148,6 +1148,17 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
+  const restControlIsCurrent = captureDraftContextGuard();
+  const handleSkipRest = () => {
+    if (!canMutate || !restControlIsCurrent()) return;
+    setRestEndsAt(null);
+    setRestSecondsRemaining(0);
+    void cancelRestTimerCue(notificationProvider, session.id).catch(() => {
+      if (restControlIsCurrent())
+        setError('Rest skipped here. The device cue could not be cancelled.');
+    });
+  };
+
   const handleDifficulty = (choice: SetDifficulty) => {
     if (setWrite.current || !canMutate || !lastSavedSet || feedbackWrite.current) return;
     const generation = feedbackGeneration.current;
@@ -1694,7 +1705,7 @@ export default function ActiveWorkoutScreen() {
               {formatTimer(restSecondsRemaining)}
             </Text>
           </View>
-          <Button label="Skip rest" variant="secondary" onPress={() => setRestEndsAt(null)} />
+          <Button label="Skip rest" variant="secondary" onPress={handleSkipRest} />
         </Card>
       ) : null}
 

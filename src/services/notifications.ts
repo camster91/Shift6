@@ -17,6 +17,10 @@ export interface LocalNotificationRequest {
 }
 
 export interface NotificationResponsePayload {
+  requestIdentifier: string;
+  actionIdentifier: string;
+  defaultActionIdentifier: string;
+  deliveredAt: number;
   data: Record<string, unknown>;
 }
 
@@ -41,6 +45,7 @@ export const shift6ReminderChannelId = 'shift6-reminders';
 
 export type NotificationModule = Pick<
   typeof Notifications,
+  | 'DEFAULT_ACTION_IDENTIFIER'
   | 'AndroidImportance'
   | 'IosAuthorizationStatus'
   | 'SchedulableTriggerInputTypes'
@@ -167,7 +172,7 @@ export class ExpoNotificationProvider implements NotificationProvider {
     if (!(await this.isAvailable())) return { remove: () => undefined };
     const notifications = await this.notificationsLoader();
     const subscription = notifications.addNotificationResponseReceivedListener((response) => {
-      listener({ data: response.notification.request.content.data ?? {} });
+      listener(toResponsePayload(response, notifications));
     });
     return subscription;
   }
@@ -176,8 +181,21 @@ export class ExpoNotificationProvider implements NotificationProvider {
     if (!(await this.isAvailable())) return null;
     const notifications = await this.notificationsLoader();
     const response = await notifications.getLastNotificationResponseAsync();
-    return response ? { data: response.notification.request.content.data ?? {} } : null;
+    return response ? toResponsePayload(response, notifications) : null;
   }
+}
+
+function toResponsePayload(
+  response: Notifications.NotificationResponse,
+  notifications: NotificationModule,
+): NotificationResponsePayload {
+  return {
+    requestIdentifier: response.notification.request.identifier,
+    actionIdentifier: response.actionIdentifier,
+    defaultActionIdentifier: notifications.DEFAULT_ACTION_IDENTIFIER,
+    deliveredAt: response.notification.date,
+    data: response.notification.request.content.data ?? {},
+  };
 }
 
 export function createExpoNotificationProvider(): NotificationProvider {

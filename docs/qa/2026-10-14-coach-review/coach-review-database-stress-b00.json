@@ -1,0 +1,63 @@
+{
+  "sourceCommit": "b00e62accb7258adb8df46f18b83fc21e35ff72e",
+  "apkSha256": "f0c4dcdc42fed84fe369a324242c2a3a04903586e30d40e6b47ed00c0de65428",
+  "observedAt": "2026-10-14T07:37:28.038876+00:00",
+  "foregroundFontSequenceRounds": 3,
+  "screenChecks": [
+    {
+      "capture": "coach-review-stress-profile-large-b00-1",
+      "expectedText": "60-minute sessions",
+      "observed": true,
+      "fontScale": "2.0"
+    },
+    {
+      "capture": "coach-review-stress-summary-large-b00-1",
+      "expectedText": "43 min elapsed since start",
+      "observed": true,
+      "fontScale": "2.0"
+    },
+    {
+      "capture": "coach-review-stress-profile-normal-b00-1",
+      "expectedText": "60-minute sessions",
+      "observed": true,
+      "fontScale": "1.0"
+    },
+    {
+      "capture": "coach-review-stress-profile-large-b00-2",
+      "expectedText": "60-minute sessions",
+      "observed": true,
+      "fontScale": "2.0"
+    },
+    {
+      "capture": "coach-review-stress-summary-large-b00-2",
+      "expectedText": "43 min elapsed since start",
+      "observed": true,
+      "fontScale": "2.0"
+    },
+    {
+      "capture": "coach-review-stress-profile-normal-b00-2",
+      "expectedText": "60-minute sessions",
+      "observed": true,
+      "fontScale": "1.0"
+    },
+    {
+      "capture": "coach-review-stress-profile-large-b00-3",
+      "expectedText": "60-minute sessions",
+      "observed": true,
+      "fontScale": "2.0"
+    },
+    {
+      "capture": "coach-review-stress-summary-large-b00-3",
+      "expectedText": "43 min elapsed since start",
+      "observed": true,
+      "fontScale": "2.0"
+    },
+    {
+      "capture": "coach-review-stress-profile-normal-b00-3",
+      "expectedText": "60-minute sessions",
+      "observed": true,
+      "fontScale": "1.0"
+    }
+  ],
+  "limits": "Source-proven lifecycle fixes plus scoped native stress; original failure cause unproven. No forced new native failure, so real-device warm retry remains untested."
+}

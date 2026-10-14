@@ -1,0 +1,44 @@
+{
+  "sourceCommit": "db4e8c290d8a801d5305ca57ffed414ecbd1d2dc",
+  "baselineRecordCount": 1076,
+  "postResumeCancelCount": 1077,
+  "finalRecordCount": 1079,
+  "cancelChangesFromBaseline": [
+    "cycleLifecycleEvents",
+    "trainingCycles"
+  ],
+  "confirmedIntentCount": 2,
+  "confirmedChangesFromCancel": [
+    "coachReviewJournal"
+  ],
+  "unchangedArraysFromCancel": 35,
+  "coldRecoveryIdenticalArrays": 36,
+  "actualSetsSessionsGoalsUnchanged": true,
+  "skipReceipt": {
+    "ownerId": "guest-user",
+    "cycleId": "cycle-guest-user-program-blank-guest-user-1791862271289-1791862663686",
+    "programVersionId": "program-blank-guest-user-1791862271289-version-1",
+    "choice": "keep-plan",
+    "response": null,
+    "window": {
+      "endDate": "2026-10-13",
+      "startDate": "2026-10-08",
+      "timeZone": "America/New_York"
+    }
+  },
+  "answerReceipt": {
+    "choice": "review-availability",
+    "response": {
+      "answer": "review-availability",
+      "questionId": "time-limited-stop"
+    },
+    "nextCapability": "open-setup",
+    "window": {
+      "endDate": "2026-10-14",
+      "startDate": "2026-10-08",
+      "timeZone": "America/New_York"
+    }
+  },
+  "previousReviewMatchesFirst": true,
+  "recreationFailure": "Observed rapid font-setting Summary/database gate; Try again remained gated; cold start recovered unchanged data. Background font-change sequence passed separately; cause unproven."
+}

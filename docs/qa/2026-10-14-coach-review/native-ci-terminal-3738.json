@@ -1,0 +1,171 @@
+{
+  "observedAt": "2026-10-14T07:03:46.926837+00:00",
+  "runId": 38521781728,
+  "headSha": "3738e8f3e448dbdb7ea9b386b006de76fb5794b2",
+  "status": "completed",
+  "conclusion": "success",
+  "url": "https://github.com/camster91/Shift6/actions/runs/38521781728",
+  "jobs": [
+    {
+      "id": 115716298054,
+      "name": "android",
+      "conclusion": "success",
+      "url": "https://github.com/camster91/Shift6/actions/runs/38521781728/job/115716298054",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v7",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v7",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-java@v6",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci --include=dev",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run validate:release-config",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run validate:release-assets",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check native artifact proof rejection cases",
+          "conclusion": "success"
+        },
+        {
+          "name": "Reject unexpected build inputs or guest release context",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npx expo prebuild --no-install --platform android",
+          "conclusion": "success"
+        },
+        {
+          "name": "Compile release-mode APK for testing",
+          "conclusion": "success"
+        },
+        {
+          "name": "Save test-signed APK (not a store submission)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve test-signed APK and checkout proof",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-java@v6",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v7",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v7",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 115716298343,
+      "name": "ios",
+      "conclusion": "success",
+      "url": "https://github.com/camster91/Shift6/actions/runs/38521781728/job/115716298343",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v7",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v7",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci --include=dev",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run validate:release-config",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run validate:release-assets",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check native artifact proof rejection cases",
+          "conclusion": "success"
+        },
+        {
+          "name": "Reject unexpected build inputs or guest release context",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npx expo prebuild --no-install --platform ios",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prefetch checksum-verified React Native archives",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install native pods",
+          "conclusion": "success"
+        },
+        {
+          "name": "Compile unsigned Release simulator app",
+          "conclusion": "success"
+        },
+        {
+          "name": "Bind simulator payload to its actual checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v7",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install and cold-launch on iPhone simulator",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v7",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v7",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v7",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "limits": "Producer native compilation/proof and iOS simulator install/cold-launch; no full consumer runtime QA, physical device or human acceptance. Head3738 docs-only over db4; later localCoach/provider source not covered."
+}

@@ -1,5 +1,9 @@
 # Continue native QA on your PC
 
+The latest scoped Android Coach QA, exact candidate and standalone launch commands
+are in [doc 50](50_LOCAL_COACH_REVIEW_QA.md). It includes observed passes, the
+earlier recreation failure, record comparisons and remaining platform gates.
+
 Historical handoff: the setup problems and test counts below describe the original
 candidate. For current priorities and the reconciled issue backlog, use
 [doc 43](43_SHIPPING_GOAL_AND_TODO.md). Dated native evidence is in docs 36,

@@ -14,6 +14,18 @@ Core training remains free, local and usable offline. Keep deterministic progres
 
 ## Verified starting point
 
+Latest scoped native update: [doc 50](50_LOCAL_COACH_REVIEW_QA.md) observes
+`b00e62ac` on the same Android emulator. Full verification passes **1,173 tests /
+144 suites**, Doctor 21/21 and both mobile exports. Saved dated Coach decisions
+survive cold start, the actionable receipt is visible at normal/200% text, and
+Continue opens editable guided setup. A newer confirmed Keep plan suppresses the
+older continuation; external JSON proves exactly one new receipt and all 35 other
+record sections unchanged. Three recreation stress rounds preserve all records.
+The original db4 database/retry failure and its unproven cause remain documented;
+native forced-failure warm retry, physical devices, current iOS journeys and human
+acceptance remain pending. This updates T03/T05/T09 evidence, not their completion
+or the 53/100 provisional score. Older bullets below retain their dated scope.
+
 - Initial GitHub reconciliation: **41 open issues**, including umbrella epics; subsequent native findings increased the mapped backlog to **52**. Issue count is not a count of missing features. All remain open pending their individual acceptance criteria.
 - `main` contains merged guest release PR #330 (`4e8a2c9b`). Later work remains in reviewable draft PRs, not merged or published.
 - [#344](https://github.com/camster91/Shift6/pull/344): guest guidance/save copy/goal units, native Android QA and earlier iOS CI evidence.

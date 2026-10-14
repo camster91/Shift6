@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "7b93db4825dc6271a0a890bda1f2f470f00383b8",
+  "exitCode": 0,
+  "architecture": "x86_64",
+  "environment": "staging",
+  "releaseMode": "guest-only",
+  "apiBaseUrl": "",
+  "dotenvDisabled": true,
+  "finishedAt": "2026-10-14T07:08:25.294284+00:00",
+  "log": "build-integrated-7b93db48.log",
+  "apk": "app-release-7b93db48-x86_64.apk",
+  "sha256": "fee779b18f083719ef4e1c7fda1e066a170c8423a2bd684b7e928642db4099e6"
+}

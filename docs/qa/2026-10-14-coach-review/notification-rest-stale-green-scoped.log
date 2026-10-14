@@ -1,0 +1,99 @@
+(node:15944) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS src/components/workoutFocusScreen.test.tsx (13.706 s)
+  ● Console
+
+    console.error
+      The current testing environment is not configured to support act(...)
+
+      213 |     voiceField.current = null;
+      214 |     keyboardSpace.current = 0;
+    > 215 |     setVoiceKeyboardSpace(null);
+          |     ^
+      216 |   }, []);
+      217 |   useEffect(() => {
+      218 |     const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+
+      at isConcurrentActEnvironment (node_modules/react-reconciler/cjs/react-reconciler.development.js:13990:17)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16304:7)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setVoiceKeyboardSpace (app/workout.tsx:215:5)
+      at Object.react_stack_bottom_frame (node_modules/react-reconciler/cjs/react-reconciler.development.js:17681:20)
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at commitHookEffectListMount (node_modules/react-reconciler/cjs/react-reconciler.development.js:10861:29)
+      at commitHookPassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:10948:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:12979:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:12934:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:13014:11)
+      at flushPassiveEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:15982:9)
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:15555:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at node_modules/react/cjs/react.development.js:847:21
+
+    console.error
+      The current testing environment is not configured to support act(...)
+
+      213 |     voiceField.current = null;
+      214 |     keyboardSpace.current = 0;
+    > 215 |     setVoiceKeyboardSpace(null);
+          |     ^
+      216 |   }, []);
+      217 |   useEffect(() => {
+      218 |     const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+
+      at isConcurrentActEnvironment (node_modules/react-reconciler/cjs/react-reconciler.development.js:13990:17)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16304:7)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setVoiceKeyboardSpace (app/workout.tsx:215:5)
+      at Object.react_stack_bottom_frame (node_modules/react-reconciler/cjs/react-reconciler.development.js:17681:20)
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at commitHookEffectListMount (node_modules/react-reconciler/cjs/react-reconciler.development.js:10861:29)
+      at commitHookPassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:10948:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:12979:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:12934:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:13014:11)
+      at flushPassiveEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:15982:9)
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:15555:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at node_modules/react/cjs/react.development.js:847:21
+
+    console.error
+      The current testing environment is not configured to support act(...)
+
+      213 |     voiceField.current = null;
+      214 |     keyboardSpace.current = 0;
+    > 215 |     setVoiceKeyboardSpace(null);
+          |     ^
+      216 |   }, []);
+      217 |   useEffect(() => {
+      218 |     const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+
+      at isConcurrentActEnvironment (node_modules/react-reconciler/cjs/react-reconciler.development.js:13990:17)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16304:7)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setVoiceKeyboardSpace (app/workout.tsx:215:5)
+      at Object.react_stack_bottom_frame (node_modules/react-reconciler/cjs/react-reconciler.development.js:17681:20)
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at commitHookEffectListMount (node_modules/react-reconciler/cjs/react-reconciler.development.js:10861:29)
+      at commitHookPassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:10948:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:12979:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:12934:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:13014:11)
+      at flushPassiveEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:15982:9)
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:15555:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at node_modules/react/cjs/react.development.js:847:21
+
+PASS src/services/notificationScheduler.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       63 passed, 63 total
+Snapshots:   0 total
+Time:        14.502 s
+Ran all test suites matching /src\\components\\workoutFocusScreen.test.tsx|src\\services\\notificationScheduler.test.ts/i.

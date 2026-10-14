@@ -128,6 +128,10 @@ is recorded above and does not establish current iOS interaction acceptance.
 - [Paced input receipt](qa/2026-10-14-coach-review/coach-review-actual-labels-voice-paced-font2.0-86a26c44-receipt.json)
 - [Exact-candidate full verification](qa/2026-10-14-coach-review/verify-integrated-86a26c44.status.json)
 - [Native build receipt](qa/2026-10-14-coach-review/build-integrated-86a26c44.status.json)
+- [Final force-close recovery](qa/2026-10-14-coach-review/coach-review-actual-labels-final-recovery-font1.0-86a26c44.png)
+- [Fresh export chooser](qa/2026-10-14-coach-review/coach-review-actual-labels-export-chooser-86a26c44.json)
+- [Outside-app receiver](qa/2026-10-14-coach-review/coach-review-actual-labels-export-receiver-86a26c44.json)
+- [Final export comparison](qa/2026-10-14-coach-review/coach-review-actual-labels-comparison-86a26c44.json)
 
 ## Verification interruption retained
 

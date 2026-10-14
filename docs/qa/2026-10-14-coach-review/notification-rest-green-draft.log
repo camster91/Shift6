@@ -1,0 +1,10 @@
+(node:23520) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS src/components/workoutFocusScreen.test.tsx (7.092 s)
+PASS src/services/notificationScheduler.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       55 skipped, 4 passed, 59 total
+Snapshots:   0 total
+Time:        8.016 s, estimated 9 s
+Ran all test suites matching /src\\services\\notificationScheduler.test.ts|src\\components\\workoutFocusScreen.test.tsx/i with tests matching "skipping a rest cue|Skip rest|failed native rest".

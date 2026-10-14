@@ -1,0 +1,30 @@
+{
+  "reviewedAtUtc": "2026-10-14T16:07:50.4088950Z",
+  "host": "CAM-DESKTOP",
+  "mode": "independent read-only source closure review; no tests, source edits, ADB or GitHub",
+  "status": "accepted_source_only",
+  "files": [
+    {
+      "sha256": "D19960A6632D461CC5872CBF18C0DABC67B132589892AD6E10128F79851867C9",
+      "path": "scripts/mobile-runtime-qa.py"
+    },
+    {
+      "sha256": "1D962ACE9253D4321AD3CD276EA1EAC780BDDEB757293E391833A8D9B3E2204E",
+      "path": "scripts/mobile-runtime-qa.test.py"
+    }
+  ],
+  "closed": [
+    "Scope is False by default. Unconfirmed metadata, hidden/missing initial setup, stale/malformed proof or verifier exceptions never arm diagnostic collection.",
+    "Finally invokes gated collector; false scope returns bounded skip reason before invoking container locator or SQL.",
+    "Gate requires intended GitHub-hosted macOS Native runtime QA job/repository/ref/CI1, valid selected source/run identifiers, visible exact SETUP1 and existing full native source/context/payload verifier. CI1/workflow/job spellings checked against actual unchanged workflow.",
+    "Diagnostic wording now explicitly includes synthetic guest setup/profile plus exact named QA Session/QA hold goal records.",
+    "Previous recovery assertions12 before review,20 saved and same12 after review remain; read-only URI/query_only/closing/whitelist/bounds unchanged."
+  ],
+  "tests": "Worker final receipt reports16 offline tests and AST/diff0; reviewer inspected source/tests/receipt but did not execute tests.",
+  "limits": [
+    "Freshness is narrowly established by intended hosted workflow provenance plus observed initial setup; not general attestation of arbitrary reused simulators or spoofed environment.",
+    "Readback is sequential and bounded, not atomic or native acceptance; new native journey still pending.",
+    "Physical device, VoiceOver/TalkBack, human study and external export receipt are not implied."
+  ],
+  "priorChangesRequestedReceipt": "mobile-runtime-helper-source-review-2495a019.json"
+}

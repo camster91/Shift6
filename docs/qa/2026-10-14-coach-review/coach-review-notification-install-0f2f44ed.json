@@ -1,0 +1,9 @@
+{
+  "sourceCommit": "0f2f44eddd9226ffb573d1cc8e257baeb9af3764",
+  "apkSha256": "2e37891e3f521ab64a95b3538902ece28ff022fd17d4c165a26efee679919cab",
+  "installUpdateSuccess": true,
+  "noDataClear": true,
+  "fontScale": "1.0",
+  "serial": "emulator-5554",
+  "device": "sdk_gphone64_x86_64 Android16/API36"
+}

@@ -1,0 +1,53 @@
+{
+  "base": "0b997f90ff43370a655830eb72c3494a665d0a7f",
+  "committed": false,
+  "recordedAt": "2026-10-14T15:09:11.340853+00:00",
+  "scope": "Skip rest local clear and queued native scheduled-cue cancellation; render-bound owner/database/focus guard",
+  "retainedFailures": [
+    {
+      "log": "notification-rest-first-red.log",
+      "classification": "npx launcher unavailable; no test execution"
+    },
+    {
+      "log": "notification-rest-red-source.log",
+      "tests": 3,
+      "failed": 3,
+      "scope": "timer remains and pending native cue survives Skip"
+    },
+    {
+      "log": "notification-rest-stale-red.log",
+      "tests": 3,
+      "failed": 3,
+      "scope": "retained callback bypasses changed owner/database/focus"
+    }
+  ],
+  "latestScoped": {
+    "log": "notification-rest-stale-green-scoped.log",
+    "tests": 63,
+    "suites": 2,
+    "exitCode": 0
+  },
+  "limitations": [
+    "No native current-binary rest cue delivery yet",
+    "Cancellation of scheduled notification does not retract delivered tray cue",
+    "Rest deadline remains component state, not durable across restart"
+  ],
+  "files": [
+    {
+      "path": "app/workout.tsx",
+      "sha256": "68455ddcfb4b41ab5972ba24ea4cdef5392a1f91ab9f5f18b3417749674c84ec"
+    },
+    {
+      "path": "src/components/workoutFocusScreen.test.tsx",
+      "sha256": "545f3edf9172c5ed7ada1875e66c0823ebb7a5312f444f65ed4df202d4740401"
+    },
+    {
+      "path": "src/services/notificationScheduler.ts",
+      "sha256": "2daf0004d70fbc8192c1c2a211625081369cdf1df35a82ea44e45a6420910cea"
+    },
+    {
+      "path": "src/services/notificationScheduler.test.ts",
+      "sha256": "fa866578cee70dbce22b57f0542ee6d7de2d319f49ab07f2bdfe86aa3bb1288d"
+    }
+  ]
+}

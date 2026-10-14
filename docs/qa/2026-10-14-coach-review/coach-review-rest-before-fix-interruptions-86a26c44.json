@@ -1,0 +1,12 @@
+{
+  "appSource": "86a26c44",
+  "device": "sdk_gphone64_x86_64 Android16/API36",
+  "firstAttempt": "Saved synthetic set1 26seconds/RPE7; ordinary dump unavailable after Save; no Skip performed",
+  "secondAttempt": "Saved synthetic set2 12seconds/noRPE; fresh observer captures5of5 and REST TIMER; helper used wrong observer className key, stopped before Skip",
+  "freshContinuation": "Correct class key inspected; timer expired before safe Skip available; no tap performed",
+  "noNativeBeforeFixSkipFailureClaim": true,
+  "noSessionFinish": true,
+  "nativeCuePermissionOffNoDeliveryClaim": true,
+  "newSavedSetsRequireExternalReadback": true,
+  "renamedExpiredCapture": "coach-review-rest-expired-no-skip-86a26c44"
+}

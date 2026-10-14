@@ -1,0 +1,42 @@
+{
+  "sourceCommit": "0f2f44eddd9226ffb573d1cc8e257baeb9af3764",
+  "arrayCount": 36,
+  "recordCount": 1088,
+  "baselineExportedAt": "2026-10-14T15:56:58.345Z",
+  "finalExportedAt": "2026-10-14T16:12:23.658Z",
+  "changedArrays": [
+    "workoutDraftLoadUnits",
+    "scheduleBaselines",
+    "scheduleRevisions",
+    "trainingCycles",
+    "workoutSessions",
+    "completedSets",
+    "workoutDrafts"
+  ],
+  "all12PriorActualsUnchanged": true,
+  "newActual": {
+    "id": "completed-session-cycle-guest-user-program-custom-program-blank-guest-user-1791862271289-slug-copy-guest-1791872974980-1791873040943-week-2-program-custom-program-blank-guest-user-1791862271289-slug-copy-guest-1791872974980-version-1-workout-1-20261014160959099-program-custom-program-blank-guest-user-1791862271289-slug-copy-guest-1791872974980-version-1-workout-1-exercise-1:1",
+    "session_id": "session-cycle-guest-user-program-custom-program-blank-guest-user-1791862271289-slug-copy-guest-1791872974980-1791873040943-week-2-program-custom-program-blank-guest-user-1791862271289-slug-copy-guest-1791872974980-version-1-workout-1-20261014160959099",
+    "workout_exercise_id": "program-custom-program-blank-guest-user-1791862271289-slug-copy-guest-1791872974980-version-1-workout-1-exercise-1",
+    "set_number": 1,
+    "load": null,
+    "reps": null,
+    "duration_seconds": 14,
+    "distance_meters": null,
+    "rpe": null,
+    "rir": null,
+    "completed_at": "2026-10-14T16:10:28.856Z",
+    "idempotency_key": "session-cycle-guest-user-program-custom-program-blank-guest-user-1791862271289-slug-copy-guest-1791872974980-1791873040943-week-2-program-custom-program-blank-guest-user-1791862271289-slug-copy-guest-1791872974980-version-1-workout-1-20261014160959099:program-custom-program-blank-guest-user-1791862271289-slug-copy-guest-1791872974980-version-1-workout-1-exercise-1:1",
+    "exercise_id": "program-blank-guest-user-1791862271289-custom-exercise-1"
+  },
+  "externalReceiverObserved": true,
+  "exactLifecycleScheduleAndDraftDeltasVerified": true,
+  "unchangedOtherArrays": 29,
+  "completedOnlyPriorBWeek1": true,
+  "singleNewBWeek2Session": true,
+  "singleReviewedScheduleMove": {
+    "from": "2026-10-20",
+    "to": "2026-10-14",
+    "timeZone": "America/New_York"
+  }
+}

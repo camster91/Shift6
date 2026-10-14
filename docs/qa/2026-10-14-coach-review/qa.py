@@ -2,6 +2,7 @@ from pathlib import Path
 import subprocess,xml.etree.ElementTree as ET,re,json,sys,time,os,shlex
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT=Path(__file__).parent
+from qa_surface_guard import require_surface
 ADB=Path(os.environ["ANDROID_HOME"])/"platform-tools/adb.exe"
 SERIAL="emulator-5554"
 def adb(*args):
@@ -9,6 +10,7 @@ def adb(*args):
  if p.returncode:raise RuntimeError(p.stderr.decode(errors="replace"))
  return p.stdout
 def nodes():
+ require_surface(adb)
  adb("shell","rm","-f","/sdcard/shift6-qa.xml")
  dumped=adb("shell","uiautomator","dump","/sdcard/shift6-qa.xml").decode(errors="replace")
  if "UI hierchary dumped to" not in dumped and "UI hierarchy dumped to" not in dumped:
@@ -36,6 +38,7 @@ def find(label,editable=False):
  return found[0]
 def tap(label):
  n=find(label);b=bounds(n)
+ require_surface(adb,n.get('package'))
  adb("shell","input","tap",str((b[0]+b[2])//2),str((b[1]+b[3])//2))
  log("tap",label,n.attrib);show(nodes())
 
@@ -58,6 +61,7 @@ def tap_card(title,label):
  raise RuntimeError('Card control unavailable: '+title+' / '+label)
 def fill(label,value,hide=True):
  n=find(label,True);b=bounds(n)
+ require_surface(adb,n.get('package'))
  adb("shell","input","tap",str((b[0]+b[2])//2),str((b[1]+b[3])//2))
  focused=[x for x in nodes() if x.get("focused")=="true" and x.get("class")=="android.widget.EditText"]
  if len(focused)!=1 or focused[0].get("content-desc")!=n.get("content-desc"):raise RuntimeError("Input focus did not match requested field")

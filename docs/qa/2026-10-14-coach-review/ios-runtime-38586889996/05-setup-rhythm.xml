@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AppiumAUT>
+  <XCUIElementTypeApplication type="XCUIElementTypeApplication" name="SHIFT6" label="SHIFT6" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="" processId="6215" bundleId="com.shift6.app">
+    <XCUIElementTypeWindow type="XCUIElementTypeWindow" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+              <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                    <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                              <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                                <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="633" index="0" traits="">
+                                    <XCUIElementTypeScrollView type="XCUIElementTypeScrollView" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="633" index="0" traits="">
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="1404" index="0" traits="">
+                                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="1404" index="0" traits="">
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Back" label="Back" enabled="true" visible="true" accessible="true" x="20" y="82" width="59" height="48" index="0" traits="Button"/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="SETUP · 4 OF 6" name="SETUP · 4 OF 6" label="SETUP · 4 OF 6" enabled="true" visible="true" accessible="false" x="154" y="98" width="89" height="16" index="1" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="SETUP · 4 OF 6" name="SETUP · 4 OF 6" label="SETUP · 4 OF 6" enabled="true" visible="true" accessible="true" x="154" y="98" width="89" height="16" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Your setup" name="Your setup" label="Your setup" enabled="true" visible="true" accessible="false" x="20" y="154" width="64" height="16" index="2" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Your setup" name="Your setup" label="Your setup" enabled="true" visible="true" accessible="true" x="20" y="154" width="64" height="16" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="67%" name="67%" label="67%" enabled="true" visible="true" accessible="false" x="355" y="154" width="27" height="16" index="3" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="67%" name="67%" label="67%" enabled="true" visible="true" accessible="true" x="355" y="154" width="27" height="16" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="67%" name="Your setup: 67%" label="Your setup: 67%" enabled="true" visible="true" accessible="false" x="20" y="178" width="362" height="8" index="4" traits="UpdatesFrequently">
+                                            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="20" y="178" width="243" height="8" index="0" traits=""/>
+                                          </XCUIElementTypeOther>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Let local Coach guide setup" label="Let local Coach guide setup" enabled="true" visible="true" accessible="true" x="20" y="186" width="362" height="48" index="5" traits="Button"/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="YOUR RHYTHM" name="YOUR RHYTHM" label="YOUR RHYTHM" enabled="true" visible="true" accessible="false" x="20" y="258" width="362" height="16" index="6" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="YOUR RHYTHM" name="YOUR RHYTHM" label="YOUR RHYTHM" enabled="true" visible="true" accessible="true" x="20" y="258" width="362" height="16" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="What fits your week?" name="What fits your week?" label="What fits your week?" enabled="true" visible="true" accessible="false" x="20" y="282" width="362" height="36" index="7" traits="Header, StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="What fits your week?" name="What fits your week?" label="What fits your week?" enabled="true" visible="true" accessible="true" x="20" y="282" width="362" height="36" index="0" traits="Header, StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="We will use this to rank plans. You can reschedule sessions when life changes." name="We will use this to rank plans. You can reschedule sessions when life changes." label="We will use this to rank plans. You can reschedule sessions when life changes." enabled="true" visible="true" accessible="false" x="20" y="334" width="362" height="48" index="8" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="We will use this to rank plans. You can reschedule sessions when life changes." name="We will use this to rank plans. You can reschedule sessions when life changes." label="We will use this to rank plans. You can reschedule sessions when life changes." enabled="true" visible="true" accessible="true" x="20" y="334" width="362" height="48" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Training days per week" name="Training days per week" label="Training days per week" enabled="true" visible="true" accessible="false" x="20" y="430" width="362" height="20" index="9" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Training days per week" name="Training days per week" label="Training days per week" enabled="true" visible="true" accessible="true" x="20" y="430" width="362" height="20" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="2 days" label="2 days" enabled="true" visible="true" accessible="true" x="20" y="474" width="175" height="66" index="10" traits=""/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="3 days" label="3 days" enabled="true" visible="true" accessible="true" x="207" y="474" width="175" height="66" index="11" traits=""/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="4 days" label="4 days" enabled="true" visible="true" accessible="true" x="20" y="552" width="175" height="66" index="12" traits=""/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="5 days" label="5 days" enabled="true" visible="true" accessible="true" x="207" y="552" width="175" height="66" index="13" traits=""/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="6 days" label="6 days" enabled="true" visible="true" accessible="true" x="20" y="630" width="362" height="66" index="14" traits=""/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Typical session length" name="Typical session length" label="Typical session length" enabled="true" visible="false" accessible="false" x="20" y="732" width="362" height="20" index="15" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Typical session length" name="Typical session length" label="Typical session length" enabled="true" visible="false" accessible="true" x="20" y="732" width="362" height="20" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="20 min" label="20 min" enabled="true" visible="false" accessible="true" x="20" y="776" width="175" height="66" index="16" traits=""/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="30 min" label="30 min" enabled="true" visible="false" accessible="true" x="207" y="776" width="175" height="66" index="17" traits=""/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="45 min" label="45 min" enabled="true" visible="false" accessible="true" x="20" y="854" width="175" height="66" index="18" traits=""/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="60 min" label="60 min" enabled="true" visible="false" accessible="true" x="207" y="854" width="175" height="66" index="19" traits=""/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Usual training time" name="Usual training time" label="Usual training time" enabled="true" visible="false" accessible="false" x="20" y="956" width="362" height="20" index="20" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Usual training time" name="Usual training time" label="Usual training time" enabled="true" visible="false" accessible="true" x="20" y="956" width="362" height="20" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="Morning. Start the day with a clear training window." label="Morning. Start the day with a clear training window." enabled="true" visible="false" accessible="true" x="20" y="1000" width="362" height="90" index="21" traits=""/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="Afternoon. Train around the middle of your day." label="Afternoon. Train around the middle of your day." enabled="true" visible="false" accessible="true" x="20" y="1102" width="362" height="90" index="22" traits=""/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="Evening. Make training part of your wind-down routine." label="Evening. Make training part of your wind-down routine." enabled="true" visible="false" accessible="true" x="20" y="1204" width="362" height="110" index="23" traits=""/>
+                                        </XCUIElementTypeOther>
+                                      </XCUIElementTypeOther>
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" value="0%" name="Horizontal scroll bar, 1 page" label="Horizontal scroll bar, 1 page" enabled="true" visible="true" accessible="false" x="0" y="662" width="402" height="30" index="1" traits="Adjustable">
+                                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="3" y="689" width="393" height="3" index="0" traits=""/>
+                                      </XCUIElementTypeOther>
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" value="0%" name="Horizontal scroll bar, 1 page" label="Horizontal scroll bar, 1 page" enabled="true" visible="true" accessible="false" x="0" y="662" width="402" height="30" index="2" traits="Adjustable">
+                                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="3" y="689" width="393" height="3" index="0" traits=""/>
+                                      </XCUIElementTypeOther>
+                                    </XCUIElementTypeScrollView>
+                                  </XCUIElementTypeOther>
+                                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="695" width="402" height="179" index="1" traits="">
+                                    <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Required to continue: training days per week; typical session length; usual training time (Morning, Afternoon or Evening). Scroll to find these choices." name="Required to continue: training days per week; typical session length; usual training time (Morning, Afternoon or Evening). Scroll to find these choices." label="Required to continue: training days per week; typical session length; usual training time (Morning, Afternoon or Evening). Scroll to find these choices." enabled="true" visible="true" accessible="false" x="20" y="708" width="362" height="60" index="0" traits="StaticText">
+                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Required to continue: training days per week; typical session length; usual training time (Morning, Afternoon or Evening). Scroll to find these choices." name="Required to continue: training days per week; typical session length; usual training time (Morning, Afternoon or Evening). Scroll to find these choices." label="Required to continue: training days per week; typical session length; usual training time (Morning, Afternoon or Evening). Scroll to find these choices." enabled="true" visible="true" accessible="true" x="20" y="708" width="362" height="60" index="0" traits="StaticText"/>
+                                    </XCUIElementTypeStaticText>
+                                    <XCUIElementTypeButton type="XCUIElementTypeButton" name="Continue" label="Continue" enabled="false" visible="true" accessible="true" x="20" y="780" width="362" height="48" index="1" traits="NotEnabled, Button"/>
+                                  </XCUIElementTypeOther>
+                                </XCUIElementTypeOther>
+                              </XCUIElementTypeOther>
+                            </XCUIElementTypeOther>
+                          </XCUIElementTypeOther>
+                        </XCUIElementTypeOther>
+                      </XCUIElementTypeOther>
+                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="1" traits="">
+                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="0" traits=""/>
+                      </XCUIElementTypeOther>
+                    </XCUIElementTypeOther>
+                  </XCUIElementTypeOther>
+                </XCUIElementTypeOther>
+              </XCUIElementTypeOther>
+            </XCUIElementTypeOther>
+          </XCUIElementTypeOther>
+        </XCUIElementTypeOther>
+      </XCUIElementTypeOther>
+    </XCUIElementTypeWindow>
+  </XCUIElementTypeApplication>
+</AppiumAUT>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AppiumAUT>
+  <XCUIElementTypeApplication type="XCUIElementTypeApplication" name="SHIFT6" label="SHIFT6" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="" processId="6215" bundleId="com.shift6.app">
+    <XCUIElementTypeWindow type="XCUIElementTypeWindow" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+              <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                    <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                              <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                                <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="653" index="0" traits="">
+                                    <XCUIElementTypeScrollView type="XCUIElementTypeScrollView" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="653" index="0" traits="">
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="688" index="0" traits="">
+                                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="688" index="0" traits="">
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Back" label="Back" enabled="true" visible="true" accessible="true" x="20" y="82" width="59" height="48" index="0" traits="Button"/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="SETUP · 5 OF 6" name="SETUP · 5 OF 6" label="SETUP · 5 OF 6" enabled="true" visible="true" accessible="false" x="154" y="98" width="89" height="16" index="1" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="SETUP · 5 OF 6" name="SETUP · 5 OF 6" label="SETUP · 5 OF 6" enabled="true" visible="true" accessible="true" x="154" y="98" width="89" height="16" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Your setup" name="Your setup" label="Your setup" enabled="true" visible="true" accessible="false" x="20" y="154" width="64" height="16" index="2" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Your setup" name="Your setup" label="Your setup" enabled="true" visible="true" accessible="true" x="20" y="154" width="64" height="16" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="83%" name="83%" label="83%" enabled="true" visible="true" accessible="false" x="354" y="154" width="28" height="16" index="3" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="83%" name="83%" label="83%" enabled="true" visible="true" accessible="true" x="354" y="154" width="28" height="16" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="83%" name="Your setup: 83%" label="Your setup: 83%" enabled="true" visible="true" accessible="false" x="20" y="178" width="362" height="8" index="4" traits="UpdatesFrequently">
+                                            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="20" y="178" width="301" height="8" index="0" traits=""/>
+                                          </XCUIElementTypeOther>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Let local Coach guide setup" label="Let local Coach guide setup" enabled="true" visible="true" accessible="true" x="20" y="186" width="362" height="48" index="5" traits="Button"/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="UNITS" name="UNITS" label="UNITS" enabled="true" visible="true" accessible="false" x="20" y="258" width="362" height="16" index="6" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="UNITS" name="UNITS" label="UNITS" enabled="true" visible="true" accessible="true" x="20" y="258" width="362" height="16" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Which units feel natural?" name="Which units feel natural?" label="Which units feel natural?" enabled="true" visible="true" accessible="false" x="20" y="282" width="362" height="36" index="7" traits="Header, StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Which units feel natural?" name="Which units feel natural?" label="Which units feel natural?" enabled="true" visible="true" accessible="true" x="20" y="282" width="362" height="36" index="0" traits="Header, StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="You can switch this any time. SHIFT6 will keep your workout targets consistent." name="You can switch this any time. SHIFT6 will keep your workout targets consistent." label="You can switch this any time. SHIFT6 will keep your workout targets consistent." enabled="true" visible="true" accessible="false" x="20" y="334" width="362" height="48" index="8" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="You can switch this any time. SHIFT6 will keep your workout targets consistent." name="You can switch this any time. SHIFT6 will keep your workout targets consistent." label="You can switch this any time. SHIFT6 will keep your workout targets consistent." enabled="true" visible="true" accessible="true" x="20" y="334" width="362" height="48" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="Imperial. Pounds, miles, and feet." label="Imperial. Pounds, miles, and feet." enabled="true" visible="true" accessible="true" x="20" y="406" width="362" height="90" index="9" traits=""/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" value="radio button" name="Metric. Kilograms, kilometres, and metres." label="Metric. Kilograms, kilometres, and metres." enabled="true" visible="true" accessible="true" x="20" y="508" width="362" height="90" index="10" traits=""/>
+                                        </XCUIElementTypeOther>
+                                      </XCUIElementTypeOther>
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" value="0%" name="Horizontal scroll bar, 1 page" label="Horizontal scroll bar, 1 page" enabled="true" visible="true" accessible="false" x="0" y="682" width="402" height="30" index="1" traits="Adjustable">
+                                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="3" y="709" width="393" height="3" index="0" traits=""/>
+                                      </XCUIElementTypeOther>
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" value="0%" name="Horizontal scroll bar, 1 page" label="Horizontal scroll bar, 1 page" enabled="true" visible="true" accessible="false" x="0" y="682" width="402" height="30" index="2" traits="Adjustable">
+                                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="3" y="709" width="393" height="3" index="0" traits=""/>
+                                      </XCUIElementTypeOther>
+                                    </XCUIElementTypeScrollView>
+                                  </XCUIElementTypeOther>
+                                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="715" width="402" height="159" index="1" traits="">
+                                    <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Required to continue: unit preference. Scroll to find these choices." name="Required to continue: unit preference. Scroll to find these choices." label="Required to continue: unit preference. Scroll to find these choices." enabled="true" visible="true" accessible="false" x="20" y="728" width="362" height="40" index="0" traits="StaticText">
+                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Required to continue: unit preference. Scroll to find these choices." name="Required to continue: unit preference. Scroll to find these choices." label="Required to continue: unit preference. Scroll to find these choices." enabled="true" visible="true" accessible="true" x="20" y="728" width="362" height="40" index="0" traits="StaticText"/>
+                                    </XCUIElementTypeStaticText>
+                                    <XCUIElementTypeButton type="XCUIElementTypeButton" name="Continue" label="Continue" enabled="true" visible="true" accessible="true" x="20" y="780" width="362" height="48" index="1" traits="Button"/>
+                                  </XCUIElementTypeOther>
+                                </XCUIElementTypeOther>
+                              </XCUIElementTypeOther>
+                            </XCUIElementTypeOther>
+                          </XCUIElementTypeOther>
+                        </XCUIElementTypeOther>
+                      </XCUIElementTypeOther>
+                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="1" traits="">
+                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="0" traits=""/>
+                      </XCUIElementTypeOther>
+                    </XCUIElementTypeOther>
+                  </XCUIElementTypeOther>
+                </XCUIElementTypeOther>
+              </XCUIElementTypeOther>
+            </XCUIElementTypeOther>
+          </XCUIElementTypeOther>
+        </XCUIElementTypeOther>
+      </XCUIElementTypeOther>
+    </XCUIElementTypeWindow>
+  </XCUIElementTypeApplication>
+</AppiumAUT>

@@ -1,0 +1,115 @@
+{
+  "conclusion": "failure",
+  "headSha": "0b997f90ff43370a655830eb72c3494a665d0a7f",
+  "jobs": [
+    {
+      "completedAt": "2026-10-14T15:31:44Z",
+      "conclusion": "failure",
+      "databaseId": 115931162815,
+      "name": "ios-guest-journey",
+      "startedAt": "2026-10-14T15:09:54Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-14T15:09:57Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-14T15:09:55Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:10:11Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@v7",
+          "number": 2,
+          "startedAt": "2026-10-14T15:09:57Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:10:12Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@v7",
+          "number": 3,
+          "startedAt": "2026-10-14T15:10:11Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:10:15Z",
+          "conclusion": "success",
+          "name": "Find a successful native build with identical app source",
+          "number": 4,
+          "startedAt": "2026-10-14T15:10:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:10:18Z",
+          "conclusion": "success",
+          "name": "Run actions/download-artifact@v8",
+          "number": 5,
+          "startedAt": "2026-10-14T15:10:15Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:10:26Z",
+          "conclusion": "success",
+          "name": "Verify actual application source and native payload before installation",
+          "number": 6,
+          "startedAt": "2026-10-14T15:10:18Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:10:50Z",
+          "conclusion": "success",
+          "name": "Install pinned UI automation tooling",
+          "number": 7,
+          "startedAt": "2026-10-14T15:10:26Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:31:08Z",
+          "conclusion": "failure",
+          "name": "Run the guest journey on iPhone simulator",
+          "number": 8,
+          "startedAt": "2026-10-14T15:10:50Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:31:12Z",
+          "conclusion": "success",
+          "name": "Preserve screenshots, UI trees and actual results",
+          "number": 9,
+          "startedAt": "2026-10-14T15:31:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:31:12Z",
+          "conclusion": "skipped",
+          "name": "Post Run actions/setup-node@v7",
+          "number": 17,
+          "startedAt": "2026-10-14T15:31:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:31:13Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@v7",
+          "number": 18,
+          "startedAt": "2026-10-14T15:31:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-14T15:31:42Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 19,
+          "startedAt": "2026-10-14T15:31:13Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/camster91/Shift6/actions/runs/38586889996/job/115931162815"
+    }
+  ],
+  "status": "completed",
+  "url": "https://github.com/camster91/Shift6/actions/runs/38586889996"
+}

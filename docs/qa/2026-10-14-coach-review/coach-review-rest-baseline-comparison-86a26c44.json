@@ -1,0 +1,27 @@
+{
+  "appSource": "86a26c44",
+  "exportedAt": "2026-10-14T15:24:13.775Z",
+  "receiverOpenedOutsideApp": true,
+  "schemaVersion": 17,
+  "arrays": 36,
+  "recordsBefore": 1082,
+  "recordsAfter": 1084,
+  "existingActualsUnchanged": true,
+  "newSavedActuals": [
+    {
+      "set": 1,
+      "durationSeconds": 26,
+      "rpe": 7,
+      "completedAt": "2026-10-14T15:15:56.182Z"
+    },
+    {
+      "set": 2,
+      "durationSeconds": 12,
+      "rpe": null,
+      "completedAt": "2026-10-14T15:18:51.707Z"
+    }
+  ],
+  "onlyDraftPayloadEdit": "Selected set2 duration25 to12 plus draft timestamps",
+  "sessionAndCycleUnchanged": true,
+  "noNativeSkipClaim": "Both attempts interrupted before Skip; timers expired before continuation"
+}

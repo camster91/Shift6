@@ -1,12 +1,14 @@
 """Native iOS guest QA with real UI assertions and screenshots; no production data."""
 
 import base64
+from contextlib import closing
 import datetime
 import json
 import os
 from pathlib import Path
 import plistlib
 import re
+import sqlite3
 import subprocess
 import time
 import traceback
@@ -19,6 +21,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 BASE = 'http://127.0.0.1:4723'
 SESSION = None
 STEP = 0
+SYNTHETIC_SCOPE_CONFIRMED = False
 RESULT = {
     'startedAt': datetime.datetime.now(datetime.timezone.utc).isoformat(),
     'sourceSha': os.environ.get('QA_NATIVE_SOURCE'),
@@ -161,9 +164,126 @@ def confirm_private_cycle_start():
     click('Start cycle')
 
 
+def verify_recovered_workout():
+    """Focus mode restores the current draft before explicitly reviewing saved sets."""
+    draft_input = find('QA Hold set 2 duration in seconds', editable=True)
+    draft_value = command('GET', f'/element/{draft_input}/attribute/value')
+    if draft_value != '12':
+        raise AssertionError(f'Recovered set 2 draft was {draft_value!r}, expected 12')
+    snapshot('workout-current-draft-recovered-in-focus-mode')
+    click('Review all sets and adjustments')
+    expect('Edit QA Hold set 1')
+    saved_input = find('QA Hold set 1 duration in seconds', editable=True)
+    saved_value = command('GET', f'/element/{saved_input}/attribute/value')
+    if saved_value != '20':
+        raise AssertionError(f'Recovered completed set was {saved_value!r}, expected 20')
+    draft_input = find('QA Hold set 2 duration in seconds', editable=True)
+    draft_value = command('GET', f'/element/{draft_input}/attribute/value')
+    if draft_value != '12':
+        raise AssertionError(f'Reviewed set 2 draft was {draft_value!r}, expected 12')
+    snapshot('workout-recovered-values')
+
+
+# Fixed schema names from src/db/migrations.ts. Only this fresh simulator's
+# deliberately named synthetic journey is selected; no arbitrary table lookup.
+SYNTHETIC_SESSION_QUERY = '''SELECT s.id FROM workout_sessions s
+    JOIN training_cycles c ON c.id=s.cycle_id
+    JOIN user_program_versions v ON v.id=s.program_version_id
+    JOIN json_each(v.version_json, '$.workouts') w
+    ON json_extract(w.value, '$.id')=s.workout_id
+    WHERE c.user_id=? AND json_extract(w.value, '$.title')=?'''
+SYNTHETIC_GOAL_QUERY = 'SELECT id FROM shifts WHERE user_id=? AND block_objective=?'
+SYNTHETIC_DIAGNOSTIC_QUERIES = {
+    'onboarding_drafts': ('SELECT user_id, substr(state_json,1,8193) AS state_json, updated_at FROM onboarding_drafts WHERE user_id=?', ('guest-user',)),
+    'user_profiles': ('SELECT id, unit_system, experience, training_days_per_week, preferred_session_minutes, health_connection FROM user_profiles WHERE id=?', ('guest-user',)),
+    'workout_sessions': (f'SELECT id,cycle_id,workout_id,program_version_id,status,started_at,completed_at FROM workout_sessions WHERE id IN ({SYNTHETIC_SESSION_QUERY})', ('guest-user', 'QA Session')),
+    'completed_sets': (f'SELECT id,session_id,workout_exercise_id,set_number,load,reps,duration_seconds,distance_meters,rpe,rir,completed_at FROM completed_sets WHERE session_id IN ({SYNTHETIC_SESSION_QUERY})', ('guest-user', 'QA Session')),
+    'workout_drafts': (f'SELECT session_id,substr(values_json,1,8193) AS values_json,updated_at FROM workout_drafts WHERE session_id IN ({SYNTHETIC_SESSION_QUERY})', ('guest-user', 'QA Session')),
+    'workout_check_ins': (f'SELECT session_id,energy,soreness,perceived_exertion,discomfort_reported,created_at,updated_at FROM workout_check_ins WHERE session_id IN ({SYNTHETIC_SESSION_QUERY})', ('guest-user', 'QA Session')),
+    'shifts': ('SELECT id,user_id,cycle_id,baseline_state,baseline_observation_id,review_state,substr(target_json,1,8193) AS target_json FROM shifts WHERE user_id=? AND block_objective=?', ('guest-user', 'QA hold goal')),
+    'shift_observations': (f'SELECT id,shift_id,user_id,source,unit,substr(value_json,1,8193) AS value_json,corrects_observation_id,workout_session_id,measured_at,recorded_at FROM shift_observations WHERE shift_id IN ({SYNTHETIC_GOAL_QUERY}) AND user_id=?', ('guest-user', 'QA hold goal', 'guest-user')),
+    'shift_goal_revisions': (f'SELECT id,shift_id,user_id,previous_revision_id,substr(target_json,1,8193) AS target_json,recorded_at FROM shift_goal_revisions WHERE shift_id IN ({SYNTHETIC_GOAL_QUERY}) AND user_id=?', ('guest-user', 'QA hold goal', 'guest-user')),
+    'personal_goal_events': (f'SELECT id,user_id,shift_id,kind,substr(payload_json,1,8193) AS payload_json,recorded_at FROM personal_goal_events WHERE shift_id IN ({SYNTHETIC_GOAL_QUERY}) AND user_id=?', ('guest-user', 'QA hold goal', 'guest-user')),
+}
+
+
+def read_synthetic_diagnostic_table(db, table, row_limit=10):
+    if table not in SYNTHETIC_DIAGNOSTIC_QUERIES:
+        raise ValueError('Unknown diagnostic table')
+    if type(row_limit) is not int or not 1 <= row_limit <= 10:
+        raise ValueError('Diagnostic row limit must be between 1 and 10')
+    query, params = SYNTHETIC_DIAGNOSTIC_QUERIES[table]
+    count = db.execute(f'SELECT COUNT(*) FROM ({query})', params).fetchone()[0]
+    rows = []
+    for row in db.execute(query + ' ORDER BY 1 LIMIT ?', (*params, row_limit)):
+        record = dict(row)
+        truncated = []
+        for key, value in record.items():
+            if isinstance(value, str) and len(value) > 8192:
+                record[key] = value[:8192]
+                truncated.append(key)
+        if truncated:
+            record['_truncatedColumns'] = truncated
+        rows.append(record)
+    return {'selectedCount': count, 'rows': rows, 'rowsTruncated': count > len(rows)}
+
+
+def collect_synthetic_diagnostics(db_path, *, synthetic_only=False, row_limit=10):
+    if synthetic_only is not True:
+        raise ValueError('Diagnostics require explicit synthetic simulator scope')
+    results = {'scope': 'Synthetic guest setup/profile plus exact QA Session workout and QA hold goal records; diagnostic readback, not acceptance', 'tables': {}}
+    with closing(sqlite3.connect(Path(db_path).resolve().as_uri() + '?mode=ro', uri=True)) as db:
+        db.row_factory = sqlite3.Row
+        db.execute('PRAGMA query_only=ON')
+        for table in SYNTHETIC_DIAGNOSTIC_QUERIES:
+            try:
+                results['tables'][table] = read_synthetic_diagnostic_table(db, table, row_limit)
+            except sqlite3.OperationalError as error:
+                results['tables'][table] = {'blocked': str(error)}
+    return results
+
+
+def confirm_synthetic_diagnostic_scope(environment, initial_tree, verify_source):
+    """Narrow the known fresh hosted workflow, not arbitrary reused simulators."""
+    expected = {'GITHUB_ACTIONS': 'true', 'RUNNER_ENVIRONMENT': 'github-hosted',
+                'RUNNER_OS': 'macOS', 'CI': '1', 'GITHUB_REPOSITORY': 'camster91/Shift6',
+                'GITHUB_WORKFLOW': 'Native runtime QA', 'GITHUB_JOB': 'ios-guest-journey'}
+    if any(environment.get(key) != value for key, value in expected.items()):
+        return {'confirmed': False, 'reason': 'Fresh hosted runtime workflow scope unconfirmed'}
+    if not environment.get('GITHUB_WORKFLOW_REF', '').startswith('camster91/Shift6/.github/workflows/native-runtime-qa.yml@'):
+        return {'confirmed': False, 'reason': 'Runtime workflow identity unconfirmed'}
+    sha = environment.get('QA_NATIVE_SOURCE', '')
+    if not re.fullmatch(r'[0-9a-f]{40}', sha) or not re.fullmatch(r'[1-9][0-9]*', environment.get('QA_NATIVE_RUN', '')):
+        return {'confirmed': False, 'reason': 'Native source/build identity unconfirmed'}
+    visible_setup = any(node.get('visible') == 'true' and
+                        'SETUP · 1 OF 6' in {node.get(key) for key in ('name', 'label', 'value')}
+                        for node in ET.fromstring(initial_tree).iter())
+    if not visible_setup:
+        return {'confirmed': False, 'reason': 'Initial setup step one was not observed'}
+    proof = verify_source(sha)  # Existing exact source/context/payload verifier.
+    if proof.get('checkout_sha') != sha or proof.get('platform') != 'ios':
+        return {'confirmed': False, 'reason': 'Verified native proof identity mismatch'}
+    return {'confirmed': True, 'reason': 'Known fresh hosted workflow, verified native source and initial setup step one',
+            'nativeSource': sha, 'nativeBuildRun': environment['QA_NATIVE_RUN']}
+
+
+def capture_confirmed_synthetic_diagnostics(scope_confirmed, locate_databases):
+    if scope_confirmed is not True:
+        return {'skipped': 'Synthetic hosted simulator and initial setup scope unconfirmed'}
+    return [collect_synthetic_diagnostics(path, synthetic_only=True) for path in locate_databases()]
+
+
 def journey():
+    global SYNTHETIC_SCOPE_CONFIRMED
     expect('SETUP', timeout=45)
-    snapshot('setup-goal')
+    initial_tree = snapshot('setup-goal')
+    from native_artifact_source import verify_manifest
+    diagnostic_scope = confirm_synthetic_diagnostic_scope(
+        os.environ, initial_tree,
+        lambda sha: verify_manifest(Path.cwd(), 'ios', Path('native-qa/native-source.json'), sha),
+    )
+    RESULT['syntheticDiagnosticScope'] = diagnostic_scope
+    SYNTHETIC_SCOPE_CONFIRMED = diagnostic_scope['confirmed']
     click('General health. Build a balanced, sustainable routine.')
     snapshot('goal-after-accessibility-tap')
     enabled = command('GET', f'/element/{find("Continue", scroll=False)}/attribute/enabled')
@@ -269,16 +389,7 @@ def journey():
     expect('Resume workout')
     snapshot('home-resume-after-force-close')
     click('Resume workout')
-    expect('Edit QA Hold set 1')
-    draft_input = find('QA Hold set 2 duration in seconds', editable=True)
-    draft_value = command('GET', f'/element/{draft_input}/attribute/value')
-    if draft_value != '12':
-        raise AssertionError(f'Recovered set 2 draft was {draft_value!r}, expected 12')
-    saved_input = find('QA Hold set 1 duration in seconds', editable=True)
-    saved_value = command('GET', f'/element/{saved_input}/attribute/value')
-    if saved_value != '20':
-        raise AssertionError(f'Recovered completed set was {saved_value!r}, expected 20')
-    snapshot('workout-recovered-values')
+    verify_recovered_workout()
     click('Save partial workout')
     click('I ran out of time')
     snapshot('partial-workout-summary')
@@ -356,13 +467,10 @@ except Exception as error:
     raise
 finally:
     try:
-        container = subprocess.check_output(['xcrun', 'simctl', 'get_app_container', device['udid'], 'com.shift6.app', 'data'], timeout=30).decode().strip()
-        import sqlite3
-        for db_path in Path(container).rglob('shift6.db'):
-            with sqlite3.connect(f'file:{db_path}?mode=ro', uri=True) as db:
-                db.row_factory = sqlite3.Row
-                tables = [r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%onboarding%'")]
-                RESULT['syntheticOnboardingRows'] = {t: [dict(r) for r in db.execute('SELECT * FROM "' + t.replace('"', '""') + '" LIMIT 10')] for t in tables}
+        def locate_databases():
+            container = subprocess.check_output(['xcrun', 'simctl', 'get_app_container', device['udid'], 'com.shift6.app', 'data'], timeout=30).decode().strip()
+            return Path(container).rglob('shift6.db')
+        RESULT['syntheticStorageDiagnostic'] = capture_confirmed_synthetic_diagnostics(SYNTHETIC_SCOPE_CONFIRMED, locate_databases)
     except Exception as diagnostic_error:
         RESULT['diagnosticError'] = str(diagnostic_error)
     try:

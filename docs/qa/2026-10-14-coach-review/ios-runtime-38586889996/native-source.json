@@ -1,0 +1,31 @@
+{
+  "format_version": 2,
+  "checkout_sha": "0b997f90ff43370a655830eb72c3494a665d0a7f",
+  "source_fingerprint": "76c893dc495c3114380321009579f836d4e145f70930330d622c2ce2d629bf6c",
+  "platform": "ios",
+  "payload_path": "SHIFT6.app",
+  "payload_kind": "tree",
+  "payload_sha256": "56a547e9b6f6cb642f189d1b691b82c930cc72b7dcf37ed683cfeb34b9dd53eb",
+  "payload_file_count": 120,
+  "build_context": {
+    "environment": {
+      "CI": "1",
+      "EXPO_PUBLIC_ENVIRONMENT": "staging",
+      "EXPO_PUBLIC_RELEASE_MODE": "guest-only",
+      "EXPO_PUBLIC_API_BASE_URL": "",
+      "EXPO_NO_DOTENV": "1",
+      "NODE_ENV": "production"
+    },
+    "native_flags": {
+      "QA_NATIVE_ARCHITECTURES": "arm64",
+      "QA_NATIVE_CONFIGURATION": "Release",
+      "QA_NATIVE_SDK": "iphonesimulator",
+      "QA_NATIVE_ONLY_ACTIVE_ARCH": "YES",
+      "QA_NATIVE_CODE_SIGNING_ALLOWED": "NO",
+      "ENTERPRISE_REPOSITORY": "https://repo.maven.apache.org/maven2"
+    },
+    "platform": "ios",
+    "prebuild_install": false,
+    "recipe_sha256": "a8277b41add0a41148592d14467b6119b8cf95d73ead9e70e9bbf1ebb5f307a6"
+  }
+}

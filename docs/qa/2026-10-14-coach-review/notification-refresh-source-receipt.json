@@ -1,0 +1,59 @@
+{
+  "host": "CAM-DESKTOP",
+  "sourceBase": "0b997f90ff43370a655830eb72c3494a665d0a7f",
+  "createdAt": "2026-10-14T15:11:52.6287328Z",
+  "committed": false,
+  "scope": "Notification privacy/default Home responses plus ABA-safe runtime leases and serialized workout refresh/stale cleanup; root-owned rest implementation retained",
+  "limitations": [
+    "No durable cross-restart response journal",
+    "No native OS/physical-device/iOS notification acceptance",
+    "Native calls already dispatched cannot be retracted; cleanup does not retract delivered notifications",
+    "Global queue waits for native calls to settle; cleanup errors remain errors"
+  ],
+  "files": [
+    {
+      "path": "src/domain/notificationSchedule.ts",
+      "sha256": "FB2DCE74BF7B651358F99157F25ADC6982DF1A8A45C9B0BB0D145E1C8D3EC380"
+    },
+    {
+      "path": "src/domain/notificationSchedule.test.ts",
+      "sha256": "10E8826C49ED20F0FAFD2BCEB1946950A1CFD764ED0373D0EC4478952ACA02E4"
+    },
+    {
+      "path": "src/services/notifications.ts",
+      "sha256": "E7C9AFD874C21F46174A18B20A6E4E0D6DAC7977A5FB4A67CFAD255214695146"
+    },
+    {
+      "path": "src/services/notifications.test.ts",
+      "sha256": "B143A450B5AB99F5E6DB2A2DADE8EB19B65478C553DD2EAD1CF254C0C41A4F96"
+    },
+    {
+      "path": "src/services/NotificationRuntimeProvider.tsx",
+      "sha256": "83FA8C9AE5BFE0920D4A3BC0372EF3FD2E65B5ABE652B88EFB320B294A1C9C6C"
+    },
+    {
+      "path": "src/services/NotificationRuntimeProvider.test.tsx",
+      "sha256": "FA6417A896A047F0911267DE4C02A0346FF2D577882629AE88B82605E57BEFBC"
+    },
+    {
+      "path": "src/services/notificationResponsePolicy.ts",
+      "sha256": "EF703C81D33E57208B07BC2F9FE49E75561B1DAEF8A1DAEAA677F1A3168470EA"
+    },
+    {
+      "path": "src/services/notificationResponsePolicy.test.ts",
+      "sha256": "4091CDC5D98D6002D000E39286C269195C90345FBB7C162B1E67B58713BB78FC"
+    },
+    {
+      "path": "src/services/notificationScheduler.ts",
+      "sha256": "B5CE21046D96299156DBEEA02FE5EE61AC94E25447D9247043B9D97FE12E3D51"
+    },
+    {
+      "path": "src/services/notificationScheduler.test.ts",
+      "sha256": "267CABCA6400F358D81D1810F3A76602A0D598FCD18DC1706FE7CCCCD3754C0E"
+    }
+  ],
+  "typecheckExit": 0,
+  "lintExit": 0,
+  "formatExit": 0,
+  "focusedExit": 0
+}

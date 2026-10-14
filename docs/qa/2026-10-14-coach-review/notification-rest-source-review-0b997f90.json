@@ -1,0 +1,70 @@
+{
+  "reviewedAtUtc": "2026-10-14T15:03:51.0961060Z",
+  "host": "CAM-DESKTOP",
+  "baseCommit": "0b997f90",
+  "mode": "read-only source review; no tests or native actions",
+  "status": "changes_requested_skip_guard",
+  "findings": [
+    "NEW handleSkipRest1151 checks closurecanMutate/livefocus but does not invoke its captured contextguard before clearingtimer/cancellingoldsession; retainedcontextcallback can mutate newer UI. Bound render/focus/owner/database/session guard required before sideeffects.",
+    "PREEXISTING NotificationRuntimeProvider.performRefresh53-90 does not invalidate owner/db/unmount asynchronous schedule/snapshot work; currentref guards responses only.",
+    "LIMIT cancelScheduledNotificationAsync cancels pending trigger only, not alreadydelivered notificationtray.",
+    "LIMIT response dedup/cacheconsumption is per mountedgeneration and not durable across apprestart."
+  ],
+  "accepted": [
+    "Generic workoutreminder title/body excludes private title/week/duration.",
+    "Installed SDK defaultaction/requestidentifier/native milliseconddate mapping correct for cached/live responses.",
+    "Malformed/foreigndefaultaction/request/date/data refusals and live/cached dedup are sourceconsistent.",
+    "Response listeners close stale owner/database/unmount generation and only open Home; no notificationpayload workoutroute or autosession.",
+    "Rest cue scalar/date snapshot and per-session schedule/cancel queue preservecallorder, recoverfailure, delete settledqueue onlyif latest."
+  ],
+  "hashes": [
+    {
+      "path": "app/workout.tsx",
+      "sha256": "2593253376978DDED495E5D1FD2877FB7CCA58A0FEA22D356601B470B8B4F9D7"
+    },
+    {
+      "path": "src/components/workoutFocusScreen.test.tsx",
+      "sha256": "288E7F0827F481C834CF6465C74CD82E7C782214B423F41B59F38F09F1AE9AE6"
+    },
+    {
+      "path": "src/services/notificationScheduler.ts",
+      "sha256": "0AC7818F695705AD6F386F9D79F4AB576FB493DD2F12DA67E2FB9155FBFDBF06"
+    },
+    {
+      "path": "src/services/notificationScheduler.test.ts",
+      "sha256": "FA866578CEE70DBCE22B57F0542EE6D7DE2D319F49AB07F2BDFE86AA3BB1288D"
+    },
+    {
+      "path": "src/domain/notificationSchedule.ts",
+      "sha256": "FB2DCE74BF7B651358F99157F25ADC6982DF1A8A45C9B0BB0D145E1C8D3EC380"
+    },
+    {
+      "path": "src/domain/notificationSchedule.test.ts",
+      "sha256": "10E8826C49ED20F0FAFD2BCEB1946950A1CFD764ED0373D0EC4478952ACA02E4"
+    },
+    {
+      "path": "src/services/notifications.ts",
+      "sha256": "E7C9AFD874C21F46174A18B20A6E4E0D6DAC7977A5FB4A67CFAD255214695146"
+    },
+    {
+      "path": "src/services/notifications.test.ts",
+      "sha256": "B143A450B5AB99F5E6DB2A2DADE8EB19B65478C553DD2EAD1CF254C0C41A4F96"
+    },
+    {
+      "path": "src/services/NotificationRuntimeProvider.tsx",
+      "sha256": "932DAF3DF308E32659A3F079B0C1855F8955CADFBA37BF50A016858796B83045"
+    },
+    {
+      "path": "src/services/NotificationRuntimeProvider.test.tsx",
+      "sha256": "A1667A657BD41DD22F198C8312C9264F24326BC0D20B3F8386F22CC187B4CF5E"
+    },
+    {
+      "path": "src/services/notificationResponsePolicy.ts",
+      "sha256": "EF703C81D33E57208B07BC2F9FE49E75561B1DAEF8A1DAEAA677F1A3168470EA"
+    },
+    {
+      "path": "src/services/notificationResponsePolicy.test.ts",
+      "sha256": "4091CDC5D98D6002D000E39286C269195C90345FBB7C162B1E67B58713BB78FC"
+    }
+  ]
+}

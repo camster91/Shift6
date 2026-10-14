@@ -340,6 +340,121 @@
     "sha256": "194a065be7533acdb97f40113fcf74a564a2862c55d30b2032da28ece1de6990"
   },
   {
+    "file": "coach-review-date-bulk-comparison-ae3efb5a.json",
+    "bytes": 355,
+    "sha256": "2bb98603d4abc85b2d5da058c308df0dfbecd35afbbc3741bfc7bffd8d850937"
+  },
+  {
+    "file": "coach-review-date-bulk-end-0-ae3efb5a.png",
+    "bytes": 247129,
+    "sha256": "ad60ead2f596ccc5f4efc0fd9e06f62e902963ee1083050815bedbbdea5c492e"
+  },
+  {
+    "file": "coach-review-date-bulk-end-0-ae3efb5a.xml",
+    "bytes": 11455,
+    "sha256": "630fb33b302c4f0db3ef40450430f54630c9758421c1e419302d0014dabc3727"
+  },
+  {
+    "file": "coach-review-date-bulk-end-1-ae3efb5a.png",
+    "bytes": 247129,
+    "sha256": "ad60ead2f596ccc5f4efc0fd9e06f62e902963ee1083050815bedbbdea5c492e"
+  },
+  {
+    "file": "coach-review-date-bulk-end-1-ae3efb5a.xml",
+    "bytes": 11455,
+    "sha256": "630fb33b302c4f0db3ef40450430f54630c9758421c1e419302d0014dabc3727"
+  },
+  {
+    "file": "coach-review-date-bulk-export-ae3efb5a.json",
+    "bytes": 407368,
+    "sha256": "31acc5a9fab11065af4eeda41f98f43b0b1fdb5eb425616dd2c22dd7312373a6"
+  },
+  {
+    "file": "coach-review-date-bulk-export-ae3efb5a.log",
+    "bytes": 780,
+    "sha256": "1922210c9b873b17d2eee0e9f874b485c4e293670ef000cf1f177ce93bdcfdea"
+  },
+  {
+    "file": "coach-review-date-bulk-export-fresh-chooser-ae3efb5a.log",
+    "bytes": 552,
+    "sha256": "f5a140bfa58872c430eab3fa4a74aadadb6b2ce589ecce55df0dafa47171df87"
+  },
+  {
+    "file": "coach-review-date-bulk-export-fresh-chooser-ae3efb5a.png",
+    "bytes": 216841,
+    "sha256": "8636fc6cb45a8504e163d181a5a98dc98adc6beec53e42d17fcd7728250127a6"
+  },
+  {
+    "file": "coach-review-date-bulk-export-fresh-chooser-ae3efb5a.xml",
+    "bytes": 15794,
+    "sha256": "342537fcfa8aa2c8d858e001a5353dcff781a86099f169052ad13200e96b1724"
+  },
+  {
+    "file": "coach-review-date-bulk-export-fresh-receiver-ae3efb5a.log",
+    "bytes": 187,
+    "sha256": "24fd209dd316df3bdf5f4b22368a6aca971ea2860304c8431b7e4c967acf3db2"
+  },
+  {
+    "file": "coach-review-date-bulk-export-fresh-receiver-ae3efb5a.png",
+    "bytes": 79575,
+    "sha256": "a05b850340960fb2a0c7a8d66fc01c51f613020fd493c06dffcf8ac783e6d81a"
+  },
+  {
+    "file": "coach-review-date-bulk-export-fresh-receiver-ae3efb5a.xml",
+    "bytes": 1681,
+    "sha256": "033abb41c78fc5b05889d179a0872114e6ffb7daf3d9c7ad474767726506db30"
+  },
+  {
+    "file": "coach-review-date-bulk-export-receiver-selection-ae3efb5a.log",
+    "bytes": 674,
+    "sha256": "3a15993d5bf83869032f2793340b086c97a42689fa308b205ab9729c48c9d82f"
+  },
+  {
+    "file": "coach-review-date-bulk-readback-ae3efb5a.json",
+    "bytes": 609,
+    "sha256": "d821045b0e6e414f4ac2141b15162936d73853c48d6de0ee5dd14e8610d0cb8e"
+  },
+  {
+    "file": "coach-review-date-bulk-ready-ae3efb5a.log",
+    "bytes": 547,
+    "sha256": "015947c882bcd17c29adfe3f92b273c92ab84e2624bd07c8763b238b82d00ce5"
+  },
+  {
+    "file": "coach-review-date-bulk-stable-export-ae3efb5a.log",
+    "bytes": 2078,
+    "sha256": "8ea501c3f846a6d29fc6d1a4f96940518ca2e9ab8ed142c4fe9d0ad608b6da7a"
+  },
+  {
+    "file": "coach-review-date-bulk-stable-export-ae3efb5a.png",
+    "bytes": 280641,
+    "sha256": "dff4d52033c10c36362e36cee3e5392b0ebdb877f93fca843d344f488ef65d81"
+  },
+  {
+    "file": "coach-review-date-bulk-stable-export-ae3efb5a.xml",
+    "bytes": 19884,
+    "sha256": "aa67c57c950d21e4a42a83a89039c1fc15c3c1f69250d0685ff7a473f610b019"
+  },
+  {
+    "file": "coach-review-date-bulk-start-0-ae3efb5a.png",
+    "bytes": 242039,
+    "sha256": "d4fabb584adc8850f333b456d1c6c20f9394fdcb191d20dfbaf429579068f9f1"
+  },
+  {
+    "file": "coach-review-date-bulk-start-0-ae3efb5a.xml",
+    "bytes": 11461,
+    "sha256": "c2bc7a414bdbd49670d6e8694bbe2aed0c156553956f64b599111e90ef61a89d"
+  },
+  {
+    "file": "coach-review-date-bulk-start-1-ae3efb5a.png",
+    "bytes": 242009,
+    "sha256": "fcda1ba73d089dbe85ae420312cbc21b35ff243ababea75a6ad461223c73b812"
+  },
+  {
+    "file": "coach-review-date-bulk-start-1-ae3efb5a.xml",
+    "bytes": 11461,
+    "sha256": "c2bc7a414bdbd49670d6e8694bbe2aed0c156553956f64b599111e90ef61a89d"
+  },
+  {
     "file": "coach-review-date-fields-export-3f1752ed-receiver.png",
     "bytes": 79516,
     "sha256": "e40c350c02bd43778d6d005c11d3ac876e1ab2753e1afb2aaa77f854f1805a48"
@@ -800,6 +915,16 @@
     "sha256": "8b7d219f140ae62d4786738303f0c6b32640b6a3a61cbd10e357c007bbeb7213"
   },
   {
+    "file": "coach-review-pr-after-edit-f5f3.json",
+    "bytes": 4224,
+    "sha256": "5a0fa11003126ed540e0389fa74754470eb3be05a6cff92223eb569ad897d685"
+  },
+  {
+    "file": "coach-review-pr-readback-native-utf8-f5f3.json",
+    "bytes": 4194,
+    "sha256": "245e6b314f4e5141f1656760f767d7e3c8a34770481fab8d8799f09de6bdf120"
+  },
+  {
     "file": "coach-review-promoted-entry-b00.png",
     "bytes": 238175,
     "sha256": "922114a59fc9a76917e1a543c9ce663103022ef794f61a061eb31814d4fd8d19"
@@ -843,6 +968,11 @@
     "file": "coach-review-published-readback-e440.json",
     "bytes": 6725,
     "sha256": "0d72e697ab7bbed7f891a4191e917b5ce7e88ff3c6a744de1ad71d201bdf2b19"
+  },
+  {
+    "file": "coach-review-published-readback-f5f3.json",
+    "bytes": 10714,
+    "sha256": "3036cdd31b2318420ac3bed4480e16cbde7a37d6de7a6360d31c163a936d4271"
   },
   {
     "file": "coach-review-recovered-action-7b.png",
@@ -1546,13 +1676,18 @@
   },
   {
     "file": "finish-keyboard-voice-evidence.py",
-    "bytes": 2726,
-    "sha256": "68eee1f7e9c5d699c08fe6fdd39e0a5a196a48111944770638d4060054373650"
+    "bytes": 2784,
+    "sha256": "b5f67b2c9f8dd923ee7adeb154ebbfcb1c2115447d5c9b2e0e6006190b1f0d61"
   },
   {
     "file": "native-ci-terminal-3738.json",
     "bytes": 5045,
     "sha256": "99bece8cb32487a578ee664e47d048cf094f447e21dac63e32ee810d4fa5912a"
+  },
+  {
+    "file": "qa.py",
+    "bytes": 5113,
+    "sha256": "3e15b575f5da363de8232f8e5cd9be119dd37280cdc0a06b2bd6fd01c5a2f46f"
   },
   {
     "file": "read-voice-export-ae3efb5a.py",
@@ -1568,6 +1703,11 @@
     "file": "test-compact-review-de0711b0.py",
     "bytes": 2572,
     "sha256": "24c4ea7fb5ae520d7b0460e837e52ebf4a4ecf2257c8c2eeef1ef822b3ececf2"
+  },
+  {
+    "file": "test-date-bulk-ready-ae3efb5a.py",
+    "bytes": 1917,
+    "sha256": "84048bbb8c5d02b602e59010282fe2c865623130eec803c35834faeeef75e58a"
   },
   {
     "file": "test-keyboard-057d5936.py",

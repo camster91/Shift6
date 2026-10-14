@@ -30,7 +30,8 @@ for name in ['test-keyboard-057d5936.py', 'test-keyboard-large-057d5936.py',
 for name in ['test-keyboard-date-fields-3f1752ed.py', 'test-keyboard-date-fields-paced-3f1752ed.py',
              'test-voice-editor-3de55425.py', 'test-voice-keyboard-ae3efb5a.py',
              'test-voice-keyboard-chunks-ae3efb5a.py', 'test-voice-retained-focus-ae3efb5a.py',
-             'compare-voice-keyboard-ae3efb5a.py', 'read-voice-export-ae3efb5a.py']:
+             'compare-voice-keyboard-ae3efb5a.py', 'read-voice-export-ae3efb5a.py',
+             'test-date-bulk-ready-ae3efb5a.py', 'qa.py']:
     files.add(qa / name)
 for p in sorted(files):
     shutil.copyfile(p, out / p.name)

@@ -261,3 +261,16 @@ payload binding, installation and cold launch. Its
 [terminal receipt](qa/2026-10-14-coach-review/coach-review-native-ci-terminal-e440.json)
 covers the earlier3f app source, not the newer voice presentation fix. Current
 iOS journeys, physical devices and human usability remain pending.
+
+On latest ae3efb5a, two normal-size bulk attempts per start/end date field pass
+after confirming native focus and an empty field before injecting the whole
+`2026-10-` string. Every exact readback and inspected field geometry passes;
+[start](qa/2026-10-14-coach-review/coach-review-date-bulk-start-1-ae3efb5a.png)
+and [end](qa/2026-10-14-coach-review/coach-review-date-bulk-end-1-ae3efb5a.png)
+remain above the IME. This does not reproduce the earlier fast mismatch under
+the stricter readiness protocol, but its original cause remains unproven.
+No review/decision/save was used. External JSON at11:41:51.494Z preserves all36
+arrays/1,082 records byte-for-value against the voice export; see
+[comparison](qa/2026-10-14-coach-review/coach-review-date-bulk-comparison-ae3efb5a.json).
+Chooser and post-selection empty dumps interrupted the first helpers; fresh
+chooser/receiver observations and the new timestamp independently verify export.

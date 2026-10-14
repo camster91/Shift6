@@ -1,0 +1,112 @@
+{
+  "pr": {
+    "body": "Private training now has confirmed lifecycle actions, immutable program history, explicit actual units, recoverable guided setup/memory and dated local Coach decisions. Saved decisions survive cold start and offer the correct continuation; a newer Keep plan suppresses the older action. SQLite ownership and stale-result guards protect recovery. Core training stays guest-only, local and deterministic, with the qualified public-content gate preserved.\r\n\r\nThe Coach date editor uses a compact explicit window and measured Android keyboard scroll space. Optional local voice entry gives honest offline-model refusal, validates typed corrections and applies only to the unsaved draft after explicit review. Its labeled correction field stays open when emptied, adds measured keyboard space, and guards retry reattachment. Backgrounding clears unconfirmed previews.\r\n\r\nValidation:\r\n\r\n- Latest app source **ae3efb5a3542e585cee459640831e22d786060f5**: full `npm run verify` exit0, **1,218 tests / 144 suites**, Doctor21/21, security/vendor/config/audit checks and both mobile exports. Standalone native x86_64 guest build/install passed; APK SHA256 `c928662fde864afcd799617b7d85328aa27de8a357b0e44901abcc18546c6ebf`.\r\n- Pixel7 emulator, Android16/API36, WHPX/host GPU: voice clear/retype/retry with explicit refocus/typed duration26-RPE7 review/background reset pass at normal and200% text. Fields are fully above the IME in inspected screenshots. No Apply/Complete was used. Earlier3de hidden-field failure and all interrupted harness attempts remain recorded. A real retry while focused blurs editing and dismisses the keyboard; the rare focus-retaining immediate-settlement path has source tests only.\r\n- External receiver opened schema17 JSON at11:30:17.041Z with **1,082 records** across36 arrays, preserving all actual/draft payloads. Only existing draft/load-map autosave timestamps refreshed. Successful speech recognition remains blocked by the absent offline model; typed fallback is not transcript acceptance.\r\n- Earlier3f source observes focused Coach time-zone and start/end dates above the keyboard at normal/200% text, actual notification refusal with guidance, and unchanged exports. One fast date-entry mismatch has an unproven cause; separately paced entries pass. These cases retain their binary scope and were not all rerun on ae3.\r\n- Dated earlier binaries observe cold Coach receipt recovery, Keep plan, recreation stress, atomic handover, deferred baseline/no-new-goal behavior, deletion and exact restore/re-export. Their observed scope remains explicit.\r\n- Remote native run38544772700 on earlier **e440b48d** succeeded: Android arm64/x86_64 compilation/proof and unsigned iOS simulator compilation, payload binding, installation/cold launch. It covers earlier3f source, not the newer voice presentation fix or full iOS journeys. New-head CI needs its own terminal evidence.\r\n\r\n[Coach native QA and exact launch instructions](https://github.com/camster91/Shift6/blob/f5f3e9c47f08ca7a8b9aac2ec34705d48dc363f5/docs/50_LOCAL_COACH_REVIEW_QA.md) \u00b7 [Voice native QA/screenshots](https://github.com/camster91/Shift6/blob/f5f3e9c47f08ca7a8b9aac2ec34705d48dc363f5/docs/51_LOCAL_VOICE_NATIVE_QA.md) \u00b7 [Reconciled TODO](https://github.com/camster91/Shift6/blob/f5f3e9c47f08ca7a8b9aac2ec34705d48dc363f5/docs/43_SHIPPING_GOAL_AND_TODO.md)\r\n\r\nAll **54 open issues** remain mapped and open. Provisional engineering score remains **53/100** under doc34; human acceptance is unverified. Deliberately induced native database failure/warm retry, complete repeat-week runtime, successful recognition, physical Android/iOS journeys, assistive technology, qualified public content, signing/support and store acceptance remain pending. Future repetition storage/readers and original-finish contracts are isolated, inactive work; their schema/tests are not this app's release evidence. Disabled Gemini preparation remains separate PR350. This draft is stacked on #349; no merge, deployment, paid activation, store submission or issue closure is included.\r\n",
+    "headRefOid": "f5f3e9c47f08ca7a8b9aac2ec34705d48dc363f5",
+    "isDraft": true,
+    "url": "https://github.com/camster91/Shift6/pull/351"
+  },
+  "comments": [
+    {
+      "issue": 364,
+      "url": "https://github.com/camster91/Shift6/issues/364#issuecomment-6167422717",
+      "readback": {
+        "url": "https://api.github.com/repos/camster91/Shift6/issues/comments/6167422717",
+        "html_url": "https://github.com/camster91/Shift6/issues/364#issuecomment-6167422717",
+        "issue_url": "https://api.github.com/repos/camster91/Shift6/issues/364",
+        "id": 6167422717,
+        "node_id": "IC_kwDOQzneMM8AAAABb5tm_Q",
+        "user": {
+          "login": "camster91",
+          "id": 33962910,
+          "node_id": "MDQ6VXNlcjMzOTYyOTEw",
+          "avatar_url": "https://avatars.githubusercontent.com/u/33962910?u=24cbf5427e651899903e2d46fe20ae81f4d0b1e0&v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/camster91",
+          "html_url": "https://github.com/camster91",
+          "followers_url": "https://api.github.com/users/camster91/followers",
+          "following_url": "https://api.github.com/users/camster91/following{/other_user}",
+          "gists_url": "https://api.github.com/users/camster91/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/camster91/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/camster91/subscriptions",
+          "organizations_url": "https://api.github.com/users/camster91/orgs",
+          "repos_url": "https://api.github.com/users/camster91/repos",
+          "events_url": "https://api.github.com/users/camster91/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/camster91/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "created_at": "2026-10-14T11:36:14Z",
+        "updated_at": "2026-10-14T11:36:14Z",
+        "author_association": "OWNER",
+        "body": "Native remediation update: app source ae3efb5a, documented in f5f3e9c47f08ca7a8b9aac2ec34705d48dc363f5 / draft PR #351. Full verify1,218 tests/144 suites, Doctor21/21 and both exports; standalone guest native build/install passes. Pixel7 emulator Android16/API36: cleared, retyped and retry-refocused correction fields remain fully above the IME at normal/200% text; typed duration26/RPE7 review and background reset pass. The earlier3de hidden-field failure and all interrupted helpers are retained. A focused real retry blurs editing/dismisses IME; rare retained-focus settlement is source-test coverage only. External receiver opened1,082 records at11:30:17.041Z, preserving actual/draft payloads apart from autosave timestamps. No Apply/Complete used. Successful recognition, physical Android/current iOS and broader acceptance remain pending; issue stays open, score53/100. Evidence: https://github.com/camster91/Shift6/blob/f5f3e9c47f08ca7a8b9aac2ec34705d48dc363f5/docs/51_LOCAL_VOICE_NATIVE_QA.md\r\n",
+        "reactions": {
+          "url": "https://api.github.com/repos/camster91/Shift6/issues/comments/6167422717/reactions",
+          "total_count": 0,
+          "+1": 0,
+          "-1": 0,
+          "laugh": 0,
+          "hooray": 0,
+          "confused": 0,
+          "heart": 0,
+          "rocket": 0,
+          "eyes": 0
+        },
+        "performed_via_github_app": null,
+        "minimized": null,
+        "pin": null
+      }
+    },
+    {
+      "issue": 363,
+      "url": "https://github.com/camster91/Shift6/issues/363#issuecomment-6167423938",
+      "readback": {
+        "url": "https://api.github.com/repos/camster91/Shift6/issues/comments/6167423938",
+        "html_url": "https://github.com/camster91/Shift6/issues/363#issuecomment-6167423938",
+        "issue_url": "https://api.github.com/repos/camster91/Shift6/issues/363",
+        "id": 6167423938,
+        "node_id": "IC_kwDOQzneMM8AAAABb5trwg",
+        "user": {
+          "login": "camster91",
+          "id": 33962910,
+          "node_id": "MDQ6VXNlcjMzOTYyOTEw",
+          "avatar_url": "https://avatars.githubusercontent.com/u/33962910?u=24cbf5427e651899903e2d46fe20ae81f4d0b1e0&v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/camster91",
+          "html_url": "https://github.com/camster91",
+          "followers_url": "https://api.github.com/users/camster91/followers",
+          "following_url": "https://api.github.com/users/camster91/following{/other_user}",
+          "gists_url": "https://api.github.com/users/camster91/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/camster91/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/camster91/subscriptions",
+          "organizations_url": "https://api.github.com/users/camster91/orgs",
+          "repos_url": "https://api.github.com/users/camster91/repos",
+          "events_url": "https://api.github.com/users/camster91/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/camster91/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "created_at": "2026-10-14T11:36:18Z",
+        "updated_at": "2026-10-14T11:36:18Z",
+        "author_association": "OWNER",
+        "body": "Additional dated native evidence on3f1752ed is now committed in f5f3e9c47f08ca7a8b9aac2ec34705d48dc363f5 / draft PR #351: start/end date fields visible above Android IME at normal/200% text. Fast normal end typing had an unproven exact-readback mismatch; separately paced end and large-text entries pass. All36 arrays/1,082 records unchanged in external export. These cases keep their original binary scope and are not a whole-run or human acceptance claim. Physical keyboards/current iOS and broader acceptance remain pending; issue stays open, score53/100. Evidence: https://github.com/camster91/Shift6/blob/f5f3e9c47f08ca7a8b9aac2ec34705d48dc363f5/docs/50_LOCAL_COACH_REVIEW_QA.md\r\n",
+        "reactions": {
+          "url": "https://api.github.com/repos/camster91/Shift6/issues/comments/6167423938/reactions",
+          "total_count": 0,
+          "+1": 0,
+          "-1": 0,
+          "laugh": 0,
+          "hooray": 0,
+          "confused": 0,
+          "heart": 0,
+          "rocket": 0,
+          "eyes": 0
+        },
+        "performed_via_github_app": null,
+        "minimized": null,
+        "pin": null
+      }
+    }
+  ]
+}

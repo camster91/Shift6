@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\test-voice-keyboard-chunks-ae3efb5a.py", line 38, in <module>
+    quiet(qa.tap,'Use optional voice set entry')
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\test-voice-keyboard-chunks-ae3efb5a.py", line 5, in quiet
+    with contextlib.redirect_stdout(io.StringIO()): return fn(*args)
+                                                           ^^^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 38, in tap
+    n=find(label);b=bounds(n)
+      ^^^^^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 33, in find
+    if len(found)!=1:raise RuntimeError("Expected one visible enabled match for "+repr(label)+", found "+str(len(found)))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Expected one visible enabled match for 'Use optional voice set entry', found 0

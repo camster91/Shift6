@@ -1,0 +1,30 @@
+[
+  {
+    "field": "Review start date",
+    "attempt": 0,
+    "text": "2026-10-",
+    "focused": "true",
+    "bounds": "[116,1307][965,1454]"
+  },
+  {
+    "field": "Review start date",
+    "attempt": 1,
+    "text": "2026-10-",
+    "focused": "true",
+    "bounds": "[116,1307][965,1454]"
+  },
+  {
+    "field": "Review end date",
+    "attempt": 0,
+    "text": "2026-10-",
+    "focused": "true",
+    "bounds": "[116,1370][965,1517]"
+  },
+  {
+    "field": "Review end date",
+    "attempt": 1,
+    "text": "2026-10-",
+    "focused": "true",
+    "bounds": "[116,1370][965,1517]"
+  }
+]

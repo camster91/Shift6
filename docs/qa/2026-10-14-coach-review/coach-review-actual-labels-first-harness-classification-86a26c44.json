@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "86a26c4490ab091f865e20773151a0443a9f2b8c",
+  "firstHelperExit": 1,
+  "interruption": "all-sets caption assertion before scrolling to actual fields",
+  "freshScrollConfirmsCaption": true,
+  "normalClosedKeyboardLabelsObserved": true,
+  "durationAndRpeRestored": [
+    "26",
+    "7"
+  ],
+  "keyboardGeometryAssumptionNotApplicable": "floating Gboard toolbar instead of earlier bottom IME",
+  "bottomKeyboardAcceptancePending": true,
+  "noCompleteOrApply": true,
+  "firstHelperSha256": "6d2e1fc7727ff267a1b051bcc5d0d10f562baaaf05e7eb3f42d14237a88f3925"
+}

@@ -1,0 +1,79 @@
+{
+  "reviewedAtUtc": "2026-10-14T15:17:30.3865768Z",
+  "host": "CAM-DESKTOP",
+  "baseCommit": "0b997f90",
+  "mode": "independent read-only source review; no competing tests, app edits, ADB, or GitHub",
+  "status": "accepted_source_only",
+  "resolved": [
+    "Skip rest now captures its context guard at render and checks entry before timer or cancellation effects; catch uses same guard. Retained owner/database/blur-refocus regression assertions reviewed.",
+    "Retained refresh callback cannot adopt a successor after owner ABA: unique memoized actor identity is closed over and checked against lease/currentActor.",
+    "Visible snapshot is keyed by actor and filtered synchronously; null database unavailable0 and first replacement idle0. Four RED assertions and retained regression source reviewed.",
+    "All refresh repository/native awaits guarded. Global workout queue waits for stale job-created identifier cleanup before successor; immutable JSON/Date input capture and failed-job recovery reviewed. Rest per-session queue preserved."
+  ],
+  "accepted": [
+    "Installed SDK default action and native request/date mappings remain correct.",
+    "Generic workout reminder title/body; Home-only default-tap routing, malformed event refusal, owner/database/lease cleanup, cached/live per-generation dedup; no auto-start.",
+    "Queue guard exceptions during schedule try trigger owned cleanup; cleanup failure rejects explicitly, and settled queue permits successor reconciliation."
+  ],
+  "limits": [
+    "Only pending triggers are cancelled; already delivered notification tray entries remain.",
+    "Never-settling native promises can block the serialized queue; no wall-clock delivery/cleanup guarantee or timeout abandonment claimed.",
+    "Cached tap consumption/dedup are not durable across restart.",
+    "A native scheduling rejection after an unreported native commit has no resolved-created identifier to clean; next reconciliation may discover it. No guaranteed rollback claimed.",
+    "Runtime platform delivery, iOS behavior and human acceptance remain untested by this source review."
+  ],
+  "evidence": [
+    "Worker final receipt notification-refresh-actor-source-receipt.json: reported68/5 focused and static0; reviewer inspected source/tests/receipt but did not rerun.",
+    "Root reported retained Skip RED3 before fix and updated full workout/scheduler63/2 passed; reviewer inspected source/tests and did not rerun."
+  ],
+  "hashes": [
+    {
+      "path": "app/workout.tsx",
+      "sha256": "68455DDCFB4B41AB5972BA24EA4CDEF5392A1F91AB9F5F18B3417749674C84EC"
+    },
+    {
+      "path": "src/components/workoutFocusScreen.test.tsx",
+      "sha256": "545F3EDF9172C5ED7ADA1875E66C0823EBB7A5312F444F65ED4DF202D4740401"
+    },
+    {
+      "path": "src/services/notificationScheduler.ts",
+      "sha256": "B5CE21046D96299156DBEEA02FE5EE61AC94E25447D9247043B9D97FE12E3D51"
+    },
+    {
+      "path": "src/services/notificationScheduler.test.ts",
+      "sha256": "267CABCA6400F358D81D1810F3A76602A0D598FCD18DC1706FE7CCCCD3754C0E"
+    },
+    {
+      "path": "src/domain/notificationSchedule.ts",
+      "sha256": "FB2DCE74BF7B651358F99157F25ADC6982DF1A8A45C9B0BB0D145E1C8D3EC380"
+    },
+    {
+      "path": "src/domain/notificationSchedule.test.ts",
+      "sha256": "10E8826C49ED20F0FAFD2BCEB1946950A1CFD764ED0373D0EC4478952ACA02E4"
+    },
+    {
+      "path": "src/services/notifications.ts",
+      "sha256": "E7C9AFD874C21F46174A18B20A6E4E0D6DAC7977A5FB4A67CFAD255214695146"
+    },
+    {
+      "path": "src/services/notifications.test.ts",
+      "sha256": "B143A450B5AB99F5E6DB2A2DADE8EB19B65478C553DD2EAD1CF254C0C41A4F96"
+    },
+    {
+      "path": "src/services/NotificationRuntimeProvider.tsx",
+      "sha256": "6EDD61DB27672219D8D1F885BB07C424C261E4C29E803C5A8DC38EA292F66735"
+    },
+    {
+      "path": "src/services/NotificationRuntimeProvider.test.tsx",
+      "sha256": "0BF8250828CC276D633D5986BB2BEEE348FB1817F9841BABDF9CFFC91AF4CDB8"
+    },
+    {
+      "path": "src/services/notificationResponsePolicy.ts",
+      "sha256": "EF703C81D33E57208B07BC2F9FE49E75561B1DAEF8A1DAEAA677F1A3168470EA"
+    },
+    {
+      "path": "src/services/notificationResponsePolicy.test.ts",
+      "sha256": "4091CDC5D98D6002D000E39286C269195C90345FBB7C162B1E67B58713BB78FC"
+    }
+  ]
+}

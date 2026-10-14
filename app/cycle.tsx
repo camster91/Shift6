@@ -1,7 +1,15 @@
+import { selectDashboardCycle } from '../src/db/cycleHistoryRepository';
+import {
+  getCycleLifecycleEvents,
+  appendCycleLifecycleEvent,
+} from '../src/db/cycleLifecycleRepository';
+import { lifecycleDate, summarizeLifecycle } from '../src/domain/cycleLifecycle';
+import type { CycleLifecycleEvent } from '../src/domain/localPersistence';
+import { useNotificationRuntime } from '../src/services/NotificationRuntimeProvider';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 
 import {
   Button,
@@ -26,23 +34,45 @@ import {
   getWorkoutScheduleOverrides,
   getWorkoutScheduleSessions,
 } from '../src/db/calendarRepository';
-import { getActiveTrainingCycle } from '../src/db/cycleRepository';
+import { getActiveTrainingCycle, getLatestTrainingCycle } from '../src/db/cycleRepository';
 import { getUserProgramVersion } from '../src/db/programRepository';
 import { getCompletedWorkoutIds } from '../src/db/progressRepository';
 import { colors, spacing } from '../src/design/tokens';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function CycleDashboardScreen() {
+  const { fontScale } = useWindowDimensions();
+  const stackCycleHeader = fontScale >= 1.5;
+  const params = useLocalSearchParams<{ cycleId?: string | string[] }>();
+  const requestedSelection =
+    params.cycleId === undefined || typeof params.cycleId === 'string'
+      ? params.cycleId
+      : '\u0000invalid-cycle';
   const database = useLocalDatabase();
   const userId = useCurrentUserId();
+  const { refreshNow } = useNotificationRuntime();
+  const [otherActive, setOtherActive] = useState<TrainingCycle | null>(null);
+  const [latestCycleId, setLatestCycleId] = useState<string | null>(null);
+  const reviewPending = useRef(false);
+  const [events, setEvents] = useState<CycleLifecycleEvent[]>([]);
+  const [reviewDate, setReviewDate] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+  const context = useRef({ database, userId, requestedSelection });
+  context.current = { database, userId, requestedSelection };
+  const focusGeneration = useRef(0);
   const [cycle, setCycle] = useState<TrainingCycle | null>(null);
   const [program, setProgram] = useState<Program | null>(null);
   const [version, setVersion] = useState<ProgramVersion | null>(null);
   const [schedule, setSchedule] = useState<WeeklyScheduleEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loadedFor, setLoadedFor] = useState<{ database: typeof database; userId: string } | null>(
-    null,
-  );
+  const [loadedFor, setLoadedFor] = useState<{
+    database: typeof database;
+    userId: string;
+    requestedSelection: typeof requestedSelection;
+    generation: number;
+  } | null>(null);
   const [completedWorkoutIds, setCompletedWorkoutIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -55,33 +85,50 @@ export default function CycleDashboardScreen() {
         return undefined;
       }
 
+      const generation = ++focusGeneration.current;
       let active = true;
+      setBusy(false);
+      reviewPending.current = false;
+      setLatestCycleId(null);
+      setEvents([]);
       setLoading(true);
       setError(null);
       setCycle(null);
       setProgram(null);
       setVersion(null);
       setLoadedFor(null);
-      void getActiveTrainingCycle(database, userId)
+      void selectDashboardCycle(database, userId, requestedSelection)
         .then(async (activeCycle) => {
           if (!active || !activeCycle) return;
+          const [currentActive, latest] = await Promise.all([
+            getActiveTrainingCycle(database, userId),
+            getLatestTrainingCycle(database, userId),
+          ]);
+          if (!active) return;
+          setLatestCycleId(latest?.userId === userId ? latest.id : null);
+          setOtherActive(
+            currentActive && currentActive.id !== activeCycle.id ? currentActive : null,
+          );
           const snapshot = await getUserProgramVersion(
             database,
             userId,
             activeCycle.programVersionId,
           );
           if (!snapshot) return;
-          const [completedIds, scheduleOverrides, scheduleSessions] = await Promise.all([
+          const [completedIds, scheduleOverrides, scheduleSessions, journal] = await Promise.all([
             getCompletedWorkoutIds(database, activeCycle.id, activeCycle.currentWeek),
             getWorkoutScheduleOverrides(database, userId, activeCycle.id),
             getWorkoutScheduleSessions(database, activeCycle.id),
+            getCycleLifecycleEvents(database, userId, activeCycle.id),
           ]);
           if (!active) return;
+          setEvents(journal);
+          setReviewDate(summarizeLifecycle(journal).reviewDate ?? '');
           setCycle(activeCycle);
           setCompletedWorkoutIds(completedIds);
           setProgram(snapshot.program);
           setVersion(snapshot.version);
-          setLoadedFor({ database, userId });
+          setLoadedFor({ database, userId, requestedSelection, generation });
           setSchedule(
             buildCurrentCycleWeekSchedule(
               activeCycle,
@@ -101,11 +148,102 @@ export default function CycleDashboardScreen() {
 
       return () => {
         active = false;
+        if (focusGeneration.current === generation) focusGeneration.current++;
       };
-    }, [database, userId]),
+    }, [database, userId, reload, requestedSelection]),
   );
 
-  if (loading || (database && cycle && loadedFor?.database !== database)) {
+  const confirmAction = (kind: CycleLifecycleEvent['kind']) => {
+    if (
+      !database ||
+      !cycle ||
+      busy ||
+      loadedFor?.userId !== userId ||
+      loadedFor.database !== database ||
+      loadedFor.requestedSelection !== requestedSelection
+    )
+      return;
+    const summary = summarizeLifecycle(events);
+    const timeZone = summary.latest?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const effectiveDate =
+      kind === 'review-date' ? reviewDate : lifecycleDate(new Date().toISOString(), timeZone);
+    const generation = focusGeneration.current;
+    const operationId = `cycle-${kind}-${cycle.id}-${Date.now()}`;
+    const message =
+      kind === 'pause'
+        ? `Pause this cycle today (${effectiveDate})? Saved sets and week ${cycle.currentWeek} stay intact.`
+        : kind === 'resume'
+          ? `Resume this cycle today (${effectiveDate}) at week ${cycle.currentWeek}? Targets stay unchanged. Choose an appropriate return to training; the app does not prescribe one.`
+          : `Use ${effectiveDate} as your planned review date? This does not complete or advance any workout.`;
+    const matches = () =>
+      focusGeneration.current === generation &&
+      context.current.database === database &&
+      context.current.userId === userId &&
+      context.current.requestedSelection === requestedSelection;
+    let submitted = false;
+    Alert.alert(
+      kind === 'review-date'
+        ? 'Confirm review date'
+        : kind === 'pause'
+          ? 'Pause cycle?'
+          : 'Resume cycle?',
+      message,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: () => {
+            if (!matches() || submitted) return;
+            submitted = true;
+            setBusy(true);
+            setNotice(null);
+            const event: CycleLifecycleEvent = {
+              id: operationId,
+              userId,
+              cycleId: cycle.id,
+              kind,
+              effectiveDate,
+              timeZone,
+              previousEventId: summary.latest?.id ?? null,
+              operationId,
+              recordedAt: new Date().toISOString(),
+            };
+            void appendCycleLifecycleEvent(database, event)
+              .then(async () => {
+                if (!matches()) return;
+                let reminderMessage = '';
+                try {
+                  const result = await refreshNow();
+                  if (result.status === 'failed')
+                    reminderMessage = ' Reminders could not refresh; reopen reminder settings.';
+                } catch {
+                  reminderMessage = ' Reminders could not refresh; reopen reminder settings.';
+                }
+                if (!matches()) return;
+                setNotice(`Saved on this device.${reminderMessage}`);
+                setReload((value) => value + 1);
+              })
+              .catch((failure: unknown) => {
+                if (matches())
+                  setNotice(
+                    failure instanceof Error ? failure.message : 'This action could not be saved.',
+                  );
+              })
+              .finally(() => {
+                if (matches()) setBusy(false);
+              });
+          },
+        },
+      ],
+    );
+  };
+
+  if (
+    loading ||
+    (database &&
+      cycle &&
+      (loadedFor?.database !== database || loadedFor.requestedSelection !== requestedSelection))
+  ) {
     return (
       <Screen>
         <LoadingSkeleton height={44} />
@@ -136,6 +274,54 @@ export default function CycleDashboardScreen() {
     completedWorkoutIds.has(workout.id),
   ).length;
   const isComplete = cycle.status === 'complete';
+  const canOpenReview = isComplete && cycle.id === latestCycleId;
+  const openCycleSummary = async () => {
+    const generation = loadedFor?.generation;
+    const matches = () =>
+      generation !== undefined &&
+      generation === focusGeneration.current &&
+      context.current.database === database &&
+      context.current.userId === userId &&
+      context.current.requestedSelection === requestedSelection &&
+      loadedFor?.database === database &&
+      loadedFor.userId === userId &&
+      loadedFor.requestedSelection === requestedSelection;
+    if (!matches() || reviewPending.current) return;
+    if (!canOpenReview) {
+      router.push(
+        requestedSelection !== undefined
+          ? { pathname: '/cycle-reflection', params: { cycleId: cycle.id } }
+          : '/progress',
+      );
+      return;
+    }
+    reviewPending.current = true;
+    setBusy(true);
+    try {
+      const latest = await getLatestTrainingCycle(database, userId);
+      if (!matches()) return;
+      if (
+        latest?.userId !== userId ||
+        latest.id !== cycle.id ||
+        latest.programVersionId !== cycle.programVersionId ||
+        latest.status !== 'complete'
+      ) {
+        setNotice('Your latest cycle changed. Reload this cycle before opening its review.');
+        return;
+      }
+      router.push({
+        pathname: '/review',
+        params: { expectedCycleId: cycle.id, expectedProgramVersionId: cycle.programVersionId },
+      });
+    } catch {
+      if (matches()) setNotice('We could not verify this cycle. Reload before opening its review.');
+    } finally {
+      if (matches()) {
+        reviewPending.current = false;
+        setBusy(false);
+      }
+    }
+  };
 
   return (
     <Screen>
@@ -143,7 +329,7 @@ export default function CycleDashboardScreen() {
         <IconButton
           icon={<Ionicons name="arrow-back" size={22} color={colors.ink} />}
           label="Back to Home"
-          onPress={() => router.back()}
+          onPress={() => router.replace('/')}
         />
         <Text variant="caption" tone="muted">
           CYCLE DASHBOARD
@@ -151,6 +337,25 @@ export default function CycleDashboardScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
+      <Button label="All saved cycles" variant="ghost" onPress={() => router.push('/cycles')} />
+      {canOpenReview ? (
+        <Button
+          label={requestedSelection !== undefined ? 'Open six-week review' : 'Open cycle review'}
+          variant="secondary"
+          icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
+          disabled={busy}
+          onPress={() => void openCycleSummary()}
+          style={styles.action}
+        />
+      ) : null}
+      <Button
+        label="Read saved reflection"
+        variant="ghost"
+        onPress={() => {
+          if (requestedSelection !== undefined && !canOpenReview) void openCycleSummary();
+          else router.push({ pathname: '/cycle-reflection', params: { cycleId: cycle.id } });
+        }}
+      />
       <Text variant="display" accessibilityRole="header" style={styles.title}>
         Your next six.
       </Text>
@@ -159,8 +364,11 @@ export default function CycleDashboardScreen() {
       </Text>
 
       <Card tone="lavender" style={styles.cycleCard} accessibilityLabel="Current six-week cycle">
-        <View style={styles.cycleHeader}>
-          <View style={styles.cycleHeaderCopy}>
+        <View style={[styles.cycleHeader, stackCycleHeader && styles.cycleHeaderStacked]}>
+          <View
+            testID="cycle-heading"
+            style={[styles.cycleHeaderCopy, stackCycleHeader && styles.cycleHeaderCopyStacked]}
+          >
             <Text variant="caption" tone="muted">
               {program.title.toUpperCase()}
             </Text>
@@ -169,10 +377,16 @@ export default function CycleDashboardScreen() {
             </Text>
             <Text variant="small" tone="muted">
               {currentWeek?.phase ?? 'In progress'} ·{' '}
-              {cycle.status === 'complete' ? 'Ready for review' : 'In progress'}
+              {cycle.status === 'complete'
+                ? 'Ready for review'
+                : cycle.status === 'paused'
+                  ? 'Paused'
+                  : 'In progress'}
             </Text>
           </View>
-          <Chip label={`${completedRequired}/${requiredWorkouts.length} done`} selected />
+          <View style={stackCycleHeader && styles.cycleBadgeStacked}>
+            <Chip label={`${completedRequired}/${requiredWorkouts.length} done`} selected />
+          </View>
         </View>
         <View style={styles.indicator}>
           <SixWeekIndicator weeks={cycle.weeks} />
@@ -182,6 +396,83 @@ export default function CycleDashboardScreen() {
             ? 'Week 6 is an evaluation week.'
             : `Week 6 is ${formatWeekSixMeaning(version.cycleModel.weekSixMeaning)}.`}
         </Text>
+      </Card>
+      <Card style={styles.cycleCard}>
+        <Text variant="h3">Your cycle, your timing.</Text>
+        <Text variant="small" tone="muted">
+          Pausing keeps saved results and prescribed targets. Return-to-training prescriptions need
+          qualified review; this app does not invent them.
+        </Text>
+        {cycle.status === 'paused' && !events.some((event) => event.kind === 'pause') ? (
+          <Text variant="small" tone="muted">
+            The earlier pause start is unknown. Resuming records today�s return without guessing a
+            pause duration.
+          </Text>
+        ) : null}
+        {summarizeLifecycle(events).unknownPriorPause ? (
+          <Text variant="small" tone="muted">
+            An earlier pause interval remains unknown.
+          </Text>
+        ) : null}
+        {cycle.status === 'active' || cycle.status === 'paused' ? (
+          <Button
+            label={cycle.status === 'paused' ? 'Resume cycle' : 'Pause cycle'}
+            disabled={busy || (cycle.status === 'paused' && otherActive !== null)}
+            onPress={() => confirmAction(cycle.status === 'paused' ? 'resume' : 'pause')}
+          />
+        ) : null}
+        {cycle.status === 'paused' && otherActive ? (
+          <>
+            <Text variant="small">
+              Another cycle is active. Open and pause it explicitly before resuming this cycle.
+            </Text>
+            <Button
+              label="Open active cycle"
+              onPress={() =>
+                router.push({ pathname: '/cycle', params: { cycleId: otherActive.id } })
+              }
+            />
+          </>
+        ) : null}
+        <Text variant="smallMedium">Planned review date (YYYY-MM-DD)</Text>
+        <TextInput
+          accessibilityLabel="Planned review date"
+          value={reviewDate}
+          onChangeText={setReviewDate}
+          editable={!busy}
+          maxLength={10}
+          placeholder="YYYY-MM-DD"
+          style={{ padding: 12, borderWidth: 1, borderColor: colors.ink, borderRadius: 8 }}
+        />
+        <Button
+          label="Confirm review date"
+          variant="secondary"
+          disabled={busy || !reviewDate}
+          onPress={() => confirmAction('review-date')}
+        />
+        {notice ? (
+          <View>
+            <Text variant="small" accessibilityRole="alert">
+              {notice}
+            </Text>
+            <Button
+              label="Refresh cycle"
+              variant="ghost"
+              disabled={busy}
+              onPress={() => setReload((value) => value + 1)}
+            />
+          </View>
+        ) : null}
+        {summarizeLifecycle(events).ordered.map((event) => (
+          <Text variant="small" key={event.id}>
+            {event.kind === 'review-date'
+              ? 'Review planned'
+              : event.kind === 'pause'
+                ? 'Paused'
+                : 'Resumed'}
+            : {event.effectiveDate} ({event.timeZone})
+          </Text>
+        ))}
       </Card>
       <Button
         label="Open calendar"
@@ -256,6 +547,8 @@ export default function CycleDashboardScreen() {
           return workout ? (
             <Pressable
               key={entry.id}
+              disabled={cycle.status !== 'active'}
+              accessibilityState={{ disabled: cycle.status !== 'active' }}
               accessibilityRole="button"
               accessibilityLabel={`${entry.day}, ${entry.title}${completed ? ', complete' : ''}. Open workout.`}
               onPress={() =>
@@ -282,13 +575,16 @@ export default function CycleDashboardScreen() {
         </Text>
       </Card>
 
-      <Button
-        label={isComplete ? 'Open cycle review' : 'Open progress'}
-        variant="secondary"
-        icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
-        onPress={() => router.push(isComplete ? '/review' : '/progress')}
-        style={styles.action}
-      />
+      {!canOpenReview && requestedSelection === undefined ? (
+        <Button
+          label="Open progress"
+          variant="secondary"
+          icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
+          disabled={busy}
+          onPress={() => void openCycleSummary()}
+          style={styles.action}
+        />
+      ) : null}
     </Screen>
   );
 }
@@ -340,6 +636,17 @@ const styles = StyleSheet.create({
   },
   cycleHeaderCopy: {
     flex: 1,
+  },
+  cycleHeaderStacked: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  cycleHeaderCopyStacked: {
+    flex: 0,
+    width: '100%',
+  },
+  cycleBadgeStacked: {
+    alignSelf: 'flex-start',
   },
   weekTitle: {
     marginTop: spacing.xs,

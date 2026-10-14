@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "ae3efb5a3542e585cee459640831e22d786060f5",
+  "records": 1082,
+  "arrays": 36,
+  "changedArrays": [
+    "workoutDraftLoadUnits",
+    "workoutDrafts"
+  ],
+  "actualPayloadsUnchanged": true,
+  "draftPayloadsUnchanged": true,
+  "exportedAt": "2026-10-14T11:30:17.041Z",
+  "nativeCases": "See separately retained helper logs and screenshots; comparison does not infer UI passes"
+}

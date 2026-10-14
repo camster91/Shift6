@@ -1,0 +1,14 @@
+{
+  "actualSkipTapped": true,
+  "beforeCaptureEpoch": 1791994280998,
+  "afterCaptureEpoch": 1791994283621,
+  "tapBounds": [
+    693,
+    952,
+    965,
+    1078
+  ],
+  "timerAndSkipRemoved": true,
+  "savedCount": "1 of 5 sets",
+  "nativeCueDeliveryTested": false
+}

@@ -36,6 +36,7 @@ const completedSet: CompletedSet = {
   workoutExerciseId: 'exercise-1',
   setNumber: 1,
   load: 50,
+  loadUnit: 'kg',
   reps: 5,
   completedAt: timestamp,
   idempotencyKey: 'session-1:exercise-1:1',
@@ -56,6 +57,8 @@ function createDatabase() {
       sqlite.prepare(sql).all(...params),
     getFirstAsync: async (sql: string, ...params: SQLInputValue[]) =>
       sqlite.prepare(sql).get(...params) ?? null,
+    withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+      database.withTransactionAsync(() => callback(database)),
     withTransactionAsync: async (callback: () => Promise<void>) => {
       sqlite.exec('BEGIN;');
       try {
@@ -130,9 +133,10 @@ const scenarios = [
         isOffline: true,
       });
       await acknowledgeAll(database);
-      await saveCompletedSet(database, completedSet);
+      await saveCompletedSet(database, completedSet, profile.user.id);
     },
-    edit: (database: SQLiteDatabase) => updateCompletedSet(database, { ...completedSet, reps: 8 }),
+    edit: (database: SQLiteDatabase) =>
+      updateCompletedSet(database, { ...completedSet, reps: 8 }, profile.user.id, completedSet),
     expectedPayload: { id: completedSet.id, reps: 8 },
   },
 ];

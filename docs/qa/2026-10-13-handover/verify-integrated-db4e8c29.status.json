@@ -1,0 +1,7 @@
+{
+  "sourceCommit": "db4e8c290d8a801d5305ca57ffed414ecbd1d2dc",
+  "exitCode": 0,
+  "finishedAt": "2026-10-14T06:01:28.856317+00:00",
+  "command": "npm run verify",
+  "log": "verify-integrated-db4e8c29.log"
+}

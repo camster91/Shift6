@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 16,
+  "exportedAt": "2026-10-13T22:34:44.492Z",
+  "userId": "guest-user",
+  "summary": {
+    "scope": "local-device",
+    "title": "SHIFT6 local data export",
+    "description": "A structured JSON copy of SHIFT6 data owned by this user and currently stored on this device.",
+    "limitations": "This is a local-device export. It does not claim to include server-only account data or third-party provider records that are not cached in SHIFT6 local storage.",
+    "totalRecordCount": 0,
+    "sections": [
+      {
+        "key": "profile",
+        "title": "Profile and equipment",
+        "description": "Your local profile answers and saved equipment inventory.",
+        "recordCount": 0
+      },
+      {
+        "key": "preferences",
+        "title": "Preferences and accessibility",
+        "description": "Local movement/accessibility preferences and Coach provider privacy preference.",
+        "recordCount": 0
+      },
+      {
+        "key": "bodyAndHealth",
+        "title": "Body metrics and health summaries",
+        "description": "Manual body measurements and health summaries imported onto this device.",
+        "recordCount": 0
+      },
+      {
+        "key": "shiftsAndMeasurements",
+        "title": "Shifts and measurements",
+        "description": "Shift goals, measurement protocols, recorded results, and goal revisions stored on this device.",
+        "recordCount": 0
+      },
+      {
+        "key": "trainingHistory",
+        "title": "Training history",
+        "description": "Cycles, workout sessions, completed sets, in-progress drafts, check-ins, cycle reviews, and schedule overrides.",
+        "recordCount": 0
+      },
+      {
+        "key": "programsAndExercises",
+        "title": "Your programs and exercises",
+        "description": "Private program copies, program versions, and custom exercise records.",
+        "recordCount": 0
+      },
+      {
+        "key": "coachAndNotifications",
+        "title": "Coach and notification records",
+        "description": "Saved Coach proposals, dated review intents and local notification preferences.",
+        "recordCount": 0
+      }
+    ]
+  },
+  "cycleLifecycleEvents": [],
+  "coachMemoryPreferences": [],
+  "coachMemoryFacts": [],
+  "builderRecoveryDrafts": [],
+  "setFeedbackEvents": [],
+  "completedSetLoadProvenance": [],
+  "workoutDraftLoadUnits": [],
+  "scheduleBaselines": [],
+  "scheduleRevisions": [],
+  "coachReviewJournal": [],
+  "personalGoalEvents": [],
+  "personalGoalDrafts": [],
+  "onboardingDrafts": [],
+  "userProfiles": [],
+  "userEquipment": [],
+  "userConsiderations": [],
+  "bodyMetrics": [],
+  "coachPrivacyPreferences": [],
+  "trainingCycles": [],
+  "shifts": [],
+  "shiftProtocols": [],
+  "shiftObservations": [],
+  "shiftGoalRevisions": [],
+  "workoutSessions": [],
+  "completedSets": [],
+  "workoutDrafts": [],
+  "workoutCheckIns": [],
+  "userPrograms": [],
+  "userProgramVersions": [],
+  "userExercises": [],
+  "coachProposals": [],
+  "healthSummaries": [],
+  "notificationPreferences": [],
+  "cycleReviews": [],
+  "workoutScheduleOverrides": []
+}

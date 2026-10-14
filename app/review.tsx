@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, StyleSheet, TextInput, View } from 'react-native';
 
 import {
   Button,
@@ -15,13 +15,21 @@ import {
   Text,
 } from '../src/components/ui';
 import { getCycleReview, saveCycleReview } from '../src/db/cycleReviewRepository';
-import { getLatestTrainingCycle, saveTrainingCycle } from '../src/db/cycleRepository';
+import { getLatestTrainingCycle } from '../src/db/cycleRepository';
+import {
+  prepareCycleHandover,
+  confirmCycleHandover,
+  getCycleHandoverReceipt,
+} from '../src/db/cycleHandoverRepository';
+import { getPersonalGoal } from '../src/db/personalGoalRepository';
+import type { CycleHandoverRequest, CycleHandoverReceipt } from '../src/domain/cycleHandover';
+import type { Shift } from '../src/domain/shift';
 import { useLocalDatabase } from '../src/db/context';
 import { getCycleProgressSummary } from '../src/db/progressRepository';
-import { getUserProgramVersion, saveProgramVersion } from '../src/db/programRepository';
+import { getUserProgramVersion } from '../src/db/programRepository';
 import { getWeekSixGuidance } from '../src/domain/progression';
-import { createTrainingCycle } from '../src/domain/cycle';
-import { createNextCycleCopy } from '../src/domain/programBuilder';
+import { lifecycleDate } from '../src/domain/cycleLifecycle';
+import { stableSnapshotJSON } from '../src/domain/programPersistence';
 import type { CycleProgressSummary } from '../src/domain/progression';
 import type {
   CheckInRating,
@@ -38,6 +46,23 @@ import { trackAnalyticsEvent } from '../src/services/analytics';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
 export default function CycleReviewScreen() {
+  const params = useLocalSearchParams<{
+    expectedCycleId?: string | string[];
+    expectedProgramVersionId?: string | string[];
+  }>();
+  const expectedCycleId = params.expectedCycleId;
+  const expectedProgramVersionId = params.expectedProgramVersionId;
+  const isDirectReview = expectedCycleId === undefined && expectedProgramVersionId === undefined;
+  const validBinding =
+    isDirectReview ||
+    (typeof expectedCycleId === 'string' &&
+      !!expectedCycleId.trim() &&
+      typeof expectedProgramVersionId === 'string' &&
+      !!expectedProgramVersionId.trim());
+  const bindingKey = stableSnapshotJSON([
+    expectedCycleId ?? null,
+    expectedProgramVersionId ?? null,
+  ]);
   const database = useLocalDatabase();
   const { analytics } = useAppServices();
   const userId = useCurrentUserId();
@@ -52,70 +77,265 @@ export default function CycleReviewScreen() {
   const [loading, setLoading] = useState(database !== null);
   const [reviewBusy, setReviewBusy] = useState<'reflection' | CycleReviewAction | null>(null);
   const [reviewSaved, setReviewSaved] = useState(false);
+  const [personalGoal, setPersonalGoal] = useState<Shift | null>(null);
+  const [handoverChoice, setHandoverChoice] = useState<CycleHandoverRequest['choice'] | null>(null);
+  const [handoverPreview, setHandoverPreview] = useState<{
+    request: CycleHandoverRequest;
+    snapshot: string;
+    focusGeneration: number;
+  } | null>(null);
+  const [handoverReceipt, setHandoverReceipt] = useState<CycleHandoverReceipt | null>(null);
+  const [receiptRecoveryOnly, setReceiptRecoveryOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadedFor, setLoadedFor] = useState<{ database: typeof database; userId: string } | null>(
-    null,
+  const [loadedFor, setLoadedFor] = useState<{
+    database: typeof database;
+    userId: string;
+    bindingKey: string;
+    generation: number;
+  } | null>(null);
+
+  const repeatContext = useRef({
+    database,
+    userId,
+    bindingKey,
+    snapshot: stableSnapshotJSON({
+      cycle,
+      program,
+      programVersion,
+      overallRating,
+      focus,
+      reviewNote,
+      review,
+      handoverChoice,
+    }),
+  });
+  repeatContext.current = {
+    database,
+    userId,
+    bindingKey,
+    snapshot: stableSnapshotJSON({
+      cycle,
+      program,
+      programVersion,
+      overallRating,
+      focus,
+      reviewNote,
+      review,
+      handoverChoice,
+    }),
+  };
+  const repeatFocus = useRef(0);
+  useFocusEffect(
+    useCallback(() => {
+      const generation = ++repeatFocus.current;
+      return () => {
+        if (repeatFocus.current === generation) repeatFocus.current++;
+      };
+    }, [database, userId, bindingKey]),
+  );
+  const repeatMounted = useRef(true),
+    repeatPending = useRef<number | null>(null),
+    repeatSequence = useRef(0);
+  useEffect(() => {
+    repeatMounted.current = true;
+    return () => {
+      repeatMounted.current = false;
+    };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!database) {
+        setLoading(false);
+        return;
+      }
+
+      let active = true;
+      const generation = repeatFocus.current;
+      const isCurrent = () =>
+        active &&
+        repeatContext.current.database === database &&
+        repeatContext.current.userId === userId &&
+        repeatContext.current.bindingKey === bindingKey &&
+        repeatFocus.current === generation;
+      setLoading(true);
+      setError(null);
+      setCycle(null);
+      setProgram(null);
+      setProgramVersion(null);
+      setSummary(null);
+      setLoadedFor(null);
+      setReviewBusy(null);
+      setPersonalGoal(null);
+      setHandoverChoice(null);
+      setHandoverPreview(null);
+      setHandoverReceipt(null);
+      setReceiptRecoveryOnly(false);
+      void (async () => {
+        try {
+          if (!validBinding)
+            throw new Error(
+              'This review link is invalid. Return to its cycle or Progress to open a fresh review.',
+            );
+          const latestCycle = await getLatestTrainingCycle(database, userId);
+          if (!isCurrent()) return;
+          if (!latestCycle) return;
+          const changedCycleMessage =
+            'The selected cycle changed. Return to its cycle or Progress to open a fresh review.';
+          if (latestCycle.userId !== userId) throw new Error(changedCycleMessage);
+          if (
+            !isDirectReview &&
+            (latestCycle.id !== expectedCycleId ||
+              latestCycle.programVersionId !== expectedProgramVersionId)
+          ) {
+            if (typeof expectedCycleId !== 'string' || typeof expectedProgramVersionId !== 'string')
+              throw new Error(changedCycleMessage);
+            const recovered = await getCycleHandoverReceipt(database, userId, expectedCycleId);
+            if (!isCurrent()) return;
+            if (!recovered) throw new Error(changedCycleMessage);
+            const freshLatest = await getLatestTrainingCycle(database, userId);
+            if (!isCurrent()) return;
+            if (
+              recovered.request.userId !== userId ||
+              recovered.request.source.cycle.userId !== userId ||
+              recovered.request.source.cycle.id !== expectedCycleId ||
+              recovered.request.source.cycle.programVersionId !== expectedProgramVersionId ||
+              recovered.request.source.version.id !== expectedProgramVersionId ||
+              freshLatest?.userId !== userId ||
+              freshLatest.id !== latestCycle.id ||
+              freshLatest.programVersionId !== latestCycle.programVersionId ||
+              recovered.request.destination.cycleId !== freshLatest.id ||
+              recovered.request.destination.versionId !== freshLatest.programVersionId
+            )
+              throw new Error(changedCycleMessage);
+            setHandoverReceipt(recovered);
+            setLoadedFor({ database, userId, bindingKey, generation });
+            setReceiptRecoveryOnly(true);
+            return;
+          }
+          const snapshot = await getUserProgramVersion(
+            database,
+            userId,
+            latestCycle.programVersionId,
+          );
+          if (!isCurrent() || !snapshot) return;
+          if (
+            snapshot.version.id !== latestCycle.programVersionId ||
+            snapshot.version.programId !== snapshot.program.id
+          )
+            throw new Error(
+              'The selected cycle changed. Return to its cycle or Progress to open a fresh review.',
+            );
+          const nextSummary = await getCycleProgressSummary(
+            database,
+            latestCycle.id,
+            getPlannedWorkoutCount(latestCycle),
+          );
+          const existingReview = await getCycleReview(database, userId, latestCycle.id);
+          const existingGoal = await getPersonalGoal(database, userId, latestCycle.id);
+          const recovered = await getCycleHandoverReceipt(database, userId, latestCycle.id);
+          if (!isCurrent()) return;
+          setPersonalGoal(existingGoal);
+          // An incoming receipt explains the active destination. Once that cycle
+          // completes it must not hide preparation of its own next block.
+          setHandoverReceipt(
+            latestCycle.status === 'complete' &&
+              recovered?.request.source.cycle.id !== latestCycle.id
+              ? null
+              : recovered,
+          );
+          setCycle(latestCycle);
+          setProgram(snapshot.program);
+          setProgramVersion(snapshot.version);
+          setSummary(nextSummary);
+          setLoadedFor({ database, userId, bindingKey, generation });
+          setReview(existingReview);
+          setOverallRating(existingReview?.overallRating ?? null);
+          setFocus(existingReview?.focus ?? null);
+          setReviewNote(existingReview?.note ?? '');
+          setReviewSaved(existingReview !== null);
+        } catch (loadError) {
+          if (isCurrent())
+            setError(
+              loadError instanceof Error &&
+                (loadError.message.startsWith('This review link is invalid.') ||
+                  loadError.message.startsWith('The selected cycle changed.'))
+                ? loadError.message
+                : 'We could not load the local cycle review.',
+            );
+        } finally {
+          if (active) setLoading(false);
+        }
+      })();
+
+      return () => {
+        active = false;
+      };
+    }, [
+      database,
+      userId,
+      bindingKey,
+      validBinding,
+      isDirectReview,
+      expectedCycleId,
+      expectedProgramVersionId,
+    ]),
   );
 
-  useEffect(() => {
-    if (!database) {
-      setLoading(false);
-      return;
-    }
-
-    let active = true;
-    setLoading(true);
-    setError(null);
-    setCycle(null);
-    setProgram(null);
-    setProgramVersion(null);
-    setSummary(null);
-    setLoadedFor(null);
-    void (async () => {
-      try {
-        const latestCycle = await getLatestTrainingCycle(database, userId);
-        if (!latestCycle) return;
-        const snapshot = await getUserProgramVersion(
-          database,
-          userId,
-          latestCycle.programVersionId,
-        );
-        if (!snapshot) return;
-        const nextSummary = await getCycleProgressSummary(
-          database,
-          latestCycle.id,
-          getPlannedWorkoutCount(latestCycle),
-        );
-        const existingReview = await getCycleReview(database, userId, latestCycle.id);
-        if (!active) return;
-        setCycle(latestCycle);
-        setProgram(snapshot.program);
-        setProgramVersion(snapshot.version);
-        setSummary(nextSummary);
-        setLoadedFor({ database, userId });
-        setReview(existingReview);
-        setOverallRating(existingReview?.overallRating ?? null);
-        setFocus(existingReview?.focus ?? null);
-        setReviewNote(existingReview?.note ?? '');
-        setReviewSaved(existingReview !== null);
-      } catch {
-        if (active) setError('We could not load the local cycle review.');
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, [database, userId]);
-
-  if (loading || (database && cycle && loadedFor?.database !== database)) {
+  if (
+    loading ||
+    (database && cycle && (loadedFor?.database !== database || loadedFor.bindingKey !== bindingKey))
+  ) {
     return (
       <Screen>
         <LoadingSkeleton width="34%" height={14} />
         <LoadingSkeleton width="80%" height={44} style={styles.loadingTitle} />
         <LoadingSkeleton height={260} style={styles.loadingCard} />
+      </Screen>
+    );
+  }
+
+  if (
+    receiptRecoveryOnly &&
+    handoverReceipt &&
+    database &&
+    loadedFor?.database === database &&
+    loadedFor.userId === userId &&
+    loadedFor.bindingKey === bindingKey &&
+    loadedFor.generation === repeatFocus.current &&
+    repeatContext.current.database === database &&
+    repeatContext.current.userId === userId &&
+    repeatContext.current.bindingKey === bindingKey &&
+    handoverReceipt.request.userId === userId
+  ) {
+    const canOpenReceipt = () =>
+      repeatContext.current.database === database &&
+      repeatContext.current.userId === userId &&
+      repeatContext.current.bindingKey === bindingKey &&
+      repeatFocus.current === loadedFor.generation;
+    return (
+      <Screen>
+        <Text variant="h1" accessibilityRole="header">
+          New cycle saved on this device.
+        </Text>
+        <Text>
+          Your completed cycle's handover is already saved. This receipt does not save another
+          reflection or start another block.
+        </Text>
+        <Text>
+          Confirmed {handoverReceipt.confirmedAt}. Your original training history is preserved.
+        </Text>
+        <Button
+          label="Open new cycle"
+          onPress={() => {
+            if (canOpenReceipt())
+              router.replace({
+                pathname: '/cycle',
+                params: { cycleId: handoverReceipt.request.destination.cycleId },
+              });
+          }}
+        />
+        <Button label="Return Home" variant="ghost" onPress={() => router.replace('/')} />
       </Screen>
     );
   }
@@ -141,9 +361,22 @@ export default function CycleReviewScreen() {
 
   const guidance = getWeekSixGuidance(programVersion.cycleModel.weekSixMeaning);
   const isComplete = cycle.status === 'complete';
+  const isLoadedContextCurrent = () =>
+    loadedFor?.database === database &&
+    loadedFor.userId === userId &&
+    loadedFor.bindingKey === bindingKey &&
+    loadedFor.generation === repeatFocus.current &&
+    repeatContext.current.database === database &&
+    repeatContext.current.userId === userId &&
+    repeatContext.current.bindingKey === bindingKey;
 
-  const persistReview = async (nextAction?: CycleReviewAction): Promise<boolean> => {
+  const persistReview = async (
+    nextAction?: CycleReviewAction,
+    isCurrent: () => boolean = () => true,
+  ): Promise<boolean> => {
+    const canShowResult = () => isCurrent() && isLoadedContextCurrent();
     if (
+      !canShowResult() ||
       reviewBusy ||
       !database ||
       !cycle ||
@@ -169,57 +402,148 @@ export default function CycleReviewScreen() {
     setError(null);
     try {
       await saveCycleReview(database, nextReview);
+      if (!canShowResult()) return false;
       setReview(nextReview);
       setReviewSaved(true);
       return true;
     } catch (saveError) {
-      setError(
-        saveError instanceof Error ? saveError.message : 'We could not save your reflection.',
-      );
+      if (canShowResult())
+        setError(
+          saveError instanceof Error ? saveError.message : 'We could not save your reflection.',
+        );
       return false;
     } finally {
-      setReviewBusy(null);
+      if (canShowResult()) setReviewBusy(null);
     }
   };
 
-  const handleRepeatCycle = async () => {
-    if (reviewBusy || !database || !cycle || !program || !programVersion) return;
-
+  const prepareNextCycle = async () => {
+    if (
+      !isLoadedContextCurrent() ||
+      repeatPending.current ||
+      reviewBusy ||
+      !handoverChoice ||
+      !isComplete ||
+      loadedFor?.database !== database ||
+      loadedFor.userId !== userId
+    )
+      return;
+    const snapshot = repeatContext.current.snapshot;
+    const focusGeneration = repeatFocus.current;
+    const isCurrent = () =>
+      repeatMounted.current &&
+      repeatContext.current.database === database &&
+      repeatContext.current.userId === userId &&
+      repeatContext.current.bindingKey === bindingKey &&
+      repeatFocus.current === focusGeneration &&
+      repeatContext.current.snapshot === snapshot;
+    const operationToken = ++repeatSequence.current;
+    repeatPending.current = operationToken;
+    setReviewBusy('repeat');
     setError(null);
     try {
-      const savedReview = await persistReview('repeat');
-      if (!savedReview) return;
-
-      setReviewBusy('repeat');
-      const startedAt = new Date().toISOString();
-      const nextProgramId = `program-${program.slug}-${userId}-${Date.now()}`;
-      const copy = createNextCycleCopy({
-        sourceProgram: program,
-        sourceVersion: programVersion,
-        userId,
-        newProgramId: nextProgramId,
-        newVersionId: `${nextProgramId}-version-1`,
-        createdAt: startedAt,
+      const preparedAt = new Date().toISOString();
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const token = `${Date.now()}-${operationToken}`;
+      const nextProgramId = `program-${program.slug}-${userId}-${token}`;
+      const request = await prepareCycleHandover(database, userId, cycle.id, {
+        operationId: `handover-${userId}-${cycle.id}-${token}`,
+        preparedAt,
+        choice: handoverChoice,
+        personalReviewState: 'postponed',
+        reflection: {
+          id: review?.id ?? `cycle-review-${cycle.id}`,
+          userId,
+          cycleId: cycle.id,
+          overallRating: overallRating ?? undefined,
+          focus: focus ?? undefined,
+          nextAction: 'repeat',
+          note: reviewNote.trim() || undefined,
+          createdAt: review?.createdAt ?? preparedAt,
+          updatedAt: preparedAt,
+        },
+        destination: {
+          cycleId: `cycle-${userId}-${cycle.id}-${token}`,
+          programId: nextProgramId,
+          versionId: `${nextProgramId}-version-1`,
+          goalId: handoverChoice === 'continue-goal' ? `goal-${userId}-${token}` : null,
+          startedAt: preparedAt,
+          startDate: lifecycleDate(preparedAt, timeZone),
+          timeZone,
+        },
       });
-      const nextCycle = createTrainingCycle({
-        id: `cycle-${userId}-${cycle.id}-${Date.now()}`,
-        userId,
-        programVersion: copy.version,
-        startedAt,
-      });
-      await saveProgramVersion(database, userId, copy.program, copy.version);
-      await saveTrainingCycle(database, nextCycle);
-      trackAnalyticsEvent(analytics, 'next_cycle_started', {
-        cycleId: nextCycle.id,
-        programId: copy.program.sourceProgramId ?? copy.program.id,
-      });
-      router.replace('/');
-    } catch (repeatError) {
-      setError(
-        repeatError instanceof Error ? repeatError.message : 'We could not start the next cycle.',
-      );
+      if (isCurrent()) setHandoverPreview({ request, snapshot, focusGeneration });
+    } catch (prepareError) {
+      if (isCurrent()) {
+        const message = handoverFailureMessage(prepareError, 'We could not prepare the new cycle.');
+        setError(message);
+        Alert.alert('New cycle not prepared', message, [{ text: 'OK' }]);
+      }
     } finally {
-      setReviewBusy(null);
+      if (repeatPending.current === operationToken) {
+        repeatPending.current = null;
+        if (repeatMounted.current) setReviewBusy(null);
+      }
+    }
+  };
+
+  const confirmNextCycle = async () => {
+    if (
+      loadedFor?.bindingKey !== bindingKey ||
+      repeatContext.current.bindingKey !== bindingKey ||
+      !handoverPreview ||
+      repeatPending.current ||
+      reviewBusy
+    )
+      return;
+    const preview = handoverPreview;
+    const callFocus = repeatFocus.current;
+    const isOwnerCurrent = () =>
+      repeatMounted.current &&
+      repeatContext.current.database === database &&
+      repeatContext.current.userId === userId &&
+      repeatContext.current.bindingKey === bindingKey &&
+      preview.request.userId === userId &&
+      loadedFor?.database === database &&
+      loadedFor.userId === userId;
+    const isContextCurrent = () =>
+      isOwnerCurrent() &&
+      repeatFocus.current === preview.focusGeneration &&
+      repeatContext.current.snapshot === preview.snapshot;
+    const canShowResult = () => isOwnerCurrent() && repeatFocus.current === callFocus;
+    const operationToken = ++repeatSequence.current;
+    repeatPending.current = operationToken;
+    setReviewBusy('repeat');
+    setError(null);
+    try {
+      // Keep this exact request for recovery: the repository reads committed receipts first.
+      const receipt = await confirmCycleHandover(database, userId, preview.request, {
+        isOwnerCurrent,
+        isContextCurrent,
+      });
+      if (!canShowResult()) return;
+      setHandoverReceipt(receipt);
+      setReview(receipt.request.reflection);
+      setReviewSaved(true);
+      trackAnalyticsEvent(analytics, 'next_cycle_started', {
+        cycleId: receipt.request.destination.cycleId,
+        programId: receipt.request.source.program.id,
+      });
+    } catch (confirmError) {
+      if (canShowResult()) {
+        const message = handoverFailureMessage(
+          confirmError,
+          'Confirmation could not be read. Retry this exact confirmation to recover its saved result.',
+        );
+        setError(message);
+        if (isLoadedContextCurrent())
+          Alert.alert('New cycle confirmation needs attention', message, [{ text: 'OK' }]);
+      }
+    } finally {
+      if (repeatPending.current === operationToken) {
+        repeatPending.current = null;
+        if (repeatMounted.current) setReviewBusy(null);
+      }
     }
   };
 
@@ -279,6 +603,12 @@ export default function CycleReviewScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
+      {summary.unknownLoadSetCount ? (
+        <Text variant="small" tone="muted">
+          {summary.unknownLoadSetCount} sets have unknown load units. Their load is excluded from
+          volume and load records; recorded reps, time and distance remain available.
+        </Text>
+      ) : null}
       <Text variant="display" accessibilityRole="header" style={styles.title}>
         {isComplete ? 'Your training record, reviewed.' : 'Review your training so far.'}
       </Text>
@@ -307,7 +637,11 @@ export default function CycleReviewScreen() {
         <Fact label="Workouts" value={String(summary.facts.completedWorkoutCount)} />
         <Fact label="Adherence" value={`${Math.round(summary.facts.completionRate * 100)}%`} />
         <Fact label="Logged sets" value={String(summary.loggedSetCount)} />
-        <Fact label="Volume" value={summary.facts.totalTrainingVolume.toLocaleString()} />
+        <Fact
+          label="Volume (kg × reps)"
+          value={summary.facts.totalTrainingVolume.toLocaleString()}
+          accessibilityLabel={`Volume ${summary.facts.totalTrainingVolume.toLocaleString()} kg × reps`}
+        />
         <Fact label="Training days" value={String(summary.facts.completedTrainingDays)} />
       </View>
 
@@ -338,6 +672,27 @@ export default function CycleReviewScreen() {
 
       {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
 
+      {handoverReceipt && !isComplete ? (
+        <Card tone="mint">
+          <Text variant="h3">New cycle saved on this device.</Text>
+          <Text variant="small">
+            Confirmed {handoverReceipt.confirmedAt}. Your original training history is preserved.
+          </Text>
+          <Button
+            label="Open new cycle"
+            onPress={() => {
+              if (
+                repeatContext.current.database === database &&
+                repeatContext.current.userId === handoverReceipt.request.userId
+              )
+                router.replace({
+                  pathname: '/cycle',
+                  params: { cycleId: handoverReceipt.request.destination.cycleId },
+                });
+            }}
+          />
+        </Card>
+      ) : null}
       {isComplete ? (
         <>
           <Text variant="h2" style={styles.sectionTitle}>
@@ -402,13 +757,132 @@ export default function CycleReviewScreen() {
             These are user-approved paths. Coach may explain the record later, but it cannot apply a
             plan change without your confirmation.
           </Text>
-          <Button
-            label="Repeat this cycle"
-            onPress={handleRepeatCycle}
-            loading={reviewBusy === 'repeat'}
-            icon={<Ionicons name="refresh-outline" size={18} color={colors.white} />}
-            style={styles.actionButton}
-          />
+          <Card tone="white" style={styles.pendingCard}>
+            <Text variant="h3">Start a new six-week cycle</Text>
+            <Text variant="small" tone="muted">
+              Keep the same training targets in a new private plan. This does not repeat a completed
+              week.
+            </Text>
+            {handoverReceipt ? (
+              <>
+                <Text variant="smallMedium" accessibilityRole="alert">
+                  New cycle saved on this device.
+                </Text>
+                <Text variant="small">
+                  Confirmed {handoverReceipt.confirmedAt}. Your history stays with the original
+                  completed cycle.
+                </Text>
+                <Button
+                  label="Open new cycle"
+                  onPress={() => {
+                    if (
+                      repeatContext.current.userId === handoverReceipt.request.userId &&
+                      repeatContext.current.database === database
+                    )
+                      router.replace({
+                        pathname: '/cycle',
+                        params: { cycleId: handoverReceipt.request.destination.cycleId },
+                      });
+                  }}
+                />
+              </>
+            ) : handoverPreview ? (
+              <>
+                <Text variant="smallMedium">Review new cycle before saving</Text>
+                <Text variant="small">
+                  From {handoverPreview.request.source.program.title}, version{' '}
+                  {handoverPreview.request.source.version.version}.
+                </Text>
+                <Text variant="small">
+                  New private cycle starting {handoverPreview.request.destination.startDate} ·{' '}
+                  {handoverPreview.request.destination.timeZone}.
+                </Text>
+                <Text variant="small">
+                  {handoverPreview.request.choice === 'continue-goal'
+                    ? `Carry “${handoverPreview.request.source.goal?.blockObjective}” into a new goal block with the same target and measurement setup. Its baseline is deferred; record a fresh baseline.`
+                    : 'Start without a new personal goal. The old goal stays in history and is no longer primary.'}
+                </Text>
+                {handoverPreview.request.choice === 'continue-goal' &&
+                handoverPreview.request.source.goal ? (
+                  <Text variant="small">
+                    Saved target:{' '}
+                    {handoverPreview.request.source.goal.target === true
+                      ? 'Complete the task'
+                      : `${handoverPreview.request.source.goal.target} ${handoverPreview.request.source.goal.protocol.canonicalUnit}`}
+                    . Measurement setup:{' '}
+                    {handoverMetricLabel(handoverPreview.request.source.goal.protocol.metric)},{' '}
+                    {handoverPreview.request.source.goal.protocol.equipmentSetup}; assistance{' '}
+                    {handoverPreview.request.source.goal.protocol.assistance}.
+                    {handoverPreview.request.source.goal.protocol.metric === 'load-for-reps'
+                      ? ` At ${handoverPreview.request.source.goal.protocol.repCount} reps.`
+                      : ''}
+                    {handoverPreview.request.source.goal.protocol.metric === 'fixed-distance-time'
+                      ? ` Over ${handoverPreview.request.source.goal.protocol.fixedDistanceMeters} meters.`
+                      : ''}
+                  </Text>
+                ) : null}
+                <Text variant="small" tone="muted">
+                  Training targets stay unchanged. Saved sets, measurements and attainment are not
+                  copied. Your reflection is saved with the old cycle; its personal-goal review is
+                  postponed. Nothing changes until you confirm.
+                </Text>
+                <Button
+                  label="Confirm new cycle"
+                  loading={reviewBusy === 'repeat'}
+                  onPress={() => void confirmNextCycle()}
+                />
+                <Button
+                  label="Cancel new cycle"
+                  variant="ghost"
+                  disabled={reviewBusy !== null}
+                  onPress={() => {
+                    setHandoverPreview(null);
+                    setError(null);
+                  }}
+                />
+                <Text variant="small" tone="muted">
+                  If confirmation is interrupted, retry this exact confirmation to recover a saved
+                  receipt. If the plan or date changed before saving, cancel and prepare a fresh
+                  preview.
+                </Text>
+              </>
+            ) : (
+              <>
+                {personalGoal ? (
+                  <Text variant="small">
+                    Current personal goal: {personalGoal.blockObjective}. Choose what happens to it.
+                  </Text>
+                ) : (
+                  <Text variant="small">This cycle has no personal goal to carry forward.</Text>
+                )}
+                <View accessibilityRole="radiogroup">
+                  {personalGoal ? (
+                    <Chip
+                      label="Carry personal goal into a new block"
+                      selected={handoverChoice === 'continue-goal'}
+                      onPress={() => setHandoverChoice('continue-goal')}
+                    />
+                  ) : null}
+                  <Chip
+                    label="Start without a new personal goal"
+                    selected={handoverChoice === 'without-goal'}
+                    onPress={() => setHandoverChoice('without-goal')}
+                  />
+                </View>
+                <Text variant="small" tone="muted">
+                  Carrying a goal starts with a deferred baseline and no copied measurements. The
+                  old personal-goal review is postponed in either path.
+                </Text>
+                <Button
+                  label="Start a new cycle with these targets"
+                  onPress={() => void prepareNextCycle()}
+                  disabled={!handoverChoice || reviewBusy !== null}
+                  loading={reviewBusy === 'repeat'}
+                  style={styles.actionButton}
+                />
+              </>
+            )}
+          </Card>
           <Button
             label="Adjust a private copy"
             variant="secondary"
@@ -450,7 +924,7 @@ export default function CycleReviewScreen() {
             style={styles.actionButton}
           />
           <Text variant="caption" tone="muted" style={styles.persistenceNote}>
-            Repeating creates a new local cycle snapshot; the completed cycle remains immutable.
+            Starting a new cycle preserves the completed cycle and its training history.
           </Text>
         </>
       ) : (
@@ -466,15 +940,34 @@ export default function CycleReviewScreen() {
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({
+  label,
+  value,
+  accessibilityLabel,
+}: {
+  label: string;
+  value: string;
+  accessibilityLabel?: string;
+}) {
   return (
-    <View style={styles.fact}>
+    <View
+      style={styles.fact}
+      accessible={Boolean(accessibilityLabel)}
+      accessibilityLabel={accessibilityLabel}
+    >
       <Text variant="caption" tone="muted">
         {label}
       </Text>
       <Text variant="h2">{value}</Text>
     </View>
   );
+}
+
+function handoverFailureMessage(failure: unknown, fallback: string): string {
+  const message = failure instanceof Error ? failure.message : fallback;
+  return message === 'Finish or save pending sessions before handover.'
+    ? 'Finish the unfinished workout, or end it with Save partial or Skip before starting a new cycle. Pausing saves its draft and keeps it unfinished.'
+    : message;
 }
 
 function getPlannedWorkoutCount(currentCycle: TrainingCycle): number {
@@ -677,3 +1170,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 });
+
+function handoverMetricLabel(metric: Shift['protocol']['metric']): string {
+  return {
+    reps: 'repetitions',
+    'load-for-reps': 'load at a fixed repetition count',
+    'hold-duration': 'hold time',
+    'fixed-distance-time': 'time over a fixed distance',
+    distance: 'distance',
+    completion: 'task completion',
+  }[metric];
+}

@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 80, in <module>
+    elif a[0]=="capture":capture(a[1])
+                         ^^^^^^^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 75, in capture
+    ns=nodes();(ROOT/(name+".xml")).write_bytes((ROOT/"latest.xml").read_bytes());(ROOT/(name+".png")).write_bytes(adb("exec-out","screencap","-p"));show(ns)
+       ^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 15, in nodes
+    raise RuntimeError("Fresh UI dump unavailable: "+dumped.strip())
+RuntimeError: Fresh UI dump unavailable: 

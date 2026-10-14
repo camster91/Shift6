@@ -1,3 +1,33 @@
+import { lifecycleDate } from './cycleLifecycle';
+import {
+  cycleHandoverSections,
+  parseCycleHandoverRequest,
+  sortHandoverSessions,
+} from './cycleHandover';
+import { createNextCycleCopy } from './programBuilder';
+import { loadProvenanceSections } from './loadUnits';
+import { coachReviewSections, parseCoachReviewReceipt } from './coachReviewJournal';
+import {
+  corroborateReviewGoal,
+  type ReviewGoalEvent,
+  type ReviewTargetRevision,
+} from './coachReviewGoalWitness';
+import { stableSnapshotJSON } from './programPersistence';
+import {
+  schedulePersistenceSections,
+  decodeScheduleBaseline,
+  cycleFromScheduleRow,
+  sessionFromScheduleRow,
+  scheduleRevisionFromRow,
+  assertBaselineLegacyDates,
+} from './scheduleSnapshot';
+import { projectScheduleRevisions } from './scheduleRevision';
+import type { ProgramVersion } from './types';
+import {
+  persistenceSections,
+  type BuilderRecoverySnapshot,
+  type CoachMemoryValue,
+} from './localPersistence';
 import { MIGRATIONS } from '../db/migrations';
 import { buildLocalDataExportSummary, type LocalDataExport } from '../db/privacyRepository';
 import { foundationalExercises } from './fixtures/exercises';
@@ -40,6 +70,11 @@ export const restoreTables = {
   notificationPreferences: 'notification_preferences',
   cycleReviews: 'cycle_reviews',
   workoutScheduleOverrides: 'workout_schedule_overrides',
+  ...persistenceSections,
+  ...loadProvenanceSections,
+  ...schedulePersistenceSections,
+  ...coachReviewSections,
+  ...cycleHandoverSections,
 } as const;
 export type RestoreSection = keyof typeof restoreTables;
 export type RestoreRow = Record<string, string | number | null>;
@@ -471,10 +506,30 @@ export function validateLocalBackup(serialized: string): RestorePreview {
   }
   check(isRecord(raw), 'file is not an export.');
   check(
-    raw.schemaVersion === 12,
-    'only export schema 12 is supported. Older or future exports need a compatible app; no automatic migration is attempted.',
+    raw.schemaVersion === 12 ||
+      raw.schemaVersion === 13 ||
+      raw.schemaVersion === 14 ||
+      raw.schemaVersion === 15 ||
+      raw.schemaVersion === 16 ||
+      raw.schemaVersion === 17,
+    'only export schemas 12, 13, 14, 15, 16 and 17 are supported. Other versions need a compatible app.',
   );
   const sections = Object.keys(restoreTables) as RestoreSection[];
+  const sourceSections = sections.filter(
+    (key) =>
+      (raw.schemaVersion !== 12 || !(key in persistenceSections)) &&
+      (raw.schemaVersion === 14 ||
+        raw.schemaVersion === 15 ||
+        raw.schemaVersion === 16 ||
+        raw.schemaVersion === 17 ||
+        !(key in loadProvenanceSections)) &&
+      (raw.schemaVersion === 15 ||
+        raw.schemaVersion === 16 ||
+        raw.schemaVersion === 17 ||
+        !(key in schedulePersistenceSections)) &&
+      (raw.schemaVersion === 16 || raw.schemaVersion === 17 || !(key in coachReviewSections)) &&
+      (raw.schemaVersion === 17 || !(key in cycleHandoverSections)),
+  );
   keys(
     raw,
     [
@@ -482,7 +537,7 @@ export function validateLocalBackup(serialized: string): RestorePreview {
       'exportedAt',
       'userId',
       'summary',
-      ...sections.filter(
+      ...sourceSections.filter(
         (key) => !['personalGoalEvents', 'personalGoalDrafts', 'onboardingDrafts'].includes(key),
       ),
     ],
@@ -545,19 +600,21 @@ export function validateLocalBackup(serialized: string): RestorePreview {
           parsed.set(`${key}:${index}:${column.name}`, safeJSON(value as string));
       }
       const identity =
-        key === 'userEquipment'
-          ? ['user_id', 'equipment_id']
-          : key === 'shiftProtocols'
-            ? ['shift_id', 'protocol_id', 'protocol_version']
-            : key === 'healthSummaries'
-              ? ['user_id', 'source', 'id']
-              : key === 'personalGoalDrafts'
-                ? ['user_id', 'cycle_id']
-                : Object.hasOwn(row, 'id')
-                  ? ['id']
-                  : Object.hasOwn(row, 'session_id')
-                    ? ['session_id']
-                    : ['user_id'];
+        key === 'completedSetLoadProvenance'
+          ? ['completed_set_id']
+          : key === 'userEquipment'
+            ? ['user_id', 'equipment_id']
+            : key === 'shiftProtocols'
+              ? ['shift_id', 'protocol_id', 'protocol_version']
+              : key === 'healthSummaries'
+                ? ['user_id', 'source', 'id']
+                : key === 'personalGoalDrafts'
+                  ? ['user_id', 'cycle_id']
+                  : Object.hasOwn(row, 'id')
+                    ? ['id']
+                    : Object.hasOwn(row, 'session_id')
+                      ? ['session_id']
+                      : ['user_id'];
       if (index === rows.length - 1) unique(rows as Record<string, unknown>[], identity, key);
     }
   }
@@ -1102,14 +1159,647 @@ export function validateLocalBackup(serialized: string): RestorePreview {
       visited.forEach((id) => done.add(id));
     }
   }
+  validatePersistenceGraph(data);
+  for (const row of data.completedSetLoadProvenance ?? []) {
+    const saved = data.completedSets.find((set) => set.id === row.completed_set_id);
+    const session = data.workoutSessions.find((entry) => entry.id === row.session_id);
+    check(
+      saved &&
+        session &&
+        saved.session_id === row.session_id &&
+        saved.load !== null &&
+        row.load_value === saved.load &&
+        row.set_completed_at === saved.completed_at,
+      'load provenance does not match its owned current set.',
+    );
+    choice(row.load_unit, ['kg', 'lb']);
+    number(row.load_value, 0);
+    check(
+      Date.parse(String(row.recorded_at)) >= Date.parse(String(session.started_at)),
+      'load provenance precedes its session.',
+    );
+  }
+  for (const row of data.workoutDraftLoadUnits ?? []) {
+    const draft = data.workoutDrafts.find((entry) => entry.session_id === row.session_id);
+    check(
+      draft && draft.updated_at === row.updated_at,
+      'draft unit snapshot does not match its draft.',
+    );
+    const units = safeJSON(String(row.load_units_json));
+    const values = safeJSON(String(draft.values_json));
+    check(isRecord(units) && isRecord(values), 'invalid draft unit map.');
+    for (const [key, unit] of Object.entries(units)) {
+      check(Object.hasOwn(values, key), 'unknown draft unit set.');
+      choice(unit, ['kg', 'lb']);
+    }
+  }
   const warnings = [
     'Restore works only on an empty local installation; it does not merge or overwrite existing records.',
     'Health connections, provider consent and notification choices reset to off. Device permissions are never granted by restore.',
     'Media files are not included. Custom media links are removed; add your media again on this device.',
     'Identifiers and immutable versions are preserved; owner fields map to the current guest. This is local recovery, not cloud sync.',
   ];
+  unique(data.scheduleBaselines ?? [], ['cycle_id'], 'schedule baseline');
+  unique(data.scheduleBaselines ?? [], ['operation_id'], 'schedule baseline operation');
+  for (const snapshot of data.scheduleBaselines ?? []) {
+    const row = cycles.get(String(snapshot.cycle_id));
+    check(
+      row &&
+        snapshot.id === snapshot.cycle_id &&
+        snapshot.program_version_id === row.program_version_id,
+      'invalid owned schedule baseline binding.',
+    );
+    const cycle = cycleFromScheduleRow(row);
+    const version = versionObjects.get(cycle.programVersionId) as unknown as ProgramVersion;
+    check(
+      Date.parse(String(snapshot.confirmed_at)) >= Date.parse(cycle.startedAt),
+      'schedule baseline precedes cycle creation.',
+    );
+    const matchingSessions = data.workoutSessions.filter(
+      (session) => session.cycle_id === cycle.id,
+    );
+    const sessionsForSchedule = matchingSessions.map(sessionFromScheduleRow);
+    const baseline = decodeScheduleBaseline(
+      String(snapshot.dates_json),
+      cycle,
+      version,
+      String(snapshot.time_zone),
+      String(snapshot.confirmed_at),
+      sessionsForSchedule,
+    );
+    const revisionRows = (data.scheduleRevisions ?? []).filter(
+      (revision) => revision.cycle_id === cycle.id,
+    );
+    assertBaselineLegacyDates(
+      baseline,
+      data.workoutScheduleOverrides.filter((override) => override.cycle_id === cycle.id),
+    );
+    for (const revision of revisionRows) {
+      check(
+        revision.program_version_id === cycle.programVersionId &&
+          String(revision.recorded_at) >= String(snapshot.confirmed_at),
+        'schedule revision precedes or disagrees with its baseline.',
+      );
+      for (const session of matchingSessions.filter(
+        (session) =>
+          session.cycle_week === revision.cycle_week && session.workout_id === revision.workout_id,
+      ))
+        check(
+          Date.parse(String(revision.recorded_at)) <= Date.parse(String(session.started_at)),
+          'schedule move rewrites started workout history.',
+        );
+    }
+    projectScheduleRevisions(
+      { cycle, programVersion: version, baseline, sessions: sessionsForSchedule },
+      revisionRows.map(scheduleRevisionFromRow),
+    );
+  }
+  for (const revision of data.scheduleRevisions ?? [])
+    check(
+      (data.scheduleBaselines ?? []).some((snapshot) => snapshot.cycle_id === revision.cycle_id),
+      'orphan schedule revision.',
+    );
+  const reviewRows = data.coachReviewJournal ?? [];
+  const reviewIds = new Map(reviewRows.map((row) => [String(row.id), row]));
+  const reviewCounts = new Map<string, number>();
+  for (const row of reviewRows) {
+    const cycleId = String(row.cycle_id);
+    const count = (reviewCounts.get(cycleId) ?? 0) + 1;
+    check(count <= 1000, 'review journal exceeds its cycle bound.');
+    reviewCounts.set(cycleId, count);
+  }
+  unique(
+    reviewRows.filter((row) => row.previous_review_id === null),
+    ['cycle_id'],
+    'review root',
+  );
+  unique(
+    reviewRows.filter((row) => row.previous_review_id !== null),
+    ['previous_review_id'],
+    'review child',
+  );
+  for (const row of reviewRows) {
+    const { receipt, evidence } = parseCoachReviewReceipt(String(row.receipt_json));
+    const cycle = cycles.get(String(row.cycle_id));
+    check(
+      cycle &&
+        receipt.ownerId === owner &&
+        receipt.cycleId === row.cycle_id &&
+        receipt.programVersionId === row.program_version_id &&
+        receipt.confirmedAt === row.confirmed_at &&
+        evidence.cycle.startedAt === cycle.started_at &&
+        versionObjects.has(String(row.program_version_id)),
+      'invalid dated review binding.',
+    );
+    check(receipt.confirmedAt <= data.exportedAt, 'review confirmation follows export time.');
+    const visited = new Set<string>();
+    let cursor: Record<string, unknown> | undefined = row;
+    while (cursor?.previous_review_id !== null) {
+      check(cursor && !visited.has(String(cursor.id)), 'cyclic review journal.');
+      visited.add(String(cursor.id));
+      const parent = reviewIds.get(String(cursor.previous_review_id));
+      check(
+        parent &&
+          parent.cycle_id === row.cycle_id &&
+          parent.user_id === owner &&
+          String(parent.confirmed_at) <= String(cursor.confirmed_at),
+        'invalid review parent.',
+      );
+      cursor = parent;
+      check(visited.size <= 1000, 'review journal exceeds its cycle bound.');
+    }
+    for (const source of evidence.sessions) {
+      const actual = sessions.get(source.id);
+      check(
+        actual &&
+          actual.cycle_id === row.cycle_id &&
+          actual.program_version_id === source.programVersionId &&
+          actual.workout_id === source.workoutId &&
+          actual.started_at === source.startedAt,
+        'missing review source session.',
+      );
+      // Terminal outcomes are never reopened by current local writers. A new
+      // attempt has a new ID. Only an in-progress witness can evolve after this
+      // dated review; it cannot be used to invent an earlier completion.
+      if (['complete', 'partial', 'skipped', 'abandoned'].includes(source.status))
+        check(
+          actual.status === source.status &&
+            (actual.completed_at ?? undefined) === source.completedAt &&
+            (actual.completion_reason ?? undefined) === source.completionReason &&
+            (actual.readiness ?? undefined) === source.readiness,
+          'review terminal outcome disagrees with its canonical session.',
+        );
+      else if (source.status === 'in-progress')
+        check(
+          source.completedAt === undefined &&
+            source.completionReason === undefined &&
+            (actual.status === 'in-progress' ||
+              (['complete', 'partial', 'skipped', 'abandoned'].includes(String(actual.status)) &&
+                typeof actual.completed_at === 'string' &&
+                actual.completed_at >= receipt.revalidatedAt)),
+          'review in-progress witness cannot establish an earlier terminal outcome.',
+        );
+      else check(actual.status === source.status, 'review planned witness is unsupported.');
+    }
+    if (evidence.goal) {
+      const goal = goals.get(evidence.goal.id);
+      check(
+        goal &&
+          goal.user_id === owner &&
+          goal.cycle_id === row.cycle_id &&
+          goal.program_version_id === evidence.goal.programVersionId,
+        'missing review goal.',
+      );
+      corroborateReviewGoal(
+        evidence.goal,
+        data.personalGoalEvents as unknown as ReviewGoalEvent[],
+        data.shiftGoalRevisions as unknown as ReviewTargetRevision[],
+        receipt.revalidatedAt,
+        receipt.goalWitness,
+        evidence.observations,
+      );
+      const protocol = data.shiftProtocols.find(
+        (entry) =>
+          entry.shift_id === evidence.goal!.id &&
+          entry.protocol_id === evidence.goal!.protocol.id &&
+          entry.protocol_version === evidence.goal!.protocol.version,
+      );
+      check(
+        protocol &&
+          stableSnapshotJSON(JSON.parse(String(protocol.snapshot_json))) ===
+            stableSnapshotJSON(evidence.goal.protocol),
+        'missing immutable review protocol.',
+      );
+      const baselineId =
+        evidence.goal.baseline.state === 'measured' ? evidence.goal.baseline.observationId : null;
+      if (baselineId)
+        check(
+          evidence.observations.some((entry) => entry.id === baselineId),
+          'missing review baseline source.',
+        );
+    }
+    if (receipt.goalWitness?.state === 'unavailable-legacy-history') {
+      const legacy = goals.get(receipt.goalWitness.goalId);
+      check(
+        legacy &&
+          legacy.user_id === owner &&
+          legacy.cycle_id === row.cycle_id &&
+          !(data.personalGoalEvents ?? []).some(
+            (event) => event.shift_id === receipt.goalWitness!.goalId && event.kind === 'created',
+          ),
+        'invalid unavailable legacy goal witness.',
+      );
+    }
+    for (const source of evidence.observations) {
+      const actual = data.shiftObservations.find((entry) => entry.id === source.id);
+      check(
+        actual &&
+          actual.shift_id === source.shiftId &&
+          actual.protocol_id === source.protocolId &&
+          actual.protocol_version === source.protocolVersion &&
+          actual.measured_at === source.measuredAt &&
+          actual.source === source.source &&
+          actual.unit === source.unit &&
+          stableSnapshotJSON(JSON.parse(String(actual.value_json))) ===
+            stableSnapshotJSON(source.value) &&
+          (actual.corrects_observation_id ?? undefined) === source.correctsObservationId,
+        'missing immutable review observation.',
+      );
+    }
+  }
+  unique(data.cycleHandovers ?? [], ['destination_cycle_id'], 'handover destination');
+  for (const row of data.cycleHandovers ?? []) {
+    const request = parseCycleHandoverRequest(String(row.request_json));
+    const sourceCycle = cycles.get(String(row.source_cycle_id));
+    const destinationCycle = cycles.get(String(row.destination_cycle_id));
+    const confirmedAt = String(row.confirmed_at);
+    check(
+      request.operationId === row.id &&
+        request.userId === owner &&
+        row.user_id === owner &&
+        request.source.cycle.id === row.source_cycle_id &&
+        request.destination.cycleId === row.destination_cycle_id &&
+        request.source.version.id === row.source_program_version_id &&
+        request.destination.versionId === row.destination_program_version_id &&
+        (request.source.goal?.id ?? null) === row.source_goal_id &&
+        request.destination.goalId === row.destination_goal_id &&
+        sourceCycle?.user_id === owner &&
+        destinationCycle?.user_id === owner &&
+        sourceCycle.started_at === request.source.cycle.startedAt &&
+        destinationCycle.started_at === request.destination.startedAt &&
+        confirmedAt >= request.preparedAt &&
+        confirmedAt <= data.exportedAt &&
+        lifecycleDate(confirmedAt, request.destination.timeZone) === request.destination.startDate,
+      'invalid cycle handover binding.',
+    );
+    check(
+      stableSnapshotJSON(versionObjects.get(request.source.version.id)) ===
+        stableSnapshotJSON(request.source.version),
+      'handover source version changed.',
+    );
+    const expectedCopy = createNextCycleCopy({
+      sourceProgram: request.source.program,
+      sourceVersion: request.source.version,
+      userId: owner,
+      newProgramId: request.destination.programId,
+      newVersionId: request.destination.versionId,
+      createdAt: request.destination.startedAt,
+    });
+    check(
+      stableSnapshotJSON(versionObjects.get(request.destination.versionId)) ===
+        stableSnapshotJSON(expectedCopy.version) &&
+        versions.get(request.destination.versionId)?.program_id === request.destination.programId,
+      'handover destination prescription changed.',
+    );
+    const baseline = (data.scheduleBaselines ?? []).find(
+      (entry) => entry.cycle_id === request.destination.cycleId,
+    );
+    check(
+      baseline &&
+        baseline.program_version_id === request.destination.versionId &&
+        baseline.time_zone === request.destination.timeZone &&
+        String(baseline.confirmed_at) >= confirmedAt,
+      'missing handover schedule baseline.',
+    );
+    if (request.source.primaryGoalId)
+      check(
+        goals.get(request.source.primaryGoalId)?.user_id === owner,
+        'orphan handover primary goal.',
+      );
+    // A later real attempt may be appended, but no session already begun at the
+    // reviewed cutoff may disappear from the historical receipt.
+    const historicalSessions = sortHandoverSessions(
+      data.workoutSessions
+        .filter(
+          (entry) =>
+            entry.cycle_id === request.source.cycle.id &&
+            Date.parse(String(entry.started_at)) <= Date.parse(request.preparedAt),
+        )
+        .map((entry) => ({
+          id: String(entry.id),
+          cycle_week: entry.cycle_week,
+          workout_id: entry.workout_id,
+          program_version_id: entry.program_version_id,
+          status: entry.status,
+          started_at: entry.started_at,
+          completed_at: entry.completed_at,
+        })),
+    );
+    check(
+      stableSnapshotJSON(historicalSessions) === stableSnapshotJSON(request.source.sessions),
+      'incomplete handover historical session series.',
+    );
+    for (const source of request.source.sessions) {
+      const saved = sessions.get(source.id);
+      check(
+        saved &&
+          saved.cycle_id === request.source.cycle.id &&
+          saved.cycle_week === source.cycle_week &&
+          saved.workout_id === source.workout_id &&
+          saved.program_version_id === source.program_version_id &&
+          saved.status === source.status &&
+          saved.started_at === source.started_at &&
+          saved.completed_at === source.completed_at,
+        'missing handover session history.',
+      );
+    }
+    const reflection = data.cycleReviews.find((entry) => entry.id === request.reflection.id);
+    check(
+      reflection?.user_id === owner && reflection.cycle_id === request.source.cycle.id,
+      'orphan handover reflection.',
+    );
+    if (request.source.goal) {
+      const source = request.source.goal;
+      check(
+        goals.get(source.id)?.cycle_id === request.source.cycle.id,
+        'orphan handover source goal.',
+      );
+      corroborateReviewGoal(
+        source,
+        (data.personalGoalEvents ?? []) as unknown as ReviewGoalEvent[],
+        data.shiftGoalRevisions as unknown as ReviewTargetRevision[],
+        request.preparedAt,
+        request.source.goalWitness,
+      );
+      const prefixIds =
+        request.source.goalWitness?.state === 'event-history'
+          ? request.source.goalWitness.eventIds
+          : [];
+      const latestTargetEvent = (data.personalGoalEvents ?? [])
+        .filter((entry) => prefixIds.includes(String(entry.id)) && entry.kind === 'target-revision')
+        .at(-1);
+      check(
+        (latestTargetEvent?.id ?? null) === request.source.latestGoalRevisionId,
+        'handover target revision witness changed.',
+      );
+      const review = (data.personalGoalEvents ?? []).find(
+        (entry) => entry.id === `${request.operationId}-goal-review`,
+      );
+      check(
+        review &&
+          review.user_id === owner &&
+          review.shift_id === source.id &&
+          review.kind === 'review' &&
+          review.recorded_at === confirmedAt,
+        'missing handover personal review.',
+      );
+      check(
+        stableSnapshotJSON(JSON.parse(String(review.payload_json))) ===
+          stableSnapshotJSON({
+            state: request.personalReviewState,
+            choice: request.choice === 'continue-goal' ? 'repeat' : 'undecided',
+            target: source.target,
+            baseline: source.baseline,
+            protocol: source.protocol,
+          }),
+        'handover personal review changed.',
+      );
+      if (request.destination.goalId) {
+        const created = (data.personalGoalEvents ?? []).find(
+          (entry) => entry.id === `create:${request.destination.goalId}`,
+        );
+        check(
+          goals.get(request.destination.goalId)?.cycle_id === request.destination.cycleId &&
+            created &&
+            created.user_id === owner &&
+            created.shift_id === request.destination.goalId &&
+            created.kind === 'created' &&
+            created.recorded_at === confirmedAt,
+          'missing handover destination goal creation.',
+        );
+        check(
+          stableSnapshotJSON(JSON.parse(String(created.payload_json))) ===
+            stableSnapshotJSON({
+              objective: source.blockObjective,
+              protocol: source.protocol,
+              target: source.target,
+              cycleId: request.destination.cycleId,
+              replacePrimary: true,
+            }),
+          'handover destination target or protocol changed.',
+        );
+      }
+    }
+  }
+  data.schemaVersion = 17;
   data.summary = buildLocalDataExportSummary(data);
   return { data, recordCount: count, exportedAt: data.exportedAt, warnings };
+}
+
+export function validateCoachMemoryValue(serialized: string): CoachMemoryValue {
+  const value = safeJSON(serialized);
+  keys(value, ['kind', 'value']);
+  choice(value.kind, ['training-time', 'session-minutes', 'equipment', 'coach-style']);
+  if (value.kind === 'training-time') choice(value.value, ['morning', 'afternoon', 'evening']);
+  if (value.kind === 'coach-style') choice(value.value, ['concise', 'supportive', 'technical']);
+  if (value.kind === 'session-minutes') number(value.value, 1, 1440, true);
+  if (value.kind === 'equipment') {
+    array(value.value);
+    check(value.value.length <= equipmentCatalog.length, 'too many memory equipment entries.');
+    check(new Set(value.value).size === value.value.length, 'duplicate memory equipment.');
+    for (const entry of value.value)
+      check(
+        equipmentCatalog.some((item) => item.id === entry),
+        'unknown memory equipment.',
+      );
+  }
+  return value as unknown as CoachMemoryValue;
+}
+
+/** Recovery remains a private, uncommitted draft; validation never applies it. */
+export function validateBuilderRecoverySnapshot(
+  serialized: string,
+  owner: string,
+): BuilderRecoverySnapshot {
+  check(
+    new TextEncoder().encode(serialized).byteLength <= 1024 * 1024,
+    'builder recovery exceeds 1 MiB.',
+  );
+  const value = safeJSON(serialized);
+  keys(value, ['program', 'version', 'customExercises', 'imports']);
+  program(value.program, owner);
+  version(value.version);
+  check(isRecord(value.program) && isRecord(value.version), 'invalid recovery draft.');
+  check(
+    value.program.id === value.version.programId &&
+      value.program.currentVersionId === value.version.id,
+    'recovery version mismatch.',
+  );
+  check(value.version.status === 'draft', 'recovery must remain a draft.');
+  array(value.customExercises);
+  check(value.customExercises.length <= 100, 'too many recovery movements.');
+  value.customExercises.forEach(exercise);
+  unique(value.customExercises as Record<string, unknown>[], ['id'], 'recovery movement');
+  const exerciseIds = new Set([
+    ...foundationalExercises.map((entry) => entry.id),
+    ...value.customExercises.map((entry) => (entry as Record<string, unknown>).id),
+  ]);
+  const workouts = value.version.workouts as Record<string, unknown>[];
+  check(workouts.length <= 100, 'too many recovery workouts.');
+  for (const workout of workouts)
+    for (const movement of workout.exercises as Record<string, unknown>[])
+      check(exerciseIds.has(movement.exerciseId as string), 'missing recovery movement.');
+  array(value.imports);
+  check(value.imports.length <= workouts.length, 'too many recovery imports.');
+  unique(value.imports as Record<string, unknown>[], ['workoutId'], 'recovery import');
+  for (const entry of value.imports) {
+    keys(entry, ['workoutId', 'text', 'previewText']);
+    check(
+      workouts.some((workout) => workout.id === entry.workoutId),
+      'missing recovery workout.',
+    );
+    text(entry.text, 'original import text', 10000);
+    if (entry.previewText !== null) {
+      text(entry.previewText, 'preview text', 10000);
+      check(entry.previewText === entry.text, 'stale recovery preview.');
+    }
+  }
+  return value as unknown as BuilderRecoverySnapshot;
+}
+
+function validatePersistenceGraph(data: LocalDataExport) {
+  const owner = data.userId;
+  const cycles = new Map(data.trainingCycles.map((row) => [row.id, row]));
+  const sessions = new Map(data.workoutSessions.map((row) => [row.id, row]));
+  const sets = new Map(data.completedSets.map((row) => [row.id, row]));
+  const lifecycle = data.cycleLifecycleEvents ?? [];
+  const feedback = data.setFeedbackEvents ?? [];
+  for (const rows of [lifecycle, feedback, data.coachMemoryFacts ?? []])
+    unique(rows, ['user_id', 'operation_id'], 'local operation');
+  for (const row of data.coachMemoryPreferences ?? []) number(row.enabled, 0, 1, true);
+  const memoryKinds = new Set<string>();
+  for (const row of data.coachMemoryFacts ?? []) {
+    number(row.revision, 1, 1000000, true);
+    const value = validateCoachMemoryValue(String(row.value_json));
+    check(!memoryKinds.has(value.kind), 'duplicate memory preference kind.');
+    memoryKinds.add(value.kind);
+    check(
+      Date.parse(String(row.updated_at)) >= Date.parse(String(row.confirmed_at)),
+      'memory update precedes confirmation.',
+    );
+  }
+  for (const row of data.builderRecoveryDrafts ?? []) {
+    number(row.revision, 1, 1000000, true);
+    validateBuilderRecoverySnapshot(String(row.snapshot_json), owner);
+  }
+  for (const row of lifecycle) {
+    check(cycles.has(row.cycle_id), 'missing lifecycle cycle.');
+    choice(row.kind, ['pause', 'resume', 'review-date']);
+    text(row.time_zone, 'time zone', 100, true);
+    try {
+      new Intl.DateTimeFormat('en', { timeZone: String(row.time_zone) }).format();
+    } catch {
+      fail('invalid lifecycle time zone.');
+    }
+    text(row.effective_date, 'effective date', 10, true);
+    check(
+      /^\d{4}-\d\d-\d\d$/.test(String(row.effective_date)) &&
+        Number.isFinite(Date.parse(String(row.effective_date))) &&
+        new Date(String(row.effective_date)).toISOString().slice(0, 10) === row.effective_date,
+      'invalid lifecycle date.',
+    );
+    const startParts = new Intl.DateTimeFormat('en', {
+      timeZone: String(row.time_zone),
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date(String(cycles.get(row.cycle_id)!.started_at)));
+    const part = (type: string) => startParts.find((item) => item.type === type)!.value;
+    check(
+      String(row.effective_date) >= `${part('year')}-${part('month')}-${part('day')}`,
+      'lifecycle date precedes cycle start.',
+    );
+    const recordedParts = new Intl.DateTimeFormat('en', {
+      timeZone: String(row.time_zone),
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date(String(row.recorded_at)));
+    const recordedPart = (type: string) =>
+      recordedParts.find((entry) => entry.type === type)!.value;
+    const recordedDate = `${recordedPart('year')}-${recordedPart('month')}-${recordedPart('day')}`;
+    check(
+      row.kind === 'review-date'
+        ? String(row.effective_date) >= recordedDate
+        : row.effective_date === recordedDate,
+      'lifecycle effective date disagrees with its recorded local date.',
+    );
+  }
+  for (const row of feedback) {
+    const session = sessions.get(row.session_id);
+    check(
+      session &&
+        cycles.has(session.cycle_id) &&
+        sets.get(row.completed_set_id)?.session_id === row.session_id,
+      'missing owned feedback set.',
+    );
+    choice(row.difficulty, ['easier-than-expected', 'about-right', 'harder-than-expected']);
+    check(
+      Date.parse(String(row.recorded_at)) >= Date.parse(String(session.started_at)),
+      'feedback precedes its workout session.',
+    );
+  }
+  for (const [rows, field, scope] of [
+    [lifecycle, 'previous_event_id', 'cycle_id'],
+    [feedback, 'corrects_event_id', 'completed_set_id'],
+  ] as const) {
+    const records = new Map(rows.map((row) => [row.id, row]));
+    const children = new Map<unknown, Record<string, unknown>>();
+    const roots = new Map<unknown, Record<string, unknown>>();
+    for (const row of rows) {
+      if (row[field] === null) {
+        check(!roots.has(row[scope]), 'duplicate local journal root.');
+        roots.set(row[scope], row);
+      } else {
+        const parent = records.get(row[field]);
+        check(
+          parent &&
+            parent[scope] === row[scope] &&
+            parent.user_id === row.user_id &&
+            (!('session_id' in row) || parent.session_id === row.session_id),
+          'foreign local journal parent.',
+        );
+        check(!children.has(row[field]), 'branched local journal.');
+        check(
+          Date.parse(String(row.recorded_at)) >= Date.parse(String(parent.recorded_at)),
+          'local journal time goes backwards.',
+        );
+        if (field === 'previous_event_id')
+          check(row.time_zone === parent.time_zone, 'lifecycle time zone anchor changed.');
+        children.set(row[field], row);
+      }
+    }
+    const visited = new Set<unknown>();
+    for (const root of roots.values()) {
+      let row: Record<string, unknown> | undefined = root;
+      let paused = false;
+      let lastTransitionDate = '';
+      while (row) {
+        check(!visited.has(row.id), 'cyclic local journal.');
+        visited.add(row.id);
+        if (field === 'previous_event_id' && row.kind !== 'review-date') {
+          check(
+            (row.kind === 'pause') !== paused || (row === root && row.kind === 'resume'),
+            'invalid pause/resume sequence.',
+          );
+          check(String(row.effective_date) >= lastTransitionDate, 'pause dates go backwards.');
+          paused = row.kind === 'pause';
+          lastTransitionDate = String(row.effective_date);
+        }
+        row = children.get(row.id);
+      }
+      if (field === 'previous_event_id' && lastTransitionDate) {
+        const status = cycles.get(root.cycle_id)!.status;
+        check(
+          paused
+            ? ['paused', 'cancelled'].includes(String(status))
+            : ['active', 'complete', 'cancelled'].includes(String(status)),
+          'lifecycle history disagrees with current cycle status.',
+        );
+      }
+    }
+    check(visited.size === rows.length, 'cyclic or disconnected local journal.');
+  }
 }
 
 function validateEvent(kind: string, value: unknown) {

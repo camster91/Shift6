@@ -1,0 +1,44 @@
+Back to Home | Button enabled=true checked=false [53,194][168,309]
+Traceback (most recent call last):
+ | TextView enabled=true checked=false [81,221][139,282]
+ACTIVE WORKOUT | TextView enabled=true checked=false [349,199][619,241]
+0 of 5 sets | TextView enabled=true checked=false [397,251][571,304]
+Pause | Button enabled=true checked=false [799,189][1028,315]
+Pause | TextView enabled=true checked=false [862,225][965,278]
+QA Session | View enabled=true checked=false [52,419][1027,488]
+Suggested values are not measurements. Enter your actual result, then tap Complete. | TextView enabled=true checked=false [52,530][1027,614]
+Offline mode. Workout logging stays on this device. Cloud sync is not enabled. | View enabled=true checked=false [53,615][1028,841]
+ | TextView enabled=true checked=false [95,700][148,755]
+Offline mode | TextView enabled=true checked=false [180,657][987,710]
+Workout logging stays on this device. Cloud sync is not enabled. | TextView enabled=true checked=false [180,715][987,799]
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\test-rest-after-fix-0f2f44ed.py", line 2, in <module>
+    qa.fill('QA Hold set 1 duration in seconds','14');qa.tap('Complete QA Hold set 1')
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 43, in tap
+1 | TextView enabled=true checked=false [142,977][164,1030]
+QA Hold | TextView enabled=true checked=false [243,957][702,1026]
+3 sets · 30s | TextView enabled=true checked=false [243,1036][702,1089]
+Substitute | Button enabled=true checked=false [743,957][976,1073]
+Substitute | TextView enabled=true checked=false [774,988][944,1041]
+Set 1 | TextView enabled=true checked=false [106,1142][976,1195]
+90s | TextView enabled=true checked=false [106,1205][976,1247]
+Duration (seconds) | TextView enabled=true checked=false [106,1279][976,1321]
+QA Hold set 1 duration in seconds | EditText enabled=true checked=false [106,1342][976,1458]
+Use optional voice set entry | Button enabled=true checked=false [106,1489][976,1615]
+Use optional voice set entry | TextView enabled=true checked=false [312,1525][770,1578]
+Review all sets and adjustments | Button enabled=true checked=false [53,1667][1028,1793]
+Review all sets and adjustments | TextView enabled=true checked=false [274,1703][806,1756]
+Discomfort — stop session | Button enabled=true checked=false [53,1793][1028,1919]
+Discomfort — stop session | TextView enabled=true checked=false [319,1829][762,1882]
+Show optional effort fields | Button enabled=true checked=false [53,1919][1028,2045]
+Show optional effort fields | TextView enabled=true checked=false [321,1955][759,2008]
+Need to skip this session? | TextView enabled=true checked=false [116,2171][965,2103]
+Record that you chose not to train today with a reason. The session stays out of cycle advancement. | TextView enabled=true checked=false [116,2245][965,2103]
+QA Hold · set 1 · Confirm the actual values you entered. | TextView enabled=true checked=false [53,2138][1028,2180]
+Complete QA Hold set 1 | Button enabled=true checked=false [53,2180][1028,2306]
+Complete set | TextView enabled=true checked=false [430,2216][650,2269]
+    log("tap",label,n.attrib);show(nodes())
+                                   ^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 17, in nodes
+    raise RuntimeError("Fresh UI dump unavailable: "+dumped.strip())
+RuntimeError: Fresh UI dump unavailable: 

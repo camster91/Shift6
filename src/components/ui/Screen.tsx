@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { ScrollViewProps, StyleProp, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ export interface ScreenProps {
   scroll?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   scrollViewProps?: Omit<ScrollViewProps, 'contentContainerStyle' | 'children'>;
+  scrollViewRef?: Ref<ScrollView>;
   footer?: ReactNode;
 }
 
@@ -18,6 +19,7 @@ export function Screen({
   scroll = true,
   contentContainerStyle,
   scrollViewProps,
+  scrollViewRef,
   footer,
 }: ScreenProps) {
   const content = <View style={[styles.content, contentContainerStyle]}>{children}</View>;
@@ -26,6 +28,7 @@ export function Screen({
     <SafeAreaView style={styles.root} edges={['top']}>
       {scroll ? (
         <ScrollView
+          ref={scrollViewRef}
           style={styles.scrollViewport}
           automaticallyAdjustKeyboardInsets
           keyboardShouldPersistTaps="handled"

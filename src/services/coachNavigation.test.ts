@@ -69,6 +69,17 @@ test('workout navigation opens existing Home controls without starting or writin
   expect(db.runAsync).not.toHaveBeenCalled();
   expect(mockVersion).toHaveBeenCalledWith(db, 'owner', cycle.programVersionId);
 });
+test('dated review capability resolves only an owned active context and performs no write', async () => {
+  expect(await resolveCoachNavigation(db, 'owner', 'open-local-review', now)).toMatchObject({
+    route: '/coach-review',
+    owner: 'owner',
+  });
+  expect(db.runAsync).not.toHaveBeenCalled();
+  mockCycle.mockResolvedValue(null);
+  await expect(resolveCoachNavigation(db, 'owner', 'open-local-review', now)).rejects.toThrow(
+    'private cycle',
+  );
+});
 test('fresh target has setup controls without fabricated training or provider activation', async () => {
   mockProfile.mockResolvedValue(null);
   mockCycle.mockResolvedValue(null);
@@ -80,7 +91,9 @@ test('fresh target has setup controls without fabricated training or provider ac
     cycle: null,
     snapshot: null,
   });
-  expect((await resolveCoachNavigation(db, 'owner', 'open-setup', now)).route).toBe('/onboarding');
+  expect((await resolveCoachNavigation(db, 'owner', 'open-setup', now)).route).toBe(
+    '/coach-onboarding',
+  );
   await expect(resolveCoachNavigation(db, 'owner', 'open-goal', now)).rejects.toThrow(
     'Start a private cycle',
   );

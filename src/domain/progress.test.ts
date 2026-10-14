@@ -4,8 +4,70 @@ import {
   buildTrainingVolumeBreakdown,
   compareCycleProgress,
   estimateOneRepMax,
+  type ProgressSetInput,
 } from './progress';
 import { buildCycleProgressSummary } from './progression';
+import { convertLoad } from './loadUnits';
+
+test('derived mixed-unit records declare canonical kg without changing measured input or record values', () => {
+  const sets: ProgressSetInput[] = [
+    {
+      sessionId: 'kg',
+      exerciseId: 'private',
+      completedAt: '2026-10-13T12:00:00Z',
+      load: 40,
+      loadUnit: 'kg',
+      reps: 5,
+    },
+    {
+      sessionId: 'lb',
+      exerciseId: 'private',
+      completedAt: '2026-10-14T12:00:00Z',
+      load: convertLoad(50, 'kg', 'lb'),
+      loadUnit: 'lb',
+      reps: 5,
+    },
+    {
+      sessionId: 'unknown',
+      exerciseId: 'private',
+      completedAt: '2026-10-15T12:00:00Z',
+      load: 999,
+      reps: 5,
+    },
+  ];
+  const original = JSON.stringify(sets);
+  const progress = buildExerciseProgress('private', sets);
+  const loads = progress.personalRecords.filter((record) => record.metric === 'load');
+  expect(loads.map((record) => record.value)).toEqual([40, 50]);
+  const estimates = progress.personalRecords.filter(
+    (record) => record.metric === 'estimated-one-rep-max',
+  );
+  expect(estimates[0]!.value).toBeCloseTo(40 * (1 + 5 / 30));
+  expect(estimates[1]!.value).toBeCloseTo(50 * (1 + 5 / 30));
+  expect([...loads, ...estimates].every((record) => record.loadUnit === 'kg')).toBe(true);
+  expect([...loads, ...estimates].some((record) => record.sessionId === 'unknown')).toBe(false);
+  expect(
+    progress.personalRecords
+      .filter((record) => record.metric === 'reps')
+      .every((record) => record.loadUnit === undefined),
+  ).toBe(true);
+  expect(JSON.stringify(sets)).toBe(original);
+});
+
+test('unknown-only load history never invents canonical load record provenance', () => {
+  const progress = buildExerciseProgress('legacy', [
+    {
+      sessionId: 'old',
+      exerciseId: 'legacy',
+      completedAt: '2020-01-01T12:00:00Z',
+      load: 999,
+      reps: 5,
+    },
+  ]);
+  expect(progress.personalRecords).toHaveLength(1);
+  expect(progress.personalRecords[0]).toMatchObject({ metric: 'reps', value: 5 });
+  expect(progress.personalRecords[0]!.loadUnit).toBeUndefined();
+});
 
 describe('deterministic progress history', () => {
   it('uses a bounded Epley estimate and refuses unsupported inputs', () => {
@@ -21,6 +83,7 @@ describe('deterministic progress history', () => {
         exerciseId: 'exercise-back-squat',
         completedAt: '2026-09-14T12:00:00.000Z',
         load: 190,
+        loadUnit: 'kg',
         reps: 6,
       },
       {
@@ -28,6 +91,7 @@ describe('deterministic progress history', () => {
         exerciseId: 'exercise-back-squat',
         completedAt: '2026-09-13T12:00:00.000Z',
         load: 185,
+        loadUnit: 'kg',
         reps: 5,
       },
       {
@@ -35,6 +99,7 @@ describe('deterministic progress history', () => {
         exerciseId: 'exercise-back-squat',
         completedAt: '2026-09-13T12:01:00.000Z',
         load: 185,
+        loadUnit: 'kg',
         reps: 6,
       },
       {
@@ -42,6 +107,7 @@ describe('deterministic progress history', () => {
         exerciseId: 'exercise-bench-press',
         completedAt: '2026-09-14T12:00:00.000Z',
         load: 200,
+        loadUnit: 'kg',
         reps: 5,
       },
     ]);
@@ -125,6 +191,7 @@ describe('deterministic progress history', () => {
           exerciseId: 'exercise-squat',
           completedAt: '2026-09-14T12:00:00.000Z',
           load: 100,
+          loadUnit: 'kg',
           reps: 5,
         },
         {
@@ -132,6 +199,7 @@ describe('deterministic progress history', () => {
           exerciseId: 'exercise-squat',
           completedAt: '2026-09-14T12:01:00.000Z',
           load: 100,
+          loadUnit: 'kg',
           reps: 5,
         },
         {

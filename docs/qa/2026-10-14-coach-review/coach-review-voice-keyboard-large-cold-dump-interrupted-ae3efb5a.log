@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\test-voice-keyboard-chunks-ae3efb5a.py", line 35, in <module>
+    qa.nodes()
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 15, in nodes
+    raise RuntimeError("Fresh UI dump unavailable: "+dumped.strip())
+RuntimeError: Fresh UI dump unavailable: 

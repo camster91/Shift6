@@ -12,7 +12,7 @@ devices or uninstalling; this release has no SHIFT6 cloud recovery. Keep exporte
 files private. Local records can also be deleted from Profile.
 
 The local-recovery candidate can restore a SHIFT6 **schema-12 JSON export** into
-an empty guest installation. On the first setup screen, choose **Restore a local
+an empty guest installation. Schema 13 and 14 exports are also supported. On the first setup screen, choose **Restore a local
 export instead**, or use **Restore a local export** in Profile. Review the file
 summary and limitations, then confirm separately. Choosing or previewing a file
 does not save training records. This feature is under device verification;
@@ -41,3 +41,27 @@ your phone's settings. Health and reminders are optional.
 
 Do not use the app to decide whether an exercise or target is medically suitable.
 Public training content remains unavailable until its review is complete.
+
+Private draft recovery and saved plans are separate. Wait for the recovery
+saved indicator, then reopen the same builder and explicitly Resume or Discard.
+Finish an editor with Done/blur and Add a custom movement before its fields enter
+recovery. Continue editing a saved plan through an explicit new private copy;
+saved version history cannot be overwritten.
+
+Optional Coach memory is local and default off. Inspect/edit/forget confirmed
+preferences without changing profile or training records. Restore leaves its
+use off. Legacy loaded sets with missing units remain unknown; current units
+and prescriptions cannot identify an old measurement. New loaded inputs show
+their actual kg/lb unit and require confirmation before conversion.
+
+The optional voice-entry candidate opens from **Use optional voice set entry**
+within a workout. **Speak a set entry** requests microphone access (and iOS speech
+authorization) only when chosen. Review the recognized fields, correct them if
+needed, and apply them to the unsaved draft; **Complete** or **Save correction**
+still records the actual set. Listening alone does not save or complete training.
+
+Voice requires supported, already-installed on-device English recognition.
+Unavailable recognition or declined permission leaves the manual fields working;
+SHIFT6 does not download a model or fall back to cloud transcription. A phone
+model name does not prove recognition availability. Native/device acceptance is
+still pending; see [voice scope and remaining checks](LOCAL_VOICE_SET_INPUT.md).

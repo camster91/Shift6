@@ -60,11 +60,14 @@ async function personalTransaction(
   operation: (tx: SQLiteDatabase) => Promise<void>,
 ) {
   return db.withExclusiveTransactionAsync(async (tx) => {
-    const flags = await tx.getFirstAsync<{ foreign_keys: number }>('PRAGMA foreign_keys;');
-    if (flags?.foreign_keys !== 1)
-      throw new Error('This build cannot save goals safely. Update the native app and try again.');
+    await requirePersonalForeignKeys(tx);
     await operation(tx);
   });
+}
+async function requirePersonalForeignKeys(tx: SQLiteDatabase) {
+  const flags = await tx.getFirstAsync<{ foreign_keys: number }>('PRAGMA foreign_keys;');
+  if (flags?.foreign_keys !== 1)
+    throw new Error('This build cannot save goals safely. Update the native app and try again.');
 }
 async function ownedRow(db: SQLiteDatabase, owner: string, id: string): Promise<GoalRow> {
   const row = await db.getFirstAsync<GoalRow>(
@@ -163,20 +166,14 @@ export async function getPersonalGoal(
   return row ? readGoal(db, await ownedRow(db, owner, row.id)) : null;
 }
 
-/** User-declared target and context, not an approved public training template. */
-export async function createPersonalGoal(
-  db: SQLiteDatabase,
-  owner: string,
-  cycleId: string,
-  goal: {
-    id: string;
-    objective: string;
-    protocol: MeasurementProtocol;
-    target: number | true;
-    replacePrimary: boolean;
-  },
-  at: string,
-): Promise<void> {
+interface PersonalGoalCreation {
+  id: string;
+  objective: string;
+  protocol: MeasurementProtocol;
+  target: number | true;
+  replacePrimary: boolean;
+}
+function validatePersonalGoalCreation(owner: string, goal: PersonalGoalCreation) {
   guestOnly();
   text(owner, 'Owner');
   text(goal.id, 'Goal ID');
@@ -192,75 +189,99 @@ export async function createPersonalGoal(
         (goal.protocol.metric === 'reps' && !Number.isInteger(goal.target))
   )
     throw new Error('Enter a valid positive target.');
-  await personalTransaction(db, async (tx) => {
-    const cycle = await tx.getFirstAsync<{ program_version_id: string; status: string }>(
-      'SELECT program_version_id,status FROM training_cycles WHERE id = ? AND user_id = ?;',
-      cycleId,
-      owner,
+}
+
+/** User-declared target and context, not an approved public training template. */
+export async function createPersonalGoal(
+  db: SQLiteDatabase,
+  owner: string,
+  cycleId: string,
+  goal: PersonalGoalCreation,
+  at: string,
+): Promise<void> {
+  validatePersonalGoalCreation(owner, goal);
+  await personalTransaction(db, async (tx) =>
+    createPersonalGoalInTransaction(tx, owner, cycleId, goal, at),
+  );
+}
+
+/** Caller owns an exclusive transaction; no baseline or observations are inferred. */
+export async function createPersonalGoalInTransaction(
+  tx: SQLiteDatabase,
+  owner: string,
+  cycleId: string,
+  goal: PersonalGoalCreation,
+  at: string,
+): Promise<void> {
+  validatePersonalGoalCreation(owner, goal);
+  await requirePersonalForeignKeys(tx);
+  const cycle = await tx.getFirstAsync<{ program_version_id: string; status: string }>(
+    'SELECT program_version_id,status FROM training_cycles WHERE id = ? AND user_id = ?;',
+    cycleId,
+    owner,
+  );
+  if (!cycle || cycle.status !== 'active')
+    throw new Error('Start an owned training plan before creating a goal.');
+  const existing = await tx.getFirstAsync<{ id: string }>(
+    'SELECT id FROM shifts WHERE cycle_id = ?;',
+    cycleId,
+  );
+  const payload = {
+    objective: goal.objective,
+    protocol: goal.protocol,
+    target: goal.target,
+    cycleId,
+    replacePrimary: goal.replacePrimary,
+  };
+  if (existing) {
+    if (existing.id !== goal.id) throw new Error('This training plan already has a goal.');
+    await ownedRow(tx, owner, goal.id);
+    const creation = await tx.getFirstAsync<{ id: string }>(
+      'SELECT id FROM personal_goal_events WHERE id=?;',
+      `create:${goal.id}`,
     );
-    if (!cycle || cycle.status !== 'active')
-      throw new Error('Start an owned training plan before creating a goal.');
-    const existing = await tx.getFirstAsync<{ id: string }>(
-      'SELECT id FROM shifts WHERE cycle_id = ?;',
-      cycleId,
-    );
-    const payload = {
-      objective: goal.objective,
-      protocol: goal.protocol,
-      target: goal.target,
-      cycleId,
-      replacePrimary: goal.replacePrimary,
-    };
-    if (existing) {
-      if (existing.id !== goal.id) throw new Error('This training plan already has a goal.');
-      await ownedRow(tx, owner, goal.id);
-      const creation = await tx.getFirstAsync<{ id: string }>(
-        'SELECT id FROM personal_goal_events WHERE id=?;',
-        `create:${goal.id}`,
-      );
-      if (!creation) throw new Error('The goal creation record is unavailable.');
-      await event(tx, owner, goal.id, `create:${goal.id}`, 'created', payload, at);
-      return;
-    }
-    const primary = await tx.getFirstAsync<{ id: string }>(
-      'SELECT id FROM shifts WHERE user_id = ? AND is_primary = 1;',
-      owner,
-    );
-    if (primary && !goal.replacePrimary)
-      throw new Error('Confirm replacing your current goal; its history will be retained.');
-    if (primary)
-      await tx.runAsync(
-        'UPDATE shifts SET is_primary = 0 WHERE id = ? AND user_id = ?;',
-        primary.id,
-        owner,
-      );
-    await tx.runAsync(
-      `INSERT INTO shifts (id,user_id,cycle_id,program_version_id,template_id,template_version,block_objective,active_protocol_id,active_protocol_version,target_json,baseline_state,review_state,next_choice,is_primary,created_at) VALUES (?,?,?,?,?,1,?,?,1,?,'deferred','missing','undecided',1,?);`,
-      goal.id,
-      owner,
-      cycleId,
-      cycle.program_version_id,
-      'personal-entry-v1',
-      goal.objective,
-      goal.protocol.id,
-      JSON.stringify(goal.target),
-      stamp(at),
-    );
-    await tx.runAsync(
-      'INSERT INTO shift_protocols (shift_id,user_id,protocol_id,protocol_version,snapshot_json,created_at) VALUES (?,?,?,1,?,?);',
-      goal.id,
-      owner,
-      goal.protocol.id,
-      JSON.stringify(goal.protocol),
-      stamp(at),
-    );
+    if (!creation) throw new Error('The goal creation record is unavailable.');
     await event(tx, owner, goal.id, `create:${goal.id}`, 'created', payload, at);
+    return;
+  }
+  const primary = await tx.getFirstAsync<{ id: string }>(
+    'SELECT id FROM shifts WHERE user_id = ? AND is_primary = 1;',
+    owner,
+  );
+  if (primary && !goal.replacePrimary)
+    throw new Error('Confirm replacing your current goal; its history will be retained.');
+  if (primary)
     await tx.runAsync(
-      'DELETE FROM personal_goal_drafts WHERE user_id = ? AND cycle_id = ?;',
+      'UPDATE shifts SET is_primary = 0 WHERE id = ? AND user_id = ?;',
+      primary.id,
       owner,
-      cycleId,
     );
-  });
+  await tx.runAsync(
+    `INSERT INTO shifts (id,user_id,cycle_id,program_version_id,template_id,template_version,block_objective,active_protocol_id,active_protocol_version,target_json,baseline_state,review_state,next_choice,is_primary,created_at) VALUES (?,?,?,?,?,1,?,?,1,?,'deferred','missing','undecided',1,?);`,
+    goal.id,
+    owner,
+    cycleId,
+    cycle.program_version_id,
+    'personal-entry-v1',
+    goal.objective,
+    goal.protocol.id,
+    JSON.stringify(goal.target),
+    stamp(at),
+  );
+  await tx.runAsync(
+    'INSERT INTO shift_protocols (shift_id,user_id,protocol_id,protocol_version,snapshot_json,created_at) VALUES (?,?,?,1,?,?);',
+    goal.id,
+    owner,
+    goal.protocol.id,
+    JSON.stringify(goal.protocol),
+    stamp(at),
+  );
+  await event(tx, owner, goal.id, `create:${goal.id}`, 'created', payload, at);
+  await tx.runAsync(
+    'DELETE FROM personal_goal_drafts WHERE user_id = ? AND cycle_id = ?;',
+    owner,
+    cycleId,
+  );
 }
 
 export async function getPersonalObservations(
@@ -453,6 +474,15 @@ export async function revisePersonalTarget(
   });
 }
 
+function validatePersonalReview(state: ShiftReviewState, choice: ShiftNextChoice) {
+  guestOnly();
+  if (
+    !['completed', 'declined', 'postponed'].includes(state) ||
+    !['maintain', 'repeat', 'modify', 'new-goal', 'break', 'undecided'].includes(choice)
+  )
+    throw new Error('Choose a valid review and next step.');
+}
+
 export async function savePersonalReview(
   db: SQLiteDatabase,
   owner: string,
@@ -462,33 +492,43 @@ export async function savePersonalReview(
   operation: string,
   at: string,
 ) {
-  guestOnly();
+  validatePersonalReview(state, choice);
+  await personalTransaction(db, async (tx) =>
+    savePersonalReviewInTransaction(tx, owner, id, state, choice, operation, at),
+  );
+}
+
+/** Caller owns an exclusive transaction; retain exact event retry validation. */
+export async function savePersonalReviewInTransaction(
+  tx: SQLiteDatabase,
+  owner: string,
+  id: string,
+  state: ShiftReviewState,
+  choice: ShiftNextChoice,
+  operation: string,
+  at: string,
+) {
+  validatePersonalReview(state, choice);
+  await requirePersonalForeignKeys(tx);
+  const goal = await readGoal(tx, await ownedRow(tx, owner, id));
   if (
-    !['completed', 'declined', 'postponed'].includes(state) ||
-    !['maintain', 'repeat', 'modify', 'new-goal', 'break', 'undecided'].includes(choice)
-  )
-    throw new Error('Choose a valid review and next step.');
-  await personalTransaction(db, async (tx) => {
-    const goal = await readGoal(tx, await ownedRow(tx, owner, id));
-    if (
-      await event(
-        tx,
-        owner,
-        id,
-        operation,
-        'review',
-        { state, choice, target: goal.target, baseline: goal.baseline, protocol: goal.protocol },
-        at,
-      )
+    await event(
+      tx,
+      owner,
+      id,
+      operation,
+      'review',
+      { state, choice, target: goal.target, baseline: goal.baseline, protocol: goal.protocol },
+      at,
     )
-      await tx.runAsync(
-        'UPDATE shifts SET review_state=?,next_choice=? WHERE id=? AND user_id=?;',
-        state,
-        choice,
-        id,
-        owner,
-      );
-  });
+  )
+    await tx.runAsync(
+      'UPDATE shifts SET review_state=?,next_choice=? WHERE id=? AND user_id=?;',
+      state,
+      choice,
+      id,
+      owner,
+    );
 }
 
 export async function savePersonalGoalDraft(

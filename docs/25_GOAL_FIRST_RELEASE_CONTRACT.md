@@ -1,5 +1,7 @@
 # SHIFT6 goal-first release contract
 
+For the expanded quality/Coach delivery goal and current issue reconciliation, use [doc 43](43_SHIPPING_GOAL_AND_TODO.md). This contract's measurement, privacy, deterministic training and qualified publication gates remain in force; later source features are not automatically enabled or accepted in the guest release.
+
 Canonical product epic: [#304](https://github.com/camster91/Shift6/issues/304). Repository reconciliation: [#305](https://github.com/camster91/Shift6/issues/305). Visual world: [#319](https://github.com/camster91/Shift6/issues/319).
 
 **Six weeks. One measurable goal.** One primary active Shift connects a chosen goal and typed baseline to an immutable program version, today's session, comparable observations, a Week 6 review and an explicit next choice. Supporting movements do not create competing primary goals. Six weeks structures review; it never guarantees the target. Closing a block, taking a final test and reaching a target are separate facts.
@@ -16,14 +18,14 @@ At review, a user may maintain, repeat, adjust/progress, choose another goal or 
 
 ## Scope and capability map
 
-| Capability | Focused pilot / first release | Later / condition |
-| --- | --- | --- |
-| Three representative Shifts | Approximately one rep, one timed, one Barbell/strength, each versioned and human content-reviewed (#309) | Exact IDs and public enablement follow review, not a numeric quota |
-| Goal, baseline, Today, workout, progression, review, return | Core vertical slice #306–#312 and #315; offline capable; accessible and recoverable | Advanced views may follow evidence |
-| Coach | Optional contextual explanation #313; deterministic core and local fallback | Provider-backed features only with configuration, privacy and cost review |
-| Visuals | Figma-first direction and representative screens in parallel (#319); static/reduced-motion paths | Full art library and trailer after direction approval |
-| Catalogue and builders | Existing architecture and user-authored private content retained; no unreviewed public startability | 20 programs, 300+ reviewed exercises, broader builders, 6–8 Shift ideas are expansion targets |
-| Health, body metrics, sync/account | Existing guarded architecture preserved; actual enabled-binary permissions and backup claims require review | Never advertise unavailable or unverified capabilities |
+| Capability                                                  | Focused pilot / first release                                                                               | Later / condition                                                                             |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Three representative Shifts                                 | Approximately one rep, one timed, one Barbell/strength, each versioned and human content-reviewed (#309)    | Exact IDs and public enablement follow review, not a numeric quota                            |
+| Goal, baseline, Today, workout, progression, review, return | Core vertical slice #306–#312 and #315; offline capable; accessible and recoverable                         | Advanced views may follow evidence                                                            |
+| Coach                                                       | Optional contextual explanation #313; deterministic core and local fallback                                 | Provider-backed features only with configuration, privacy and cost review                     |
+| Visuals                                                     | Figma-first direction and representative screens in parallel (#319); static/reduced-motion paths            | Full art library and trailer after direction approval                                         |
+| Catalogue and builders                                      | Existing architecture and user-authored private content retained; no unreviewed public startability         | 20 programs, 300+ reviewed exercises, broader builders, 6–8 Shift ideas are expansion targets |
+| Health, body metrics, sync/account                          | Existing guarded architecture preserved; actual enabled-binary permissions and backup claims require review | Never advertise unavailable or unverified capabilities                                        |
 
 #270–#281 retain applicable architecture, content, privacy, accessibility and native evidence requirements. No narrower scope relaxes safety. Pilot participation (#316) and public store release (#281) are separate decisions.
 
@@ -35,13 +37,13 @@ Current status: pilot IDs, measurements, human fitness reviews, Figma nodes and 
 
 ## Design and validation handoff
 
-| Screen/state | Issue | Figma node |
-| --- | --- | --- |
-| Goal selection / plan versus add-on / baseline fallback | #307, #309 | Pending |
-| One Shift Today / no active Shift / storage recovery | #308, #280 | Pending |
-| Focus, rest, partial, stop/discomfort, completion | #310, #311 | Pending |
-| Pause, repeat, re-entry, adjusted schedule | #315 | Pending |
-| Measured progress, early target, optional test, review, next choice | #312 | Pending |
+| Screen/state                                                        | Issue      | Figma node |
+| ------------------------------------------------------------------- | ---------- | ---------- |
+| Goal selection / plan versus add-on / baseline fallback             | #307, #309 | Pending    |
+| One Shift Today / no active Shift / storage recovery                | #308, #280 | Pending    |
+| Focus, rest, partial, stop/discomfort, completion                   | #310, #311 | Pending    |
+| Pause, repeat, re-entry, adjusted schedule                          | #315       | Pending    |
+| Measured progress, early target, optional test, review, next choice | #312       | Pending    |
 
 Use existing tokens/components (#271) and Figma for actual visual designs. Text and contracts stay in Markdown; do not invent approval or nodes. Measure first workout, continued training, return, assessment, closure and next-step start with explicit denominators under #314/#316. No raw health data or free text in general analytics.
 

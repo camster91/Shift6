@@ -1,0 +1,49 @@
+ACCESSIBILITY MANAGER (dumpsys accessibility)
+
+currentUserId=0
+hasMagnificationConnection=false
+Magnifier on display#0
+    MagnificationConfig[mode: 1, activated: false, scale: 1.0, centerX: 540.0, centerY: 1168.5] 
+    Magnification region=SkRegion((0,0,1080,2337))
+    IdOfLastServiceToMagnify=-1
+    SupportWindowMagnification=true
+    WindowMagnificationConnectionState=DISCONNECTED
+User state[
+     attributes:{id=0, touchExplorationEnabled=false, serviceHandlesDoubleTap=false, requestMultiFingerGestures=false, requestTwoFingerPassthrough=false, sendMotionEventsEnabledfalse, displayMagnificationEnabled=false, autoclickEnabled=false, nonInteractiveUiTimeout=0, interactiveUiTimeout=0, installedServiceCount=5, magnificationModes={0=1}, magnificationCapabilities=3, audioDescriptionByDefaultEnabled=false, magnificationFollowTypingEnabled=true, alwaysOnMagnificationEnabled=true}
+     button mode: 1
+     shortcut key:{}
+     button:{}
+     button target:{null}
+     gesture:{}
+     qs shortcut targets:{}
+     a11y tiles in QS panel:{}
+     Bound services:{}
+     Enabled services:{}
+     Binding services:{}
+     Crashed services:{}
+     Client list info:{
+          Client list callbacks: 12
+          Client list killed: false
+          Client list broadcasts count: -1
+          Registered clients:{
+[com.google.android.googlequicksearchbox][com.shift6.app][com.google.android.inputmethod.latin][com.google.android.marvin.talkback][com.google.android.apps.messaging][com.google.android.tts][com.google.android.as][com.google.android.apps.wellbeing][com.google.android.apps.nexuslauncher][com.google.android.googlequicksearchbox][com.shift6.qa.receiver][com.google.android.apps.photos]}]
+Global Info [ Top focused display Id = 0
+     Active Window Id = -1
+     Top Focused Window Id = 28549
+     Accessibility Focused Window Id = 28542 ]
+
+
+Window attributes:[{10228=AccessibilityWindowAttributes{mAccessibilityWindowTitle=HomemLocales=[en_US]}, 11609=AccessibilityWindowAttributes{mAccessibilityWindowTitle=HomemLocales=[en_US]}, 11638=AccessibilityWindowAttributes{mAccessibilityWindowTitle=HomemLocales=[en_US]}, 11688=AccessibilityWindowAttributes{mAccessibilityWindowTitle=HomemLocales=[en_US]}, 11719=AccessibilityWindowAttributes{mAccessibilityWindowTitle=HomemLocales=[en_US]}, 11771=AccessibilityWindowAttributes{mAccessibilityWindowTitle=HomemLocales=[en_US]}, 11802=AccessibilityWindowAttributes{mAccessibilityWindowTitle=HomemLocales=[en_US]}, 11852=AccessibilityWindowAttributes{mAccessibilityWindowTitle=HomemLocales=[en_US]}, 12319=AccessibilityWindowAttributes{mAccessibilityWindowTitle=HomemLocales=[en_US]}, 12555=AccessibilityWindowAttributes{mAccessibilityWindowTitle=HomemLocales=[en_US]}, 20948=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 24003=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28192=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28193=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28196=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28197=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28198=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28199=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28200=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28201=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28202=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28203=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28204=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28205=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28206=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28207=AccessibilityWindowAttributes{mAccessibilityWindowTitle=QA JSON ReceivermLocales=[en_US]}, 28524=AccessibilityWindowAttributes{mAccessibilityWindowTitle=Allow Android Accessibility Suite to send you notifications?mLocales=[en_US]}, 28526=AccessibilityWindowAttributes{mAccessibilityWindowTitle=Allow Android Accessibility Suite to send you notifications?mLocales=[en_US]}, 28528=AccessibilityWindowAttributes{mAccessibilityWindowTitle=Allow Android Accessibility Suite to send you notifications?mLocales=[en_US]}}]
+Global client list info:{
+    Client list callbacks: 5
+    Client list killed: false
+    Client list broadcasts count: -1
+    Registered clients:{
+[com.android.intentresolver][com.android.systemui][com.android.keychain, com.android.location.fused, com.android.settings, android, com.android.dynsystem, com.android.server.telecom, com.android.DeviceAsWebcam, com.android.inputdevices, com.android.providers.settings, com.android.emulator.multidisplay, com.android.localtransport][com.android.dynsystem, com.android.localtransport, com.android.emulator.multidisplay, com.android.DeviceAsWebcam, com.android.inputdevices, com.android.server.telecom, com.android.settings, com.android.providers.settings, com.android.keychain, com.android.location.fused, android][com.google.android.permissioncontroller]
+
+Proxy manager state:
+    Number of proxy connections: 0
+    Registered proxy connections:
+Accessibility Display Listener:
+    SystemUI uid: 10185
+    1 valid display: 0

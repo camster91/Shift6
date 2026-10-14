@@ -31,7 +31,12 @@ export interface RefreshWorkoutReminderScheduleInput {
 }
 
 export type WorkoutReminderScheduleOutcome =
-  'scheduled' | 'disabled' | 'no-active-cycle' | 'permission-required' | 'unavailable';
+  | 'scheduled'
+  | 'disabled'
+  | 'no-active-cycle'
+  | 'permission-required'
+  | 'unavailable'
+  | 'stale-context';
 
 export interface WorkoutReminderScheduleResult {
   outcome: WorkoutReminderScheduleOutcome;
@@ -56,19 +61,51 @@ export interface RestTimerCueResult {
  * Reconciles only SHIFT6-owned workout reminders. Existing app-managed
  * reminders are cancelled before the new bounded schedule is written, which
  * prevents stale cycle/version reminders and retry duplicates.
+ * Context-bound callers must supply their live generation guard. Omitting it
+ * is only for standalone reconciliation with no runtime owner lifecycle.
  */
-export async function refreshWorkoutReminderSchedule(
+export function refreshWorkoutReminderSchedule(
   provider: NotificationProvider,
   input: RefreshWorkoutReminderScheduleInput,
+  isCurrent: () => boolean = () => true,
 ): Promise<WorkoutReminderScheduleResult> {
-  if (!(await provider.isAvailable())) {
+  // Domain records are JSON snapshots. Capture before waiting on another job.
+  const captured = JSON.parse(JSON.stringify(input)) as RefreshWorkoutReminderScheduleInput;
+  captured.now = new Date(input.now.getTime());
+  const result = workoutReminderOperation.then(() =>
+    refreshWorkoutReminderScheduleNow(provider, captured, isCurrent),
+  );
+  workoutReminderOperation = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
+
+// All workout reconciliation jobs share the lock, even across owner/database
+// replacement. Stale cleanup must finish before a successor can reuse IDs.
+let workoutReminderOperation: Promise<void> = Promise.resolve();
+
+async function refreshWorkoutReminderScheduleNow(
+  provider: NotificationProvider,
+  input: RefreshWorkoutReminderScheduleInput,
+  isCurrent: () => boolean,
+): Promise<WorkoutReminderScheduleResult> {
+  const stale: WorkoutReminderScheduleResult = { outcome: 'stale-context', scheduledCount: 0 };
+  if (!isCurrent()) return stale;
+  const available = await provider.isAvailable();
+  if (!isCurrent()) return stale;
+  if (!available) {
     return { outcome: 'unavailable', scheduledCount: 0 };
   }
 
   const existing = await provider.getScheduledNotifications();
+  if (!isCurrent()) return stale;
   const managed = existing.filter(isManagedWorkoutReminder);
   for (const notification of managed) {
+    if (!isCurrent()) return stale;
     await provider.cancelScheduledNotification(notification.identifier);
+    if (!isCurrent()) return stale;
   }
 
   if (!input.preferences.workoutReminders) {
@@ -79,6 +116,7 @@ export async function refreshWorkoutReminderSchedule(
   }
 
   const permission = await provider.getPermissionStatus();
+  if (!isCurrent()) return stale;
   if (permission !== 'granted') {
     return { outcome: 'permission-required', scheduledCount: 0 };
   }
@@ -95,16 +133,33 @@ export async function refreshWorkoutReminderSchedule(
     sessions: input.sessions,
   });
   const createdIdentifiers: string[] = [];
+  let cleanupAttempted = false;
+  const cleanup = async () => {
+    cleanupAttempted = true;
+    // These are this job's writes. Hold the lock until their cleanup settles,
+    // so an old callback cannot cancel a successor's identically named cue.
+    const results = await Promise.allSettled(
+      createdIdentifiers.map((identifier) => provider.cancelScheduledNotification(identifier)),
+    );
+    if (results.some((result) => result.status === 'rejected'))
+      throw new Error('Reminder cleanup failed. Refresh reminders again.');
+  };
 
   try {
     for (const schedule of schedules) {
+      if (!isCurrent()) {
+        await cleanup();
+        return stale;
+      }
       const identifier = await provider.scheduleLocalNotification(toNotificationRequest(schedule));
       createdIdentifiers.push(identifier);
+      if (!isCurrent()) {
+        await cleanup();
+        return stale;
+      }
     }
   } catch (error) {
-    await Promise.allSettled(
-      createdIdentifiers.map((identifier) => provider.cancelScheduledNotification(identifier)),
-    );
+    if (!cleanupAttempted) await cleanup();
     throw error;
   }
 
@@ -116,7 +171,17 @@ export async function refreshWorkoutReminderSchedule(
  * persisted by the workout repository before this best-effort side effect is
  * attempted, so notification availability can never block workout logging.
  */
-export async function refreshRestTimerCue(
+export function refreshRestTimerCue(
+  provider: NotificationProvider,
+  input: RefreshRestTimerCueInput,
+): Promise<RestTimerCueResult> {
+  const captured = { ...input, now: new Date(input.now.getTime()) };
+  return queueRestCueOperation(captured.sessionId, () =>
+    refreshRestTimerCueNow(provider, captured),
+  );
+}
+
+async function refreshRestTimerCueNow(
   provider: NotificationProvider,
   input: RefreshRestTimerCueInput,
 ): Promise<RestTimerCueResult> {
@@ -152,12 +217,32 @@ export async function refreshRestTimerCue(
   return { outcome: 'scheduled' };
 }
 
-export async function cancelRestTimerCue(
+export function cancelRestTimerCue(
   provider: NotificationProvider,
   sessionId: string,
 ): Promise<void> {
-  if (!(await provider.isAvailable())) return;
-  await provider.cancelScheduledNotification(restTimerIdentifier(sessionId));
+  return queueRestCueOperation(sessionId, async () => {
+    if (!(await provider.isAvailable())) return;
+    await provider.cancelScheduledNotification(restTimerIdentifier(sessionId));
+  });
+}
+
+// Native scheduling can settle after Skip or unmount. Preserve call order for
+// each session so cancellation follows its pending schedule, even after failure.
+const restCueOperations = new Map<string, Promise<void>>();
+
+function queueRestCueOperation<T>(sessionId: string, operation: () => Promise<T>): Promise<T> {
+  const previous = restCueOperations.get(sessionId) ?? Promise.resolve();
+  const result = previous.then(operation);
+  const settled = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  restCueOperations.set(sessionId, settled);
+  void settled.then(() => {
+    if (restCueOperations.get(sessionId) === settled) restCueOperations.delete(sessionId);
+  });
+  return result;
 }
 
 function isManagedWorkoutReminder(notification: ScheduledNotification): boolean {

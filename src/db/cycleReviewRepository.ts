@@ -20,6 +20,15 @@ interface CycleReviewRow {
   updated_at: string;
 }
 
+function validateCycleReview(review: CycleReview) {
+  if (!review.id.trim() || !review.userId.trim() || !review.cycleId.trim()) {
+    throw new Error('A cycle review needs stable user, cycle, and review IDs.');
+  }
+  if (review.note && review.note.length > 2_000) {
+    throw new Error('Cycle review notes must be 2,000 characters or fewer.');
+  }
+}
+
 /**
  * Stores the user's end-of-cycle reflection separately from derived facts.
  * Edits retain the same reflection entity but queue distinct immutable
@@ -29,46 +38,65 @@ export async function saveCycleReview(
   database: SQLiteDatabase,
   review: CycleReview,
 ): Promise<void> {
-  if (!review.id.trim() || !review.userId.trim() || !review.cycleId.trim()) {
-    throw new Error('A cycle review needs stable user, cycle, and review IDs.');
-  }
-  if (review.note && review.note.length > 2_000) {
-    throw new Error('Cycle review notes must be 2,000 characters or fewer.');
-  }
+  validateCycleReview(review);
+  await database.withExclusiveTransactionAsync(async (tx) =>
+    saveCycleReviewInTransaction(tx, review),
+  );
+}
 
-  await database.withTransactionAsync(async () => {
-    await database.runAsync(
-      `INSERT INTO cycle_reviews
-        (id, user_id, cycle_id, overall_rating, focus, next_action, note, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(cycle_id) DO UPDATE SET
-         id = excluded.id,
-         user_id = excluded.user_id,
-         overall_rating = excluded.overall_rating,
-         focus = excluded.focus,
-         next_action = excluded.next_action,
-         note = excluded.note,
-         updated_at = excluded.updated_at;`,
-      review.id,
-      review.userId,
-      review.cycleId,
-      review.overallRating ?? null,
-      review.focus ?? null,
-      review.nextAction ?? null,
-      review.note ?? null,
-      review.createdAt,
-      review.updatedAt,
-    );
-    await database.runAsync(
-      SYNC_MUTATION_INSERT_SQL,
-      `outbox-cycle-review-${review.id}`,
-      `cycle-review:${review.id}`,
-      'cycle-review',
-      review.id,
-      JSON.stringify(review),
-      review.updatedAt,
-    );
-  });
+/** Caller owns an exclusive transaction; fresh ownership and reflection identity are mandatory. */
+export async function saveCycleReviewInTransaction(
+  database: SQLiteDatabase,
+  review: CycleReview,
+): Promise<void> {
+  validateCycleReview(review);
+  const cycle = await database.getFirstAsync<{ id: string; user_id: string }>(
+    'SELECT id,user_id FROM training_cycles WHERE id=?;',
+    review.cycleId,
+  );
+  if (!cycle || cycle.user_id !== review.userId)
+    throw new Error('A reflection must belong to its current owned cycle.');
+  const existing = await database.getAllAsync<{ id: string; user_id: string; cycle_id: string }>(
+    'SELECT id,user_id,cycle_id FROM cycle_reviews WHERE id=? OR cycle_id=?;',
+    review.id,
+    review.cycleId,
+  );
+  if (
+    existing.some(
+      (row) =>
+        row.id !== review.id || row.user_id !== review.userId || row.cycle_id !== review.cycleId,
+    )
+  )
+    throw new Error('The saved reflection identity changed. Reload before saving.');
+  await database.runAsync(
+    `INSERT INTO cycle_reviews
+      (id, user_id, cycle_id, overall_rating, focus, next_action, note, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(cycle_id) DO UPDATE SET
+       overall_rating = excluded.overall_rating,
+       focus = excluded.focus,
+       next_action = excluded.next_action,
+       note = excluded.note,
+       updated_at = excluded.updated_at;`,
+    review.id,
+    review.userId,
+    review.cycleId,
+    review.overallRating ?? null,
+    review.focus ?? null,
+    review.nextAction ?? null,
+    review.note ?? null,
+    review.createdAt,
+    review.updatedAt,
+  );
+  await database.runAsync(
+    SYNC_MUTATION_INSERT_SQL,
+    `outbox-cycle-review-${review.id}`,
+    `cycle-review:${review.id}`,
+    'cycle-review',
+    review.id,
+    JSON.stringify(review),
+    review.updatedAt,
+  );
 }
 
 export async function getCycleReview(

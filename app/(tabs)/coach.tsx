@@ -21,6 +21,11 @@ import {
 } from '../../src/db/coachRepository';
 import { getCoachPrivacyPreference } from '../../src/db/coachPrivacyRepository';
 import { useLocalDatabase } from '../../src/db/context';
+import {
+  getCoachMemorySnapshot,
+  type CoachMemorySnapshot,
+} from '../../src/db/coachMemoryRepository';
+import { appendConfirmedLocalMemory } from '../../src/services/coachMemory';
 import { getCycleProgressSummary } from '../../src/db/progressRepository';
 import { CoachWorkflowActions } from '../../src/components/CoachWorkflowActions';
 import {
@@ -57,6 +62,7 @@ export default function CoachScreen() {
   const [activeProgram, setActiveProgram] = useState<Program | null>(null);
   const [activeProgramVersion, setActiveProgramVersion] = useState<ProgramVersion | null>(null);
   const [coachContext, setCoachContext] = useState<CoachContext | null>(null);
+  const [memorySnapshot, setMemorySnapshot] = useState<CoachMemorySnapshot | null>(null);
   const [loadedFor, setLoadedFor] = useState<{ database: typeof database; userId: string } | null>(
     null,
   );
@@ -107,6 +113,7 @@ export default function CoachScreen() {
     setActiveProgram(null);
     setActiveProgramVersion(null);
     setCoachContext(null);
+    setMemorySnapshot(null);
     setCoachMessage(null);
     setProposals([]);
     setBusyProposalId(null);
@@ -122,6 +129,14 @@ export default function CoachScreen() {
 
     let active = true;
     setLoading(true);
+    const hydrationRequest = requestId.current;
+    void getCoachMemorySnapshot(database, userId)
+      .then((memory) => {
+        if (active && hydrationRequest === requestId.current) setMemorySnapshot(memory);
+      })
+      .catch(() => {
+        /* Optional memory cannot block canonical context hydration. */
+      });
     void (async () => {
       try {
         const navigation = await loadCoachNavigationSnapshot(database, userId);
@@ -160,10 +175,14 @@ export default function CoachScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      requestId.current += 1;
+      setCoachLoading(false);
       // Tabs remain mounted. Immediately invalidate old facts on every return,
       // then hydrate the current record rather than reusing prior session data.
       setLoading(true);
       setCoachContext(null);
+      setMemorySnapshot(null);
+      setCoachMessage(null);
       setNavigationSnapshot(null);
       setReloadIndex((current) => current + 1);
       setProviderCoachEnabled(false);
@@ -180,6 +199,8 @@ export default function CoachScreen() {
 
       return () => {
         active = false;
+        requestId.current += 1;
+        setCoachLoading(false);
       };
     }, [database, userId]),
   );
@@ -277,7 +298,9 @@ export default function CoachScreen() {
     }
   };
 
-  const coachNote = contextReady ? buildLocalCoachMessage(coachContext, 'explain-workout') : null;
+  const localNote = contextReady ? buildLocalCoachMessage(coachContext, 'explain-workout') : null;
+  const coachNote =
+    localNote && memorySnapshot ? appendConfirmedLocalMemory(localNote, memorySnapshot) : localNote;
   const askCoach = async (task: CoachTask, prompt = '') => {
     if (!contextReady || coachLoading) return;
     const request = ++requestId.current;
@@ -297,7 +320,29 @@ export default function CoachScreen() {
       )
         return;
       setCoachSource(response.source);
+      // Publish canonical/urgent guidance immediately. Optional local memory
+      // cannot hold a response or controls hostage to a pending database read.
       setCoachMessage(response.result);
+      if (response.source === 'local' && response.result.kind === 'message' && database) {
+        setMemorySnapshot(null);
+        void getCoachMemorySnapshot(database, userId)
+          .then((memory) => {
+            if (
+              request !== requestId.current ||
+              currentIdentity.current.database !== database ||
+              currentIdentity.current.userId !== userId
+            )
+              return;
+            setMemorySnapshot(memory);
+            setCoachMessage(appendConfirmedLocalMemory(response.result, memory));
+          })
+          .catch(() => {
+            /* Canonical local guidance remains visible without memory. */
+          });
+      }
+    } catch {
+      if (request === requestId.current)
+        setError('Coach could not refresh local memory. No remembered preference was used.');
     } finally {
       if (request === requestId.current) setCoachLoading(false);
     }
@@ -319,6 +364,20 @@ export default function CoachScreen() {
         <Text variant="display" accessibilityRole="header" style={styles.title}>
           A thoughtful next step.
         </Text>
+        {!loading && navigationSnapshot?.owner === userId ? (
+          <Button
+            label="Review setup with local Coach"
+            variant="secondary"
+            onPress={() => router.push('/coach-onboarding')}
+          />
+        ) : null}
+        {navigationSnapshot?.hasProfile ? (
+          <Button
+            label="Inspect local Coach memory"
+            variant="ghost"
+            onPress={() => router.push('/coach-memory')}
+          />
+        ) : null}
         {loading ||
         (database &&
           loadedFor !== null &&
@@ -367,6 +426,11 @@ export default function CoachScreen() {
       <Text variant="body" tone="muted" style={styles.subtitle}>
         Coach guidance will stay grounded in your saved plan and logged training.
       </Text>
+      <Button
+        label="Review setup with local Coach"
+        variant="ghost"
+        onPress={() => router.push('/coach-onboarding')}
+      />
       {navigationSnapshot ? (
         <CoachWorkflowActions
           state={navigationSnapshot}
@@ -396,6 +460,11 @@ export default function CoachScreen() {
       </Card>
 
       <Card tone="white" style={styles.privacyCard}>
+        <Button
+          label="Inspect local Coach memory"
+          variant="ghost"
+          onPress={() => router.push('/coach-memory')}
+        />
         <View style={styles.privacyHeader}>
           <Ionicons
             name={providerCoachEnabled ? 'cloud-outline' : 'phone-portrait-outline'}
@@ -475,11 +544,6 @@ export default function CoachScreen() {
             disabled={coachLoading}
             label={coachLoading ? 'Coach is thinking…' : "Explain today's workout"}
             onPress={() => void askCoach('explain-workout')}
-          />
-          <Chip
-            disabled={coachLoading}
-            label="Review my progress"
-            onPress={() => void askCoach('weekly-review')}
           />
           <Chip
             disabled={coachLoading}

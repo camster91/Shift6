@@ -31,6 +31,9 @@ import type {
 import { colors, radii, spacing } from '../src/design/tokens';
 import { useCurrentUserId } from '../src/services/UserIdentityProvider';
 
+const elapsedTimeExplanation =
+  'Includes time away and pauses. Active training time is not measured.';
+
 export default function WorkoutSummaryScreen() {
   const database = useLocalDatabase();
   const userId = useCurrentUserId();
@@ -241,9 +244,7 @@ export default function WorkoutSummaryScreen() {
       <Card
         tone={isPartial ? 'yellow' : isSkipped ? 'lavender' : 'mint'}
         style={styles.completeCard}
-        accessibilityLabel={
-          isPartial ? 'Partial workout saved' : isSkipped ? 'Workout skipped' : 'Workout complete'
-        }
+        accessibilityLabel={`${isPartial ? 'Partial workout saved' : isSkipped ? 'Workout skipped' : 'Workout complete'}. ${facts.durationLabel}.${session.completedAt ? ` ${elapsedTimeExplanation}` : ''}`}
       >
         <View style={styles.completeHeader}>
           <View style={styles.completeIcon}>
@@ -252,10 +253,16 @@ export default function WorkoutSummaryScreen() {
           <View style={styles.completeCopy}>
             <Text variant="h2">{workout.title}</Text>
             <Text variant="small" tone="muted">
-              {displayedSetCount} sets logged · {facts.durationLabel}
+              {displayedSetCount} {displayedSetCount === 1 ? 'set' : 'sets'} logged ·{' '}
+              {facts.durationLabel}
             </Text>
           </View>
         </View>
+        {session.completedAt ? (
+          <Text variant="caption" tone="muted">
+            {elapsedTimeExplanation}
+          </Text>
+        ) : null}
         <View style={styles.factsRow}>
           <SummaryFact label="Volume" value={facts.volumeLabel} />
           <SummaryFact label="Cardio" value={facts.cardioLabel} />
@@ -442,7 +449,7 @@ function buildSummaryFacts(
     durationLabel:
       durationMinutes === undefined
         ? `${workout.estimatedDurationMinutes} min target`
-        : `${Math.round(durationMinutes)} min`,
+        : `${Math.round(durationMinutes)} min elapsed since start`,
     volumeLabel: summaryVolumeLabel(sets),
     cardioLabel: cardioMinutes > 0 ? `${Math.round(cardioMinutes)} min` : '—',
   };

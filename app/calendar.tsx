@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import {
   Button,
@@ -18,8 +18,6 @@ import {
 import {
   addDaysToDateKey,
   buildCycleSchedule,
-  buildWorkoutScheduleOverrideId,
-  canMoveScheduleOccurrence,
   formatDateKey,
   getCycleStartDateKey,
   getScheduleDateLabel,
@@ -38,8 +36,13 @@ import { useLocalDatabase } from '../src/db/context';
 import {
   getWorkoutScheduleOverrides,
   getWorkoutScheduleSessions,
-  saveWorkoutScheduleOverride,
 } from '../src/db/calendarRepository';
+import {
+  previewLocalScheduleMove,
+  confirmLocalScheduleMove,
+  getConfirmedScheduleTimeZone,
+  type ScheduleMovePreview,
+} from '../src/db/scheduleRevisionRepository';
 import { getActiveTrainingCycle } from '../src/db/cycleRepository';
 import { getUserProgramVersion } from '../src/db/programRepository';
 import { colors, spacing } from '../src/design/tokens';
@@ -69,6 +72,7 @@ export default function CalendarScreen() {
   const [overrides, setOverrides] = useState<WorkoutScheduleOverride[]>([]);
   const [previewUserId, setPreviewUserId] = useState(userId);
   const [sessions, setSessions] = useState<WorkoutScheduleSession[]>([]);
+  const [anchorTimeZone, setAnchorTimeZone] = useState<string | null>(null);
   const [loading, setLoading] = useState(database !== null);
   const [loadedFor, setLoadedFor] = useState<{ database: typeof database; userId: string } | null>(
     null,
@@ -78,9 +82,23 @@ export default function CalendarScreen() {
   const [reminderNotice, setReminderNotice] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const todayKey = formatDateKey(new Date());
+  const focusGeneration = useRef(0),
+    movePending = useRef(false);
+  const [moveDraft, setMoveDraft] = useState<{
+    occurrence: PlannedWorkoutOccurrence;
+    date: string;
+    originalTimeZone: string;
+  } | null>(null);
+  const [movePreview, setMovePreview] = useState<ScheduleMovePreview | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
+      const generation = ++focusGeneration.current;
+      setMoveDraft(null);
+      setAnchorTimeZone(null);
+      setMovePreview(null);
+      setMoveError(null);
       if (!database) {
         setLoading(false);
         setCycle(null);
@@ -118,10 +136,11 @@ export default function CalendarScreen() {
             return;
           }
 
-          const [snapshot, nextOverrides, nextSessions] = await Promise.all([
+          const [snapshot, nextOverrides, nextSessions, nextAnchorTimeZone] = await Promise.all([
             getUserProgramVersion(database, userId, activeCycle.programVersionId),
             getWorkoutScheduleOverrides(database, userId, activeCycle.id),
             getWorkoutScheduleSessions(database, activeCycle.id),
+            getConfirmedScheduleTimeZone(database, userId, activeCycle.id),
           ]);
           if (!active) return;
           if (!snapshot) throw new Error('The active cycle snapshot is not available locally.');
@@ -130,6 +149,7 @@ export default function CalendarScreen() {
           setProgramVersion(snapshot.version);
           setOverrides(nextOverrides);
           setSessions(nextSessions);
+          setAnchorTimeZone(nextAnchorTimeZone);
         })
         .catch((loadError) => {
           if (!active) return;
@@ -148,6 +168,7 @@ export default function CalendarScreen() {
 
       return () => {
         active = false;
+        if (focusGeneration.current === generation) focusGeneration.current++;
       };
     }, [database, reloadToken, userId]),
   );
@@ -229,99 +250,107 @@ export default function CalendarScreen() {
     week,
     occurrences: schedule.filter((occurrence) => occurrence.cycleWeek === week.weekNumber),
   }));
+  const originalFirst = schedule.find((entry) => entry.cycleWeek === 1);
+  const pinnedStart = originalFirst
+    ? addDaysToDateKey(originalFirst.originalDate, -(originalFirst.workout.dayOfWeek - 1))
+    : getCycleStartDateKey(displayedCycle);
 
-  const performMove = async (occurrence: PlannedWorkoutOccurrence, dayDelta: number) => {
-    if (
-      (!database && !previewEnabled) ||
-      movingOccurrenceId ||
-      currentContext.current.database !== database ||
-      currentContext.current.userId !== userId ||
-      !canMoveScheduleOccurrence(occurrence, formatDateKey(new Date()), dayDelta)
-    )
-      return;
-
-    const scheduledDate = addDaysToDateKey(occurrence.scheduledDate, dayDelta);
-    const now = new Date().toISOString();
-    const nextOverride: WorkoutScheduleOverride = {
-      id: buildWorkoutScheduleOverrideId(
-        occurrence.cycleId,
-        occurrence.cycleWeek,
-        occurrence.workout.id,
-      ),
-      userId: displayedCycle.userId,
-      cycleId: occurrence.cycleId,
-      cycleWeek: occurrence.cycleWeek,
-      workoutId: occurrence.workout.id,
-      originalDate: occurrence.originalDate,
-      scheduledDate,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const previousOverrides = displayedOverrides;
-    setOverrides((current) => [
-      ...current.filter(
-        (override) =>
-          !(
-            override.cycleId === nextOverride.cycleId &&
-            override.cycleWeek === nextOverride.cycleWeek &&
-            override.workoutId === nextOverride.workoutId
-          ),
-      ),
-      nextOverride,
-    ]);
-    setMovingOccurrenceId(occurrence.id);
-    setError(null);
+  const eligible = (occurrence: PlannedWorkoutOccurrence) =>
+    displayedCycle.status === 'active' &&
+    occurrence.cycleWeek === displayedCycle.currentWeek &&
+    !['complete', 'partial', 'skipped', 'in-progress'].includes(occurrence.status);
+  const handleMove = (occurrence: PlannedWorkoutOccurrence, dayDelta: number) => {
+    if (movingOccurrenceId || !eligible(occurrence)) return;
+    const proposed = addDaysToDateKey(occurrence.scheduledDate, dayDelta);
+    setMoveDraft({
+      occurrence,
+      date: proposed < todayKey ? todayKey : proposed,
+      originalTimeZone: anchorTimeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+    setMovePreview(null);
+    setMoveError(null);
     setReminderNotice(null);
-
-    if (!database) {
-      setMovingOccurrenceId(null);
-      return;
-    }
-
+  };
+  const previewMove = async () => {
+    if (!moveDraft || !database || movePending.current) return;
+    const generation = focusGeneration.current;
+    movePending.current = true;
+    setMovingOccurrenceId(moveDraft.occurrence.id);
+    setMoveError(null);
     try {
-      await saveWorkoutScheduleOverride(database, nextOverride);
-      // Date persistence is authoritative; reminder availability cannot undo it.
+      const next = await previewLocalScheduleMove(
+        database,
+        {
+          userId,
+          cycleId: displayedCycle.id,
+          programVersionId: displayedVersion.id,
+          cycleWeek: moveDraft.occurrence.cycleWeek,
+          workoutId: moveDraft.occurrence.workout.id,
+          operationId: `schedule-move-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          fromDate: moveDraft.occurrence.scheduledDate,
+          toDate: moveDraft.date,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          originalTimeZone: moveDraft.originalTimeZone,
+        },
+        new Date().toISOString(),
+      );
+      if (
+        focusGeneration.current === generation &&
+        currentContext.current.database === database &&
+        currentContext.current.userId === userId
+      )
+        setMovePreview(next);
+    } catch (failure) {
+      if (focusGeneration.current === generation)
+        setMoveError(failure instanceof Error ? failure.message : 'Review the date again.');
+    } finally {
+      movePending.current = false;
+      if (focusGeneration.current === generation) setMovingOccurrenceId(null);
+    }
+  };
+  const confirmMove = async () => {
+    if (!movePreview || !database || movePending.current) return;
+    const generation = focusGeneration.current;
+    const isCurrent = () =>
+      focusGeneration.current === generation &&
+      currentContext.current.database === database &&
+      currentContext.current.userId === userId;
+    movePending.current = true;
+    setMovingOccurrenceId(moveDraft?.occurrence.id ?? 'pending');
+    setMoveError(null);
+    try {
+      await confirmLocalScheduleMove(database, movePreview, new Date().toISOString(), isCurrent);
+      if (!isCurrent()) return;
+      const nextOverrides = await getWorkoutScheduleOverrides(database, userId, displayedCycle.id);
+      if (!isCurrent()) return;
+      setOverrides(nextOverrides);
+      if (movePreview.baseline) setAnchorTimeZone(movePreview.baseline.timeZone);
+      setMoveDraft(null);
+      setMovePreview(null);
+      setReminderNotice('Session date saved on this device.');
       try {
-        const result = await notificationRuntime.refreshNow();
-        if (result.status === 'failed')
+        const refreshed = await notificationRuntime.refreshNow();
+        if (isCurrent() && refreshed.status === 'failed')
           setReminderNotice(
             'Date saved. Device reminders could not be refreshed; check notification settings.',
           );
       } catch {
-        setReminderNotice(
-          'Date saved. Device reminders could not be refreshed; check notification settings.',
+        if (isCurrent())
+          setReminderNotice(
+            'Date saved. Device reminders could not be refreshed; check notification settings.',
+          );
+      }
+    } catch (failure) {
+      if (isCurrent()) {
+        setMovePreview(null);
+        setMoveError(
+          failure instanceof Error ? failure.message : 'Your date was not saved. Review it again.',
         );
       }
-    } catch (saveError) {
-      if (currentContext.current.database !== database || currentContext.current.userId !== userId)
-        return;
-      setOverrides(previousOverrides);
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : 'We could not save this schedule change locally.',
-      );
     } finally {
-      if (currentContext.current.database === database && currentContext.current.userId === userId)
-        setMovingOccurrenceId(null);
+      movePending.current = false;
+      if (isCurrent()) setMovingOccurrenceId(null);
     }
-  };
-
-  const handleMove = (occurrence: PlannedWorkoutOccurrence, dayDelta: number) => {
-    if (
-      movingOccurrenceId ||
-      !canMoveScheduleOccurrence(occurrence, formatDateKey(new Date()), dayDelta)
-    )
-      return;
-    const nextDate = addDaysToDateKey(occurrence.scheduledDate, dayDelta);
-    Alert.alert(
-      'Move this session?',
-      `${occurrence.workout.title}: ${getScheduleDateLabel(occurrence.scheduledDate)} → ${getScheduleDateLabel(nextDate)}. Your recorded sets and workout targets stay unchanged.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Move session', onPress: () => void performMove(occurrence, dayDelta) },
-      ],
-    );
   };
 
   return (
@@ -350,7 +379,7 @@ export default function CalendarScreen() {
               Week {displayedCycle.currentWeek} of 6
             </Text>
             <Text variant="small" tone="muted">
-              Starts {getScheduleDateLabel(getCycleStartDateKey(displayedCycle))} · local plan
+              Starts {getScheduleDateLabel(pinnedStart)} · local plan
             </Text>
           </View>
           <Chip
@@ -376,6 +405,101 @@ export default function CalendarScreen() {
             This development preview uses sample data. Schedule changes here are temporary; saved
             training is available in the native app build.
           </Text>
+        </Card>
+      ) : null}
+
+      {moveDraft ? (
+        <Card tone="white" accessibilityLabel="Review session date">
+          <Text variant="h2">Move {moveDraft.occurrence.workout.title}</Text>
+          <Text variant="small">
+            Only an unstarted session in the current training week can move. Recorded workouts and
+            targets stay unchanged.
+          </Text>
+          <TextInput
+            accessibilityLabel="New session date YYYY-MM-DD"
+            value={moveDraft.date}
+            placeholder="YYYY-MM-DD"
+            onChangeText={(date) => {
+              setMoveDraft({ ...moveDraft, date });
+              setMovePreview(null);
+            }}
+            editable={!movingOccurrenceId}
+            style={{ borderWidth: 1, padding: spacing.md, marginVertical: spacing.sm }}
+          />
+          {!anchorTimeZone ? (
+            <>
+              <Text variant="small">
+                Time zone when your cycle started. Check it if you have travelled.
+              </Text>
+              <TextInput
+                accessibilityLabel="Original cycle timezone"
+                value={moveDraft.originalTimeZone}
+                onChangeText={(originalTimeZone) => {
+                  setMoveDraft({ ...moveDraft, originalTimeZone });
+                  setMovePreview(null);
+                }}
+                editable={!movingOccurrenceId}
+                autoCapitalize="none"
+                style={{ borderWidth: 1, padding: spacing.md, marginVertical: spacing.sm }}
+              />
+            </>
+          ) : (
+            <Text variant="small">Your original cycle dates are kept in {anchorTimeZone}.</Text>
+          )}
+          {movePreview ? (
+            <View>
+              <Text variant="smallMedium">
+                {movePreview.move.fromDate} to {movePreview.move.toDate} ·{' '}
+                {movePreview.move.timeZone}
+              </Text>
+              {movePreview.baseline ? (
+                <View>
+                  <Text variant="small">
+                    Confirm the original six-week dates below in {movePreview.baseline.timeZone}.
+                    Future travel preserves these dates.
+                  </Text>
+                  {displayedCycle.weeks.map((week) => (
+                    <Text key={week.weekNumber} variant="small">
+                      Week {week.weekNumber}:{' '}
+                      {movePreview.dates
+                        .filter((date) => date.cycleWeek === week.weekNumber)
+                        .map(
+                          (date) =>
+                            `${date.scheduledDate} ${displayedVersion.workouts.find((workout) => workout.id === date.workoutId)?.title}`,
+                        )
+                        .join('; ')}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+              <Button
+                label="Confirm session date"
+                onPress={() => void confirmMove()}
+                loading={Boolean(movingOccurrenceId)}
+              />
+            </View>
+          ) : (
+            <Button
+              label="Review date change"
+              onPress={() => void previewMove()}
+              loading={Boolean(movingOccurrenceId)}
+            />
+          )}
+          {moveError ? (
+            <Text variant="small" accessibilityLiveRegion="polite">
+              {moveError}
+            </Text>
+          ) : null}
+          <Button
+            label="Cancel date change"
+            variant="secondary"
+            disabled={Boolean(movingOccurrenceId)}
+            onPress={() => {
+              setMoveDraft(null);
+              setMovePreview(null);
+              setMoveError(null);
+            }}
+          />
         </Card>
       ) : null}
 
@@ -435,17 +559,15 @@ export default function CalendarScreen() {
                       label={`Move ${occurrence.workout.title} earlier`}
                       disabled={
                         Boolean(movingOccurrenceId) ||
-                        !canMoveScheduleOccurrence(occurrence, todayKey, -1)
+                        !eligible(occurrence) ||
+                        occurrence.scheduledDate <= todayKey
                       }
                       onPress={() => void handleMove(occurrence, -1)}
                     />
                     <IconButton
                       icon={<Ionicons name="chevron-forward" size={18} color={colors.ink} />}
                       label={`Move ${occurrence.workout.title} later`}
-                      disabled={
-                        Boolean(movingOccurrenceId) ||
-                        !canMoveScheduleOccurrence(occurrence, todayKey, 1)
-                      }
+                      disabled={Boolean(movingOccurrenceId) || !eligible(occurrence)}
                       onPress={() => void handleMove(occurrence, 1)}
                     />
                   </View>

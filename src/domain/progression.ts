@@ -20,6 +20,7 @@ export interface ReadinessDecision {
 export interface SetPerformance {
   completed: boolean;
   load?: number;
+  loadProvenanceMissing?: boolean;
   reps?: number;
   durationSeconds?: number;
   distanceMeters?: number;
@@ -122,6 +123,7 @@ export interface CycleReviewFacts {
 export interface CycleProgressSummary {
   facts: CycleReviewFacts;
   loggedSetCount: number;
+  unknownLoadSetCount?: number;
 }
 
 export interface WeekSixGuidance {
@@ -362,6 +364,11 @@ export function buildCycleProgressSummary(
   return {
     facts: buildCycleReviewFacts(plannedWorkoutCount, sessions),
     loggedSetCount: sessions.reduce((total, session) => total + (session.sets?.length ?? 0), 0),
+    unknownLoadSetCount: sessions.reduce(
+      (total, session) =>
+        total + (session.sets?.filter((set) => set.loadProvenanceMissing).length ?? 0),
+      0,
+    ),
   };
 }
 

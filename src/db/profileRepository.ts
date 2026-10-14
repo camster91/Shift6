@@ -28,54 +28,60 @@ export async function saveOnboardingProfile(
   database: SQLiteDatabase,
   profile: OnboardingProfile,
 ): Promise<void> {
-  await database.withTransactionAsync(async () => {
+  await database.withTransactionAsync(() => saveOnboardingProfileInTransaction(database, profile));
+}
+
+/** Caller owns the transaction; used by atomic setup confirmation. */
+export async function saveOnboardingProfileInTransaction(
+  database: SQLiteDatabase,
+  profile: OnboardingProfile,
+): Promise<void> {
+  await database.runAsync(
+    `INSERT INTO user_profiles
+      (id, display_name, unit_system, goals_json, experience, training_days_per_week,
+       preferred_session_minutes, preferred_training_time, coach_tone, coach_intervention,
+       health_connection, completed_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       display_name = excluded.display_name,
+       unit_system = excluded.unit_system,
+       goals_json = excluded.goals_json,
+       experience = excluded.experience,
+       training_days_per_week = excluded.training_days_per_week,
+       preferred_session_minutes = excluded.preferred_session_minutes,
+       preferred_training_time = excluded.preferred_training_time,
+       coach_tone = excluded.coach_tone,
+       coach_intervention = excluded.coach_intervention,
+       health_connection = excluded.health_connection,
+       completed_at = excluded.completed_at,
+       updated_at = excluded.updated_at;`,
+    profile.user.id,
+    profile.user.displayName,
+    profile.user.unitSystem,
+    JSON.stringify(profile.user.goals),
+    profile.user.experience,
+    profile.user.trainingDaysPerWeek,
+    profile.user.preferredSessionMinutes,
+    profile.user.preferredTrainingTime,
+    profile.coachTone,
+    profile.coachIntervention,
+    profile.healthConnection,
+    profile.completedAt,
+    profile.user.createdAt,
+    profile.user.updatedAt,
+  );
+
+  await database.runAsync('DELETE FROM user_equipment WHERE user_id = ?;', profile.user.id);
+
+  for (const equipmentId of profile.user.equipmentIds) {
     await database.runAsync(
-      `INSERT INTO user_profiles
-        (id, display_name, unit_system, goals_json, experience, training_days_per_week,
-         preferred_session_minutes, preferred_training_time, coach_tone, coach_intervention,
-         health_connection, completed_at, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET
-         display_name = excluded.display_name,
-         unit_system = excluded.unit_system,
-         goals_json = excluded.goals_json,
-         experience = excluded.experience,
-         training_days_per_week = excluded.training_days_per_week,
-         preferred_session_minutes = excluded.preferred_session_minutes,
-         preferred_training_time = excluded.preferred_training_time,
-         coach_tone = excluded.coach_tone,
-         coach_intervention = excluded.coach_intervention,
-         health_connection = excluded.health_connection,
-         completed_at = excluded.completed_at,
-         updated_at = excluded.updated_at;`,
+      `INSERT INTO user_equipment (user_id, equipment_id) VALUES (?, ?);`,
       profile.user.id,
-      profile.user.displayName,
-      profile.user.unitSystem,
-      JSON.stringify(profile.user.goals),
-      profile.user.experience,
-      profile.user.trainingDaysPerWeek,
-      profile.user.preferredSessionMinutes,
-      profile.user.preferredTrainingTime,
-      profile.coachTone,
-      profile.coachIntervention,
-      profile.healthConnection,
-      profile.completedAt,
-      profile.user.createdAt,
-      profile.user.updatedAt,
+      equipmentId,
     );
+  }
 
-    await database.runAsync('DELETE FROM user_equipment WHERE user_id = ?;', profile.user.id);
-
-    for (const equipmentId of profile.user.equipmentIds) {
-      await database.runAsync(
-        `INSERT INTO user_equipment (user_id, equipment_id) VALUES (?, ?);`,
-        profile.user.id,
-        equipmentId,
-      );
-    }
-
-    await enqueueProfileMutation(database, profile);
-  });
+  await enqueueProfileMutation(database, profile);
 }
 
 /**

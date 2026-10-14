@@ -1,0 +1,8 @@
+Allow TalkBack to have full control of your device? | TextView enabled=true checked=false [133,733][947,866]
+Full control is appropriate for apps that help you with accessibility needs, but not for most apps. | TextView enabled=true checked=false [133,908][947,1063]
+View and control screen | TextView enabled=true checked=false [212,1147][947,1204]
+It can read all content on the screen and display content over other apps. | TextView enabled=true checked=false [212,1204][947,1298]
+View and perform actions | TextView enabled=true checked=false [212,1361][947,1418]
+It can track your interactions with an app or a hardware sensor, and interact with apps on your behalf. | TextView enabled=true checked=false [212,1418][947,1555]
+Allow | Button enabled=true checked=false [70,1621][1010,1768]
+Deny | Button enabled=true checked=false [70,1771][1010,1918]

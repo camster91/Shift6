@@ -12,6 +12,20 @@ test('guest writes preserve local training data without accumulating a cloud out
     sqlite.exec('PRAGMA foreign_keys=ON;');
     for (const m of MIGRATIONS) for (const s of m.statements) sqlite.exec(s);
     const db = {
+      getAllAsync: async (sql: string, ...values: SQLInputValue[]) =>
+        sqlite.prepare(sql).all(...values),
+      getFirstAsync: async (sql: string, ...values: SQLInputValue[]) =>
+        sqlite.prepare(sql).get(...values) ?? null,
+      withExclusiveTransactionAsync: async (operation: (tx: SQLiteDatabase) => Promise<void>) => {
+        sqlite.exec('BEGIN;');
+        try {
+          await operation(db);
+          sqlite.exec('COMMIT;');
+        } catch (error) {
+          sqlite.exec('ROLLBACK;');
+          throw error;
+        }
+      },
       runAsync: async (sql: string, ...values: SQLInputValue[]) => {
         const r = sqlite.prepare(sql).run(...values);
         return { changes: Number(r.changes), lastInsertRowId: Number(r.lastInsertRowid) };

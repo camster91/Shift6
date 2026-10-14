@@ -1,0 +1,589 @@
+
+> shift6@0.1.0 verify
+> npm run format:check && npm run lint && npm run typecheck && npm run doctor && npm run validate:assets && npm run check:secrets && npm run validate:release-config && npm audit --omit=dev --audit-level=moderate && npm run validate:vendor && npm run test:security && npm test -- --ci && npm run export:all
+
+
+> shift6@0.1.0 format:check
+> prettier --check "app/**/*.{ts,tsx}" "src/**/*.{ts,tsx}" "scripts/**/*.{js,mjs}" "*.{json,js,cjs,mjs}"
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> shift6@0.1.0 lint
+> eslint . --max-warnings 0
+
+
+> shift6@0.1.0 typecheck
+> tsc --noEmit
+
+
+> shift6@0.1.0 doctor
+> expo-doctor
+
+env: load .env
+env: export EXPO_PUBLIC_API_BASE_URL EXPO_PUBLIC_ENVIRONMENT EXPO_PUBLIC_RELEASE_MODE
+Running 21 checks on your project...
+21/21 checks passed. No issues detected!
+
+> shift6@0.1.0 validate:assets
+> node scripts/validate-assets.mjs
+
+Validated 4 asset families and 9 source files.
+
+> shift6@0.1.0 check:secrets
+> node scripts/check-secrets.mjs
+
+Scanned 1251 tracked files for high-confidence credential formats.
+
+> shift6@0.1.0 validate:release-config
+> node scripts/validate-release-config.mjs
+
+Validated Expo identifiers, native plugins, mobile platforms, EAS profiles, and public environment keys.
+found 0 vulnerabilities
+
+> shift6@0.1.0 validate:vendor
+> node scripts/validate-vendor.mjs
+
+Verified 143 vendored source and license files.
+
+> shift6@0.1.0 test:security
+> node --test scripts/vendor-security.test.mjs scripts/local-voice-native.test.mjs
+
+TAP version 13
+# Subtest: retains licensed pinned private fork provenance and excludes lifecycle install code
+ok 1 - retains licensed pinned private fork provenance and excludes lifecycle install code
+  ---
+  duration_ms: 6.2282
+  type: 'test'
+  ...
+# Subtest: requested iOS locale is probed and unsupported local recognition fails before request preparation
+ok 2 - requested iOS locale is probed and unsupported local recognition fails before request preparation
+  ---
+  duration_ms: 1.895
+  type: 'test'
+  ...
+# Subtest: Android result callbacks cannot log raw transcript payloads
+ok 3 - Android result callbacks cannot log raw transcript payloads
+  ---
+  duration_ms: 1.7996
+  type: 'test'
+  ...
+# Subtest: vendor inventory tolerates only the native speech module Gradle output directories
+ok 4 - vendor inventory tolerates only the native speech module Gradle output directories
+  ---
+  duration_ms: 31.3593
+  type: 'test'
+  ...
+# Subtest: vendor inventory rejects unexpected files even in similarly named build paths
+ok 5 - vendor inventory rejects unexpected files even in similarly named build paths
+  ---
+  duration_ms: 81.344
+  type: 'test'
+  ...
+# Subtest: native build exclusions do not suppress source, build.gradle or license hash checks
+ok 6 - native build exclusions do not suppress source, build.gradle or license hash checks
+  ---
+  duration_ms: 38.6411
+  type: 'test'
+  ...
+# Subtest: braces supports ordinary patterns and rejects deep patterns and externally supplied ASTs
+ok 7 - braces supports ordinary patterns and rejects deep patterns and externally supplied ASTs
+  ---
+  duration_ms: 5.5372
+  type: 'test'
+  ...
+# Subtest: RSA accepts valid signatures and rejects unconsumed nested DigestAlgorithm children
+ok 8 - RSA accepts valid signatures and rejects unconsumed nested DigestAlgorithm children
+  ---
+  duration_ms: 67.9349
+  type: 'test'
+  ...
+# Subtest: the CommonJS decoder preserves legacy API and query-string compatibility
+ok 9 - the CommonJS decoder preserves legacy API and query-string compatibility
+  ---
+  duration_ms: 82.7038
+  type: 'test'
+  ...
+# Subtest: sprintf bounds hostile precision without breaking ordinary formatting
+ok 10 - sprintf bounds hostile precision without breaking ordinary formatting
+  ---
+  duration_ms: 0.9295
+  type: 'test'
+  ...
+# Subtest: UUID v3 and v5 enforce caller-provided buffer bounds while Xcode v4 stays compatible
+ok 11 - UUID v3 and v5 enforce caller-provided buffer bounds while Xcode v4 stays compatible
+  ---
+  duration_ms: 0.9821
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 562.3466
+
+> shift6@0.1.0 test
+> jest --runInBand --ci
+
+(node:38852) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS src/components/workoutFocusScreen.test.tsx (10.926 s)
+PASS src/components/cycleStartConfirmation.test.tsx
+PASS src/components/cycleHandoverScreen.test.tsx
+PASS src/db/cycleHandoverRepository.test.ts
+PASS src/components/builderRecovery.test.tsx
+PASS src/components/calendarReminderSave.test.tsx
+PASS src/db/scheduleRevisionRepository.test.ts
+PASS src/components/onboardingRecovery.test.tsx
+PASS src/components/cycleLifecycleScreen.test.tsx
+PASS src/components/builderPlanText.test.tsx
+PASS src/components/builderPersistence.test.tsx
+PASS src/components/coachReviewScreen.test.tsx
+PASS src/components/personalGoalScreen.test.tsx
+PASS src/db/exportSnapshot.test.ts
+PASS src/components/progressScreen.test.tsx
+PASS src/components/coachScreen.test.tsx
+PASS src/db/coachReviewRepository.test.ts
+PASS src/db/localRestoreRepository.test.ts
+PASS src/components/programsCatalogue.test.tsx
+PASS src/db/loadProvenanceRepository.test.ts
+PASS src/components/coachMemoryScreen.test.tsx
+PASS src/db/deletionIsolation.test.ts
+PASS src/components/profileExport.test.tsx
+PASS src/components/VoiceSetEntry.test.tsx
+PASS src/components/homeWorkoutSelection.test.tsx
+PASS src/components/summaryGuestCopy.test.tsx
+PASS src/components/notificationsSettings.test.tsx
+PASS src/components/PlanTextImport.test.tsx
+PASS src/components/restoreScreen.test.tsx
+  ● Console
+
+    console.error
+      An update to RestoreScreen inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      33 |   async function restore() {
+      34 |     if (!db || !backup || busy) return;
+    > 35 |     setBusy(true);
+         |     ^
+      36 |     setMessage(null);
+      37 |     try {
+      38 |       const count = await restoreLocalBackup(db, owner, backup.serialized);
+
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:16307:19
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16306:9)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setBusy (app/restore.tsx:35:5)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12
+      at apply (app/restore.tsx:50:4)
+      at apply (app/restore.tsx:33:25)
+      at Object.restore (app/restore.tsx:97:58)
+      at Object.onPress (src/components/restoreScreen.test.tsx:46:62)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to RestoreScreen inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      34 |     if (!db || !backup || busy) return;
+      35 |     setBusy(true);
+    > 36 |     setMessage(null);
+         |     ^
+      37 |     try {
+      38 |       const count = await restoreLocalBackup(db, owner, backup.serialized);
+      39 |       setBackup(null);
+
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:16307:19
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16306:9)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setMessage (app/restore.tsx:36:5)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12
+      at apply (app/restore.tsx:50:4)
+      at apply (app/restore.tsx:33:25)
+      at Object.restore (app/restore.tsx:97:58)
+      at Object.onPress (src/components/restoreScreen.test.tsx:46:62)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to RestoreScreen inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      37 |     try {
+      38 |       const count = await restoreLocalBackup(db, owner, backup.serialized);
+    > 39 |       setBackup(null);
+         |       ^
+      40 |       setMessage(
+      41 |         `${count} records restored locally. Health access must be connected again in settings.`,
+      42 |       );
+
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:16307:19
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16306:9)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setBackup (app/restore.tsx:39:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to RestoreScreen inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      38 |       const count = await restoreLocalBackup(db, owner, backup.serialized);
+      39 |       setBackup(null);
+    > 40 |       setMessage(
+         |       ^
+      41 |         `${count} records restored locally. Health access must be connected again in settings.`,
+      42 |       );
+      43 |     } catch (error) {
+
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:16307:19
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16306:9)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setMessage (app/restore.tsx:40:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to RestoreScreen inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      46 |       );
+      47 |     } finally {
+    > 48 |       setBusy(false);
+         |       ^
+      49 |     }
+      50 |   }
+      51 |   return (
+
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:16307:19
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16306:9)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setBusy (app/restore.tsx:48:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+PASS src/components/CoachWorkflowActions.test.tsx
+PASS src/db/cycleHandoverTransaction.test.ts
+PASS src/components/ui/OfflineBanner.test.tsx
+PASS src/components/ui/accessibility.test.tsx
+PASS src/components/artwork/ShiftArtwork.test.tsx
+PASS src/db/coachProposalBoundary.test.ts
+PASS src/db/coachMemoryRepository.test.ts
+PASS src/db/cycleLifecycleRepository.test.ts
+PASS src/db/personalGoalRepository.test.ts
+PASS src/db/programRepository.test.ts
+PASS src/services/appServices.test.ts
+PASS src/db/builderRecoveryRepository.test.ts
+PASS src/components/ui/SixWeekIndicator.test.tsx
+PASS src/db/syncMutationLifecycle.test.ts
+PASS src/domain/scheduleRevision.test.ts
+PASS src/services/platformHealthProviders.test.ts
+PASS src/db/workoutRepository.test.ts
+PASS src/db/onboardingDraftRepository.test.ts
+PASS src/db/onboardingConfirmation.test.ts
+PASS src/db/accountRepository.test.ts
+PASS src/services/localDataRestore.test.ts
+PASS src/services/coach.test.ts
+PASS src/services/accountDeletion.test.ts
+PASS src/db/voiceLoadReadback.test.ts
+PASS src/domain/coachReview.test.ts
+PASS src/services/coachEvaluation.test.ts
+PASS src/services/accountDeletionRecovery.test.ts
+PASS src/services/auth.test.ts
+PASS src/db/progressRepository.test.ts
+PASS src/domain/coachProposal.test.ts
+PASS src/db/shiftSchema.test.ts
+PASS src/services/localVoice.test.ts
+PASS src/services/coachNavigation.test.ts
+PASS src/config/env.test.ts
+PASS src/db/coachRepository.test.ts
+PASS src/domain/programBuilder.test.ts
+PASS src/services/localDataExport.test.ts
+PASS src/domain/planTextImport.test.ts
+PASS src/domain/programCatalogueReadiness.test.ts
+PASS src/domain/programLibrary.test.ts
+PASS src/services/notificationScheduler.test.ts
+PASS src/services/backend.test.ts
+PASS src/domain/shift.test.ts
+PASS src/services/connectivity.test.ts
+PASS src/db/privacyRepository.test.ts
+PASS src/services/syncRuntime.test.ts
+PASS src/domain/datePresentation.test.ts
+PASS src/domain/shiftCalendar.test.ts
+PASS src/services/userIdentity.test.ts
+PASS src/db/coachPrivacyRepository.test.ts
+PASS src/domain/notificationSchedule.test.ts
+PASS src/db/healthReplacement.test.ts
+PASS src/db/cycleRepository.test.ts
+PASS src/domain/plateCalculator.test.ts
+PASS src/services/platformHealthTotals.test.ts
+PASS src/services/healthPagination.test.ts
+PASS src/db/profileRepository.test.ts
+PASS src/db/guestRelease.test.ts
+PASS src/db/bodyMetricRepository.test.ts
+PASS src/services/notificationRefresh.test.ts
+PASS src/db/cycleReviewRepository.test.ts
+PASS src/db/calendarRepository.test.ts
+PASS src/domain/progress.test.ts
+PASS src/domain/nativeLinks.test.ts
+PASS src/domain/coachOnboarding.test.ts
+PASS src/services/notifications.test.ts
+PASS src/domain/contentReadiness.test.ts
+PASS src/services/coachPrivacy.test.ts
+PASS src/db/syncRepository.test.ts
+PASS src/domain/voiceSetDraft.test.ts
+PASS src/domain/home.test.ts
+PASS src/domain/goalPresentation.test.ts
+PASS src/domain/calendar.test.ts
+PASS src/services/healthSyncFeedback.test.ts
+PASS src/domain/runtimeContentGates.test.ts
+PASS src/domain/exerciseCatalog.test.ts
+PASS src/domain/cycleProgression.test.ts
+PASS src/db/migrations.test.ts
+PASS src/domain/workoutInputs.test.ts
+PASS src/domain/progressionRules.test.ts
+PASS src/domain/equipment.test.ts
+PASS src/db/notificationRepository.test.ts
+PASS src/db/checkInRepository.test.ts
+PASS src/domain/workoutFocus.test.ts
+PASS src/domain/progression.test.ts
+PASS src/domain/nextSession.test.ts
+PASS src/services/localCoach.test.ts
+PASS src/services/apiProtocol.test.ts
+PASS src/domain/onboarding.test.ts
+PASS src/domain/loadUnits.test.ts
+PASS src/domain/health.test.ts
+PASS src/domain/focusedRelease.test.ts
+PASS src/services/healthSync.test.ts
+PASS src/services/healthDayWindows.test.ts
+PASS src/services/coachSafety.test.ts
+PASS src/services/analytics.test.ts
+PASS vendor/sprintf-js/test/test.js
+PASS src/domain/cycle.test.ts
+PASS src/services/syncCoordinator.test.ts
+PASS src/db/considerationsRepository.test.ts
+PASS src/design/tokens.test.ts
+PASS src/domain/fixtures/home.test.ts
+PASS src/domain/notifications.test.ts
+PASS src/domain/history.test.ts
+PASS src/domain/exerciseTracking.test.ts
+PASS src/domain/coachCapabilities.test.ts
+PASS src/services/health.test.ts
+PASS src/db/historyRepository.test.ts
+PASS src/db/healthRepository.test.ts
+PASS src/domain/summaryVolume.test.ts
+PASS src/design/iconography.test.ts
+PASS src/services/coachMemory.test.ts
+
+Test Suites: 141 passed, 141 total
+Tests:       1132 passed, 1132 total
+Snapshots:   0 total
+Time:        66.183 s
+Ran all test suites.
+
+> shift6@0.1.0 export:all
+> expo export --platform ios && expo export --platform android
+
+env: load .env
+env: export EXPO_PUBLIC_API_BASE_URL EXPO_PUBLIC_ENVIRONMENT EXPO_PUBLIC_RELEASE_MODE
+Starting Metro Bundler
+
+| (node:43380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:43380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:43380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:43380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:43380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:43380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:43380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:43380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+iOS Bundled 22129ms node_modules\expo-router\entry.js (1607 modules)
+
+› Assets (47):
+assets\higgsfield\runtime\journey-v01.jpg (23KB)
+assets\higgsfield\runtime\journey-v01.mp4 (53KB)
+assets\higgsfield\runtime\return-v01.jpg (21KB)
+assets\higgsfield\runtime\session-saved-v01.jpg (19KB)
+assets\higgsfield\runtime\session-saved-v01.mp4 (71KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\AntDesign.ttf (130KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Entypo.ttf (66KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\EvilIcons.ttf (13KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Feather.ttf (56KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome.ttf (166KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome5_Brands.ttf (134KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome5_Regular.ttf (34KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome5_Solid.ttf (203KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome6_Brands.ttf (209KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome6_Regular.ttf (68KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome6_Solid.ttf (424KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Fontisto.ttf (314KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Foundation.ttf (57KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Ionicons.ttf (390KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\MaterialCommunityIcons.ttf (1.3MB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\MaterialIcons.ttf (357KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Octicons.ttf (69KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\SimpleLineIcons.ttf (54KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Zocial.ttf (26KB)
+node_modules\expo-router\assets\arrow_down.png (9.5KB)
+node_modules\expo-router\assets\error.png (469B)
+node_modules\expo-router\assets\file.png (138B)
+node_modules\expo-router\assets\forward.png (188B)
+node_modules\expo-router\assets\pkg.png (364B)
+node_modules\expo-router\assets\react-navigation\elements\back-icon-mask.png (653B)
+node_modules\expo-router\assets\react-navigation\elements\back-icon.png (4 variations | 566B)
+node_modules\expo-router\assets\react-navigation\elements\clear-icon.png (4 variations | 425B)
+node_modules\expo-router\assets\react-navigation\elements\close-icon.png (4 variations | 235B)
+node_modules\expo-router\assets\react-navigation\elements\search-icon.png (3 variations | 582B)
+node_modules\expo-router\assets\sitemap.png (465B)
+node_modules\expo-router\assets\unmatched.png (4.8KB)
+
+› ios bundles (1):
+_expo/static/js/ios/entry-e8bb599f50797f3732c6a1438f86b49f.hbc (4.7MB)
+
+› Files (1):
+metadata.json (3.1KB)
+
+Exported: dist
+env: load .env
+env: export EXPO_PUBLIC_API_BASE_URL EXPO_PUBLIC_ENVIRONMENT EXPO_PUBLIC_RELEASE_MODE
+Starting Metro Bundler
+
+| (node:26176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:26176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:26176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:26176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:26176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:26176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:26176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:26176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Android Bundled 41291ms node_modules\expo-router\entry.js (1641 modules)
+
+› Assets (51):
+assets\higgsfield\runtime\journey-v01.jpg (23KB)
+assets\higgsfield\runtime\journey-v01.mp4 (53KB)
+assets\higgsfield\runtime\return-v01.jpg (21KB)
+assets\higgsfield\runtime\session-saved-v01.jpg (19KB)
+assets\higgsfield\runtime\session-saved-v01.mp4 (71KB)
+node_modules\@expo-google-fonts\material-symbols\400Regular\MaterialSymbols_400Regular.ttf (971KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\AntDesign.ttf (130KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Entypo.ttf (66KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\EvilIcons.ttf (13KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Feather.ttf (56KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome.ttf (166KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome5_Brands.ttf (134KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome5_Regular.ttf (34KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome5_Solid.ttf (203KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome6_Brands.ttf (209KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome6_Regular.ttf (68KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\FontAwesome6_Solid.ttf (424KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Fontisto.ttf (314KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Foundation.ttf (57KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Ionicons.ttf (390KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\MaterialCommunityIcons.ttf (1.3MB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\MaterialIcons.ttf (357KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Octicons.ttf (69KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\SimpleLineIcons.ttf (54KB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\Zocial.ttf (26KB)
+node_modules\expo-router\assets\arrow_down.png (9.5KB)
+node_modules\expo-router\assets\arrow_right.xml (307B)
+node_modules\expo-router\assets\checkmark.xml (312B)
+node_modules\expo-router\assets\error.png (469B)
+node_modules\expo-router\assets\file.png (138B)
+node_modules\expo-router\assets\forward.png (188B)
+node_modules\expo-router\assets\pkg.png (364B)
+node_modules\expo-router\assets\react-navigation\elements\back-icon-mask.png (653B)
+node_modules\expo-router\assets\react-navigation\elements\back-icon.png (4 variations | 152B)
+node_modules\expo-router\assets\react-navigation\elements\clear-icon.png (4 variations | 425B)
+node_modules\expo-router\assets\react-navigation\elements\close-icon.png (4 variations | 235B)
+node_modules\expo-router\assets\react-navigation\elements\search-icon.png (4 variations | 599B)
+node_modules\expo-router\assets\sitemap.png (465B)
+node_modules\expo-router\assets\unmatched.png (4.8KB)
+
+› android bundles (1):
+_expo/static/js/android/entry-27c936932f9365733ea4d1d0058aae2d.hbc (4.8MB)
+
+› Files (1):
+metadata.json (3.4KB)
+
+Exported: dist

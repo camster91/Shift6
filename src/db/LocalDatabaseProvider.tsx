@@ -1,40 +1,60 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { useCallback, useState } from 'react';
-import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
+import { useCallback, useEffect, useState } from 'react';
+import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { StyleSheet, View } from 'react-native';
 
-import { Button, Card, Screen, Text } from '../components/ui';
+import { Button, Card, LoadingSkeleton, Screen, Text } from '../components/ui';
 import { colors, spacing } from '../design/tokens';
 import { migrateDatabase } from './migrations';
 import { LocalDatabaseContext } from './context';
+import {
+  createDatabaseInitialization,
+  type DatabaseInitializationState,
+} from './databaseInitialization';
+
+// Public SDK option: each attempt owns its connection instead of borrowing the
+// native cache's handle. Keep initialization serialized across React remounts.
+const databaseOpenOptions = { useNewConnection: true } as const;
+const initialization = createDatabaseInitialization({
+  open: () => openDatabaseAsync('shift6.db', databaseOpenOptions),
+  initialize: migrateDatabase,
+  onDiagnostic: (value) => console.warn('SHIFT6 local storage', value.stage, value.code),
+});
 
 interface LocalDatabaseProviderProps {
   children: ReactNode;
 }
 
 export function LocalDatabaseProvider({ children }: LocalDatabaseProviderProps) {
-  const [databaseError, setDatabaseError] = useState(false);
+  const [state, setState] = useState<DatabaseInitializationState<SQLiteDatabase>>({
+    status: 'loading',
+  });
   const [attempt, setAttempt] = useState(0);
-  const handleDatabaseError = useCallback(() => setDatabaseError(true), []);
   const retryDatabase = useCallback(() => {
-    setDatabaseError(false);
+    setState({ status: 'loading' });
     setAttempt((current) => current + 1);
   }, []);
 
-  if (databaseError) {
+  useEffect(() => initialization.start(setState), [attempt]);
+
+  if (state.status === 'error') {
     return <DatabaseUnavailableScreen onRetry={retryDatabase} />;
   }
 
+  if (state.status === 'loading') {
+    return (
+      <Screen>
+        <Text variant="h2" accessibilityRole="alert">
+          Opening your local record…
+        </Text>
+        <LoadingSkeleton height={180} />
+      </Screen>
+    );
+  }
+
   return (
-    <SQLiteProvider
-      key={attempt}
-      databaseName="shift6.db"
-      onError={handleDatabaseError}
-      onInit={migrateDatabase}
-    >
-      <DatabaseContextBridge>{children}</DatabaseContextBridge>
-    </SQLiteProvider>
+    <LocalDatabaseContext.Provider value={state.database}>{children}</LocalDatabaseContext.Provider>
   );
 }
 
@@ -48,8 +68,7 @@ function DatabaseUnavailableScreen({ onRetry }: { onRetry: () => void }) {
         Your local record needs attention.
       </Text>
       <Text variant="body" tone="muted" style={styles.subtitle}>
-        SHIFT6 could not open its on-device workout storage. Your data was not changed. Try again
-        before continuing.
+        SHIFT6 could not open its on-device workout storage. Try again before continuing.
       </Text>
       <Card tone="yellow" style={styles.card} accessibilityLabel="Local storage unavailable">
         <Text variant="smallMedium">Local-first storage is unavailable</Text>
@@ -60,12 +79,6 @@ function DatabaseUnavailableScreen({ onRetry }: { onRetry: () => void }) {
       <Button label="Try again" onPress={onRetry} style={styles.retryButton} />
     </Screen>
   );
-}
-
-function DatabaseContextBridge({ children }: LocalDatabaseProviderProps) {
-  const database = useSQLiteContext();
-
-  return <LocalDatabaseContext.Provider value={database}>{children}</LocalDatabaseContext.Provider>;
 }
 
 const styles = StyleSheet.create({

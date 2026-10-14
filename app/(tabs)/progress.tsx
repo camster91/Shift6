@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import {
@@ -68,110 +68,144 @@ export default function ProgressScreen() {
   const [exerciseProgressLoading, setExerciseProgressLoading] = useState(false);
   const [loading, setLoading] = useState(database !== null);
   const [error, setError] = useState<string | null>(null);
-  const [loadedFor, setLoadedFor] = useState<{ database: typeof database; userId: string } | null>(
-    null,
-  );
+  const [loadedFor, setLoadedFor] = useState<{
+    database: typeof database;
+    userId: string;
+    generation: number;
+  } | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  useEffect(() => {
-    if (!database) {
-      setLoading(false);
-      return;
-    }
+  const contextRef = useRef({ database, userId });
+  contextRef.current = { database, userId };
+  const generationRef = useRef(0);
+  const movementRequestRef = useRef(0);
+  const selectedExerciseRef = useRef(selectedExerciseId);
+  selectedExerciseRef.current = selectedExerciseId;
 
-    let active = true;
-    setLoading(true);
-    setError(null);
-    setCurrentCycle(null);
-    setCurrentProgram(null);
-    setSummary(null);
-    setLoadedFor(null);
-
-    void (async () => {
-      try {
-        const storedCycle = await getLatestTrainingCycle(database, userId);
-        if (!storedCycle) return;
-        const cycle = storedCycle;
-        const snapshot = await getUserProgramVersion(database, userId, cycle.programVersionId);
-        if (!snapshot) return;
-        const { program, version: programVersion } = snapshot;
-        const workout = programVersion.workouts[0];
-        const previousCycle = await getPreviousTrainingCycle(database, userId, cycle);
-        const [
-          nextSummary,
-          latestSets,
-          profile,
-          userExercises,
-          previousSummary,
-          completedSets,
-          cardioRecords,
-        ] = await Promise.all([
-          getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
-          workout
-            ? getLatestCompletedWorkoutSets(database, cycle.id, workout.id, programVersion.id)
-            : Promise.resolve([]),
-          getOnboardingProfile(database, userId),
-          getUserExercises(database, userId),
-          previousCycle
-            ? getCycleProgressSummary(
-                database,
-                previousCycle.id,
-                getPlannedWorkoutCount(previousCycle),
-              )
-            : Promise.resolve(null),
-          getCycleCompletedSetRecords(database, cycle.id),
-          getCycleCardioRecords(database, cycle.id),
-        ]);
-        const volumeExercises = [...foundationalExercises, ...userExercises];
-        const nextVolumeBreakdown = buildTrainingVolumeBreakdown(completedSets, volumeExercises);
-        const nextCardioProgress = buildCardioProgress(cardioRecords);
-        const nextCycleComparison =
-          previousCycle && previousSummary
-            ? compareCycleProgress(cycle, nextSummary, previousCycle, previousSummary)
-            : null;
-        const nextExerciseChoices = getProgressExerciseChoices(programVersion, userExercises);
-        const nextSelectedExerciseId = nextExerciseChoices.some(
-          (choice) => choice.exerciseId === selectedExerciseId,
-        )
-          ? selectedExerciseId
-          : (nextExerciseChoices[0]?.exerciseId ?? null);
-        const selectedExerciseProgress = nextSelectedExerciseId
-          ? await getExerciseProgress(database, cycle.id, nextSelectedExerciseId)
-          : null;
-        const nextSessionTargets = workout
-          ? buildNextSessionTargets(
-              workout,
-              program.progressionStrategy,
-              latestSets,
-              profile?.user.unitSystem ?? 'imperial',
-              undefined,
-              programVersion.progressionRuleIds,
-            )
-          : [];
-
-        if (!active) return;
-        setCurrentCycle(cycle);
-        setCurrentProgram(program);
-        setSummary(nextSummary);
-        setLoadedFor({ database, userId });
-        setNextTargets(latestSets.length > 0 ? nextSessionTargets : []);
-        setExerciseChoices(nextExerciseChoices);
-        setSelectedExerciseId(nextSelectedExerciseId);
-        setExerciseProgress(selectedExerciseProgress);
-        setCycleComparison(nextCycleComparison);
-        setVolumeBreakdown(nextVolumeBreakdown);
-        setCardioProgress(nextCardioProgress);
-      } catch {
-        if (active) setError('We could not load local cycle progress.');
-      } finally {
-        if (active) setLoading(false);
+  useFocusEffect(
+    useCallback(() => {
+      const generation = ++generationRef.current;
+      ++movementRequestRef.current;
+      const isCurrent = () =>
+        generationRef.current === generation &&
+        contextRef.current.database === database &&
+        contextRef.current.userId === userId;
+      if (!database) {
+        setLoading(false);
+        return;
       }
-    })();
 
-    return () => {
-      active = false;
-    };
-  }, [database, reloadKey, userId]);
+      setLoading(true);
+      setError(null);
+      setCurrentCycle(null);
+      setCurrentProgram(null);
+      setSummary(null);
+      setLoadedFor(null);
+      setNextTargets([]);
+      setExerciseChoices([]);
+      setExerciseProgress(null);
+      setExerciseProgressLoading(false);
+      setCycleComparison(null);
+      setVolumeBreakdown(buildTrainingVolumeBreakdown([], foundationalExercises));
+      setCardioProgress(buildCardioProgress([]));
+
+      void (async () => {
+        try {
+          const storedCycle = await getLatestTrainingCycle(database, userId);
+          if (!isCurrent() || !storedCycle) return;
+          if (storedCycle.userId !== userId) throw new Error('Cycle owner changed');
+          const cycle = storedCycle;
+          const snapshot = await getUserProgramVersion(database, userId, cycle.programVersionId);
+          if (!isCurrent() || !snapshot) return;
+          if (
+            snapshot.version.id !== cycle.programVersionId ||
+            snapshot.version.programId !== snapshot.program.id
+          )
+            throw new Error('Cycle version changed');
+          const { program, version: programVersion } = snapshot;
+          const workout = programVersion.workouts[0];
+          const previousCycle = await getPreviousTrainingCycle(database, userId, cycle);
+          if (!isCurrent()) return;
+          if (previousCycle && previousCycle.userId !== userId)
+            throw new Error('Previous cycle owner changed');
+          const [
+            nextSummary,
+            latestSets,
+            profile,
+            userExercises,
+            previousSummary,
+            completedSets,
+            cardioRecords,
+          ] = await Promise.all([
+            getCycleProgressSummary(database, cycle.id, getPlannedWorkoutCount(cycle)),
+            workout
+              ? getLatestCompletedWorkoutSets(database, cycle.id, workout.id, programVersion.id)
+              : Promise.resolve([]),
+            getOnboardingProfile(database, userId),
+            getUserExercises(database, userId),
+            previousCycle
+              ? getCycleProgressSummary(
+                  database,
+                  previousCycle.id,
+                  getPlannedWorkoutCount(previousCycle),
+                )
+              : Promise.resolve(null),
+            getCycleCompletedSetRecords(database, cycle.id),
+            getCycleCardioRecords(database, cycle.id),
+          ]);
+          if (!isCurrent()) return;
+          const volumeExercises = [...foundationalExercises, ...userExercises];
+          const nextVolumeBreakdown = buildTrainingVolumeBreakdown(completedSets, volumeExercises);
+          const nextCardioProgress = buildCardioProgress(cardioRecords);
+          const nextCycleComparison =
+            previousCycle && previousSummary
+              ? compareCycleProgress(cycle, nextSummary, previousCycle, previousSummary)
+              : null;
+          const nextExerciseChoices = getProgressExerciseChoices(programVersion, userExercises);
+          const nextSelectedExerciseId = nextExerciseChoices.some(
+            (choice) => choice.exerciseId === selectedExerciseRef.current,
+          )
+            ? selectedExerciseRef.current
+            : (nextExerciseChoices[0]?.exerciseId ?? null);
+          const selectedExerciseProgress = nextSelectedExerciseId
+            ? await getExerciseProgress(database, cycle.id, nextSelectedExerciseId)
+            : null;
+          const nextSessionTargets = workout
+            ? buildNextSessionTargets(
+                workout,
+                program.progressionStrategy,
+                latestSets,
+                profile?.user.unitSystem ?? 'imperial',
+                undefined,
+                programVersion.progressionRuleIds,
+              )
+            : [];
+
+          if (!isCurrent()) return;
+          setCurrentCycle(cycle);
+          setCurrentProgram(program);
+          setSummary(nextSummary);
+          setLoadedFor({ database, userId, generation });
+          setNextTargets(latestSets.length > 0 ? nextSessionTargets : []);
+          setExerciseChoices(nextExerciseChoices);
+          setSelectedExerciseId(nextSelectedExerciseId);
+          setExerciseProgress(selectedExerciseProgress);
+          setCycleComparison(nextCycleComparison);
+          setVolumeBreakdown(nextVolumeBreakdown);
+          setCardioProgress(nextCardioProgress);
+        } catch {
+          if (isCurrent()) setError('We could not load local cycle progress.');
+        } finally {
+          if (isCurrent()) setLoading(false);
+        }
+      })();
+
+      return () => {
+        if (generationRef.current === generation) ++generationRef.current;
+        ++movementRequestRef.current;
+      };
+    }, [database, reloadKey, userId]),
+  );
 
   if (loading || (database && currentCycle && loadedFor?.database !== database)) {
     return (
@@ -215,11 +249,38 @@ export default function ProgressScreen() {
   }
 
   const { facts } = summary;
+  const openSixWeekReview = () => {
+    if (
+      loadedFor.database !== database ||
+      loadedFor.userId !== userId ||
+      loadedFor.generation !== generationRef.current ||
+      contextRef.current.database !== database ||
+      contextRef.current.userId !== userId ||
+      currentCycle.userId !== userId ||
+      currentCycle.status !== 'complete'
+    )
+      return;
+    router.push({
+      pathname: '/review',
+      params: {
+        expectedCycleId: currentCycle.id,
+        expectedProgramVersionId: currentCycle.programVersionId,
+      },
+    });
+  };
   const selectedExercise = exerciseChoices.find(
     (choice) => choice.exerciseId === selectedExerciseId,
   );
 
   const handleSelectExercise = async (exerciseId: string) => {
+    const generation = generationRef.current;
+    const request = ++movementRequestRef.current;
+    const isCurrent = () =>
+      generationRef.current === generation &&
+      movementRequestRef.current === request &&
+      contextRef.current.database === database &&
+      contextRef.current.userId === userId;
+    selectedExerciseRef.current = exerciseId;
     setSelectedExerciseId(exerciseId);
     if (!database) {
       setExerciseProgress(null);
@@ -230,11 +291,11 @@ export default function ProgressScreen() {
     setError(null);
     try {
       const nextProgress = await getExerciseProgress(database, currentCycle.id, exerciseId);
-      setExerciseProgress(nextProgress);
+      if (isCurrent()) setExerciseProgress(nextProgress);
     } catch {
-      setError('We could not load this movement trend.');
+      if (isCurrent()) setError('We could not load this movement trend.');
     } finally {
-      setExerciseProgressLoading(false);
+      if (isCurrent()) setExerciseProgressLoading(false);
     }
   };
 
@@ -258,6 +319,16 @@ export default function ProgressScreen() {
         Progress starts with a trustworthy baseline, not a perfect streak.
       </Text>
 
+      {currentCycle.status === 'complete' ? (
+        <Button
+          label="Open six-week review"
+          variant="secondary"
+          onPress={openSixWeekReview}
+          icon={<Ionicons name="document-text-outline" size={18} color={colors.ink} />}
+          style={styles.reviewButton}
+        />
+      ) : null}
+
       <Card tone="white" style={styles.cycleCard}>
         <View style={styles.cardHeader}>
           <View>
@@ -274,7 +345,7 @@ export default function ProgressScreen() {
         <ProgressIndicator label="Adherence" value={facts.completionRate} />
         <Text variant="small" tone="muted" style={styles.helper}>
           {facts.completedWorkoutCount > 0
-            ? `${facts.completedWorkoutCount} completed workout${facts.completedWorkoutCount === 1 ? '' : 's'} are reflected from local records.`
+            ? `${facts.completedWorkoutCount} completed workout${facts.completedWorkoutCount === 1 ? ' is' : 's are'} reflected from local records.`
             : 'Your first completed sessions will populate this cycle scorecard.'}
         </Text>
       </Card>
@@ -298,7 +369,8 @@ export default function ProgressScreen() {
           icon="stats-chart-outline"
           label="Volume"
           value={facts.totalTrainingVolume > 0 ? formatVolume(facts.totalTrainingVolume) : '—'}
-          detail={facts.totalTrainingVolume > 0 ? 'load × reps' : 'not enough data'}
+          detail={facts.totalTrainingVolume > 0 ? 'kg × reps' : 'kg × reps · not enough data'}
+          accessibilityLabel={`Volume ${facts.totalTrainingVolume > 0 ? formatVolume(facts.totalTrainingVolume) : 'not enough data'} kg × reps. Known loads are normalized to kilograms; unknown-unit loads are excluded.`}
           tone="yellow"
         />
         <MetricCard
@@ -364,7 +436,8 @@ export default function ProgressScreen() {
               <View key={target.workoutExerciseId} style={styles.nextTargetRow}>
                 <View style={styles.nextTargetCopy}>
                   <Text variant="smallMedium" tone="inverse">
-                    {formatExerciseName(target.exerciseId)}
+                    {exerciseChoices.find((choice) => choice.exerciseId === target.exerciseId)
+                      ?.label ?? formatExerciseName(target.exerciseId)}
                   </Text>
                   <Text variant="caption" tone="inverse">
                     {formatTarget(target.decision.nextTarget)}
@@ -390,16 +463,6 @@ export default function ProgressScreen() {
           progress={exerciseProgress}
           label={selectedExercise?.label}
           trackingType={selectedExercise?.trackingType}
-        />
-      ) : null}
-
-      {currentCycle.status === 'complete' ? (
-        <Button
-          label="Open six-week review"
-          variant="secondary"
-          onPress={() => router.push('/review')}
-          icon={<Ionicons name="document-text-outline" size={18} color={colors.ink} />}
-          style={styles.reviewButton}
         />
       ) : null}
 
@@ -685,11 +748,16 @@ function TrainingVolumeCard({ breakdown }: { breakdown: TrainingVolumeBreakdown 
     <Card
       tone="white"
       style={styles.volumeCard}
-      accessibilityLabel={`Training volume. ${summary} This is an approximate primary-muscle set count.`}
+      accessibilityLabel={`Training volume. ${summary} ${breakdown.totalLoadVolume > 0 ? `Load volume: ${formatVolume(breakdown.totalLoadVolume)} kg × reps. ` : ''}${breakdown.unknownLoadSetCount ? `${breakdown.unknownLoadSetCount} sets have unknown load units; their load is excluded. ` : ''}This is an approximate primary-muscle set count.`}
     >
       <Text variant="caption" tone="muted">
         TRAINING VOLUME
       </Text>
+      {breakdown.unknownLoadSetCount ? (
+        <Text variant="small" tone="muted">
+          {breakdown.unknownLoadSetCount} sets have unknown load units; their load is excluded.
+        </Text>
+      ) : null}
       <Text variant="h3" style={styles.volumeTitle}>
         What you trained.
       </Text>
@@ -726,7 +794,7 @@ function TrainingVolumeCard({ breakdown }: { breakdown: TrainingVolumeBreakdown 
           </View>
           {breakdown.totalLoadVolume > 0 ? (
             <Text variant="caption" tone="muted" style={styles.loadVolume}>
-              Load volume: {formatVolume(breakdown.totalLoadVolume)} load × reps
+              Load volume: {formatVolume(breakdown.totalLoadVolume)} kg × reps
             </Text>
           ) : null}
         </>
@@ -821,8 +889,8 @@ function formatHistoryValue(point: ProgressPoint | undefined, metric: HistoryMet
   if (metric === 'duration') return formatDuration(value);
   if (metric === 'distance') return formatDistance(value);
   if (metric === 'reps') return `${Math.round(value)} reps`;
-  if (point?.estimatedOneRepMax !== undefined) return `${Math.round(value)} estimated`;
-  if (point?.bestLoad !== undefined) return `${Math.round(value)} load`;
+  if (point?.estimatedOneRepMax !== undefined) return `${Math.round(value)} kg estimated`;
+  if (point?.bestLoad !== undefined) return `${Math.round(value)} kg load`;
   return `${Math.round(value)} reps`;
 }
 
@@ -841,7 +909,9 @@ function formatRecordMetric(metric: PersonalRecord['metric']): string {
   }
 }
 
-function formatRecordValue(record: PersonalRecord): string {
+function formatRecordValue(record: ExerciseProgress['personalRecords'][number]): string {
+  const recordedUnit =
+    record.loadUnit === 'kg' || record.loadUnit === 'lb' ? record.loadUnit : '(unit unknown)';
   switch (record.metric) {
     case 'duration':
       return formatDuration(record.value);
@@ -850,9 +920,9 @@ function formatRecordValue(record: PersonalRecord): string {
     case 'reps':
       return `${Math.round(record.value)} reps`;
     case 'estimated-one-rep-max':
-      return `${Math.round(record.value)} estimated`;
+      return `${Math.round(record.value)} ${recordedUnit} estimated`;
     case 'load':
-      return `${Math.round(record.value)} load`;
+      return `${Math.round(record.value)} ${recordedUnit}`;
   }
 }
 
@@ -902,7 +972,7 @@ function CycleComparisonCard({ comparison }: { comparison: CycleProgressComparis
         <ComparisonRow
           label="Training volume"
           metric={comparison.totalTrainingVolume}
-          format={formatWhole}
+          format={(value) => `${formatWhole(value)} kg × reps`}
         />
         <ComparisonRow
           label="Cardio minutes"
@@ -954,7 +1024,7 @@ function formatPercent(value: number): string {
 }
 
 function formatComparisonAccessibilityLabel(comparison: CycleProgressComparison): string {
-  return `Cycle comparison. Completed workouts changed by ${formatWhole(comparison.completedWorkouts.delta)}, adherence changed by ${formatPercent(comparison.completionRate.delta)}, logged sets changed by ${formatWhole(comparison.loggedSets.delta)}, training volume changed by ${formatWhole(comparison.totalTrainingVolume.delta)}, cardio changed by ${formatWhole(comparison.cardioMinutes.delta)} minutes, and personal records changed by ${formatWhole(comparison.personalRecords.delta)}.`;
+  return `Cycle comparison. Completed workouts changed by ${formatWhole(comparison.completedWorkouts.delta)}, adherence changed by ${formatPercent(comparison.completionRate.delta)}, logged sets changed by ${formatWhole(comparison.loggedSets.delta)}, training volume changed by ${formatWhole(comparison.totalTrainingVolume.delta)} kg × reps, cardio changed by ${formatWhole(comparison.cardioMinutes.delta)} minutes, and personal records changed by ${formatWhole(comparison.personalRecords.delta)}.`;
 }
 
 interface MetricCardProps {
@@ -963,11 +1033,12 @@ interface MetricCardProps {
   value: string;
   detail: string;
   tone: 'lavender' | 'blue' | 'mint' | 'yellow' | 'coral';
+  accessibilityLabel?: string;
 }
 
-function MetricCard({ icon, label, value, detail, tone }: MetricCardProps) {
+function MetricCard({ icon, label, value, detail, tone, accessibilityLabel }: MetricCardProps) {
   return (
-    <Card tone={tone} style={styles.metricCard}>
+    <Card tone={tone} style={styles.metricCard} accessibilityLabel={accessibilityLabel}>
       <Ionicons name={icon} size={20} color={colors.ink} />
       <Text variant="caption" tone="muted" style={styles.metricLabel}>
         {label}

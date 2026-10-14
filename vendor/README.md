@@ -23,3 +23,9 @@ buffer bounds. `scripts/validate-vendor.mjs` verifies the committed file invento
 
 These checks address the listed cases; they are not a general security audit or
 independent cryptographic review of the complete libraries.
+
+The tracked `expo-speech-recognition` 57.1.1-shift6.1 dependency is a separate
+privacy fork, not an advisory remediation. Its MIT license, verified npm artifact
+integrity, native per-locale fail-closed changes and transcript-log removal are
+documented in `expo-speech-recognition/SHIFT6_PROVENANCE.md`. It is installed as a
+direct local dependency. Native audio/device acceptance remains pending.

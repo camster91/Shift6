@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "3de5542595e737ab3ed48806958eff28869d896d",
+  "records": 1082,
+  "changedArrays": [
+    "workoutDraftLoadUnits",
+    "workoutDrafts"
+  ],
+  "draftPayloadsUnchanged": true,
+  "actualPayloadsUnchanged": true,
+  "backgroundResetObserved": true,
+  "voiceFocusedFieldBelowKeyboardObservedFailure": true,
+  "exportedAt": "2026-10-14T10:25:37.125Z"
+}

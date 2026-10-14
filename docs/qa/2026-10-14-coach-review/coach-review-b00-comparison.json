@@ -1,0 +1,16 @@
+{
+  "sourceCommit": "b00e62accb7258adb8df46f18b83fc21e35ff72e",
+  "identicalArraysPerExport": 36,
+  "exports": [
+    {
+      "file": "coach-review-promoted-export-b00.json",
+      "changedArrays": [],
+      "records": 1079
+    },
+    {
+      "file": "coach-review-database-stress-export-b00.json",
+      "changedArrays": [],
+      "records": 1079
+    }
+  ]
+}

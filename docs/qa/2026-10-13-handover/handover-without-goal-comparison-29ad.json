@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "29adf0af",
+  "beforeRecords": 1076,
+  "afterRecords": 1083,
+  "handoverReceipts": 1,
+  "destinationGoalId": null,
+  "goalCountUnchanged": true,
+  "oldGoalPrimary": 0,
+  "oldGoalReviewState": "postponed",
+  "all10ActualSetsPreserved": true,
+  "allSessionsPreserved": true,
+  "allObservationsPreserved": true,
+  "newCycleSessionCount": 0,
+  "confirmedAt": "2026-10-14T04:45:20.741Z"
+}

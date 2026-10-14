@@ -1,3 +1,5 @@
+import { loadProvenanceSections } from '../domain/loadUnits';
+import { persistenceSections } from '../domain/localPersistence';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 
@@ -12,7 +14,16 @@ import {
 describe('exportLocalUserData', () => {
   it('returns user-scoped local records with a versioned export envelope', async () => {
     const database = {
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        callback(database),
       getAllAsync: async (sql: string) => {
+        if (
+          Object.values({ ...persistenceSections, ...loadProvenanceSections }).some((table) =>
+            sql.includes(table),
+          )
+        )
+          return [];
+        if (sql.includes('coach_review_journal') || sql.includes('cycle_handovers')) return [];
         if (sql.includes('personal_goal')) return [];
         if (sql.includes('onboarding_drafts')) return [];
         if (sql.includes('user_profiles')) return [{ id: 'guest-user', display_name: 'Cameron' }];
@@ -53,6 +64,7 @@ describe('exportLocalUserData', () => {
         if (sql.includes('notification_preferences')) return [];
         if (sql.includes('cycle_reviews')) return [];
         if (sql.includes('workout_schedule_overrides')) return [];
+        if (sql.includes('schedule_baselines') || sql.includes('schedule_revisions')) return [];
         return [{ id: 'proposal-1', user_id: 'guest-user' }];
       },
     } as unknown as SQLiteDatabase;
@@ -60,7 +72,18 @@ describe('exportLocalUserData', () => {
     await expect(
       exportLocalUserData(database, 'guest-user', '2026-09-14T12:00:00.000Z'),
     ).resolves.toEqual({
-      schemaVersion: 12,
+      schemaVersion: 17,
+      cycleHandovers: [],
+      coachReviewJournal: [],
+      completedSetLoadProvenance: [],
+      scheduleBaselines: [],
+      scheduleRevisions: [],
+      workoutDraftLoadUnits: [],
+      cycleLifecycleEvents: [],
+      coachMemoryPreferences: [],
+      coachMemoryFacts: [],
+      builderRecoveryDrafts: [],
+      setFeedbackEvents: [],
       personalGoalEvents: [],
       personalGoalDrafts: [],
       onboardingDrafts: [],
@@ -117,7 +140,8 @@ describe('exportLocalUserData', () => {
           {
             key: 'coachAndNotifications',
             title: 'Coach and notification records',
-            description: 'Saved Coach proposals and local notification preferences.',
+            description:
+              'Saved Coach proposals, dated review intents and local notification preferences.',
             recordCount: 1,
           },
         ],
@@ -201,6 +225,8 @@ describe('deleteLocalUserData', () => {
   it('fails before deleting records when a future Shift child mutation cannot be attributed safely', async () => {
     const runAsync = jest.fn();
     const database = {
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        database.withTransactionAsync(() => callback(database)),
       getFirstAsync: async () => ({ id: 'future-child' }),
       runAsync,
       withTransactionAsync: async (callback: () => Promise<void>) => callback(),
@@ -215,6 +241,8 @@ describe('deleteLocalUserData', () => {
   it('clears dependent records and sync mutations in one transaction', async () => {
     const calls: Array<{ sql: string; params: unknown[] }> = [];
     const database = {
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        database.withTransactionAsync(() => callback(database)),
       getFirstAsync: async () => null,
       runAsync: async (sql: string, ...params: unknown[]) => {
         calls.push({ sql, params });
@@ -227,7 +255,9 @@ describe('deleteLocalUserData', () => {
 
     await expect(deleteLocalUserData(database, 'guest-user')).resolves.toBeUndefined();
 
-    expect(calls).toHaveLength(24);
+    expect(calls).toHaveLength(35);
+    expect(calls.slice(0, 11).every((call) => call.params[0] === 'guest-user')).toBe(true);
+    calls.splice(0, 11);
     expect(calls[0]?.sql).toContain('DELETE FROM sync_outbox');
     expect(calls[0]?.params.every((param) => param === 'guest-user')).toBe(true);
     expect(calls[1]?.sql).toContain('DELETE FROM notification_preferences');
@@ -258,6 +288,16 @@ describe('deleteLocalUserData', () => {
       runAsync: async (sql: string, ...params: unknown[]) => {
         const result = sqlite.prepare(sql).run(...(params as SQLInputValue[]));
         return { changes: Number(result.changes), lastInsertRowId: Number(result.lastInsertRowid) };
+      },
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) => {
+        sqlite.exec('BEGIN');
+        try {
+          await callback(database);
+          sqlite.exec('COMMIT');
+        } catch (error) {
+          sqlite.exec('ROLLBACK');
+          throw error;
+        }
       },
       withTransactionAsync: async (callback: () => Promise<void>) => {
         sqlite.exec('BEGIN TRANSACTION;');
@@ -336,7 +376,7 @@ describe('deleteLocalUserData', () => {
       }
 
       const exportData = await exportLocalUserData(database, 'owner-1', '2026-09-24');
-      expect(exportData.schemaVersion).toBe(12);
+      expect(exportData.schemaVersion).toBe(17);
       expect(exportData.shifts.map((row) => row.id)).toEqual(['shift-owner-1']);
       expect(exportData.shiftProtocols.map((row) => row.shift_id)).toEqual(['shift-owner-1']);
       expect(exportData.shiftObservations.map((row) => row.id)).toEqual(['observation-owner-1']);

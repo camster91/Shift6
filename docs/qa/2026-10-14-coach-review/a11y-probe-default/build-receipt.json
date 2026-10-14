@@ -1,0 +1,26 @@
+{
+  "builtAtUtc": "2026-10-14T13:47:36.0023365Z",
+  "host": "CAM-DESKTOP",
+  "sdkPlatform": 36,
+  "buildTools": "36.0.0",
+  "jdk": "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.9.10-hotspot",
+  "package": "com.shift6.qa.a11yprobedefault",
+  "deviceInstalled": false,
+  "deviceExecuted": false,
+  "apk": "C:\\Users\\camst\\Documents\\Codex\\2026-10-12\\let-s-install-https-github-com\\shift6-native-qa\\a11y-probe-default\\a11y-probe.apk",
+  "apkSha256": "F74B388F4030B87B122DF056661CCCEF350396EA83BD03D2FC8F21D1B7812017",
+  "sourceHashes": [
+    {
+      "sha256": "BF46B519DC376B21827C26460385CDD91C362A32CAE954C3D34BB4C81AAFAD1E",
+      "path": "src\\com\\shift6\\qa\\a11yprobedefault\\Probe.java"
+    },
+    {
+      "sha256": "72403D1E19C69013D43F4C02F9C6822CF988594CD4423CC5D744CD7F29DFF864",
+      "path": "AndroidManifest.xml"
+    },
+    {
+      "sha256": "C2FB9650CB63E006148A605C9207034D996D29A0F45644C794B1979D5EB6276F",
+      "path": "build.ps1"
+    }
+  ]
+}

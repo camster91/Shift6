@@ -1,0 +1,7 @@
+{
+  "sourceCommit": "057d593609956001e4582565c25699caae796979",
+  "exitCode": 0,
+  "finishedAt": "2026-10-14T08:53:34.610355+00:00",
+  "command": "npm run verify",
+  "log": "verify-integrated-057d5936.log"
+}

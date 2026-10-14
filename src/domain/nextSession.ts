@@ -1,3 +1,4 @@
+import { declaredLoad, systemForLoadUnit, loadUnitForSystem } from './loadUnits';
 import type {
   CompletedSet,
   EntityId,
@@ -67,14 +68,17 @@ export function buildNextSessionTargets(
         (completedSet.exerciseId === undefined ||
           completedSet.exerciseId === workoutExercise.exerciseId),
     );
-    const latestLoad = [...exerciseSets]
+    const latestMeasured = [...exerciseSets]
       .reverse()
-      .find((completedSet) => completedSet.load !== undefined)?.load;
-    const currentTarget = withObservedLoad(
-      workoutExercise.sets[0]?.target ?? {},
-      latestLoad,
-      unitSystem,
-    );
+      .find((set) => declaredLoad(set.load, set.loadUnit) !== undefined);
+    const sourceTarget = workoutExercise.sets[0]?.target ?? {};
+    const targetSystem =
+      sourceTarget.load?.unit ??
+      (latestMeasured?.loadUnit ? systemForLoadUnit(latestMeasured.loadUnit) : unitSystem);
+    const latestLoad = latestMeasured
+      ? declaredLoad(latestMeasured.load, latestMeasured.loadUnit, loadUnitForSystem(targetSystem))
+      : undefined;
+    const currentTarget = withObservedLoad(sourceTarget, latestLoad, targetSystem);
     const effectiveStrategy = progressionStrategyForTarget(progressionStrategy, currentTarget);
     const progressionParameters = resolveProgressionParameters(
       progressionRuleIds,
@@ -84,12 +88,28 @@ export function buildNextSessionTargets(
       currentTarget.load?.unit ?? unitSystem,
     );
 
+    const missingLoadProvenance = exerciseSets.some(
+      (set) => set.load !== undefined && declaredLoad(set.load, set.loadUnit) === undefined,
+    );
+    const nonComparableLoad = exerciseSets.some((set) => {
+      const prescription =
+        workoutExercise.sets.find((candidate) => candidate.setNumber === set.setNumber)?.target
+          .load ?? sourceTarget.load;
+      if (prescription?.value === undefined) return false;
+      const observed = declaredLoad(set.load, set.loadUnit, loadUnitForSystem(prescription.unit));
+      const floatingTolerance = Math.max(1, Math.abs(prescription.value)) * Number.EPSILON * 8;
+      return observed === undefined || observed + floatingTolerance < prescription.value;
+    });
     const decision = calculateNextTarget({
       strategy: effectiveStrategy,
       currentTarget,
       completedSets: exerciseSets.map((completedSet) => ({
         completed: true,
-        load: completedSet.load,
+        load: declaredLoad(
+          completedSet.load,
+          completedSet.loadUnit,
+          loadUnitForSystem(targetSystem),
+        ),
         reps: completedSet.reps,
         durationSeconds: completedSet.durationSeconds,
         distanceMeters: completedSet.distanceMeters,
@@ -103,6 +123,20 @@ export function buildNextSessionTargets(
       totalRepTarget: progressionParameters.totalRepTarget,
       skillReady: progressionParameters.skillReady,
     });
+
+    if (
+      (missingLoadProvenance || nonComparableLoad) &&
+      !['time', 'distance', 'cardio'].includes(effectiveStrategy)
+    ) {
+      decision.action = 'hold';
+      decision.nextTarget = cloneTarget(sourceTarget);
+      decision.reason = missingLoadProvenance
+        ? 'Actual load units are unknown. Keep the prescription until comparable declared measurements are available.'
+        : 'The prescribed load has no comparable completed measurement. Keep the prescription until it is explicitly measured at the prescribed load.';
+      decision.requiresUserConfirmation = false;
+      delete decision.setCountDelta;
+      delete decision.densitySecondsDelta;
+    }
 
     return {
       workoutExerciseId: workoutExercise.id,

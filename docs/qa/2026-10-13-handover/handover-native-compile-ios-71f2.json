@@ -1,0 +1,239 @@
+{
+  "observedAtUTC": "2026-10-14T05:25:51.193103+00:00",
+  "host": "CAM-DESKTOP",
+  "repository": "camster91/Shift6",
+  "pullRequest": 351,
+  "headSha": "71f2b4fe8a0f6fd51a6bccf32e0bf5bd51ba7f62",
+  "run": {
+    "conclusion": "",
+    "databaseId": 38515606180,
+    "event": "pull_request",
+    "headBranch": "feat/confirmed-local-lifecycle",
+    "headSha": "71f2b4fe8a0f6fd51a6bccf32e0bf5bd51ba7f62",
+    "name": "Native validation",
+    "status": "in_progress",
+    "url": "https://github.com/camster91/Shift6/actions/runs/38515606180"
+  },
+  "iosJob": {
+    "completedAt": "2026-10-14T05:23:22Z",
+    "conclusion": "success",
+    "databaseId": 115693590649,
+    "name": "ios",
+    "startedAt": "2026-10-14T05:15:00Z",
+    "status": "completed",
+    "steps": [
+      {
+        "completedAt": "2026-10-14T05:15:02Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-14T05:15:00Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:15:09Z",
+        "conclusion": "success",
+        "name": "Run actions/checkout@v7",
+        "number": 2,
+        "startedAt": "2026-10-14T05:15:02Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:15:12Z",
+        "conclusion": "success",
+        "name": "Run actions/setup-node@v7",
+        "number": 3,
+        "startedAt": "2026-10-14T05:15:09Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:15:19Z",
+        "conclusion": "success",
+        "name": "Run npm ci --include=dev",
+        "number": 4,
+        "startedAt": "2026-10-14T05:15:12Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:15:20Z",
+        "conclusion": "success",
+        "name": "Run npm run validate:release-config",
+        "number": 5,
+        "startedAt": "2026-10-14T05:15:19Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:15:20Z",
+        "conclusion": "success",
+        "name": "Run npm run validate:release-assets",
+        "number": 6,
+        "startedAt": "2026-10-14T05:15:20Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:15:24Z",
+        "conclusion": "success",
+        "name": "Check native artifact proof rejection cases",
+        "number": 7,
+        "startedAt": "2026-10-14T05:15:20Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:15:24Z",
+        "conclusion": "success",
+        "name": "Reject unexpected build inputs or guest release context",
+        "number": 8,
+        "startedAt": "2026-10-14T05:15:24Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:15:26Z",
+        "conclusion": "success",
+        "name": "Run npx expo prebuild --no-install --platform ios",
+        "number": 9,
+        "startedAt": "2026-10-14T05:15:24Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:15:28Z",
+        "conclusion": "success",
+        "name": "Prefetch checksum-verified React Native archives",
+        "number": 10,
+        "startedAt": "2026-10-14T05:15:26Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:16:07Z",
+        "conclusion": "success",
+        "name": "Install native pods",
+        "number": 11,
+        "startedAt": "2026-10-14T05:15:28Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:21:09Z",
+        "conclusion": "success",
+        "name": "Compile unsigned Release simulator app",
+        "number": 12,
+        "startedAt": "2026-10-14T05:16:07Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:21:09Z",
+        "conclusion": "success",
+        "name": "Bind simulator payload to its actual checkout",
+        "number": 13,
+        "startedAt": "2026-10-14T05:21:09Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:21:12Z",
+        "conclusion": "success",
+        "name": "Run actions/upload-artifact@v7",
+        "number": 14,
+        "startedAt": "2026-10-14T05:21:09Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:23:00Z",
+        "conclusion": "success",
+        "name": "Install and cold-launch on iPhone simulator",
+        "number": 15,
+        "startedAt": "2026-10-14T05:21:12Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:23:01Z",
+        "conclusion": "success",
+        "name": "Run actions/upload-artifact@v7",
+        "number": 16,
+        "startedAt": "2026-10-14T05:23:00Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:23:01Z",
+        "conclusion": "success",
+        "name": "Post Run actions/setup-node@v7",
+        "number": 31,
+        "startedAt": "2026-10-14T05:23:01Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:23:02Z",
+        "conclusion": "success",
+        "name": "Post Run actions/checkout@v7",
+        "number": 32,
+        "startedAt": "2026-10-14T05:23:01Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-14T05:23:21Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 33,
+        "startedAt": "2026-10-14T05:23:02Z",
+        "status": "completed"
+      }
+    ],
+    "url": "https://github.com/camster91/Shift6/actions/runs/38515606180/job/115693590649"
+  },
+  "androidJob": {
+    "completedAt": "0001-01-01T00:00:00Z",
+    "conclusion": "",
+    "databaseId": 115693590484,
+    "name": "android",
+    "startedAt": "2026-10-14T05:14:57Z",
+    "status": "in_progress",
+    "url": "https://github.com/camster91/Shift6/actions/runs/38515606180/job/115693590484"
+  },
+  "qualityChecks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T05:16:25Z",
+      "conclusion": "CANCELLED",
+      "detailsUrl": "https://github.com/camster91/Shift6/actions/runs/38515601661/job/115693575614",
+      "name": "quality",
+      "startedAt": "2026-10-14T05:14:54Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T05:18:58Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/camster91/Shift6/actions/runs/38515606139/job/115694019680",
+      "name": "quality",
+      "startedAt": "2026-10-14T05:16:28Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    }
+  ],
+  "sourceComparison": {
+    "base": "0d705bacb7e0622a2c8ad08f9d5d1b1cb52071b3",
+    "head": "71f2b4fe8a0f6fd51a6bccf32e0bf5bd51ba7f62",
+    "changedPathCount": 239,
+    "onlyReadmeDocsAndEvidence": true,
+    "applicationAndRecipeInputsUnchanged": true
+  },
+  "checkoutRecipePinnedToPRHead": true,
+  "log": {
+    "available": true,
+    "bytes": 8975370,
+    "retrieval": "GitHub completed-job logs endpoint",
+    "sha256": "6506e3905b1f832059117a8aa877f28e18b277896d853bb616e3a57772c0dc45",
+    "checkoutHeadConfirmed": true,
+    "buildSucceededConfirmed": true,
+    "inJobPayloadProofVerified": {
+      "checkoutSha": "71f2b4fe8a0f6fd51a6bccf32e0bf5bd51ba7f62",
+      "treeSHA256": "5aa9459e300182c868b8f330f51f0f391149a954043c8a4045bc8bb2fa10d3f6",
+      "scope": "Build job log reports source/payload proof verification before simulator installation; downloaded payload not independently checked here."
+    }
+  },
+  "boundaries": [
+    "Job metadata and retrieved log verify unsigned Release iOS simulator compilation, pinned checkout and in-job source/payload proof. Job cold-launch smoke succeeded; full runtime journey was not checked.",
+    "No full Native runtime QA journey or consumer artifact proof independently verified here.",
+    "No signed physical iPhone, VoiceOver, human usability or store acceptance.",
+    "Windows-local iOS UI testing remains pending.",
+    "Root later501 source is outside this CI job scope."
+  ]
+}

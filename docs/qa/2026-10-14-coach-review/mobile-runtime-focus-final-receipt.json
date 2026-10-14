@@ -1,0 +1,20 @@
+{
+  "host": "CAM-DESKTOP",
+  "source": "0f2f44eddd9226ffb573d1cc8e257baeb9af3764",
+  "createdAt": "2026-10-14T15:45:24.4000805Z",
+  "testExit": 0,
+  "scope": "QA harness focus-mode recovery and bounded read-only synthetic SQL diagnostics; not native runtime acceptance",
+  "nativeFailurePreserved": "38586889996",
+  "files": [
+    {
+      "path": "scripts/mobile-runtime-qa.py",
+      "sha256": "2495A019D55AC3210D7456C3B75A8109842B54D37D37F6A8EF2A86C6C78D5F43"
+    },
+    {
+      "path": "scripts/mobile-runtime-qa.test.py",
+      "sha256": "351D1C03181EBD8688A1F2F909A8F33F95F38EC0C481761BD37C2C1F4E013DBC"
+    }
+  ],
+  "staticExit": 0,
+  "diffCheckExit": 0
+}

@@ -1,0 +1,55 @@
+diff --git a/src/components/workoutFocusScreen.test.tsx b/src/components/workoutFocusScreen.test.tsx
+index f6824ed4..3f29b8ad 100644
+--- a/src/components/workoutFocusScreen.test.tsx
++++ b/src/components/workoutFocusScreen.test.tsx
+@@ -159,18 +159,26 @@ test.each([
+ ] as const)(
+   'actual units follow %s target under %s preferences; unit conversion requires confirmation',
+   async (targetUnit, preference, actualUnit, otherUnit) => {
++    const phaseStart = Date.now();
++    const phase = (name: string) => console.warn('QA_PHASE', name, Date.now() - phaseStart);
++    phase('start');
+     const target = mockVersion.workouts[0]!.exercises[0]!.sets[0]!.target;
+     const oldLoad = target.load;
+     target.load = { value: 40, unit: targetUnit };
+     mockUser = { ...demoUser, unitSystem: preference };
+     try {
++      phase('before render');
+       const screen = await render(<ActiveWorkoutScreen />);
++      phase('after render');
+       await waitFor(() => expect(screen.getByLabelText('Back squat set 1 load')).toBeTruthy());
++      phase('after first wait/query');
+       expect(screen.getByLabelText('Back squat set 1 load').props.placeholder).toBe(actualUnit);
+       await fireEvent.changeText(screen.getByLabelText('Back squat set 1 load'), '40');
++      phase('after change');
+       await fireEvent.press(
+         screen.getByLabelText(`Back squat set 1 actual load unit ${otherUnit}`),
+       );
++      phase('after unit press');
+       expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('40');
+       expect(mockSaveSet).not.toHaveBeenCalled();
+       await act(async () => {
+@@ -180,17 +188,23 @@ test.each([
+           ?.find((button) => button.text === 'Confirm')
+           ?.onPress?.();
+       });
++      phase('after confirm');
+       expect(Number(screen.getByLabelText('Back squat set 1 load').props.value)).toBeCloseTo(
+         actualUnit === 'kg' ? 40 / 0.45359237 : 40 * 0.45359237,
+       );
++      phase('before complete');
+       await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
++      phase('after complete');
+       await waitFor(() => expect(mockSaveSet).toHaveBeenCalledTimes(1));
++      phase('after saved wait');
+       expect(mockSaveSet.mock.calls[0]?.[1]).toMatchObject({ loadUnit: otherUnit });
+       expect(mockSaveSet.mock.calls[0]?.[2]).toBe('guest-user');
+     } finally {
++      phase('finally restore target');
+       target.load = oldLoad;
+     }
+   },
++  15000,
+ );
+ 
+ test('legacy recovered load stays unknown and cannot save until explicitly declared', async () => {

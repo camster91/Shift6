@@ -1,0 +1,193 @@
+(node:18756) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+  console.error
+    The current testing environment is not configured to support act(...)
+
+      213 |     voiceField.current = null;
+      214 |     keyboardSpace.current = 0;
+    > 215 |     setVoiceKeyboardSpace(null);
+          |     ^
+      216 |   }, []);
+      217 |   useEffect(() => {
+      218 |     const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+
+      at isConcurrentActEnvironment (node_modules/react-reconciler/cjs/react-reconciler.development.js:13990:17)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16304:7)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setVoiceKeyboardSpace (app/workout.tsx:215:5)
+      at Object.react_stack_bottom_frame (node_modules/react-reconciler/cjs/react-reconciler.development.js:17681:20)
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at commitHookEffectListMount (node_modules/react-reconciler/cjs/react-reconciler.development.js:10861:29)
+      at commitHookPassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:10948:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:12979:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:12934:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:13014:11)
+      at flushPassiveEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:15982:9)
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:15555:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at node_modules/react/cjs/react.development.js:847:21
+
+  console.error
+    The current testing environment is not configured to support act(...)
+
+      213 |     voiceField.current = null;
+      214 |     keyboardSpace.current = 0;
+    > 215 |     setVoiceKeyboardSpace(null);
+          |     ^
+      216 |   }, []);
+      217 |   useEffect(() => {
+      218 |     const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+
+      at isConcurrentActEnvironment (node_modules/react-reconciler/cjs/react-reconciler.development.js:13990:17)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16304:7)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setVoiceKeyboardSpace (app/workout.tsx:215:5)
+      at Object.react_stack_bottom_frame (node_modules/react-reconciler/cjs/react-reconciler.development.js:17681:20)
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at commitHookEffectListMount (node_modules/react-reconciler/cjs/react-reconciler.development.js:10861:29)
+      at commitHookPassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:10948:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:12979:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:12934:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:13014:11)
+      at flushPassiveEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:15982:9)
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:15555:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at node_modules/react/cjs/react.development.js:847:21
+
+  console.error
+    The current testing environment is not configured to support act(...)
+
+      213 |     voiceField.current = null;
+      214 |     keyboardSpace.current = 0;
+    > 215 |     setVoiceKeyboardSpace(null);
+          |     ^
+      216 |   }, []);
+      217 |   useEffect(() => {
+      218 |     const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+
+      at isConcurrentActEnvironment (node_modules/react-reconciler/cjs/react-reconciler.development.js:13990:17)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16304:7)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setVoiceKeyboardSpace (app/workout.tsx:215:5)
+      at Object.react_stack_bottom_frame (node_modules/react-reconciler/cjs/react-reconciler.development.js:17681:20)
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at commitHookEffectListMount (node_modules/react-reconciler/cjs/react-reconciler.development.js:10861:29)
+      at commitHookPassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:10948:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:12979:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:12934:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:13014:11)
+      at flushPassiveEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:15982:9)
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:15555:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at node_modules/react/cjs/react.development.js:847:21
+
+  console.error
+    The current testing environment is not configured to support act(...)
+
+      213 |     voiceField.current = null;
+      214 |     keyboardSpace.current = 0;
+    > 215 |     setVoiceKeyboardSpace(null);
+          |     ^
+      216 |   }, []);
+      217 |   useEffect(() => {
+      218 |     const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+
+      at isConcurrentActEnvironment (node_modules/react-reconciler/cjs/react-reconciler.development.js:13990:17)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:16304:7)
+      at scheduleUpdateOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:14070:11)
+      at dispatchSetStateInternal (node_modules/react-reconciler/cjs/react-reconciler.development.js:6784:13)
+      at dispatchSetState (node_modules/react-reconciler/cjs/react-reconciler.development.js:6741:7)
+      at setVoiceKeyboardSpace (app/workout.tsx:215:5)
+      at Object.react_stack_bottom_frame (node_modules/react-reconciler/cjs/react-reconciler.development.js:17681:20)
+      at runWithFiberInDEV (node_modules/react-reconciler/cjs/react-reconciler.development.js:2508:13)
+      at commitHookEffectListMount (node_modules/react-reconciler/cjs/react-reconciler.development.js:10861:29)
+      at commitHookPassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:10948:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:12979:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:12934:11)
+      at commitPassiveMountOnFiber (node_modules/react-reconciler/cjs/react-reconciler.development.js:13014:11)
+      at flushPassiveEffects (node_modules/react-reconciler/cjs/react-reconciler.development.js:15982:9)
+      at node_modules/react-reconciler/cjs/react-reconciler.development.js:15555:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at node_modules/react/cjs/react.development.js:847:21
+
+FAIL src/components/workoutFocusScreen.test.tsx (46.409 s)
+  × actual units follow metric target under imperial preferences; unit conversion requires confirmation (8856 ms)
+  √ actual units follow imperial target under metric preferences; unit conversion requires confirmation (86 ms)
+  √ legacy recovered load stays unknown and cannot save until explicitly declared (73 ms)
+  √ recovered populated actuals retain visible field names and canonical units, including zero reps and RIR (46 ms)
+  √ actual field captions follow existing conditional inputs and remain after manual entry (86 ms)
+  √ focused fields precede optional details and bodyweight never requires owned gear (101 ms)
+  √ focused logging keeps a compact real missing-gear cue without opening preflight (33 ms)
+  √ focus saves the actual edited result before revealing the next set, preserving failure state (456 ms)
+  √ a failed set save does not advance focus or manufacture a recorded result (68 ms)
+  √ discomfort requires confirmation and an untouched session is skipped rather than completed (21 ms)
+  √ pending feedback stays attached to the saved set and cannot advance or select another set (124 ms)
+  √ explicit saved-set correction supplies its original actual snapshot and an invalidated unmount guard (359 ms)
+  √ correction keeps restored canonical set ID and operation identity rather than generating replacements (187 ms)
+  √ pending correction freezes numeric and unit mutation immediately and displays only confirmed actuals (153 ms)
+  √ queued draft context stays invalid after blur then same-owner focus return (200 ms)
+  √ hydrated unchanged session notes do not start an unsolicited note save (365 ms)
+  √ a rejected old note save cannot show an error after blur and same-session reentry (933 ms)
+  √ a current changed note save failure remains visible and retains its input (507 ms)
+  √ dirty note retries with a fresh save after blur drops its debounce (935 ms)
+  √ dirty note retries after an old rejected save and reads back from SQLite on reentry (1547 ms)
+  √ nonempty invalid actual load -5 stays editable and cannot silently save reps only (45 ms)
+  √ nonempty invalid actual load not a number stays editable and cannot silently save reps only (47 ms)
+  √ nonempty invalid actual load Infinity stays editable and cannot silently save reps only (44 ms)
+  √ nonempty invalid optional RPE -5 cannot silently disappear from a saved set (59 ms)
+  √ nonempty invalid optional RPE not a number cannot silently disappear from a saved set (59 ms)
+  √ nonempty invalid optional RPE Infinity cannot silently disappear from a saved set (57 ms)
+  √ nonempty invalid optional RIR -5 cannot silently disappear from a saved set (58 ms)
+  √ nonempty invalid optional RIR not a number cannot silently disappear from a saved set (58 ms)
+  √ nonempty invalid optional RIR Infinity cannot silently disappear from a saved set (59 ms)
+  √ nonempty optional reps -5 cannot silently disappear when no reps target is prescribed (45 ms)
+  √ nonempty optional reps not a number cannot silently disappear when no reps target is prescribed (46 ms)
+  √ nonempty optional reps Infinity cannot silently disappear when no reps target is prescribed (52 ms)
+  √ blank optional effort is omitted while explicitly recorded zero RIR is preserved (45 ms)
+  √ existing RPE range refuses 0 without saving (20 ms)
+  √ existing RPE range refuses 11 without saving (18 ms)
+  √ existing RIR range refuses 11 without saving (20 ms)
+  √ valid fractional effort retains the existing numeric contract (28 ms)
+  √ previous actual load kg displays its own provenance beside current preferred inputs (40 ms)
+  √ previous actual load lb displays its own provenance beside current preferred inputs (30 ms)
+  √ previous actual load undefined displays its own provenance beside current preferred inputs (30 ms)
+  √ optional voice review fills declared unsaved actuals and only normal Complete saves (32 ms)
+  √ an old voice review cannot overwrite a newer typed input before its next render (20 ms)
+  √ same-event blur and focus return cannot revive a retained voice apply callback (25 ms)
+  √ voice correction reserves measured Android overlap before scrolling its whole edit area; native viewport resizing removes extra space (35 ms)
+  √ delayed correction geometry refuses field blur and never writes an actual set (20 ms)
+  √ delayed correction geometry refuses screen blur and never writes an actual set (21 ms)
+  √ delayed correction geometry refuses child reset and never writes an actual set (15 ms)
+  √ delayed correction geometry refuses set input change and never writes an actual set (24 ms)
+  √ delayed correction geometry refuses hide widget and never writes an actual set (25 ms)
+  √ delayed correction geometry refuses keyboard hide and never writes an actual set (18 ms)
+
+  ● actual units follow metric target under imperial preferences; unit conversion requires confirmation
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      157 |   ['metric', 'imperial', 'kg', 'lb'],
+      158 |   ['imperial', 'metric', 'lb', 'kg'],
+    > 159 | ] as const)(
+          |            ^
+      160 |   'actual units follow %s target under %s preferences; unit conversion requires confirmation',
+      161 |   async (targetUnit, preference, actualUnit, otherUnit) => {
+      162 |     const target = mockVersion.workouts[0]!.exercises[0]!.sets[0]!.target;
+
+      at node_modules/jest-each/build/bind.js:47:15
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (src/components/workoutFocusScreen.test.tsx:159:12)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 49 passed, 50 total
+Snapshots:   0 total
+Time:        52.718 s
+Ran all test suites matching /src\\components\\workoutFocusScreen.test.tsx/i.
+Test results written to: ..\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\workout-focus-diagnostic-1f4d33b1.json

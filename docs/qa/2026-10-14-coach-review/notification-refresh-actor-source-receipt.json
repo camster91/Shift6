@@ -1,0 +1,24 @@
+{
+  "host": "CAM-DESKTOP",
+  "sourceBase": "0b997f90ff43370a655830eb72c3494a665d0a7f",
+  "createdAt": "2026-10-14T15:15:53.0862518Z",
+  "committed": false,
+  "scope": "Retained callback actor ABA and synchronous owned snapshot filtering followup",
+  "redEvidence": "notification-refresh-actor-red.log/.status.json; four real assertions failed before fix",
+  "files": [
+    {
+      "path": "src/services/NotificationRuntimeProvider.tsx",
+      "sha256": "6EDD61DB27672219D8D1F885BB07C424C261E4C29E803C5A8DC38EA292F66735"
+    },
+    {
+      "path": "src/services/NotificationRuntimeProvider.test.tsx",
+      "sha256": "0BF8250828CC276D633D5986BB2BEEE348FB1817F9841BABDF9CFFC91AF4CDB8"
+    }
+  ],
+  "schedulerSha": "B5CE21046D96299156DBEEA02FE5EE61AC94E25447D9247043B9D97FE12E3D51",
+  "typecheckExit": 0,
+  "lintExit": 0,
+  "formatExit": 0,
+  "focusedExit": 0,
+  "diffCheckExit": 0
+}

@@ -14,6 +14,7 @@ export interface OptionCardProps {
   accessibilityHint?: string;
   accessibilityRole?: 'radio' | 'checkbox';
   style?: StyleProp<ViewStyle>;
+  disabled?: boolean;
 }
 
 export function OptionCard({
@@ -25,6 +26,7 @@ export function OptionCard({
   accessibilityHint,
   accessibilityRole = 'radio',
   style,
+  disabled = false,
 }: OptionCardProps) {
   const accessibilityState =
     accessibilityRole === 'checkbox' ? { checked: selected } : { selected };
@@ -34,7 +36,8 @@ export function OptionCard({
       accessibilityHint={accessibilityHint}
       accessibilityLabel={description ? `${label}. ${description}` : label}
       accessibilityRole={accessibilityRole}
-      accessibilityState={accessibilityState}
+      accessibilityState={{ ...accessibilityState, disabled }}
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,

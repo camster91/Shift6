@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AppiumAUT>
+  <XCUIElementTypeApplication type="XCUIElementTypeApplication" name="SHIFT6" label="SHIFT6" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="" processId="18684" bundleId="com.shift6.app">
+    <XCUIElementTypeWindow type="XCUIElementTypeWindow" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+              <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                    <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                              <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                                <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="729" index="0" traits="">
+                                    <XCUIElementTypeScrollView type="XCUIElementTypeScrollView" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="729" index="0" traits="">
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="-701" width="402" height="2098" index="0" traits="">
+                                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="-701" width="402" height="2098" index="0" traits="">
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Back" label="Back" enabled="true" visible="false" accessible="true" x="20" y="-681" width="362" height="48" index="0" traits="Button"/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Personal goal" name="Personal goal" label="Personal goal" enabled="true" visible="false" accessible="false" x="20" y="-633" width="362" height="36" index="1" traits="Header, StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Personal goal" name="Personal goal" label="Personal goal" enabled="true" visible="false" accessible="true" x="20" y="-633" width="362" height="36" index="0" traits="Header, StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Your own target and measurements, saved locally. This does not prescribe an exercise or verify that a target is safe for you." name="Your own target and measurements, saved locally. This does not prescribe an exercise or verify that a target is safe for you." label="Your own target and measurements, saved locally. This does not prescribe an exercise or verify that a target is safe for you." enabled="true" visible="false" accessible="false" x="20" y="-585" width="362" height="72" index="2" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Your own target and measurements, saved locally. This does not prescribe an exercise or verify that a target is safe for you." name="Your own target and measurements, saved locally. This does not prescribe an exercise or verify that a target is safe for you." label="Your own target and measurements, saved locally. This does not prescribe an exercise or verify that a target is safe for you." enabled="true" visible="false" accessible="true" x="20" y="-585" width="362" height="72" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="20" y="-501" width="362" height="270" index="3" traits=""/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="QA hold goal" name="QA hold goal" label="QA hold goal" enabled="true" visible="false" accessible="false" x="44" y="-477" width="314" height="30" index="4" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="QA hold goal" name="QA hold goal" label="QA hold goal" enabled="true" visible="false" accessible="true" x="44" y="-477" width="314" height="30" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Target: 30 seconds" name="Target: 30 seconds" label="Target: 30 seconds" enabled="true" visible="false" accessible="false" x="44" y="-447" width="314" height="24" index="5" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Target: 30 seconds" name="Target: 30 seconds" label="Target: 30 seconds" enabled="true" visible="false" accessible="true" x="44" y="-447" width="314" height="24" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Setup: Bodyweight floor. Assistance: none." name="Setup: Bodyweight floor. Assistance: none." label="Setup: Bodyweight floor. Assistance: none." enabled="true" visible="false" accessible="false" x="44" y="-423" width="314" height="24" index="6" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Setup: Bodyweight floor. Assistance: none." name="Setup: Bodyweight floor. Assistance: none." label="Setup: Bodyweight floor. Assistance: none." enabled="true" visible="false" accessible="true" x="44" y="-423" width="314" height="24" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Baseline: Not measured · Latest: Not measured" name="Baseline: Not measured · Latest: Not measured" label="Baseline: Not measured · Latest: Not measured" enabled="true" visible="false" accessible="false" x="44" y="-399" width="314" height="48" index="7" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Baseline: Not measured · Latest: Not measured" name="Baseline: Not measured · Latest: Not measured" label="Baseline: Not measured · Latest: Not measured" enabled="true" visible="false" accessible="true" x="44" y="-399" width="314" height="48" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Personal best: Not measured" name="Personal best: Not measured" label="Personal best: Not measured" enabled="true" visible="false" accessible="false" x="44" y="-351" width="314" height="24" index="8" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Personal best: Not measured" name="Personal best: Not measured" label="Personal best: Not measured" enabled="true" visible="false" accessible="true" x="44" y="-351" width="314" height="24" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Target attainment needs a measurement" name="Target attainment needs a measurement" label="Target attainment needs a measurement" enabled="true" visible="false" accessible="false" x="44" y="-327" width="314" height="24" index="9" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Target attainment needs a measurement" name="Target attainment needs a measurement" label="Target attainment needs a measurement" enabled="true" visible="false" accessible="true" x="44" y="-327" width="314" height="24" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Baseline status: deferred. Missing measurements are never treated as zero." name="Baseline status: deferred. Missing measurements are never treated as zero." label="Baseline status: deferred. Missing measurements are never treated as zero." enabled="true" visible="false" accessible="false" x="44" y="-303" width="314" height="48" index="10" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Baseline status: deferred. Missing measurements are never treated as zero." name="Baseline status: deferred. Missing measurements are never treated as zero." label="Baseline status: deferred. Missing measurements are never treated as zero." enabled="true" visible="false" accessible="true" x="44" y="-303" width="314" height="48" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="20" y="-219" width="362" height="394" index="11" traits=""/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Record a measurement" name="Record a measurement" label="Record a measurement" enabled="true" visible="false" accessible="false" x="44" y="-195" width="314" height="30" index="12" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Record a measurement" name="Record a measurement" label="Record a measurement" enabled="true" visible="false" accessible="true" x="44" y="-195" width="314" height="30" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Actual value (seconds)" name="Actual value (seconds)" label="Actual value (seconds)" enabled="true" visible="false" accessible="false" x="44" y="-153" width="314" height="20" index="13" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Actual value (seconds)" name="Actual value (seconds)" label="Actual value (seconds)" enabled="true" visible="false" accessible="true" x="44" y="-153" width="314" height="20" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="44" y="-125" width="314" height="48" index="14" traits="">
+                                            <XCUIElementTypeTextField type="XCUIElementTypeTextField" name="Actual value (seconds)" label="Actual value (seconds)" enabled="true" visible="false" accessible="true" x="45" y="-124" width="312" height="46" index="0" placeholderValue="" traits=""/>
+                                          </XCUIElementTypeOther>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Save measurement" label="Save measurement" enabled="true" visible="false" accessible="true" x="44" y="-65" width="314" height="48" index="15" traits="Button"/>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Save as baseline" label="Save as baseline" enabled="true" visible="false" accessible="true" x="44" y="-5" width="314" height="48" index="16" traits="Button"/>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Defer baseline" label="Defer baseline" enabled="true" visible="true" accessible="true" x="44" y="55" width="314" height="48" index="17" traits="Button"/>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Mark baseline not yet able" label="Mark baseline not yet able" enabled="true" visible="true" accessible="true" x="44" y="103" width="314" height="48" index="18" traits="Button"/>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="20" y="187" width="362" height="102" index="19" traits=""/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Measurement history" name="Measurement history" label="Measurement history" enabled="true" visible="true" accessible="false" x="44" y="211" width="314" height="30" index="20" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Measurement history" name="Measurement history" label="Measurement history" enabled="true" visible="true" accessible="true" x="44" y="211" width="314" height="30" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="No measurements yet." name="No measurements yet." label="No measurements yet." enabled="true" visible="true" accessible="false" x="44" y="241" width="314" height="24" index="21" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="No measurements yet." name="No measurements yet." label="No measurements yet." enabled="true" visible="true" accessible="true" x="44" y="241" width="314" height="24" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="20" y="301" width="362" height="398" index="22" traits=""/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Revise target" name="Revise target" label="Revise target" enabled="true" visible="true" accessible="false" x="44" y="325" width="314" height="30" index="23" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Revise target" name="Revise target" label="Revise target" enabled="true" visible="true" accessible="true" x="44" y="325" width="314" height="30" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="New target (seconds)" name="New target (seconds)" label="New target (seconds)" enabled="true" visible="true" accessible="false" x="44" y="367" width="314" height="20" index="24" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="New target (seconds)" name="New target (seconds)" label="New target (seconds)" enabled="true" visible="true" accessible="true" x="44" y="367" width="314" height="20" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="44" y="395" width="314" height="48" index="25" traits="">
+                                            <XCUIElementTypeTextField type="XCUIElementTypeTextField" name="New target (seconds)" label="New target (seconds)" enabled="true" visible="true" accessible="true" x="45" y="396" width="312" height="46" index="0" placeholderValue="" traits=""/>
+                                          </XCUIElementTypeOther>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Reason for changing target" name="Reason for changing target" label="Reason for changing target" enabled="true" visible="true" accessible="false" x="44" y="467" width="314" height="20" index="26" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Reason for changing target" name="Reason for changing target" label="Reason for changing target" enabled="true" visible="true" accessible="true" x="44" y="467" width="314" height="20" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="44" y="495" width="314" height="48" index="27" traits="">
+                                            <XCUIElementTypeTextField type="XCUIElementTypeTextField" name="Reason for changing target" label="Reason for changing target" enabled="true" visible="true" accessible="true" x="45" y="496" width="312" height="46" index="0" placeholderValue="" traits=""/>
+                                          </XCUIElementTypeOther>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Save target revision" label="Save target revision" enabled="true" visible="true" accessible="true" x="44" y="555" width="314" height="48" index="28" traits="Button"/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Previous target revisions and measurements stay in your exported history." name="Previous target revisions and measurements stay in your exported history." label="Previous target revisions and measurements stay in your exported history." enabled="true" visible="true" accessible="false" x="44" y="603" width="314" height="72" index="29" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Previous target revisions and measurements stay in your exported history." name="Previous target revisions and measurements stay in your exported history." label="Previous target revisions and measurements stay in your exported history." enabled="true" visible="true" accessible="true" x="44" y="603" width="314" height="72" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="20" y="711" width="362" height="558" index="30" traits=""/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Review and next step" name="Review and next step" label="Review and next step" enabled="true" visible="true" accessible="false" x="44" y="735" width="314" height="30" index="31" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Review and next step" name="Review and next step" label="Review and next step" enabled="true" visible="true" accessible="true" x="44" y="735" width="314" height="30" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Review: missing. Next step: undecided." name="Review: missing. Next step: undecided." label="Review: missing. Next step: undecided." enabled="true" visible="true" accessible="false" x="44" y="765" width="314" height="24" index="32" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Review: missing. Next step: undecided." name="Review: missing. Next step: undecided." label="Review: missing. Next step: undecided." enabled="true" visible="true" accessible="true" x="44" y="765" width="314" height="24" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Record next step: maintain" label="Record next step: maintain" enabled="true" visible="false" accessible="true" x="44" y="801" width="314" height="48" index="33" traits="Button"/>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Record next step: repeat" label="Record next step: repeat" enabled="true" visible="false" accessible="true" x="44" y="873" width="314" height="48" index="34" traits="Button"/>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Record next step: modify" label="Record next step: modify" enabled="true" visible="false" accessible="true" x="44" y="945" width="314" height="48" index="35" traits="Button"/>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Record next step: new goal" label="Record next step: new goal" enabled="true" visible="false" accessible="true" x="44" y="1017" width="314" height="48" index="36" traits="Button"/>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Record next step: break" label="Record next step: break" enabled="true" visible="false" accessible="true" x="44" y="1089" width="314" height="48" index="37" traits="Button"/>
+                                          <XCUIElementTypeButton type="XCUIElementTypeButton" name="Postpone review" label="Postpone review" enabled="true" visible="false" accessible="true" x="44" y="1149" width="314" height="48" index="38" traits="Button"/>
+                                          <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Recording a choice does not start or change a training plan." name="Recording a choice does not start or change a training plan." label="Recording a choice does not start or change a training plan." enabled="true" visible="false" accessible="false" x="44" y="1197" width="314" height="48" index="39" traits="StaticText">
+                                            <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Recording a choice does not start or change a training plan." name="Recording a choice does not start or change a training plan." label="Recording a choice does not start or change a training plan." enabled="true" visible="false" accessible="true" x="44" y="1197" width="314" height="48" index="0" traits="StaticText"/>
+                                          </XCUIElementTypeStaticText>
+                                        </XCUIElementTypeOther>
+                                      </XCUIElementTypeOther>
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" value="0%" name="Horizontal scroll bar, 1 page" label="Horizontal scroll bar, 1 page" enabled="true" visible="true" accessible="false" x="0" y="758" width="402" height="30" index="1" traits="Adjustable">
+                                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="6" y="785" width="390" height="3" index="0" traits=""/>
+                                      </XCUIElementTypeOther>
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" value="0%" name="Horizontal scroll bar, 1 page" label="Horizontal scroll bar, 1 page" enabled="true" visible="true" accessible="false" x="0" y="758" width="402" height="30" index="2" traits="Adjustable">
+                                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="6" y="785" width="390" height="3" index="0" traits=""/>
+                                      </XCUIElementTypeOther>
+                                    </XCUIElementTypeScrollView>
+                                  </XCUIElementTypeOther>
+                                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="791" width="402" height="83" index="1" traits="">
+                                    <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Saved on this device." name="Saved on this device." label="Saved on this device." enabled="true" visible="true" accessible="false" x="20" y="804" width="362" height="24" index="0" traits="StaticText">
+                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Saved on this device." name="Saved on this device." label="Saved on this device." enabled="true" visible="true" accessible="true" x="20" y="804" width="362" height="24" index="0" traits="StaticText"/>
+                                    </XCUIElementTypeStaticText>
+                                  </XCUIElementTypeOther>
+                                </XCUIElementTypeOther>
+                              </XCUIElementTypeOther>
+                            </XCUIElementTypeOther>
+                          </XCUIElementTypeOther>
+                        </XCUIElementTypeOther>
+                      </XCUIElementTypeOther>
+                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="1" traits="">
+                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="0" traits=""/>
+                      </XCUIElementTypeOther>
+                    </XCUIElementTypeOther>
+                  </XCUIElementTypeOther>
+                </XCUIElementTypeOther>
+              </XCUIElementTypeOther>
+            </XCUIElementTypeOther>
+          </XCUIElementTypeOther>
+        </XCUIElementTypeOther>
+      </XCUIElementTypeOther>
+    </XCUIElementTypeWindow>
+    <XCUIElementTypeWindow type="XCUIElementTypeWindow" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="1" traits="">
+      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="0" traits=""/>
+      </XCUIElementTypeOther>
+    </XCUIElementTypeWindow>
+  </XCUIElementTypeApplication>
+</AppiumAUT>

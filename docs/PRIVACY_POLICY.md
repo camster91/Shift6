@@ -18,11 +18,25 @@ Optional Apple Health or Health Connect access requires your permission. You
 can decline, revoke access in system settings, or disconnect and remove imported
 health records from SHIFT6. Optional reminders use native notification permission.
 
+The optional voice-entry candidate requests microphone access only when you
+choose to speak a set entry; iOS also requires speech authorization. It requires
+available on-device English recognition and has no SHIFT6 cloud transcription
+fallback or automatic language-model download. Manual entry remains available.
+An unconfirmed transcript is held in memory for review and discarded when capture
+ends or the context changes. Applying reviewed numbers fills the existing draft;
+the usual set-save control is still required to record an actual result.
+
+Audio recording persistence is disabled, and SHIFT6 does not deliberately save
+audio or transcripts in its records, logs or JSON exports. Confirmed numeric
+input follows the normal draft/set export and deletion rules. Actual device
+recognizer behavior, permissions and candidate traffic still require native
+verification before final store disclosures. See [voice acceptance scope](LOCAL_VOICE_SET_INPUT.md).
+
 You can export your local records as a JSON file from Profile. SHIFT6 keeps a temporary copy in private app cache so the receiving app can read it. A later export removes copies older than a day, and deleting local records removes the temporary copies for that user. Device storage management may also clear cache files. Choosing a destination in the
 system sharing interface may send that export outside your device; you control
 the destination. Treat exports as private files.
 
-The local-recovery candidate can read a user-selected schema-12 JSON export
+The local-recovery candidate can read user-selected schema-12, 13 or 14 JSON exports
 (up to 20 MiB and 50,000 records). File selection and preview are inert; restoring
 requires a separate explicit confirmation. Restore only accepts an empty guest
 installation, including no saved setup draft, and does not merge or overwrite
@@ -49,6 +63,19 @@ media links so inaccessible old-device URIs or remote URLs are not opened
 unexpectedly. Add custom media again on this device. The app's installed bundled
 artwork is separate from your backup. These resets are disclosed in the preview
 and confirmation. See [local backup restore](LOCAL_BACKUP_RESTORE.md).
+
+Optional local Coach memory stores only practical preferences you explicitly
+confirm. It defaults off; disabling retains inspection and forget controls.
+Forget removes the current local preference, but cannot remove copies in an
+earlier export. Memory does not replace profile or training records and is not
+sent to an AI provider. Restoring a backup leaves memory use off.
+
+Private builder recovery stores committed editor values and unapplied pasted
+text separately from saved plans. A saved indicator appears after its local
+write. Resume or discard is explicit; resuming a previously saved version uses
+a new private copy. Pending custom-movement forms require Add before recovery
+includes them. Load-unit metadata records explicitly declared actual units;
+legacy missing units remain unknown rather than inferred from preferences.
 
 You can delete local records from Profile. Uninstalling may also remove records,
 depending on device backup/restore behavior. This release has no SHIFT6 cloud

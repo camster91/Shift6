@@ -26,6 +26,7 @@ const completedSet: CompletedSet = {
   workoutExerciseId: 'workout-exercise-1',
   setNumber: 1,
   load: 185,
+  loadUnit: 'lb',
   reps: 5,
   rir: 2,
   completedAt: '2026-09-13T12:05:00.000Z',
@@ -37,6 +38,23 @@ function fakeDatabase(completedSetChanges: number) {
   let runCount = 0;
 
   const database = {
+    getFirstAsync: async () => ({ user_id: 'guest-user' }),
+    getAllAsync: async () => [
+      {
+        ...completedSet,
+        session_id: completedSet.sessionId,
+        workout_exercise_id: completedSet.workoutExerciseId,
+        set_number: 1,
+        load_unit: 'lb',
+        idempotency_key: completedSet.idempotencyKey,
+        completed_at: completedSet.completedAt,
+      },
+    ],
+    withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) => {
+      calls.push('BEGIN TRANSACTION');
+      await callback(database);
+      calls.push('COMMIT TRANSACTION');
+    },
     runAsync: async (sql: string) => {
       calls.push(sql);
       runCount += 1;
@@ -56,17 +74,18 @@ describe('saveCompletedSet', () => {
   it('commits the local set and outbox mutation in one transaction', async () => {
     const { database, calls } = fakeDatabase(1);
 
-    await expect(saveCompletedSet(database, completedSet)).resolves.toBe('inserted');
+    await expect(saveCompletedSet(database, completedSet, 'guest-user')).resolves.toBe('inserted');
     expect(calls[0]).toBe('BEGIN TRANSACTION');
     expect(calls[1]).toContain('INSERT OR IGNORE INTO completed_sets');
-    expect(calls[2]).toContain('INSERT INTO sync_outbox');
-    expect(calls[3]).toBe('COMMIT TRANSACTION');
+    expect(calls[2]).toContain('INSERT INTO completed_set_load_provenance');
+    expect(calls[3]).toContain('INSERT INTO sync_outbox');
+    expect(calls[4]).toBe('COMMIT TRANSACTION');
   });
 
   it('does not enqueue a duplicate set when SQLite reports no inserted row', async () => {
     const { database, calls } = fakeDatabase(0);
 
-    await expect(saveCompletedSet(database, completedSet)).resolves.toBe('duplicate');
+    await expect(saveCompletedSet(database, completedSet, 'guest-user')).resolves.toBe('duplicate');
     expect(calls).toEqual([
       'BEGIN TRANSACTION',
       expect.stringContaining('completed_sets'),
@@ -83,6 +102,7 @@ describe('saveCompletedSet', () => {
           workout_exercise_id: 'workout-exercise-1',
           set_number: 1,
           load: 185,
+          load_unit: 'lb',
           reps: 5,
           duration_seconds: null,
           distance_meters: null,
@@ -341,25 +361,29 @@ describe('saveActiveWorkoutRevision', () => {
   it('commits the version, cycle pointer, session pointer, and outbox rows together', async () => {
     const calls: Array<{ sql: string; params: unknown[] }> = [];
     const database = {
+      getAllAsync: async () => [],
       runAsync: async (sql: string, ...params: unknown[]) => {
         calls.push({ sql, params });
         return { changes: 1, lastInsertRowId: 1 };
       },
-      getFirstAsync: async () => ({
-        id: 'session-1',
-        cycle_id: 'cycle-1',
-        cycle_week: 1,
-        workout_id: 'workout-1',
-        program_version_id: 'program-version-2',
-        workout_focus: 'strength',
-        status: 'in-progress',
-        started_at: '2026-09-14T12:00:00.000Z',
-        completed_at: null,
-        completion_reason: null,
-        is_offline: 1,
-        readiness: 'ready',
-        note: null,
-      }),
+      getFirstAsync: async (sql: string) =>
+        sql.includes('FROM user_program_versions v')
+          ? null
+          : {
+              id: 'session-1',
+              cycle_id: 'cycle-1',
+              cycle_week: 1,
+              workout_id: 'workout-1',
+              program_version_id: 'program-version-2',
+              workout_focus: 'strength',
+              status: 'in-progress',
+              started_at: '2026-09-14T12:00:00.000Z',
+              completed_at: null,
+              completion_reason: null,
+              is_offline: 1,
+              readiness: 'ready',
+              note: null,
+            },
       withTransactionAsync: async (callback: () => Promise<void>) => {
         calls.push({ sql: 'BEGIN TRANSACTION', params: [] });
         await callback();
@@ -572,11 +596,15 @@ describe('workout drafts and corrections', () => {
   it('round-trips unfinished input through the local draft table', async () => {
     const calls: Array<{ sql: string; params: unknown[] }> = [];
     const database = {
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        callback(database),
       runAsync: async (sql: string, ...params: unknown[]) => {
         calls.push({ sql, params });
         return { changes: 1, lastInsertRowId: 1 };
       },
       getFirstAsync: async () => ({
+        user_id: 'guest-user',
+        load_units_json: '{"exercise:1":"lb"}',
         values_json: JSON.stringify({ 'exercise:1': { load: '95' } }),
       }),
     } as unknown as SQLiteDatabase;
@@ -585,40 +613,85 @@ describe('workout drafts and corrections', () => {
       database,
       'session-1',
       {
-        'exercise:1': { load: '95', reps: '5', duration: '', distance: '', rpe: '', rir: '' },
+        'exercise:1': {
+          load: '95',
+          loadUnit: 'lb',
+          reps: '5',
+          duration: '',
+          distance: '',
+          rpe: '',
+          rir: '',
+        },
       },
       '2026-09-14T12:00:00.000Z',
+      'guest-user',
     );
 
     await expect(getWorkoutDraft(database, 'session-1')).resolves.toEqual({
-      'exercise:1': { load: '95' },
+      'exercise:1': { load: '95', loadUnit: 'lb' },
     });
     expect(calls[0]?.sql).toContain('ON CONFLICT(session_id) DO UPDATE');
   });
 
   it('updates a completed set and queues a separate correction snapshot', async () => {
     const calls: string[] = [];
+    const bindings: unknown[][] = [];
+    const previous: CompletedSet = {
+      id: 'set-1',
+      sessionId: 'session-1',
+      workoutExerciseId: 'workout-exercise-1',
+      setNumber: 1,
+      load: 90,
+      loadUnit: 'kg',
+      reps: 5,
+      completedAt: '2026-09-14T11:00:00.000Z',
+      idempotencyKey: 'session-1:workout-exercise-1:1',
+    };
+    const correction = { ...previous, load: 100, completedAt: '2026-09-14T12:00:00.000Z' };
+    let current = previous;
     const database = {
-      runAsync: async (sql: string) => {
+      getFirstAsync: async () => ({ user_id: 'guest-user' }),
+      getAllAsync: async () => [
+        {
+          id: current.id,
+          session_id: current.sessionId,
+          workout_exercise_id: current.workoutExerciseId,
+          exercise_id: null,
+          set_number: current.setNumber,
+          load: current.load,
+          load_unit: current.loadUnit,
+          reps: current.reps,
+          duration_seconds: null,
+          distance_meters: null,
+          rpe: null,
+          rir: null,
+          completed_at: current.completedAt,
+          idempotency_key: current.idempotencyKey,
+        },
+      ],
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        callback(database),
+      runAsync: async (sql: string, ...args: unknown[]) => {
         calls.push(sql);
+        bindings.push(args);
+        if (sql.includes('UPDATE completed_sets'))
+          current = { ...correction, completedAt: previous.completedAt };
         return { changes: 1, lastInsertRowId: 1 };
       },
-      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
     } as unknown as SQLiteDatabase;
-
-    await expect(
-      updateCompletedSet(database, {
-        id: 'set-1',
-        sessionId: 'session-1',
-        workoutExerciseId: 'workout-exercise-1',
-        setNumber: 1,
-        load: 100,
-        reps: 5,
-        completedAt: '2026-09-14T12:00:00.000Z',
-        idempotencyKey: 'session-1:workout-exercise-1:1',
-      }),
-    ).resolves.toBe('updated');
+    await expect(updateCompletedSet(database, correction, 'guest-user', previous)).resolves.toBe(
+      'updated',
+    );
     expect(calls[0]).toContain('UPDATE completed_sets');
-    expect(calls[1]).not.toContain('DO UPDATE');
+    expect(calls[0]).toContain('session_id=?');
+    expect(calls[1]).toContain('completed_set_load_provenance');
+    expect(calls[2]).not.toContain('DO UPDATE');
+    expect(JSON.parse(String(bindings[2]![4]))).toMatchObject({
+      load: 100,
+      completedAt: previous.completedAt,
+      idempotencyKey: previous.idempotencyKey,
+    });
+    expect(bindings[1]![5]).toBe(previous.completedAt);
+    expect(bindings[1]![6]).toBe(bindings[2]![5]);
   });
 });

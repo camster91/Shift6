@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "3f1752ede2917489e5ff4af103e4fc634fa41273",
+  "identicalArrays": 36,
+  "records": 1082,
+  "normalKeyboardObservedPass": true,
+  "font2KeyboardObservedPass": true,
+  "firstExportRouteMissedAfterFontRecreation": true,
+  "coldRestartThenFreshReceiverVerified": true,
+  "exportedAt": "2026-10-14T09:41:59.460Z"
+}

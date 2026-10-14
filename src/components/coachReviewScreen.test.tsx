@@ -1,0 +1,1045 @@
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
+import { Keyboard, Platform } from 'react-native';
+import type * as ReactNative from 'react-native';
+import type * as ReactModule from 'react';
+import type { KeyboardEvent, ScrollView, TextInput, TextInputProps } from 'react-native';
+import CoachReviewScreen from '../../app/coach-review';
+import { demoCycle } from '../domain/fixtures/home';
+import {
+  prepareCoachReview,
+  previewCoachReviewChoice,
+  confirmCoachReviewChoice,
+  type CoachReviewInput,
+} from '../domain/coachReview';
+import type { SavedCoachReview } from '../db/coachReviewRepository';
+import type { Shift } from '../domain/shift';
+import type { ButtonProps } from './ui/Button';
+import type { ScreenProps } from './ui/Screen';
+import { formatRecordedDateTime } from '../domain/datePresentation';
+let mockOwner = 'guest-user';
+let mockBlur: (() => void) | undefined;
+let mockFocus: (() => () => void) | undefined;
+let mockDb = {};
+const mockLoad = jest.fn(),
+  mockHistory = jest.fn(),
+  mockConfirm = jest.fn(),
+  mockCycle = jest.fn(),
+  mockNavigate = jest.fn();
+const stamp = '2026-10-13T16:00:00.000Z';
+const cycle = { ...demoCycle, userId: 'guest-user' };
+let packet: CoachReviewInput;
+// Keep the real Button while capturing the screen's handler before React can
+// commit a disabled state, to exercise two callbacks in the same event.
+const mockButtonHandlers = new Map<string, (() => void) | undefined>();
+const mockRenderFrames: { db: object; owner: string; text: string }[] = [];
+let mockBeforeEffects: (() => void) | undefined;
+let mockDateScreenProps: ScreenProps | undefined;
+const mockNativeDateInputs = new Map<string, TextInput>();
+jest.mock('react-native', () => {
+  const actual = jest.requireActual<typeof ReactNative>('react-native');
+  const React = jest.requireActual<typeof ReactModule>('react');
+  return Object.defineProperty(Object.create(actual), 'TextInput', {
+    value: React.forwardRef<TextInput, TextInputProps>((props, ref) => {
+      const label = props.accessibilityLabel;
+      const attach = React.useCallback(
+        (node: TextInput | null) => {
+          if (label) {
+            if (node) mockNativeDateInputs.set(label, node);
+            else mockNativeDateInputs.delete(label);
+          }
+          if (typeof ref === 'function') ref(node);
+          else if (ref) ref.current = node;
+        },
+        [label, ref],
+      );
+      return React.createElement(actual.TextInput, { ...props, ref: attach });
+    }),
+  });
+});
+function mockVisibleText(node: unknown): string {
+  if (Array.isArray(node)) return node.map(mockVisibleText).join(' ');
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (node && typeof node === 'object' && 'props' in node) {
+    const props = (node as { props: { children?: unknown; label?: string } }).props;
+    return `${props.label ?? ''} ${mockVisibleText(props.children)}`;
+  }
+  return '';
+}
+jest.mock('./ui', () => {
+  const actual = jest.requireActual('./ui'),
+    React = jest.requireActual('react');
+  return {
+    ...actual,
+    Button: (props: ButtonProps) => {
+      mockButtonHandlers.set(props.label, props.onPress);
+      return React.createElement(actual.Button, props);
+    },
+    Screen: (props: ScreenProps) => {
+      if (props.scrollViewRef) mockDateScreenProps = props;
+      mockRenderFrames.push({
+        db: mockDb,
+        owner: mockOwner,
+        text: `${mockVisibleText(props.children)} ${mockVisibleText(props.footer)}`,
+      });
+      mockBeforeEffects?.();
+      return React.createElement(actual.Screen, props);
+    },
+  };
+});
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn(), back: jest.fn() },
+  useFocusEffect: (callback: () => () => void) => {
+    const React = jest.requireActual('react');
+    React.useEffect(() => {
+      mockFocus = callback;
+      mockBlur = callback();
+      return () => mockBlur?.();
+    }, [callback]);
+  },
+}));
+jest.mock('../db/context', () => ({ useLocalDatabase: () => mockDb }));
+jest.mock('../services/UserIdentityProvider', () => ({ useCurrentUserId: () => mockOwner }));
+jest.mock('../db/cycleRepository', () => ({
+  getActiveTrainingCycle: (...args: unknown[]) => mockCycle(...args),
+}));
+jest.mock('../db/profileRepository', () => ({
+  getOnboardingProfile: async () => ({ user: { unitSystem: 'imperial' } }),
+}));
+jest.mock('../db/coachReviewRepository', () => ({
+  loadDatedCoachReview: (...args: unknown[]) => mockLoad(...args),
+  getSavedCoachReviews: (...args: unknown[]) => mockHistory(...args),
+  confirmDatedCoachReview: (...args: unknown[]) => mockConfirm(...args),
+}));
+jest.mock('../services/coachNavigation', () => ({
+  resolveCoachNavigation: (...args: unknown[]) => mockNavigate(...args),
+}));
+beforeEach(() => {
+  jest.resetAllMocks();
+  mockButtonHandlers.clear();
+  mockRenderFrames.length = 0;
+  mockBeforeEffects = undefined;
+  mockDateScreenProps = undefined;
+  mockNativeDateInputs.clear();
+  mockDb = {};
+  mockOwner = 'guest-user';
+  mockBlur = undefined;
+  mockFocus = undefined;
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date(stamp));
+  packet = {
+    ownerId: cycle.userId,
+    cycle,
+    programVersionId: cycle.programVersionId,
+    now: stamp,
+    window: { startDate: '2026-10-07', endDate: '2026-10-13', timeZone: 'America/Toronto' },
+    goal: null,
+    observations: [],
+    sessions: [
+      {
+        id: 'actual-partial',
+        cycleId: cycle.id,
+        programVersionId: cycle.programVersionId,
+        workoutId: 'private-workout',
+        cycleWeek: 1,
+        workoutFocus: 'mixed',
+        isOffline: true,
+        status: 'partial',
+        completionReason: 'time-limited',
+        startedAt: '2026-10-12T12:00:00.000Z',
+        completedAt: '2026-10-12T12:30:00.000Z',
+      },
+    ],
+  };
+  mockCycle.mockResolvedValue(cycle);
+  mockHistory.mockResolvedValue([]);
+  mockLoad.mockImplementation(async (_db, _owner, _cycle, window, now) =>
+    prepareCoachReview({ ...packet, window, now }),
+  );
+  mockConfirm.mockImplementation(
+    async (_db, preview, id, parent, confirmedAt, confirmed, isCurrent) => {
+      if (!isCurrent()) throw new Error('Review context changed.');
+      const saved = {
+        id,
+        previousReviewId: parent,
+        receipt: confirmCoachReviewChoice(
+          preview,
+          prepareCoachReview({ ...packet, window: preview.window, now: confirmedAt }),
+          confirmedAt,
+          confirmed,
+        ),
+      };
+      mockHistory.mockResolvedValue([saved]);
+      return saved;
+    },
+  );
+  mockNavigate.mockResolvedValue({
+    status: 'ready-to-open',
+    owner: 'guest-user',
+    route: '/coach-onboarding',
+  });
+});
+test.each([
+  ['owner', 'preview'],
+  ['database', 'preview'],
+  ['owner', 'receipt'],
+  ['database', 'receipt'],
+] as const)(
+  'a %s transition hides the old %s and private history during the first render and rejects its retained callback before focus effects',
+  async (kind, phase) => {
+    const screen = await ready();
+    await fireEvent.press(screen.getByLabelText('Review availability'));
+    if (phase === 'receipt') {
+      await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+      await waitFor(() => expect(screen.getByText('Saved dated review history')).toBeTruthy());
+    }
+    const retained = mockButtonHandlers.get(
+      phase === 'receipt' ? 'Continue to setup' : 'Confirm and save intent',
+    )!;
+    mockConfirm.mockClear();
+    const oldDb = mockDb;
+    mockLoad.mockImplementation(() => new Promise(() => {}));
+    if (kind === 'owner') {
+      mockOwner = 'other-owner';
+      mockCycle.mockResolvedValue({ ...cycle, userId: mockOwner });
+    } else mockDb = {};
+    const changedDb = mockDb,
+      changedOwner = mockOwner;
+    let tapped = false;
+    mockBeforeEffects = () => {
+      if (!tapped) {
+        tapped = true;
+        retained();
+      }
+    };
+    await screen.rerender(<CoachReviewScreen />);
+    mockBeforeEffects = undefined;
+    const frames = mockRenderFrames.filter(
+      (frame) =>
+        frame.owner === changedOwner &&
+        frame.db === changedDb &&
+        (kind === 'owner' || frame.db !== oldDb),
+    );
+    expect(frames.length).toBeGreaterThan(0);
+    for (const frame of frames)
+      expect(frame.text).not.toMatch(
+        /Sessions started in this date range|Confirm dated intent|Dated intent saved locally|Saved dated review history|One optional question|Keep plan/,
+      );
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+  },
+);
+afterEach(() => {
+  jest.useRealTimers();
+  jest.restoreAllMocks();
+});
+async function ready() {
+  const screen = await render(<CoachReviewScreen />);
+  await waitFor(() => expect(screen.getByText('Sessions started in this date range')).toBeTruthy());
+  return screen;
+}
+
+async function keyboardEditor() {
+  const geometry = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  jest.replaceProperty(Platform, 'OS', 'android');
+  const listeners = new Map<string, (event: KeyboardEvent) => void>();
+  jest.spyOn(Keyboard, 'addListener').mockImplementation((name, callback) => {
+    listeners.set(name, callback);
+    return { remove: jest.fn() } as unknown as ReturnType<typeof Keyboard.addListener>;
+  });
+  jest.spyOn(Keyboard, 'metrics').mockReturnValue(undefined);
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Change review dates'));
+  const input = mockNativeDateInputs.get('Review time zone')!;
+  jest.spyOn(input, 'isFocused').mockReturnValue(true);
+  const inputMeasure = jest.spyOn(input, 'measureInWindow');
+  inputMeasure.mockImplementation((callback) => callback(0, 600, 320, 48));
+  const nativeViewport = {
+    measureInWindow: jest.fn((callback: (x: number, y: number, w: number, h: number) => void) =>
+      callback(0, 80, 400, 500),
+    ),
+  };
+  const viewport = {
+    scrollTo: jest.fn(),
+    getNativeScrollRef: () => nativeViewport,
+  };
+  (mockDateScreenProps!.scrollViewRef as { current: ScrollView | null }).current =
+    viewport as unknown as ScrollView;
+  const content = {
+    measureInWindow: jest.fn((callback: (x: number, y: number, w: number, h: number) => void) =>
+      callback(0, -120, 400, 1000),
+    ),
+  };
+  (mockDateScreenProps!.scrollViewProps!.innerViewRef as { current: unknown }).current = content;
+  await fireEvent(screen.getByLabelText('Review time zone'), 'focus');
+  const show = () =>
+    listeners.get('keyboardDidShow')!({
+      duration: 0,
+      easing: 'keyboard',
+      endCoordinates: { screenX: 0, screenY: 420, width: 400, height: 340 },
+    });
+  return { screen, inputMeasure, viewport, nativeViewport, content, show, listeners, geometry };
+}
+
+test('keyboard and content layout measure the focused date field and scroll only its necessary overflow without animation', async () => {
+  const { screen, inputMeasure, viewport, show, geometry } = await keyboardEditor();
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  await act(() => show());
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  expect(mockDateScreenProps!.contentContainerStyle).toEqual({ paddingBottom: 160 });
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1160);
+  expect(viewport.scrollTo).toHaveBeenLastCalledWith({ y: 428, animated: false });
+  expect(geometry).toHaveBeenCalledWith('SHIFT6 date keyboard geometry', {
+    viewportY: 80,
+    viewportHeight: 500,
+    keyboardTop: 420,
+    contentY: -120,
+    contentHeight: 1000,
+    inputY: 600,
+    inputHeight: 48,
+    keyboardSpace: 160,
+    targetOffset: 428,
+    maxScrollOffset: 500,
+  });
+  viewport.scrollTo.mockClear();
+  inputMeasure.mockImplementation((callback) => callback(0, 100, 320, 48));
+  await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'Invalid/Zone');
+  expect(screen.queryByText('Sessions started in this date range')).toBeNull();
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 700);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  inputMeasure.mockImplementation((callback) => callback(0, 40, 320, 48));
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 650);
+  expect(viewport.scrollTo).toHaveBeenLastCalledWith({ y: 160, animated: false });
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+test('measured keyboard space clears on dismissal and does not duplicate an Android viewport that already resized', async () => {
+  const { viewport, nativeViewport, show, listeners } = await keyboardEditor();
+  await act(() => show());
+  expect(mockDateScreenProps!.contentContainerStyle).toEqual({ paddingBottom: 160 });
+  nativeViewport.measureInWindow.mockImplementation((callback) => callback(0, 80, 400, 340));
+  await act(() => mockDateScreenProps!.scrollViewProps!.onLayout!({} as never));
+  expect(mockDateScreenProps!.contentContainerStyle).toBeUndefined();
+  viewport.scrollTo.mockClear();
+  await act(() => listeners.get('keyboardDidHide')!({} as KeyboardEvent));
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1000);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  expect(mockDateScreenProps!.contentContainerStyle).toBeUndefined();
+});
+
+test('scroll waits for actual native content range after keyboard space is committed', async () => {
+  const { viewport, content, show } = await keyboardEditor();
+  content.measureInWindow.mockImplementation((callback) => callback(0, -120, 400, 600));
+  await act(() => show());
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 600);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  content.measureInWindow.mockImplementation((callback) => callback(0, -120, 400, 1160));
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1160);
+  expect(viewport.scrollTo).toHaveBeenCalledWith({ y: 428, animated: false });
+});
+
+test.each(['blur', 'field blur', 'hide', 'owner', 'database', 'keyboard hidden', 'edit'])(
+  'a delayed keyboard measurement cannot scroll after %s invalidates its context',
+  async (change) => {
+    const { screen, inputMeasure, viewport, show, listeners } = await keyboardEditor();
+    let measured!: (x: number, y: number, width: number, height: number) => void;
+    inputMeasure.mockImplementation((callback) => {
+      measured = callback;
+    });
+    await act(() => show());
+    mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1160);
+    if (change === 'blur') await act(() => mockBlur?.());
+    if (change === 'field blur') await fireEvent(screen.getByLabelText('Review time zone'), 'blur');
+    if (change === 'hide')
+      await fireEvent.press(screen.getByLabelText('Hide review date controls'));
+    if (change === 'owner') mockOwner = 'new-person';
+    if (change === 'database') mockDb = {};
+    if (change === 'owner' || change === 'database') await screen.rerender(<CoachReviewScreen />);
+    if (change === 'keyboard hidden') listeners.get('keyboardDidHide')!({} as KeyboardEvent);
+    if (change === 'edit')
+      await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'Invalid/Zone');
+    await act(() => measured(0, 600, 320, 48));
+    expect(viewport.scrollTo).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
+  },
+);
+
+test('a newer keyboard layout measurement supersedes an older response and never scrolls an unfocused editor', async () => {
+  const { screen, inputMeasure, viewport, show } = await keyboardEditor();
+  const callbacks: ((x: number, y: number, width: number, height: number) => void)[] = [];
+  inputMeasure.mockImplementation((callback) => {
+    callbacks.push(callback);
+  });
+  await act(() => show());
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1160);
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 750);
+  expect(callbacks).toHaveLength(2);
+  callbacks[0]!(0, 600, 320, 48);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  callbacks[1]!(0, 100, 320, 48);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  await fireEvent(screen.getByLabelText('Review time zone'), 'blur');
+  viewport.scrollTo.mockClear();
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 600);
+  expect(callbacks).toHaveLength(2);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+});
+test('dated session evidence is explicit, bounded and local with a single skippable question; reading and preview never save', async () => {
+  const screen = await ready();
+  expect(screen.getByText(/0 complete · 1 partial · 0 skipped · 0 in progress/)).toBeTruthy();
+  expect(screen.getByText(/original start date/)).toBeTruthy();
+  expect(screen.getByText(/Planned coverage and adherence are unavailable/)).toBeTruthy();
+  expect(screen.getAllByText('One optional question')).toHaveLength(1);
+  await fireEvent.press(screen.getByLabelText('Skip question'));
+  await fireEvent.press(screen.getByLabelText('Review availability'));
+  expect(screen.getByText('Confirm dated intent: Review availability')).toBeTruthy();
+  expect(screen.getByText(/any changes require its own confirmation/)).toBeTruthy();
+  expect(mockConfirm).not.toHaveBeenCalled();
+  expect(mockNavigate).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Cancel preview'));
+  expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+test('choosing a current intent opens an immediately actionable preview and native Back cancels without saving', async () => {
+  const dismiss = jest.spyOn(Keyboard, 'dismiss');
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Keep plan'));
+  expect(dismiss).toHaveBeenCalledTimes(1);
+  expect(screen.getByTestId('coach-review-preview-modal')).toBeTruthy();
+  expect(screen.getByLabelText('Confirm and save intent')).not.toBeDisabled();
+  expect(screen.getByLabelText('Cancel preview')).not.toBeDisabled();
+  expect(mockConfirm).not.toHaveBeenCalled();
+  await fireEvent(screen.getByTestId('coach-review-preview-modal'), 'requestClose');
+  expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+  expect(mockConfirm).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Keep plan'));
+  await fireEvent.press(screen.getByLabelText('Cancel preview'));
+  expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+  dismiss.mockRestore();
+});
+test('only confirmation saves the selected intent; optional answer stays in receipt and navigation is a separate action', async () => {
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Review available time'));
+  await fireEvent.press(screen.getByLabelText('Review availability'));
+  await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+  await waitFor(() => expect(screen.getByText('Dated intent saved locally')).toBeTruthy());
+  expect(mockConfirm).toHaveBeenCalledTimes(1);
+  expect(mockConfirm.mock.calls[0]![1]).toMatchObject({
+    choice: 'review-availability',
+    response: { questionId: 'time-limited-stop', answer: 'review-availability' },
+  });
+  expect(mockConfirm.mock.calls[0]![5]).toBe(true);
+  expect(screen.getByText('Your plan was not changed by this receipt.')).toBeTruthy();
+  expect(mockNavigate).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Continue to setup'));
+  await waitFor(() => expect(router.push).toHaveBeenCalledWith('/coach-onboarding'));
+  expect(mockNavigate).toHaveBeenCalledWith(mockDb, 'guest-user', 'open-setup');
+});
+test('same-event double confirmation uses one immediate pending mutex and controls stay frozen until receipt resolves', async () => {
+  let release!: (result: SavedCoachReview) => void;
+  mockConfirm.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Keep plan'));
+  const onPress = mockButtonHandlers.get('Confirm and save intent')!;
+  await act(() => {
+    onPress();
+    onPress();
+  });
+  expect(mockConfirm).toHaveBeenCalledTimes(1);
+  expect(screen.queryByLabelText('Review start date')).toBeNull();
+  expect(screen.getByLabelText('Confirm and save intent')).toBeDisabled();
+  expect(screen.getByLabelText('Cancel preview')).toBeDisabled();
+  await fireEvent(screen.getByTestId('coach-review-preview-modal'), 'requestClose');
+  expect(screen.getByTestId('coach-review-preview-modal')).toBeTruthy();
+  const [_db, preview, id, parent] = mockConfirm.mock.calls[0]!;
+  await act(() =>
+    release({
+      id,
+      previousReviewId: parent,
+      receipt: {
+        ...confirmCoachReviewChoice(
+          preview,
+          prepareCoachReview({ ...packet, window: preview.window }),
+          stamp,
+          true,
+        ),
+        goalWitness: null,
+      },
+    }),
+  );
+  await waitFor(() => expect(screen.getByText('Dated intent saved locally')).toBeTruthy());
+});
+test('focus loss permanently invalidates a pending confirmation even when the same screen refocuses', async () => {
+  let release!: () => void;
+  mockConfirm.mockImplementationOnce(async (...args) => {
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    if (!args[6]()) throw new Error('Review context changed.');
+    throw new Error('unexpected current request');
+  });
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Keep plan'));
+  await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+  const guard = mockConfirm.mock.calls[0]![6];
+  expect(guard()).toBe(true);
+  await act(async () => {
+    mockBlur?.();
+    mockBlur = mockFocus?.();
+  });
+  expect(guard()).toBe(false);
+  await act(async () => release());
+  await waitFor(() => expect(screen.getByLabelText('Keep plan')).not.toBeDisabled());
+  expect(screen.queryByText('Dated intent saved locally')).toBeNull();
+  expect(screen.queryByText('Review context changed.')).toBeNull();
+});
+test('nonempty invalid dates produce actionable guidance and no stale evidence or journal mutation', async () => {
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Change review dates'));
+  await fireEvent.changeText(screen.getByLabelText('Review start date'), '2026-09-01');
+  expect(screen.queryByText('Sessions started in this date range')).toBeNull();
+  await fireEvent.press(screen.getByLabelText('Review these dates'));
+  await waitFor(() =>
+    expect(
+      screen.getByText('Choose an explicit review window of at most seven elapsed local dates.'),
+    ).toBeTruthy(),
+  );
+  expect(screen.queryByLabelText('Keep plan')).toBeNull();
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+test('changed evidence fails confirmation visibly without claiming a receipt or plan application', async () => {
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Keep plan'));
+  packet.sessions = [{ ...packet.sessions[0]!, status: 'complete' }];
+  await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+  await waitFor(() => expect(screen.getByText(/changed/)).toBeTruthy());
+  expect(screen.queryByText('Dated intent saved locally')).toBeNull();
+  expect(mockNavigate).not.toHaveBeenCalled();
+});
+test('remount reads confirmed journal history; an old receipt does not imply current evidence or plan changes', async () => {
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Keep plan'));
+  await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+  const saved = await mockConfirm.mock.results[0]!.value;
+  mockHistory.mockResolvedValue([saved]);
+  await screen.unmount();
+  const restored = await ready();
+  expect(restored.getByText('Saved dated review history')).toBeTruthy();
+  expect(restored.getByText(/Evidence reflects each confirmation time/)).toBeTruthy();
+  expect(restored.queryByLabelText('Confirm and save intent')).toBeNull();
+  expect(restored.queryByLabelText('Continue to setup')).toBeNull();
+  expect(mockConfirm).toHaveBeenCalledTimes(1);
+});
+
+async function restoredAvailability() {
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Review availability'));
+  await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+  const saved = await mockConfirm.mock.results[0]!.value;
+  await screen.unmount();
+  return { screen: await ready(), saved };
+}
+
+test.each(['Cancel preview', 'native Back'])(
+  '%s restores the latest confirmed follow-up without a write and preview blocks its retained callback',
+  async (exit) => {
+    const { screen, saved } = await restoredAvailability();
+    const canonical = JSON.stringify(saved);
+    const retained = mockButtonHandlers.get('Continue to setup')!;
+    const choose = mockButtonHandlers.get('Keep plan')!;
+    await act(() => {
+      choose();
+      retained();
+    });
+    expect(screen.queryByLabelText('Continue to setup')).toBeNull();
+    await act(() => retained());
+    expect(mockNavigate).not.toHaveBeenCalled();
+    if (exit === 'native Back')
+      await fireEvent(screen.getByTestId('coach-review-preview-modal'), 'requestClose');
+    else await fireEvent.press(screen.getByLabelText('Cancel preview'));
+    expect(screen.getByLabelText('Continue to setup')).toBeTruthy();
+    expect(JSON.stringify(saved)).toBe(canonical);
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByLabelText('Continue to setup'));
+    expect(router.push).toHaveBeenCalledWith('/coach-onboarding');
+  },
+);
+
+test.each(['just confirmed', 'cold reopened'])(
+  'the %s dated follow-up is before date entry and evidence with one guarded action',
+  async (phase) => {
+    let screen = await ready();
+    await fireEvent.press(screen.getByLabelText('Review availability'));
+    await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+    const saved = await mockConfirm.mock.results[0]!.value;
+    const before = JSON.stringify(saved);
+    if (phase === 'cold reopened') {
+      await screen.unmount();
+      screen = await ready();
+    }
+    const frame = mockRenderFrames.at(-1)!.text;
+    expect(frame.indexOf('Continue to setup')).toBeGreaterThan(-1);
+    expect(frame.indexOf('Continue to setup')).toBeLessThan(frame.indexOf('Review date window'));
+    expect(frame.indexOf('Continue to setup')).toBeLessThan(
+      frame.indexOf('Sessions started in this date range'),
+    );
+    expect(screen.getAllByLabelText('Continue to setup')).toHaveLength(1);
+    expect(
+      screen.getByText(
+        `Reviewed dates: ${saved.receipt.window.startDate} through ${saved.receipt.window.endDate} · ${saved.receipt.window.timeZone}`,
+      ),
+    ).toBeTruthy();
+    expect(JSON.stringify(saved)).toBe(before);
+    await fireEvent.press(screen.getByLabelText('Continue to setup'));
+    expect(router.push).toHaveBeenCalledWith('/coach-onboarding');
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+  },
+);
+
+test('automatic review shows its exact compact window and date controls open explicitly without any write', async () => {
+  const dismiss = jest.spyOn(Keyboard, 'dismiss');
+  const screen = await ready();
+  expect(screen.queryByLabelText('Review start date')).toBeNull();
+  expect(screen.queryByLabelText('Review end date')).toBeNull();
+  expect(screen.queryByLabelText('Review time zone')).toBeNull();
+  expect(screen.queryByLabelText('Review these dates')).toBeNull();
+  const window = mockLoad.mock.calls[0]![3];
+  expect(
+    screen.getByText(`${window.startDate} through ${window.endDate} · ${window.timeZone}`),
+  ).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Change review dates'));
+  expect(screen.getByLabelText('Review start date')).toHaveDisplayValue(window.startDate);
+  expect(screen.getByLabelText('Review end date')).toHaveDisplayValue(window.endDate);
+  expect(screen.getByLabelText('Review time zone')).toHaveDisplayValue(window.timeZone);
+  expect(screen.getByText(/All three fields are required/)).toBeTruthy();
+  expect(mockLoad).toHaveBeenCalledTimes(1);
+  expect(mockConfirm).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Hide review date controls'));
+  expect(dismiss).toHaveBeenCalledTimes(1);
+  expect(screen.queryByLabelText('Review start date')).toBeNull();
+  expect(screen.getByLabelText('Keep plan')).toBeTruthy();
+});
+
+test.each(['hide', 'successful reread'])(
+  'a field callback retained before %s cannot invalidate the compact evidence or saved follow-up',
+  async (close) => {
+    const { screen, saved } = await restoredAvailability();
+    const original = JSON.stringify(saved);
+    await fireEvent.press(screen.getByLabelText('Change review dates'));
+    const retained = (
+      screen.getByLabelText('Review start date').props as { onChangeText: (text: string) => void }
+    ).onChangeText;
+    const retainedRead = mockButtonHandlers.get('Review these dates')!;
+    if (close === 'hide') {
+      const hide = mockButtonHandlers.get('Hide review date controls')!;
+      await act(() => {
+        hide();
+        retained('1900-01-01');
+        retainedRead();
+      });
+    } else {
+      await fireEvent.press(screen.getByLabelText('Review these dates'));
+      await waitFor(() => expect(screen.getByLabelText('Change review dates')).toBeTruthy());
+    }
+    const reads = mockLoad.mock.calls.length;
+    await act(() => {
+      retained('1900-01-01');
+      retainedRead();
+    });
+    expect(screen.queryByLabelText('Review start date')).toBeNull();
+    expect(screen.getByText('Sessions started in this date range')).toBeTruthy();
+    expect(screen.getByLabelText('Continue to setup')).toBeTruthy();
+    const window = mockLoad.mock.calls.at(-1)![3];
+    expect(
+      screen.getAllByText(`${window.startDate} through ${window.endDate} · ${window.timeZone}`),
+    ).toHaveLength(2);
+    expect(mockLoad).toHaveBeenCalledTimes(reads);
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(saved)).toBe(original);
+
+    await fireEvent.press(screen.getByLabelText('Change review dates'));
+    await act(() => {
+      retained('1900-01-01');
+      retainedRead();
+    });
+    expect(screen.getByLabelText('Review start date')).toHaveDisplayValue(window.startDate);
+    await fireEvent.changeText(screen.getByLabelText('Review start date'), '2026-10-12');
+    expect(screen.getByLabelText('Review start date')).toHaveDisplayValue('2026-10-12');
+    expect(screen.queryByLabelText('Continue to setup')).toBeNull();
+    expect(screen.queryByText('Sessions started in this date range')).toBeNull();
+  },
+);
+
+test.each(['Keep plan', 'Continue to setup'])(
+  'an accepted date edit synchronously rejects retained %s and read callbacks before render',
+  async (action) => {
+    const { screen } = await restoredAvailability();
+    await fireEvent.press(screen.getByLabelText('Change review dates'));
+    const field = (
+      screen.getByLabelText('Review start date').props as { onChangeText: (text: string) => void }
+    ).onChangeText;
+    const retainedAction = mockButtonHandlers.get(action)!;
+    const retainedRead = mockButtonHandlers.get('Review these dates')!;
+    const reads = mockLoad.mock.calls.length;
+    await act(() => {
+      field('2026-10-12');
+      retainedAction();
+      retainedRead();
+    });
+    expect(screen.getByLabelText('Review start date')).toHaveDisplayValue('2026-10-12');
+    expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+    expect(screen.queryByLabelText('Continue to setup')).toBeNull();
+    expect(screen.queryByText('Sessions started in this date range')).toBeNull();
+    expect(mockLoad).toHaveBeenCalledTimes(reads);
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByLabelText('Review these dates'));
+    await waitFor(() => expect(screen.getByLabelText('Change review dates')).toBeTruthy());
+    expect(mockLoad.mock.calls.at(-1)![3].startDate).toBe('2026-10-12');
+    expect(screen.getByText('Sessions started in this date range')).toBeTruthy();
+    expect(screen.queryByLabelText('Review start date')).toBeNull();
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+  },
+);
+
+test('a retained edit during deferred continuation is rejected by the pending mutex and cannot change its window', async () => {
+  const { screen, saved } = await restoredAvailability();
+  const canonical = JSON.stringify(saved);
+  await fireEvent.press(screen.getByLabelText('Change review dates'));
+  const field = (
+    screen.getByLabelText('Review start date').props as { onChangeText: (text: string) => void }
+  ).onChangeText;
+  const window = mockLoad.mock.calls.at(-1)![3];
+  let resolve!: (value: { route: string }) => void;
+  mockNavigate.mockImplementationOnce(() => new Promise((done) => (resolve = done)));
+  await fireEvent.press(screen.getByLabelText('Continue to setup'));
+  await waitFor(() => expect(mockNavigate).toHaveBeenCalledTimes(1));
+  await act(() => field('1900-01-01'));
+  expect(screen.getByLabelText('Review start date')).toHaveDisplayValue(window.startDate);
+  expect(screen.getByText('Sessions started in this date range')).toBeTruthy();
+  expect(router.push).not.toHaveBeenCalled();
+  await act(() => resolve({ route: '/coach-onboarding' }));
+  expect(router.push).toHaveBeenCalledWith('/coach-onboarding');
+  expect(JSON.stringify(saved)).toBe(canonical);
+  expect(mockConfirm).toHaveBeenCalledTimes(1);
+});
+
+test.each(['', 'Not/A_Zone'])(
+  'invalid time zone %p keeps needed fields visible and correction reloads a compact fresh window',
+  async (zone) => {
+    const screen = await ready();
+    const retained = mockButtonHandlers.get('Keep plan')!;
+    await fireEvent.press(screen.getByLabelText('Change review dates'));
+    await fireEvent.changeText(screen.getByLabelText('Review time zone'), zone);
+    await act(() => retained());
+    expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+    expect(screen.getByLabelText('Hide review date controls')).toBeDisabled();
+    await fireEvent.press(screen.getByLabelText('Review these dates'));
+    await waitFor(() => expect(screen.getByText(/Enter a valid time zone/)).toBeTruthy());
+    expect(screen.getByLabelText('Review time zone')).toHaveDisplayValue(zone);
+    await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'Asia/Tokyo');
+    await fireEvent.press(screen.getByLabelText('Review these dates'));
+    await waitFor(() => expect(screen.getByLabelText('Change review dates')).toBeTruthy());
+    expect(screen.queryByLabelText('Review time zone')).toBeNull();
+    expect(screen.queryByText(/Enter a valid time zone/)).toBeNull();
+    expect(screen.getByText(/through .* · Asia\/Tokyo/)).toBeTruthy();
+    expect(mockConfirm).not.toHaveBeenCalled();
+  },
+);
+
+test.each(['Review start date', 'Review end date'])(
+  'a missing %s cannot hide required fields or leave old evidence actionable',
+  async (field) => {
+    const screen = await ready();
+    await fireEvent.press(screen.getByLabelText('Change review dates'));
+    await fireEvent.changeText(screen.getByLabelText(field), '');
+    expect(screen.queryByLabelText('Keep plan')).toBeNull();
+    expect(screen.getByLabelText('Hide review date controls')).toBeDisabled();
+    await fireEvent.press(screen.getByLabelText('Review these dates'));
+    await waitFor(() => expect(screen.getByText(/Invalid local date key/)).toBeTruthy());
+    expect(screen.getByLabelText(field)).toHaveDisplayValue('');
+    expect(screen.getByText(/All three fields are required/)).toBeTruthy();
+    expect(mockConfirm).not.toHaveBeenCalled();
+  },
+);
+
+test('automatic date read failure reveals controls, and a corrected explicit reread returns to compact evidence', async () => {
+  mockLoad.mockRejectedValueOnce(
+    new Error('Enter a valid time zone, then review these dates again.'),
+  );
+  const screen = await render(<CoachReviewScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Review time zone')).toBeTruthy());
+  expect(screen.getByText(/Enter a valid time zone/)).toBeTruthy();
+  expect(screen.queryByLabelText('Keep plan')).toBeNull();
+  await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'America/Toronto');
+  await fireEvent.press(screen.getByLabelText('Review these dates'));
+  await waitFor(() => expect(screen.getByLabelText('Change review dates')).toBeTruthy());
+  expect(screen.queryByLabelText('Review time zone')).toBeNull();
+  expect(screen.getByLabelText('Keep plan')).toBeTruthy();
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+test('an edited-window read resolving after blur and refocus cannot replace the new automatic compact window', async () => {
+  const screen = await ready();
+  let release!: () => void;
+  mockLoad.mockImplementationOnce(
+    (_db, _owner, _cycle, window, now) =>
+      new Promise((resolve) => {
+        release = () => resolve(prepareCoachReview({ ...packet, window, now }));
+      }),
+  );
+  await fireEvent.press(screen.getByLabelText('Change review dates'));
+  await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'Asia/Tokyo');
+  await fireEvent.press(screen.getByLabelText('Review these dates'));
+  await waitFor(() => expect(mockLoad).toHaveBeenCalledTimes(2));
+  await act(() => {
+    mockBlur?.();
+    mockBlur = mockFocus?.();
+  });
+  await waitFor(() => expect(screen.getByLabelText('Change review dates')).toBeTruthy());
+  const freshWindow = mockLoad.mock.calls[2]![3];
+  await act(() => release());
+  expect(
+    screen.getByText(
+      `${freshWindow.startDate} through ${freshWindow.endDate} · ${freshWindow.timeZone}`,
+    ),
+  ).toBeTruthy();
+  expect(screen.queryByText(/through .* · Asia\/Tokyo/)).toBeNull();
+  expect(screen.queryByLabelText('Review time zone')).toBeNull();
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+test('cold reopen recovers only the latest owned dated next step and separately rechecks its exact head', async () => {
+  const { screen, saved } = await restoredAvailability();
+  expect(screen.getByText('Latest saved dated intent')).toBeTruthy();
+  expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+  await fireEvent.press(screen.getByLabelText('Continue to setup'));
+  expect(mockHistory).toHaveBeenCalledWith(mockDb, mockOwner, cycle.id, 1);
+  expect(router.push).toHaveBeenCalledWith('/coach-onboarding');
+  expect(mockConfirm).toHaveBeenCalledTimes(1);
+  expect(saved.receipt.confirmedAt).toBe(stamp);
+});
+
+test.each(['head', 'same-id-content', 'version', 'goal', 'blur'])(
+  'a recovered next step refuses a changed %s without saving another intent',
+  async (change) => {
+    const { screen, saved } = await restoredAvailability();
+    const retained = mockButtonHandlers.get('Continue to setup')!;
+    if (change === 'head') mockHistory.mockResolvedValue([{ ...saved, id: 'newer-keep-plan' }]);
+    if (change === 'same-id-content')
+      mockHistory.mockResolvedValue([
+        { ...saved, receipt: { ...saved.receipt, response: null, choice: 'keep-plan' } },
+      ]);
+    if (change === 'version')
+      mockCycle.mockResolvedValue({ ...cycle, programVersionId: 'new-version' });
+    if (change === 'goal')
+      mockLoad.mockImplementation(async (_db, _owner, _cycle, window, now) => {
+        const fresh = prepareCoachReview({ ...packet, window, now });
+        return {
+          ...fresh,
+          evidenceFingerprint: JSON.stringify({
+            ...JSON.parse(fresh.evidenceFingerprint),
+            goal: { id: 'new-goal', target: 'revised-target' },
+          }),
+        };
+      });
+    if (change === 'blur') await act(() => mockBlur?.());
+    await act(() => retained());
+    expect(router.push).not.toHaveBeenCalled();
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    if (change !== 'blur') expect(screen.getByText(/changed. Reload/)).toBeTruthy();
+  },
+);
+
+test('a newer Keep plan suppresses an older availability continuation on cold reopen', async () => {
+  const { screen, saved } = await restoredAvailability();
+  await screen.unmount();
+  const fresh = prepareCoachReview(packet);
+  mockHistory.mockResolvedValue([
+    {
+      id: 'newer-keep-plan',
+      previousReviewId: saved.id,
+      receipt: {
+        ...confirmCoachReviewChoice(
+          previewCoachReviewChoice(fresh, 'keep-plan'),
+          fresh,
+          stamp,
+          true,
+        ),
+        goalWitness: null,
+      },
+    },
+    saved,
+  ]);
+  const restored = await ready();
+  expect(restored.queryByLabelText('Continue to setup')).toBeNull();
+  expect(mockConfirm).toHaveBeenCalledTimes(1);
+});
+
+test.each(['foreign', 'version', 'goal'])(
+  'cold reopen never restores continuation from a %s saved context',
+  async (change) => {
+    const { screen, saved } = await restoredAvailability();
+    await screen.unmount();
+    const receipt = {
+      ...saved.receipt,
+      ...(change === 'foreign' ? { ownerId: 'another-person' } : {}),
+      ...(change === 'version' ? { programVersionId: 'old-version' } : {}),
+      ...(change === 'goal'
+        ? { goalWitness: { state: 'unavailable-legacy-history', goalId: 'old-goal' } }
+        : {}),
+    };
+    mockHistory.mockResolvedValue([{ ...saved, receipt }]);
+    const restored = await render(<CoachReviewScreen />);
+    await waitFor(() => expect(restored.queryByText(/Loading the current person/)).toBeNull());
+    expect(restored.queryByLabelText('Continue to setup')).toBeNull();
+    expect(router.push).not.toHaveBeenCalled();
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+  },
+);
+
+test.each(['head', 'goal', 'owner', 'database'])(
+  'navigation resolver returning after a changed %s cannot open a recovered follow-up',
+  async (change) => {
+    const { screen, saved } = await restoredAvailability();
+    let resolve!: (value: { route: string }) => void;
+    mockNavigate.mockImplementationOnce(() => new Promise((done) => (resolve = done)));
+    await fireEvent.press(screen.getByLabelText('Continue to setup'));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledTimes(1));
+    if (change === 'head') mockHistory.mockResolvedValue([{ ...saved, id: 'new-head' }]);
+    if (change === 'goal')
+      mockLoad.mockImplementation(async (_db, _owner, _cycle, window, now) => ({
+        ...prepareCoachReview({ ...packet, window, now }),
+        goalWitness: { state: 'unavailable-legacy-history', goalId: 'changed-goal' },
+      }));
+    if (change === 'owner') mockOwner = 'new-owner';
+    if (change === 'database') mockDb = {};
+    if (change === 'owner' || change === 'database') await screen.rerender(<CoachReviewScreen />);
+    await act(() => resolve({ route: '/coach-onboarding' }));
+    expect(router.push).not.toHaveBeenCalled();
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+  },
+);
+
+test('historical confirmation dates use each saved timezone without rewriting receipt data', async () => {
+  const snapshot = prepareCoachReview({
+    ...packet,
+    window: { ...packet.window, timeZone: 'Asia/Tokyo' },
+  });
+  const receipt = {
+    ...confirmCoachReviewChoice(
+      previewCoachReviewChoice(snapshot, 'keep-plan'),
+      snapshot,
+      stamp,
+      true,
+    ),
+    goalWitness: null,
+  };
+  const saved = { id: 'saved-tokyo', previousReviewId: null, receipt };
+  const canonicalBefore = JSON.stringify(saved);
+  mockHistory.mockResolvedValue([saved]);
+  const screen = await ready();
+  expect(
+    screen.getByText(`Keep plan · confirmed ${formatRecordedDateTime(stamp, 'Asia/Tokyo')}`),
+  ).toBeTruthy();
+  expect(
+    screen.queryByText(`Keep plan · confirmed ${formatRecordedDateTime(stamp, 'America/Toronto')}`),
+  ).toBeNull();
+  expect(JSON.stringify(saved)).toBe(canonicalBefore);
+  expect(saved.receipt.confirmedAt).toBe(stamp);
+  expect(saved.receipt.window.timeZone).toBe('Asia/Tokyo');
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+test('goal baseline-to-latest dates are separate from session window, and Imperial labels preserve canonical load comparison', async () => {
+  const goal: Shift = {
+    id: 'goal',
+    userId: cycle.userId,
+    cycleId: cycle.id,
+    programVersionId: cycle.programVersionId,
+    templateId: 'personal-entry-v1',
+    blockObjective: 'Synthetic fixed-rep load',
+    target: 50,
+    baseline: { state: 'measured', observationId: 'baseline' },
+    reviewState: 'missing',
+    nextChoice: 'undecided',
+    protocol: {
+      id: 'protocol',
+      version: 1,
+      exerciseId: 'private',
+      variantId: 'same',
+      equipmentSetup: 'same setup',
+      assistance: 'none',
+      metric: 'load-for-reps',
+      canonicalUnit: 'kg',
+      direction: 'higher',
+      repCount: 5,
+    },
+  };
+  packet.goal = goal;
+  packet.observations = [
+    {
+      id: 'baseline',
+      shiftId: goal.id,
+      protocolId: goal.protocol.id,
+      protocolVersion: 1,
+      measuredAt: '2026-10-01T12:00:00.000Z',
+      source: 'assessment',
+      value: 40,
+      unit: 'kg',
+    },
+    {
+      id: 'latest',
+      shiftId: goal.id,
+      protocolId: goal.protocol.id,
+      protocolVersion: 1,
+      measuredAt: '2026-10-12T12:00:00.000Z',
+      source: 'assessment',
+      value: 45,
+      unit: 'kg',
+    },
+  ];
+  const screen = await ready();
+  const loadedWindow = mockLoad.mock.calls[0]![3];
+  expect(
+    screen.getByText(
+      `Baseline: 88.184905 lb · measured ${formatRecordedDateTime(packet.observations[0]!.measuredAt, loadedWindow.timeZone)}`,
+    ),
+  ).toBeTruthy();
+  expect(
+    screen.getByText(
+      `Latest: 99.208018 lb · measured ${formatRecordedDateTime(packet.observations[1]!.measuredAt, loadedWindow.timeZone)}`,
+    ),
+  ).toBeTruthy();
+  expect(screen.getByText(/separately from the selected session dates/)).toBeTruthy();
+  expect(screen.getByText(/Measured change: improved/)).toBeTruthy();
+  expect(packet.observations[0]!.value).toBe(40);
+});
+test('a changed cycle blocks the separate receipt navigation instead of opening a different goal', async () => {
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Open goal review'));
+  await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+  await waitFor(() => expect(screen.getByLabelText('Continue to personal goal')).toBeTruthy());
+  mockCycle.mockResolvedValue({ ...cycle, id: 'different-cycle' });
+  await fireEvent.press(screen.getByLabelText('Continue to personal goal'));
+  await waitFor(() => expect(screen.getByText(/reviewed cycle changed/)).toBeTruthy());
+  expect(mockNavigate).not.toHaveBeenCalled();
+  expect(router.push).not.toHaveBeenCalled();
+});
+test('legacy goal history is explicitly unavailable rather than a fabricated comparison or missing goal claim', async () => {
+  mockLoad.mockImplementation(async (_db, _owner, _cycle, window, now) => ({
+    ...prepareCoachReview({ ...packet, window, now }),
+    goalWitness: { state: 'unavailable-legacy-history', goalId: 'legacy-goal' },
+  }));
+  const screen = await ready();
+  expect(screen.getByText(/dated change history is unavailable/)).toBeTruthy();
+  expect(screen.queryByText('No personal goal is saved for this cycle.')).toBeNull();
+  expect(screen.queryByText(/Measured change:/)).toBeNull();
+  expect(screen.getByLabelText('Open goal review')).not.toBeDisabled();
+});

@@ -1,0 +1,1380 @@
+{
+  "scope": "Frozen c3270bdf, 1060a9b8, 29adf0af, d80cd6dd, d60daf0a, 0d705bac, 501be370 and db4e8c29 observations each identify their own commits and APK hashes. Separately dated iOS CI 71f2b4fe proves compile/install/cold-launch smoke, not later source or full iOS journeys. Synthetic completed-state fixture is UI-only and not six-week or completion-engine evidence. The unmatched goal route is classified as a harness error; unrelated-app private capture is excluded.",
+  "files": [
+    {
+      "file": "build-handover-zone-c327.log",
+      "bytes": 65592,
+      "sha256": "78ac45d9f49c94de0af183aae9958eaae1cb6aaa53d103ad987c7949eea2f5c4"
+    },
+    {
+      "file": "build-handover-zone-c327.status.json",
+      "bytes": 149,
+      "sha256": "5e0b868f83b750b8de82e3d61d797d046c1b2c227accacb5f04120f08fc7cc5b"
+    },
+    {
+      "file": "build-integrated-0d705bac.log",
+      "bytes": 65555,
+      "sha256": "7ca0548efe162e3060fa70a6da92dce8f42e6cd396018427dd976ba2da77e5f5"
+    },
+    {
+      "file": "build-integrated-0d705bac.status.json",
+      "bytes": 446,
+      "sha256": "6a0bca2127a00e6d0e241c61b215604ccf14fa28a4a61b9d7556b9ca084711a6"
+    },
+    {
+      "file": "build-integrated-1060a9b8.log",
+      "bytes": 65507,
+      "sha256": "9c37695ccc97c3b9c75fc34c689928ca5280c588fd3e79420570bdd77c7812b7"
+    },
+    {
+      "file": "build-integrated-1060a9b8.status.json",
+      "bytes": 446,
+      "sha256": "fa022bd01e1d4239140768114e641d8f9741d255b816a2f2a910bb5e8f99ab67"
+    },
+    {
+      "file": "build-integrated-29adf0af.log",
+      "bytes": 65555,
+      "sha256": "9e29471a0a4d23fa3d9cdc66abf1688d4a5fbfe77ceea769ab2577856ae202c2"
+    },
+    {
+      "file": "build-integrated-29adf0af.status.json",
+      "bytes": 446,
+      "sha256": "c0afec16d8b59cb426b7e4739302c716972f1188aa263d88f788cd54fdad5e0b"
+    },
+    {
+      "file": "build-integrated-501be370.log",
+      "bytes": 65547,
+      "sha256": "6e67e850ac319db2132be4eb07403e2c1ff0e3438025da5ee2c793e75b12ee48"
+    },
+    {
+      "file": "build-integrated-501be370.status.json",
+      "bytes": 446,
+      "sha256": "3d07cb2d1aa33b891dc6961f54b5233577ef6dc455663e3801bebe6ffd436d2b"
+    },
+    {
+      "file": "build-integrated-candidate.py",
+      "bytes": 2180,
+      "sha256": "d3506552322f6b49280f73ca5ad1ec4f3fd0546fc53bf66aa9e81a49969b6008"
+    },
+    {
+      "file": "build-integrated-d60daf0a.log",
+      "bytes": 65555,
+      "sha256": "1b16820da06313ddcbbf7fe7ea88a90158e8c53c1a562272d9c29a01bf1fd34d"
+    },
+    {
+      "file": "build-integrated-d60daf0a.status.json",
+      "bytes": 446,
+      "sha256": "5fbf24008229f329ec241524612bbc5508dcbf4a64b07f2f5271219fc1d3f982"
+    },
+    {
+      "file": "build-integrated-d80cd6dd.log",
+      "bytes": 65554,
+      "sha256": "33db669d76ee280c20698c72ea56e1ccf445c6f2557bfef00f965ca7e6352ffe"
+    },
+    {
+      "file": "build-integrated-d80cd6dd.status.json",
+      "bytes": 446,
+      "sha256": "893940c10e7c39c43aba6bf406c4ef7ac9c92049495f013a7183ed6c71103e65"
+    },
+    {
+      "file": "build-integrated-db4e8c29.log",
+      "bytes": 65555,
+      "sha256": "bf642c7a6afa612392acd630afe441e1814e7c7c229d04e522ae810b137f63f4"
+    },
+    {
+      "file": "build-integrated-db4e8c29.status.json",
+      "bytes": 446,
+      "sha256": "98f4e184a67943ad3dae7b65b87f3815700602f8c5ba924f0266a913b74602ea"
+    },
+    {
+      "file": "handover-after-partial-home-1060.png",
+      "bytes": 284670,
+      "sha256": "49edc9a28d1ba0ccd50581e08f5903dc4938a9a59dcaafe5dcf2d5cedc3850de"
+    },
+    {
+      "file": "handover-after-partial-home-1060.xml",
+      "bytes": 18196,
+      "sha256": "380fdef8f626df469866ec3e311c852220776f17ea9562298245edb52f30718e"
+    },
+    {
+      "file": "handover-blank-zone-fixed-c327.png",
+      "bytes": 256213,
+      "sha256": "00626ebd0615e56772bfc8bd2224826e183fa261960f4488d53a1fb916bc9f70"
+    },
+    {
+      "file": "handover-blank-zone-fixed-c327.xml",
+      "bytes": 12553,
+      "sha256": "dfe599301a05c98345459c8730a4e694625e86b6721150bcefddbe79bfb0ef42"
+    },
+    {
+      "file": "handover-bound-destination-29ad.png",
+      "bytes": 233073,
+      "sha256": "db9fbf6ba90cfb61599b27459d4ecd5c3f2d14c63527fa08549040900d5e4104"
+    },
+    {
+      "file": "handover-bound-destination-29ad.xml",
+      "bytes": 21250,
+      "sha256": "b986f7826064ad2b8ba3907671c4123d7e64ef31899a6c7aec3a717ce58ba2a3"
+    },
+    {
+      "file": "handover-bound-source-recovery-29ad.png",
+      "bytes": 130211,
+      "sha256": "bd552e109c8448b2be7df8314b7441a240cf6df52e598d1e2dcb96b211ef828e"
+    },
+    {
+      "file": "handover-bound-source-recovery-29ad.xml",
+      "bytes": 7726,
+      "sha256": "175f2bc4ed92668e7d1b5963dc9be71c4f46267bd7e7cbcd28c3bf207924ab7a"
+    },
+    {
+      "file": "handover-cancel-comparison-1060.json",
+      "bytes": 200,
+      "sha256": "5af1afb311e48cf136ded4d2e65d2ffbb5fb4e3f0327ece19277c9709324d7f7"
+    },
+    {
+      "file": "handover-cancelled-1060.png",
+      "bytes": 270914,
+      "sha256": "fbabc4d2664d12b54045a4a836c5dfd93f97c04583477c6a4850bc644c753b68"
+    },
+    {
+      "file": "handover-cancelled-1060.xml",
+      "bytes": 15699,
+      "sha256": "e4a291c0e8c2504e7b6bebbef62498da4fe6a8118adab7915df43fe0ef1aea23"
+    },
+    {
+      "file": "handover-cancelled-export-1060.json",
+      "bytes": 393867,
+      "sha256": "dad9444db4c820d0a1d1d1804811f0c4f45128e8ebe0094156e7a1b80a481ea6"
+    },
+    {
+      "file": "handover-cancelled-export-receiver-1060.png",
+      "bytes": 78575,
+      "sha256": "97ad9a6fba686a91d76b4ee828defe9006d23a919b44f9410e95c4d03da475bc"
+    },
+    {
+      "file": "handover-cancelled-export-receiver-1060.xml",
+      "bytes": 1681,
+      "sha256": "1c87c991b0d039933f35301b3834c469979fc10daf047f1989269431d729f920"
+    },
+    {
+      "file": "handover-carry-ready-preview-1060.png",
+      "bytes": 363671,
+      "sha256": "e16a3082509d34893a16db9e7a7be9b1d13e6b8753555292c6fe633a09283de5"
+    },
+    {
+      "file": "handover-carry-ready-preview-1060.xml",
+      "bytes": 12786,
+      "sha256": "e2a2179ebd1136944417f4ff586335f31caa16f896d67035afb43a701bc0a070"
+    },
+    {
+      "file": "handover-cold-recovery-home-1060.png",
+      "bytes": 274643,
+      "sha256": "c67bd001744759a5463eb8af79448099ed10a00888f82f7ae6c2a030f7be322e"
+    },
+    {
+      "file": "handover-cold-recovery-home-1060.xml",
+      "bytes": 20592,
+      "sha256": "8dc6a89c4b04f40c59835c7b2e070487f8b146ebb6267ad82705f279e92612da"
+    },
+    {
+      "file": "handover-completed-dashboard-1060.png",
+      "bytes": 239409,
+      "sha256": "515a8c715ddbbbdc167297582ec136a551c27866b0981622ff0c241fe1d31fa6"
+    },
+    {
+      "file": "handover-completed-dashboard-1060.xml",
+      "bytes": 21278,
+      "sha256": "deb8b03d237d4c389193a7577668fad828e004c26ce54567c3834e689a35529a"
+    },
+    {
+      "file": "handover-completed-dashboard-action-0d.png",
+      "bytes": 238629,
+      "sha256": "55213f9df05056491ff0abcb97d17fb2b215d05d5a8443b397699f27f284aba8"
+    },
+    {
+      "file": "handover-completed-dashboard-action-0d.xml",
+      "bytes": 21278,
+      "sha256": "deb8b03d237d4c389193a7577668fad828e004c26ce54567c3834e689a35529a"
+    },
+    {
+      "file": "handover-completed-dashboard-review-below-fold-0d.png",
+      "bytes": 161379,
+      "sha256": "6c3aa66a99894cbe2d133c36e686d0c1feb4e8056489fb5d202b2cc5612f6631"
+    },
+    {
+      "file": "handover-completed-dashboard-review-below-fold-0d.xml",
+      "bytes": 16041,
+      "sha256": "cc1db79037e9004199cdfd457d2aacad4bcc81035d96b2afd5b6b25395d294fd"
+    },
+    {
+      "file": "handover-completed-progress-review-entry-29ad.png",
+      "bytes": 216013,
+      "sha256": "e64ae405818880c0412682fa94c87f8a9a41a5dfa1f9d81982c1528b582daa25"
+    },
+    {
+      "file": "handover-completed-progress-review-entry-29ad.xml",
+      "bytes": 28744,
+      "sha256": "6647d8f1f8cb0f6883ae0fa962352dd559dccd198fe741a9c887a310615e5b4b"
+    },
+    {
+      "file": "handover-completed-progress-top-29ad.png",
+      "bytes": 239509,
+      "sha256": "c74ef993bee54023c82c66616f40b2706e5492010cca0d8b36b3b6f5b53268b6"
+    },
+    {
+      "file": "handover-completed-progress-top-29ad.xml",
+      "bytes": 22615,
+      "sha256": "f38157cd5b403a2b4e88e42338f22be92a684519f2e108c28fe3a8dc89dc9570"
+    },
+    {
+      "file": "handover-completed-review-bound-entry-29ad.png",
+      "bytes": 194666,
+      "sha256": "cb4f64af397ea4e26ab9fbc01aeaef655e5e885c20eae6fdc9584dd73f62aa3f"
+    },
+    {
+      "file": "handover-completed-review-bound-entry-29ad.xml",
+      "bytes": 20700,
+      "sha256": "dc8de6a4434c309654923a85cda8af571295860b10555c772e489451ed3739ce"
+    },
+    {
+      "file": "handover-confirmation-comparison-1060.json",
+      "bytes": 1111,
+      "sha256": "1ad97cdc160da5536b6c2cabec785bf8cf1f7b93abe821e81547fb69df2cdf6a"
+    },
+    {
+      "file": "handover-confirmed-export-1060.json",
+      "bytes": 413267,
+      "sha256": "7b3b23e19c703181942c940b4afd0402e802de5b3ff020b28e245ef0b370e38f"
+    },
+    {
+      "file": "handover-confirmed-export-receiver-1060.png",
+      "bytes": 78522,
+      "sha256": "80be067421328a36d89436fdb5242b5392ea8b1b2184a7b475c43d260cabaf3e"
+    },
+    {
+      "file": "handover-confirmed-export-receiver-1060.xml",
+      "bytes": 1681,
+      "sha256": "3c2d918e9d0567ce9308c10479261d405fd9220bc166dff575ae963315a6272c"
+    },
+    {
+      "file": "handover-confirmed-journal-delete-preview-29ad.png",
+      "bytes": 226819,
+      "sha256": "11ce1a8ff43ee2ab8e887d45967f909c1554195f6b86b408fbc488cf73fd8fbb"
+    },
+    {
+      "file": "handover-confirmed-journal-delete-preview-29ad.xml",
+      "bytes": 7063,
+      "sha256": "2a97109b0a88994d858efd95061b1f4f16c3f612d75f588c7c4b83cf88204809"
+    },
+    {
+      "file": "handover-confirmed-journal-deleted-export-29ad.json",
+      "bytes": 3103,
+      "sha256": "1dfe8a0cc7d0d2ee32ce279677ce5d4dc3a3947cb10e2efbb8f89495e8058cad"
+    },
+    {
+      "file": "handover-confirmed-journal-deleted-receiver-29ad.png",
+      "bytes": 74442,
+      "sha256": "3b7978979ead3af822b922168f7e134c1ba5190ded2ba0756878534b5af832da"
+    },
+    {
+      "file": "handover-confirmed-journal-deleted-receiver-29ad.xml",
+      "bytes": 1676,
+      "sha256": "7256f93e4a62e5843b2d5c30503d4d3575e68e02c174d28744e2108b97b32ce9"
+    },
+    {
+      "file": "handover-confirmed-journal-restore-comparison-29ad.json",
+      "bytes": 179,
+      "sha256": "6a5a996f41597dc7091fae8e2468e204a5199218ea70a56ac2b6e02a5bea5044"
+    },
+    {
+      "file": "handover-confirmed-journal-restore-preview-29ad.png",
+      "bytes": 365367,
+      "sha256": "b0a5698d46a98918ff1dae1ed6ab0731b0eaed077f7eced046361e7b07bc4360"
+    },
+    {
+      "file": "handover-confirmed-journal-restore-preview-29ad.xml",
+      "bytes": 15071,
+      "sha256": "1a460fe5628bb08ef5d578e7d49b3f497c8710f5978ec56382e6f5969c86ab0e"
+    },
+    {
+      "file": "handover-confirmed-journal-restored-29ad.png",
+      "bytes": 142379,
+      "sha256": "a85dc5c20615ad2147f3e5e1a77398ef7ca03a4a9f710cf755542f182cc28e28"
+    },
+    {
+      "file": "handover-confirmed-journal-restored-29ad.xml",
+      "bytes": 8460,
+      "sha256": "8b0cde8489c2a632b9a3135dd5c180b032c066711b2364c4ec6ed746239b8364"
+    },
+    {
+      "file": "handover-confirmed-journal-restored-export-29ad.json",
+      "bytes": 413267,
+      "sha256": "f2deff0e8d03710dd7e49b3cb345e1b5989cae89f1b54e6e841efcf164c6e070"
+    },
+    {
+      "file": "handover-confirmed-journal-restored-receiver-29ad.png",
+      "bytes": 78706,
+      "sha256": "92f28e9e482868e6f9b0a491d069afc28eaedfb952effb047cd03f8362203820"
+    },
+    {
+      "file": "handover-confirmed-journal-restored-receiver-29ad.xml",
+      "bytes": 1681,
+      "sha256": "3c2d918e9d0567ce9308c10479261d405fd9220bc166dff575ae963315a6272c"
+    },
+    {
+      "file": "handover-confirmed-receipt-1060.png",
+      "bytes": 242580,
+      "sha256": "45096a32fa891e910d7301f503ab583ca6626af5b3e6aefb1f6c36addf7265ba"
+    },
+    {
+      "file": "handover-confirmed-receipt-1060.xml",
+      "bytes": 15497,
+      "sha256": "796559e71ab05ccb4c917d88fe294581bb1a5180140742089a66f4340a3c0a85"
+    },
+    {
+      "file": "handover-connectivity-c327.txt",
+      "bytes": 57841,
+      "sha256": "19a1ae13b2ea7de88913c0281825f6dfcbb442cd3b692125fdd2e6207bd6c65d"
+    },
+    {
+      "file": "handover-current-c327.png",
+      "bytes": 285996,
+      "sha256": "e1a10c3421e73728b8435e0fd6dbda8d7a2a47be3e6a13c3a08fe6d689beee94"
+    },
+    {
+      "file": "handover-current-c327.xml",
+      "bytes": 18196,
+      "sha256": "68afc3fdd1a60cfcbbde17e2fdf8bc41b166a5b6a942ab778fbaefa7ff2fd63c"
+    },
+    {
+      "file": "handover-dashboard-final-comparison-501.json",
+      "bytes": 358,
+      "sha256": "c049b6d3cced21f086970def72d1d20531a7df1e97a11a3cd50f00f134b63e0d"
+    },
+    {
+      "file": "handover-dashboard-final-comparison-db4.json",
+      "bytes": 384,
+      "sha256": "2044e9b7c3a3d33fb44e296ed0367efcee997fabaaaf6c4b4be33b9e58b7d52d"
+    },
+    {
+      "file": "handover-dashboard-final-export-501.json",
+      "bytes": 394577,
+      "sha256": "5cd9d606e26a9e2daddd1ceb5855a583dd950483673fee68c0657948ebe18363"
+    },
+    {
+      "file": "handover-dashboard-final-export-db4.json",
+      "bytes": 394577,
+      "sha256": "83f8f83c51d1281f0db99d804324bcadf20557a6f0ba737a1820f0915c70ede1"
+    },
+    {
+      "file": "handover-dashboard-final-export-receiver-501.png",
+      "bytes": 77427,
+      "sha256": "b0bed50df8b976684d8ef5aaaf368ee3b4c122e531c751d3ae1a5426e94f66f0"
+    },
+    {
+      "file": "handover-dashboard-final-export-receiver-501.xml",
+      "bytes": 1681,
+      "sha256": "75b09f0710291ef4de896f754666df4ef050d7881de1dfe609b9812be328f5d7"
+    },
+    {
+      "file": "handover-dashboard-final-export-receiver-db4.png",
+      "bytes": 77590,
+      "sha256": "fe9681e2c5cff9d577039d8e5605d77120465db5eada8b4dc7cfa3f2ab46cb5b"
+    },
+    {
+      "file": "handover-dashboard-final-export-receiver-db4.xml",
+      "bytes": 1681,
+      "sha256": "75b09f0710291ef4de896f754666df4ef050d7881de1dfe609b9812be328f5d7"
+    },
+    {
+      "file": "handover-dashboard-large-header-db4.png",
+      "bytes": 237175,
+      "sha256": "a99938c2b05fcaba285e403618bb3c2010f30a5d715ae288022d546d86012904"
+    },
+    {
+      "file": "handover-dashboard-large-header-db4.xml",
+      "bytes": 19643,
+      "sha256": "1508cb7621720dd63681d82355d774f071c7c2ba69c0db1500d4b44bbe5ae22b"
+    },
+    {
+      "file": "handover-dashboard-large-review-db4.png",
+      "bytes": 245761,
+      "sha256": "f94491c939bffab4578bb9cd46e6a6ea78ec9652c943d143c24f96aa992cf690"
+    },
+    {
+      "file": "handover-dashboard-large-review-db4.xml",
+      "bytes": 17179,
+      "sha256": "fde9156f9843dbde666a15bf99e5f813e19981d61b31bcba9a9dca2655bf765c"
+    },
+    {
+      "file": "handover-dashboard-normal-db4.png",
+      "bytes": 234234,
+      "sha256": "78fb893f359c649a047cf0d85ded4b86397173148b12ba6fc7cc619be095033b"
+    },
+    {
+      "file": "handover-dashboard-normal-db4.xml",
+      "bytes": 21604,
+      "sha256": "825a564e12d4a9e9e7047bdbeda776c64ab1433945064fc81d4a0d386bbf1cf8"
+    },
+    {
+      "file": "handover-dashboard-normal-review-db4.png",
+      "bytes": 198336,
+      "sha256": "786613db4bb9ad86f59a264ebbd17b64e503c1f3c0587e01a48e1f745116def4"
+    },
+    {
+      "file": "handover-dashboard-normal-review-db4.xml",
+      "bytes": 20738,
+      "sha256": "7f41629ab621250f29ffe49031cd51e5c999d4c9f2f1c8f6d9b6a447f67b2705"
+    },
+    {
+      "file": "handover-dashboard-older-paused-501.png",
+      "bytes": 236744,
+      "sha256": "8b562ca5157b45ad2877550ed5c74f4ea77cfec1f66e6cbe8ad67a7fc62bbf6d"
+    },
+    {
+      "file": "handover-dashboard-older-paused-501.xml",
+      "bytes": 21252,
+      "sha256": "43218fb92e87fb38bf1eca3e166000aa69fb93d29e1cdc4448c1a2a52eeb033c"
+    },
+    {
+      "file": "handover-dashboard-older-reflection-501.png",
+      "bytes": 95326,
+      "sha256": "3184c5c4a72d2720b270b51da7f6a8becde0b3e6cdd78ce77b4dc8a8a2f2b884"
+    },
+    {
+      "file": "handover-dashboard-older-reflection-501.xml",
+      "bytes": 7625,
+      "sha256": "1ff3a11f895b09816099a51c091838113c795e342dd6f02e54aa87a1d41666d8"
+    },
+    {
+      "file": "handover-dashboard-older-selection-501.json",
+      "bytes": 241,
+      "sha256": "2bb7f143a15851ea604283ade9bdcf0524907574e17020408d778d3052c74766"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-501.png",
+      "bytes": 234198,
+      "sha256": "795cd589a27f799a1bd9c992c7bee4f55eb329307bf8e64c6efa83842a5733da"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-501.xml",
+      "bytes": 21243,
+      "sha256": "90d915a06c140a3cc35b88f745f29ffa29bb71e9d5639fef4bb41a11ab06aa2f"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-destination-501.png",
+      "bytes": 198225,
+      "sha256": "99411e5b6a2f364599848750f66d958e94d810ff1fd7c40b270dd11e81ad199d"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-destination-501.xml",
+      "bytes": 20738,
+      "sha256": "7f41629ab621250f29ffe49031cd51e5c999d4c9f2f1c8f6d9b6a447f67b2705"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-large-text-501.png",
+      "bytes": 221844,
+      "sha256": "6e69039063abed4ef2e33bfb6990c2d8826a0b5735a5d7db6745f136e8ca5c04"
+    },
+    {
+      "file": "handover-dashboard-promoted-review-large-text-501.xml",
+      "bytes": 18203,
+      "sha256": "fc56d2717111f1f75aaf99a848b8cbf29df6bc316168ad0cb360d40af5bf0489"
+    },
+    {
+      "file": "handover-deferred-goal-confirmed-1060.png",
+      "bytes": 233447,
+      "sha256": "75bfc20da86eb27b545d414ee32835d9f38ce9482a6c9f4b0ec9c308f1e495b7"
+    },
+    {
+      "file": "handover-deferred-goal-confirmed-1060.xml",
+      "bytes": 14296,
+      "sha256": "6d6de035e7e02c95925ca91278d93b4acea40301bf86d93e8a4dc816403b0c11"
+    },
+    {
+      "file": "handover-delete-preview-c327.png",
+      "bytes": 218625,
+      "sha256": "0ea5524feda1d0999f609224cd08949b87fb9b4b92d89698380b33a0e54f745c"
+    },
+    {
+      "file": "handover-delete-preview-c327.xml",
+      "bytes": 7063,
+      "sha256": "2a97109b0a88994d858efd95061b1f4f16c3f612d75f588c7c4b83cf88204809"
+    },
+    {
+      "file": "handover-deleted-export-c327.json",
+      "bytes": 3103,
+      "sha256": "bdf2a18622b0cc1e116e7240dba30346fbba78248e00de758ef0044254f29d7b"
+    },
+    {
+      "file": "handover-deleted-profile-c327.png",
+      "bytes": 201231,
+      "sha256": "b0796d735b3c17d50b2d62b192f95c967296216a2f6e4125330efaa5a6ab12ae"
+    },
+    {
+      "file": "handover-deleted-profile-c327.xml",
+      "bytes": 18560,
+      "sha256": "036998f73c371fe664e1c41df7dc1be6469e3c8e2914120be1ee79551a09ec36"
+    },
+    {
+      "file": "handover-deleted-receiver-c327.png",
+      "bytes": 74187,
+      "sha256": "a75dc1c52a060facd0b35a5e006f45049e4d598298d1c6b6e56cf7a03c968aaf"
+    },
+    {
+      "file": "handover-deleted-receiver-c327.xml",
+      "bytes": 1676,
+      "sha256": "7256f93e4a62e5843b2d5c30503d4d3575e68e02c174d28744e2108b97b32ce9"
+    },
+    {
+      "file": "handover-deleted-share-c327.png",
+      "bytes": 192757,
+      "sha256": "d5b40d8f3689ec890c4ca104044cf083ffa2651d8d74192342ae2959c008f69d"
+    },
+    {
+      "file": "handover-deleted-share-c327.xml",
+      "bytes": 15796,
+      "sha256": "03729f3d6230197e7bef4c1006b19c44b726cf7e8fa9934de6b54a6642f10743"
+    },
+    {
+      "file": "handover-elapsed-comparison-d60.json",
+      "bytes": 179,
+      "sha256": "97b56b1894e678a7fa107879b7f06071bd4b399e0de71d430e83a606353867e2"
+    },
+    {
+      "file": "handover-elapsed-export-d60.json",
+      "bytes": 394577,
+      "sha256": "a2acf16cffcd79741c5ea233daee1f0fa698cda2408152e9b834cf2782c11754"
+    },
+    {
+      "file": "handover-export-return-c327.png",
+      "bytes": 233107,
+      "sha256": "e1075a3a5985fc638244bf2f120382c2c98027bc8508abdf21fa5fd29a6b70ec"
+    },
+    {
+      "file": "handover-export-return-c327.xml",
+      "bytes": 18644,
+      "sha256": "322e209226dc63bf1299fe15713f613394797edf1d06e3e886b4bc7839ee111b"
+    },
+    {
+      "file": "handover-export-share-c327.png",
+      "bytes": 188833,
+      "sha256": "b094d1f2f63352379fc5425d3450a8f16c504c7427132891ba86a3c37bd35aca"
+    },
+    {
+      "file": "handover-export-share-c327.xml",
+      "bytes": 15796,
+      "sha256": "5e37e59d306dee5a726ed26ff2f5b3e05ef63b7fe9d8816f76448b98961c7fe6"
+    },
+    {
+      "file": "handover-external-schema17-c327.json",
+      "bytes": 394575,
+      "sha256": "561614a807e1e134bed2939f0dbdb410b89f54e2ed1c27f969eb4fd75e6fe8e8"
+    },
+    {
+      "file": "handover-file-picker-c327.png",
+      "bytes": 103949,
+      "sha256": "cfe01a40344b13d0238b94cbc70b248166f00c55a1e2fc23c244b178d7a7b7ee"
+    },
+    {
+      "file": "handover-file-picker-c327.xml",
+      "bytes": 52406,
+      "sha256": "74903717559c1bea03b3eea4d79a0147b92267f3000fba392aa22167ca58470e"
+    },
+    {
+      "file": "handover-final-carry-preview-1060.png",
+      "bytes": 348359,
+      "sha256": "fe44062a92d99686a0c533fe8385d04e99e101773f74681d703e8329209b9cc8"
+    },
+    {
+      "file": "handover-final-carry-preview-1060.xml",
+      "bytes": 15611,
+      "sha256": "497220da833935cc286cb15edc4a46f020e0d83f343e191b6d0f6cd4ed5c0330"
+    },
+    {
+      "file": "handover-final-comparison-0d.json",
+      "bytes": 145,
+      "sha256": "fd44caac021bd84c6f02e50ac4916dd8247fef74c8f3736728a8cd401937ca1f"
+    },
+    {
+      "file": "handover-final-export-0d.json",
+      "bytes": 394577,
+      "sha256": "18962ebf7d726383ccd68d5c467db1161eea5038fcd7325c9b3846483fc49d91"
+    },
+    {
+      "file": "handover-final-export-receiver-0d.png",
+      "bytes": 77537,
+      "sha256": "95e26a87c79b74f339d8b246b38f0f500a2c04445de03293d5e7015d98cf3eca"
+    },
+    {
+      "file": "handover-final-export-receiver-0d.xml",
+      "bytes": 1681,
+      "sha256": "75b09f0710291ef4de896f754666df4ef050d7881de1dfe609b9812be328f5d7"
+    },
+    {
+      "file": "handover-final-progress-top-0d.png",
+      "bytes": 216431,
+      "sha256": "f4c634c632eb7f40871cdd02f826699160ff34a4483369f9a343d008a8aedeb3"
+    },
+    {
+      "file": "handover-final-progress-top-0d.xml",
+      "bytes": 28841,
+      "sha256": "7b1ca57573e46462476a98eb38e0335b2925cba6f0441041f0ae8878107ad87a"
+    },
+    {
+      "file": "handover-fixture-restore-comparison-c327.json",
+      "bytes": 291,
+      "sha256": "77835e46bc262c26557a060c5f3c77c160e7270517acaaa655c36155e20de616"
+    },
+    {
+      "file": "handover-github-comment-readback.json",
+      "bytes": 1442,
+      "sha256": "16b869daca23b19fe17fd5e72fc4d9ea3b39cc19ebe9ef84d2b74dd4e6a2f847"
+    },
+    {
+      "file": "handover-history-elapsed-details-large-text-d60.png",
+      "bytes": 276538,
+      "sha256": "ba901b0ae1406b913d0feb0e5375c487001c68a83f0606858bcdee79d0190f62"
+    },
+    {
+      "file": "handover-history-elapsed-details-large-text-d60.xml",
+      "bytes": 13862,
+      "sha256": "79eaa838d103876a5f72d4e7dead46c8fa4d715ff86a68f8fa474fb8944297de"
+    },
+    {
+      "file": "handover-history-elapsed-large-text-d60.png",
+      "bytes": 283953,
+      "sha256": "edf3c3033d547ad22bdb2dcb7ba9b75c7ef7e0fe9728df8ae6852feb1bc031ec"
+    },
+    {
+      "file": "handover-history-elapsed-large-text-d60.xml",
+      "bytes": 14575,
+      "sha256": "a9e7ef273a5cd109d639c5fdcd7586dcbef15e163e1a9031a5c21f53467102eb"
+    },
+    {
+      "file": "handover-invalid-zone-fixed-c327.png",
+      "bytes": 261773,
+      "sha256": "2a0addff4ffe6c74b099f5ac2bc7dd3e8e8ff3e3e90fd917dd28035a64dec114"
+    },
+    {
+      "file": "handover-invalid-zone-fixed-c327.xml",
+      "bytes": 12565,
+      "sha256": "356b658d33bb3958adc2e6452859205a499f10523ff10da045bf40e4e15f824a"
+    },
+    {
+      "file": "handover-native-checks-c327.json",
+      "bytes": 2063,
+      "sha256": "26cc2795113f74e3d6ed6897cae426533d1d3648b48292b8b0816334f8b51596"
+    },
+    {
+      "file": "handover-native-compile-ios-71f2.json",
+      "bytes": 8243,
+      "sha256": "9582d62c0864eaca519d3c63f7f3a3981cfe790a554b520b34c5badddc24b37c"
+    },
+    {
+      "file": "handover-native-compile-ios-71f2.txt",
+      "bytes": 8975370,
+      "sha256": "6506e3905b1f832059117a8aa877f28e18b277896d853bb616e3a57772c0dc45"
+    },
+    {
+      "file": "handover-native-environment-c327.json",
+      "bytes": 194,
+      "sha256": "1ad1ec9162ab93a240372a7074b5d45ac055138c8eebb42858ebdbd8445dac0e"
+    },
+    {
+      "file": "handover-new-cycle-1060.png",
+      "bytes": 231505,
+      "sha256": "bdf4c3dc98388b50cd56f80251f52b837136e9d7d695a56be10b9cca98ccc025"
+    },
+    {
+      "file": "handover-new-cycle-1060.xml",
+      "bytes": 21250,
+      "sha256": "b986f7826064ad2b8ba3907671c4123d7e64ef31899a6c7aec3a717ce58ba2a3"
+    },
+    {
+      "file": "handover-pending-cycle-active-1060.png",
+      "bytes": 232217,
+      "sha256": "5cedceeb1cd289e62c7bfbf558200249727829245f70ef2468fa91d6f32f6ed6"
+    },
+    {
+      "file": "handover-pending-cycle-active-1060.xml",
+      "bytes": 21250,
+      "sha256": "3bd39f62b336d4ed099cb2f49e2b15fadb1731b25d557e4757cc1c861f95c8e3"
+    },
+    {
+      "file": "handover-pending-cycle-dashboard-1060.png",
+      "bytes": 231564,
+      "sha256": "0061e359a3a299a938f34771a0a1bd66a239c522569404869b6f9d3877665ece"
+    },
+    {
+      "file": "handover-pending-cycle-dashboard-1060.xml",
+      "bytes": 21247,
+      "sha256": "e7a91be2eb51e8835a3b5491b7d01c65404bb894862c2bd54cedcf4059ee29d9"
+    },
+    {
+      "file": "handover-pending-cycle-resume-preview-1060.png",
+      "bytes": 221648,
+      "sha256": "96007ec37f6052f210e35b63887f09e198abfef71c194992fe3852087e55b9ce"
+    },
+    {
+      "file": "handover-pending-cycle-resume-preview-1060.xml",
+      "bytes": 6924,
+      "sha256": "b3b454a076b65ed08d11bbe21cd52fa56b4c643205ffb327a0cf68856b951114"
+    },
+    {
+      "file": "handover-pending-fixture-restored-d80.png",
+      "bytes": 140978,
+      "sha256": "0818656a85ae12521b3d5ed94fab29f4da03a3a593726ed50522ff294b6fe269"
+    },
+    {
+      "file": "handover-pending-fixture-restored-d80.xml",
+      "bytes": 8460,
+      "sha256": "a50c9ef09aa0bc803e9faf293be5a4269f8b9b86fb11217f92f31a88da2beb44"
+    },
+    {
+      "file": "handover-pending-partial-confirm-1060.png",
+      "bytes": 286073,
+      "sha256": "4213a61da55e2588f4208d3ff986364b06fee4d7f54c5c352f1e1a2f33a7f596"
+    },
+    {
+      "file": "handover-pending-partial-confirm-1060.xml",
+      "bytes": 13115,
+      "sha256": "8dc38623ad7cc27268b050f6b51341c1dc891c6a5b9a58ae0b43aac432576a0b"
+    },
+    {
+      "file": "handover-pending-partial-reasons-1060.png",
+      "bytes": 179174,
+      "sha256": "1b1edef0f60a8ce225112854200f4c728fcc1c326df91bc5b77bd8cf83255d38"
+    },
+    {
+      "file": "handover-pending-partial-reasons-1060.xml",
+      "bytes": 18275,
+      "sha256": "fcfc63c92b4a65694f9c16e7cc9cbd0f5ee87a1d30ebceba2205a6cf9d8a34b3"
+    },
+    {
+      "file": "handover-pending-refusal-offscreen-1060.png",
+      "bytes": 278865,
+      "sha256": "4442e9066b929b073b6e8f46060728ca5811cf79d30b12ae33c663baa3d031fb"
+    },
+    {
+      "file": "handover-pending-refusal-offscreen-1060.xml",
+      "bytes": 16782,
+      "sha256": "63b63fdede5f397333cd2fa094d0e9ee3b3f1bf27786cd6fac71fdd2c62718a4"
+    },
+    {
+      "file": "handover-pending-refusal-visible-large-text-d80.png",
+      "bytes": 269623,
+      "sha256": "5ea4bf99ef3296248a5ab01cd71e3ec3cb6e8955618a7264b5efefa90b9a3628"
+    },
+    {
+      "file": "handover-pending-refusal-visible-large-text-d80.xml",
+      "bytes": 6550,
+      "sha256": "34e4a6435f40a0d22f5104bae9659acc5463cc9bc83f55b404657303438280d4"
+    },
+    {
+      "file": "handover-pending-session-refusal-1060.png",
+      "bytes": 234360,
+      "sha256": "de333ca3b0263171b91550522b1bd73c7784c71ef82fbbcb0183e5c43df9205f"
+    },
+    {
+      "file": "handover-pending-session-refusal-1060.xml",
+      "bytes": 22477,
+      "sha256": "2aa73a52909864edb919443c897a3bd9097ee17742e25dc3dbbefb5e24eb3dbc"
+    },
+    {
+      "file": "handover-pending-workout-resumed-1060.png",
+      "bytes": 189533,
+      "sha256": "295308177307a890ee88b476fde225287999185c3f09debe473fabbea55fe473"
+    },
+    {
+      "file": "handover-pending-workout-resumed-1060.xml",
+      "bytes": 19060,
+      "sha256": "ac291cc7a025d4df3466706392f3331fd6be9dc3b9e6cc81f68f75035db317fe"
+    },
+    {
+      "file": "handover-profile-before-upgrade-1060.png",
+      "bytes": 200518,
+      "sha256": "5bd5e9e40a2f4c9fcb11b40e36922c4bf932a3e85a97e39223ed79cd6c7d2193"
+    },
+    {
+      "file": "handover-profile-before-upgrade-1060.xml",
+      "bytes": 18963,
+      "sha256": "8d605b323daee26e1eebf1ad512e38df11bc6f942db7b7fc92a62c98d0dace46"
+    },
+    {
+      "file": "handover-profile-c327.png",
+      "bytes": 199967,
+      "sha256": "4f6753d954bf0df2effb57f022b765c5d2d8d66d9d56ebfbcfd5dc7d1a6fe2d7"
+    },
+    {
+      "file": "handover-profile-c327.xml",
+      "bytes": 18961,
+      "sha256": "fa326c14979c2d18aa99f1c8acfc66d4a1e0f9cb348273416d5c62e1f04e40ca"
+    },
+    {
+      "file": "handover-progress-current-top-29ad.png",
+      "bytes": 221899,
+      "sha256": "a3dd3d4d5059cae54a26b08163525e0df07592f8b83bbc6816f09fb154d5d6f5"
+    },
+    {
+      "file": "handover-progress-current-top-29ad.xml",
+      "bytes": 29410,
+      "sha256": "a2267dd41ec6e4646461cecf8817600cc434b8342b5bd0f9e46e0802b4e9eafd"
+    },
+    {
+      "file": "handover-progress-derived-units-29ad.png",
+      "bytes": 188948,
+      "sha256": "8e4d66e27f174a36f76d0c76e5747de5730b77e9ab056a8587932e1de7fa07aa"
+    },
+    {
+      "file": "handover-progress-derived-units-29ad.xml",
+      "bytes": 22247,
+      "sha256": "839daf1c13332eef46fc5dd711ffdaa6cc7e222b6ecc71d47d449c2fc2e68f09"
+    },
+    {
+      "file": "handover-progress-entry-1060.png",
+      "bytes": 217653,
+      "sha256": "b444af4963d3a5c959c0178813f72a83f17994aac262d734ba6eb9ef0876e2fd"
+    },
+    {
+      "file": "handover-progress-entry-1060.xml",
+      "bytes": 29754,
+      "sha256": "bfdfad0aa2203c55e1adb2ad61aff134944a4728dbb5a470e5dbfb42f36bc53c"
+    },
+    {
+      "file": "handover-progress-record-units-29ad.png",
+      "bytes": 156951,
+      "sha256": "91482b6316c0d0e3431be1542cf71eeae5a8fcc0049ee8d03528bb1f2a4e4237"
+    },
+    {
+      "file": "handover-progress-record-units-29ad.xml",
+      "bytes": 19720,
+      "sha256": "6b4937910bbc5fb76a9c63235841a72174515c9f8a4fe99fb5aa0b7af88ce43e"
+    },
+    {
+      "file": "handover-progress-review-below-fold-1060.png",
+      "bytes": 193948,
+      "sha256": "1055d415d87e261b698708ed8a1929701063e6ef4f3086a163c1ff2690361a04"
+    },
+    {
+      "file": "handover-progress-review-below-fold-1060.xml",
+      "bytes": 22219,
+      "sha256": "a8c1479dd6700e2c1d95efe8090d26e48238287ddfd46391960e5b65f78b5e51"
+    },
+    {
+      "file": "handover-progress-volume-breakdown-0d.png",
+      "bytes": 238699,
+      "sha256": "7e8105d6128c31e1797d162a63884cb473218884a2812e102c668591aba3554c"
+    },
+    {
+      "file": "handover-progress-volume-breakdown-0d.xml",
+      "bytes": 23203,
+      "sha256": "0321864d4411b2dcf99a2e945a063bc00159dde90934ede4ae6e92c0492ad073"
+    },
+    {
+      "file": "handover-progress-volume-metric-0d.png",
+      "bytes": 224767,
+      "sha256": "47bfaaebb0d15f3effaee3753a8d6602d83893435c96e420006941847c34e820"
+    },
+    {
+      "file": "handover-progress-volume-metric-0d.xml",
+      "bytes": 28336,
+      "sha256": "654886e162efc3a3363ce837ed6135dcaa8902cf259b0a3d5af3bf8356a1c4c6"
+    },
+    {
+      "file": "handover-ready-baseline-1060.json",
+      "bytes": 393867,
+      "sha256": "2c5056702c725b4c05cd7ee3c880a74dc6f4c907367f1f3eb54d75f5ded4bf53"
+    },
+    {
+      "file": "handover-ready-baseline-receiver-1060.png",
+      "bytes": 78592,
+      "sha256": "c05755e60ed6b4e855dc769f50318f2d51b4f1208e7c21f67dcd97b8c47c5f64"
+    },
+    {
+      "file": "handover-ready-baseline-receiver-1060.xml",
+      "bytes": 1681,
+      "sha256": "1c87c991b0d039933f35301b3834c469979fc10daf047f1989269431d729f920"
+    },
+    {
+      "file": "handover-ready-fixture-restored-29ad.png",
+      "bytes": 141370,
+      "sha256": "7bea56326f2cde5e9fd6fb30754c934e11c2a397198cb99f81fe381fb6434be3"
+    },
+    {
+      "file": "handover-ready-fixture-restored-29ad.xml",
+      "bytes": 8460,
+      "sha256": "a50c9ef09aa0bc803e9faf293be5a4269f8b9b86fb11217f92f31a88da2beb44"
+    },
+    {
+      "file": "handover-receiver-schema17-c327.png",
+      "bytes": 77124,
+      "sha256": "dace34c399895e1895c832951bd0a322c64b59fc2ab6d2958cf54d8b1eef2458"
+    },
+    {
+      "file": "handover-receiver-schema17-c327.xml",
+      "bytes": 1681,
+      "sha256": "38a135e9f507cbc0b07c732b3600a51c2c4b92d28e03389e8919f7bfc9fbaf08"
+    },
+    {
+      "file": "handover-recovered-receipt-1060.png",
+      "bytes": 195571,
+      "sha256": "6e33bb6793550f40b484d82866f3be501cc38dff7142fcf35d3a82a1ae3899aa"
+    },
+    {
+      "file": "handover-recovered-receipt-1060.xml",
+      "bytes": 20362,
+      "sha256": "a157c8a73589e3e12db6432e3f3dd87c9a347723e5086dc47ef09f8688d5a1b4"
+    },
+    {
+      "file": "handover-recovered-receipt-card-1060.png",
+      "bytes": 245916,
+      "sha256": "7c216fd9683e207d673e65c6ba3d9c4971cfddb8b8c28266f74192375c1747ac"
+    },
+    {
+      "file": "handover-recovered-receipt-card-1060.xml",
+      "bytes": 16289,
+      "sha256": "f63ab5081752d0bc1e77aba0fc1941db8fd007e246f1e6ae45334c0855667ca2"
+    },
+    {
+      "file": "handover-refusal-comparison-d80.json",
+      "bytes": 138,
+      "sha256": "c640e651e1eab60b3b0b27538e04d09c1555cfaa331abc259be7621c240328b9"
+    },
+    {
+      "file": "handover-refusal-export-d80.json",
+      "bytes": 394577,
+      "sha256": "149c3d4461029968b90b9c446da298e19733bd41b7e7b29d0180739d1d621296"
+    },
+    {
+      "file": "handover-refusal-large-text-environment-d80.json",
+      "bytes": 188,
+      "sha256": "e9c1bd0ddf8975872ee7a632a3406a496d1d1fbb3b7f7b3c76265dcab0b98e32"
+    },
+    {
+      "file": "handover-required-choice-1060.png",
+      "bytes": 242390,
+      "sha256": "b28c4ac62b546761b331940bc017dcb74c9fa760ce6b143af37ba7cda270233c"
+    },
+    {
+      "file": "handover-required-choice-1060.xml",
+      "bytes": 16395,
+      "sha256": "17ae384625e2ce55042d638e267a63c6100bfb05b977fa02dc12904cc2db09ba"
+    },
+    {
+      "file": "handover-resolve-pending-list-1060.png",
+      "bytes": 239391,
+      "sha256": "0e915e1f04ac21b10cc0725c914b747aab775cbb44ff97e8c52c1fd704d8a301"
+    },
+    {
+      "file": "handover-resolve-pending-list-1060.xml",
+      "bytes": 14998,
+      "sha256": "a84cb57458338a7f7039685964dc24191535f4411f1d4efef346b4e311d31b0b"
+    },
+    {
+      "file": "handover-restore-picker-c327.png",
+      "bytes": 101718,
+      "sha256": "654543b8343e20ca51d963e774911bf88a525badc43e5195970f56f49c4484a8"
+    },
+    {
+      "file": "handover-restore-picker-c327.xml",
+      "bytes": 7286,
+      "sha256": "4defb9fc7cbc1c81365fad0340da1998fa788a6dcc15502c8b55895b081d0f95"
+    },
+    {
+      "file": "handover-restore-preview-c327.png",
+      "bytes": 364904,
+      "sha256": "8575bc670899694a22ffedc561f88976ed7eb5e4afb83c6e17671883a5ae70d6"
+    },
+    {
+      "file": "handover-restore-preview-c327.xml",
+      "bytes": 15071,
+      "sha256": "5b990e1cc338c0a9a4ee8ccd4534ddcc925929051024483f53d2d5d95bd5e210"
+    },
+    {
+      "file": "handover-restored-fixture-c327.png",
+      "bytes": 141093,
+      "sha256": "46ff1fcbf42af4b1ca139802d408f28e647eca96200adf0ee6cb751138dffee2"
+    },
+    {
+      "file": "handover-restored-fixture-c327.xml",
+      "bytes": 8460,
+      "sha256": "a50c9ef09aa0bc803e9faf293be5a4269f8b9b86fb11217f92f31a88da2beb44"
+    },
+    {
+      "file": "handover-restored-fixture-export-c327.json",
+      "bytes": 394577,
+      "sha256": "2411f8c6569e5b40ff69823c33cdd61ce20d4a5dfb8853a4f82c0000575f5f19"
+    },
+    {
+      "file": "handover-restored-fixture-receiver-c327.png",
+      "bytes": 77612,
+      "sha256": "2cbc14ad940288cff26d5327d3a2a22918d25de6a4a70fdad45d0da217b8d215"
+    },
+    {
+      "file": "handover-restored-fixture-receiver-c327.xml",
+      "bytes": 1681,
+      "sha256": "75b09f0710291ef4de896f754666df4ef050d7881de1dfe609b9812be328f5d7"
+    },
+    {
+      "file": "handover-resumed-pending-home-1060.png",
+      "bytes": 280617,
+      "sha256": "d4f1ebc66457e25d9428bc4a43ea8a62b593b77aeeb3f59114f55fc58d931414"
+    },
+    {
+      "file": "handover-resumed-pending-home-1060.xml",
+      "bytes": 19884,
+      "sha256": "aa67c57c950d21e4a42a83a89039c1fc15c3c1f69250d0685ff7a473f610b019"
+    },
+    {
+      "file": "handover-review-entry-1060.png",
+      "bytes": 194740,
+      "sha256": "b5d8f8602357d7ce75dbd15a4d865ad4879c0b534da96f071e29ef3012729f8f"
+    },
+    {
+      "file": "handover-review-entry-1060.xml",
+      "bytes": 20700,
+      "sha256": "dc8de6a4434c309654923a85cda8af571295860b10555c772e489451ed3739ce"
+    },
+    {
+      "file": "handover-review-large-text-top-d80.png",
+      "bytes": 244725,
+      "sha256": "a81416a83d7249b80b9ddcb94dec84bf534eb218f35d0c297f9deabf31347a34"
+    },
+    {
+      "file": "handover-review-large-text-top-d80.xml",
+      "bytes": 17179,
+      "sha256": "bb40fd320e2f9ca5b485a31cad80c401ed08eac0bdd5879e9128c0db02001e13"
+    },
+    {
+      "file": "handover-review-upgrade-c327.png",
+      "bytes": 244883,
+      "sha256": "a577fa550753bf5f606640df57ae70c673c1e15613c0e242307f22d948eb2dc4"
+    },
+    {
+      "file": "handover-review-upgrade-c327.xml",
+      "bytes": 12243,
+      "sha256": "81448d145cae29c0fb333e349243ad0a0ad0258c0b84c5946bf0138f74d4233b"
+    },
+    {
+      "file": "handover-review-volume-large-text-0d.png",
+      "bytes": 318980,
+      "sha256": "9421ff0f8728b509281f7de9fc67b35dfe19ae91f1d4f011aaba177b92bf14b4"
+    },
+    {
+      "file": "handover-review-volume-large-text-0d.xml",
+      "bytes": 9542,
+      "sha256": "4952e798c60b7d4afaa7684c105e5654aebf6dfcf2ed6d52c1d69dd21d6c9814"
+    },
+    {
+      "file": "handover-review-volume-large-text-visible-0d.png",
+      "bytes": 233250,
+      "sha256": "038702e7536cadeeeba3a0a7052dc1b5236394f18d5df76984efbc36dd55eb43"
+    },
+    {
+      "file": "handover-review-volume-large-text-visible-0d.xml",
+      "bytes": 15537,
+      "sha256": "03f5041569f0c8f7a8edd9b12e9deb79f20b14a6233e449ca6483d4d575f44dd"
+    },
+    {
+      "file": "handover-review-volume-units-0d.png",
+      "bytes": 233782,
+      "sha256": "bf343d691a66d91148a5bb7e2585d33df82cafadba69849bb7b01a7569bce96e"
+    },
+    {
+      "file": "handover-review-volume-units-0d.xml",
+      "bytes": 20873,
+      "sha256": "94a470265d16d195f1e38d4d27f9186fcc13c95a8b071fb9c30a54b751aee818"
+    },
+    {
+      "file": "handover-saved-cycles-1060.png",
+      "bytes": 239648,
+      "sha256": "30b59faeea5fcc568dbfd12407b008e5c6a418b590e41e693c8bc987df225f2f"
+    },
+    {
+      "file": "handover-saved-cycles-1060.xml",
+      "bytes": 14998,
+      "sha256": "a84cb57458338a7f7039685964dc24191535f4411f1d4efef346b4e311d31b0b"
+    },
+    {
+      "file": "handover-shift6-foreground-c327.png",
+      "bytes": 233594,
+      "sha256": "c1ac5a2ecd1f305b78e43001bb5f5d83b84611d1a47f8f2387385419219dfbee"
+    },
+    {
+      "file": "handover-shift6-foreground-c327.xml",
+      "bytes": 18644,
+      "sha256": "322e209226dc63bf1299fe15713f613394797edf1d06e3e886b4bc7839ee111b"
+    },
+    {
+      "file": "handover-summary-elapsed-large-text-d60.png",
+      "bytes": 249566,
+      "sha256": "42dacfb5147831355a4d057ce70c296d871a5184d8954c67ee67792fbb42b214"
+    },
+    {
+      "file": "handover-summary-elapsed-large-text-d60.xml",
+      "bytes": 12078,
+      "sha256": "2baf684268d701c0659e99724f7841851788866180a1bb6374c3cb5b97e29f84"
+    },
+    {
+      "file": "handover-synthetic-completed-schema17-c327.json",
+      "bytes": 394578,
+      "sha256": "5b041b403fa4fd24b137559010ff04c66ebcd24f3dbfac15c3b593b878b20a21"
+    },
+    {
+      "file": "handover-synthetic-fixture-receipt.json",
+      "bytes": 1887,
+      "sha256": "b099e71a87d917e9422d115d4a55a61c3e7172826d9f5ec53e32b9e272205aac"
+    },
+    {
+      "file": "handover-unsaved-reflection-1060.png",
+      "bytes": 254424,
+      "sha256": "e66358afb87fe128c0c800e25805a8c5e06164fc763b5846b45b22bebc025859"
+    },
+    {
+      "file": "handover-unsaved-reflection-1060.xml",
+      "bytes": 23313,
+      "sha256": "72e975a82760bf46df4cefc667ebc4fad49365bf05164016d1f9c05b13f75eeb"
+    },
+    {
+      "file": "handover-upgrade-comparison-29ad.json",
+      "bytes": 129,
+      "sha256": "d075ce7a63e5bff9b5c4e2ecf8bcebfb2879fc203e6c4d2d6f6ba6060f60b4ef"
+    },
+    {
+      "file": "handover-upgrade-comparison-c327.json",
+      "bytes": 212,
+      "sha256": "311f781da30f6d009edbab86a8a57bc92b95a3d7fa3d86f3c07959cef0051a97"
+    },
+    {
+      "file": "handover-upgrade-home-1060.png",
+      "bytes": 240418,
+      "sha256": "4c1206c0da981a49fd9b31672f5877bb8725b668c71143f330a7d76d6aeb58ef"
+    },
+    {
+      "file": "handover-upgrade-home-1060.xml",
+      "bytes": 15832,
+      "sha256": "ca6b22b9e34242c52629eb61bc30b8a079407a4ea38c66602d7cdfe9cc9d31c2"
+    },
+    {
+      "file": "handover-upgrade-home-c327.png",
+      "bytes": 285202,
+      "sha256": "c723934a0e46deead1469dd25853c263b4ee957a808729bcc96c6ea2e0dcd74c"
+    },
+    {
+      "file": "handover-upgrade-home-c327.xml",
+      "bytes": 18196,
+      "sha256": "68afc3fdd1a60cfcbbde17e2fdf8bc41b166a5b6a942ab778fbaefa7ff2fd63c"
+    },
+    {
+      "file": "handover-upgraded-export-29ad.json",
+      "bytes": 413267,
+      "sha256": "1d5060615fe010c712d2157fe1e981a2ffa5df626835485a439c3c1e31e9a253"
+    },
+    {
+      "file": "handover-upgraded-export-receiver-29ad.png",
+      "bytes": 78691,
+      "sha256": "4415e1bb6fe02fd3127d7becc76f49611941e265cacc73b8cd07534652b12979"
+    },
+    {
+      "file": "handover-upgraded-export-receiver-29ad.xml",
+      "bytes": 1681,
+      "sha256": "3c2d918e9d0567ce9308c10479261d405fd9220bc166dff575ae963315a6272c"
+    },
+    {
+      "file": "handover-valid-zone-recovered-c327.png",
+      "bytes": 245248,
+      "sha256": "bc3d9b247552ad7737b7e22ed8993dafd871906cbcfdecfbbb37a531023405f8"
+    },
+    {
+      "file": "handover-valid-zone-recovered-c327.xml",
+      "bytes": 12243,
+      "sha256": "81448d145cae29c0fb333e349243ad0a0ad0258c0b84c5946bf0138f74d4233b"
+    },
+    {
+      "file": "handover-without-goal-comparison-29ad.json",
+      "bytes": 417,
+      "sha256": "37f84447f799493a4a4aa7a18b5af2d79c98165d7abe394cc6741620157c2db9"
+    },
+    {
+      "file": "handover-without-goal-confirm-preview-29ad.png",
+      "bytes": 318055,
+      "sha256": "65857d80b1c3fbdc3344f71c6f332c82ec0e6e667d5264bd42ff92db399fbb95"
+    },
+    {
+      "file": "handover-without-goal-confirm-preview-29ad.xml",
+      "bytes": 16218,
+      "sha256": "90388989ebcfdb4e759cd2de8e56036ba1a750fe1d6b1d09d998da829000d856"
+    },
+    {
+      "file": "handover-without-goal-confirmed-29ad.png",
+      "bytes": 240921,
+      "sha256": "cf28a8508d4e39c1f98b649c16a6aa40998f7fa7498d970265d082142b8c8220"
+    },
+    {
+      "file": "handover-without-goal-confirmed-29ad.xml",
+      "bytes": 15497,
+      "sha256": "79d46569f6a2782632ddef2229c4e3040642d89b40fd84d959ffabb46863dff5"
+    },
+    {
+      "file": "handover-without-goal-export-29ad.json",
+      "bytes": 410964,
+      "sha256": "ff01dd680b25a61b831a82a73cf230395909cbed2fe63e9a43c81f66468eec97"
+    },
+    {
+      "file": "handover-without-goal-export-receiver-29ad.png",
+      "bytes": 78474,
+      "sha256": "e0cde383428e95cebbe0163499cf732ae40dcda8c4924cabe08ccad12e36805d"
+    },
+    {
+      "file": "handover-without-goal-export-receiver-29ad.xml",
+      "bytes": 1681,
+      "sha256": "b6665461cc1959c53125126bd4a85b7dc878de6fc79a546ee5fae5b31490beb9"
+    },
+    {
+      "file": "handover-without-goal-preview-1060.png",
+      "bytes": 337696,
+      "sha256": "885ee3eace574b922c450081c61ed59baff941f12c74f9b490fd6d28d2c23b48"
+    },
+    {
+      "file": "handover-without-goal-preview-1060.xml",
+      "bytes": 13395,
+      "sha256": "507d38423e98c34b9fdcf0d3ca7af533f4a6c257aaacad8fa36a64a98763925d"
+    },
+    {
+      "file": "harness-unmatched-personal-goal-route-1060.png",
+      "bytes": 131745,
+      "sha256": "425b8c00dcbd7e2648aec6d457c97fe741014d4219b32c5c4149ca3f04a0ac90"
+    },
+    {
+      "file": "harness-unmatched-personal-goal-route-1060.xml",
+      "bytes": 6514,
+      "sha256": "7a82d56223c89163a32a09ea6241c24942ade974663d46880148563e493b3126"
+    },
+    {
+      "file": "issues-handover-live.json",
+      "bytes": 7975,
+      "sha256": "b81c87b024fa8cdb5135a28676bfc3374576c6b8c36ea8fe7f2aa6be225effa2"
+    },
+    {
+      "file": "native-proof-f14e28cb.log",
+      "bytes": 131,
+      "sha256": "d025e82053772065ae6e98049f6f81d39bd76215f970f3d97f07c22644400f36"
+    },
+    {
+      "file": "native-proof-f14e28cb.status.json",
+      "bytes": 445,
+      "sha256": "8eab24ae4f133d4f7bfe739b0a17c3c800ea3bf4bb9498140cd5734b938d7c12"
+    },
+    {
+      "file": "qa.py",
+      "bytes": 5113,
+      "sha256": "3e15b575f5da363de8232f8e5cd9be119dd37280cdc0a06b2bd6fd01c5a2f46f"
+    },
+    {
+      "file": "verify-integrated-0d705bac.log",
+      "bytes": 28914,
+      "sha256": "9a2afe471ee860d2432493a373d325947aa9afda7b5295ce613223b136449e71"
+    },
+    {
+      "file": "verify-integrated-0d705bac.status.json",
+      "bytes": 215,
+      "sha256": "dd39a84cc896ca3ec39657a9b76db59cde5c57bb2f1c44b6af904f3b41b839bf"
+    },
+    {
+      "file": "verify-integrated-1060a9b8.log",
+      "bytes": 27563,
+      "sha256": "a42c06624864f38153201cd297577311d7e67aed1c3ac28a14d2efb75549c509"
+    },
+    {
+      "file": "verify-integrated-1060a9b8.status.json",
+      "bytes": 215,
+      "sha256": "22de2185552a4f277d13f63e7be678db0e28aba9b70aa41299026d0c811d672d"
+    },
+    {
+      "file": "verify-integrated-17237f60.log",
+      "bytes": 28864,
+      "sha256": "f18819ef90c2f895701f5a760a6c3e312659cfc3bde293ae6ee20de28c974ff9"
+    },
+    {
+      "file": "verify-integrated-17237f60.status.json",
+      "bytes": 215,
+      "sha256": "da1b7b567d4baa18c69e8d31e45fc75d3cbec2fecfc43aa10c408a453829819a"
+    },
+    {
+      "file": "verify-integrated-29adf0af.log",
+      "bytes": 28863,
+      "sha256": "665e35c5e11a997fde349ee876572cdad9e772845e2acf52919c821b6722842a"
+    },
+    {
+      "file": "verify-integrated-29adf0af.status.json",
+      "bytes": 215,
+      "sha256": "8eb1bf9efc15af7a9f1e9ab241c9663cdc02c5ecf5dda65609f94e0e1cc1e35e"
+    },
+    {
+      "file": "verify-integrated-501be370.log",
+      "bytes": 28903,
+      "sha256": "6160bdb070a961f9f408b8307ea69b40aaefc4cda4dec803ad10bae551d9a72a"
+    },
+    {
+      "file": "verify-integrated-501be370.status.json",
+      "bytes": 215,
+      "sha256": "b17068beaa5823bfe5ffc52491d3b5b78e8c38ec98391c53341e6823949fb9e4"
+    },
+    {
+      "file": "verify-integrated-63bdf057.log",
+      "bytes": 26251,
+      "sha256": "c5592e455aecac2c162aaca74a40a8cf41d092efe08072422bcd7308a5b74422"
+    },
+    {
+      "file": "verify-integrated-63bdf057.status.json",
+      "bytes": 215,
+      "sha256": "981c7ab01f3af196507eb510b3b1307d78a17755b777407c6deaafb4b9ab6d49"
+    },
+    {
+      "file": "verify-integrated-candidate.py",
+      "bytes": 1201,
+      "sha256": "9da9b120723944ed4566f5f2a50db9c1beb8508a3a2be897a7922be58f6275fd"
+    },
+    {
+      "file": "verify-integrated-d60daf0a.log",
+      "bytes": 28905,
+      "sha256": "b34013bc8d1a1907393c0da2d9d8b3d11ef9cde448a065c9e7a5f0f15856c4bb"
+    },
+    {
+      "file": "verify-integrated-d60daf0a.status.json",
+      "bytes": 215,
+      "sha256": "c91bb6fca91b9cfc369388e4b651b555c7899596cba8ff2ba47f79ec5db48ad4"
+    },
+    {
+      "file": "verify-integrated-d80cd6dd.log",
+      "bytes": 28855,
+      "sha256": "3e884835c9115e502fc403cf3a06903674cdc6b88378f3a57d2e96e2b78716d3"
+    },
+    {
+      "file": "verify-integrated-d80cd6dd.status.json",
+      "bytes": 215,
+      "sha256": "8d1f8aa7a5db93f8ccb4b34c5af850f91656b2c6d9947d3a9d4a3caccf1baebf"
+    },
+    {
+      "file": "verify-integrated-db4e8c29.log",
+      "bytes": 28905,
+      "sha256": "44afb8881803d44bd86ad61ca1892c67e067ee8210eb617088358a2d7ad60c88"
+    },
+    {
+      "file": "verify-integrated-db4e8c29.status.json",
+      "bytes": 215,
+      "sha256": "f6bdd6e3cd1e455432a0930f0e43dc013659c0f9819851b2cbedf84cdedbb730"
+    },
+    {
+      "file": "verify-integrated-f14e28cb.log",
+      "bytes": 33445,
+      "sha256": "812504b2f9ec26e4603c7b4ca4b2ce43356196750295a425695dfaab39568a38"
+    },
+    {
+      "file": "verify-integrated-f14e28cb.status.json",
+      "bytes": 215,
+      "sha256": "ad58f3847683b53b28c6f0b1dfe2ea6cb7a404c87cdf3d5a3e1a33faabc9cf1e"
+    }
+  ]
+}

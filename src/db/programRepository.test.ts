@@ -3,11 +3,14 @@ import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 
 import { migrateLocalUserToAccount } from './accountRepository';
 import { demoProgram, demoProgramVersion } from '../domain/fixtures/home';
-import { createCustomExercise } from '../domain/programBuilder';
+import { createCustomExercise, createProgramCopy } from '../domain/programBuilder';
 import { MIGRATIONS } from './migrations';
+import { saveTrainingCycle } from './cycleRepository';
+import { createTrainingCycle } from '../domain/cycle';
 import {
   getSavedUserPrograms,
   getUserExercises,
+  getUserProgramVersion,
   saveCustomExercise,
   saveProgramVersion,
 } from './programRepository';
@@ -15,6 +18,7 @@ import {
 function fakeDatabase() {
   const calls: string[] = [];
   const database = {
+    getFirstAsync: async () => null,
     runAsync: async (sql: string) => {
       calls.push(sql);
       return { changes: 1, lastInsertRowId: 1 };
@@ -45,6 +49,8 @@ function sqliteDatabase() {
       sqlite.prepare(sql).get(...(params as SQLInputValue[])) ?? null,
     getAllAsync: async (sql: string, ...params: unknown[]) =>
       sqlite.prepare(sql).all(...(params as SQLInputValue[])),
+    withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+      database.withTransactionAsync(() => callback(database)),
     withTransactionAsync: async (callback: () => Promise<void>) => {
       sqlite.exec('BEGIN TRANSACTION;');
       try {
@@ -115,6 +121,157 @@ describe('programRepository', () => {
 });
 
 describe('programRepository ownership in SQLite', () => {
+  it('refuses a foreign owner embedded in a new private snapshot before canonical or outbox writes', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      await expect(
+        saveProgramVersion(
+          database,
+          'guest-user',
+          { ...demoProgram, isTemplate: false, ownerId: 'foreign-owner' },
+          demoProgramVersion,
+        ),
+      ).rejects.toThrow('local owner');
+      for (const table of ['user_programs', 'user_program_versions', 'sync_outbox'])
+        expect(sqlite.prepare(`SELECT count(*) AS n FROM ${table}`).get()).toEqual({ n: 0 });
+    } finally {
+      sqlite.close();
+    }
+  });
+  it('identical retries tolerate object key order and cannot rewind a newer program pointer or rewrite outbox payloads', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      await saveProgramVersion(database, 'guest-user', demoProgram, demoProgramVersion);
+      const reordered = Object.fromEntries(
+        Object.entries(demoProgramVersion).reverse(),
+      ) as typeof demoProgramVersion;
+      await saveProgramVersion(database, 'guest-user', demoProgram, reordered);
+      const nextVersion = {
+        ...demoProgramVersion,
+        id: 'immutable-next-version',
+        version: 2,
+        createdAt: '2026-10-13T12:00:00.000Z',
+      };
+      const nextProgram = { ...demoProgram, currentVersionId: nextVersion.id };
+      await saveProgramVersion(database, 'guest-user', nextProgram, nextVersion);
+      const before = Object.fromEntries(
+        ['user_programs', 'user_program_versions', 'sync_outbox'].map((table) => [
+          table,
+          sqlite.prepare(`SELECT * FROM ${table} ORDER BY id`).all(),
+        ]),
+      );
+      await saveProgramVersion(database, 'guest-user', demoProgram, demoProgramVersion);
+      for (const [table, rows] of Object.entries(before))
+        expect(sqlite.prepare(`SELECT * FROM ${table} ORDER BY id`).all()).toEqual(rows);
+      await expect(
+        saveProgramVersion(
+          database,
+          'guest-user',
+          { ...demoProgram, title: 'Unsaved metadata change' },
+          demoProgramVersion,
+        ),
+      ).rejects.toThrow('immutable');
+      expect((await getSavedUserPrograms(database, 'guest-user'))[0]?.version.id).toBe(
+        nextVersion.id,
+      );
+    } finally {
+      sqlite.close();
+    }
+  });
+  it('same-ID status, version, creation time and current metadata mutations are rejected before writes', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      await saveProgramVersion(database, 'guest-user', demoProgram, demoProgramVersion);
+      const originalProgram = sqlite
+        .prepare('SELECT * FROM user_programs WHERE id=?')
+        .get(demoProgram.id);
+      const originalVersion = sqlite
+        .prepare('SELECT * FROM user_program_versions WHERE id=?')
+        .get(demoProgramVersion.id);
+      for (const change of [
+        { status: 'retired' as const },
+        { version: 2 },
+        { createdAt: '2026-10-13T13:00:00.000Z' },
+      ])
+        await expect(
+          saveProgramVersion(database, 'guest-user', demoProgram, {
+            ...demoProgramVersion,
+            ...change,
+          }),
+        ).rejects.toThrow('immutable');
+      await expect(
+        saveProgramVersion(
+          database,
+          'guest-user',
+          { ...demoProgram, title: 'Changed title' },
+          demoProgramVersion,
+        ),
+      ).rejects.toThrow('immutable');
+      expect(sqlite.prepare('SELECT * FROM user_programs WHERE id=?').get(demoProgram.id)).toEqual(
+        originalProgram,
+      );
+      expect(
+        sqlite.prepare('SELECT * FROM user_program_versions WHERE id=?').get(demoProgramVersion.id),
+      ).toEqual(originalVersion);
+    } finally {
+      sqlite.close();
+    }
+  });
+  it('rejects changed same-ID targets before changing a cycle-referenced saved snapshot or program/outbox metadata', async () => {
+    const { database, sqlite } = sqliteDatabase();
+    try {
+      await saveProgramVersion(database, 'guest-user', demoProgram, demoProgramVersion);
+      const cycle = createTrainingCycle({
+        id: 'immutable-cycle',
+        userId: 'guest-user',
+        programVersion: demoProgramVersion,
+        startedAt: '2026-10-13T12:00:00.000Z',
+      });
+      await saveTrainingCycle(database, cycle);
+      const before = Object.fromEntries(
+        ['user_programs', 'user_program_versions', 'training_cycles', 'sync_outbox'].map(
+          (table) => [table, sqlite.prepare(`SELECT * FROM ${table} ORDER BY id`).all()],
+        ),
+      );
+      const changed = {
+        ...demoProgramVersion,
+        workouts: demoProgramVersion.workouts.map((workout, index) =>
+          index === 0
+            ? {
+                ...workout,
+                title: 'Overwritten historical workout',
+                exercises: workout.exercises.map((movement, movementIndex) =>
+                  movementIndex === 0
+                    ? {
+                        ...movement,
+                        sets: movement.sets.map((set) => ({
+                          ...set,
+                          target: { ...set.target, reps: 99 },
+                        })),
+                      }
+                    : movement,
+                ),
+              }
+            : workout,
+        ),
+      };
+      await expect(
+        saveProgramVersion(
+          database,
+          'guest-user',
+          { ...demoProgram, title: 'Overwritten metadata' },
+          changed,
+        ),
+      ).rejects.toThrow('immutable');
+      for (const [table, rows] of Object.entries(before))
+        expect(sqlite.prepare(`SELECT * FROM ${table} ORDER BY id`).all()).toEqual(rows);
+      expect(
+        (await getUserProgramVersion(database, 'guest-user', cycle.programVersionId))?.version,
+      ).toEqual(demoProgramVersion);
+    } finally {
+      sqlite.close();
+    }
+  });
   it('discovers only the latest owned saved version with workout data after reopening', async () => {
     const { database, sqlite } = sqliteDatabase();
     try {
@@ -243,29 +400,49 @@ describe('programRepository ownership in SQLite', () => {
     }
   });
 
-  it('allows a same-owner snapshot update and an explicitly adopted guest program', async () => {
+  it('rejects a same-owner snapshot mutation and allows an identical adopted-owner retry', async () => {
     const { database, sqlite } = sqliteDatabase();
     try {
-      await saveProgramVersion(database, 'guest-user', demoProgram, demoProgramVersion);
-      await saveProgramVersion(database, 'guest-user', demoProgram, {
-        ...demoProgramVersion,
-        status: 'retired',
+      const owned = createProgramCopy({
+        sourceProgram: demoProgram,
+        sourceVersion: demoProgramVersion,
+        userId: 'guest-user',
+        newProgramId: 'honest-private-adoption',
+        newVersionId: 'honest-private-adoption-v1',
+        createdAt: '2026-10-13T12:00:00.000Z',
       });
+      await saveProgramVersion(database, 'guest-user', owned.program, owned.version);
+      await expect(
+        saveProgramVersion(database, 'guest-user', owned.program, {
+          ...owned.version,
+          status: 'retired',
+        }),
+      ).rejects.toThrow('immutable');
       await expect(
         migrateLocalUserToAccount(database, 'guest-user', 'account-user'),
       ).resolves.toMatchObject({
         status: 'migrated',
       });
-      await saveProgramVersion(database, 'account-user', demoProgram, demoProgramVersion);
+      const adopted = (await getUserProgramVersion(database, 'account-user', owned.version.id))!;
+      expect(adopted.program.ownerId).toBe('account-user');
+      const beforeRetry = sqlite.prepare('SELECT * FROM sync_outbox ORDER BY id').all();
+      await saveProgramVersion(database, 'account-user', adopted.program, adopted.version);
+      expect(sqlite.prepare('SELECT * FROM sync_outbox ORDER BY id').all()).toEqual(beforeRetry);
+      await expect(
+        saveProgramVersion(database, 'account-user', adopted.program, {
+          ...adopted.version,
+          status: 'retired',
+        }),
+      ).rejects.toThrow('immutable');
 
       expect(
-        sqlite.prepare('SELECT user_id FROM user_programs WHERE id = ?').get(demoProgram.id),
+        sqlite.prepare('SELECT user_id FROM user_programs WHERE id = ?').get(owned.program.id),
       ).toMatchObject({ user_id: 'account-user' });
       expect(
         sqlite
           .prepare('SELECT version_json FROM user_program_versions WHERE id = ?')
-          .get(demoProgramVersion.id),
-      ).toMatchObject({ version_json: JSON.stringify(demoProgramVersion) });
+          .get(owned.version.id),
+      ).toMatchObject({ version_json: JSON.stringify(owned.version) });
     } finally {
       sqlite.close();
     }

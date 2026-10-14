@@ -26,17 +26,22 @@ desired. Duplicate restores are rejected by the same policy.
 
 ## Supported format and graph
 
-- Export **schema 12** only, up to **20 MiB** and **50,000 records**. The export
+- Exports **schema 12, 13 and 14**, up to **20 MiB** and **50,000 records**. The export
   format version differs from the SQLite migration version; neither is imported
   from a backup. Older/future export versions are rejected with a compatible-build
   explanation. Optional recovery sections omitted by earlier schema-12 exports
   are treated as empty, never fabricated.
-- All 25 schema-12 record sections participate: profile/equipment/considerations,
+- All 25 original record sections participate: profile/equipment/considerations,
   body and imported health history, program/version/custom-movement snapshots,
   cycles, sessions, completed sets, workout drafts/check-ins, personal goals,
   immutable protocols, observations/corrections, target revisions, goal journals,
   goal/setup drafts, Coach proposal history, notification preferences, cycle
   reviews and schedule overrides.
+- Schema 13 adds five lifecycle, practical Coach memory, builder recovery and
+  set-feedback sections. Schema 14 adds two declared actual/draft load-unit
+  sections. Their graph, chronology and snapshot bindings are validated.
+  Legacy formats normalize missing new sections to empty; actual units remain
+  unknown rather than inferred or backfilled.
 - Unknown envelope, table-column and nested-object fields are rejected. IDs,
   owners, primitive types, bounded JSON, duplicate identities, references and
   prescription/version identities are checked before writes. Goal corrections
@@ -53,6 +58,8 @@ desired. Duplicate restores are rejected by the same policy.
 
 Health connection preferences, provider Coach consent and all five notification
 choices restore **off**, even if the OS retained a previously granted permission.
+Optional local Coach memory use also restores off, while its confirmed values
+remain inspectable and forgettable.
 Imported health history is retained as historical data. The user must reconnect
 or reenable optional features on this device. Restore never requests or grants
 OS health/notification permissions and never applies a historical Coach proposal.

@@ -24,6 +24,16 @@ function memoryDatabase() {
       sqlite.prepare(sql).get(...values) ?? null,
     getAllAsync: async (sql: string, ...values: SQLInputValue[]) =>
       sqlite.prepare(sql).all(...values),
+    withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) => {
+      sqlite.exec('BEGIN');
+      try {
+        await callback(database);
+        sqlite.exec('COMMIT');
+      } catch (error) {
+        sqlite.exec('ROLLBACK');
+        throw error;
+      }
+    },
     withTransactionAsync: async (callback: () => Promise<void>) => {
       sqlite.exec('BEGIN;');
       try {
@@ -133,7 +143,7 @@ describe('local onboarding recovery', () => {
       await saveOnboardingDraft(database, 'one', state(1));
       await saveOnboardingDraft(database, 'two', state(2));
       const exported = await exportLocalUserData(database, 'one', 'now');
-      expect(exported.schemaVersion).toBe(12);
+      expect(exported.schemaVersion).toBe(17);
       expect(exported.onboardingDrafts).toHaveLength(1);
       expect(exported.onboardingDrafts?.[0]?.user_id).toBe('one');
       expect(exported.summary.totalRecordCount).toBe(1);

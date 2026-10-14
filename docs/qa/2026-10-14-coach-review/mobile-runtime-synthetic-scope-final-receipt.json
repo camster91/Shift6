@@ -1,0 +1,20 @@
+{
+  "host": "CAM-DESKTOP",
+  "source": "0f2f44eddd9226ffb573d1cc8e257baeb9af3764",
+  "createdAt": "2026-10-14T15:53:33.6971768Z",
+  "staticExit": 0,
+  "tests": "16 offline tests passed; not native acceptance",
+  "scope": "Diagnostics default false; intended fresh GitHub-hosted macOS workflow/job/repo + full native source verifier + visible initial SETUP1 required",
+  "limits": "Hosted freshness is intended workflow provenance plus observed initial setup, not generalized reused-simulator evidence",
+  "files": [
+    {
+      "sha256": "D19960A6632D461CC5872CBF18C0DABC67B132589892AD6E10128F79851867C9",
+      "path": "scripts/mobile-runtime-qa.py"
+    },
+    {
+      "sha256": "1D962ACE9253D4321AD3CD276EA1EAC780BDDEB757293E391833A8D9B3E2204E",
+      "path": "scripts/mobile-runtime-qa.test.py"
+    }
+  ],
+  "diffCheckExit": 0
+}

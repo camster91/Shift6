@@ -1,5 +1,15 @@
 # Continue native QA on your PC
 
+The latest scoped Android Coach QA, exact candidate and standalone launch commands
+are in [doc 50](50_LOCAL_COACH_REVIEW_QA.md). It includes observed passes, the
+earlier recreation failure, record comparisons and remaining platform gates.
+
+Historical handoff: the setup problems and test counts below describe the original
+candidate. For current priorities and the reconciled issue backlog, use
+[doc 43](43_SHIPPING_GOAL_AND_TODO.md). Dated native evidence is in docs 36,
+39, 40, 41 and [42](42_GUARDED_LOCAL_WORKFLOWS_QA.md); each report identifies
+its own source and binary. Latest handover/backup/large-text observations and exact local launch commands are in [doc 47](47_ATOMIC_HANDOVER_QA.md). Earlier failures are not assumed to remain present.
+
 Handoff: 13 October 2026. The app is mobile-only and guest-only; no backend is
 required. Merging the implementation does not certify a store release or a
 100/100 human usability score.

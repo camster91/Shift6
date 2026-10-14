@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\export-coach-native.py", line 18, in <module>
+    qa.tap('QA JSON Receiver')
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 38, in tap
+    n=find(label);b=bounds(n)
+      ^^^^^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 28, in find
+    ns=nodes()
+       ^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 15, in nodes
+    raise RuntimeError("Fresh UI dump unavailable: "+dumped.strip())
+RuntimeError: Fresh UI dump unavailable: 

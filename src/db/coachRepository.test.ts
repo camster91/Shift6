@@ -132,28 +132,60 @@ describe('acceptCoachProposalWithRevision', () => {
       ],
     };
     const calls: string[] = [];
+    let savedProgram = demoProgram;
+    let savedVersion = demoProgramVersion;
+    let savedCycle = demoCycle;
+    let decision = 'pending';
     const database = {
-      runAsync: async (sql: string) => {
+      getAllAsync: async () => [],
+      runAsync: async (sql: string, ...params: unknown[]) => {
         calls.push(sql);
+        if (sql.includes('UPDATE coach_proposals')) decision = 'accepted';
+        if (sql.includes('INSERT INTO user_programs')) savedProgram = JSON.parse(String(params[3]));
+        if (sql.includes('INSERT INTO user_program_versions'))
+          savedVersion = JSON.parse(String(params[4]));
+        if (sql.includes('INSERT INTO training_cycles'))
+          savedCycle = {
+            id: String(params[0]),
+            userId: String(params[1]),
+            programVersionId: String(params[2]),
+            status: params[3] as typeof demoCycle.status,
+            currentWeek: Number(params[4]),
+            startedAt: String(params[5]),
+            weeks: JSON.parse(String(params[6])),
+          };
         return { changes: 1, lastInsertRowId: 1 };
       },
       getFirstAsync: async (sql: string) =>
-        sql.includes('FROM training_cycles')
-          ? {
-              user_id: demoCycle.userId,
-              program_version_id: demoProgramVersion.id,
-              status: 'active',
-            }
-          : {
-              ...pendingRow,
-              id: proposal.id,
-              changes_json: JSON.stringify(proposal.changes),
-              status: 'accepted',
-              updated_at: '2026-09-14T12:00:00.000Z',
-            },
-      withTransactionAsync: async (callback: () => Promise<void>) => {
+        sql.includes('FROM user_program_versions v')
+          ? null
+          : sql.includes('FROM user_program_versions')
+            ? {
+                program_json: JSON.stringify(savedProgram),
+                version_json: JSON.stringify(savedVersion),
+              }
+            : sql.includes('FROM training_cycles')
+              ? {
+                  id: savedCycle.id,
+                  user_id: savedCycle.userId,
+                  program_version_id: savedCycle.programVersionId,
+                  status: savedCycle.status,
+                  current_week: savedCycle.currentWeek,
+                  started_at: savedCycle.startedAt,
+                  weeks_json: JSON.stringify(savedCycle.weeks),
+                }
+              : {
+                  ...pendingRow,
+                  user_id: demoCycle.userId,
+                  cycle_id: demoCycle.id,
+                  id: proposal.id,
+                  changes_json: JSON.stringify(proposal.changes),
+                  status: decision,
+                  updated_at: '2026-09-14T12:00:00.000Z',
+                },
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) => {
         calls.push('BEGIN TRANSACTION');
-        await callback();
+        await callback(database as unknown as SQLiteDatabase);
         calls.push('COMMIT TRANSACTION');
       },
     } as unknown as SQLiteDatabase;
@@ -184,25 +216,19 @@ describe('acceptCoachProposalWithRevision', () => {
     );
   });
 
-  it('does not write again when the proposal was already decided', async () => {
-    const calls: string[] = [];
+  it('does not write again when the owner-scoped stored proposal was already decided', async () => {
+    const runAsync = jest.fn();
     const database = {
-      runAsync: async (sql: string) => {
-        calls.push(sql);
-        return { changes: 0, lastInsertRowId: 0 };
-      },
+      runAsync,
       getFirstAsync: async () => ({
+        ...pendingRow,
         user_id: demoCycle.userId,
-        program_version_id: demoProgramVersion.id,
-        status: 'active',
+        cycle_id: demoCycle.id,
+        status: 'accepted',
       }),
-      withTransactionAsync: async (callback: () => Promise<void>) => {
-        calls.push('BEGIN TRANSACTION');
-        await callback();
-        calls.push('COMMIT TRANSACTION');
-      },
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        callback(database as unknown as SQLiteDatabase),
     } as unknown as SQLiteDatabase;
-
     await expect(
       acceptCoachProposalWithRevision(
         database,
@@ -214,23 +240,27 @@ describe('acceptCoachProposalWithRevision', () => {
         '2026-09-14T12:00:00.000Z',
       ),
     ).resolves.toMatchObject({ status: 'unchanged' });
-    expect(calls).toEqual([
-      'BEGIN TRANSACTION',
-      expect.stringContaining('UPDATE coach_proposals'),
-      'COMMIT TRANSACTION',
-    ]);
+    expect(runAsync).not.toHaveBeenCalled();
   });
 
   it('refuses approval when the persisted cycle points to a newer plan revision', async () => {
     const runAsync = jest.fn();
     const database = {
       runAsync,
-      getFirstAsync: async () => ({
-        user_id: 'guest-user',
-        program_version_id: 'newer-version',
-        status: 'active',
-      }),
-      withTransactionAsync: async (callback: () => Promise<void>) => callback(),
+      getFirstAsync: async (sql: string) =>
+        sql.includes('FROM coach_proposals')
+          ? { ...pendingRow, user_id: demoCycle.userId, cycle_id: demoCycle.id }
+          : {
+              id: demoCycle.id,
+              user_id: demoCycle.userId,
+              program_version_id: 'newer-version',
+              status: 'active',
+              current_week: demoCycle.currentWeek,
+              started_at: demoCycle.startedAt,
+              weeks_json: JSON.stringify(demoCycle.weeks),
+            },
+      withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) =>
+        callback(database as unknown as SQLiteDatabase),
     } as unknown as SQLiteDatabase;
 
     await expect(

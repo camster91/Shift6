@@ -60,7 +60,7 @@ export default function RestoreScreen() {
         Restore a local export
       </Text>
       <Text variant="body">
-        Recover a schema-12 SHIFT6 JSON export into an empty guest installation. Existing records
+        Recover a supported SHIFT6 JSON backup into an empty guest installation. Existing records
         are never merged or replaced.
       </Text>
       <Button
@@ -73,7 +73,7 @@ export default function RestoreScreen() {
         <Card tone="white">
           <Text variant="h2">Review before restoring</Text>
           <Text variant="body">{backup.name}</Text>
-          <Text variant="body">Schema 12 · {backup.preview.recordCount} records</Text>
+          <Text variant="body">{backup.preview.recordCount} records</Text>
           <Text variant="small">Exported {backup.preview.exportedAt}</Text>
           {backup.preview.data.summary.sections.map((section) => (
             <Text key={section.key} variant="small">

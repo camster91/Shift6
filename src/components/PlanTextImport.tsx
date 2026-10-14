@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import type { Exercise, SetTarget } from '../domain/types';
 import { parsePlanText } from '../domain/planTextImport';
@@ -9,17 +9,41 @@ export function PlanTextImport({
   available,
   workoutTitle,
   onApply,
+  recoveryState,
+  onRecoveryChange,
 }: {
   available: readonly Exercise[];
   workoutTitle: string;
   onApply: (text: string) => void;
+  recoveryState?: { text: string; previewText: string | null };
+  onRecoveryChange?: (state: { text: string; previewText: string | null }) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewToken, setPreviewToken] = useState(0);
   const revision = useRef(0);
+  const recoveryFingerprint = JSON.stringify(recoveryState ?? null);
+  const fingerprint = useRef(recoveryFingerprint);
+  if (fingerprint.current !== recoveryFingerprint) {
+    fingerprint.current = recoveryFingerprint;
+    revision.current++;
+  }
   const [message, setMessage] = useState('');
+  useEffect(() => {
+    if (!recoveryState) return;
+    const token = ++revision.current;
+    setText(recoveryState.text);
+    setPreviewText(recoveryState.previewText);
+    setPreviewToken(token);
+    if (recoveryState.text || recoveryState.previewText) setOpen(true);
+  }, [recoveryState?.text, recoveryState?.previewText]);
+  useEffect(
+    () => () => {
+      revision.current++;
+    },
+    [],
+  );
   const preview = previewText === null ? null : parsePlanText(previewText, available);
   const ready =
     preview !== null &&
@@ -33,9 +57,8 @@ export function PlanTextImport({
         variant="ghost"
         onPress={() => {
           revision.current++;
+          setPreviewToken(revision.current);
           setOpen(!open);
-          setText('');
-          setPreviewText(null);
           setMessage('');
         }}
       />
@@ -66,22 +89,41 @@ export function PlanTextImport({
               setText(value);
               setPreviewText(null);
               setMessage('');
+              onRecoveryChange?.({ text: value, previewText: null });
             }}
             maxLength={10000}
             multiline
             style={styles.input}
           />
           <Text variant="small">
-            Unsubmitted text is not saved and will be lost if this screen closes. After adding
-            reviewed rows, choose Save draft program to keep them. Original lines become private
-            movement notes.
+            Closing hides your text and preview. Use Discard pasted text and preview to clear them.{' '}
+            {onRecoveryChange
+              ? 'Private recovery includes this text. Check the recovery status above before leaving. Recovered previews are recomputed and require explicit review.'
+              : 'Unsubmitted text is not saved and will be lost if this screen closes.'}{' '}
+            After adding reviewed rows, choose Save draft program to keep them in your plan.
+            Original lines become private movement notes.
           </Text>
+          <Button
+            label="Discard pasted text and preview"
+            variant="ghost"
+            onPress={() => {
+              revision.current++;
+              setText('');
+              setPreviewText(null);
+              setPreviewToken(0);
+              onRecoveryChange?.({ text: '', previewText: null });
+              setMessage(
+                'Pasted text and preview discarded. Added movements remain in your private plan.',
+              );
+            }}
+          />
           <Button
             label="Preview pasted targets"
             variant="secondary"
             onPress={() => {
               setPreviewToken(++revision.current);
               setPreviewText(text);
+              onRecoveryChange?.({ text, previewText: text });
             }}
           />
           {preview ? (
@@ -119,11 +161,13 @@ export function PlanTextImport({
                     onApply(previewText!);
                     setText('');
                     setPreviewText(null);
+                    onRecoveryChange?.({ text: '', previewText: null });
                     setMessage(
                       'Rows added to your unsaved plan. Choose Save draft program to keep them.',
                     );
                   } catch (error) {
                     setPreviewText(null);
+                    onRecoveryChange?.({ text, previewText: null });
                     setMessage(
                       error instanceof Error ? error.message : 'Import could not be applied.',
                     );

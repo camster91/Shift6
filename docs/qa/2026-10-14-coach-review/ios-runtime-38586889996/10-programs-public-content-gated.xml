@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AppiumAUT>
+  <XCUIElementTypeApplication type="XCUIElementTypeApplication" name="SHIFT6" label="SHIFT6" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="" processId="18684" bundleId="com.shift6.app">
+    <XCUIElementTypeWindow type="XCUIElementTypeWindow" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+              <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                    <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                              <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="874" index="0" traits="">
+                                <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="776" index="0" traits="">
+                                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="776" index="0" traits="">
+                                    <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="776" index="0" traits="">
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="776" index="0" traits="">
+                                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="776" index="0" traits="">
+                                          <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="776" index="0" traits="">
+                                            <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="0" width="402" height="776" index="0" traits="">
+                                              <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="714" index="0" traits="">
+                                                <XCUIElementTypeScrollView type="XCUIElementTypeScrollView" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="714" index="0" traits="">
+                                                  <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="1332" index="0" traits="">
+                                                    <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="0" y="62" width="402" height="1332" index="0" traits="">
+                                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="PROGRAM LIBRARY" name="PROGRAM LIBRARY" label="PROGRAM LIBRARY" enabled="true" visible="true" accessible="false" x="20" y="82" width="362" height="16" index="0" traits="StaticText">
+                                                        <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="PROGRAM LIBRARY" name="PROGRAM LIBRARY" label="PROGRAM LIBRARY" enabled="true" visible="true" accessible="true" x="20" y="82" width="362" height="16" index="0" traits="StaticText"/>
+                                                      </XCUIElementTypeStaticText>
+                                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Build the next six weeks." name="Build the next six weeks." label="Build the next six weeks." enabled="true" visible="true" accessible="false" x="20" y="106" width="362" height="88" index="1" traits="Header, StaticText">
+                                                        <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Build the next six weeks." name="Build the next six weeks." label="Build the next six weeks." enabled="true" visible="true" accessible="true" x="20" y="106" width="362" height="88" index="0" traits="Header, StaticText"/>
+                                                      </XCUIElementTypeStaticText>
+                                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Start with a clear framework, then make it yours as your training evolves." name="Start with a clear framework, then make it yours as your training evolves." label="Start with a clear framework, then make it yours as your training evolves." enabled="true" visible="true" accessible="false" x="20" y="210" width="362" height="48" index="2" traits="StaticText">
+                                                        <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Start with a clear framework, then make it yours as your training evolves." name="Start with a clear framework, then make it yours as your training evolves." label="Start with a clear framework, then make it yours as your training evolves." enabled="true" visible="true" accessible="true" x="20" y="210" width="362" height="48" index="0" traits="StaticText"/>
+                                                      </XCUIElementTypeStaticText>
+                                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Your saved private plans" name="Your saved private plans" label="Your saved private plans" enabled="true" visible="true" accessible="false" x="20" y="298" width="362" height="30" index="3" traits="Header, StaticText">
+                                                        <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Your saved private plans" name="Your saved private plans" label="Your saved private plans" enabled="true" visible="true" accessible="true" x="20" y="298" width="362" height="30" index="0" traits="Header, StaticText"/>
+                                                      </XCUIElementTypeStaticText>
+                                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Saved on this device, without public content review. Open an editable copy to preserve the saved version and any training history." name="Saved on this device, without public content review. Open an editable copy to preserve the saved version and any training history." label="Saved on this device, without public content review. Open an editable copy to preserve the saved version and any training history." enabled="true" visible="true" accessible="false" x="20" y="344" width="362" height="60" index="4" traits="StaticText">
+                                                        <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Saved on this device, without public content review. Open an editable copy to preserve the saved version and any training history." name="Saved on this device, without public content review. Open an editable copy to preserve the saved version and any training history." label="Saved on this device, without public content review. Open an editable copy to preserve the saved version and any training history." enabled="true" visible="true" accessible="true" x="20" y="344" width="362" height="60" index="0" traits="StaticText"/>
+                                                      </XCUIElementTypeStaticText>
+                                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="No private plans saved yet." name="No private plans saved yet." label="No private plans saved yet." enabled="true" visible="true" accessible="false" x="20" y="404" width="362" height="20" index="5" traits="StaticText">
+                                                        <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="No private plans saved yet." name="No private plans saved yet." label="No private plans saved yet." enabled="true" visible="true" accessible="true" x="20" y="404" width="362" height="20" index="0" traits="StaticText"/>
+                                                      </XCUIElementTypeStaticText>
+                                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Start with your own plan" name="Start with your own plan" label="Start with your own plan" enabled="true" visible="true" accessible="false" x="20" y="464" width="362" height="30" index="6" traits="StaticText">
+                                                        <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Start with your own plan" name="Start with your own plan" label="Start with your own plan" enabled="true" visible="true" accessible="true" x="20" y="464" width="362" height="30" index="0" traits="StaticText"/>
+                                                      </XCUIElementTypeStaticText>
+                                                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="20" y="510" width="362" height="353" index="7" traits=""/>
+                                                      <XCUIElementTypeOther type="XCUIElementTypeOther" name="Public programs are under review. Public programs will be available after qualified content review. You can create a private plan with your own workouts and movements now." label="Public programs are under review. Public programs will be available after qualified content review. You can create a private plan with your own workouts and movements now." enabled="true" visible="true" accessible="true" x="60" y="550" width="282" height="225" index="8" traits=""/>
+                                                      <XCUIElementTypeButton type="XCUIElementTypeButton" name="Build a private plan" label="Build a private plan" enabled="true" visible="false" accessible="true" x="113" y="775" width="176" height="48" index="9" traits="Button"/>
+                                                      <XCUIElementTypeButton type="XCUIElementTypeButton" name="Personalize recommendations" label="Personalize recommendations" enabled="true" visible="false" accessible="true" x="20" y="879" width="362" height="48" index="10" traits="Button"/>
+                                                      <XCUIElementTypeButton type="XCUIElementTypeButton" name="Browse exercise library" label="Browse exercise library" enabled="true" visible="false" accessible="true" x="20" y="935" width="362" height="48" index="11" traits="Button"/>
+                                                      <XCUIElementTypeButton type="XCUIElementTypeButton" name="Build from blank" label="Build from blank" enabled="true" visible="false" accessible="true" x="20" y="991" width="362" height="48" index="12" traits="Button"/>
+                                                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="20" y="1063" width="362" height="203" index="13" traits=""/>
+                                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="" name="" label="" enabled="true" visible="false" accessible="false" x="44" y="1087" width="314" height="25" index="14" traits="StaticText">
+                                                        <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="" name="" label="" enabled="true" visible="false" accessible="true" x="44" y="1087" width="314" height="25" index="0" traits="StaticText"/>
+                                                      </XCUIElementTypeStaticText>
+                                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Your library is taking shape." name="Your library is taking shape." label="Your library is taking shape." enabled="true" visible="false" accessible="false" x="44" y="1131" width="314" height="27" index="15" traits="StaticText">
+                                                        <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Your library is taking shape." name="Your library is taking shape." label="Your library is taking shape." enabled="true" visible="false" accessible="true" x="44" y="1131" width="314" height="27" index="0" traits="StaticText"/>
+                                                      </XCUIElementTypeStaticText>
+                                                      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="The curated catalogue and custom builder will share the same versioned program model." name="The curated catalogue and custom builder will share the same versioned program model." label="The curated catalogue and custom builder will share the same versioned program model." enabled="true" visible="false" accessible="false" x="44" y="1169" width="314" height="73" index="16" traits="StaticText">
+                                                        <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="The curated catalogue and custom builder will share the same versioned program model." name="The curated catalogue and custom builder will share the same versioned program model." label="The curated catalogue and custom builder will share the same versioned program model." enabled="true" visible="false" accessible="true" x="44" y="1169" width="314" height="73" index="0" traits="StaticText"/>
+                                                      </XCUIElementTypeStaticText>
+                                                    </XCUIElementTypeOther>
+                                                  </XCUIElementTypeOther>
+                                                  <XCUIElementTypeOther type="XCUIElementTypeOther" value="0%" name="Horizontal scroll bar, 1 page" label="Horizontal scroll bar, 1 page" enabled="true" visible="true" accessible="false" x="0" y="743" width="402" height="30" index="1" traits="Adjustable">
+                                                    <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="3" y="770" width="393" height="3" index="0" traits=""/>
+                                                  </XCUIElementTypeOther>
+                                                  <XCUIElementTypeOther type="XCUIElementTypeOther" value="0%" name="Horizontal scroll bar, 1 page" label="Horizontal scroll bar, 1 page" enabled="true" visible="true" accessible="false" x="0" y="743" width="402" height="30" index="2" traits="Adjustable">
+                                                    <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="3" y="770" width="393" height="3" index="0" traits=""/>
+                                                  </XCUIElementTypeOther>
+                                                </XCUIElementTypeScrollView>
+                                              </XCUIElementTypeOther>
+                                            </XCUIElementTypeOther>
+                                          </XCUIElementTypeOther>
+                                        </XCUIElementTypeOther>
+                                      </XCUIElementTypeOther>
+                                    </XCUIElementTypeOther>
+                                    <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="776" index="1" traits="">
+                                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="776" index="0" traits=""/>
+                                    </XCUIElementTypeOther>
+                                  </XCUIElementTypeOther>
+                                </XCUIElementTypeOther>
+                                <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="true" accessible="false" x="16" y="776" width="370" height="64" index="1" traits=""/>
+                                <XCUIElementTypeOther type="XCUIElementTypeOther" name="Home" label="Home" enabled="true" visible="true" accessible="true" x="29" y="784" width="49" height="48" index="2" traits=""/>
+                                <XCUIElementTypeOther type="XCUIElementTypeOther" name="Programs" label="Programs" enabled="true" visible="true" accessible="true" x="87" y="784" width="111" height="48" index="3" traits="Selected"/>
+                                <XCUIElementTypeOther type="XCUIElementTypeOther" name="Progress" label="Progress" enabled="true" visible="true" accessible="true" x="208" y="784" width="49" height="48" index="4" traits=""/>
+                                <XCUIElementTypeOther type="XCUIElementTypeOther" name="Coach" label="Coach" enabled="true" visible="true" accessible="true" x="266" y="784" width="49" height="48" index="5" traits=""/>
+                                <XCUIElementTypeOther type="XCUIElementTypeOther" name="Profile" label="Profile" enabled="true" visible="true" accessible="true" x="325" y="784" width="48" height="48" index="6" traits=""/>
+                              </XCUIElementTypeOther>
+                            </XCUIElementTypeOther>
+                          </XCUIElementTypeOther>
+                        </XCUIElementTypeOther>
+                      </XCUIElementTypeOther>
+                      <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="1" traits="">
+                        <XCUIElementTypeOther type="XCUIElementTypeOther" enabled="true" visible="false" accessible="false" x="0" y="0" width="402" height="874" index="0" traits=""/>
+                      </XCUIElementTypeOther>
+                    </XCUIElementTypeOther>
+                  </XCUIElementTypeOther>
+                </XCUIElementTypeOther>
+              </XCUIElementTypeOther>
+            </XCUIElementTypeOther>
+          </XCUIElementTypeOther>
+        </XCUIElementTypeOther>
+      </XCUIElementTypeOther>
+    </XCUIElementTypeWindow>
+  </XCUIElementTypeApplication>
+</AppiumAUT>

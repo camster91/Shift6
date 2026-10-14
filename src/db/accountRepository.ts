@@ -1,3 +1,8 @@
+import { cycleHandoverSections, remapCycleHandoverRequest } from '../domain/cycleHandover';
+import { loadProvenanceSections } from '../domain/loadUnits';
+import { persistenceSections } from '../domain/localPersistence';
+import { schedulePersistenceSections } from '../domain/scheduleSnapshot';
+import { coachReviewSections, remapCoachReviewReceipt } from '../domain/coachReviewJournal';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export interface LocalAccountMigrationResult {
@@ -151,6 +156,20 @@ export async function migrateLocalUserToAccount(
     }
     if (!sourceProfile && !sourceDraft && mutations.length === 0) return;
 
+    for (const table of Object.values({
+      ...persistenceSections,
+      ...loadProvenanceSections,
+      ...schedulePersistenceSections,
+      ...coachReviewSections,
+      ...cycleHandoverSections,
+    })) {
+      const conflict = await database.getFirstAsync(
+        `SELECT user_id FROM ${table} WHERE user_id=? LIMIT 1;`,
+        destinationUserId,
+      );
+      if (conflict)
+        throw new Error('The account already has local data; explicit merge is required.');
+    }
     const destinationConflict = await database.getFirstAsync<{ conflict: 1 }>(
       `SELECT 1 AS conflict
          FROM user_profiles
@@ -260,6 +279,26 @@ export async function migrateLocalUserToAccount(
       destinationUserId,
       sourceUserId,
     );
+    const programs = await database.getAllAsync<{ id: string; program_json: string }>(
+      'SELECT id,program_json FROM user_programs WHERE user_id=?;',
+      destinationUserId,
+    );
+    for (const row of programs) {
+      const program = JSON.parse(row.program_json);
+      if (
+        !program ||
+        typeof program !== 'object' ||
+        Array.isArray(program) ||
+        program.ownerId !== sourceUserId
+      )
+        throw new Error('Private program ownership cannot be adopted safely.');
+      await database.runAsync(
+        'UPDATE user_programs SET program_json=? WHERE id=? AND user_id=?;',
+        JSON.stringify({ ...program, ownerId: destinationUserId }),
+        row.id,
+        destinationUserId,
+      );
+    }
     await database.runAsync(
       'UPDATE user_exercises SET user_id = ? WHERE user_id = ?;',
       destinationUserId,
@@ -317,6 +356,51 @@ export async function migrateLocalUserToAccount(
       destinationUserId,
       sourceUserId,
     );
+    for (const table of Object.values({
+      ...persistenceSections,
+      ...loadProvenanceSections,
+      ...schedulePersistenceSections,
+      ...coachReviewSections,
+      ...cycleHandoverSections,
+    }))
+      await database.runAsync(
+        `UPDATE ${table} SET user_id=? WHERE user_id=?;`,
+        destinationUserId,
+        sourceUserId,
+      );
+    const reviews = await database.getAllAsync<{ id: string; receipt_json: string }>(
+      'SELECT id,receipt_json FROM coach_review_journal WHERE user_id=?;',
+      destinationUserId,
+    );
+    for (const row of reviews)
+      await database.runAsync(
+        'UPDATE coach_review_journal SET receipt_json=? WHERE id=?;',
+        remapCoachReviewReceipt(row.receipt_json, destinationUserId),
+        row.id,
+      );
+    const handovers = await database.getAllAsync<{ id: string; request_json: string }>(
+      'SELECT id,request_json FROM cycle_handovers WHERE user_id=?;',
+      destinationUserId,
+    );
+    for (const row of handovers)
+      await database.runAsync(
+        'UPDATE cycle_handovers SET request_json=? WHERE id=?;',
+        remapCycleHandoverRequest(row.request_json, destinationUserId),
+        row.id,
+      );
+    const recoveries = await database.getAllAsync<{ id: string; snapshot_json: string }>(
+      'SELECT id,snapshot_json FROM builder_recovery_drafts WHERE user_id=?;',
+      destinationUserId,
+    );
+    for (const row of recoveries) {
+      const snapshot = JSON.parse(row.snapshot_json);
+      snapshot.program.ownerId = destinationUserId;
+      await database.runAsync(
+        'UPDATE builder_recovery_drafts SET snapshot_json=? WHERE id=?;',
+        JSON.stringify(snapshot),
+        row.id,
+      );
+    }
     if (sourceProfile) {
       await database.runAsync('DELETE FROM user_profiles WHERE id = ?;', sourceUserId);
     }

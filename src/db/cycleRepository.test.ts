@@ -11,6 +11,12 @@ import {
 function fakeDatabase() {
   const calls: Array<{ sql: string; params: unknown[] }> = [];
   const database = {
+    getAllAsync: async () => [],
+    withExclusiveTransactionAsync: async (callback: (tx: SQLiteDatabase) => Promise<void>) => {
+      calls.push({ sql: 'BEGIN TRANSACTION', params: [] });
+      await callback(database);
+      calls.push({ sql: 'COMMIT TRANSACTION', params: [] });
+    },
     runAsync: async (sql: string, ...params: unknown[]) => {
       calls.push({ sql, params });
       return { changes: 1, lastInsertRowId: 1 };
@@ -32,9 +38,8 @@ describe('saveTrainingCycle', () => {
     await expect(saveTrainingCycle(database, demoCycle)).resolves.toBeUndefined();
 
     expect(calls[0]?.sql).toBe('BEGIN TRANSACTION');
-    expect(calls[1]?.sql).toContain("SET status = 'paused'");
-    expect(calls[2]?.sql).toContain('INSERT INTO training_cycles');
-    expect(calls[2]?.params).toContain(JSON.stringify(demoCycle.weeks));
+    expect(calls[1]?.sql).toContain('INSERT INTO training_cycles');
+    expect(calls[1]?.params).toContain(JSON.stringify(demoCycle.weeks));
     expect(calls.at(-1)?.sql).toBe('COMMIT TRANSACTION');
   });
 });

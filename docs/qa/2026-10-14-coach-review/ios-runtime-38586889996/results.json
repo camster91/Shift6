@@ -1,0 +1,170 @@
+{
+  "startedAt": "2026-10-14T15:10:51.220377+00:00",
+  "sourceSha": "0b997f90ff43370a655830eb72c3494a665d0a7f",
+  "nativeRun": "38583313337",
+  "scope": "iPhone simulator; synthetic guest records; no physical-device, screen-reader or human-study claim",
+  "steps": [
+    {
+      "step": 1,
+      "name": "setup-goal",
+      "screenshot": "01-setup-goal.png"
+    },
+    {
+      "step": 2,
+      "name": "goal-after-accessibility-tap",
+      "screenshot": "02-goal-after-accessibility-tap.png"
+    },
+    {
+      "step": 3,
+      "name": "setup-experience",
+      "screenshot": "03-setup-experience.png"
+    },
+    {
+      "step": 4,
+      "name": "setup-equipment",
+      "screenshot": "04-setup-equipment.png"
+    },
+    {
+      "step": 5,
+      "name": "setup-rhythm",
+      "screenshot": "05-setup-rhythm.png"
+    },
+    {
+      "step": 6,
+      "name": "setup-rhythm-all-required-choices",
+      "screenshot": "06-setup-rhythm-all-required-choices.png"
+    },
+    {
+      "step": 7,
+      "name": "setup-units",
+      "screenshot": "07-setup-units.png"
+    },
+    {
+      "step": 8,
+      "name": "setup-review",
+      "screenshot": "08-setup-review.png"
+    },
+    {
+      "step": 9,
+      "name": "setup-recovered-after-force-close",
+      "screenshot": "09-setup-recovered-after-force-close.png"
+    },
+    {
+      "step": 10,
+      "name": "programs-public-content-gated",
+      "screenshot": "10-programs-public-content-gated.png"
+    },
+    {
+      "step": 11,
+      "name": "private-builder-entry",
+      "screenshot": "11-private-builder-entry.png"
+    },
+    {
+      "step": 12,
+      "name": "private-builder-workout-name-entered",
+      "screenshot": "12-private-builder-workout-name-entered.png"
+    },
+    {
+      "step": 13,
+      "name": "private-builder-required-workout-added",
+      "screenshot": "13-private-builder-required-workout-added.png"
+    },
+    {
+      "step": 14,
+      "name": "private-builder-custom-movement",
+      "screenshot": "14-private-builder-custom-movement.png"
+    },
+    {
+      "step": 15,
+      "name": "private-draft-saved-copy",
+      "screenshot": "15-private-draft-saved-copy.png"
+    },
+    {
+      "step": 16,
+      "name": "private-cycle-date-timezone-confirmation",
+      "screenshot": "16-private-cycle-date-timezone-confirmation.png"
+    },
+    {
+      "step": 17,
+      "name": "home-active-private-cycle",
+      "screenshot": "17-home-active-private-cycle.png"
+    },
+    {
+      "step": 18,
+      "name": "goal-form-default",
+      "screenshot": "18-goal-form-default.png"
+    },
+    {
+      "step": 19,
+      "name": "goal-imperial-preference-pound-input",
+      "screenshot": "19-goal-imperial-preference-pound-input.png"
+    },
+    {
+      "step": 20,
+      "name": "goal-form-filled",
+      "screenshot": "20-goal-form-filled.png"
+    },
+    {
+      "step": 21,
+      "name": "goal-saved-without-invented-baseline",
+      "screenshot": "21-goal-saved-without-invented-baseline.png"
+    },
+    {
+      "step": 22,
+      "name": "goal-measurements",
+      "screenshot": "22-goal-measurements.png"
+    },
+    {
+      "step": 23,
+      "name": "goal-corrected-progress",
+      "screenshot": "23-goal-corrected-progress.png"
+    },
+    {
+      "step": 24,
+      "name": "goal-target-and-postponed-review",
+      "screenshot": "24-goal-target-and-postponed-review.png"
+    },
+    {
+      "step": 25,
+      "name": "workout-initial",
+      "screenshot": "25-workout-initial.png"
+    },
+    {
+      "step": 26,
+      "name": "workout-saved-set-and-unsaved-draft",
+      "screenshot": "26-workout-saved-set-and-unsaved-draft.png"
+    },
+    {
+      "step": 27,
+      "name": "home-resume-after-force-close",
+      "screenshot": "27-home-resume-after-force-close.png"
+    },
+    {
+      "step": 28,
+      "name": "failure-state",
+      "screenshot": "28-failure-state.png"
+    }
+  ],
+  "device": {
+    "dataPath": "/Users/runner/Library/Developer/CoreSimulator/Devices/4E3A6BB3-F417-4829-8DF5-0EA652541F40/data",
+    "dataPathSize": 18337792,
+    "logPath": "/Users/runner/Library/Logs/CoreSimulator/4E3A6BB3-F417-4829-8DF5-0EA652541F40",
+    "udid": "4E3A6BB3-F417-4829-8DF5-0EA652541F40",
+    "isAvailable": true,
+    "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
+    "state": "Shutdown",
+    "name": "iPhone 17 Pro"
+  },
+  "architecture": "arm64",
+  "privateCycleStartPreview": {
+    "date": "2026-10-14",
+    "timeZone": "GMT"
+  },
+  "status": "failed-or-blocked",
+  "error": "Native UI did not contain: Edit QA Hold set 1",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/runner/work/Shift6/Shift6/scripts/mobile-runtime-qa.py\", line 346, in <module>\n    journey()\n    ~~~~~~~^^\n  File \"/Users/runner/work/Shift6/Shift6/scripts/mobile-runtime-qa.py\", line 272, in journey\n    expect('Edit QA Hold set 1')\n    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/runner/work/Shift6/Shift6/scripts/mobile-runtime-qa.py\", line 126, in expect\n    raise AssertionError(f'Native UI did not contain: {text}')\nAssertionError: Native UI did not contain: Edit QA Hold set 1\n",
+  "syntheticOnboardingRows": {
+    "onboarding_drafts": []
+  },
+  "finishedAt": "2026-10-14T15:31:07.983137+00:00"
+}

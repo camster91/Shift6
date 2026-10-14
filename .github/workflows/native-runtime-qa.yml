@@ -1,25 +1,46 @@
 name: Native runtime QA
 
 on:
-  pull_request:
+  # Completion coordination activates once this workflow reaches the default branch.
+  workflow_run:
+    workflows: ['Native validation']
+    types: [completed]
   workflow_dispatch:
 
 permissions:
   contents: read
   actions: read
 
+env:
+  CI: '1'
+  EXPO_PUBLIC_ENVIRONMENT: staging
+  EXPO_PUBLIC_RELEASE_MODE: guest-only
+  EXPO_PUBLIC_API_BASE_URL: ''
+  EXPO_NO_DOTENV: '1'
+  NODE_ENV: production
+  QA_NATIVE_ARCHITECTURES: arm64
+  QA_NATIVE_CONFIGURATION: Release
+  QA_NATIVE_SDK: iphonesimulator
+  QA_NATIVE_ONLY_ACTIVE_ARCH: 'YES'
+  QA_NATIVE_CODE_SIGNING_ALLOWED: 'NO'
+  ENTERPRISE_REPOSITORY: https://repo.maven.apache.org/maven2
+
 concurrency:
-  group: native-runtime-qa-${{ github.head_ref || github.ref_name }}
+  group: native-runtime-qa-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   ios-guest-journey:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: macos-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
@@ -28,14 +49,23 @@ jobs:
         id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
-          QA_BRANCH: ${{ github.head_ref || github.ref_name }}
+          QA_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+          QA_NATIVE_BUILD_RUN: ${{ github.event.workflow_run.id || '' }}
         run: python3 scripts/select-native-qa-artifact.py
       - uses: actions/download-artifact@v8
         with:
           name: ios-unsigned-simulator-release
           run-id: ${{ steps.candidate.outputs.run_id }}
           github-token: ${{ github.token }}
-          path: native-qa/SHIFT6.app
+          path: native-qa
+      - name: Verify actual application source and native payload before installation
+        env:
+          QA_NATIVE_SOURCE: ${{ steps.candidate.outputs.source_sha }}
+        run: |
+          python3 scripts/native_artifact_source_test.py
+          python3 scripts/native_artifact_source.py verify --platform ios --manifest native-qa/native-source.json --expected-source-sha "$QA_NATIVE_SOURCE"
+          mkdir -p native-qa/evidence
+          cp native-qa/native-source.json native-qa/evidence/native-source.json
       - name: Install pinned UI automation tooling
         run: |
           npm install --global appium@3.8.0

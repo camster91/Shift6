@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "b00e62accb7258adb8df46f18b83fc21e35ff72e",
+  "changedArrays": [
+    "coachReviewJournal"
+  ],
+  "identicalArrays": 35,
+  "totalRecords": 1080,
+  "newReceipt": {
+    "choice": "keep-plan",
+    "confirmedAt": "2026-10-14T07:49:07.907Z",
+    "cycleId": "cycle-guest-user-program-blank-guest-user-1791862271289-1791862663686",
+    "effect": "keep-current-plan",
+    "evidenceFingerprint": "{\"cycle\":{\"currentWeek\":1,\"id\":\"cycle-guest-user-program-blank-guest-user-1791862271289-1791862663686\",\"programVersionId\":\"program-blank-guest-user-1791862271289-version-1\",\"startedAt\":\"2026-10-13T03:37:43.686Z\",\"status\":\"active\",\"userId\":\"guest-user\",\"weeks\":[{\"completedWorkoutCount\":0,\"label\":\"Week 1\",\"phase\":\"Establish\",\"plannedWorkoutCount\":1,\"status\":\"current\",\"weekNumber\":1},{\"completedWorkoutCount\":0,\"label\":\"Week 2\",\"phase\":\"Repeatability\",\"plannedWorkoutCount\":1,\"status\":\"upcoming\",\"weekNumber\":2},{\"completedWorkoutCount\":0,\"label\":\"Week 3\",\"phase\":\"Build\",\"plannedWorkoutCount\":1,\"status\":\"upcoming\",\"weekNumber\":3},{\"completedWorkoutCount\":0,\"label\":\"Week 4\",\"phase\":\"Build\",\"plannedWorkoutCount\":1,\"status\":\"upcoming\",\"weekNumber\":4},{\"completedWorkoutCount\":0,\"label\":\"Week 5\",\"phase\":\"Challenge\",\"plannedWorkoutCount\":1,\"status\":\"upcoming\",\"weekNumber\":5},{\"completedWorkoutCount\":0,\"label\":\"Week 6\",\"phase\":\"Review\",\"plannedWorkoutCount\":1,\"status\":\"upcoming\",\"weekNumber\":6}]},\"format\":\"local-dated-review-v1\",\"goal\":null,\"observations\":[],\"ownerId\":\"guest-user\",\"programVersionId\":\"program-blank-guest-user-1791862271289-version-1\",\"sessions\":[{\"completedAt\":\"2026-10-13T06:00:55.264Z\",\"completionReason\":\"time-limited\",\"cycleId\":\"cycle-guest-user-program-blank-guest-user-1791862271289-1791862663686\",\"cycleWeek\":1,\"id\":\"session-cycle-guest-user-program-blank-guest-user-1791862271289-1791862663686-week-1-program-blank-guest-user-1791862271289-version-1-workout-extra-1-20261013051810057\",\"programVersionId\":\"program-blank-guest-user-1791862271289-version-1\",\"startedAt\":\"2026-10-13T05:18:10.057Z\",\"status\":\"partial\",\"workoutId\":\"program-blank-guest-user-1791862271289-version-1-workout-extra-1\"}],\"window\":{\"endDate\":\"2026-10-14\",\"startDate\":\"2026-10-08\",\"timeZone\":\"America/New_York\"}}",
+    "goalWitness": null,
+    "nextCapability": null,
+    "ownerId": "guest-user",
+    "preparedAt": "2026-10-14T07:48:36.256Z",
+    "programVersionId": "program-blank-guest-user-1791862271289-version-1",
+    "requiresWorkflowConfirmation": false,
+    "response": null,
+    "revalidatedAt": "2026-10-14T07:49:07.907Z",
+    "status": "confirmed-intent",
+    "window": {
+      "endDate": "2026-10-14",
+      "startDate": "2026-10-08",
+      "timeZone": "America/New_York"
+    }
+  },
+  "coldContinuationAbsentObserved": true
+}

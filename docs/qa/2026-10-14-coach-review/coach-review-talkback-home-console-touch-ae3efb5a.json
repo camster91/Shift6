@@ -1,0 +1,18 @@
+{
+  "time": "2026-10-14T12:29:01.321120+00:00",
+  "intendedLabel": "Resume workout",
+  "observedBounds": [
+    53,
+    1480,
+    1028,
+    1606
+  ],
+  "x": 540,
+  "y": 1543,
+  "consoleInterface": "event mouse device0 touchscreen",
+  "results": [
+    "OK",
+    "OK"
+  ],
+  "focusOrNavigationRequiresFreshObservation": true
+}

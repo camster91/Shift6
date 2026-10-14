@@ -1,12 +1,27 @@
+import { VoiceSetEntry } from '../src/components/VoiceSetEntry';
+import {
+  voiceBindingKey,
+  reviewedVoiceValuesAreValid,
+  type VoiceSetBinding,
+  type VoiceNumericField,
+} from '../src/domain/voiceSetDraft';
+import {
+  actualLoadUnit,
+  convertLoad,
+  formatActualLoad,
+  type LoadUnit,
+} from '../src/domain/loadUnits';
 import {
   buildInitialValues,
   emptySetInput,
   hydrateWorkoutValues,
 } from '../src/domain/workoutInputs';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppState, StyleSheet, TextInput, View } from 'react-native';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { RefObject } from 'react';
+import { Alert, AppState, Keyboard, Platform, StyleSheet, TextInput, View } from 'react-native';
+import type { ScrollView } from 'react-native';
 
 import {
   Button,
@@ -160,9 +175,90 @@ export default function ActiveWorkoutScreen() {
   const [difficultySaving, setDifficultySaving] = useState(false);
   const feedbackWrite = useRef<Promise<void> | null>(null);
   const feedbackGeneration = useRef(0);
-  const feedbackContext = useRef({ database, userId, sessionId: '' });
+  const [voiceFocused, setVoiceFocused] = useState(false);
+  const [voiceEntryKey, setVoiceEntryKey] = useState<string | null>(null);
+  const workoutScroll = useRef<ScrollView | null>(null);
+  const workoutContent = useRef<View | null>(null);
+  const [voiceKeyboardSpace, setVoiceKeyboardSpace] = useState<{
+    key: string;
+    space: number;
+  } | null>(null);
+  const keyboardSpace = useRef(0),
+    keyboardTop = useRef<number | null>(null),
+    keyboardMeasurement = useRef(0);
+  const voiceField = useRef<{ input: TextInput; current: () => boolean } | null>(null);
+  const revealVoiceField = useRef<() => void>(() => undefined);
+  const voiceInputRevision = useRef(0);
+  const voiceContext = useRef<{
+    key: string | null;
+    database: typeof database;
+    inputRevision: number;
+    focusGeneration: number;
+    focused: boolean;
+    entryVisible: boolean;
+  }>({
+    key: null,
+    database,
+    inputRevision: 0,
+    focusGeneration: 0,
+    focused: false,
+    entryVisible: false,
+  });
+  const workoutIsFocused = useRef(false);
+  const workoutFocusGeneration = useRef(0);
+  const [noteFocusRevision, setNoteFocusRevision] = useState(0);
+  const setWrite = useRef<object | null>(null);
+  const clearVoiceGeometry = useCallback(() => {
+    keyboardMeasurement.current++;
+    voiceField.current = null;
+    keyboardSpace.current = 0;
+    setVoiceKeyboardSpace(null);
+  }, []);
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+      keyboardTop.current = event.endCoordinates.screenY;
+      revealVoiceField.current();
+    });
+    const hidden = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardTop.current = null;
+      // Android can hide the IME while this native input retains focus.
+      // Invalidate measurements/inset, but allow a later show to recheck it.
+      keyboardMeasurement.current++;
+      keyboardSpace.current = 0;
+      setVoiceKeyboardSpace(null);
+    });
+    return () => {
+      keyboardMeasurement.current++;
+      shown.remove();
+      hidden.remove();
+    };
+  }, [clearVoiceGeometry]);
+  useFocusEffect(
+    useCallback(() => {
+      workoutIsFocused.current = true;
+      setVoiceFocused(true);
+      workoutFocusGeneration.current++;
+      setNoteFocusRevision((revision) => revision + 1);
+      return () => {
+        clearVoiceGeometry();
+        workoutIsFocused.current = false;
+        setVoiceFocused(false);
+        workoutFocusGeneration.current++;
+        feedbackGeneration.current++;
+      };
+    }, [clearVoiceGeometry]),
+  );
+  const feedbackContext = useRef({
+    database,
+    userId,
+    sessionId: '',
+    versionId: '',
+    workoutId: '',
+    cycleWeek: 0,
+  });
   const [difficulty, setDifficulty] = useState<SetDifficulty | null>(null);
   const [showEffortDetails, setShowEffortDetails] = useState(false);
+  const savedActuals = useRef(new Map<string, CompletedSet>());
   const [completedSetKeys, setCompletedSetKeys] = useState<Set<string>>(() => new Set());
   const [editingSetKey, setEditingSetKey] = useState<string | null>(null);
   const [substitutionFor, setSubstitutionFor] = useState<string | null>(null);
@@ -188,6 +284,7 @@ export default function ActiveWorkoutScreen() {
   const [readiness, setReadiness] = useState<WorkoutReadiness | null>(null);
   const [sessionNote, setSessionNote] = useState('');
   const sessionNoteRef = useRef(sessionNote);
+  const savedSessionNoteRef = useRef('');
   sessionNoteRef.current = sessionNote;
   const [readinessSaving, setReadinessSaving] = useState(false);
   const [restTimerEnabled, setRestTimerEnabled] = useState(false);
@@ -225,12 +322,16 @@ export default function ActiveWorkoutScreen() {
     feedbackGeneration.current++;
     feedbackWrite.current = null;
     setDifficultySaving(false);
+    setWrite.current = null;
+    setSavingSetKey(null);
+    savedActuals.current.clear();
     setCompletedSetKeys(new Set());
     setEditingSetKey(null);
     setSubstitutionFor(null);
     setEarlyStopReasonOpen(false);
     setReadiness(null);
     setSessionNote('');
+    savedSessionNoteRef.current = '';
     setLoadingSession(database !== null);
     setHydratedRoute(null);
   }, [activeWorkout.id, database]);
@@ -256,7 +357,26 @@ export default function ActiveWorkoutScreen() {
     [activeCycle.id, activeCycle.currentWeek, activeWorkout, connectivity, readiness, startedAt],
   );
   const session = resumedSession ?? proposedSession;
-  feedbackContext.current = { database, userId, sessionId: session.id };
+  feedbackContext.current = {
+    database,
+    userId,
+    sessionId: session.id,
+    versionId: activeProgramVersion.id,
+    workoutId: activeWorkout.id,
+    cycleWeek: activeCycle.currentWeek,
+  };
+  const captureDraftContextGuard = () => {
+    const generation = workoutFocusGeneration.current;
+    return () =>
+      generation === workoutFocusGeneration.current &&
+      workoutIsFocused.current &&
+      feedbackContext.current.database === database &&
+      feedbackContext.current.userId === userId &&
+      feedbackContext.current.sessionId === session.id &&
+      feedbackContext.current.versionId === activeProgramVersion.id &&
+      feedbackContext.current.workoutId === activeWorkout.id &&
+      feedbackContext.current.cycleWeek === activeCycle.currentWeek;
+  };
   const canMutate =
     previewEnabled ||
     (routeReady &&
@@ -300,7 +420,7 @@ export default function ActiveWorkoutScreen() {
 
   useEffect(() => {
     return () => {
-      void cancelRestTimerCue(notificationProvider, session.id);
+      void cancelRestTimerCue(notificationProvider, session.id).catch(() => undefined);
     };
   }, [session.id]);
 
@@ -424,6 +544,8 @@ export default function ActiveWorkoutScreen() {
           setRestTimerEnabled(restTimerEnabled);
           setReadiness(readiness ?? null);
           setSessionNote(note);
+          savedSessionNoteRef.current = note.trim();
+          savedActuals.current = new Map(completedSets.map((set) => [completedSetKey(set), set]));
           setCompletedSetKeys(new Set(completedSets.map(completedSetKey)));
           setPreviousSets(previousSets);
           const nextTargets =
@@ -453,6 +575,7 @@ export default function ActiveWorkoutScreen() {
               completedSets,
               draft,
               hydratedRoute?.sessionId === sessionId ? current : undefined,
+              unitSystem,
             ),
           );
           setHydratedRoute({
@@ -490,33 +613,58 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     if (!database || !canMutate) return;
 
+    const draftGuard = captureDraftContextGuard();
     const timeout = setTimeout(() => {
-      void saveWorkoutDraft(database, session.id, values, new Date().toISOString()).catch(() => {
+      void saveWorkoutDraft(
+        database,
+        session.id,
+        values,
+        new Date().toISOString(),
+        userId,
+        draftGuard,
+      ).catch(() => {
         setError('We could not save the unfinished workout locally.');
       });
     }, 150);
 
     return () => clearTimeout(timeout);
-  }, [canMutate, database, session.id, values]);
+  }, [canMutate, database, session.id, userId, values]);
 
   useEffect(() => {
-    if (!database || !canMutate) return;
+    if (!database || !canMutate || !workoutIsFocused.current) return;
 
+    const note = sessionNote.trim();
+    if (note === savedSessionNoteRef.current) return;
+    const isCurrent = captureDraftContextGuard();
     const timeout = setTimeout(() => {
-      if (feedbackWrite.current) return;
-      void updateWorkoutSessionNote(database, session.id, sessionNoteRef.current).catch(() => {
-        setError('We could not save the workout note locally.');
-      });
+      if (feedbackWrite.current || !isCurrent()) return;
+      void updateWorkoutSessionNote(database, session.id, note)
+        .then(() => {
+          if (isCurrent() && sessionNoteRef.current.trim() === note)
+            savedSessionNoteRef.current = note;
+        })
+        .catch(() => {
+          if (isCurrent() && sessionNoteRef.current.trim() === note)
+            setError('We could not save the workout note locally.');
+        });
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [canMutate, database, session.id, sessionNote]);
+  }, [canMutate, database, session.id, sessionNote, userId, noteFocusRevision]);
 
   useEffect(() => {
     if (!database || !canMutate) return;
 
+    const draftGuard = captureDraftContextGuard();
     const flushDraft = () => {
-      void saveWorkoutDraft(database, session.id, values, new Date().toISOString()).catch(() => {
+      void saveWorkoutDraft(
+        database,
+        session.id,
+        values,
+        new Date().toISOString(),
+        userId,
+        draftGuard,
+      ).catch(() => {
         setError('We could not save the unfinished workout locally.');
       });
     };
@@ -525,21 +673,24 @@ export default function ActiveWorkoutScreen() {
         flushDraft();
         void (async () => {
           await feedbackWrite.current;
-          const current = feedbackContext.current;
-          if (
-            current.database === database &&
-            current.userId === userId &&
-            current.sessionId === session.id
-          )
-            await updateWorkoutSessionNote(database, session.id, sessionNoteRef.current);
+          const note = sessionNoteRef.current.trim();
+          if (!draftGuard() || note === savedSessionNoteRef.current) return;
+          try {
+            await updateWorkoutSessionNote(database, session.id, note);
+            if (draftGuard() && sessionNoteRef.current.trim() === note)
+              savedSessionNoteRef.current = note;
+          } catch {
+            if (draftGuard() && sessionNoteRef.current.trim() === note)
+              setError('We could not save the workout note locally.');
+          }
         })().catch(() => {
-          setError('We could not save the workout note locally.');
+          if (draftGuard()) setError('We could not save the workout note locally.');
         });
       }
     });
 
     return () => subscription.remove();
-  }, [canMutate, database, session.id, sessionNote, userId, values]);
+  }, [canMutate, database, session.id, sessionNote, userId, values, noteFocusRevision]);
 
   useEffect(() => {
     if (restEndsAt === null) return;
@@ -573,8 +724,206 @@ export default function ActiveWorkoutScreen() {
   const allSetsComplete = completedCount >= totalSets;
   const focus = nextWorkoutSet(activeWorkout, completedSetKeys, editingSetKey);
   const previousResult = focus ? previousComparableSet(focus, previousSets) : undefined;
+  const voiceTarget = focus ? (targetOverrides[focus.exercise.id] ?? focus.set.target) : undefined;
+  const voiceBinding: VoiceSetBinding | null =
+    focus && voiceTarget && values[focus.key]
+      ? {
+          ownerId: userId,
+          sessionId: session.id,
+          programVersionId: activeProgramVersion.id,
+          workoutExerciseId: focus.exercise.id,
+          exerciseId: focus.exercise.exerciseId,
+          variantId: focus.exercise.variantId,
+          setNumber: focus.set.setNumber,
+          loadUnit: actualLoadUnit(values[focus.key]?.loadUnit) ?? 'unknown',
+          contextKey: JSON.stringify([
+            activeCycle.id,
+            activeCycle.currentWeek,
+            activeWorkout.id,
+            workoutFocusGeneration.current,
+            voiceInputRevision.current,
+            values[focus.key],
+            voiceTarget,
+            savedActuals.current.get(focus.key) ?? null,
+            editingSetKey,
+          ]),
+          required: [
+            ...(voiceTarget.reps !== undefined ? ['reps' as const] : []),
+            ...(requiresDuration(
+              getTrackingType(focus.exercise.exerciseId, voiceTarget, availableExercises),
+              voiceTarget,
+            )
+              ? ['duration' as const]
+              : []),
+            ...(requiresDistance(
+              getTrackingType(focus.exercise.exerciseId, voiceTarget, availableExercises),
+              voiceTarget,
+            )
+              ? ['distance' as const]
+              : []),
+          ],
+          allowed: [
+            ...(showsLoad(focus.exercise.exerciseId, voiceTarget, availableExercises)
+              ? ['load' as const]
+              : []),
+            ...(showsReps(focus.exercise.exerciseId, voiceTarget, availableExercises)
+              ? ['reps' as const]
+              : []),
+            ...(showsDuration(focus.exercise.exerciseId, voiceTarget, availableExercises)
+              ? ['duration' as const]
+              : []),
+            ...(showsDistance(focus.exercise.exerciseId, voiceTarget, availableExercises)
+              ? ['distance' as const]
+              : []),
+            'rpe',
+            'rir',
+          ] as VoiceNumericField[],
+        }
+      : null;
+  const voiceBusy = Boolean(
+    savingSetKey ||
+    difficultySaving ||
+    feedbackWrite.current ||
+    revisionSaving ||
+    finishing ||
+    partialFinishing ||
+    readinessSaving,
+  );
+  voiceContext.current = {
+    key: voiceBinding ? voiceBindingKey(voiceBinding) : null,
+    database,
+    inputRevision: voiceInputRevision.current,
+    focusGeneration: workoutFocusGeneration.current,
+    focused: voiceFocused && canMutate && !voiceBusy,
+    entryVisible: voiceEntryKey === focus?.key,
+  };
+  const currentVoiceKey = voiceBinding ? voiceBindingKey(voiceBinding) : null;
+  useEffect(clearVoiceGeometry, [
+    clearVoiceGeometry,
+    currentVoiceKey,
+    voiceEntryKey,
+    voiceFocused,
+    voiceBusy,
+  ]);
+  revealVoiceField.current = () => {
+    const field = voiceField.current,
+      scroll = workoutScroll.current;
+    const viewport = scroll?.getNativeScrollRef(),
+      content = workoutContent.current;
+    const top = keyboardTop.current ?? Keyboard.metrics()?.screenY;
+    if (!field || !scroll || !viewport || !content || top === undefined || !field.current()) return;
+    if ((voiceKeyboardSpace?.space ?? 0) !== keyboardSpace.current) return;
+    const key = voiceContext.current.key;
+    if (!key) return;
+    const request = ++keyboardMeasurement.current;
+    const current = () =>
+      request === keyboardMeasurement.current &&
+      keyboardTop.current !== null &&
+      voiceField.current === field &&
+      workoutScroll.current === scroll &&
+      scroll.getNativeScrollRef() === viewport &&
+      workoutContent.current === content &&
+      field.current();
+    viewport.measureInWindow((_x, viewportY, _width, viewportHeight) => {
+      if (
+        !current() ||
+        ![viewportY, viewportHeight, top].every(Number.isFinite) ||
+        viewportHeight <= 0
+      )
+        return;
+      const space = Platform.OS === 'android' ? Math.max(0, viewportY + viewportHeight - top) : 0;
+      if (space !== keyboardSpace.current) {
+        keyboardSpace.current = space;
+        keyboardMeasurement.current++;
+        setVoiceKeyboardSpace({ key, space });
+        return;
+      }
+      content.measureInWindow((_contentX, contentY, _contentWidth, contentHeight) => {
+        if (!current()) return;
+        field.input.measureInWindow((_inputX, inputY, _inputWidth, inputHeight) => {
+          if (!current()) return;
+          const bottom = Math.min(viewportY + viewportHeight, top);
+          if (
+            ![
+              viewportY,
+              viewportHeight,
+              contentY,
+              contentHeight,
+              inputY,
+              inputHeight,
+              bottom,
+            ].every(Number.isFinite) ||
+            inputHeight <= 0 ||
+            bottom <= viewportY
+          )
+            return;
+          const delta =
+            inputY < viewportY || inputHeight > bottom - viewportY
+              ? inputY - viewportY
+              : Math.max(0, inputY + inputHeight - bottom);
+          if (delta === 0) return;
+          const targetOffset = Math.max(0, viewportY - contentY + delta);
+          if (
+            Platform.OS === 'android' &&
+            targetOffset > Math.max(0, contentHeight - viewportHeight)
+          )
+            return;
+          scroll.scrollTo({ y: targetOffset, animated: false });
+        });
+      });
+    });
+  };
+  const focusVoiceCorrection = (input: TextInput, childCurrent: () => boolean) => {
+    const key = currentVoiceKey,
+      savedDatabase = database,
+      focusGeneration = workoutFocusGeneration.current;
+    const current = () =>
+      Boolean(
+        key &&
+        voiceContext.current.key === key &&
+        voiceContext.current.database === savedDatabase &&
+        voiceContext.current.focusGeneration === focusGeneration &&
+        voiceContext.current.focused &&
+        voiceContext.current.entryVisible &&
+        workoutIsFocused.current &&
+        input.isFocused() &&
+        childCurrent(),
+      );
+    if (!current()) return;
+    voiceField.current = { input, current };
+    keyboardTop.current = Keyboard.metrics()?.screenY ?? keyboardTop.current;
+    revealVoiceField.current();
+  };
+  const applyVoiceValues = (reviewed: Partial<SetInputValues>, expectedKey: string): boolean => {
+    if (
+      !voiceBinding ||
+      !focus ||
+      setWrite.current ||
+      feedbackWrite.current ||
+      !workoutIsFocused.current ||
+      !voiceContext.current.focused ||
+      voiceContext.current.database !== database ||
+      voiceContext.current.key !== expectedKey ||
+      voiceContext.current.inputRevision !== voiceInputRevision.current ||
+      voiceContext.current.focusGeneration !== workoutFocusGeneration.current ||
+      voiceBindingKey(voiceBinding) !== expectedKey ||
+      !reviewedVoiceValuesAreValid(reviewed, voiceBinding) ||
+      (completedSetKeys.has(focus.key) && editingSetKey !== focus.key)
+    )
+      return false;
+    voiceInputRevision.current++;
+    voiceContext.current.focused = false; // Consume the preview before queued state updates.
+    setValues((current) => ({
+      ...current,
+      [focus.key]: { ...(current[focus.key] ?? emptySetInput()), ...reviewed },
+    }));
+    setError(null);
+    return true;
+  };
 
   const updateValue = (key: string, field: keyof SetInputValues, value: string) => {
+    if (setWrite.current || !workoutIsFocused.current) return;
+    voiceInputRevision.current++;
     setValues((current) => ({
       ...current,
       [key]: { ...(current[key] ?? emptySetInput()), [field]: value },
@@ -582,8 +931,61 @@ export default function ActiveWorkoutScreen() {
     setError(null);
   };
 
+  const chooseActualLoadUnit = (key: string, unit: LoadUnit) => {
+    if (setWrite.current || !canMutate) return;
+    const current = values[key];
+    if (!current) return;
+    const prior = actualLoadUnit(current.loadUnit);
+    if (prior === unit) return;
+    const measured = parseNumber(current.load);
+    const generation = feedbackGeneration.current;
+    const apply = () => {
+      if (
+        setWrite.current ||
+        !canMutate ||
+        !workoutIsFocused.current ||
+        feedbackGeneration.current !== generation ||
+        feedbackContext.current.database !== database ||
+        feedbackContext.current.userId !== userId ||
+        feedbackContext.current.sessionId !== session.id
+      )
+        return;
+      voiceInputRevision.current++;
+      setValues((latest) => {
+        const value = latest[key];
+        if (!value || value.load !== current.load || value.loadUnit !== current.loadUnit)
+          return latest;
+        return {
+          ...latest,
+          [key]: {
+            ...value,
+            loadUnit: unit,
+            load:
+              measured !== undefined && prior
+                ? String(convertLoad(measured, prior, unit))
+                : value.load,
+          },
+        };
+      });
+    };
+    if (measured === undefined) {
+      apply();
+      return;
+    }
+    Alert.alert(
+      'Confirm actual load unit',
+      prior
+        ? `Convert the entered ${current.load} ${prior} to ${unit}? The entered measurement stays equivalent.`
+        : `Record the currently entered ${current.load} as ${unit}? Its earlier unit is unknown; this confirms only the current edited result.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Confirm', onPress: apply },
+      ],
+    );
+  };
+
   const handleCompleteSet = async (workoutExercise: WorkoutExercise, setNumber: number) => {
-    if (!canMutate || feedbackWrite.current) return;
+    if (setWrite.current || !canMutate || feedbackWrite.current) return;
     const key = setKey(workoutExercise.id, setNumber);
     const alreadyCompleted = completedSetKeys.has(key);
     const editing = editingSetKey === key;
@@ -592,11 +994,49 @@ export default function ActiveWorkoutScreen() {
     const target =
       targetOverrides[workoutExercise.id] ?? workoutExercise.sets[setNumber - 1]?.target;
     const input = values[key] ?? emptySetInput(target);
+    const load = parseNumber(input.load);
+    if (input.load.trim() && load === undefined) {
+      setError('Enter a valid nonnegative load, or clear the field if load was not recorded.');
+      return;
+    }
     const reps = parseNumber(input.reps);
     const durationSeconds = parseNumber(input.duration);
     const distanceMeters = parseNumber(input.distance);
     const rpe = parseNumber(input.rpe);
     const rir = parseNumber(input.rir);
+    const invalidEntry = (
+      [
+        [
+          input.reps,
+          reps,
+          'Enter valid nonnegative reps, or clear the field if reps were not recorded.',
+        ],
+        [
+          input.duration,
+          durationSeconds,
+          'Enter a valid nonnegative time in seconds, or clear the field if time was not recorded.',
+        ],
+        [
+          input.distance,
+          distanceMeters,
+          'Enter a valid nonnegative distance in meters, or clear the field if distance was not recorded.',
+        ],
+        [
+          input.rpe,
+          rpe,
+          'Enter a valid RPE from 1 to 10, or clear the field if RPE was not recorded.',
+        ],
+        [
+          input.rir,
+          rir,
+          'Enter a valid RIR from 0 to 10, or clear the field if RIR was not recorded.',
+        ],
+      ] as const
+    ).find(([raw, parsed]) => raw.trim() && parsed === undefined);
+    if (invalidEntry) {
+      setError(invalidEntry[2]);
+      return;
+    }
     const trackingType = getTrackingType(workoutExercise.exerciseId, target, availableExercises);
     if (target?.reps !== undefined && reps === undefined) {
       setError(`Enter the reps completed for set ${setNumber} before marking it complete.`);
@@ -619,34 +1059,63 @@ export default function ActiveWorkoutScreen() {
       return;
     }
 
+    if (load !== undefined && !actualLoadUnit(input.loadUnit)) {
+      setError(
+        'The saved load unit is unknown. Confirm kg or lb before saving this actual result.',
+      );
+      return;
+    }
+    const expectedSaved = savedActuals.current.get(key);
     const completedSet: CompletedSet = {
-      id: `completed-${session.id}-${key}`,
+      id: alreadyCompleted && expectedSaved ? expectedSaved.id : `completed-${session.id}-${key}`,
       sessionId: session.id,
       workoutExerciseId: workoutExercise.id,
       exerciseId: workoutExercise.exerciseId,
       setNumber,
-      load: parseNumber(input.load),
+      load,
+      loadUnit: load !== undefined ? actualLoadUnit(input.loadUnit) : undefined,
       reps,
       durationSeconds,
       distanceMeters,
       rpe,
       rir,
-      completedAt: new Date().toISOString(),
-      idempotencyKey: `${session.id}:${workoutExercise.id}:${setNumber}`,
+      completedAt:
+        alreadyCompleted && expectedSaved ? expectedSaved.completedAt : new Date().toISOString(),
+      idempotencyKey:
+        alreadyCompleted && expectedSaved
+          ? expectedSaved.idempotencyKey
+          : `${session.id}:${workoutExercise.id}:${setNumber}`,
     };
 
+    if (alreadyCompleted && !expectedSaved) {
+      setError('Reload the saved set before correcting its actual values.');
+      return;
+    }
+    const generation = feedbackGeneration.current;
+    const draftGuard = captureDraftContextGuard();
+    const isCurrent = () =>
+      workoutIsFocused.current &&
+      feedbackGeneration.current === generation &&
+      feedbackContext.current.database === database &&
+      feedbackContext.current.userId === userId &&
+      feedbackContext.current.sessionId === session.id &&
+      draftGuard();
+    const write = {};
+    setWrite.current = write;
     setSavingSetKey(key);
     setError(null);
     try {
       if (database) {
         const result = alreadyCompleted
-          ? await updateCompletedSet(database, completedSet)
-          : await saveCompletedSet(database, completedSet);
+          ? await updateCompletedSet(database, completedSet, userId, expectedSaved!, isCurrent)
+          : await saveCompletedSet(database, completedSet, userId);
         if (alreadyCompleted && result === 'missing') {
           throw new Error('This completed set is no longer available locally.');
         }
         void flushNow();
       }
+      if (!isCurrent()) return;
+      savedActuals.current.set(key, completedSet);
       setCompletedSetKeys((current) => new Set(current).add(key));
       feedbackGeneration.current++;
       setLastSavedSet({
@@ -672,12 +1141,26 @@ export default function ActiveWorkoutScreen() {
         saveError instanceof Error ? saveError.message : 'We could not save this set locally.',
       );
     } finally {
-      setSavingSetKey(null);
+      if (setWrite.current === write) {
+        setWrite.current = null;
+        setSavingSetKey(null);
+      }
     }
   };
 
+  const restControlIsCurrent = captureDraftContextGuard();
+  const handleSkipRest = () => {
+    if (!canMutate || !restControlIsCurrent()) return;
+    setRestEndsAt(null);
+    setRestSecondsRemaining(0);
+    void cancelRestTimerCue(notificationProvider, session.id).catch(() => {
+      if (restControlIsCurrent())
+        setError('Rest skipped here. The device cue could not be cancelled.');
+    });
+  };
+
   const handleDifficulty = (choice: SetDifficulty) => {
-    if (!canMutate || !lastSavedSet || feedbackWrite.current) return;
+    if (setWrite.current || !canMutate || !lastSavedSet || feedbackWrite.current) return;
     const generation = feedbackGeneration.current;
     const context = feedbackContext.current;
     setDifficultySaving(true);
@@ -701,6 +1184,7 @@ export default function ActiveWorkoutScreen() {
           )
             return;
           sessionNoteRef.current = next;
+          savedSessionNoteRef.current = next.trim();
           setSessionNote(next);
           setDifficulty(choice);
         } catch (error) {
@@ -719,7 +1203,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleDiscomfortStop = () => {
-    if (!canMutate || finishing || partialFinishing || allSetsComplete) return;
+    if (setWrite.current || !canMutate || finishing || partialFinishing || allSetsComplete) return;
     Alert.alert(
       'Stop this session for discomfort?',
       'Save only your already completed sets, or record an untouched session as skipped. This does not advance your training week or prescribe work through discomfort.',
@@ -735,12 +1219,20 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handlePauseWorkout = async () => {
-    if (!canMutate) return;
+    if (setWrite.current || !canMutate) return;
+    const draftGuard = captureDraftContextGuard();
     if (database) {
       try {
         await feedbackWrite.current;
         await updateWorkoutSessionNote(database, session.id, sessionNoteRef.current);
-        await saveWorkoutDraft(database, session.id, values, new Date().toISOString());
+        await saveWorkoutDraft(
+          database,
+          session.id,
+          values,
+          new Date().toISOString(),
+          userId,
+          draftGuard,
+        );
         void flushNow();
       } catch {
         setError('We could not save the unfinished workout locally.');
@@ -752,7 +1244,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleReadinessChange = async (nextReadiness: WorkoutReadiness) => {
-    if (!canMutate) return;
+    if (setWrite.current || !canMutate) return;
     if (readinessSaving || readiness === nextReadiness) return;
 
     const previousReadiness = readiness;
@@ -760,6 +1252,7 @@ export default function ActiveWorkoutScreen() {
     setError(null);
     if (!database) return;
 
+    voiceInputRevision.current++;
     setReadinessSaving(true);
     try {
       const updatedSession = await updateWorkoutSessionReadiness(
@@ -786,8 +1279,9 @@ export default function ActiveWorkoutScreen() {
     revise: (version: ProgramVersion) => ProgramVersion,
     fallbackMessage: string,
   ): Promise<boolean> => {
-    if (!canMutate || revisionSaving) return false;
+    if (setWrite.current || !canMutate || revisionSaving) return false;
 
+    voiceInputRevision.current++;
     setRevisionSaving(true);
     setError(null);
     try {
@@ -908,8 +1402,10 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleFinishWorkout = async () => {
-    if (!canMutate || !allSetsComplete || editingSetKey !== null || finishing) return;
+    if (setWrite.current || !canMutate || !allSetsComplete || editingSetKey !== null || finishing)
+      return;
 
+    voiceInputRevision.current++;
     setFinishing(true);
     setError(null);
     try {
@@ -963,11 +1459,12 @@ export default function ActiveWorkoutScreen() {
     status: Extract<WorkoutSession['status'], 'partial' | 'skipped'>,
     reason: PartialWorkoutReason,
   ) => {
-    if (!canMutate) return;
+    if (setWrite.current || !canMutate) return;
     const canFinish =
       status === 'partial' ? completedCount > 0 && !allSetsComplete : completedCount === 0;
     if (!canFinish || finishing || partialFinishing) return;
 
+    voiceInputRevision.current++;
     setPartialFinishing(true);
     setError(null);
     try {
@@ -1083,6 +1580,20 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <Screen
+      scrollViewRef={workoutScroll}
+      contentContainerStyle={
+        voiceKeyboardSpace?.key === currentVoiceKey &&
+        voiceEntryKey === focus?.key &&
+        voiceContext.current.focused &&
+        voiceKeyboardSpace.space > 0
+          ? { paddingBottom: voiceKeyboardSpace.space }
+          : undefined
+      }
+      scrollViewProps={{
+        innerViewRef: workoutContent as RefObject<View>,
+        onLayout: () => revealVoiceField.current(),
+        onContentSizeChange: () => revealVoiceField.current(),
+      }}
       footer={
         !showAllSets && focus ? (
           <View>
@@ -1194,7 +1705,7 @@ export default function ActiveWorkoutScreen() {
               {formatTimer(restSecondsRemaining)}
             </Text>
           </View>
-          <Button label="Skip rest" variant="secondary" onPress={() => setRestEndsAt(null)} />
+          <Button label="Skip rest" variant="secondary" onPress={handleSkipRest} />
         </Card>
       ) : null}
 
@@ -1377,115 +1888,187 @@ export default function ActiveWorkoutScreen() {
                             )}
                           </Text>
                         </View>
-                        {showsLoad(
-                          workoutExercise.exerciseId,
-                          workoutSet.target,
-                          availableExercises,
-                        ) ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} load`}
-                            accessibilityHint={`Enter actual load in ${(targetOverrides[workoutExercise.id]?.load?.unit ?? workoutSet.target.load?.unit ?? unitSystem) === 'imperial' ? 'pounds' : 'kilograms'}`}
-                            editable={!completed || editing}
-                            keyboardType="decimal-pad"
-                            onChangeText={(value) => updateValue(key, 'load', value)}
-                            placeholder={
-                              (targetOverrides[workoutExercise.id]?.load?.unit ??
-                                workoutSet.target.load?.unit ??
-                                unitSystem) === 'imperial'
-                                ? 'lb'
-                                : 'kg'
-                            }
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.valueInput}
-                            value={values[key]?.load ?? ''}
-                          />
-                        ) : null}
-                        {showsReps(
-                          workoutExercise.exerciseId,
-                          workoutSet.target,
-                          availableExercises,
-                        ) ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} reps`}
-                            editable={!completed || editing}
-                            keyboardType="number-pad"
-                            onChangeText={(value) => updateValue(key, 'reps', value)}
-                            placeholder="Reps"
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.valueInput}
-                            value={values[key]?.reps ?? ''}
-                          />
-                        ) : null}
-                        {showsDuration(
-                          workoutExercise.exerciseId,
-                          workoutSet.target,
-                          availableExercises,
-                        ) ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} duration in seconds`}
-                            editable={!completed || editing}
-                            keyboardType="number-pad"
-                            onChangeText={(value) => updateValue(key, 'duration', value)}
-                            placeholder="Seconds"
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.valueInput}
-                            value={values[key]?.duration ?? ''}
-                          />
-                        ) : null}
-                        {showsDistance(
-                          workoutExercise.exerciseId,
-                          workoutSet.target,
-                          availableExercises,
-                        ) ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} distance in meters`}
-                            editable={!completed || editing}
-                            keyboardType="decimal-pad"
-                            onChangeText={(value) => updateValue(key, 'distance', value)}
-                            placeholder="Meters"
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.valueInput}
-                            value={values[key]?.distance ?? ''}
-                          />
-                        ) : null}
-                        {showEffortDetails || values[key]?.rpe ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
-                            editable={!completed || editing}
-                            keyboardType="decimal-pad"
-                            onChangeText={(value) => updateValue(key, 'rpe', value)}
-                            placeholder="RPE"
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.effortInput}
-                            value={values[key]?.rpe ?? ''}
-                          />
-                        ) : null}
-                        {showEffortDetails || values[key]?.rir ? (
-                          <TextInput
-                            accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
-                            editable={!completed || editing}
-                            keyboardType="number-pad"
-                            onChangeText={(value) => updateValue(key, 'rir', value)}
-                            placeholder="RIR"
-                            placeholderTextColor={colors.inkMuted}
-                            style={styles.effortInput}
-                            value={values[key]?.rir ?? ''}
-                          />
-                        ) : null}
-                        {showAllSets ? (
-                          <Button
-                            label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
-                            accessibilityLabel={`${completed ? (editing ? 'Save' : 'Edit') : 'Complete'} ${exerciseName} set ${workoutSet.setNumber}`}
-                            variant={completed && !editing ? 'secondary' : 'primary'}
-                            loading={savingSetKey === key}
-                            onPress={
-                              completed && !editing
-                                ? () => setEditingSetKey(key)
-                                : () => handleCompleteSet(workoutExercise, workoutSet.setNumber)
-                            }
-                            style={styles.completeButton}
-                          />
-                        ) : null}
+                        <View style={styles.setControls}>
+                          {showsLoad(
+                            workoutExercise.exerciseId,
+                            workoutSet.target,
+                            availableExercises,
+                          ) ? (
+                            <View style={styles.loadControls}>
+                              <Text variant="caption">
+                                Actual load: {values[key]?.loadUnit ?? 'unknown'}
+                              </Text>
+                              <View style={styles.loadUnitControls}>
+                                {(['kg', 'lb'] as const).map((unit) => (
+                                  <Button
+                                    key={unit}
+                                    label={unit}
+                                    variant="ghost"
+                                    disabled={savingSetKey !== null || (completed && !editing)}
+                                    onPress={() => chooseActualLoadUnit(key, unit)}
+                                    accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} actual load unit ${unit}`}
+                                  />
+                                ))}
+                              </View>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} load`}
+                                accessibilityHint={
+                                  actualLoadUnit(values[key]?.loadUnit)
+                                    ? `Enter actual load in ${values[key]?.loadUnit === 'lb' ? 'pounds' : 'kilograms'}`
+                                    : 'The saved unit is unknown. Confirm kg or lb before saving.'
+                                }
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="decimal-pad"
+                                onChangeText={(value) => updateValue(key, 'load', value)}
+                                placeholder={
+                                  actualLoadUnit(values[key]?.loadUnit) ?? 'Unit unknown'
+                                }
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.valueInput, styles.loadInput]}
+                                value={values[key]?.load ?? ''}
+                              />
+                            </View>
+                          ) : null}
+                          {showsReps(
+                            workoutExercise.exerciseId,
+                            workoutSet.target,
+                            availableExercises,
+                          ) ? (
+                            <View style={styles.actualField}>
+                              <Text variant="caption">Reps</Text>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} reps`}
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="number-pad"
+                                onChangeText={(value) => updateValue(key, 'reps', value)}
+                                placeholder="Reps"
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.valueInput, styles.labeledInput]}
+                                value={values[key]?.reps ?? ''}
+                              />
+                            </View>
+                          ) : null}
+                          {showsDuration(
+                            workoutExercise.exerciseId,
+                            workoutSet.target,
+                            availableExercises,
+                          ) ? (
+                            <View style={styles.actualField}>
+                              <Text variant="caption">Duration (seconds)</Text>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} duration in seconds`}
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="number-pad"
+                                onChangeText={(value) => updateValue(key, 'duration', value)}
+                                placeholder="Seconds"
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.valueInput, styles.labeledInput]}
+                                value={values[key]?.duration ?? ''}
+                              />
+                            </View>
+                          ) : null}
+                          {showsDistance(
+                            workoutExercise.exerciseId,
+                            workoutSet.target,
+                            availableExercises,
+                          ) ? (
+                            <View style={styles.actualField}>
+                              <Text variant="caption">Distance (meters)</Text>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} distance in meters`}
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="decimal-pad"
+                                onChangeText={(value) => updateValue(key, 'distance', value)}
+                                placeholder="Meters"
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.valueInput, styles.labeledInput]}
+                                value={values[key]?.distance ?? ''}
+                              />
+                            </View>
+                          ) : null}
+                          {showEffortDetails || values[key]?.rpe ? (
+                            <View style={styles.actualField}>
+                              <Text variant="caption">RPE (1–10)</Text>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RPE from 1 to 10`}
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="decimal-pad"
+                                onChangeText={(value) => updateValue(key, 'rpe', value)}
+                                placeholder="RPE"
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.effortInput, styles.labeledInput]}
+                                value={values[key]?.rpe ?? ''}
+                              />
+                            </View>
+                          ) : null}
+                          {showEffortDetails || values[key]?.rir ? (
+                            <View style={styles.actualField}>
+                              <Text variant="caption">RIR (0–10)</Text>
+                              <TextInput
+                                accessibilityLabel={`${formatExerciseName(workoutExercise.exerciseId, availableExercises)} set ${workoutSet.setNumber} RIR from 0 to 10`}
+                                editable={savingSetKey === null && (!completed || editing)}
+                                keyboardType="number-pad"
+                                onChangeText={(value) => updateValue(key, 'rir', value)}
+                                placeholder="RIR"
+                                placeholderTextColor={colors.inkMuted}
+                                style={[styles.effortInput, styles.labeledInput]}
+                                value={values[key]?.rir ?? ''}
+                              />
+                            </View>
+                          ) : null}
+                          {key === focus?.key &&
+                          voiceBinding &&
+                          voiceFocused &&
+                          (!completed || editing) ? (
+                            <View style={styles.voiceControls}>
+                              <Button
+                                label={
+                                  voiceEntryKey === key
+                                    ? 'Hide voice set entry'
+                                    : 'Use optional voice set entry'
+                                }
+                                variant="ghost"
+                                disabled={voiceBusy}
+                                onPress={() => {
+                                  if (!setWrite.current)
+                                    setVoiceEntryKey((current) => (current === key ? null : key));
+                                }}
+                              />
+                              {voiceEntryKey === key ? (
+                                <VoiceSetEntry
+                                  onCorrectionFocus={focusVoiceCorrection}
+                                  onCorrectionBlur={(input) => {
+                                    if (voiceField.current?.input === input) clearVoiceGeometry();
+                                  }}
+                                  onCorrectionLayout={(input) => {
+                                    if (voiceField.current?.input === input)
+                                      revealVoiceField.current();
+                                  }}
+                                  binding={voiceBinding}
+                                  disabled={voiceBusy}
+                                  onApply={applyVoiceValues}
+                                />
+                              ) : null}
+                            </View>
+                          ) : null}
+                          {showAllSets ? (
+                            <Button
+                              label={completed ? (editing ? 'Save' : 'Edit') : 'Complete'}
+                              accessibilityLabel={`${completed ? (editing ? 'Save' : 'Edit') : 'Complete'} ${exerciseName} set ${workoutSet.setNumber}`}
+                              variant={completed && !editing ? 'secondary' : 'primary'}
+                              disabled={savingSetKey !== null}
+                              loading={savingSetKey === key}
+                              onPress={
+                                completed && !editing
+                                  ? () => {
+                                      if (!setWrite.current) setEditingSetKey(key);
+                                    }
+                                  : () => handleCompleteSet(workoutExercise, workoutSet.setNumber)
+                              }
+                              style={styles.completeButton}
+                            />
+                          ) : null}
+                        </View>
                       </View>
                     );
                   })}
@@ -1520,7 +2103,7 @@ export default function ActiveWorkoutScreen() {
                   distanceMeters: previousResult.distanceMeters,
                 })}
                 {previousResult.load !== undefined
-                  ? ` · load ${previousResult.load} (saved units)`
+                  ? ` · load ${formatActualLoad(previousResult.load, previousResult.loadUnit)}`
                   : ''}{' '}
                 · {new Date(previousResult.completedAt).toLocaleDateString()}
               </Text>
@@ -2086,17 +2669,54 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   setRow: {
+    gap: spacing.sm,
+  },
+  setControls: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: spacing.xs,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
   setLabel: {
-    flex: 1,
+    width: '100%',
     gap: spacing.xxs,
   },
+  loadControls: {
+    flexBasis: 144,
+    flexGrow: 1,
+    minWidth: 144,
+    maxWidth: '100%',
+    gap: spacing.xs,
+  },
+  actualField: {
+    flexBasis: 96,
+    flexGrow: 1,
+    minWidth: 96,
+    maxWidth: '100%',
+    gap: spacing.xs,
+  },
+  labeledInput: {
+    width: '100%',
+    flexBasis: 'auto',
+    flexGrow: 0,
+  },
+  loadUnitControls: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  loadInput: {
+    width: '100%',
+    flexBasis: 'auto',
+    flexGrow: 0,
+  },
+  voiceControls: {
+    width: '100%',
+  },
   valueInput: {
-    width: 74,
+    flexBasis: 96,
+    flexGrow: 1,
+    minWidth: 96,
+    maxWidth: '100%',
     minHeight: 44,
     paddingVertical: spacing.xs,
     borderWidth: 1,
@@ -2109,7 +2729,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   effortInput: {
-    width: 68,
+    flexBasis: 96,
+    flexGrow: 1,
+    minWidth: 96,
+    maxWidth: '100%',
     minHeight: 44,
     paddingVertical: spacing.xs,
     borderWidth: 1,

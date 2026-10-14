@@ -1,0 +1,19 @@
+{
+  "commit": "86a26c44",
+  "testOnly": true,
+  "globalTimeoutUnchanged": true,
+  "perCaseBudgetMs": 15000,
+  "scopedCases": [
+    "conversion parameterized cases",
+    "pending correction"
+  ],
+  "allAssertionsPreserved": true,
+  "independentReviewAccepted": true,
+  "pendingWriterDisposedReleasedDrained": true,
+  "enabledSaveAssertion": true,
+  "scopedBeforeFinalAssertion": "79/79 pass",
+  "finalAssertionTargeted": "1/1 pass;49skipped",
+  "staticChecks": "type/lint/format/diff pass",
+  "deadlockNotReproduced": true,
+  "fullVerificationPending": true
+}

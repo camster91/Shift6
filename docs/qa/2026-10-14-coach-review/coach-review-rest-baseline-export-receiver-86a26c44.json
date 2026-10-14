@@ -1,0 +1,32 @@
+{
+  "formatVersion": 1,
+  "holdConnectedMs": 500,
+  "observerConnected": true,
+  "capturedAtEpochMillis": 1791991516702,
+  "platform": {
+    "sdk": 36,
+    "release": "16",
+    "manufacturer": "Google",
+    "model": "sdk_gphone64_x86_64",
+    "fingerprint": "google\/sdk_gphone64_x86_64\/emu64xa:16\/BE2A.250530.026.F3\/13894323:userdebug\/dev-keys",
+    "probePackage": "com.shift6.qa.a11yprobedefault",
+    "automationFlags": 0
+  },
+  "limits": {
+    "nodes": 5000,
+    "depth": 128,
+    "windows": 32,
+    "stringChars": 2048,
+    "actionsPerNode": 64,
+    "traversalMillis": 10000,
+    "totalStringChars": 1000000
+  },
+  "accessibilityManagerEnabledBeforeConnection": false,
+  "configuredAccessibilityServicesBeforeConnection": false,
+  "accessibilityGuardChecked": true,
+  "heldConnectedMs": 503,
+  "success": false,
+  "complete": false,
+  "errorClass": "IllegalStateException",
+  "limitations": []
+}

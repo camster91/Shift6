@@ -1,3 +1,4 @@
+import type { LoadUnit } from './loadUnits';
 export type EntityId = string;
 export type ISODateString = string;
 
@@ -345,6 +346,8 @@ export interface CompletedSet {
   exerciseId?: EntityId;
   setNumber: number;
   load?: number;
+  /** Explicit actual entry unit; absent means unknown legacy provenance. */
+  loadUnit?: LoadUnit;
   reps?: number;
   durationSeconds?: number;
   distanceMeters?: number;
@@ -380,6 +383,7 @@ export interface PersonalRecord {
 
 export interface WorkoutDraftSetValues {
   load: string;
+  loadUnit?: LoadUnit | 'unknown';
   reps: string;
   duration: string;
   distance: string;

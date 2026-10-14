@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 78, in <module>
+    if a[0]=="tap":tap(a[1])
+                   ^^^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 40, in tap
+    log("tap",label,n.attrib);show(nodes())
+                                   ^^^^^^^
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\qa.py", line 15, in nodes
+    raise RuntimeError("Fresh UI dump unavailable: "+dumped.strip())
+RuntimeError: Fresh UI dump unavailable: 

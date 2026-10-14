@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import {
   Button,
@@ -14,7 +14,9 @@ import {
   Text,
 } from '../src/components/ui';
 import { useLocalDatabase } from '../src/db/context';
-import { saveTrainingCycle } from '../src/db/cycleRepository';
+import { saveTrainingCycleWithSchedule } from '../src/db/cycleRepository';
+import { lifecycleDate } from '../src/domain/cycleLifecycle';
+import { stableSnapshotJSON } from '../src/domain/programPersistence';
 import { createTrainingCycle } from '../src/domain/cycle';
 import { equipmentCatalog } from '../src/domain/equipment';
 import { createProgramCopy } from '../src/domain/programBuilder';
@@ -43,8 +45,45 @@ export default function ProgramDetailScreen() {
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleStartCycle = async () => {
-    if (starting) return;
+  const startContext = useRef({
+    database,
+    userId,
+    programId,
+    snapshot: stableSnapshotJSON({ program: selectedProgram, version: selectedVersion }),
+  });
+  startContext.current = {
+    database,
+    userId,
+    programId,
+    snapshot: stableSnapshotJSON({ program: selectedProgram, version: selectedVersion }),
+  };
+  const startFocus = useRef(0);
+  useFocusEffect(
+    useCallback(() => {
+      const generation = ++startFocus.current;
+      return () => {
+        if (startFocus.current === generation) startFocus.current++;
+      };
+    }, [database, userId, programId]),
+  );
+  const mounted = useRef(true),
+    pending = useRef<number | null>(null),
+    operationSequence = useRef(0);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const handleStartCycle = async (preview?: {
+    startedAt: string;
+    timeZone: string;
+    startDate: string;
+    token: number;
+    snapshot: string;
+    focusGeneration: number;
+  }) => {
+    if (starting || pending.current) return;
 
     // Recheck at the mutation boundary; hiding the button is not a publication gate.
     if (!isProgramStartAllowed(catalogueEntry, __DEV__)) {
@@ -56,11 +95,53 @@ export default function ProgramDetailScreen() {
       return;
     }
 
+    if (!selectedVersion) {
+      setError('This program does not have an executable version yet.');
+      return;
+    }
+    if (!preview) {
+      const startedAt = new Date().toISOString(),
+        timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const next = {
+        startedAt,
+        timeZone,
+        startDate: lifecycleDate(startedAt, timeZone),
+        token: Date.now(),
+        snapshot: startContext.current.snapshot,
+        focusGeneration: startFocus.current,
+      };
+      Alert.alert(
+        'Start a new six-week cycle?',
+        `Start date ${next.startDate} · ${timeZone}. Any active cycle will be paused. Your saved history stays unchanged.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Start cycle', onPress: () => void handleStartCycle(next) },
+        ],
+      );
+      return;
+    }
+    const isCurrent = () =>
+      mounted.current &&
+      startFocus.current === preview.focusGeneration &&
+      isProgramStartAllowed(catalogueEntry, __DEV__) &&
+      startContext.current.database === database &&
+      startContext.current.userId === userId &&
+      startContext.current.programId === programId &&
+      startContext.current.snapshot === preview.snapshot;
+    if (
+      !isCurrent() ||
+      lifecycleDate(new Date().toISOString(), preview.timeZone) !== preview.startDate
+    ) {
+      setError('The plan or date changed. Review Start again.');
+      return;
+    }
+    const operationToken = ++operationSequence.current;
+    pending.current = operationToken;
     setStarting(true);
     setError(null);
     try {
-      const startedAt = new Date().toISOString();
-      const programId = `program-${selectedProgram.slug}-${userId}-${Date.now()}`;
+      const startedAt = preview.startedAt;
+      const programId = `program-${selectedProgram.slug}-${userId}-${preview.token}`;
       if (!selectedVersion)
         throw new Error('This program does not have an executable version yet.');
       const copy = createProgramCopy({
@@ -78,15 +159,25 @@ export default function ProgramDetailScreen() {
         description: selectedProgram.description,
       };
       const cycle = createTrainingCycle({
-        id: `cycle-${userId}-${program.id}-${Date.now()}`,
+        id: `cycle-${userId}-${program.id}-${preview.token}`,
         userId,
         programVersion: copy.version,
         startedAt,
       });
       if (database) {
+        if (!isCurrent()) return;
         await saveProgramVersion(database, userId, program, copy.version);
-        await saveTrainingCycle(database, cycle);
+        if (!isCurrent()) return;
+        await saveTrainingCycleWithSchedule(
+          database,
+          cycle,
+          copy.version,
+          preview.timeZone,
+          preview.startDate,
+          isCurrent,
+        );
       }
+      if (!isCurrent()) return;
       trackAnalyticsEvent(analytics, 'program_started', {
         programId: selectedProgram.id,
         daysPerWeek: selectedProgram.daysPerWeek,
@@ -94,9 +185,15 @@ export default function ProgramDetailScreen() {
       });
       router.replace('/');
     } catch (startError) {
-      setError(startError instanceof Error ? startError.message : 'We could not start this cycle.');
+      if (isCurrent())
+        setError(
+          startError instanceof Error ? startError.message : 'We could not start this cycle.',
+        );
     } finally {
-      setStarting(false);
+      if (pending.current === operationToken) {
+        pending.current = null;
+        if (mounted.current) setStarting(false);
+      }
     }
   };
 
@@ -247,7 +344,7 @@ export default function ProgramDetailScreen() {
       {isStartable ? (
         <Button
           label={publicationReady ? 'Start six-week cycle' : 'Start draft preview'}
-          onPress={handleStartCycle}
+          onPress={() => void handleStartCycle()}
           loading={starting}
           icon={<Ionicons name="arrow-forward" size={18} color={colors.white} />}
           style={styles.startButton}

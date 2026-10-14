@@ -1,0 +1,127 @@
+(node:41376) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL src/components/workoutFocusScreen.test.tsx (6.155 s)
+  × retained Skip rest callback refuses a changed database generation (783 ms)
+  × retained Skip rest callback refuses a changed owner generation (88 ms)
+  × retained Skip rest callback refuses a changed focus generation (81 ms)
+  ○ skipped actual units follow metric target under imperial preferences; unit conversion requires confirmation
+  ○ skipped actual units follow imperial target under metric preferences; unit conversion requires confirmation
+  ○ skipped Skip rest clears the local timer and cancels its cue, native rejection=false
+  ○ skipped Skip rest clears the local timer and cancels its cue, native rejection=true
+  ○ skipped legacy recovered load stays unknown and cannot save until explicitly declared
+  ○ skipped recovered populated actuals retain visible field names and canonical units, including zero reps and RIR
+  ○ skipped actual field captions follow existing conditional inputs and remain after manual entry
+  ○ skipped focused fields precede optional details and bodyweight never requires owned gear
+  ○ skipped focused logging keeps a compact real missing-gear cue without opening preflight
+  ○ skipped focus saves the actual edited result before revealing the next set, preserving failure state
+  ○ skipped a failed set save does not advance focus or manufacture a recorded result
+  ○ skipped discomfort requires confirmation and an untouched session is skipped rather than completed
+  ○ skipped pending feedback stays attached to the saved set and cannot advance or select another set
+  ○ skipped explicit saved-set correction supplies its original actual snapshot and an invalidated unmount guard
+  ○ skipped correction keeps restored canonical set ID and operation identity rather than generating replacements
+  ○ skipped pending correction freezes numeric and unit mutation immediately and displays only confirmed actuals
+  ○ skipped queued draft context stays invalid after blur then same-owner focus return
+  ○ skipped hydrated unchanged session notes do not start an unsolicited note save
+  ○ skipped a rejected old note save cannot show an error after blur and same-session reentry
+  ○ skipped a current changed note save failure remains visible and retains its input
+  ○ skipped dirty note retries with a fresh save after blur drops its debounce
+  ○ skipped dirty note retries after an old rejected save and reads back from SQLite on reentry
+  ○ skipped nonempty invalid actual load -5 stays editable and cannot silently save reps only
+  ○ skipped nonempty invalid actual load not a number stays editable and cannot silently save reps only
+  ○ skipped nonempty invalid actual load Infinity stays editable and cannot silently save reps only
+  ○ skipped nonempty invalid optional RPE -5 cannot silently disappear from a saved set
+  ○ skipped nonempty invalid optional RPE not a number cannot silently disappear from a saved set
+  ○ skipped nonempty invalid optional RPE Infinity cannot silently disappear from a saved set
+  ○ skipped nonempty invalid optional RIR -5 cannot silently disappear from a saved set
+  ○ skipped nonempty invalid optional RIR not a number cannot silently disappear from a saved set
+  ○ skipped nonempty invalid optional RIR Infinity cannot silently disappear from a saved set
+  ○ skipped nonempty optional reps -5 cannot silently disappear when no reps target is prescribed
+  ○ skipped nonempty optional reps not a number cannot silently disappear when no reps target is prescribed
+  ○ skipped nonempty optional reps Infinity cannot silently disappear when no reps target is prescribed
+  ○ skipped blank optional effort is omitted while explicitly recorded zero RIR is preserved
+  ○ skipped existing RPE range refuses 0 without saving
+  ○ skipped existing RPE range refuses 11 without saving
+  ○ skipped existing RIR range refuses 11 without saving
+  ○ skipped valid fractional effort retains the existing numeric contract
+  ○ skipped previous actual load kg displays its own provenance beside current preferred inputs
+  ○ skipped previous actual load lb displays its own provenance beside current preferred inputs
+  ○ skipped previous actual load undefined displays its own provenance beside current preferred inputs
+  ○ skipped optional voice review fills declared unsaved actuals and only normal Complete saves
+  ○ skipped an old voice review cannot overwrite a newer typed input before its next render
+  ○ skipped same-event blur and focus return cannot revive a retained voice apply callback
+  ○ skipped voice correction reserves measured Android overlap before scrolling its whole edit area; native viewport resizing removes extra space
+  ○ skipped delayed correction geometry refuses field blur and never writes an actual set
+  ○ skipped delayed correction geometry refuses screen blur and never writes an actual set
+  ○ skipped delayed correction geometry refuses child reset and never writes an actual set
+  ○ skipped delayed correction geometry refuses set input change and never writes an actual set
+  ○ skipped delayed correction geometry refuses hide widget and never writes an actual set
+  ○ skipped delayed correction geometry refuses keyboard hide and never writes an actual set
+
+  ● retained Skip rest callback refuses a changed database generation
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: {}, "session-cycle-demo-barbell-30-2026-09-week-1-workout-barbell-30-strength-a-20261014150400507"
+
+      244 |   mockCancelRest.mockClear();
+      245 |   await act(async () => { skip(); });
+    > 246 |   expect(mockCancelRest).not.toHaveBeenCalled();
+          |                              ^
+      247 |   if (change !== 'focus') {
+      248 |     mockDatabaseInstance = mockDb; mockOwnerId = 'guest-user';
+      249 |     await screen.rerender(<ActiveWorkoutScreen />);
+
+      at toHaveBeenCalled (src/components/workoutFocusScreen.test.tsx:246:30)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● retained Skip rest callback refuses a changed owner generation
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: {}, "session-cycle-demo-barbell-30-2026-09-week-1-workout-barbell-30-strength-a-20261014150401260"
+
+      244 |   mockCancelRest.mockClear();
+      245 |   await act(async () => { skip(); });
+    > 246 |   expect(mockCancelRest).not.toHaveBeenCalled();
+          |                              ^
+      247 |   if (change !== 'focus') {
+      248 |     mockDatabaseInstance = mockDb; mockOwnerId = 'guest-user';
+      249 |     await screen.rerender(<ActiveWorkoutScreen />);
+
+      at toHaveBeenCalled (src/components/workoutFocusScreen.test.tsx:246:30)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● retained Skip rest callback refuses a changed focus generation
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: {}, "session-cycle-demo-barbell-30-2026-09-week-1-workout-barbell-30-strength-a-20261014150401348"
+
+      244 |   mockCancelRest.mockClear();
+      245 |   await act(async () => { skip(); });
+    > 246 |   expect(mockCancelRest).not.toHaveBeenCalled();
+          |                              ^
+      247 |   if (change !== 'focus') {
+      248 |     mockDatabaseInstance = mockDb; mockOwnerId = 'guest-user';
+      249 |     await screen.rerender(<ActiveWorkoutScreen />);
+
+      at toHaveBeenCalled (src/components/workoutFocusScreen.test.tsx:246:30)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 52 skipped, 55 total
+Snapshots:   0 total
+Time:        6.655 s, estimated 13 s
+Ran all test suites matching /src\\components\\workoutFocusScreen.test.tsx/i with tests matching "retained Skip".

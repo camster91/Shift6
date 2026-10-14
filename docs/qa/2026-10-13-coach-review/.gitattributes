@@ -1,0 +1,3 @@
+* -text
+*.log binary
+*.py whitespace=cr-at-eol

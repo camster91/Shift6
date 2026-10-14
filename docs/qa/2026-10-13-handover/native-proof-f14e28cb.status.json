@@ -1,0 +1,11 @@
+{
+  "sourceSha": "f14e28cbab4db3a06197fc3c732f6d0728dd1679",
+  "host": "CAM-DESKTOP",
+  "command": "python scripts/native_artifact_source_test.py",
+  "tests": 26,
+  "durationSeconds": 56.133,
+  "exitCode": 0,
+  "status": "passed",
+  "scope": "Local synthetic actual-Git source, environment, recipe, binary payload and selector regressions; no native artifact execution or remote CI validation",
+  "log": "native-proof-f14e28cb.log"
+}

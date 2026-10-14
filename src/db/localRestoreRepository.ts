@@ -1,6 +1,8 @@
+import { remapCycleHandoverRequest } from '../domain/cycleHandover';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { runtimeConfig } from '../config/env';
 import { LOCAL_GUEST_USER_ID } from '../domain/userIdentity';
+import { remapCoachReviewReceipt } from '../domain/coachReviewJournal';
 import {
   restoreTables,
   restoreColumns,
@@ -49,6 +51,7 @@ export async function restoreLocalBackup(
           row.health_connection = 'not-now';
         }
         if (key === 'coachPrivacyPreferences') row.provider_coach_enabled = 0;
+        if (key === 'coachMemoryPreferences') row.enabled = 0;
         if (key === 'notificationPreferences')
           for (const field of [
             'workout_reminders',
@@ -63,10 +66,28 @@ export async function restoreLocalBackup(
           if (key === 'userPrograms')
             value = { ...(value as Record<string, unknown>), ownerId: owner };
           if (key === 'userExercises') value = { ...(value as Record<string, unknown>), media: [] };
+          if (key === 'builderRecoveryDrafts') {
+            const snapshot = value as {
+              program: Record<string, unknown>;
+              customExercises: Record<string, unknown>[];
+            };
+            value = {
+              ...snapshot,
+              program: { ...snapshot.program, ownerId: owner },
+              customExercises: snapshot.customExercises.map((exercise) => ({
+                ...exercise,
+                media: [],
+              })),
+            };
+          }
           if (key === 'onboardingDrafts') {
             const state = value as { draft: Record<string, unknown> };
             value = { ...state, draft: { ...state.draft, healthConnection: 'not-now' } };
           }
+          if (key === 'cycleHandovers')
+            value = JSON.parse(remapCycleHandoverRequest(String(row[column.name]), owner));
+          if (key === 'coachReviewJournal')
+            value = JSON.parse(remapCoachReviewReceipt(String(row[column.name]), owner));
           row[column.name] = JSON.stringify(value);
         }
         // IDs embedded in strings remain stable. Only explicit owner fields are

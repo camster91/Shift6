@@ -107,14 +107,20 @@ export default function ProfileScreen() {
 
     setPrivacyBusy('export');
     setPrivacyMessage(null);
+    let recordsPrepared = false;
     try {
       const data = await exportLocalUserData(database, userId, new Date().toISOString());
+      recordsPrepared = true;
       await shareLocalDataExport(data);
       setPrivacyMessage(
-        `Your local export includes ${data.summary.totalRecordCount} records across ${data.summary.sections.length} sections and is ready to share.`,
+        `Your local export includes ${data.summary.totalRecordCount} records across ${data.summary.sections.length} sections. Open the JSON file in your chosen destination to confirm receipt.`,
       );
     } catch {
-      setPrivacyMessage('We could not prepare the local export.');
+      setPrivacyMessage(
+        recordsPrepared
+          ? 'Your local records were prepared, but we could not share the export file. Reopen the app and try Export local data again.'
+          : 'We could not prepare the local export. Reopen the app and try again.',
+      );
     } finally {
       setPrivacyBusy(null);
     }

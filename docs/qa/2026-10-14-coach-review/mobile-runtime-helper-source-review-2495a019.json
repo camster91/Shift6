@@ -1,0 +1,32 @@
+{
+  "reviewedAtUtc": "2026-10-14T15:51:02.7960693Z",
+  "host": "CAM-DESKTOP",
+  "mode": "independent source-only review; no tests, native operations, edits, or GitHub",
+  "status": "changes_requested_synthetic_runtime_scope",
+  "hashes": [
+    {
+      "path": "scripts/mobile-runtime-qa.py",
+      "sha256": "2495A019D55AC3210D7456C3B75A8109842B54D37D37F6A8EF2A86C6C78D5F43"
+    },
+    {
+      "path": "scripts/mobile-runtime-qa.test.py",
+      "sha256": "351D1C03181EBD8688A1F2F909A8F33F95F38EC0C481761BD37C2C1F4E013DBC"
+    }
+  ],
+  "accepted": [
+    "Recovery explicitly reads focused draft12 before revealing all sets, then saved20 and same draft12; no assertions weakened or new saved-set writes.",
+    "Fixed diagnostic query whitelist, SQL parameters, row_limit integer1..10, per-field8192 truncation, selected counts and row truncation flags; unknown tables blocked before reads.",
+    "Read-only percent-encoded absolute file URI mode=ro plus query_only; connection closing on success/error. Only SELECT data queries; check-in free-text note excluded.",
+    "Goal observation/revision/event queries constrain guest owner and exact QA goal marker; session-related rows constrain guest cycle owner and QA workout title.",
+    "Offline AST and actual CREATE-schema fixtures are honest unit evidence, not native QA; test SQL setup writes are confined to temporary fixture."
+  ],
+  "changesRequested": [
+    "Main finally unconditionally asserts synthetic_only=True even when journey fails before observed SETUP. First existing simulator/noReset is not a standalone verified fresh-data condition; gate collection on explicit fresh synthetic runtime scope and observed setup, skip otherwise.",
+    "Result scope text says QA Session/QA hold goal only, but guest onboarding/profile selections have no QA marker. Describe guest setup/profile scope accurately."
+  ],
+  "context": [
+    "Current native-runtime-qa workflow uses macos-latest hosted runner with verified artifact before helper, supporting intended fresh CI use; helper itself can otherwise run against reused simulator.",
+    "No native recovered saved-record proof is inferred from this source review. Snapshot rows are sequential reads while app may update data, not an atomic audit."
+  ],
+  "evidence": "Root reported12 offline tests green; reviewer inspected tests and source, did not rerun."
+}

@@ -1,0 +1,51 @@
+{
+  "host": "CAM-DESKTOP",
+  "sourceBase": "0b997f90ff43370a655830eb72c3494a665d0a7f",
+  "createdAt": "2026-10-14T14:59:36.8324340Z",
+  "committed": false,
+  "scope": "Generic notification text; strict native default-tap identity; Home-only navigation; generation-only dedup and stale callback guards",
+  "limitations": [
+    "No durable cross-restart consumption journal",
+    "No native OS delivery test",
+    "No physical-device or iOS notification acceptance",
+    "Rest payload has no owner field; no session mutation or workout opening is authorized"
+  ],
+  "files": [
+    {
+      "path": "src/domain/notificationSchedule.ts",
+      "sha256": "FB2DCE74BF7B651358F99157F25ADC6982DF1A8A45C9B0BB0D145E1C8D3EC380"
+    },
+    {
+      "path": "src/domain/notificationSchedule.test.ts",
+      "sha256": "10E8826C49ED20F0FAFD2BCEB1946950A1CFD764ED0373D0EC4478952ACA02E4"
+    },
+    {
+      "path": "src/services/notifications.ts",
+      "sha256": "E7C9AFD874C21F46174A18B20A6E4E0D6DAC7977A5FB4A67CFAD255214695146"
+    },
+    {
+      "path": "src/services/notifications.test.ts",
+      "sha256": "B143A450B5AB99F5E6DB2A2DADE8EB19B65478C553DD2EAD1CF254C0C41A4F96"
+    },
+    {
+      "path": "src/services/NotificationRuntimeProvider.tsx",
+      "sha256": "932DAF3DF308E32659A3F079B0C1855F8955CADFBA37BF50A016858796B83045"
+    },
+    {
+      "path": "src/services/NotificationRuntimeProvider.test.tsx",
+      "sha256": "A1667A657BD41DD22F198C8312C9264F24326BC0D20B3F8386F22CC187B4CF5E"
+    },
+    {
+      "path": "src/services/notificationResponsePolicy.ts",
+      "sha256": "EF703C81D33E57208B07BC2F9FE49E75561B1DAEF8A1DAEAA677F1A3168470EA"
+    },
+    {
+      "path": "src/services/notificationResponsePolicy.test.ts",
+      "sha256": "4091CDC5D98D6002D000E39286C269195C90345FBB7C162B1E67B58713BB78FC"
+    }
+  ],
+  "typecheckExit": 0,
+  "lintExit": 0,
+  "formatExit": 0,
+  "focusedExit": 0
+}

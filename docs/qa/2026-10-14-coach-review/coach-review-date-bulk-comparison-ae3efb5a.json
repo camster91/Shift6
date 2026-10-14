@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "ae3efb5a3542e585cee459640831e22d786060f5",
+  "identicalArrays": 36,
+  "records": 1082,
+  "exportedAt": "2026-10-14T11:41:51.494Z",
+  "firstChooserDumpInterrupted": true,
+  "postReceiverTapDumpInterrupted": true,
+  "freshReceiverVerified": true,
+  "fourReadyBulkInputsPassed": true,
+  "earlierMismatchCauseUnproven": true
+}

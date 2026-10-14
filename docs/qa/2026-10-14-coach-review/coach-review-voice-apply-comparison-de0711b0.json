@@ -1,0 +1,33 @@
+{
+  "sourceCommit": "de0711b08757be2b9e3443350ebabccd33ae937c",
+  "records": 1082,
+  "changedArrays": [
+    "workoutDraftLoadUnits",
+    "workoutDrafts"
+  ],
+  "identicalArrays": 34,
+  "draftOnlyValueChange": {
+    "setKey": "program-custom-program-blank-guest-user-1791862271289-slug-copy-guest-1791872974980-version-1-workout-1-exercise-2:1",
+    "before": {
+      "distance": "",
+      "duration": "25",
+      "load": "",
+      "reps": "",
+      "rir": "",
+      "rpe": ""
+    },
+    "after": {
+      "distance": "",
+      "duration": "26",
+      "load": "",
+      "reps": "",
+      "rir": "",
+      "rpe": "7"
+    }
+  },
+  "loadUnitMapUnchanged": true,
+  "actualSetsAndSessionsUnchanged": true,
+  "recognition": "Blocked: selected offline language model not installed; native manual fallback observed",
+  "microphonePermission": "RECORD_AUDIO granted=false observed after failed availability and typed apply",
+  "noSetCompletion": "3 of 5 remains in native UI; completedSets/session rows unchanged"
+}

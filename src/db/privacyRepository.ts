@@ -1,3 +1,8 @@
+import { cycleHandoverSections } from '../domain/cycleHandover';
+import { loadProvenanceSections } from '../domain/loadUnits';
+import { persistenceSections } from '../domain/localPersistence';
+import { schedulePersistenceSections } from '../domain/scheduleSnapshot';
+import { coachReviewSections } from '../domain/coachReviewJournal';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export type LocalDataExportSectionKey =
@@ -26,7 +31,18 @@ export interface LocalDataExportSummary {
 }
 
 export interface LocalDataExport {
-  schemaVersion: 12;
+  schemaVersion: 12 | 13 | 14 | 15 | 16 | 17;
+  cycleHandovers?: Record<string, unknown>[];
+  coachReviewJournal?: Record<string, unknown>[];
+  scheduleBaselines?: Record<string, unknown>[];
+  scheduleRevisions?: Record<string, unknown>[];
+  completedSetLoadProvenance?: Record<string, unknown>[];
+  workoutDraftLoadUnits?: Record<string, unknown>[];
+  cycleLifecycleEvents?: Record<string, unknown>[];
+  coachMemoryPreferences?: Record<string, unknown>[];
+  coachMemoryFacts?: Record<string, unknown>[];
+  builderRecoveryDrafts?: Record<string, unknown>[];
+  setFeedbackEvents?: Record<string, unknown>[];
   exportedAt: string;
   userId: string;
   summary: LocalDataExportSummary;
@@ -62,6 +78,31 @@ export async function exportLocalUserData(
   userId: string,
   exportedAt: string,
 ): Promise<LocalDataExport> {
+  let result: LocalDataExport | undefined;
+  await database.withExclusiveTransactionAsync(async (tx) => {
+    result = await exportLocalUserDataInTransaction(tx, userId, exportedAt);
+  });
+  if (!result) throw new Error('The local export transaction did not complete.');
+  return result;
+}
+
+async function exportLocalUserDataInTransaction(
+  database: SQLiteDatabase,
+  userId: string,
+  exportedAt: string,
+): Promise<LocalDataExport> {
+  const additions: Record<string, Record<string, unknown>[]> = {};
+  for (const [key, table] of Object.entries({
+    ...persistenceSections,
+    ...loadProvenanceSections,
+    ...schedulePersistenceSections,
+    ...coachReviewSections,
+    ...cycleHandoverSections,
+  }))
+    additions[key] = await database.getAllAsync(
+      `SELECT * FROM ${table} WHERE user_id=? ORDER BY rowid;`,
+      userId,
+    );
   const personalGoalEvents = await database.getAllAsync<Record<string, unknown>>(
     'SELECT * FROM personal_goal_events WHERE user_id=? ORDER BY rowid;',
     userId,
@@ -197,6 +238,7 @@ export async function exportLocalUserData(
   );
 
   const summary = buildLocalDataExportSummary({
+    ...additions,
     personalGoalEvents,
     personalGoalDrafts,
     onboardingDrafts,
@@ -225,10 +267,11 @@ export async function exportLocalUserData(
   });
 
   return {
-    schemaVersion: 12,
+    schemaVersion: 17,
     exportedAt,
     userId,
     summary,
+    ...additions,
     personalGoalEvents,
     personalGoalDrafts,
     onboardingDrafts,
@@ -306,20 +349,36 @@ export function buildLocalDataExportSummary(
         data.workoutDrafts.length +
         data.workoutCheckIns.length +
         data.cycleReviews.length +
-        data.workoutScheduleOverrides.length,
+        data.workoutScheduleOverrides.length +
+        (data.cycleLifecycleEvents?.length ?? 0) +
+        (data.setFeedbackEvents?.length ?? 0) +
+        (data.completedSetLoadProvenance?.length ?? 0) +
+        (data.workoutDraftLoadUnits?.length ?? 0) +
+        (data.scheduleBaselines?.length ?? 0) +
+        (data.scheduleRevisions?.length ?? 0),
     },
     {
       key: 'programsAndExercises',
       title: 'Your programs and exercises',
       description: 'Private program copies, program versions, and custom exercise records.',
       recordCount:
-        data.userPrograms.length + data.userProgramVersions.length + data.userExercises.length,
+        data.userPrograms.length +
+        data.userProgramVersions.length +
+        data.userExercises.length +
+        (data.builderRecoveryDrafts?.length ?? 0),
     },
     {
       key: 'coachAndNotifications',
       title: 'Coach and notification records',
-      description: 'Saved Coach proposals and local notification preferences.',
-      recordCount: data.coachProposals.length + data.notificationPreferences.length,
+      description:
+        'Saved Coach proposals, dated review intents and local notification preferences.',
+      recordCount:
+        data.coachProposals.length +
+        data.notificationPreferences.length +
+        (data.coachMemoryPreferences?.length ?? 0) +
+        (data.coachMemoryFacts?.length ?? 0) +
+        (data.coachReviewJournal?.length ?? 0) +
+        (data.cycleHandovers?.length ?? 0),
     },
   ];
 
@@ -352,8 +411,16 @@ export async function assertNoUnsupportedShiftOutboxRows(database: SQLiteDatabas
 }
 
 export async function deleteLocalUserData(database: SQLiteDatabase, userId: string): Promise<void> {
-  await database.withTransactionAsync(async () => {
+  await database.withExclusiveTransactionAsync(async (database) => {
     await assertNoUnsupportedShiftOutboxRows(database);
+    for (const table of [
+      cycleHandoverSections.cycleHandovers,
+      coachReviewSections.coachReviewJournal,
+      schedulePersistenceSections.scheduleRevisions,
+      schedulePersistenceSections.scheduleBaselines,
+      ...Object.values({ ...persistenceSections, ...loadProvenanceSections }),
+    ])
+      await database.runAsync(`DELETE FROM ${table} WHERE user_id=?;`, userId);
     await database.runAsync(
       `DELETE FROM sync_outbox
         WHERE (entity_type = 'profile' AND entity_id = ?)

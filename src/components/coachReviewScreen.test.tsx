@@ -130,7 +130,7 @@ beforeEach(() => {
   mockConfirm.mockImplementation(
     async (_db, preview, id, parent, confirmedAt, confirmed, isCurrent) => {
       if (!isCurrent()) throw new Error('Review context changed.');
-      return {
+      const saved = {
         id,
         previousReviewId: parent,
         receipt: confirmCoachReviewChoice(
@@ -140,6 +140,8 @@ beforeEach(() => {
           confirmed,
         ),
       };
+      mockHistory.mockResolvedValue([saved]);
+      return saved;
     },
   );
   mockNavigate.mockResolvedValue({
@@ -352,8 +354,130 @@ test('remount reads confirmed journal history; an old receipt does not imply cur
   expect(restored.getByText('Saved dated review history')).toBeTruthy();
   expect(restored.getByText(/Evidence reflects each confirmation time/)).toBeTruthy();
   expect(restored.queryByLabelText('Confirm and save intent')).toBeNull();
+  expect(restored.queryByLabelText('Continue to setup')).toBeNull();
   expect(mockConfirm).toHaveBeenCalledTimes(1);
 });
+
+async function restoredAvailability() {
+  const screen = await ready();
+  await fireEvent.press(screen.getByLabelText('Review availability'));
+  await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+  const saved = await mockConfirm.mock.results[0]!.value;
+  await screen.unmount();
+  return { screen: await ready(), saved };
+}
+
+test('cold reopen recovers only the latest owned dated next step and separately rechecks its exact head', async () => {
+  const { screen, saved } = await restoredAvailability();
+  expect(screen.getByText('Latest saved dated intent')).toBeTruthy();
+  expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
+  await fireEvent.press(screen.getByLabelText('Continue to setup'));
+  expect(mockHistory).toHaveBeenCalledWith(mockDb, mockOwner, cycle.id, 1);
+  expect(router.push).toHaveBeenCalledWith('/onboarding');
+  expect(mockConfirm).toHaveBeenCalledTimes(1);
+  expect(saved.receipt.confirmedAt).toBe(stamp);
+});
+
+test.each(['head', 'same-id-content', 'version', 'goal', 'blur'])(
+  'a recovered next step refuses a changed %s without saving another intent',
+  async (change) => {
+    const { screen, saved } = await restoredAvailability();
+    const retained = mockButtonHandlers.get('Continue to setup')!;
+    if (change === 'head') mockHistory.mockResolvedValue([{ ...saved, id: 'newer-keep-plan' }]);
+    if (change === 'same-id-content')
+      mockHistory.mockResolvedValue([
+        { ...saved, receipt: { ...saved.receipt, response: null, choice: 'keep-plan' } },
+      ]);
+    if (change === 'version')
+      mockCycle.mockResolvedValue({ ...cycle, programVersionId: 'new-version' });
+    if (change === 'goal')
+      mockLoad.mockImplementation(async (_db, _owner, _cycle, window, now) => {
+        const fresh = prepareCoachReview({ ...packet, window, now });
+        return {
+          ...fresh,
+          evidenceFingerprint: JSON.stringify({
+            ...JSON.parse(fresh.evidenceFingerprint),
+            goal: { id: 'new-goal', target: 'revised-target' },
+          }),
+        };
+      });
+    if (change === 'blur') await act(() => mockBlur?.());
+    await act(() => retained());
+    expect(router.push).not.toHaveBeenCalled();
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    if (change !== 'blur') expect(screen.getByText(/changed. Reload/)).toBeTruthy();
+  },
+);
+
+test('a newer Keep plan suppresses an older availability continuation on cold reopen', async () => {
+  const { screen, saved } = await restoredAvailability();
+  await screen.unmount();
+  const fresh = prepareCoachReview(packet);
+  mockHistory.mockResolvedValue([
+    {
+      id: 'newer-keep-plan',
+      previousReviewId: saved.id,
+      receipt: {
+        ...confirmCoachReviewChoice(
+          previewCoachReviewChoice(fresh, 'keep-plan'),
+          fresh,
+          stamp,
+          true,
+        ),
+        goalWitness: null,
+      },
+    },
+    saved,
+  ]);
+  const restored = await ready();
+  expect(restored.queryByLabelText('Continue to setup')).toBeNull();
+  expect(mockConfirm).toHaveBeenCalledTimes(1);
+});
+
+test.each(['foreign', 'version', 'goal'])(
+  'cold reopen never restores continuation from a %s saved context',
+  async (change) => {
+    const { screen, saved } = await restoredAvailability();
+    await screen.unmount();
+    const receipt = {
+      ...saved.receipt,
+      ...(change === 'foreign' ? { ownerId: 'another-person' } : {}),
+      ...(change === 'version' ? { programVersionId: 'old-version' } : {}),
+      ...(change === 'goal'
+        ? { goalWitness: { state: 'unavailable-legacy-history', goalId: 'old-goal' } }
+        : {}),
+    };
+    mockHistory.mockResolvedValue([{ ...saved, receipt }]);
+    const restored = await render(<CoachReviewScreen />);
+    await waitFor(() => expect(restored.queryByText(/Loading the current person/)).toBeNull());
+    expect(restored.queryByLabelText('Continue to setup')).toBeNull();
+    expect(router.push).not.toHaveBeenCalled();
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+  },
+);
+
+test.each(['head', 'goal', 'owner', 'database'])(
+  'navigation resolver returning after a changed %s cannot open a recovered follow-up',
+  async (change) => {
+    const { screen, saved } = await restoredAvailability();
+    let resolve!: (value: { route: string }) => void;
+    mockNavigate.mockImplementationOnce(() => new Promise((done) => (resolve = done)));
+    await fireEvent.press(screen.getByLabelText('Continue to setup'));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledTimes(1));
+    if (change === 'head') mockHistory.mockResolvedValue([{ ...saved, id: 'new-head' }]);
+    if (change === 'goal')
+      mockLoad.mockImplementation(async (_db, _owner, _cycle, window, now) => ({
+        ...prepareCoachReview({ ...packet, window, now }),
+        goalWitness: { state: 'unavailable-legacy-history', goalId: 'changed-goal' },
+      }));
+    if (change === 'owner') mockOwner = 'new-owner';
+    if (change === 'database') mockDb = {};
+    if (change === 'owner' || change === 'database') await screen.rerender(<CoachReviewScreen />);
+    await act(() => resolve({ route: '/onboarding' }));
+    expect(router.push).not.toHaveBeenCalled();
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+  },
+);
 
 test('historical confirmation dates use each saved timezone without rewriting receipt data', async () => {
   const snapshot = prepareCoachReview({

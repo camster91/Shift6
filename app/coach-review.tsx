@@ -28,6 +28,22 @@ import type { UnitSystem } from '../src/domain/types';
 import { resolveCoachNavigation } from '../src/services/coachNavigation';
 import { colors, spacing } from '../src/design/tokens';
 import { formatRecordedDateTime } from '../src/domain/datePresentation';
+import { stableSnapshotJSON } from '../src/domain/programPersistence';
+
+function goalContext(value: {
+  evidenceFingerprint: string;
+  goalWitness?: SavedCoachReview['receipt']['goalWitness'];
+}) {
+  const evidence = JSON.parse(value.evidenceFingerprint) as {
+    goal: unknown;
+    observations: unknown;
+  };
+  return stableSnapshotJSON({
+    goal: evidence.goal,
+    observations: evidence.observations,
+    witness: value.goalWitness ?? null,
+  });
+}
 
 const choices: Record<CoachReviewChoice, string> = {
   'keep-plan': 'Keep plan',
@@ -73,6 +89,7 @@ export default function CoachReviewScreen() {
     parent: string | null;
   } | null>(null);
   const [receipt, setReceipt] = useState<SavedCoachReview | null>(null);
+  const [restoredReceipt, setRestoredReceipt] = useState(false);
   const [busy, setBusy] = useState(false),
     [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
@@ -130,7 +147,15 @@ export default function CoachReviewScreen() {
       setResponse(null);
       setSkipped(false);
       setPreview(null);
-      setReceipt(null);
+      const head = saved[0];
+      setReceipt(
+        head?.receipt.nextCapability &&
+          head.receipt.programVersionId === cycle.programVersionId &&
+          goalContext(head.receipt) === goalContext(next)
+          ? head
+          : null,
+      );
+      setRestoredReceipt(true);
       setLoadedFor({
         db,
         owner,
@@ -300,6 +325,7 @@ export default function CoachReviewScreen() {
       )
         throw new Error('The saved intent belongs to a different review context.');
       setReceipt(result);
+      setRestoredReceipt(false);
       setPreview(null);
       setHistory((items) =>
         [result, ...items.filter((item) => item.id !== result.id)].slice(0, 20),
@@ -312,12 +338,50 @@ export default function CoachReviewScreen() {
       if (!current()) return;
       if (
         !cycle ||
+        cycle.userId !== owner ||
         cycle.id !== receipt.receipt.cycleId ||
         cycle.programVersionId !== receipt.receipt.programVersionId
       )
         throw new Error('The reviewed cycle changed. Reload before opening another workflow.');
+      const checkHead = async () => {
+        const saved = await getSavedCoachReviews(db, owner, cycle.id, 1);
+        if (!current()) return false;
+        if (stableSnapshotJSON(saved[0] ?? null) !== stableSnapshotJSON(receipt))
+          throw new Error('The latest saved intent changed. Reload before continuing.');
+        return true;
+      };
+      if (!(await checkHead())) return;
+      const checkGoal = async () => {
+        const fresh = await loadDatedCoachReview(
+          db,
+          owner,
+          cycle.id,
+          receipt.receipt.window,
+          new Date().toISOString(),
+        );
+        if (!current()) return false;
+        if (
+          fresh.ownerId !== owner ||
+          fresh.cycleId !== cycle.id ||
+          fresh.programVersionId !== cycle.programVersionId ||
+          goalContext(fresh) !== goalContext(receipt.receipt)
+        )
+          throw new Error('The reviewed goal changed. Reload before opening another workflow.');
+        return true;
+      };
+      if (!(await checkGoal())) return;
       const next = await resolveCoachNavigation(db, owner, receipt.receipt.nextCapability);
-      if (current()) router.push(next.route);
+      if (!current() || !(await checkHead()) || !(await checkGoal())) return;
+      const latestCycle = await getActiveTrainingCycle(db, owner);
+      if (!current()) return;
+      if (
+        !latestCycle ||
+        latestCycle.userId !== owner ||
+        latestCycle.id !== cycle.id ||
+        latestCycle.programVersionId !== cycle.programVersionId
+      )
+        throw new Error('The reviewed cycle changed. Reload before opening another workflow.');
+      router.push(next.route);
     });
   if (!loadMatches())
     return (
@@ -579,7 +643,7 @@ export default function CoachReviewScreen() {
       {receiptMatches() && receipt ? (
         <Card style={styles.card}>
           <Text variant="bodyMedium" accessibilityLiveRegion="polite">
-            Dated intent saved locally
+            {restoredReceipt ? 'Latest saved dated intent' : 'Dated intent saved locally'}
           </Text>
           <Text>
             {choices[receipt.receipt.choice]} · confirmed{' '}

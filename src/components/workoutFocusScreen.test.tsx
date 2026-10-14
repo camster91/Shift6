@@ -36,9 +36,13 @@ jest.mock('../config/env', () => ({ runtimeConfig: { releaseMode: 'guest-only' }
 jest.mock('expo-router', () => ({
   useFocusEffect: (callback: () => () => void) =>
     jest.requireActual<typeof ReactModule>('react').useEffect(() => {
-      mockFocusEnter = callback;
-      mockFocusLeave = callback();
-      return () => mockFocusLeave?.();
+      let leave = callback();
+      mockFocusEnter = () => {
+        leave = callback();
+        return leave;
+      };
+      mockFocusLeave = leave;
+      return () => leave();
     }, [callback]),
   router: { back: jest.fn(), replace: jest.fn(), push: jest.fn() },
   useLocalSearchParams: () => ({ workoutId: 'workout-barbell-30-strength-a' }),
@@ -179,8 +183,9 @@ test('legacy recovered load stays unknown and cannot save until explicitly decla
   expect(mockSaveSet.mock.calls[0]?.[1]).toMatchObject({ load: 35, loadUnit: 'kg' });
 });
 test('focused fields precede optional details and bodyweight never requires owned gear', async () => {
-  const beforeEquipment = mockVersion.workouts[0]!.equipmentIds;
-  mockVersion.workouts[0]!.equipmentIds = ['equipment-bodyweight'];
+  const workout = mockVersion.workouts[0]!;
+  const beforeEquipment = workout.equipmentIds;
+  workout.equipmentIds = ['equipment-bodyweight'];
   mockUser = { ...demoUser, equipmentIds: ['equipment-dumbbells'] };
   try {
     const screen = await render(<ActiveWorkoutScreen />);
@@ -209,7 +214,7 @@ test('focused fields precede optional details and bodyweight never requires owne
     expect(screen.getByRole('radio', { name: 'Ready to train', selected: false })).toBeTruthy();
     expect(mockSaveSet).not.toHaveBeenCalled();
   } finally {
-    mockVersion.workouts[0]!.equipmentIds = beforeEquipment;
+    workout.equipmentIds = beforeEquipment;
   }
 });
 

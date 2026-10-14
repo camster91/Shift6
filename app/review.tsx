@@ -164,6 +164,7 @@ export default function CycleReviewScreen() {
       setProgramVersion(null);
       setSummary(null);
       setLoadedFor(null);
+      setReviewBusy(null);
       setPersonalGoal(null);
       setHandoverChoice(null);
       setHandoverPreview(null);
@@ -302,9 +303,9 @@ export default function CycleReviewScreen() {
     nextAction?: CycleReviewAction,
     isCurrent: () => boolean = () => true,
   ): Promise<boolean> => {
+    const canShowResult = () => isCurrent() && isLoadedContextCurrent();
     if (
-      !isCurrent() ||
-      !isLoadedContextCurrent() ||
+      !canShowResult() ||
       reviewBusy ||
       !database ||
       !cycle ||
@@ -330,18 +331,18 @@ export default function CycleReviewScreen() {
     setError(null);
     try {
       await saveCycleReview(database, nextReview);
-      if (!isCurrent()) return false;
+      if (!canShowResult()) return false;
       setReview(nextReview);
       setReviewSaved(true);
       return true;
     } catch (saveError) {
-      if (isCurrent())
+      if (canShowResult())
         setError(
           saveError instanceof Error ? saveError.message : 'We could not save your reflection.',
         );
       return false;
     } finally {
-      if (isCurrent()) setReviewBusy(null);
+      if (canShowResult()) setReviewBusy(null);
     }
   };
 

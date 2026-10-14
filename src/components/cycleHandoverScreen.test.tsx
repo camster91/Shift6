@@ -171,6 +171,118 @@ test('matching paired destination binding retains explicit preview without savin
   expect(mockSave).not.toHaveBeenCalled();
 });
 
+test.each(['route', 'owner', 'database'])(
+  'delayed reflection result cannot mark the new context saved (%s)',
+  async (change) => {
+    let release!: () => void;
+    mockSave.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const screen = await render(<CycleReviewScreen />);
+    await waitFor(() => expect(screen.getByLabelText('Save reflection')).toBeTruthy());
+    await fireEvent.press(screen.getByLabelText('Save reflection'));
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    const committedRecord = mockSave.mock.calls[0]![1];
+    if (change === 'route')
+      mockParams = {
+        expectedCycleId: mockCycle.id,
+        expectedProgramVersionId: mockCycle.programVersionId,
+      };
+    if (change === 'owner') mockOwner = 'new-owner';
+    if (change === 'database') mockDb = {};
+    await screen.rerender(<CycleReviewScreen />);
+    await waitFor(() => expect(screen.getByLabelText('Save reflection')).not.toBeDisabled());
+    await act(async () => release());
+    expect(screen.queryByLabelText('Reflection saved')).toBeNull();
+    expect(screen.getByLabelText('Save reflection')).not.toBeDisabled();
+    expect(committedRecord.userId).toBe('guest-user');
+    expect(committedRecord.cycleId).toBe(mockCycle.id);
+  },
+);
+
+test.each(['Adjust a private copy', 'Build a progression copy'])(
+  'delayed %s save cannot navigate an obsolete builder after route change',
+  async (label) => {
+    let release!: () => void;
+    mockSave.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const screen = await render(<CycleReviewScreen />);
+    await waitFor(() => expect(screen.getByLabelText(label)).toBeTruthy());
+    await fireEvent.press(screen.getByLabelText(label));
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    mockParams = {
+      expectedCycleId: mockCycle.id,
+      expectedProgramVersionId: mockCycle.programVersionId,
+    };
+    await screen.rerender(<CycleReviewScreen />);
+    await waitFor(() => expect(screen.getByLabelText(label)).not.toBeDisabled());
+    await act(async () => release());
+    expect(router.push).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Reflection saved')).toBeNull();
+  },
+);
+
+test('obsolete reflection rejection cannot display its error in the new route context', async () => {
+  let rejectOld!: (error: Error) => void;
+  mockSave.mockImplementationOnce(
+    () =>
+      new Promise<void>((_resolve, reject) => {
+        rejectOld = reject;
+      }),
+  );
+  const screen = await render(<CycleReviewScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Save reflection')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText('Save reflection'));
+  mockParams = {
+    expectedCycleId: mockCycle.id,
+    expectedProgramVersionId: mockCycle.programVersionId,
+  };
+  await screen.rerender(<CycleReviewScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Save reflection')).not.toBeDisabled());
+  await act(async () => rejectOld(new Error('Obsolete reflection failure')));
+  expect(screen.queryByText('Obsolete reflection failure')).toBeNull();
+  expect(screen.getByLabelText('Save reflection')).not.toBeDisabled();
+});
+
+test('obsolete save finally cannot release a new context pending reflection save', async () => {
+  let releaseOld!: () => void, releaseNew!: () => void;
+  mockSave
+    .mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          releaseOld = resolve;
+        }),
+    )
+    .mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          releaseNew = resolve;
+        }),
+    );
+  const screen = await render(<CycleReviewScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Save reflection')).toBeTruthy());
+  await fireEvent.press(screen.getByLabelText('Save reflection'));
+  mockOwner = 'new-owner';
+  await screen.rerender(<CycleReviewScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Save reflection')).not.toBeDisabled());
+  await fireEvent.press(screen.getByLabelText('Save reflection'));
+  expect(mockSave).toHaveBeenCalledTimes(2);
+  expect(mockSave.mock.calls[0]![1].userId).toBe('guest-user');
+  expect(mockSave.mock.calls[1]![1].userId).toBe('new-owner');
+  await act(async () => releaseOld());
+  expect(screen.getByLabelText('Save reflection')).toBeDisabled();
+  expect(screen.queryByLabelText('Reflection saved')).toBeNull();
+  await act(async () => releaseNew());
+  expect(screen.getByLabelText('Reflection saved')).toBeTruthy();
+});
+
 test('a destination binding change clears the old private preview and prevents confirmation', async () => {
   mockParams = {
     expectedCycleId: mockCycle.id,

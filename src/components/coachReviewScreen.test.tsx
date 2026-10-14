@@ -367,6 +367,64 @@ async function restoredAvailability() {
   return { screen: await ready(), saved };
 }
 
+test.each(['Cancel preview', 'native Back'])(
+  '%s restores the latest confirmed follow-up without a write and preview blocks its retained callback',
+  async (exit) => {
+    const { screen, saved } = await restoredAvailability();
+    const canonical = JSON.stringify(saved);
+    const retained = mockButtonHandlers.get('Continue to setup')!;
+    const choose = mockButtonHandlers.get('Keep plan')!;
+    await act(() => {
+      choose();
+      retained();
+    });
+    expect(screen.queryByLabelText('Continue to setup')).toBeNull();
+    await act(() => retained());
+    expect(mockNavigate).not.toHaveBeenCalled();
+    if (exit === 'native Back')
+      await fireEvent(screen.getByTestId('coach-review-preview-modal'), 'requestClose');
+    else await fireEvent.press(screen.getByLabelText('Cancel preview'));
+    expect(screen.getByLabelText('Continue to setup')).toBeTruthy();
+    expect(JSON.stringify(saved)).toBe(canonical);
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByLabelText('Continue to setup'));
+    expect(router.push).toHaveBeenCalledWith('/onboarding');
+  },
+);
+
+test.each(['just confirmed', 'cold reopened'])(
+  'the %s dated follow-up is before date entry and evidence with one guarded action',
+  async (phase) => {
+    let screen = await ready();
+    await fireEvent.press(screen.getByLabelText('Review availability'));
+    await fireEvent.press(screen.getByLabelText('Confirm and save intent'));
+    const saved = await mockConfirm.mock.results[0]!.value;
+    const before = JSON.stringify(saved);
+    if (phase === 'cold reopened') {
+      await screen.unmount();
+      screen = await ready();
+    }
+    const frame = mockRenderFrames.at(-1)!.text;
+    expect(frame.indexOf('Continue to setup')).toBeGreaterThan(-1);
+    expect(frame.indexOf('Continue to setup')).toBeLessThan(
+      frame.indexOf('Choose up to seven local dates'),
+    );
+    expect(frame.indexOf('Continue to setup')).toBeLessThan(
+      frame.indexOf('Sessions started in this date range'),
+    );
+    expect(screen.getAllByLabelText('Continue to setup')).toHaveLength(1);
+    expect(
+      screen.getByText(
+        `Reviewed dates: ${saved.receipt.window.startDate} through ${saved.receipt.window.endDate} · ${saved.receipt.window.timeZone}`,
+      ),
+    ).toBeTruthy();
+    expect(JSON.stringify(saved)).toBe(before);
+    await fireEvent.press(screen.getByLabelText('Continue to setup'));
+    expect(router.push).toHaveBeenCalledWith('/onboarding');
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+  },
+);
+
 test('cold reopen recovers only the latest owned dated next step and separately rechecks its exact head', async () => {
   const { screen, saved } = await restoredAvailability();
   expect(screen.getByText('Latest saved dated intent')).toBeTruthy();

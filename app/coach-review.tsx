@@ -250,6 +250,7 @@ export default function CoachReviewScreen() {
     Boolean(
       loadMatches() &&
       receipt &&
+      visibleState.current.preview === null &&
       visibleState.current.receipt === receipt &&
       receipt.receipt.ownerId === owner &&
       receipt.receipt.cycleId === loadedFor?.cycleId &&
@@ -297,12 +298,14 @@ export default function CoachReviewScreen() {
   const choose = (choice: CoachReviewChoice) => {
     if (!review || pending.current || !reviewMatches()) return;
     Keyboard.dismiss();
-    setPreview({
+    const nextPreview = {
       value: previewCoachReviewChoice(review, choice, response),
       id: operationId(),
       parent: history[0]?.id ?? null,
-    });
-    setReceipt(null);
+    };
+    // Invalidate a retained continuation before React commits the modal render.
+    visibleState.current.preview = nextPreview;
+    setPreview(nextPreview);
     setError('');
   };
   const confirm = () =>
@@ -403,6 +406,33 @@ export default function CoachReviewScreen() {
       <Text tone="muted">
         Review saved evidence and record your choice. Everything stays on this device.
       </Text>
+      {receiptMatches() && receipt ? (
+        <Card style={styles.card}>
+          <Text variant="bodyMedium" accessibilityLiveRegion="polite">
+            {restoredReceipt ? 'Latest saved dated intent' : 'Dated intent saved locally'}
+          </Text>
+          <Text>
+            {choices[receipt.receipt.choice]} · confirmed{' '}
+            {formatRecordedDateTime(receipt.receipt.confirmedAt, receipt.receipt.window.timeZone)}
+          </Text>
+          <Text tone="muted">
+            Reviewed dates: {receipt.receipt.window.startDate} through{' '}
+            {receipt.receipt.window.endDate} · {receipt.receipt.window.timeZone}
+          </Text>
+          <Text>Your plan was not changed by this receipt.</Text>
+          {receipt.receipt.nextCapability ? (
+            <Button
+              label={
+                receipt.receipt.nextCapability === 'open-goal'
+                  ? 'Continue to personal goal'
+                  : 'Continue to setup'
+              }
+              disabled={busy}
+              onPress={openNext}
+            />
+          ) : null}
+        </Card>
+      ) : null}
       <Card style={styles.card}>
         <Text variant="bodyMedium">Choose up to seven local dates</Text>
         {(['startDate', 'endDate', 'timeZone'] as const).map((key) => (
@@ -639,29 +669,6 @@ export default function CoachReviewScreen() {
             </Text>
           </Screen>
         </Modal>
-      ) : null}
-      {receiptMatches() && receipt ? (
-        <Card style={styles.card}>
-          <Text variant="bodyMedium" accessibilityLiveRegion="polite">
-            {restoredReceipt ? 'Latest saved dated intent' : 'Dated intent saved locally'}
-          </Text>
-          <Text>
-            {choices[receipt.receipt.choice]} · confirmed{' '}
-            {formatRecordedDateTime(receipt.receipt.confirmedAt, receipt.receipt.window.timeZone)}
-          </Text>
-          <Text>Your plan was not changed by this receipt.</Text>
-          {receipt.receipt.nextCapability ? (
-            <Button
-              label={
-                receipt.receipt.nextCapability === 'open-goal'
-                  ? 'Continue to personal goal'
-                  : 'Continue to setup'
-              }
-              disabled={busy}
-              onPress={openNext}
-            />
-          ) : null}
-        </Card>
       ) : null}
       {history.length &&
       history.every(

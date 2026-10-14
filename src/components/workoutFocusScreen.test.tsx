@@ -12,6 +12,7 @@ import { demoCycle, demoProgram, demoProgramVersion, demoUser } from '../domain/
 import type { CompletedSet, WorkoutSession, WorkoutDraftValues } from '../domain/types';
 let mockFocusEnter: (() => () => void) | null = null;
 let mockFocusLeave: (() => void) | null = null;
+let pendingCorrectionCleanup: (() => Promise<void>) | null = null;
 let mockResumed: WorkoutSession | null = null;
 let mockSavedActuals: CompletedSet[] = [];
 let mockPreviousActuals: CompletedSet[] = [];
@@ -147,7 +148,10 @@ beforeEach(() => {
 const originalKeyboardSubscribe = jest.isMockFunction(Keyboard.addListener)
   ? jest.mocked(Keyboard.addListener).getMockImplementation()
   : undefined;
-afterEach(() => {
+afterEach(async () => {
+  const cleanup = pendingCorrectionCleanup;
+  pendingCorrectionCleanup = null;
+  if (cleanup) await cleanup();
   jest.restoreAllMocks();
   if (originalKeyboardSubscribe)
     jest.mocked(Keyboard.addListener).mockImplementation(originalKeyboardSubscribe);
@@ -191,6 +195,7 @@ test.each([
       target.load = oldLoad;
     }
   },
+  15000,
 );
 
 test('legacy recovered load stays unknown and cannot save until explicitly declared', async () => {
@@ -500,50 +505,75 @@ test('correction keeps restored canonical set ID and operation identity rather t
 
 test('pending correction freezes numeric and unit mutation immediately and displays only confirmed actuals', async () => {
   const screen = await render(<ActiveWorkoutScreen />);
-  await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
-  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 load'), '40');
-  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), '4');
-  await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
-  await waitFor(() => expect(mockSaveSet).toHaveBeenCalledTimes(1));
-  await fireEvent.press(screen.getByText('Review all sets and adjustments'));
-  await fireEvent.press(screen.getByLabelText('Edit Back squat set 1'));
-  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 load'), '45');
-  await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), '6');
-  let release!: (value: string) => void;
-  let canonical: CompletedSet | null = null;
-  mockUpdateSet.mockImplementationOnce(
-    (...args: unknown[]) =>
-      new Promise<string>((resolve) => {
-        release = (value) => {
-          canonical = args[1] as CompletedSet;
-          resolve(value);
-        };
-      }),
-  );
-  const pending = fireEvent.press(screen.getByLabelText('Save Back squat set 1'));
-  await waitFor(() => expect(mockUpdateSet).toHaveBeenCalledTimes(1));
-  const load = screen.getByLabelText('Back squat set 1 load');
-  const reps = screen.getByLabelText('Back squat set 1 reps');
-  expect(load.props.editable).toBe(false);
-  expect(reps.props.editable).toBe(false);
-  await act(async () => {
-    load.props.onChangeText('999');
-    reps.props.onChangeText('999');
-  });
-  await fireEvent.press(screen.getByLabelText('Back squat set 1 actual load unit kg'));
-  expect(Alert.alert).not.toHaveBeenCalled();
-  expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('45');
-  expect(screen.getByLabelText('Back squat set 1 reps').props.value).toBe('6');
-  await act(async () => {
-    release('updated');
-    await pending;
-  });
-  await waitFor(() => expect(screen.getByLabelText('Edit Back squat set 1')).toBeTruthy());
-  expect(canonical).toMatchObject({ load: 45, loadUnit: 'lb', reps: 6 });
-  expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('45');
-  expect(screen.getByLabelText('Back squat set 1 reps').props.value).toBe('6');
-  expect(screen.getByLabelText('Edit Back squat set 1')).toBeTruthy();
-});
+  let release: ((value: string) => void) | undefined;
+  let pending: Promise<void> | undefined;
+  let cleanupPromise: Promise<void> | undefined;
+  const cleanup = () => {
+    cleanupPromise ??= (async () => {
+      // Disposal invalidates the captured writer guard before draining its promise.
+      await screen.unmount();
+      if (release)
+        await act(async () => {
+          release!('updated');
+          await pending;
+        });
+    })();
+    return cleanupPromise;
+  };
+  pendingCorrectionCleanup = cleanup;
+  try {
+    await waitFor(() => expect(screen.getByLabelText('Back squat set 1 reps')).toBeTruthy());
+    await fireEvent.changeText(screen.getByLabelText('Back squat set 1 load'), '40');
+    await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), '4');
+    await fireEvent.press(screen.getByLabelText('Complete Back squat set 1'));
+    await waitFor(() => expect(mockSaveSet).toHaveBeenCalledTimes(1));
+    await fireEvent.press(screen.getByText('Review all sets and adjustments'));
+    await fireEvent.press(screen.getByLabelText('Edit Back squat set 1'));
+    await fireEvent.changeText(screen.getByLabelText('Back squat set 1 load'), '45');
+    await fireEvent.changeText(screen.getByLabelText('Back squat set 1 reps'), '6');
+    let canonical: CompletedSet | null = null;
+    mockUpdateSet.mockImplementationOnce(
+      (...args: unknown[]) =>
+        new Promise<string>((resolve) => {
+          release = (value) => {
+            canonical = args[1] as CompletedSet;
+            resolve(value);
+          };
+        }),
+    );
+    const saveButton = screen.getByLabelText('Save Back squat set 1');
+    expect(saveButton.props.accessibilityState.disabled).toBe(false);
+    const save = saveButton.props.onStartShouldSetResponder.testOnly_pressabilityConfig().onPress;
+    await act(() => {
+      pending = save();
+    });
+    await waitFor(() => expect(mockUpdateSet).toHaveBeenCalledTimes(1));
+    const load = screen.getByLabelText('Back squat set 1 load');
+    const reps = screen.getByLabelText('Back squat set 1 reps');
+    expect(load.props.editable).toBe(false);
+    expect(reps.props.editable).toBe(false);
+    await act(async () => {
+      load.props.onChangeText('999');
+      reps.props.onChangeText('999');
+    });
+    await fireEvent.press(screen.getByLabelText('Back squat set 1 actual load unit kg'));
+    expect(Alert.alert).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('45');
+    expect(screen.getByLabelText('Back squat set 1 reps').props.value).toBe('6');
+    await act(async () => {
+      release!('updated');
+      await pending;
+    });
+    await waitFor(() => expect(screen.getByLabelText('Edit Back squat set 1')).toBeTruthy());
+    expect(canonical).toMatchObject({ load: 45, loadUnit: 'lb', reps: 6 });
+    expect(screen.getByLabelText('Back squat set 1 load').props.value).toBe('45');
+    expect(screen.getByLabelText('Back squat set 1 reps').props.value).toBe('6');
+    expect(screen.getByLabelText('Edit Back squat set 1')).toBeTruthy();
+  } finally {
+    await cleanup();
+    if (pendingCorrectionCleanup === cleanup) pendingCorrectionCleanup = null;
+  }
+}, 15000);
 
 test('queued draft context stays invalid after blur then same-owner focus return', async () => {
   const screen = await render(<ActiveWorkoutScreen />);

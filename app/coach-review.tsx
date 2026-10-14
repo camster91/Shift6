@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { Keyboard, Modal, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, Modal, Platform, StyleSheet, TextInput, View } from 'react-native';
 import type { ScrollView } from 'react-native';
 import { Button, Card, Screen, Text } from '../src/components/ui';
 import { useLocalDatabase } from '../src/db/context';
@@ -79,6 +79,8 @@ export default function CoachReviewScreen() {
     owner = useCurrentUserId();
   const [dates, setDates] = useState(initialWindow);
   const [datesExpanded, setDatesExpanded] = useState(false);
+  const [keyboardSpace, setKeyboardSpace] = useState(0);
+  const currentKeyboardSpace = useRef(0);
   const dateScroll = useRef<ScrollView | null>(null);
   const dateContent = useRef<View | null>(null);
   const dateInputs = useRef<Partial<Record<keyof CoachReviewWindow, TextInput | null>>>({});
@@ -92,6 +94,8 @@ export default function CoachReviewScreen() {
   const dateEditor = useRef({ visible: false, generation: 0 });
   const dateEditorGeneration = dateEditor.current.generation;
   const setDateEditorVisibility = useCallback((visible: boolean) => {
+    currentKeyboardSpace.current = 0;
+    setKeyboardSpace(0);
     measurement.current += 1;
     focusedDateInput.current = null;
     dateEditor.current = { visible, generation: dateEditor.current.generation + 1 };
@@ -103,6 +107,8 @@ export default function CoachReviewScreen() {
       revealFocusedDateInput.current();
     });
     const hidden = Keyboard.addListener('keyboardDidHide', () => {
+      currentKeyboardSpace.current = 0;
+      setKeyboardSpace(0);
       keyboardTop.current = null;
       measurement.current += 1;
     });
@@ -250,6 +256,8 @@ export default function CoachReviewScreen() {
       return () => {
         active.current = false;
         generation.current += 1;
+        currentKeyboardSpace.current = 0;
+        setKeyboardSpace(0);
       };
     }, [db, owner, read, epoch, setDateEditorVisibility]),
   );
@@ -298,6 +306,7 @@ export default function CoachReviewScreen() {
       receipt.receipt.programVersionId === loadedFor?.programVersionId,
     );
   revealFocusedDateInput.current = () => {
+    if (keyboardSpace !== currentKeyboardSpace.current) return;
     const field = focusedDateInput.current;
     const viewport = dateScroll.current;
     const nativeViewport = viewport?.getNativeScrollRef();
@@ -320,15 +329,33 @@ export default function CoachReviewScreen() {
     // before a scroll event arrives. Never guess an offset or scroll to the end.
     nativeViewport.measureInWindow((_x, viewportY, _width, viewportHeight) => {
       if (!current()) return;
-      content.measureInWindow((_contentX, contentY) => {
+      if (![viewportY, viewportHeight, top].every(Number.isFinite) || viewportHeight <= 0) return;
+      // Android's automatic keyboard insets are not supplied by ScrollView.
+      // Reserve only measured overlap, then wait for the new content layout
+      // before scrolling; otherwise a shortened record can clamp the target.
+      const neededSpace =
+        Platform.OS === 'android' ? Math.max(0, viewportY + viewportHeight - top) : 0;
+      if (neededSpace !== currentKeyboardSpace.current) {
+        currentKeyboardSpace.current = neededSpace;
+        measurement.current += 1;
+        setKeyboardSpace(neededSpace);
+        return;
+      }
+      content.measureInWindow((_contentX, contentY, _contentWidth, contentHeight) => {
         if (!current()) return;
         field.input.measureInWindow((_inputX, inputY, _inputWidth, inputHeight) => {
           if (!current()) return;
           const bottom = Math.min(viewportY + viewportHeight, top);
           if (
-            ![viewportY, viewportHeight, contentY, inputY, inputHeight, bottom].every(
-              Number.isFinite,
-            ) ||
+            ![
+              viewportY,
+              viewportHeight,
+              contentY,
+              contentHeight,
+              inputY,
+              inputHeight,
+              bottom,
+            ].every(Number.isFinite) ||
             viewportHeight <= 0 ||
             inputHeight <= 0 ||
             bottom <= viewportY
@@ -338,8 +365,24 @@ export default function CoachReviewScreen() {
             inputY < viewportY || inputHeight > bottom - viewportY
               ? inputY - viewportY
               : Math.max(0, inputY + inputHeight - bottom);
-          if (delta !== 0)
-            viewport.scrollTo({ y: Math.max(0, viewportY - contentY + delta), animated: false });
+          if (delta !== 0) {
+            const targetOffset = Math.max(0, viewportY - contentY + delta);
+            const maxScrollOffset = Math.max(0, contentHeight - viewportHeight);
+            console.warn('SHIFT6 date keyboard geometry', {
+              viewportY,
+              viewportHeight,
+              keyboardTop: top,
+              contentY,
+              contentHeight,
+              inputY,
+              inputHeight,
+              keyboardSpace: currentKeyboardSpace.current,
+              targetOffset,
+              maxScrollOffset,
+            });
+            if (Platform.OS === 'android' && targetOffset > maxScrollOffset) return;
+            viewport.scrollTo({ y: targetOffset, animated: false });
+          }
         });
       });
     });
@@ -523,6 +566,7 @@ export default function CoachReviewScreen() {
   return (
     <Screen
       scrollViewRef={dateScroll}
+      contentContainerStyle={keyboardSpace > 0 ? { paddingBottom: keyboardSpace } : undefined}
       scrollViewProps={{
         innerViewRef: dateContent as RefObject<View>,
         onLayout: () => {

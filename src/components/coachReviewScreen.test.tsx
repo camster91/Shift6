@@ -1,6 +1,6 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import { Keyboard } from 'react-native';
+import { Keyboard, Platform } from 'react-native';
 import type * as ReactNative from 'react-native';
 import type * as ReactModule from 'react';
 import type { KeyboardEvent, ScrollView, TextInput, TextInputProps } from 'react-native';
@@ -241,6 +241,8 @@ async function ready() {
 }
 
 async function keyboardEditor() {
+  const geometry = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  jest.replaceProperty(Platform, 'OS', 'android');
   const listeners = new Map<string, (event: KeyboardEvent) => void>();
   jest.spyOn(Keyboard, 'addListener').mockImplementation((name, callback) => {
     listeners.set(name, callback);
@@ -277,14 +279,29 @@ async function keyboardEditor() {
       easing: 'keyboard',
       endCoordinates: { screenX: 0, screenY: 420, width: 400, height: 340 },
     });
-  return { screen, inputMeasure, viewport, show, listeners };
+  return { screen, inputMeasure, viewport, nativeViewport, content, show, listeners, geometry };
 }
 
 test('keyboard and content layout measure the focused date field and scroll only its necessary overflow without animation', async () => {
-  const { screen, inputMeasure, viewport, show } = await keyboardEditor();
+  const { screen, inputMeasure, viewport, show, geometry } = await keyboardEditor();
   expect(viewport.scrollTo).not.toHaveBeenCalled();
   await act(() => show());
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  expect(mockDateScreenProps!.contentContainerStyle).toEqual({ paddingBottom: 160 });
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1160);
   expect(viewport.scrollTo).toHaveBeenLastCalledWith({ y: 428, animated: false });
+  expect(geometry).toHaveBeenCalledWith('SHIFT6 date keyboard geometry', {
+    viewportY: 80,
+    viewportHeight: 500,
+    keyboardTop: 420,
+    contentY: -120,
+    contentHeight: 1000,
+    inputY: 600,
+    inputHeight: 48,
+    keyboardSpace: 160,
+    targetOffset: 428,
+    maxScrollOffset: 500,
+  });
   viewport.scrollTo.mockClear();
   inputMeasure.mockImplementation((callback) => callback(0, 100, 320, 48));
   await fireEvent.changeText(screen.getByLabelText('Review time zone'), 'Invalid/Zone');
@@ -297,6 +314,31 @@ test('keyboard and content layout measure the focused date field and scroll only
   expect(mockConfirm).not.toHaveBeenCalled();
 });
 
+test('measured keyboard space clears on dismissal and does not duplicate an Android viewport that already resized', async () => {
+  const { viewport, nativeViewport, show, listeners } = await keyboardEditor();
+  await act(() => show());
+  expect(mockDateScreenProps!.contentContainerStyle).toEqual({ paddingBottom: 160 });
+  nativeViewport.measureInWindow.mockImplementation((callback) => callback(0, 80, 400, 340));
+  await act(() => mockDateScreenProps!.scrollViewProps!.onLayout!({} as never));
+  expect(mockDateScreenProps!.contentContainerStyle).toBeUndefined();
+  viewport.scrollTo.mockClear();
+  await act(() => listeners.get('keyboardDidHide')!({} as KeyboardEvent));
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1000);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  expect(mockDateScreenProps!.contentContainerStyle).toBeUndefined();
+});
+
+test('scroll waits for actual native content range after keyboard space is committed', async () => {
+  const { viewport, content, show } = await keyboardEditor();
+  content.measureInWindow.mockImplementation((callback) => callback(0, -120, 400, 600));
+  await act(() => show());
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 600);
+  expect(viewport.scrollTo).not.toHaveBeenCalled();
+  content.measureInWindow.mockImplementation((callback) => callback(0, -120, 400, 1160));
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1160);
+  expect(viewport.scrollTo).toHaveBeenCalledWith({ y: 428, animated: false });
+});
+
 test.each(['blur', 'field blur', 'hide', 'owner', 'database', 'keyboard hidden', 'edit'])(
   'a delayed keyboard measurement cannot scroll after %s invalidates its context',
   async (change) => {
@@ -306,6 +348,7 @@ test.each(['blur', 'field blur', 'hide', 'owner', 'database', 'keyboard hidden',
       measured = callback;
     });
     await act(() => show());
+    mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1160);
     if (change === 'blur') await act(() => mockBlur?.());
     if (change === 'field blur') await fireEvent(screen.getByLabelText('Review time zone'), 'blur');
     if (change === 'hide')
@@ -329,6 +372,7 @@ test('a newer keyboard layout measurement supersedes an older response and never
     callbacks.push(callback);
   });
   await act(() => show());
+  mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 1160);
   mockDateScreenProps!.scrollViewProps!.onContentSizeChange!(400, 750);
   expect(callbacks).toHaveLength(2);
   callbacks[0]!(0, 600, 320, 48);

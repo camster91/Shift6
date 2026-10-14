@@ -28,6 +28,61 @@ import {
   type HandoverSession,
 } from '../domain/cycleHandover';
 
+/** Recover only the receipt bound to this owned source or destination cycle. */
+export async function getCycleHandoverReceipt(
+  db: SQLiteDatabase,
+  owner: string,
+  cycleId: string,
+): Promise<CycleHandoverReceipt | null> {
+  guestOnly();
+  const cycle = await getOwnedTrainingCycle(db, owner, cycleId);
+  if (!cycle) return null;
+  const row = await db.getFirstAsync<{
+    id: string;
+    user_id: string;
+    source_cycle_id: string;
+    destination_cycle_id: string;
+    source_program_version_id: string;
+    destination_program_version_id: string;
+    source_goal_id: string | null;
+    destination_goal_id: string | null;
+    request_json: string;
+    confirmed_at: string;
+  }>(
+    'SELECT * FROM cycle_handovers WHERE user_id=? AND (source_cycle_id=? OR destination_cycle_id=?) ORDER BY confirmed_at DESC LIMIT 1;',
+    owner,
+    cycleId,
+    cycleId,
+  );
+  if (!row) return null;
+  const request = parseCycleHandoverRequest(row.request_json);
+  if (
+    row.user_id !== owner ||
+    request.userId !== owner ||
+    row.id !== request.operationId ||
+    row.source_cycle_id !== request.source.cycle.id ||
+    row.destination_cycle_id !== request.destination.cycleId ||
+    row.source_program_version_id !== request.source.version.id ||
+    row.destination_program_version_id !== request.destination.versionId ||
+    row.source_goal_id !== (request.source.goal?.id ?? null) ||
+    row.destination_goal_id !== request.destination.goalId ||
+    (cycleId !== row.source_cycle_id && cycleId !== row.destination_cycle_id) ||
+    new Date(row.confirmed_at).toISOString() !== row.confirmed_at ||
+    Date.parse(row.confirmed_at) < Date.parse(request.preparedAt)
+  )
+    throw new Error('Saved handover does not match its owned cycle record.');
+  const source = await getOwnedTrainingCycle(db, owner, row.source_cycle_id);
+  const destination = await getOwnedTrainingCycle(db, owner, row.destination_cycle_id);
+  if (
+    !source ||
+    !destination ||
+    source.programVersionId !== row.source_program_version_id ||
+    destination.programVersionId !== row.destination_program_version_id
+  )
+    throw new Error('Saved handover cycles are unavailable.');
+  return { request, confirmedAt: row.confirmed_at };
+}
+
 function guestOnly() {
   if (runtimeConfig.releaseMode !== 'guest-only')
     throw new Error('Cycle handover is local-only in this release.');

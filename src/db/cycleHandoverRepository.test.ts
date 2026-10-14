@@ -1,5 +1,6 @@
 import { appendCycleLifecycleEvent, getCycleLifecycleEvents } from './cycleLifecycleRepository';
 import {
+  getCycleHandoverReceipt,
   prepareCycleHandover,
   confirmCycleHandover as commitHandover,
 } from './cycleHandoverRepository';
@@ -666,4 +667,36 @@ test.each([
   await deleteLocalUserData(db, owner);
   await restoreLocalBackup(db, owner, JSON.stringify(saved));
   expect(await exportNow()).toEqual(saved);
+});
+
+test('receipt recovery binds the owned source and fresh destination without writes', async () => {
+  const request = await prepare();
+  const receipt = await confirmCycleHandover(db, owner, request);
+  const count = beginCount;
+  expect(await getCycleHandoverReceipt(db, owner, sourceCycle.id)).toEqual(receipt);
+  expect(await getCycleHandoverReceipt(db, owner, request.destination.cycleId)).toEqual(receipt);
+  expect(await getCycleHandoverReceipt(db, 'other-owner', request.destination.cycleId)).toBeNull();
+  expect(beginCount).toBe(count);
+});
+
+test.each(['id', 'destination_program_version_id', 'source_goal_id', 'user_id'])(
+  'receipt recovery refuses mismatched %s binding',
+  async (column) => {
+    const request = await prepare();
+    await confirmCycleHandover(db, owner, request);
+    // Foreign-owner rows are hidden by the owner query; other binding corruption is rejected.
+    sqlite.exec('PRAGMA foreign_keys=OFF; DROP TRIGGER IF EXISTS cycle_handover_immutable;');
+    sqlite.prepare(`UPDATE cycle_handovers SET ${column}=?;`).run('wrong-binding');
+    if (column === 'user_id')
+      expect(await getCycleHandoverReceipt(db, owner, sourceCycle.id)).toBeNull();
+    else await expect(getCycleHandoverReceipt(db, owner, sourceCycle.id)).rejects.toThrow();
+  },
+);
+
+test('receipt recovery refuses malformed request instead of showing guessed history', async () => {
+  const request = await prepare();
+  await confirmCycleHandover(db, owner, request);
+  sqlite.exec('DROP TRIGGER IF EXISTS cycle_handover_immutable;');
+  sqlite.prepare('UPDATE cycle_handovers SET request_json=?;').run('{}');
+  await expect(getCycleHandoverReceipt(db, owner, sourceCycle.id)).rejects.toThrow();
 });

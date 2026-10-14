@@ -99,6 +99,82 @@ pending broader acceptance, including physical recognizer and current iOS.
 
 ## Remaining work and evidence
 
+### Correction field presentation regression and source correction
+
+On the same Pixel 7 / Android 16 API36 emulator, source
+`3de5542595e737ab3ed48806958eff28869d896d`, APK SHA256
+`eebbbf65506c0b507601bb0185d97a1906fb96cc421841cfb9cfea98826db5d1`,
+the new label, guidance and bordered multiline field expose a native regression.
+Resume the existing workout > optional voice > Speak (offline model unavailable)
+
+> type26 seconds > focus/select-all/delete. Expected: the empty focused field is
+> visible above the IME. Actual: bounds169,1556–913,1766 are below keyboard top1517.
+> The editor remains mounted and Review disabled, but cannot be seen.
+> See [hidden field failure](qa/2026-10-14-coach-review/coach-review-voice-empty-editor-hidden-3de55425.png).
+> The following coordinate-based replacement failed exact readback with a missing
+> leading character; the selected coordinates were covered by the IME. Its cause
+> is not proven as an app text-entry defect. The failed helper is not a pass.
+> Background/foreground clears the unconfirmed editor; external JSON preserves
+> all actual/draft payloads, with only autosave timestamps changed. See
+> [comparison](qa/2026-10-14-coach-review/coach-review-voice-hidden-comparison-3de55425.json).
+> No Apply or Complete was used.
+
+Source `ae3efb5a3542e585cee459640831e22d786060f5` adds focused-field native
+measurement, bounded Android keyboard scroll space and guarded reattachment
+after an immediate retry refusal or completed capture. Stale capture/opening,
+owner context, background and dismissal cannot publish or register the field.
+Independent source review passes102 focused tests. Full verify passes1,218
+tests/144 suites, Doctor21/21 and both exports. Native build/install succeeds,
+APK SHA256`c928662fde864afcd799617b7d85328aa27de8a357b0e44901abcc18546c6ebf`.
+Native visibility results are recorded separately below; these source/build
+checks do not prove the keyboard fix.
+
+On this exact binary, the complete normal and200% helper sequences exit0.
+Delete all text: the native field stays focused, Review is disabled and its
+whole border is above the observed IME. Normal bounds169,1307–913,1517;
+large-text empty bounds169,1141–913,1351, expanding to1421 when populated.
+Retype `26 seconds, RPE seven` with exact readback, retry Speak through the
+missing-model fallback, and retype/review: duration26/rpe7 appears. Background
+and foreground: no unconfirmed editor or Apply remains. No Apply or Complete
+was tapped. Screenshots were visually inspected:
+[normal empty](qa/2026-10-14-coach-review/coach-review-voice-empty-font1.0-ae3efb5a.png),
+[normal typed](qa/2026-10-14-coach-review/coach-review-voice-retyped-font1.0-ae3efb5a.png),
+[large empty](qa/2026-10-14-coach-review/coach-review-voice-empty-font2.0-ae3efb5a.png)
+and [large retry](qa/2026-10-14-coach-review/coach-review-voice-retry-font2.0-ae3efb5a.png).
+Normal uses paced characters; large text uses four chunks with exact readback
+after each. These are operator/harness observations, not participant acceptance.
+
+Two prior large-text attempts remain interrupted: the optional entry button was
+below the fold, then an immediate cold-start UI dump was empty. Fresh stable Home
+and scrolling to the actual control preceded the successful complete sequence.
+Font-transition dumps are also retained. No interruption is relabeled as a pass.
+
+A separate normal attempt presses Speak while the field is focused. The helper's
+expectation that native focus stays true fails: the actual refusal leaves an
+enabled, mounted, empty field with the IME dismissed and focus false. The
+[fresh screenshot](qa/2026-10-14-coach-review/coach-review-voice-retained-focus-interrupted-ae3efb5a.png)
+shows the entire field, disabled Review and missing-model guidance. This does not
+reproduce hidden focused input. Native listening disables editing temporarily;
+the rare immediate-settlement path that retains focus is covered by source tests
+and remains unobserved natively. The failed assertion is retained, not converted
+to a retained-focus pass. The completed normal/large sequences above explicitly
+refocus after retry.
+
+The final external receiver received and opened schema17 JSON at
+11:30:17.041Z: **36 arrays / 1,082 records**, all actual and draft payloads
+unchanged against the3de failure export. Only existing draft/load-map autosave
+timestamps refresh. See [comparison](qa/2026-10-14-coach-review/coach-review-voice-keyboard-comparison-ae3efb5a.json)
+and [external receiver](qa/2026-10-14-coach-review/coach-review-voice-keyboard-export-ae3efb5a-fresh-receiver.png).
+The initial share helper stopped on an empty dump after selecting the receiver;
+fresh receiver UI plus its newly timestamped file verified the export separately.
+Font is restored to1.0. #364 remains open for successful recognizer, current iOS,
+physical-device and broader acceptance checks. No score increase is claimed.
+
+The first styling candidate03ec4a76 failed full verification in three workout
+unit cases. Fresh fixture graphs and effect-owned focus disposal corrected test
+cross-contamination;40edbf9f and3de55425 then passed1,202/144. This harness history
+is retained alongside the separate native visibility defect.
+
 Current fixture is QA Cycle B active with its existing unfinished session and
 reviewed draft; the earlier private cycle is paused. Restoring the original active
 cycle requires two additional explicit lifecycle events and will not restore the

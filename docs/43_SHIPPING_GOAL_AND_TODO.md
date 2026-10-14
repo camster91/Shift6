@@ -14,6 +14,17 @@ Core training remains free, local and usable offline. Keep deterministic progres
 
 ## Verified starting point
 
+Newest source `ae3efb5a` passes full verify **1,218 tests/144 suites**, Doctor21/21,
+both exports and a standalone Android guest build. The optional voice correction
+field now has explicit guidance, measured keyboard scroll space and guarded retry
+reattachment. Doc51 preserves the preceding3de native hidden-field failure and
+records normal/200% clear/retype/retry-refocus/background native passes and an
+external export preserving every actual/draft payload across1,082 records.
+The rare focus-retaining refusal path remains source-test coverage only.
+No source test or scoped emulator check upgrades the score.
+The repetition foundation remains in an isolated inactive worktree; its tests
+and proposed journal versions do not describe this shipping schema17 app.
+
 Latest source `3f1752ed` passes full verify **1,202 tests/144 suites**, Doctor21/21,
 both exports and a standalone Android guest build. Doc50 observes the focused
 Coach time-zone editor fully visible above the keyboard after editing at normal

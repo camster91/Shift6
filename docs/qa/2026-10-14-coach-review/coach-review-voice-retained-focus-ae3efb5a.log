@@ -1,0 +1,8 @@
+empty [169, 1307, 913, 1517]
+retyped [169, 1307, 913, 1517]
+Traceback (most recent call last):
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\test-voice-retained-focus-ae3efb5a.py", line 52, in <module>
+    field_visible('settled-retry')
+  File "C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\test-voice-retained-focus-ae3efb5a.py", line 15, in field_visible
+    assert n.get('focused')=='true'
+AssertionError

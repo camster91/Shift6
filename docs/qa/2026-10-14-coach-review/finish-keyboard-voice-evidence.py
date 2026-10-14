@@ -18,14 +18,19 @@ receipt = {'sourceCommit': '3f1752ede2917489e5ff4af103e4fc634fa41273',
 for run in [38534099956, 38534108589, 38534108570]:
     result = subprocess.run(['gh', 'run', 'view', str(run), '--repo', 'camster91/Shift6', '--json', 'headSha,conclusion,jobs'], capture_output=True, check=True)
     (qa / f'coach-review-ci-{run}.json').write_bytes(result.stdout)
-patterns = ['coach-review-*.png', 'coach-review-*.xml', 'coach-review-*.json']
-for sha in ['2c584311', '057d5936', '3f1752ed']:
+patterns = ['coach-review-*.png', 'coach-review-*.xml', 'coach-review-*.json', 'coach-review-*.log']
+for sha in ['2c584311', '057d5936', '3f1752ed', '03ec4a76', '40edbf9f', '3de55425', 'ae3efb5a']:
     patterns += [f'verify-integrated-{sha}.*', f'build-integrated-{sha}.*']
 files = {p for pattern in patterns for p in qa.glob(pattern) if p.is_file()}
 for name in ['test-keyboard-057d5936.py', 'test-keyboard-large-057d5936.py',
              'test-voice-editor-057d5936.py', 'test-keyboard-space-3f1752ed.py',
              'test-keyboard-space-large-3f1752ed.py', 'finish-keyboard-voice-evidence.py',
              'export-coach-native.py']:
+    files.add(qa / name)
+for name in ['test-keyboard-date-fields-3f1752ed.py', 'test-keyboard-date-fields-paced-3f1752ed.py',
+             'test-voice-editor-3de55425.py', 'test-voice-keyboard-ae3efb5a.py',
+             'test-voice-keyboard-chunks-ae3efb5a.py', 'test-voice-retained-focus-ae3efb5a.py',
+             'compare-voice-keyboard-ae3efb5a.py', 'read-voice-export-ae3efb5a.py']:
     files.add(qa / name)
 for p in sorted(files):
     shutil.copyfile(p, out / p.name)

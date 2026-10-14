@@ -15,6 +15,16 @@
     "sha256": "2a5b4e31d660cdbb917ecce5cb43bd91e9ecc7a6b6e8aca03a3e254b4b2c6d4b"
   },
   {
+    "file": "build-integrated-3de55425.log",
+    "bytes": 65555,
+    "sha256": "d30643507734e1f3b43052ffd44f142f86cc2777a1e798f40d597b61492e1c2e"
+  },
+  {
+    "file": "build-integrated-3de55425.status.json",
+    "bytes": 446,
+    "sha256": "74ae5253442488ad6d0ee7d619ba017fd70888322521f27f53d32f053bda34ee"
+  },
+  {
     "file": "build-integrated-3f1752ed.log",
     "bytes": 65555,
     "sha256": "4e51b55162d7e4b22b3e30ef9c6b9469eac69e8873a931681ae4d89ae7a4af70"
@@ -33,6 +43,16 @@
     "file": "build-integrated-7b93db48.status.json",
     "bytes": 446,
     "sha256": "490c43ce9c505980cd87ba65ffe758fd518298c200cea48ef6f82c14be54de9a"
+  },
+  {
+    "file": "build-integrated-ae3efb5a.log",
+    "bytes": 65555,
+    "sha256": "6e8925363979b5d9718dc1fa325d7cff92e824877a5727e20ba4e7f5f3db0940"
+  },
+  {
+    "file": "build-integrated-ae3efb5a.status.json",
+    "bytes": 446,
+    "sha256": "bcc51be230adc065c590489b07dbfd6ae7d67df6c38d54e049784974d987b925"
   },
   {
     "file": "build-integrated-b00e62ac.log",
@@ -320,6 +340,21 @@
     "sha256": "194a065be7533acdb97f40113fcf74a564a2862c55d30b2032da28ece1de6990"
   },
   {
+    "file": "coach-review-date-fields-export-3f1752ed-receiver.png",
+    "bytes": 79516,
+    "sha256": "e40c350c02bd43778d6d005c11d3ac876e1ab2753e1afb2aaa77f854f1805a48"
+  },
+  {
+    "file": "coach-review-date-fields-export-3f1752ed-receiver.xml",
+    "bytes": 1681,
+    "sha256": "033abb41c78fc5b05889d179a0872114e6ffb7daf3d9c7ad474767726506db30"
+  },
+  {
+    "file": "coach-review-date-fields-export-3f1752ed.json",
+    "bytes": 407368,
+    "sha256": "586968a4c093903c6eab47f2e83ef5a85554a2e798567120e01ae3d5f75b5bd2"
+  },
+  {
     "file": "coach-review-date-invalidates-preview-db4.png",
     "bytes": 158117,
     "sha256": "4c17c08432d255071d8a975b997c46c86735c87b964d837d7d8df76affad66e5"
@@ -390,6 +425,26 @@
     "sha256": "8b7d219f140ae62d4786738303f0c6b32640b6a3a61cbd10e357c007bbeb7213"
   },
   {
+    "file": "coach-review-font2-before-voice-ae3efb5a.log",
+    "bytes": 784,
+    "sha256": "039a3b84c479969bce2f43e5f6d8f782ab293a5697a646f2bb09e8ef3080c587"
+  },
+  {
+    "file": "coach-review-font2-stable-before-voice-ae3efb5a.log",
+    "bytes": 966,
+    "sha256": "1511fa7bebf2d8596fbac687b799d16d08d9956c68040cc71af62031f340cda2"
+  },
+  {
+    "file": "coach-review-font2-stable-before-voice-ae3efb5a.png",
+    "bytes": 1388703,
+    "sha256": "a9307990fd78655f4b8fb0ca8a115aa34b353b6a1b399ac35c9220da751b7b6b"
+  },
+  {
+    "file": "coach-review-font2-stable-before-voice-ae3efb5a.xml",
+    "bytes": 13188,
+    "sha256": "d8e41fbec9f2326651990f8d8b1515d60ec12a4987e70a24eabba66e813f1110"
+  },
+  {
     "file": "coach-review-guided-destination-b00.png",
     "bytes": 231437,
     "sha256": "4f46d347918db4226fb2c863040ea9faa1cab771e89d0ec615be71e722fdcd74"
@@ -458,6 +513,56 @@
     "file": "coach-review-keep-plan-export-b00.json",
     "bytes": 405801,
     "sha256": "8ad4fc8db4e6b6ac9132364fa04973c54613e337be8965b123eecbd98151e790"
+  },
+  {
+    "file": "coach-review-keyboard-date-end-interrupted-font1-3f1752ed.png",
+    "bytes": 247385,
+    "sha256": "97cbea0488a4b101b673040382b12ca7da2197b1fa81ac5aaa55aedfe245c04f"
+  },
+  {
+    "file": "coach-review-keyboard-date-end-interrupted-font1-3f1752ed.xml",
+    "bytes": 11455,
+    "sha256": "882627f7d49bb316533bbd86c4f687717bbbb0aa1c4182cee977ef4bb0ab28d0"
+  },
+  {
+    "file": "coach-review-keyboard-date-end-paced-font1-3f1752ed.png",
+    "bytes": 248000,
+    "sha256": "ba16470be849ea040a53ec21f8000f01c7935a6cd3af38334191855e4a229789"
+  },
+  {
+    "file": "coach-review-keyboard-date-end-paced-font1-3f1752ed.xml",
+    "bytes": 11457,
+    "sha256": "781a6f10a00dbe7f844a290238c3e7c1f72417e0adcb6cbcab364b8ccfeac12f"
+  },
+  {
+    "file": "coach-review-keyboard-date-end-paced-font2-3f1752ed.png",
+    "bytes": 249511,
+    "sha256": "821428c324157cc9b03b14707020bf7fccde2a909377feb1ba9d19c079de803b"
+  },
+  {
+    "file": "coach-review-keyboard-date-end-paced-font2-3f1752ed.xml",
+    "bytes": 8867,
+    "sha256": "408a34aa8c3335e86adbb13313113fb99488eb716d2f7139cfffeb33ef4ea776"
+  },
+  {
+    "file": "coach-review-keyboard-date-start-font1-3f1752ed.png",
+    "bytes": 241669,
+    "sha256": "7ee1bac5af0870c50da075382e78ecf8b86378f473061cf44492e4f476ebf03a"
+  },
+  {
+    "file": "coach-review-keyboard-date-start-font1-3f1752ed.xml",
+    "bytes": 11461,
+    "sha256": "c2bc7a414bdbd49670d6e8694bbe2aed0c156553956f64b599111e90ef61a89d"
+  },
+  {
+    "file": "coach-review-keyboard-date-start-paced-font2-3f1752ed.png",
+    "bytes": 255145,
+    "sha256": "e503b83b1fe297f25d10ec08039cdb14d22cfeca34949d1940e3f695c67a3ab9"
+  },
+  {
+    "file": "coach-review-keyboard-date-start-paced-font2-3f1752ed.xml",
+    "bytes": 9975,
+    "sha256": "cb931677f1edeeea3c48ff41ade81ec80aa3034d2a369991817047de252bf2f6"
   },
   {
     "file": "coach-review-keyboard-final-comparison-3f1752ed.json",
@@ -653,6 +758,16 @@
     "file": "coach-review-native-ci-terminal-e3.json",
     "bytes": 10680,
     "sha256": "307bcc1dbe1ffb1b60745e0118601fa917f96d3c4bc2d2f3b40a36d9b54db24f"
+  },
+  {
+    "file": "coach-review-native-ci-terminal-e440.json",
+    "bytes": 6814,
+    "sha256": "b63c16b8326e0e699b72817aa2889ca9fd0e7954ca7a46ff3638393d0c29ae8b"
+  },
+  {
+    "file": "coach-review-open-issues-ae3efb5a.json",
+    "bytes": 11579,
+    "sha256": "f87d048d204df61fcd24e2a8e50aa6d1f981aab3537cf50da0ab9ffa38c24ee3"
   },
   {
     "file": "coach-review-partial-summary-db4.png",
@@ -1015,6 +1130,26 @@
     "sha256": "621d6001f9154737144baff884eb1c2bf81f7e5fccceb64e9431e42566afa89e"
   },
   {
+    "file": "coach-review-voice-background-font1.0-ae3efb5a.png",
+    "bytes": 259185,
+    "sha256": "4827fc1110d69086f35410ac2b5c2472541f5908f000254ddcb0bfeb40d27602"
+  },
+  {
+    "file": "coach-review-voice-background-font1.0-ae3efb5a.xml",
+    "bytes": 15972,
+    "sha256": "d925db30ff02279d559242d50628b8c8c6c76aeebacaad13aa4499b18ed0faef"
+  },
+  {
+    "file": "coach-review-voice-background-font2.0-ae3efb5a.png",
+    "bytes": 296752,
+    "sha256": "75a9a651c1c205ff38191394a3fe35e1c906b8542d5372e0d9a4bf34695e949e"
+  },
+  {
+    "file": "coach-review-voice-background-font2.0-ae3efb5a.xml",
+    "bytes": 14110,
+    "sha256": "1b50fd5d465adacca9afc45c427a950ef9104fec68349ebcbb3ea4b88560b570"
+  },
+  {
     "file": "coach-review-voice-baseline-de0711b0-receiver.png",
     "bytes": 78313,
     "sha256": "8001e723316b0e7c62d8b9332ad1375c777390dda461c076f5a3b5e5b3903b99"
@@ -1080,6 +1215,191 @@
     "sha256": "6b17e3c0c31b3edf539071885566c9d3f2a7298125aa3b3cccd188745330b57d"
   },
   {
+    "file": "coach-review-voice-empty-editor-hidden-3de55425.png",
+    "bytes": 243925,
+    "sha256": "df4532e001074949fa916a83d9eeda371522c2eec595bf402eda2dcf3292eb0d"
+  },
+  {
+    "file": "coach-review-voice-empty-editor-hidden-3de55425.xml",
+    "bytes": 16348,
+    "sha256": "4290988f29faa8089ebfa0717f44b6cd3a88abed3a1cc9c3c7f6fe295df66904"
+  },
+  {
+    "file": "coach-review-voice-empty-font1.0-ae3efb5a.png",
+    "bytes": 247103,
+    "sha256": "53a42fbc54a8340f20fc716d3e17dacb7ce46f0807e7fe371bff72c71c99f09d"
+  },
+  {
+    "file": "coach-review-voice-empty-font1.0-ae3efb5a.xml",
+    "bytes": 16820,
+    "sha256": "14ff45f1373f68933052f2777e07977b71716aa668d47ad1b5a5a1ba82752c2d"
+  },
+  {
+    "file": "coach-review-voice-empty-font2.0-ae3efb5a.png",
+    "bytes": 239794,
+    "sha256": "5ce20fa58198f93714af456f44de0a96015af73428417960c1da1feb6503268c"
+  },
+  {
+    "file": "coach-review-voice-empty-font2.0-ae3efb5a.xml",
+    "bytes": 14965,
+    "sha256": "42f2637c0bd74d78bea8270927a568cba295a3539bc2d29475294a7ae07ecfef"
+  },
+  {
+    "file": "coach-review-voice-hidden-background-reset-3de55425.png",
+    "bytes": 226798,
+    "sha256": "e14ab0d2ce4c85741b746fd0910934706d4c7c77ddbc68058e3b3e3adf086794"
+  },
+  {
+    "file": "coach-review-voice-hidden-background-reset-3de55425.xml",
+    "bytes": 16676,
+    "sha256": "d2b1f9d1a890f99b66076965812d59ecd59357b94a792115c882966347fae3cc"
+  },
+  {
+    "file": "coach-review-voice-hidden-comparison-3de55425.json",
+    "bytes": 377,
+    "sha256": "d858c3a50838fad9ef5dc5c9151b2293f3b00b669880fb24304273cb7afedc0a"
+  },
+  {
+    "file": "coach-review-voice-hidden-export-3de55425-receiver.png",
+    "bytes": 79577,
+    "sha256": "39c05cc91b243da43c904e82d52cad7f01a6bbb9c600e8c32bbf3fef5c35e13d"
+  },
+  {
+    "file": "coach-review-voice-hidden-export-3de55425-receiver.xml",
+    "bytes": 1681,
+    "sha256": "033abb41c78fc5b05889d179a0872114e6ffb7daf3d9c7ad474767726506db30"
+  },
+  {
+    "file": "coach-review-voice-hidden-export-3de55425.json",
+    "bytes": 407368,
+    "sha256": "e61f1c3f19955b080ed903b5ccd1bb38a94f1fa00335b8856bed11178f03d73b"
+  },
+  {
+    "file": "coach-review-voice-hidden-field-interrupted-3de55425.png",
+    "bytes": 245754,
+    "sha256": "2aca806ee4dc751df880cd0d0ff2a881d8fd933aaceb2f085be768d094d55371"
+  },
+  {
+    "file": "coach-review-voice-hidden-field-interrupted-3de55425.xml",
+    "bytes": 16348,
+    "sha256": "8961da33a6fd555b24774142564064079b2df9da23f9f0926b451cac3cb98d6d"
+  },
+  {
+    "file": "coach-review-voice-keyboard-comparison-ae3efb5a.json",
+    "bytes": 410,
+    "sha256": "f98fc927b197ecf401bb462bc604a12963f984affc83d8bd8f4a2b63cdd4aa3d"
+  },
+  {
+    "file": "coach-review-voice-keyboard-export-ae3efb5a-fresh-receiver.log",
+    "bytes": 187,
+    "sha256": "24fd209dd316df3bdf5f4b22368a6aca971ea2860304c8431b7e4c967acf3db2"
+  },
+  {
+    "file": "coach-review-voice-keyboard-export-ae3efb5a-fresh-receiver.png",
+    "bytes": 79577,
+    "sha256": "50ac2fc109e916a9fa02c7e4144154a5842db62bba680e250311ff43003e9fcd"
+  },
+  {
+    "file": "coach-review-voice-keyboard-export-ae3efb5a-fresh-receiver.xml",
+    "bytes": 1681,
+    "sha256": "033abb41c78fc5b05889d179a0872114e6ffb7daf3d9c7ad474767726506db30"
+  },
+  {
+    "file": "coach-review-voice-keyboard-export-ae3efb5a.json",
+    "bytes": 407368,
+    "sha256": "f040a0ba9e1ca4b6f79d154648ac7d577d35edc0be8c16f0ba389b04848122ee"
+  },
+  {
+    "file": "coach-review-voice-keyboard-export-ae3efb5a.log",
+    "bytes": 663,
+    "sha256": "514aa84b0b9e0ba968f8f7dafb3069e8dc3b3a7432d02eb6a4f11e0aa00fb483"
+  },
+  {
+    "file": "coach-review-voice-keyboard-large-ae3efb5a.log",
+    "bytes": 154,
+    "sha256": "0a53c857bed1277f1028037a83a04c7b7d01c9e52007e09aaa6c91699b514a4e"
+  },
+  {
+    "file": "coach-review-voice-keyboard-large-cold-dump-interrupted-ae3efb5a.log",
+    "bytes": 451,
+    "sha256": "aa6bb86fff2e9dbc6ebdc48112988c583c3272410d933685d6366bff4c1edaa9"
+  },
+  {
+    "file": "coach-review-voice-keyboard-large-entry-interrupted-ae3efb5a.log",
+    "bytes": 1181,
+    "sha256": "65f4944137af9c5b6d2822df791e23ab48b40ada7af44cad78acb4133dc12a13"
+  },
+  {
+    "file": "coach-review-voice-keyboard-normal-ae3efb5a.log",
+    "bytes": 154,
+    "sha256": "3cfb2840f9727c94709075fa7f951c48ea46c65bafc15b96ba7c230051b5631c"
+  },
+  {
+    "file": "coach-review-voice-large-entry-interrupted-ae3efb5a.log",
+    "bytes": 2288,
+    "sha256": "d5df29477434cbe99bbceaa273ffa1650f3dd554157a8eed18372f4712d98cd7"
+  },
+  {
+    "file": "coach-review-voice-large-entry-interrupted-ae3efb5a.png",
+    "bytes": 242827,
+    "sha256": "dcb5ecd48e5927414aef4d78f7793a5bf07ee17c4a8a37a8211483786e62b7f1"
+  },
+  {
+    "file": "coach-review-voice-large-entry-interrupted-ae3efb5a.xml",
+    "bytes": 16405,
+    "sha256": "90fd66e413578e3db77c4286d59c5a84e4e73722f09432017f51324958b6c9d0"
+  },
+  {
+    "file": "coach-review-voice-large-fresh-home-ae3efb5a.log",
+    "bytes": 1944,
+    "sha256": "cd924db74ab639633a527948b6e8dbd87d0a90b075f15029b5ab0a416ce33946"
+  },
+  {
+    "file": "coach-review-voice-large-fresh-home-ae3efb5a.png",
+    "bytes": 234300,
+    "sha256": "b0e34e464f0746bc97378834b763027c37c9a4465b7aa3c43c0a267f193909a1"
+  },
+  {
+    "file": "coach-review-voice-large-fresh-home-ae3efb5a.xml",
+    "bytes": 18475,
+    "sha256": "5fd87ee32c55960322c52ffae5af9e8c8acd123e9ec1111d68b49227fc070f5a"
+  },
+  {
+    "file": "coach-review-voice-normal-stable-before-retained-ae3efb5a.log",
+    "bytes": 2078,
+    "sha256": "8ea501c3f846a6d29fc6d1a4f96940518ca2e9ab8ed142c4fe9d0ad608b6da7a"
+  },
+  {
+    "file": "coach-review-voice-normal-stable-before-retained-ae3efb5a.png",
+    "bytes": 280700,
+    "sha256": "de7191ee448d964660675204fb8ca9030d46e22c775339d5870aed4015664024"
+  },
+  {
+    "file": "coach-review-voice-normal-stable-before-retained-ae3efb5a.xml",
+    "bytes": 19884,
+    "sha256": "aa67c57c950d21e4a42a83a89039c1fc15c3c1f69250d0685ff7a473f610b019"
+  },
+  {
+    "file": "coach-review-voice-preview-font1.0-ae3efb5a.png",
+    "bytes": 260289,
+    "sha256": "8dd668c86becd69fbfc44b3d8040d4223c0009dbb621f2887ac8fca074030b0a"
+  },
+  {
+    "file": "coach-review-voice-preview-font1.0-ae3efb5a.xml",
+    "bytes": 17513,
+    "sha256": "beeb8cbacbe206e198f16bcce9d1ac53962039bfefc36c9a67064219810049c8"
+  },
+  {
+    "file": "coach-review-voice-preview-font2.0-ae3efb5a.png",
+    "bytes": 267289,
+    "sha256": "8a37b79e59b96b9efc355bdd5667a19297839ec2044452a3cc435d4bdb22c475"
+  },
+  {
+    "file": "coach-review-voice-preview-font2.0-ae3efb5a.xml",
+    "bytes": 14156,
+    "sha256": "4cb5276a68c808bf8cfaa4639dd7d091040ed33916367d5539172f07baa2ebd8"
+  },
+  {
     "file": "coach-review-voice-resumed-de0711b0.png",
     "bytes": 189304,
     "sha256": "201607921362f870d33c104ec8f1c652c62492fe77b363d7d377620c908a37b7"
@@ -1090,6 +1410,66 @@
     "sha256": "ac291cc7a025d4df3466706392f3331fd6be9dc3b9e6cc81f68f75035db317fe"
   },
   {
+    "file": "coach-review-voice-retained-empty-font1.0-ae3efb5a.png",
+    "bytes": 247371,
+    "sha256": "83575b4be484818ff9610e01f1a9415a09eaa92327dc949ce1c6063c071354c2"
+  },
+  {
+    "file": "coach-review-voice-retained-empty-font1.0-ae3efb5a.xml",
+    "bytes": 16820,
+    "sha256": "14ff45f1373f68933052f2777e07977b71716aa668d47ad1b5a5a1ba82752c2d"
+  },
+  {
+    "file": "coach-review-voice-retained-focus-ae3efb5a.log",
+    "bytes": 512,
+    "sha256": "148acfc1c5e00aff098f46cbba3c7bc85b81396cfc32c00a41cf0f15ce0ab017"
+  },
+  {
+    "file": "coach-review-voice-retained-focus-interrupted-ae3efb5a.log",
+    "bytes": 2485,
+    "sha256": "4e8f3fa29d19f19b52ca1943190bb943af0877226185c2f6f85a451b7359a24c"
+  },
+  {
+    "file": "coach-review-voice-retained-focus-interrupted-ae3efb5a.png",
+    "bytes": 269576,
+    "sha256": "696de42aa55c678b89368ac64a1f2646d1b9561be28c416f8dd56a85290f41e5"
+  },
+  {
+    "file": "coach-review-voice-retained-focus-interrupted-ae3efb5a.xml",
+    "bytes": 16082,
+    "sha256": "32819b06d2c038ba1f39163d0570decd4653b46be83dc8f02e58d163f13d7d1d"
+  },
+  {
+    "file": "coach-review-voice-retained-retyped-font1.0-ae3efb5a.png",
+    "bytes": 249105,
+    "sha256": "36aa7bc874e79f85371820e7ec247f73f5bd61f3bdb3124bbfa1d67f747ffba3"
+  },
+  {
+    "file": "coach-review-voice-retained-retyped-font1.0-ae3efb5a.xml",
+    "bytes": 16821,
+    "sha256": "db7c272fd18d56a018cff17e97863ac766c98bf7340b2a7716b2de72d1fe5121"
+  },
+  {
+    "file": "coach-review-voice-retry-font1.0-ae3efb5a.png",
+    "bytes": 248307,
+    "sha256": "9849bc51f68924e5989acf549f64efe0ce982ec8f1f7c5093943cf793ea939f8"
+  },
+  {
+    "file": "coach-review-voice-retry-font1.0-ae3efb5a.xml",
+    "bytes": 16821,
+    "sha256": "db7c272fd18d56a018cff17e97863ac766c98bf7340b2a7716b2de72d1fe5121"
+  },
+  {
+    "file": "coach-review-voice-retry-font2.0-ae3efb5a.png",
+    "bytes": 243377,
+    "sha256": "97d665e74f6e891d496444848360a1bb597c90a33fa2ff5906eaf39319e252cc"
+  },
+  {
+    "file": "coach-review-voice-retry-font2.0-ae3efb5a.xml",
+    "bytes": 14506,
+    "sha256": "dbcaffdc04a1bbbf3bf7894ff88f098841a965bfb4741c198146d7bb83fa2a44"
+  },
+  {
     "file": "coach-review-voice-retyped-fixed-057d5936.png",
     "bytes": 256573,
     "sha256": "7d61609e13ca5442a662215262d6e9c8b06a68789674adac26f9f9987fc1623f"
@@ -1098,6 +1478,41 @@
     "file": "coach-review-voice-retyped-fixed-057d5936.xml",
     "bytes": 17778,
     "sha256": "f57c4b6bca382986506292176bd066312eeb0f069f7eced6122abec594bea925"
+  },
+  {
+    "file": "coach-review-voice-retyped-font1.0-ae3efb5a.png",
+    "bytes": 248439,
+    "sha256": "2cf9a4136fdeeb1fc2e15153f7c53009bf8d867b0fb640040c242d4d7cd8acca"
+  },
+  {
+    "file": "coach-review-voice-retyped-font1.0-ae3efb5a.xml",
+    "bytes": 16821,
+    "sha256": "db7c272fd18d56a018cff17e97863ac766c98bf7340b2a7716b2de72d1fe5121"
+  },
+  {
+    "file": "coach-review-voice-retyped-font2.0-ae3efb5a.png",
+    "bytes": 243261,
+    "sha256": "95c1dddca117512497313869d36f6053d3587472f7189c0269cc85e6a894f80e"
+  },
+  {
+    "file": "coach-review-voice-retyped-font2.0-ae3efb5a.xml",
+    "bytes": 14506,
+    "sha256": "dbcaffdc04a1bbbf3bf7894ff88f098841a965bfb4741c198146d7bb83fa2a44"
+  },
+  {
+    "file": "coach-review-voice-stable-before-export-ae3efb5a.log",
+    "bytes": 2078,
+    "sha256": "8ea501c3f846a6d29fc6d1a4f96940518ca2e9ab8ed142c4fe9d0ad608b6da7a"
+  },
+  {
+    "file": "coach-review-voice-stable-before-export-ae3efb5a.png",
+    "bytes": 281566,
+    "sha256": "639b8ba5070eb619061ee26196c2fae7f79b3b60fd34ef34d85bcb4f6ef9b839"
+  },
+  {
+    "file": "coach-review-voice-stable-before-export-ae3efb5a.xml",
+    "bytes": 19884,
+    "sha256": "aa67c57c950d21e4a42a83a89039c1fc15c3c1f69250d0685ff7a473f610b019"
   },
   {
     "file": "coach-review-voice-unsupported-fields-de0711b0.png",
@@ -1120,19 +1535,29 @@
     "sha256": "46dfa7501decc1072a4c2cc1f7551424e3866b32a3de3f0f3382976d41079d51"
   },
   {
+    "file": "compare-voice-keyboard-ae3efb5a.py",
+    "bytes": 1065,
+    "sha256": "a57ee4a1799421e1e5e67408085208e0c75495bf79730e1a96f7f843191cb574"
+  },
+  {
     "file": "export-coach-native.py",
     "bytes": 1112,
     "sha256": "91de09173cfc4df1f37a32b9548b9ec28ef966caa55ac67f5add18fc05d47c9b"
   },
   {
     "file": "finish-keyboard-voice-evidence.py",
-    "bytes": 2268,
-    "sha256": "baf0aeb954ad2c4cb68ac42cee746bc5e8d121423fccee501cbd567668d979ae"
+    "bytes": 2726,
+    "sha256": "68eee1f7e9c5d699c08fe6fdd39e0a5a196a48111944770638d4060054373650"
   },
   {
     "file": "native-ci-terminal-3738.json",
     "bytes": 5045,
     "sha256": "99bece8cb32487a578ee664e47d048cf094f447e21dac63e32ee810d4fa5912a"
+  },
+  {
+    "file": "read-voice-export-ae3efb5a.py",
+    "bytes": 590,
+    "sha256": "59c276954296c8861d76c597ca39e6c7a3c9abfe3c6a4bbf2e0346e0659d9985"
   },
   {
     "file": "stress-coach-database-b00.py",
@@ -1148,6 +1573,16 @@
     "file": "test-keyboard-057d5936.py",
     "bytes": 1888,
     "sha256": "198d08817494ca1c921ce27c56de36f4b58058ca6f3e0aa66609dd79c76b92a7"
+  },
+  {
+    "file": "test-keyboard-date-fields-3f1752ed.py",
+    "bytes": 1494,
+    "sha256": "9bb0d577165ba60cf0561c993558dd9e51b165bb46d82206916579ab8121a766"
+  },
+  {
+    "file": "test-keyboard-date-fields-paced-3f1752ed.py",
+    "bytes": 1721,
+    "sha256": "d01a4e2a9dea156b262067be9b75e2aaa8b7ef778c039c25c6ceea8f155b0122"
   },
   {
     "file": "test-keyboard-large-057d5936.py",
@@ -1170,6 +1605,36 @@
     "sha256": "5798e9d710696243c5e069dea3c9a65663c0fff6e53fa664a23439984537b2c5"
   },
   {
+    "file": "test-voice-editor-3de55425.py",
+    "bytes": 2726,
+    "sha256": "2478c838db6df904ae9c99eda7ed8194f84307d16233bab33bd7a9bf4a627bcc"
+  },
+  {
+    "file": "test-voice-keyboard-ae3efb5a.py",
+    "bytes": 3014,
+    "sha256": "63c7dab5da47d0d9f7a1e9d6ce97fb1a616531dd0f69354f60c6a2ba5aa56b5d"
+  },
+  {
+    "file": "test-voice-keyboard-chunks-ae3efb5a.py",
+    "bytes": 3199,
+    "sha256": "3f27c9b67a2fcf2271e689ee5fe240ff8cd00b998eae5825191b77ea45ac373a"
+  },
+  {
+    "file": "test-voice-retained-focus-ae3efb5a.py",
+    "bytes": 2759,
+    "sha256": "7c0731538fa28048f244942bcfa20597f474054540d1a1942f55795a33f49ec5"
+  },
+  {
+    "file": "verify-integrated-03ec4a76.log",
+    "bytes": 26899,
+    "sha256": "e9f19c22226adfd9598b29b0d3f7aece03efb434facf83504e3be73d592a9179"
+  },
+  {
+    "file": "verify-integrated-03ec4a76.status.json",
+    "bytes": 215,
+    "sha256": "62bb26c6f18f4834582e17f5cc91725ef2be0bf0e1d047cfb06d6966ec691aec"
+  },
+  {
     "file": "verify-integrated-057d5936.log",
     "bytes": 26655,
     "sha256": "6329f8b8d74ab3020150f900317cda3efbe6733229db4fd3aa447416eff07211"
@@ -1190,6 +1655,16 @@
     "sha256": "b850cd8012323901b477b1d50f8f4717ace35f1c85cad13d91c129a023461698"
   },
   {
+    "file": "verify-integrated-3de55425.log",
+    "bytes": 27985,
+    "sha256": "bed98e58ccbe1b472f609563486bb808ca9a45ecc45a77b76cbadb162268a214"
+  },
+  {
+    "file": "verify-integrated-3de55425.status.json",
+    "bytes": 215,
+    "sha256": "8464db2bed8afa098ca4910e9eb0f00627a157b47db64b8e7013223b9836147b"
+  },
+  {
     "file": "verify-integrated-3f1752ed.log",
     "bytes": 30681,
     "sha256": "d50fbe6aa16a6e3aa340b095a18cf3b1193d0c438aeec8d7297b359118ee8c83"
@@ -1200,6 +1675,16 @@
     "sha256": "429823aa424b6814edd1c052328c5924422889fec268ce740ba5d56188b3beb5"
   },
   {
+    "file": "verify-integrated-40edbf9f.log",
+    "bytes": 30696,
+    "sha256": "2644320e0d147b147af4fa36de83fb20c115c024de9e071ad2bd7aebe8d9f810"
+  },
+  {
+    "file": "verify-integrated-40edbf9f.status.json",
+    "bytes": 215,
+    "sha256": "7e438fecf05d3b17546c0c1427c6773b591201ec9e47f2942ecf1c912440a946"
+  },
+  {
     "file": "verify-integrated-7b93db48.log",
     "bytes": 28916,
     "sha256": "2415c2844d2256b0d3cf141c8bfec40f9a6514108729d52223d84fc814a0d7e3"
@@ -1208,6 +1693,16 @@
     "file": "verify-integrated-7b93db48.status.json",
     "bytes": 215,
     "sha256": "392e6e2847c1765d7fc63e85fb7ef86aff5be0b14c296e806052c188b0975a03"
+  },
+  {
+    "file": "verify-integrated-ae3efb5a.log",
+    "bytes": 39129,
+    "sha256": "e9e0b009d9c76c20fb2c6948f34a938c31d7ee0add1e1c1df870fa23fb4a54e7"
+  },
+  {
+    "file": "verify-integrated-ae3efb5a.status.json",
+    "bytes": 215,
+    "sha256": "43123205707feb94044f981546d28ca962c53c85ddb7fc1cd11bb83d4300ebe2"
   },
   {
     "file": "verify-integrated-b00e62ac.log",

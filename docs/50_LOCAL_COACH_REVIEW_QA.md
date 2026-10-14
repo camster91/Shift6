@@ -6,6 +6,12 @@ synthetic operator checks on CAM-DESKTOP's WHPX/host-GPU Pixel 7 emulator,
 Android 16/API 36 x86_64. ADB automation was authorized. No Expo Go, backend,
 participants, physical Samsung device or local iOS runtime was used.
 
+Latest app source is `ae3efb5a3542e585cee459640831e22d786060f5`:
+full verify1,218 tests/144 suites, Doctor21/21 and both exports; standalone native
+guest build succeeds. The voice correction-field presentation regression and
+scoped retest are in [doc51](51_LOCAL_VOICE_NATIVE_QA.md). Earlier Coach/date
+observations below remain bound to their stated binary.
+
 ## Exact candidates
 
 | Source                                     | Scope and evidence                                                                                                                                                                                                                                                                  |
@@ -116,7 +122,7 @@ Use the already running `emulator-5554`. In PowerShell:
 
 ```powershell
 $Shift6Sdk = 'C:\Users\camst\AppData\Local\Android\Sdk'
-$Shift6Apk = 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\app-release-3f1752ed-x86_64.apk'
+$Shift6Apk = 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\app-release-ae3efb5a-x86_64.apk'
 & "$Shift6Sdk\platform-tools\adb.exe" -s emulator-5554 install -r $Shift6Apk
 & "$Shift6Sdk\platform-tools\adb.exe" -s emulator-5554 shell am start -n com.shift6.app/.MainActivity
 ```
@@ -233,3 +239,25 @@ it fail. The [native receipt](qa/2026-10-14-coach-review/coach-review-ci-3853410
 and [cancelled receipt](qa/2026-10-14-coach-review/coach-review-ci-38534099956.json)
 retain exact steps. These runs precede the newer keyboard/voice fixes and provide
 no current iOS interaction or human acceptance evidence. Score remains53/100.
+
+## Additional date-field cases and remote build evidence
+
+On3f1752ed, the focused start and end date fields are fully above the IME at
+normal and200% text. Normal start bulk entry passes; normal end bulk entry fails
+exact readback (`26-10-` rather than `2026-10-`), with correct focus. Its cause is
+unproven. A fresh end attempt with paced characters and exact readback per
+character passes; both200% cases pass using paced entry. These separate results
+do not turn the interrupted first helper into a pass or establish human typing
+acceptance. Screenshots include
+[normal end](qa/2026-10-14-coach-review/coach-review-keyboard-date-end-paced-font1-3f1752ed.png)
+and [large-text end](qa/2026-10-14-coach-review/coach-review-keyboard-date-end-paced-font2-3f1752ed.png).
+After a chooser/dump interruption, fresh external receiver inspection verifies
+the10:04:11.113Z export, all36 arrays/1,082 records identical to the preceding
+notification-refusal export. No goal, set, session or Coach decision was saved.
+
+Remote native run38544772700 on **e440b48d** completed successfully: Android
+arm64/x86_64 compilation and test-signed proof; unsigned iOS simulator compilation,
+payload binding, installation and cold launch. Its
+[terminal receipt](qa/2026-10-14-coach-review/coach-review-native-ci-terminal-e440.json)
+covers the earlier3f app source, not the newer voice presentation fix. Current
+iOS journeys, physical devices and human usability remain pending.

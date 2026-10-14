@@ -91,7 +91,9 @@ test('fresh target has setup controls without fabricated training or provider ac
     cycle: null,
     snapshot: null,
   });
-  expect((await resolveCoachNavigation(db, 'owner', 'open-setup', now)).route).toBe('/onboarding');
+  expect((await resolveCoachNavigation(db, 'owner', 'open-setup', now)).route).toBe(
+    '/coach-onboarding',
+  );
   await expect(resolveCoachNavigation(db, 'owner', 'open-goal', now)).rejects.toThrow(
     'Start a private cycle',
   );

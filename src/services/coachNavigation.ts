@@ -75,7 +75,7 @@ export async function loadCoachNavigationSnapshot(
 }
 
 export type CoachNavigationRoute =
-  | '/onboarding'
+  | '/coach-onboarding'
   | '/'
   | '/calendar'
   | '/goal'
@@ -104,7 +104,9 @@ export async function resolveCoachNavigation(
   let route: CoachNavigationRoute;
   switch (requested) {
     case 'open-setup':
-      route = '/onboarding';
+      // Existing reviewed choices can be edited directly; first-time setup still
+      // asks for missing answers and requires its own explicit confirmation.
+      route = '/coach-onboarding';
       break;
     case 'build-private-plan':
       route = { pathname: '/builder', params: { mode: 'blank' } };

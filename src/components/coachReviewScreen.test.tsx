@@ -147,7 +147,7 @@ beforeEach(() => {
   mockNavigate.mockResolvedValue({
     status: 'ready-to-open',
     owner: 'guest-user',
-    route: '/onboarding',
+    route: '/coach-onboarding',
   });
 });
 test.each([
@@ -259,7 +259,7 @@ test('only confirmation saves the selected intent; optional answer stays in rece
   expect(screen.getByText('Your plan was not changed by this receipt.')).toBeTruthy();
   expect(mockNavigate).not.toHaveBeenCalled();
   await fireEvent.press(screen.getByLabelText('Continue to setup'));
-  await waitFor(() => expect(router.push).toHaveBeenCalledWith('/onboarding'));
+  await waitFor(() => expect(router.push).toHaveBeenCalledWith('/coach-onboarding'));
   expect(mockNavigate).toHaveBeenCalledWith(mockDb, 'guest-user', 'open-setup');
 });
 test('same-event double confirmation uses one immediate pending mutex and controls stay frozen until receipt resolves', async () => {
@@ -388,7 +388,7 @@ test.each(['Cancel preview', 'native Back'])(
     expect(JSON.stringify(saved)).toBe(canonical);
     expect(mockConfirm).toHaveBeenCalledTimes(1);
     await fireEvent.press(screen.getByLabelText('Continue to setup'));
-    expect(router.push).toHaveBeenCalledWith('/onboarding');
+    expect(router.push).toHaveBeenCalledWith('/coach-onboarding');
   },
 );
 
@@ -420,7 +420,7 @@ test.each(['just confirmed', 'cold reopened'])(
     ).toBeTruthy();
     expect(JSON.stringify(saved)).toBe(before);
     await fireEvent.press(screen.getByLabelText('Continue to setup'));
-    expect(router.push).toHaveBeenCalledWith('/onboarding');
+    expect(router.push).toHaveBeenCalledWith('/coach-onboarding');
     expect(mockConfirm).toHaveBeenCalledTimes(1);
   },
 );
@@ -431,7 +431,7 @@ test('cold reopen recovers only the latest owned dated next step and separately 
   expect(screen.queryByLabelText('Confirm and save intent')).toBeNull();
   await fireEvent.press(screen.getByLabelText('Continue to setup'));
   expect(mockHistory).toHaveBeenCalledWith(mockDb, mockOwner, cycle.id, 1);
-  expect(router.push).toHaveBeenCalledWith('/onboarding');
+  expect(router.push).toHaveBeenCalledWith('/coach-onboarding');
   expect(mockConfirm).toHaveBeenCalledTimes(1);
   expect(saved.receipt.confirmedAt).toBe(stamp);
 });
@@ -531,7 +531,7 @@ test.each(['head', 'goal', 'owner', 'database'])(
     if (change === 'owner') mockOwner = 'new-owner';
     if (change === 'database') mockDb = {};
     if (change === 'owner' || change === 'database') await screen.rerender(<CoachReviewScreen />);
-    await act(() => resolve({ route: '/onboarding' }));
+    await act(() => resolve({ route: '/coach-onboarding' }));
     expect(router.push).not.toHaveBeenCalled();
     expect(mockConfirm).toHaveBeenCalledTimes(1);
   },

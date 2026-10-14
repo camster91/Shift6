@@ -26,39 +26,62 @@ export function VoiceSetEntry({
   currentKey.current = key;
   const currentDisabled = useRef(disabled);
   currentDisabled.current = disabled;
+  const currentAdapter = useRef(adapter);
+  currentAdapter.current = adapter;
   const revision = useRef(0);
   const capturing = useRef(false);
+  const [editor, setEditor] = useState<{ key: string; adapter: LocalVoiceAdapter } | null>(null);
+  const currentEditor = useRef(editor);
+  const editorMatches = () =>
+    Boolean(
+      editor &&
+      currentEditor.current === editor &&
+      editor.key === currentKey.current &&
+      editor.key === key &&
+      editor.adapter === adapter &&
+      editor.adapter === currentAdapter.current &&
+      !currentDisabled.current,
+    );
   const [listening, setListening] = useState(false);
   const [text, setText] = useState('');
+  const currentText = useRef(text);
+  currentText.current = text;
   const [preview, setPreview] = useState<{ text: string; token: number; key: string } | null>(null);
   const [message, setMessage] = useState('');
   useEffect(() => {
     revision.current++;
     capturing.current = false;
+    currentEditor.current = null;
+    setEditor(null);
     adapter.cancel();
     setListening(false);
+    currentText.current = '';
     setText('');
     setPreview(null);
     setMessage('');
     return () => {
       revision.current++;
+      currentEditor.current = null;
       adapter.cancel();
     };
   }, [adapter, key, disabled]);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'background') return;
+      if (state !== 'background' || currentAdapter.current !== adapter) return;
       revision.current++;
       capturing.current = false;
+      currentEditor.current = null;
+      setEditor(null);
       adapter.cancel();
       setListening(false);
+      currentText.current = '';
       setText('');
       setPreview(null);
       setMessage('');
     });
     return () => subscription.remove();
   }, [adapter]);
-  const draft = preview ? parseVoiceSet(preview.text, binding) : null;
+  const draft = editorMatches() && preview ? parseVoiceSet(preview.text, binding) : null;
   const examples = {
     reps: 'eight reps',
     load: binding.loadUnit === 'lb' ? 'forty pounds' : 'forty kilograms',
@@ -103,11 +126,21 @@ export function VoiceSetEntry({
         label={listening ? 'Listening on device…' : 'Speak a set entry'}
         disabled={listening || disabled}
         onPress={async () => {
-          if (capturing.current || currentDisabled.current) return;
+          if (
+            capturing.current ||
+            currentDisabled.current ||
+            currentKey.current !== key ||
+            currentAdapter.current !== adapter
+          )
+            return;
           capturing.current = true;
+          const opened = { key, adapter };
+          currentEditor.current = opened;
+          setEditor(opened);
           const token = ++revision.current;
           const capturedKey = key;
           setListening(true);
+          currentText.current = '';
           setText('');
           setPreview(null);
           setMessage('');
@@ -117,8 +150,10 @@ export function VoiceSetEntry({
                 !currentDisabled.current &&
                 revision.current === token &&
                 currentKey.current === capturedKey
-              )
+              ) {
+                currentText.current = partial;
                 setText(partial);
+              }
             });
             if (
               currentDisabled.current ||
@@ -126,6 +161,7 @@ export function VoiceSetEntry({
               currentKey.current !== capturedKey
             )
               return;
+            currentText.current = final;
             setText(final);
             setPreview({ text: final, token, key: capturedKey });
           } catch (error) {
@@ -147,16 +183,20 @@ export function VoiceSetEntry({
           }
         }}
       />
-      {listening || text || message ? (
+      {editorMatches() ? (
         <View>
           <Button
             label="Dismiss voice entry"
             variant="ghost"
             onPress={() => {
+              if (!editorMatches()) return;
               revision.current++;
               capturing.current = false;
+              currentEditor.current = null;
+              setEditor(null);
               adapter.cancel();
               setListening(false);
+              currentText.current = '';
               setText('');
               setPreview(null);
               setMessage('');
@@ -169,7 +209,9 @@ export function VoiceSetEntry({
             maxLength={500}
             multiline
             onChangeText={(value) => {
+              if (!editorMatches() || capturing.current) return;
               revision.current++;
+              currentText.current = value;
               setText(value);
               setPreview(null);
               setMessage('');
@@ -180,7 +222,13 @@ export function VoiceSetEntry({
             disabled={listening || disabled || !text.trim()}
             variant="secondary"
             onPress={() => {
-              if (currentDisabled.current) return;
+              if (
+                !editorMatches() ||
+                capturing.current ||
+                currentText.current !== text ||
+                !text.trim()
+              )
+                return;
               setPreview({ text, token: ++revision.current, key });
             }}
           />
@@ -214,6 +262,7 @@ export function VoiceSetEntry({
             onPress={() => {
               if (
                 !preview ||
+                !editorMatches() ||
                 currentDisabled.current ||
                 preview.token !== revision.current ||
                 preview.key !== currentKey.current ||
@@ -222,6 +271,7 @@ export function VoiceSetEntry({
                 return;
               revision.current++;
               setPreview(null);
+              currentText.current = '';
               setText('');
               try {
                 const accepted = onApply(draft.values, preview.key);

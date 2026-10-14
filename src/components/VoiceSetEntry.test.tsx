@@ -30,6 +30,127 @@ function fixture() {
   return { adapter, resolve: (text: string) => resolve(text) };
 }
 
+test('manual correction can delete every character and retype after an offline failure without losing the editor or applying a draft', async () => {
+  const f = fixture(),
+    apply = jest.fn(() => true);
+  (f.adapter.listen as jest.Mock).mockRejectedValue(
+    new Error(
+      'The selected offline language model is not installed. Use manual entry; no cloud fallback is used.',
+    ),
+  );
+  const timed: VoiceSetBinding = {
+    ...binding,
+    required: ['duration'],
+    allowed: ['duration', 'rpe', 'rir'],
+  };
+  const screen = await render(
+    <VoiceSetEntry binding={timed} adapter={f.adapter} onApply={apply} />,
+  );
+  await fireEvent.press(screen.getByLabelText('Speak a set entry'));
+  await fireEvent.changeText(
+    screen.getByLabelText('Review or correct the spoken set entry'),
+    '40 pounds, 8 reps',
+  );
+  await fireEvent.press(screen.getByLabelText('Review corrected values'));
+  expect(screen.getByLabelText('Use reviewed values in unsaved set')).toBeDisabled();
+  const oldReview = screen
+    .getByLabelText('Review corrected values')
+    .props.onStartShouldSetResponder.testOnly_pressabilityConfig().onPress;
+  const clear = screen.getByLabelText('Review or correct the spoken set entry').props.onChangeText;
+  await act(() => {
+    clear('');
+    oldReview();
+  });
+  expect(screen.getByLabelText('Review or correct the spoken set entry')).toHaveDisplayValue('');
+  expect(screen.getByLabelText('Review corrected values')).toBeDisabled();
+  expect(screen.queryByLabelText('Use reviewed values in unsaved set')).toBeNull();
+  expect(apply).not.toHaveBeenCalled();
+  await fireEvent.changeText(
+    screen.getByLabelText('Review or correct the spoken set entry'),
+    '26 seconds, RPE seven',
+  );
+  await fireEvent.press(screen.getByLabelText('Review corrected values'));
+  expect(screen.getByText('duration: 26 seconds')).toBeTruthy();
+  expect(apply).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Use reviewed values in unsaved set'));
+  expect(apply).toHaveBeenCalledTimes(1);
+  expect(apply).toHaveBeenCalledWith({ duration: '26', rpe: '7' }, voiceBindingKey(timed));
+});
+
+test.each(['dismiss', 'binding', 'disabled', 'adapter', 'background'])(
+  'an empty opened correction editor closes on %s and its retained review cannot recreate a preview',
+  async (reset) => {
+    const originalImplementation = jest.isMockFunction(AppState.addEventListener)
+      ? jest.mocked(AppState.addEventListener).getMockImplementation()
+      : undefined;
+    let background!: (state: AppStateStatus) => void;
+    const subscription = jest
+      .spyOn(AppState, 'addEventListener')
+      .mockImplementation((_type, callback) => {
+        background = callback;
+        return { remove: jest.fn() };
+      });
+    try {
+      const f = fixture(),
+        apply = jest.fn(() => true);
+      (f.adapter.listen as jest.Mock).mockRejectedValue(
+        new Error('Offline voice unavailable. Use manual entry.'),
+      );
+      const screen = await render(
+        <VoiceSetEntry binding={binding} adapter={f.adapter} onApply={apply} />,
+      );
+      await fireEvent.press(screen.getByLabelText('Speak a set entry'));
+      await fireEvent.changeText(
+        screen.getByLabelText('Review or correct the spoken set entry'),
+        '8 reps, 40 kilograms',
+      );
+      const retainedReview = screen
+        .getByLabelText('Review corrected values')
+        .props.onStartShouldSetResponder.testOnly_pressabilityConfig().onPress;
+      await fireEvent.changeText(
+        screen.getByLabelText('Review or correct the spoken set entry'),
+        '',
+      );
+      expect(screen.getByLabelText('Review or correct the spoken set entry')).toHaveDisplayValue(
+        '',
+      );
+      if (reset === 'dismiss')
+        await act(() => {
+          screen
+            .getByLabelText('Dismiss voice entry')
+            .props.onStartShouldSetResponder.testOnly_pressabilityConfig()
+            .onPress();
+          retainedReview();
+        });
+      if (reset === 'binding')
+        await screen.rerender(
+          <VoiceSetEntry
+            binding={{ ...binding, ownerId: 'new-owner' }}
+            adapter={f.adapter}
+            onApply={apply}
+          />,
+        );
+      if (reset === 'disabled')
+        await screen.rerender(
+          <VoiceSetEntry binding={binding} adapter={f.adapter} onApply={apply} disabled />,
+        );
+      if (reset === 'adapter')
+        await screen.rerender(
+          <VoiceSetEntry binding={binding} adapter={fixture().adapter} onApply={apply} />,
+        );
+      if (reset === 'background') await act(() => background('background'));
+      await act(() => retainedReview());
+      expect(screen.queryByLabelText('Review or correct the spoken set entry')).toBeNull();
+      expect(screen.queryByLabelText('Use reviewed values in unsaved set')).toBeNull();
+      expect(apply).not.toHaveBeenCalled();
+    } finally {
+      subscription.mockRestore();
+      if (originalImplementation)
+        jest.mocked(AppState.addEventListener).mockImplementation(originalImplementation);
+    }
+  },
+);
+
 test.each([
   ['duration', 'thirty seconds', 'Report hold time in seconds.', { duration: '30' }],
   [

@@ -19,11 +19,18 @@ env:
   CI: '1'
   EXPO_PUBLIC_ENVIRONMENT: staging
   EXPO_PUBLIC_RELEASE_MODE: guest-only
+  EXPO_PUBLIC_API_BASE_URL: ''
+  EXPO_NO_DOTENV: '1'
+  NODE_ENV: production
 
 jobs:
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      QA_NATIVE_ARCHITECTURES: arm64-v8a,x86_64
+      QA_NATIVE_CONFIGURATION: Release
+      QA_NATIVE_GRADLE_TASK: assembleRelease
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,15 +43,17 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - run: npm ci
+      - run: npm ci --include=dev
       - run: npm run validate:release-config
       - run: npm run validate:release-assets
       - name: Check native artifact proof rejection cases
         run: python3 scripts/native_artifact_source_test.py
+      - name: Reject unexpected build inputs or guest release context
+        run: python3 scripts/native_artifact_source.py check --platform android
       - run: npx expo prebuild --no-install --platform android
       - name: Compile release-mode APK for testing
         working-directory: android
-        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64 --no-daemon --max-workers=2
+        run: ./gradlew "$QA_NATIVE_GRADLE_TASK" "-PreactNativeArchitectures=$QA_NATIVE_ARCHITECTURES" --no-daemon --max-workers=2
       - name: Save test-signed APK (not a store submission)
         run: |
           mkdir -p native-qa-artifact
@@ -62,6 +71,11 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 60
     env:
+      QA_NATIVE_ARCHITECTURES: arm64
+      QA_NATIVE_CONFIGURATION: Release
+      QA_NATIVE_SDK: iphonesimulator
+      QA_NATIVE_ONLY_ACTIVE_ARCH: 'YES'
+      QA_NATIVE_CODE_SIGNING_ALLOWED: 'NO'
       # Canonical Maven Central endpoint; RN retains its normal SHA verification.
       ENTERPRISE_REPOSITORY: https://repo.maven.apache.org/maven2
     steps:
@@ -72,11 +86,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm ci --include=dev
       - run: npm run validate:release-config
       - run: npm run validate:release-assets
       - name: Check native artifact proof rejection cases
         run: python3 scripts/native_artifact_source_test.py
+      - name: Reject unexpected build inputs or guest release context
+        run: python3 scripts/native_artifact_source.py check --platform ios
       - run: npx expo prebuild --no-install --platform ios
       - name: Prefetch checksum-verified React Native archives
         timeout-minutes: 15
@@ -145,10 +161,10 @@ jobs:
       - name: Compile unsigned Release simulator app
         run: >-
           xcodebuild -workspace ios/SHIFT6.xcworkspace -scheme SHIFT6
-          -configuration Release -sdk iphonesimulator
+          -configuration "$QA_NATIVE_CONFIGURATION" -sdk "$QA_NATIVE_SDK"
           -destination 'generic/platform=iOS Simulator'
-          -derivedDataPath native-build ARCHS="$(uname -m)"
-          ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
+          -derivedDataPath native-build ARCHS="$QA_NATIVE_ARCHITECTURES"
+          ONLY_ACTIVE_ARCH="$QA_NATIVE_ONLY_ACTIVE_ARCH" CODE_SIGNING_ALLOWED="$QA_NATIVE_CODE_SIGNING_ALLOWED" build
       - name: Bind simulator payload to its actual checkout
         run: |
           mkdir -p native-qa-artifact

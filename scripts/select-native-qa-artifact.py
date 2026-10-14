@@ -5,7 +5,7 @@ import os
 import re
 import subprocess
 from urllib.parse import quote
-from native_artifact_source import SOURCE_PATHS
+from native_artifact_source import SOURCE_PATHS, BUILD_RECIPE, FORMAT_VERSION
 
 
 repo = os.environ['GITHUB_REPOSITORY']
@@ -34,6 +34,11 @@ for run in runs:
         continue
     # Old builds did not emit source proof. They cannot be reused by the new verifier.
     if subprocess.run(['git', 'cat-file', '-e', f'{sha}:scripts/native_artifact_source.py'], capture_output=True).returncode:
+        continue
+    helper = subprocess.check_output(['git', 'show', f'{sha}:scripts/native_artifact_source.py']).decode('utf-8')
+    if f'FORMAT_VERSION = {FORMAT_VERSION}' not in helper.splitlines():
+        continue
+    if subprocess.run(['git', 'diff', '--quiet', sha, 'HEAD', '--', BUILD_RECIPE]).returncode:
         continue
     matches = subprocess.run(['git', 'diff', '--quiet', sha, 'HEAD', '--', *SOURCE_PATHS]).returncode == 0
     if not matches:

@@ -11,6 +11,20 @@ permissions:
   contents: read
   actions: read
 
+env:
+  CI: '1'
+  EXPO_PUBLIC_ENVIRONMENT: staging
+  EXPO_PUBLIC_RELEASE_MODE: guest-only
+  EXPO_PUBLIC_API_BASE_URL: ''
+  EXPO_NO_DOTENV: '1'
+  NODE_ENV: production
+  QA_NATIVE_ARCHITECTURES: arm64
+  QA_NATIVE_CONFIGURATION: Release
+  QA_NATIVE_SDK: iphonesimulator
+  QA_NATIVE_ONLY_ACTIVE_ARCH: 'YES'
+  QA_NATIVE_CODE_SIGNING_ALLOWED: 'NO'
+  ENTERPRISE_REPOSITORY: https://repo.maven.apache.org/maven2
+
 concurrency:
   group: native-runtime-qa-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: true

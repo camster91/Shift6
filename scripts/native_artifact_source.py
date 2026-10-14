@@ -3,11 +3,12 @@ import argparse
 import hashlib
 import io
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2
 EXCLUDED = (
     'docs', 'README.md', '.github', '.env.release.example',
     'scripts/mobile-runtime-qa.py', 'scripts/mobile-runtime-qa.test.py',
@@ -17,7 +18,76 @@ EXCLUDED = (
 SOURCE_PATHS = ['.', *[f':!{path}' for path in EXCLUDED]]
 PAYLOADS = {'ios': ('SHIFT6.app', 'tree'), 'android': ('app-release.apk', 'file')}
 FIELDS = {'format_version', 'checkout_sha', 'source_fingerprint', 'platform',
-          'payload_path', 'payload_kind', 'payload_sha256', 'payload_file_count'}
+          'payload_path', 'payload_kind', 'payload_sha256', 'payload_file_count', 'build_context'}
+BUILD_RECIPE = '.github/workflows/native-validation.yml'
+# CNG outputs and tool directories are created by the pinned CI recipe, not input
+# routes/configuration. Do not expand this to arbitrary ignored files or *.log.
+GENERATED_ROOTS = {'node_modules', 'android', 'ios', '.expo', 'dist', 'coverage',
+                   'native-build', 'native-qa-artifact', 'native-qa', '.turbo',
+                   '.idea', '.vscode', 'scripts/__pycache__',
+                   'vendor/expo-speech-recognition/android/build',
+                   'vendor/expo-speech-recognition/android/.gradle'}
+ENV_EXAMPLES = {'.env.example', '.env.release.example'}
+COMMON_ENV = {'CI': '1', 'EXPO_PUBLIC_ENVIRONMENT': 'staging',
+              'EXPO_PUBLIC_RELEASE_MODE': 'guest-only', 'EXPO_PUBLIC_API_BASE_URL': '',
+              'EXPO_NO_DOTENV': '1', 'NODE_ENV': 'production'}
+PLATFORM_ENV = {
+    'android': {'QA_NATIVE_ARCHITECTURES': 'arm64-v8a,x86_64',
+                'QA_NATIVE_CONFIGURATION': 'Release', 'QA_NATIVE_GRADLE_TASK': 'assembleRelease'},
+    'ios': {'QA_NATIVE_ARCHITECTURES': 'arm64', 'QA_NATIVE_CONFIGURATION': 'Release',
+            'QA_NATIVE_SDK': 'iphonesimulator', 'QA_NATIVE_ONLY_ACTIVE_ARCH': 'YES',
+            'QA_NATIVE_CODE_SIGNING_ALLOWED': 'NO',
+            'ENTERPRISE_REPOSITORY': 'https://repo.maven.apache.org/maven2'},
+}
+
+
+def excluded_source(name):
+    return any(name == path or name.startswith(path + '/') for path in EXCLUDED)
+
+
+def assert_source_inputs(repo):
+    repo = Path(repo).resolve()
+    tracked = {path.decode('utf-8') for path in git(repo, 'ls-files', '-z').split(b'\0') if path}
+    for directory, folders, files in os.walk(repo, followlinks=False):
+        relative = Path(directory).relative_to(repo)
+        kept = []
+        for folder in folders:
+            path = Path(directory) / folder
+            name = (relative / folder).as_posix()
+            if name == '.git' or name in GENERATED_ROOTS or excluded_source(name):
+                continue
+            if path.is_symlink():
+                raise ValueError('Unexpected application directory link; source proof refused.')
+            kept.append(folder)
+        folders[:] = kept
+        for file in files:
+            name = (relative / file).as_posix()
+            if excluded_source(name) or file == '.DS_Store' or name in {'.git', 'expo-env.d.ts'}:
+                continue
+            if (file == '.env' or file.startswith('.env.')) and name not in ENV_EXAMPLES:
+                raise ValueError('Unexpected dotenv build input; source proof refused.')
+            if relative == Path('.') and file.startswith(('app.config.', 'metro.config.', 'babel.config.')):
+                raise ValueError('Unexpected native build configuration override; source proof refused.')
+            if (Path(directory) / file).is_symlink():
+                raise ValueError('Unexpected application file link; source proof refused.')
+            if name not in tracked:
+                raise ValueError('Untracked application build input; source proof refused.')
+
+
+def build_context(repo, platform):
+    expected = {**COMMON_ENV, **PLATFORM_ENV[platform]}
+    if any(key.startswith('EXPO_PUBLIC_') and key not in COMMON_ENV for key in os.environ):
+        raise ValueError('Unexpected public build context; source proof refused.')
+    if any(key not in os.environ or os.environ[key] != value for key, value in expected.items()):
+        # Never include unexpected values, URLs, credentials or secret hashes.
+        raise ValueError('Missing or unexpected native build context; source proof refused.')
+    if subprocess.run(['git', '-C', str(repo), 'diff', '--quiet', 'HEAD', '--', BUILD_RECIPE]).returncode:
+        raise ValueError('Native build recipe is dirty; source proof refused.')
+    recipe = git(repo, 'show', f'HEAD:{BUILD_RECIPE}')
+    return {'environment': {key: os.environ[key] for key in COMMON_ENV},
+            'native_flags': {key: os.environ[key] for key in PLATFORM_ENV[platform]},
+            'platform': platform, 'prebuild_install': False,
+            'recipe_sha256': digest(recipe)}
 
 
 def git(repo, *args):
@@ -29,6 +99,7 @@ def digest(value):
 
 
 def source_fingerprint(repo):
+    assert_source_inputs(repo)
     # Git filters normalize platform line endings. Reject dirty build source rather
     # than attributing uncommitted contents to HEAD; hash canonical blob contents.
     result = subprocess.run(['git', '-C', str(repo), 'diff', '--quiet', 'HEAD', '--', *SOURCE_PATHS])
@@ -40,7 +111,7 @@ def source_fingerprint(repo):
             continue
         metadata, path = entry.split(b'\t', 1)
         name = path.decode('utf-8')
-        if any(name == excluded or name.startswith(excluded + '/') for excluded in EXCLUDED):
+        if excluded_source(name):
             continue
         mode, kind, object_id = metadata.decode('ascii').split()
         if kind != 'blob':
@@ -104,12 +175,15 @@ def create_manifest(repo, platform, payload, destination):
     payload, destination = Path(payload), Path(destination)
     if payload.name != name or payload.parent.resolve() != destination.parent.resolve():
         raise ValueError('Native payload must be beside its manifest under the expected name.')
+    source = source_fingerprint(repo)
+    context = build_context(repo, platform)
     sha256, count = payload_fingerprint(payload, kind)
     proof = {'format_version': FORMAT_VERSION,
              'checkout_sha': git(repo, 'rev-parse', 'HEAD').decode('ascii').strip(),
-             'source_fingerprint': source_fingerprint(repo), 'platform': platform,
+             'source_fingerprint': source, 'platform': platform,
              'payload_path': name, 'payload_kind': kind,
-             'payload_sha256': sha256, 'payload_file_count': count}
+             'payload_sha256': sha256, 'payload_file_count': count,
+             'build_context': context}
     destination.write_text(json.dumps(proof, indent=2) + '\n', encoding='utf-8')
     return proof
 
@@ -135,6 +209,8 @@ def verify_manifest(repo, platform, manifest, expected_sha):
         raise ValueError('Native source manifest file count is invalid.')
     if proof['source_fingerprint'] != source_fingerprint(repo):
         raise ValueError('Native artifact application source does not match this checkout.')
+    if proof['build_context'] != build_context(repo, platform):
+        raise ValueError('Native artifact build context does not match this checkout.')
     actual_hash, count = payload_fingerprint(manifest.parent / name, kind)
     if (actual_hash, count) != (proof['payload_sha256'], proof['payload_file_count']):
         raise ValueError('Native artifact binary payload does not match its source manifest.')
@@ -143,13 +219,20 @@ def verify_manifest(repo, platform, manifest, expected_sha):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('operation', choices=['create', 'verify'])
+    parser.add_argument('operation', choices=['create', 'verify', 'check'])
     parser.add_argument('--repo', default='.')
     parser.add_argument('--platform', choices=PAYLOADS, required=True)
-    parser.add_argument('--manifest', required=True)
+    parser.add_argument('--manifest')
     parser.add_argument('--payload')
     parser.add_argument('--expected-source-sha')
     args = parser.parse_args()
+    if args.operation == 'check':
+        source_fingerprint(args.repo)
+        build_context(args.repo, args.platform)
+        print('Native build inputs and expected guest release context verified.')
+        return
+    if not args.manifest:
+        parser.error('create and verify require --manifest')
     if args.operation == 'create':
         if not args.payload:
             parser.error('create requires --payload')

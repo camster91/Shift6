@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import patch
 from pathlib import Path
 
-from native_artifact_source import create_manifest, verify_manifest, source_fingerprint
+from native_artifact_source import create_manifest, verify_manifest, source_fingerprint, COMMON_ENV, PLATFORM_ENV, FORMAT_VERSION
 
 
 class NativeProofTests(unittest.TestCase):
@@ -21,6 +21,9 @@ class NativeProofTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.repo = self.root / 'repo'
         self.repo.mkdir()
+        environment = patch.dict(os.environ, {**COMMON_ENV, **PLATFORM_ENV['ios']})
+        environment.start()
+        self.addCleanup(environment.stop)
         self.git('init', '-q')
         self.git('config', 'user.name', 'Synthetic QA')
         self.git('config', 'user.email', 'synthetic@example.invalid')
@@ -29,7 +32,10 @@ class NativeProofTests(unittest.TestCase):
         (self.repo / 'app' / 'index.tsx').write_text('export const actual = 1;\n', encoding='utf-8')
         (self.repo / 'package-lock.json').write_text('{"lockfileVersion":3}\n', encoding='utf-8')
         (self.repo / 'scripts').mkdir()
-        (self.repo / 'scripts' / 'native_artifact_source.py').write_text('synthetic proof marker', encoding='utf-8')
+        (self.repo / 'scripts' / 'native_artifact_source.py').write_text(f'FORMAT_VERSION = {FORMAT_VERSION}\n', encoding='utf-8')
+        (self.repo / '.github' / 'workflows').mkdir(parents=True)
+        (self.repo / '.github' / 'workflows' / 'native-validation.yml').write_text('name: Synthetic native recipe\n', encoding='utf-8')
+        (self.repo / '.gitignore').write_text('.env\n.env.*\nnode_modules/\nandroid/\nios/\n*.log\n', encoding='utf-8')
         self.commit()
         self.sha = self.git('rev-parse', 'HEAD').decode().strip()
         self.artifact = self.root / 'artifact'
@@ -62,11 +68,12 @@ class NativeProofTests(unittest.TestCase):
     def test_android_file_proof_rejects_changed_apk(self):
         apk = self.artifact / 'app-release.apk'
         apk.write_bytes(b'synthetic APK')
-        create_manifest(self.repo, 'android', apk, self.manifest)
-        verify_manifest(self.repo, 'android', self.manifest, self.sha)
-        apk.write_bytes(b'changed APK')
-        with self.assertRaisesRegex(ValueError, 'binary payload'):
+        with patch.dict(os.environ, PLATFORM_ENV['android']):
+            create_manifest(self.repo, 'android', apk, self.manifest)
             verify_manifest(self.repo, 'android', self.manifest, self.sha)
+            apk.write_bytes(b'changed APK')
+            with self.assertRaisesRegex(ValueError, 'binary payload'):
+                verify_manifest(self.repo, 'android', self.manifest, self.sha)
 
     def test_missing_proof_never_reuses_an_unproven_artifact(self):
         self.manifest.unlink()
@@ -75,7 +82,7 @@ class NativeProofTests(unittest.TestCase):
 
     def test_wrong_manifest_fields_version_identity_and_sha_reject(self):
         faults = [
-            ('format_version', 2), ('format_version', True),
+            ('format_version', FORMAT_VERSION + 1), ('format_version', True),
             ('checkout_sha', '0' * 40), ('platform', 'android'),
             ('payload_path', '../SHIFT6.app'), ('payload_kind', 'file'),
             ('source_fingerprint', 'bad'), ('payload_sha256', 'bad'),
@@ -212,6 +219,122 @@ class NativeProofTests(unittest.TestCase):
         run['head_sha'] = self.git('rev-parse', 'HEAD').decode().strip()
         with self.assertRaises(SystemExit):
             self.select_run(run, [{'name': 'ios-unsigned-simulator-release', 'expired': False}])
+
+    def test_untracked_expo_route_cannot_reuse_the_tracked_source_proof(self):
+        (self.repo / 'app' / 'new-route.tsx').write_text('untracked bundled route', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'Untracked application'):
+            self.verify()
+
+    def test_untracked_source_assets_and_configuration_fail_closed(self):
+        for name in ['src/new.ts', 'assets/new.png', 'config/build.json']:
+            with self.subTest(name=name):
+                path = self.repo / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'synthetic untracked build input')
+                with self.assertRaisesRegex(ValueError, 'Untracked application'):
+                    self.verify()
+                path.unlink()
+
+    def test_unexpected_public_api_build_context_cannot_create_a_guest_proof(self):
+        for value in ['https://synthetic.invalid', ' ', '\n']:
+            with self.subTest(value=value), patch.dict(os.environ, {'EXPO_PUBLIC_API_BASE_URL': value}):
+                with self.assertRaisesRegex(ValueError, 'build context'):
+                    create_manifest(self.repo, 'ios', self.bundle, self.manifest)
+
+    def test_ignored_route_and_dotenv_inputs_fail_before_reading_secret_contents(self):
+        ignore = self.repo / '.gitignore'
+        ignore.write_text(ignore.read_text() + 'app/ignored-route.tsx\n', encoding='utf-8')
+        self.commit()
+        self.sha = self.git('rev-parse', 'HEAD').decode().strip()
+        self.proof = create_manifest(self.repo, 'ios', self.bundle, self.manifest)
+        route = self.repo / 'app' / 'ignored-route.tsx'
+        route.write_text('ignored but bundled route', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'Untracked application'):
+            self.verify()
+        route.unlink()
+        (self.repo / '.env.local').write_text('SYNTHETIC_SECRET=not-a-real-secret', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'dotenv') as error:
+            self.verify()
+        self.assertNotIn('not-a-real-secret', str(error.exception))
+
+    def test_known_scoped_cng_and_dependency_outputs_are_allowed(self):
+        for name in ['node_modules/package/file.js', 'android/app/build/classes.bin',
+                     'ios/Pods/library/file.m', '.expo/types/router.d.ts',
+                     'native-build/output.bin', 'native-qa-artifact/file.apk',
+                     'vendor/expo-speech-recognition/android/build/classes.bin']:
+            path = self.repo / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b'synthetic generated output')
+        self.verify()
+
+    def test_known_native_module_output_scope_does_not_allow_untracked_module_source(self):
+        path = self.repo / 'vendor/expo-speech-recognition/android/src/new.kt'
+        path.parent.mkdir(parents=True)
+        path.write_text('untracked native build input', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'Untracked application'):
+            self.verify()
+
+    def test_untracked_or_tracked_build_configuration_overrides_fail_closed(self):
+        config = self.repo / 'app.config.js'
+        config.write_text('synthetic override', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'configuration override'):
+            create_manifest(self.repo, 'ios', self.bundle, self.manifest)
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'configuration override'):
+            create_manifest(self.repo, 'ios', self.bundle, self.manifest)
+
+    def test_missing_and_unknown_public_environment_values_fail_without_disclosure(self):
+        with patch.dict(os.environ):
+            os.environ.pop('EXPO_PUBLIC_API_BASE_URL')
+            with self.assertRaisesRegex(ValueError, 'build context'):
+                self.verify()
+        with patch.dict(os.environ, {'EXPO_PUBLIC_UNEXPECTED': 'synthetic-private-value'}):
+            with self.assertRaisesRegex(ValueError, 'build context') as error:
+                self.verify()
+            self.assertNotIn('synthetic-private-value', str(error.exception))
+
+    def test_wrong_release_architecture_sdk_or_signing_context_rejects(self):
+        for key, value in [('EXPO_PUBLIC_ENVIRONMENT', 'production'),
+                           ('EXPO_PUBLIC_RELEASE_MODE', 'connected'),
+                           ('QA_NATIVE_ARCHITECTURES', 'x86_64'),
+                           ('QA_NATIVE_CONFIGURATION', 'Debug'),
+                           ('QA_NATIVE_SDK', 'iphoneos'),
+                           ('QA_NATIVE_CODE_SIGNING_ALLOWED', 'YES')]:
+            with self.subTest(key=key), patch.dict(os.environ, {key: value}):
+                with self.assertRaisesRegex(ValueError, 'build context'):
+                    self.verify()
+
+    def test_manifest_context_cannot_claim_other_flags_or_extra_private_settings(self):
+        for change in ('architecture', 'extra-setting'):
+            with self.subTest(change=change):
+                proof = copy.deepcopy(self.proof)
+                if change == 'architecture':
+                    proof['build_context']['native_flags']['QA_NATIVE_ARCHITECTURES'] = 'x86_64'
+                else:
+                    proof['build_context']['environment']['PRIVATE_SETTING'] = 'synthetic-private-value'
+                self.write(proof)
+                with self.assertRaisesRegex(ValueError, 'build context does not match') as error:
+                    self.verify()
+                self.assertNotIn('synthetic-private-value', str(error.exception))
+
+    def test_recipe_change_rejects_reuse_even_when_application_fingerprint_matches(self):
+        before = source_fingerprint(self.repo)
+        recipe = self.repo / '.github' / 'workflows' / 'native-validation.yml'
+        recipe.write_text('name: Synthetic altered build flags\n', encoding='utf-8')
+        self.commit()
+        self.assertEqual(source_fingerprint(self.repo), before)
+        with self.assertRaisesRegex(ValueError, 'build context does not match'):
+            self.verify()
+        with self.assertRaises(SystemExit):
+            self.select_run(self.successful_run(), [{'name': 'ios-unsigned-simulator-release', 'expired': False}])
+
+    def test_dirty_recipe_cannot_claim_the_tracked_recipe_hash(self):
+        recipe = self.repo / '.github' / 'workflows' / 'native-validation.yml'
+        recipe.write_text('name: Uncommitted different recipe\n', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'recipe is dirty'):
+            self.verify()
+        with self.assertRaisesRegex(ValueError, 'recipe is dirty'):
+            create_manifest(self.repo, 'ios', self.bundle, self.manifest)
 
 
 if __name__ == '__main__':

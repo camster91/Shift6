@@ -2,7 +2,7 @@
 
 14 October 2026. This is the current delivery index for the expanded iOS/Android goal. It supersedes the delivery order in doc 37, while preserving that document's dated audit and evidence. It does not approve content, alter the shipping guest configuration or authorize a release.
 
-Native QA filed #352–#363 for reproducible validation, units, presentation, recovery, feedback and keyboard concerns. The refreshed backlog is **53 open issues**, all mapped below; the original 41-issue reconciliation remains a dated snapshot. No issue is closed from source tests or scoped emulator evidence.
+Native QA filed #352–#364 for reproducible validation, units, presentation, recovery, feedback, keyboard and correction-editor concerns. The refreshed backlog is **54 open issues**, all mapped below; the original 41-issue reconciliation remains a dated snapshot. No issue is closed from source tests or scoped emulator evidence.
 
 ## Goal and product promise
 
@@ -13,6 +13,16 @@ Aim for **95+/100 and ultimately full evidenced coverage** under [doc 34](34_HUM
 Core training remains free, local and usable offline. Keep deterministic progression, immutable history, explicit actual values and units, optional assessments, privacy controls, Higgsfield assets, reduced motion and the qualified public-content allowlist. More features do not automatically earn more points. A critical safety, privacy, data-loss or accessibility failure blocks launch regardless of score.
 
 ## Verified starting point
+
+Latest source `3f1752ed` passes full verify **1,202 tests/144 suites**, Doctor21/21,
+both exports and a standalone Android guest build. Doc50 observes the focused
+Coach time-zone editor fully visible above the keyboard after editing at normal
+and200% text. Doc51 observes the voice correction editor remaining open when
+cleared, retyping a valid duration/RPE preview and background reset on057d5936.
+Recognition itself is blocked by the missing offline model. The final external
+export retains all36 arrays/1,082 records against the preceding voice retest.
+Earlier deliberate lifecycle/draft fixture changes remain separately accounted.
+These scoped fixes update #363/#364 evidence; no issue closes or score increases.
 
 Latest scoped native update: [doc 50](50_LOCAL_COACH_REVIEW_QA.md) observes
 `b00e62ac` on the same Android emulator. Full verification passes **1,173 tests /
@@ -26,12 +36,12 @@ native forced-failure warm retry, physical devices, current iOS journeys and hum
 acceptance remain pending. This updates T03/T05/T09 evidence, not their completion
 or the 53/100 provisional score. Older bullets below retain their dated scope.
 
-- Initial GitHub reconciliation: **41 open issues**, including umbrella epics; subsequent native findings increased the mapped backlog to **53**. Issue count is not a count of missing features. All remain open pending their individual acceptance criteria.
+- Initial GitHub reconciliation: **41 open issues**, including umbrella epics; subsequent native findings increased the mapped backlog to **54**. Issue count is not a count of missing features. All remain open pending their individual acceptance criteria.
 - `main` contains merged guest release PR #330 (`4e8a2c9b`). Later work remains in reviewable draft PRs, not merged or published.
 - [#344](https://github.com/camster91/Shift6/pull/344): guest guidance/save copy/goal units, native Android QA and earlier iOS CI evidence.
 - [#346](https://github.com/camster91/Shift6/pull/346), stacked on #344: local restore, Health Connect pagination/totals and saved-plan discovery. Native synthetic framework/picker/export evidence is in doc 39.
 - [#349](https://github.com/camster91/Shift6/pull/349), stacked on #346: focused workout entry, calendar/Coach navigation, difficulty feedback and reviewed text imports. Native evidence is in doc 40.
-- [#351](https://github.com/camster91/Shift6/pull/351), stacked on #349: confirmed lifecycle, builder recovery, immutable versions, actual load provenance, practical memory, guided setup and stricter Coach execution. Current integration also contains optional local voice draft entry. Full integrated/native acceptance of the latest voice source remains pending.
+- [#351](https://github.com/camster91/Shift6/pull/351), stacked on #349: confirmed lifecycle, builder recovery, immutable versions, actual load provenance, practical memory, guided setup and stricter Coach execution. Optional local voice typed fallback/review has scoped native evidence in doc51. Successful recognition, broader native and human acceptance remain pending.
 - [#350](https://github.com/camster91/Shift6/pull/350), based on #344: disabled bounded Gemini service preparation. It is not deployed or connected to the guest app. Its model selects allowlisted explanation templates; this is not unrestricted interactive coaching.
 - Existing draft [#327](https://github.com/camster91/Shift6/pull/327) concerns #306 Shift persistence/sync. Reconcile its contract and overlapping writers before integration; do not merge it blindly or activate sync in guest mode.
 - Full `npm run verify` at `4871035e`: **807 tests / 125 suites**, Doctor 21/21, audit/security/vendor/config checks and both mobile exports. Subsequent invalid-load/label and voice changes need a new full pass; the 807-test result does not cover them.
@@ -88,16 +98,16 @@ Follow-up issue mapping:
 | #360  | Completed review was absent/contextually buried on earlier binaries and still needed four dashboard scrolls on 0d. Native 501 promotes it above details at normal/large text, opens the correct bound review and preserves older paused reflection; physical/iOS and human comprehension remain.                       | T04, T09 |
 | #361  | Pending-workout refusal was offscreen on 1060. Native d80 shows a legible focused alert at font scale 2.0; external export proves all 36 sections unchanged. Full screen-reader/physical/iOS acceptance remains.                                                                                                       | T04, T09 |
 | #362  | Duration was ambiguous wall-clock time. Source d60 labels elapsed since start including time away/pauses, preserves timestamps and native Summary/History are legible at font scale 2.0. Partial 588-minute changed-binary, physical/iOS and assistive-technology acceptance remain.                                   | T03, T09 |
-| #363  | Native de0711b0 hides the focused review time-zone field beneath the Android keyboard after editing. Two screenshots and exact focus/value readback distinguish it from harness failure. Keyboard fix and native retest pending; doc50 records scoped passes separately.                                               | T05, T09 |
+| #363  | Native de0711b0 and057d5936 hide the focused edited time-zone field. Revised3f1752ed passes normal/200% text keyboard visibility and preserves all36 arrays; doc50 retains failures and exact retest. Physical/iOS, different keyboards and assistive-technology acceptance remain.                                    | T05, T09 |
+| #364  | Native de0711b0 unmounts the emptied voice editor. Explicit-open-state fix057d5936 passes native clear/retype/background reset; actual payloads unchanged. Doc51 distinguishes deliberate unsaved draft application and blocked recognition. Physical/iOS and broader acceptance remain.                               | T03, T09 |
 
 ## Ordered TODO and acceptance receipts
 
-Follow-up #363 belongs to T05/T09: native de0711b0 twice hides the focused
-time-zone field beneath the keyboard despite correct input focus/value readback.
-Compact default dates, invalid-zone guidance and valid reread pass; the external
-export retains all 36 sections / 1,080 records. Full verify passes 1,185 tests /
-144 suites and both exports. Keyboard fix/native retest are pending; source tests
-do not resolve the observed failure. See doc50 for the exact candidate/evidence.
+Follow-up #363 belongs to T05/T09 and #364 to T03/T09. Docs50–51 retain the actual
+failures, later scoped native passes, frozen source/APK hashes and external JSON
+comparisons. Full verify3f1752ed passes1,202/144 and both exports. Issue status stays
+open until broader criteria are accepted; source tests alone never resolved the
+observed failures.
 
 Follow-up #357 belongs to T03/T09: the earlier mounted Progress failure is reproduced on `2fe82a20` and fixed/observed on `7a811baa` (doc 45). Physical/iOS acceptance remains pending; no data loss was inferred from the stale view.
 
@@ -105,7 +115,7 @@ T04 confirmed scheduling source is integrated at `eb6cd6d2`: frozen dates/timezo
 
 The dated `996058d0` source passed 1,019 tests/138 suites. Subsequent `d60daf0a` passed full `npm run verify`: **1,137 tests/142 suites**, Doctor 21/21 and both mobile exports. Dated code `0d705bac` passes full verification: **1,139 tests/142 suites**, Doctor 21/21 and both mobile exports. Its standalone Android build/install and canonical volume labels are native observed; all 36 exported arrays remain identical. [Doc47](47_ATOMIC_HANDOVER_QA.md) identifies every frozen source, APK hash, failed and passing check, native handover/receipt recovery, exact backup roundtrip and large-text refusal/elapsed-copy observations. Native proofs use synthetic records; the completed-state fixture proves neither six-week use nor completion-engine acceptance. Earlier dated source/binary results remain in docs45–46. Latest code `501be370` passes full verify **1,142/142**, Doctor 21/21 and both mobile exports; native dashboard Review is above the fold at normal/font2 and older paused reflection remains scoped. All 36 exported arrays remain unchanged. iOS CI compile/install/cold-launch at documentation-only `71f2b4fe` is separately dated, not acceptance of later source or full iOS journeys.
 
-- [x] **T01 — Reconcile scope and live backlog.** Map all 53 currently open issues, retain the original 41-issue snapshot, record goal/score and dated evidence. Keep the index reviewable and linked from the master; no issue closure implied.
+- [x] **T01 — Reconcile scope and live backlog.** Map all 54 currently open issues, retain the original 41-issue snapshot, record goal/score and dated evidence. Keep the index reviewable and linked from the master; no issue closure implied.
 - [x] **T02 — Stabilize one integrated native candidate.** At `71babfc8`, dependencies/native voice compile, full verify (872/129) and Android APK build pass; source/hash and native regression readback are in doc 42. This is an emulator test candidate, not a signed release. Repeat affected checks after subsequent implementation changes.
 - [ ] **T03 — Finish the six native acceptance journeys.** Use ADB on the same PC emulator, synthetic records and a separate receiving app. Verify latest setup/guided recovery, private builder/import/recovery/new-copy, goals/baselines/units/corrections/review, sets/drafts/mixed units/partial/resume, external backup/export/restore/delete at the exact candidate schema, including confirmed schema-17 handover receipts, and offline/keyboard/navigation/permissions/reminders/health/media. Capture device/OS/SHA, steps, expected/actual, screenshots and actual exported records. Retest defects in the changed binary.
 - [ ] **T04 — Unify the goal/cycle/return contract.** Canonical local handover ownership, immutable source/version capture, atomic storage and durable receipt are implemented. Doc47 observes Cancel, both goal choices, unchanged actuals, deferred carried baseline, cold receipt recovery and confirmed-journal backup. Interrupted exact retry, stale/older-cycle native cases, completed-week occurrence readers, travel/missed-week decisions and qualified return prescriptions remain. Reconcile PR #327 without a second authority; preserve legacy records without invented baselines.

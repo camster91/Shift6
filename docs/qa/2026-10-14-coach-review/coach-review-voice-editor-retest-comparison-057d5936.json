@@ -1,0 +1,14 @@
+{
+  "sourceCommit": "057d593609956001e4582565c25699caae796979",
+  "records": 1082,
+  "changedArrays": [
+    "workoutDraftLoadUnits",
+    "workoutDrafts"
+  ],
+  "actualPayloadsUnchanged": true,
+  "draftPayloadsUnchanged": true,
+  "emptyEditorAndRetypeObserved": true,
+  "backgroundClearsUnconfirmedPreview": true,
+  "receiverAfterInterruptedDumpFreshlyVerified": true,
+  "exportedAt": "2026-10-14T09:20:57.925Z"
+}

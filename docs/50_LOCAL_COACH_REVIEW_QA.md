@@ -116,7 +116,7 @@ Use the already running `emulator-5554`. In PowerShell:
 
 ```powershell
 $Shift6Sdk = 'C:\Users\camst\AppData\Local\Android\Sdk'
-$Shift6Apk = 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\app-release-de0711b0-x86_64.apk'
+$Shift6Apk = 'C:\Users\camst\Documents\Codex\2026-10-12\let-s-install-https-github-com\shift6-native-qa\app-release-3f1752ed-x86_64.apk'
 & "$Shift6Sdk\platform-tools\adb.exe" -s emulator-5554 install -r $Shift6Apk
 & "$Shift6Sdk\platform-tools\adb.exe" -s emulator-5554 shell am start -n com.shift6.app/.MainActivity
 ```
@@ -154,7 +154,7 @@ time-zone field lies beneath the IME. Exact focus and entered-value readback
 succeeded. Dismissing the keyboard exposes the field; this is a visibility defect,
 not failed text entry. See [first capture](qa/2026-10-14-coach-review/coach-review-compact-keyboard-de0711b0.png)
 and [independent repeat](qa/2026-10-14-coach-review/coach-review-keyboard-repeat-de0711b0.png).
-Fix and native retest are pending. No keyboard usability pass is claimed.
+This candidate fails keyboard visibility. The later fix and bounded retest are recorded below.
 
 The scripted sequence stopped after valid reread when a fresh UI dump returned
 empty during the font transition. A later stable Home observation enabled the
@@ -164,3 +164,53 @@ are retained harness interruptions; the original script exited 1 and is not a
 whole-run pass. Font scale ends at 1.0. The export comparison precedes the second
 keyboard reproduction and proves the first main editor case, not an additional
 post-repeat export. Physical/iOS and screen-reader acceptance remain unverified.
+
+## Keyboard fix iterations and native retest
+
+Same device/OS, issue [#363](https://github.com/camster91/Shift6/issues/363).
+The first measured-scroll proposal in native source `057d593609956001e4582565c25699caae796979`
+still fails after typing removes review evidence and reduces content height.
+Exact focus/value readback succeeds at normal and 200% text, but the edited field
+remains beneath the IME. Preserve the [normal failure](qa/2026-10-14-coach-review/coach-review-keyboard-proposal-failed-normal-057d5936.png)
+and [large edited failure](qa/2026-10-14-coach-review/coach-review-keyboard-proposal-large-edited-057d5936.png).
+The preceding large-text focused field was visible before editing; it does not
+establish a pass after content removal. The filename containing `fixed-invalid`
+records guidance only, not successful keyboard placement.
+
+The revised Android fix reserves measured keyboard overlap as additional Coach
+scroll content, then waits for the updated layout before positioning the focused
+field. The space clears when the keyboard hides or the editor resets. Native
+source `3f1752ede2917489e5ff4af103e4fc634fa41273`, APK SHA256
+`ed017404cfb3dc83bd4491642b4ac6531d75dc904ead6f630354e33e07b0b24c`:
+Change review dates > focus Review time zone > type `Invalid/Zone` > leave IME
+open. **Observed pass at font1.0 and font2.0:** the complete focused field and
+entered text remain visible above the keyboard after evidence disappears.
+Both [normal](qa/2026-10-14-coach-review/coach-review-keyboard-space-normal-3f1752ed.png)
+and [large](qa/2026-10-14-coach-review/coach-review-keyboard-space-large-3f1752ed.png)
+captures were visually inspected; focus and exact value were also asserted.
+Closing the keyboard and requesting invalid review shows guidance; correcting to
+`America/New_York` and rereading collapses the editor.
+
+Full `npm run verify` on this source passes **1,202 tests / 144 suites**, Doctor
+21/21 and both platform exports. Standalone guest native build/install passed.
+See [verify receipt](qa/2026-10-14-coach-review/verify-integrated-3f1752ed.status.json)
+and [build receipt](qa/2026-10-14-coach-review/build-integrated-3f1752ed.status.json).
+Font returns to1.0. First post-font-reset export missed its route despite a fresh
+dump; actual UI remained Coach. A cold restart, stable Home observation and fresh
+Profile/share/receiver sequence then succeeded. This is an interrupted route
+sequence, not an app data-loss conclusion. The external receiver opened the new
+JSON: **all36 arrays / 1,082 records are identical** to the preceding voice retest
+export. See [comparison](qa/2026-10-14-coach-review/coach-review-keyboard-final-comparison-3f1752ed.json).
+Fixture preparation and the deliberate earlier draft edit are documented in
+[doc51](51_LOCAL_VOICE_NATIVE_QA.md). No set/session/goal/receipt changed during
+these keyboard cases. This scoped Android pass leaves physical-device, screen
+reader, different keyboards and iOS journeys untested; #363 remains open.
+
+Fresh GitHub readback also confirms native run38534108589 on **a63a3b74** succeeds
+for Android compilation/proof and unsigned iOS simulator compilation, binding,
+installation and cold launch. Quality run38534108570 succeeds. Older quality
+run38534099956 was **cancelled during Jest**, although the checks summary labels
+it fail. The [native receipt](qa/2026-10-14-coach-review/coach-review-ci-38534108589.json)
+and [cancelled receipt](qa/2026-10-14-coach-review/coach-review-ci-38534099956.json)
+retain exact steps. These runs precede the newer keyboard/voice fixes and provide
+no current iOS interaction or human acceptance evidence. Score remains53/100.

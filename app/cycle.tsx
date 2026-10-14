@@ -34,7 +34,7 @@ import {
   getWorkoutScheduleOverrides,
   getWorkoutScheduleSessions,
 } from '../src/db/calendarRepository';
-import { getActiveTrainingCycle } from '../src/db/cycleRepository';
+import { getActiveTrainingCycle, getLatestTrainingCycle } from '../src/db/cycleRepository';
 import { getUserProgramVersion } from '../src/db/programRepository';
 import { getCompletedWorkoutIds } from '../src/db/progressRepository';
 import { colors, spacing } from '../src/design/tokens';
@@ -50,6 +50,8 @@ export default function CycleDashboardScreen() {
   const userId = useCurrentUserId();
   const { refreshNow } = useNotificationRuntime();
   const [otherActive, setOtherActive] = useState<TrainingCycle | null>(null);
+  const [latestCycleId, setLatestCycleId] = useState<string | null>(null);
+  const reviewPending = useRef(false);
   const [events, setEvents] = useState<CycleLifecycleEvent[]>([]);
   const [reviewDate, setReviewDate] = useState('');
   const [busy, setBusy] = useState(false);
@@ -83,6 +85,8 @@ export default function CycleDashboardScreen() {
       const generation = ++focusGeneration.current;
       let active = true;
       setBusy(false);
+      reviewPending.current = false;
+      setLatestCycleId(null);
       setEvents([]);
       setLoading(true);
       setError(null);
@@ -93,8 +97,12 @@ export default function CycleDashboardScreen() {
       void selectDashboardCycle(database, userId, requestedSelection)
         .then(async (activeCycle) => {
           if (!active || !activeCycle) return;
-          const currentActive = await getActiveTrainingCycle(database, userId);
+          const [currentActive, latest] = await Promise.all([
+            getActiveTrainingCycle(database, userId),
+            getLatestTrainingCycle(database, userId),
+          ]);
           if (!active) return;
+          setLatestCycleId(latest?.userId === userId ? latest.id : null);
           setOtherActive(
             currentActive && currentActive.id !== activeCycle.id ? currentActive : null,
           );
@@ -263,6 +271,50 @@ export default function CycleDashboardScreen() {
     completedWorkoutIds.has(workout.id),
   ).length;
   const isComplete = cycle.status === 'complete';
+  const canOpenReview = isComplete && cycle.id === latestCycleId;
+  const openCycleSummary = async () => {
+    const generation = focusGeneration.current;
+    const matches = () =>
+      generation === focusGeneration.current &&
+      context.current.database === database &&
+      context.current.userId === userId &&
+      context.current.requestedSelection === requestedSelection &&
+      loadedFor?.database === database &&
+      loadedFor.userId === userId &&
+      loadedFor.requestedSelection === requestedSelection;
+    if (!matches() || reviewPending.current) return;
+    if (!canOpenReview) {
+      router.push(
+        requestedSelection !== undefined
+          ? { pathname: '/cycle-reflection', params: { cycleId: cycle.id } }
+          : '/progress',
+      );
+      return;
+    }
+    reviewPending.current = true;
+    setBusy(true);
+    try {
+      const latest = await getLatestTrainingCycle(database, userId);
+      if (!matches()) return;
+      if (
+        latest?.userId !== userId ||
+        latest.id !== cycle.id ||
+        latest.programVersionId !== cycle.programVersionId ||
+        latest.status !== 'complete'
+      ) {
+        setNotice('Your latest cycle changed. Reload this cycle before opening its review.');
+        return;
+      }
+      router.push('/review');
+    } catch {
+      if (matches()) setNotice('We could not verify this cycle. Reload before opening its review.');
+    } finally {
+      if (matches()) {
+        reviewPending.current = false;
+        setBusy(false);
+      }
+    }
+  };
 
   return (
     <Screen>
@@ -502,23 +554,18 @@ export default function CycleDashboardScreen() {
 
       <Button
         label={
-          requestedSelection !== undefined
-            ? 'Read saved reflection'
-            : isComplete
-              ? 'Open cycle review'
+          canOpenReview
+            ? requestedSelection !== undefined
+              ? 'Open six-week review'
+              : 'Open cycle review'
+            : requestedSelection !== undefined
+              ? 'Read saved reflection'
               : 'Open progress'
         }
         variant="secondary"
         icon={<Ionicons name="arrow-forward" size={18} color={colors.ink} />}
-        onPress={() =>
-          router.push(
-            requestedSelection !== undefined
-              ? { pathname: '/cycle-reflection', params: { cycleId: cycle.id } }
-              : isComplete
-                ? '/review'
-                : '/progress',
-          )
-        }
+        disabled={busy}
+        onPress={() => void openCycleSummary()}
         style={styles.action}
       />
     </Screen>
